@@ -1,6 +1,9 @@
 package jd.http.ext;
 
+import java.awt.Component;
+import java.awt.Insets;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,6 +27,7 @@ import org.lobobrowser.html.UserAgentContext;
 import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
 import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.domimpl.HTMLFrameElementImpl;
+import org.lobobrowser.html.domimpl.HTMLIFrameElementImpl;
 import org.lobobrowser.html.io.WritableLineReader;
 import org.lobobrowser.html.js.Executor;
 import org.lobobrowser.html.js.Window;
@@ -31,6 +35,7 @@ import org.lobobrowser.html.js.event.BasicEvent;
 import org.lobobrowser.html.js.event.JSEventListener;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
+import org.w3c.dom.Document;
 import org.w3c.dom.html2.HTMLCollection;
 import org.w3c.dom.html2.HTMLElement;
 import org.w3c.dom.html2.HTMLLinkElement;
@@ -44,7 +49,7 @@ import org.w3c.dom.html2.HTMLLinkElement;
  * @author thomas
  * 
  */
-public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameElement {
+public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameElement, BrowserFrame {
 
     private static final String DOM_CONTENT_LOADED = "DOMContentLoaded";
     private ExtBrowser extBrowser;
@@ -54,6 +59,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     private HtmlFrameControllerEventsender eventSender;
     private ExtHTMLFrameImpl frame = null;
     private HashMap<String, ArrayList<JSEventListener>> listenerMap = new HashMap<String, ArrayList<JSEventListener>>();
+    private boolean loaded;
 
     public ExtHTMLFrameImpl getFrame() {
         return frame;
@@ -108,10 +114,6 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
         getEventSender().fireEvent(event);
         return event.getAnswer() == JSInteraction.AnswerTypes.OK;
 
-    }
-
-    public BrowserFrame createBrowserFrame() {
-        return new ExtBrowserFrame(this);
     }
 
     public void focus() {
@@ -436,12 +438,41 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public void eval() throws ExtBrowserException {
-        WritableLineReader wis = new WritableLineReader(new StringReader(extBrowser.getCommContext() + ""));
+        WritableLineReader wis = new WritableLineReader(new StringReader(extBrowser.getCommContext() + "")) {
+            public void write(String text) throws IOException {
+                super.write(text);
 
-        htmlDocument = new HTMLDocumentImpl(this.getUserAgentContext(), this, wis, extBrowser.getCommContext().getURL() + "");
+                System.out.println("Wrote to doc:\r\n" + text);
+            }
+
+            // public int read() throws IOException {
+            //
+            // int ret = super.read();
+            // System.out.print(" " + new String(new byte[] { (byte) ret }));
+            // return ret;
+            // }
+            //
+            // /*
+            // * (non-Javadoc) Note: Not implicitly thread safe.
+            // *
+            // * @see java.io.Reader#read(byte[], int, int)
+            // */
+            // public int read(char[] b, int off, int len) throws IOException {
+            // int ret = super.read(b, off, len);
+            // System.out.println("Read " + new String(b));
+            // return ret;
+            // }
+
+        };
+
+        htmlDocument = new ExtHTMLDocumentImpl(this.getUserAgentContext(), this, wis, extBrowser.getCommContext().getURL() + "");
 
         try {
             htmlDocument.load();
+            loaded = true;
+            // if (extBrowser.getBrowserEnviroment().isAutoProcessSubFrames()) {
+            // processFrames();
+            // }
             if (this.frame != null) {
                 if (frame.getSrc() != null && frame.getSrc().length() > 0) {
                     dispatch(new BasicEvent("load", frame.getImpl()));
@@ -449,9 +480,6 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
             } else {
                 dispatch(new BasicEvent("DOMContentLoaded", this.getDocument()));
                 dispatch(new BasicEvent("load", Window.getWindow(this)));
-            }
-            if (extBrowser.getBrowserEnviroment().isAutoProcessSubFrames()) {
-                processFrames();
             }
 
         } catch (Exception e) {
@@ -472,23 +500,30 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
     public void processFrames() throws ExtBrowserException {
         for (ExtHTMLFrameImpl frame : extBrowser.getFrames(this)) {
-            processFrame(frame);
+            if (CssUtilities.isVisible(frame.getImpl())) {
+                System.out.println("Load frame " + frame.getSrc());
+                processFrame(frame);
+            } else {
+                System.out.println("Frame not loaded... not visible " + frame.getSrc());
+            }
         }
 
     }
 
     public ExtHTMLFrameImpl processFrame(ExtHTMLFrameImpl f) throws ExtBrowserException {
-        if (f.getSrc() != null) {
-            HtmlFrameController rContext = new HtmlFrameController(this.extBrowser, f);
-            rContext.parentFrameController = this;
-            try {
-                rContext.submitForm("GET", new URL(extBrowser.getCommContext().getURL(f.getSrc())), null, null, null);
-                f.setBrowserFrame(rContext.createBrowserFrame());
-                return f;
-            } catch (Exception e) {
-                throw new ExtBrowserException(e);
-            }
+        if (f.getImpl() instanceof HTMLIFrameElementImpl) {
+            if (f.getSrc() != null) {
 
+                try {
+
+                    ((HtmlFrameController) ((HTMLIFrameElementImpl) f.getImpl()).getBrowserFrame()).submitForm("GET", new URL(extBrowser.getCommContext().getURL(f.getSrc())), null, null, null);
+
+                    return f;
+                } catch (Exception e) {
+                    throw new ExtBrowserException(e);
+                }
+
+            }
         }
         return null;
     }
@@ -602,6 +637,67 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
         }
         return ret;
+    }
+
+    public Component getComponent() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Document getContentDocument() {
+        // TODO Auto-generated method stub
+        return this.getDocument();
+    }
+
+    public HtmlRendererContext getHtmlRendererContext() {
+        // TODO Auto-generated method stub
+        return this;
+    }
+
+    public void loadURL(final URL url) {
+        if (!loaded) {
+            System.out.println("NOT LOADED FRAME " + url + " not loaded yet. QUEUED");
+            return;
+        }
+        System.out.println(this.frame.getImpl() + ".src=" + url);
+        // AbstractCSS2Properties style = this.frame.getImpl().getStyle();
+        // String st = this.frame.getImpl().getAttribute("style");
+        // String vis = style.getVisibility();
+        // vis = vis;
+        new Thread("URLLOADER") {
+            public void run() {
+
+                // submitForm("GET", url, null, null, null);
+            }
+        }.start();
+
+    }
+
+    public void setDefaultMarginInsets(Insets insets) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void setDefaultOverflowX(int overflowX) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void setDefaultOverflowY(int overflowY) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public HtmlFrameController createParentFrameController(ExtHTMLFrameImpl extHTMLFrameImpl) {
+        HtmlFrameController parent = (HtmlFrameController) getHtmlRendererContext();
+        HtmlFrameController rContext = new HtmlFrameController(this.extBrowser, extHTMLFrameImpl);
+        rContext.parentFrameController = this;
+        return rContext;
+    }
+
+    public BrowserFrame createBrowserFrame() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     // public void addEventListener(Object nodeImpl, String type, BaseFunction

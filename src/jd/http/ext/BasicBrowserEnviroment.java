@@ -125,12 +125,12 @@ public class BasicBrowserEnviroment implements BrowserEnviroment {
 
     public boolean isExternalCSSEnabled() {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     public boolean isInternalCSSEnabled() {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     public boolean isScriptingEnabled() {

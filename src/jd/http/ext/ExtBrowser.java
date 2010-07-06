@@ -15,7 +15,6 @@ import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
 import org.lobobrowser.html.domimpl.HTMLFormElementImpl;
 import org.lobobrowser.html.domimpl.HTMLFrameElementImpl;
 import org.lobobrowser.html.domimpl.HTMLIFrameElementImpl;
-import org.lobobrowser.html.domimpl.HTMLSpanElementImpl;
 import org.w3c.dom.Element;
 import org.w3c.dom.html2.HTMLCollection;
 
@@ -32,7 +31,7 @@ public class ExtBrowser {
     }
 
     @SuppressWarnings("all")
-    public static void main(String args[]) throws ExtBrowserException {
+    public static void main(String args[]) throws ExtBrowserException, InterruptedException {
 
         ExtBrowser br = new ExtBrowser();
         br.setUserAgent(new FullBrowserEnviroment() {
@@ -49,15 +48,46 @@ public class ExtBrowser {
         Browser.setVerbose(true);
         br.getCommContext().forceDebug(true);
 
-        br.getPage("http://ifile.it/uvkog7y");
-        // br.getPage("http://jdownloader.net:8081/advert/jstest.html");
-        ArrayList<HTMLFormElementImpl> forms = br.getForms(null);
-        String text = br.getHtmlText();
-        HTMLSpanElementImpl button = (HTMLSpanElementImpl) br.getElementByID(null, "req_btn2");
-        br.getInputController().click(button);
-        // br.getInputController().mouseClick(button, null, 1, 4);
+        ExtBrowser eb = new ExtBrowser();
+        eb.setUserAgent(new jd.http.ext.BasicBrowserEnviroment(null, null));
+        try {
+            eb.getPage("http://www.mediafire.com/?dzmzuzmh2md");
 
-        br = br;
+            System.out.println(eb.getHtmlText());
+            eb.cleanUp();
+            org.w3c.dom.html2.HTMLCollection links = eb.getDocument().getLinks();
+            String txt = eb.getHtmlText();
+            for (int i = 0; i < links.getLength(); i++) {
+                org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
+                String inner = l.getInnerHTML();
+                System.out.println(inner + " - " + l);
+                if (inner.toLowerCase().contains("start download")) {
+                    org.lobobrowser.html.domimpl.HTMLDivElementImpl div = (org.lobobrowser.html.domimpl.HTMLDivElementImpl) l.getParentNode();
+                    System.out.println("          *    " + inner + " - " + div.getOuterHTML());
+                    org.lobobrowser.html.style.AbstractCSS2Properties s = div.getStyle();
+                    if (!"-250px".equalsIgnoreCase(s.getTop()) && !"none".equalsIgnoreCase(s.getDisplay())) {
+                        String myURL = l.getAbsoluteHref();
+
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        while (true) {
+            Thread.sleep(100);
+        }
+        // br.getPage("http://ifile.it/uvkog7y");
+        // br.getPage("http://jdownloader.net:8081/advert/jstest.html");
+        // ArrayList<HTMLFormElementImpl> forms = br.getForms(null);
+        // String text = br.getHtmlText();
+        // HTMLSpanElementImpl button = (HTMLSpanElementImpl)
+        // br.getElementByID(null, "req_btn2");
+        // br.getInputController().click(button);
+        // // br.getInputController().mouseClick(button, null, 1, 4);
+        //
+        // br = br;
         // String str = br.getHtmlText();
         // str = str;
         // HTMLCollection links = br.getDocument().getLinks();
@@ -243,6 +273,7 @@ public class ExtBrowser {
      * @return
      */
     public ArrayList<ExtHTMLFrameImpl> getFrames(ExtHTMLFrameElement baseFrame) {
+        if (baseFrame == null) baseFrame = getHtmlFrameController();
         HTMLCollection frames = baseFrame.getHtmlFrameController().getFrames();
         ArrayList<ExtHTMLFrameImpl> ret = new ArrayList<ExtHTMLFrameImpl>();
         for (int i = 0; i < frames.getLength(); i++) {
@@ -260,6 +291,11 @@ public class ExtBrowser {
 
     public String getScriptableVariable(String string) {
         return this.getHtmlFrameController().getScriptableVariable(string);
+
+    }
+
+    public void cleanUp() {
+        // TODO Auto-generated method stub
 
     }
 
