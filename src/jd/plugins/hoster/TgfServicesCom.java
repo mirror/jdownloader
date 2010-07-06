@@ -22,11 +22,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tgf-services.com" }, urls = { "http://[\\w\\.]*?tgf-services\\.com/UserDownloads/.+" }, flags = { 0 })
@@ -62,9 +62,8 @@ public class TgfServicesCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        boolean pluginUnfinished = true;
-        if (pluginUnfinished) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Plugin unfinished");
         String reCaptchaID = br.getRegex("\\?k=(.*?)\"").getMatch(0);
         if (reCaptchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://tgf-services.com/js/scripts.js");
@@ -73,13 +72,19 @@ public class TgfServicesCom extends PluginForHost {
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(reCaptchaID);
         rc.load();
+        // need download if not don't work
+        try {
+            br.getPage("http://tgf-services.com/reg_code_process.php");
+        } catch (Exception e) {
+        }
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         String c = getCaptchaCode(cf, downloadLink);
-        // Those requests seem to be wrong anybee
+
         String postURL = "http://tgf-services.com/pages/checkCapture.php?start=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c.replace(" ", "%20") + "&PHPSESSID=" + br.getCookie("http://tgf-services.com", "PHPSESSID") + "&" + System.currentTimeMillis() * 10 + "-xml";
         br.postPage(postURL, "dump=1");
         System.out.print(br.toString());
-        if (!br.containsHTML("'responce_result': 'GOOD\\!\\!\\!\\!\\!'")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // wrong code put - maybe need better test
+        if (br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         int tt = 50;
         if (waittime != null) {
@@ -92,13 +97,16 @@ public class TgfServicesCom extends PluginForHost {
         String postURL2 = "http://tgf-services.com/pages/getDownloadPage.php?start=1&hash=" + theHash + "&PHPSESSID=" + br.getCookie("http://tgf-services.com", "PHPSESSID") + "&" + System.currentTimeMillis() * 10 + "-xml";
         br.postPage(postURL2, "dump=1");
         System.out.print(br.toString());
-        String dllink = null;
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /**
-         * TODO: You never reach this code line! There will always be a thrown
-         * PluginException!
-         */
+        // stupid download limit ... one file per day?
+        if (br.containsHTML("You have reached your daily free downloads limits.")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+        }
+        String dllink = br.getRegex("<a href=\\\\\"(.*?)\\\\\"").getMatch(0);
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        // Possible error - link change every refresh ...
+        // This download link has already expired.
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
