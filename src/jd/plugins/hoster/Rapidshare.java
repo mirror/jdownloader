@@ -892,7 +892,7 @@ public class Rapidshare extends PluginForHost {
         JDL.L("plugins.host.rapidshare.errors.8da4051e59062d67a39a7e10cc026831", "You have reached your daily limit.");
         JDL.L("plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e", "This file seems to be illegal and is locked. Downloading this file is prohibited by Rapidshare.");
         JDL.L("plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692", "10 GB limit reached.");
-
+        JDL.L("plugins.host.rapidshare.errors.8b1fa6afcc062650ad29d80989022f39", "Account is expired,");
         String error2 = JDL.L("plugins.host.rapidshare.errors." + JDHash.getMD5(error) + "", error);
         if (error.equals(error2)) {
             logger.warning("NO TRANSLATIONKEY FOUND FOR: " + error + "(" + JDHash.getMD5(error) + ")");
@@ -1256,8 +1256,12 @@ public class Rapidshare extends PluginForHost {
             if (billedUntilTime != null && serverTimeString != null) {
                 /* next billing in */
                 nextBill = Long.parseLong(billedUntilTime) - Long.parseLong(serverTimeString);
-                String left = Formatter.formatSeconds(nextBill, false);
-                ai.setStatus("Valid for " + left);
+                if (nextBill <= 0) {
+                    ai.setStatus("Account might be expired");
+                } else {
+                    String left = Formatter.formatSeconds(nextBill, false);
+                    ai.setStatus("Valid for " + left);
+                }
             }
         } catch (Exception e) {
             logger.severe("RS-API change detected, please inform support!");
