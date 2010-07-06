@@ -67,7 +67,7 @@ public class TgfServicesCom extends PluginForHost {
         String reCaptchaID = br.getRegex("\\?k=(.*?)\"").getMatch(0);
         if (reCaptchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://tgf-services.com/js/scripts.js");
-        String waittime = br.getRegex("secs=(\\d+);").getMatch(0);
+        // String waittime = br.getRegex("secs=(\\d+);").getMatch(0);
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(reCaptchaID);
@@ -79,32 +79,29 @@ public class TgfServicesCom extends PluginForHost {
         }
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         String c = getCaptchaCode(cf, downloadLink);
-
         String postURL = "http://tgf-services.com/pages/checkCapture.php?start=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c.replace(" ", "%20") + "&PHPSESSID=" + br.getCookie("http://tgf-services.com", "PHPSESSID") + "&" + System.currentTimeMillis() * 10 + "-xml";
         br.postPage(postURL, "dump=1");
-        System.out.print(br.toString());
-        // wrong code put - maybe need better test
-        if (br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Ticket Time
-        int tt = 50;
-        if (waittime != null) {
-            logger.info("Waittime detected, waiting " + waittime + " seconds from now on...");
-            tt = Integer.parseInt(waittime);
-        }
-        sleep(tt * 1001, downloadLink);
+        // Captcha errorhandling
+        if (br.containsHTML("'error': '2'")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        // Unknown error->Plugin broken
+        if (br.containsHTML("'error':")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Ticket Time - not needed, can be skipped atm!
+        // int tt = 50;
+        // if (waittime != null) {
+        // logger.info("Waittime detected, waiting " + waittime +
+        // " seconds from now on...");
+        // tt = Integer.parseInt(waittime);
+        // }
+        // sleep(tt * 1001, downloadLink);
         String theHash = new Regex(downloadLink.getDownloadURL(), "tgf-services\\.com/UserDownloads/(.+)/").getMatch(0);
         if (theHash == null) theHash = new Regex(downloadLink.getDownloadURL(), "tgf-services\\.com/UserDownloads/(.+)").getMatch(0);
         String postURL2 = "http://tgf-services.com/pages/getDownloadPage.php?start=1&hash=" + theHash + "&PHPSESSID=" + br.getCookie("http://tgf-services.com", "PHPSESSID") + "&" + System.currentTimeMillis() * 10 + "-xml";
         br.postPage(postURL2, "dump=1");
-        System.out.print(br.toString());
         // stupid download limit ... one file per day?
-        if (br.containsHTML("You have reached your daily free downloads limits.")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
-        }
+        if (br.containsHTML("You have reached your daily free downloads limits.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         String dllink = br.getRegex("<a href=\\\\\"(.*?)\\\\\"").getMatch(0);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         // Possible error - link change every refresh ...
         // This download link has already expired.
         if (dl.getConnection().getContentType().contains("html")) {
@@ -120,7 +117,7 @@ public class TgfServicesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

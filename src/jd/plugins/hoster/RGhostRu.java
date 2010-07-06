@@ -40,6 +40,8 @@ public class RGhostRu extends PluginForHost {
         this.setStartIntervall(3500l);
     }
 
+    private static final String PWTEXT = "Password: <input id=\"password\" name=\"password\" type=\"password\"";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -56,6 +58,7 @@ public class RGhostRu extends PluginForHost {
         if (sha1 != null) link.setSha1Hash(sha1.trim());
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
+        if (br.containsHTML(PWTEXT)) link.getLinkStatus().setStatusText("This file is password protected");
         return AvailableStatus.TRUE;
     }
 
@@ -66,7 +69,7 @@ public class RGhostRu extends PluginForHost {
         String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
         String passCode = null;
-        if (dllink == null) {
+        if (dllink == null && br.containsHTML(PWTEXT)) {
             Form pwform = br.getForm(2);
             if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
@@ -86,6 +89,7 @@ public class RGhostRu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
