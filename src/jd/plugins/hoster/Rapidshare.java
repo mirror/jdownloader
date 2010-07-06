@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,20 +24,12 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
-import jd.gui.UserIO;
-import jd.gui.swing.dialog.ContainerDialog;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -61,9 +52,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.swing.dialog.Dialog;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -170,8 +159,6 @@ public class Rapidshare extends PluginForHost {
     private static final int BUSINESS = 449;
 
     private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
-
-    protected static final String ASK_BEFORE_UPGRADE = "ASK_BEFORE_UPGRADE_V2";
 
     public static final int UPGRADEPROTECTION_SMALL = 0;
     public static final int UPGRADEPROTECTION_MEDIUM = 1;
@@ -771,76 +758,7 @@ public class Rapidshare extends PluginForHost {
                         account.setTempDisabled(true);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wait for Happy Hour!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    /*
-                     * check needed traffic for running downloads on this
-                     * accounts
-                     */
-                    long downloadSize = 0;
-                    for (DownloadLink trafficLink : trafficCheck.get(account)) {
-                        downloadSize += trafficLink.getDownloadSize() - trafficLink.getDownloadCurrent();
-                    }
-                    /* how much bytes rs will calculate */
-                    long countedSize = (long) (downloadSize * (happyhour ? 0.1f : 1.0f));
-                    /* get needed infos for packagemanaging */
-                    long trafficLeft = Long.parseLong(account.getStringProperty("tskb")) * 1000;
-                    boolean upgradeRequired = countedSize > trafficLeft;
-                    int pckg = getCurrentPackage(account);
-                    boolean ask = account.getBooleanProperty(ASK_BEFORE_UPGRADE, false);
-                    if (upgradeRequired && ask) {
-                        logger.info("Account: " + account.getUser() + " needs upgrade in order to continue downloading");
-                        /*
-                         * TODO: we need to know what package currently is set!
-                         * without this information we cannot do automatic
-                         * upgrade management
-                         */
-                        /* we have to upgrade package, not enough traffic left */
-                        int next = -1;
-                        String nextName = null;
-                        switch (pckg) {
-                        case SMALL:
-                            next = MEDIUM;
-                            nextName = "Medium";
-                            break;
-                        case MEDIUM:
-                            next = BIG;
-                            nextName = "Big";
-                            break;
-                        case BIG:
-                            next = SUPERSIZE;
-                            nextName = "SuperSize";
-                            break;
-                        case SUPERSIZE:
-                            next = BUSINESS;
-                            nextName = "Business";
-                            break;
-                        case BUSINESS:
-                            next = -1;
-                            break;
-                        }
-                        boolean allowUpgrade = Integer.parseInt(account.getStringProperty("maxrperday")) >= next;
-                        if (allowUpgrade) {
-                            //
 
-                            allowUpgrade = Dialog.isOK(UserIO.getInstance().requestConfirmDialog(0, JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.title", "Upgrade RapidShare Account %s?", account.getUser()), JDL.LF("jd.plugins.hoster.Rapidshare.handlePremium.allowUpgrade.message", "If you want continue downloading today, you have to upgrade your RapidShare Account to %s for %s Rapids. \r\n\r\nUpgrade now?", nextName, next - pckg)));
-
-                            if (!allowUpgrade) {
-                                logger.info("Package upgrade required but forbidden by user!");
-                                synchronized (RESET_WAITING_ACCOUNTS) {
-                                    if (!RESET_WAITING_ACCOUNTS.contains(account)) {
-                                        RESET_WAITING_ACCOUNTS.add(account);
-                                    }
-                                }
-                                /*
-                                 * temp disable the account, no upgrade allowed
-                                 * for this account
-                                 */
-                                account.setTempDisabled(true);
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Package upgrade required but forbidden by user!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                            } else {
-                                logger.info("Package upgrade required and allowed by user!");
-                            }
-                        }
-                    }
                 }
 
                 br.setFollowRedirects(false);
@@ -956,39 +874,6 @@ public class Rapidshare extends PluginForHost {
             }
             downloadLink.getLinkStatus().setStatusText(JDL.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", account.getUser()));
         }
-    }
-
-    private int getCurrentPackage(Account account) throws Exception {
-
-        // queryAPI(br,
-        // "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getrapidpaylogs_v1&login="
-        // + account.getUser() + "&password=" + account.getPass());
-        // Calendar server = Calendar.getInstance();
-        // TimeZone tz = TimeZone.getTimeZone("CEST");
-        // server.setTimeZone(tz);
-        // Calendar stamp = Calendar.getInstance();
-        int ret = Integer.parseInt(account.getStringProperty("rperday"));
-        // server.setTimeZone(tz);
-        // server.setTimeInMillis(Long.parseLong(account.getStringProperty("servertime"))
-        // * 1000l);
-        // int serverDay = server.get(Calendar.DAY_OF_YEAR);
-        // for (String str : Regex.getLines(br + "")) {
-        // String[] matches = new Regex(str,
-        // "(\\d+),(\\d+),(\\d+),(.+)").getRow(0);
-        // stamp.setTimeInMillis(Long.parseLong(matches[0]) * 1000l);
-        //
-        // if (stamp.get(Calendar.DAY_OF_YEAR) != serverDay) {
-        // break;
-        // }
-        // String upgrade = new Regex(matches[3],
-        // "upgrade to rperday (\\d+)").getMatch(0);
-        // if (upgrade != null) {
-        // ret = Math.max(ret, Integer.parseInt(upgrade.trim()));
-        // }
-        //
-        // }
-
-        return ret;
     }
 
     private String findError(Browser br) {
@@ -1271,15 +1156,13 @@ public class Rapidshare extends PluginForHost {
             boolean cookieLogin = false;
             Long lastUpdate = account.getGenericProperty("lastUpdate", new Long(0));
             if (cookies != null && forceRefresh == false && lastUpdate != 0) {
-                if (!account.getBooleanProperty(ASK_BEFORE_UPGRADE, false) && !getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false)) {
+                if (!getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false)) {
                     /*
                      * no upgrade warning and no happy hour check, so we can use
                      * cookie
                      */
                     cookieLogin = true;
-                } else if (account.getBooleanProperty(ASK_BEFORE_UPGRADE, false)) {
-                    /* upgrade warning needed, so we have to login */
-                    cookieLogin = false;
+
                 } else {
                     /* last updateCheck, wait at least 5 mins for hh check */
                     Long timeout = 5 * 60 * 1000l;
@@ -1480,23 +1363,26 @@ public class Rapidshare extends PluginForHost {
                                  * able to change it in future, cause menu is
                                  * temp saved and used in menubar
                                  */
-                                MenuAction upgradeBlock = menuActionMap.get(1000 + i);
-                                if (upgradeBlock == null) {
-                                    /* create new donotupgrade action */
-                                    upgradeBlock = new MenuAction(JDL.L("plugins.hoster.rapidshare.com.upgrade", "Upgradesettings"), 1000 + i);
-
-                                    upgradeBlock.setActionListener(this);
-                                    menuActionMap.put(1000 + i, upgradeBlock);
-                                }
-
-                                if (!aa.getItems().contains(upgradeBlock)) {
-                                    /* backwards compatibility to 0.95xx */
-                                    /*
-                                     * old version did only create account menu
-                                     * once per jd session
-                                     */
-                                    aa.addMenuItem(upgradeBlock);
-                                }
+                                // MenuAction upgradeBlock =
+                                // menuActionMap.get(1000 + i);
+                                // if (upgradeBlock == null) {
+                                // /* create new donotupgrade action */
+                                // upgradeBlock = new
+                                // MenuAction(JDL.L("plugins.hoster.rapidshare.com.upgrade",
+                                // "Upgradesettings"), 1000 + i);
+                                //
+                                // upgradeBlock.setActionListener(this);
+                                // menuActionMap.put(1000 + i, upgradeBlock);
+                                // }
+                                //
+                                // if (!aa.getItems().contains(upgradeBlock)) {
+                                // /* backwards compatibility to 0.95xx */
+                                // /*
+                                // * old version did only create account menu
+                                // * once per jd session
+                                // */
+                                // aa.addMenuItem(upgradeBlock);
+                                // }
                                 i++;
                             }
                         }
@@ -1526,168 +1412,219 @@ public class Rapidshare extends PluginForHost {
                  * get menuaction and change its selected state, also change
                  * property of account
                  */
-                if (upgradeBlock != null) {
-                    int i = e.getID() - 1000;
-
-                    JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill]", "[][][][][][][]"));
-                    // getPremiumAccounts().get(i)
-                    final Account account = getPremiumAccounts().get(i);
-                    this.login(account, true);
-                    JLabel lbl;
-                    lbl = new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.title", "RS FlexyPay Upgradecontroller"));
-                    lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
-                    content.add(lbl, "split 2");
-                    content.add(new JSeparator());
-                    content.add(new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.desc", "Control the usage of your Rapids & set the max. Package for Autoupgrade")));
-                    /* max */
-                    final JComboBox combo = new JComboBox(new String[] { JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.unlimited", "Unlimited"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitsmall", "At most to RapidSmall(1GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitmedium", "At most to RapidMedium(5GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBig", "At most to RapidBig(20GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitSuperSize", "At most to RapidSuperSize(60GB daily)"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBusiness", "At most to Business(120GB daily)"), });
-
-                    content.add(combo);
-                    final JCheckBox ask = new JCheckBox(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.ask", "Ask before each Upgrade"));
-                    content.add(ask);
-
-                    lbl = new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.title", "Auto-Downgrade Options"));
-                    lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
-                    content.add(lbl, "split 2");
-                    content.add(new JSeparator());
-                    content.add(new JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.desc", "Save Rapids and Money by downgrading automaticly to a cheap package every day.")));
-                    /* min */
-                    final JComboBox combo2 = new JComboBox(new String[] { JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.lowest", "Lowest possible package"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.small", "Downgrade to RapidSmall"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.medium", "Downgrade to RapidMedium"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.Big", "Downgrade to RapidBig"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.SuperSize", "Downgrade to RapidSuperSize"), JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.Business", "Downgrade to Business") });
-
-                    content.add(combo2);
-                    switch (Integer.parseInt(account.getStringProperty("maxrperday"))) {
-                    case 0:
-                        combo.setSelectedIndex(0);
-                        break;
-                    case SMALL:
-                        combo.setSelectedIndex(1);
-                        break;
-                    case MEDIUM:
-                        combo.setSelectedIndex(2);
-                        break;
-                    case BIG:
-                        combo.setSelectedIndex(3);
-                        break;
-                    case SUPERSIZE:
-                        combo.setSelectedIndex(4);
-                        break;
-                    case BUSINESS:
-                        combo.setSelectedIndex(5);
-                        break;
-                    }
-                    ask.setSelected(account.getBooleanProperty(ASK_BEFORE_UPGRADE, false));
-
-                    // TODO: ask on first use.
-                    switch (Integer.parseInt(account.getStringProperty("minrperday"))) {
-                    case 0:
-                        combo2.setSelectedIndex(0);
-                        break;
-                    case SMALL:
-                        combo2.setSelectedIndex(1);
-                        break;
-                    case MEDIUM:
-                        combo2.setSelectedIndex(2);
-                        break;
-                    case BIG:
-                        combo2.setSelectedIndex(3);
-                        break;
-                    case SUPERSIZE:
-                        combo2.setSelectedIndex(4);
-                        break;
-                    case BUSINESS:
-                        combo2.setSelectedIndex(5);
-                        break;
-                    }
-                    new ContainerDialog(UserIO.NO_ICON | UserIO.NO_COUNTDOWN, JDL.LF("jd.plugins.hoster.Rapidshare.UpgradeDialog.title", "Upgrade & Downgrade Settings for %s", account.getUser()), content, null, JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.save", "Save"), null) {
-                        /**
-                     * 
-                     */
-                        private static final long serialVersionUID = -6731126041686901174L;
-
-                        @Override
-                        protected void setReturnValue(final boolean b) {
-                            super.setReturnValue(b);
-                            if (b) {
-                                account.setProperty(ASK_BEFORE_UPGRADE, ask.isSelected());
-                                int rmin = 0;
-                                int rmax = 0;
-                                switch (combo.getSelectedIndex()) {
-                                case 0:
-                                    rmax = 0;
-                                    break;
-                                case 1:
-                                    rmax = SMALL;
-                                    break;
-                                case 2:
-                                    rmax = MEDIUM;
-                                    break;
-                                case 3:
-                                    rmax = BIG;
-                                    break;
-                                case 4:
-                                    rmax = SUPERSIZE;
-                                    break;
-                                case 5:
-                                    rmax = 0;
-                                    break;
-                                }
-
-                                switch (combo2.getSelectedIndex()) {
-                                case 0:
-                                    rmin = 0;
-                                    break;
-                                case 1:
-                                    rmin = SMALL;
-                                    break;
-                                case 2:
-                                    rmin = MEDIUM;
-                                    break;
-                                case 3:
-                                    rmin = BIG;
-                                    break;
-                                case 4:
-                                    rmin = SUPERSIZE;
-                                    break;
-                                case 5:
-                                    rmin = 0;
-                                    break;
-                                }
-                                try {
-                                    while (true) {
-                                        Browser browser = br.cloneBrowser();
-                                        queryAPI(browser, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=setaccountdetails_v1&cookie=" + account.getStringProperty("cookie") + "&minrperday=" + rmin + "&maxrperday=" + rmax);
-                                        if (browser.containsHTML("ERROR: E-mail invalid.")) {
-                                            String mail = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.plugins.hoster.Rapidshare.actionPerformed.emailmissing.title", "E-Mail missing"), JDL.L("jd.plugins.hoster.Rapidshare.actionPerformed.emailmissing.message", "To use this feature, you have to set a E-Mail adress in your RapidShare Account.\r\nPlease enter your Email."), null, null, null, null);
-                                            if (mail == null) return;
-                                            queryAPI(browser, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=setaccountdetails_v1&email=" + mail + "&cookie=" + account.getStringProperty("cookie") + "&minrperday=" + rmin + "&maxrperday=" + rmax);
-                                        } else if (!browser.containsHTML("OK")) {
-                                            if (browser.containsHTML("minrperday is bigger")) {
-                                                UserIO.getInstance().requestMessageDialog("Error:\r\nCurrent selected RapidShare package is bigger than your wished minimal package!");
-                                                return;
-                                            }
-                                            if (browser.containsHTML("rperday is bigger")) {
-                                                UserIO.getInstance().requestMessageDialog("Error:\r\nCurrent selected RapidShare package is bigger than your wished maximal package!");
-                                                return;
-                                            }
-                                            logger.severe("RapidShare Setter failed: " + browser);
-                                            UserIO.getInstance().requestMessageDialog("Failed. Please Upload Log and contact JDownloader Support: " + browser);
-                                            return;
-                                        } else {
-                                            break;
-                                        }
-                                    }
-                                    account.setTempDisabled(false);
-                                } catch (Exception e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                }
-
-                            }
-
-                        }
-                    }.getReturnValue();
-
-                }
+                // if (upgradeBlock != null) {
+                // int i = e.getID() - 1000;
+                //
+                // JPanel content = new JPanel(new MigLayout("ins 5, wrap 1",
+                // "[grow,fill]", "[][][][][][][]"));
+                // // getPremiumAccounts().get(i)
+                // final Account account = getPremiumAccounts().get(i);
+                // this.login(account, true);
+                // JLabel lbl;
+                // lbl = new
+                // JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.title",
+                // "RS FlexyPay Upgradecontroller"));
+                // lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+                // content.add(lbl, "split 2");
+                // content.add(new JSeparator());
+                // content.add(new
+                // JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.desc",
+                // "Control the usage of your Rapids & set the max. Package for Autoupgrade")));
+                // /* max */
+                // final JComboBox combo = new JComboBox(new String[] {
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.unlimited",
+                // "Unlimited"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitsmall",
+                // "At most to RapidSmall(1GB daily)"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitmedium",
+                // "At most to RapidMedium(5GB daily)"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBig",
+                // "At most to RapidBig(20GB daily)"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitSuperSize",
+                // "At most to RapidSuperSize(60GB daily)"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.upgradelimit.limitBusiness",
+                // "At most to Business(120GB daily)"), });
+                //
+                // content.add(combo);
+                //
+                // lbl = new
+                // JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.title",
+                // "Auto-Downgrade Options"));
+                // lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+                // content.add(lbl, "split 2");
+                // content.add(new JSeparator());
+                // content.add(new
+                // JLabel(JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.desc",
+                // "Save Rapids and Money by downgrading automaticly to a cheap package every day.")));
+                // /* min */
+                // final JComboBox combo2 = new JComboBox(new String[] {
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.lowest",
+                // "Lowest possible package"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.small",
+                // "Downgrade to RapidSmall"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.medium",
+                // "Downgrade to RapidMedium"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.Big",
+                // "Downgrade to RapidBig"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.SuperSize",
+                // "Downgrade to RapidSuperSize"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.downgrade.Business",
+                // "Downgrade to Business") });
+                //
+                // content.add(combo2);
+                // switch
+                // (Integer.parseInt(account.getStringProperty("maxrperday"))) {
+                // case 0:
+                // combo.setSelectedIndex(0);
+                // break;
+                // case SMALL:
+                // combo.setSelectedIndex(1);
+                // break;
+                // case MEDIUM:
+                // combo.setSelectedIndex(2);
+                // break;
+                // case BIG:
+                // combo.setSelectedIndex(3);
+                // break;
+                // case SUPERSIZE:
+                // combo.setSelectedIndex(4);
+                // break;
+                // case BUSINESS:
+                // combo.setSelectedIndex(5);
+                // break;
+                // }
+                //
+                // // TODO: ask on first use.
+                // switch
+                // (Integer.parseInt(account.getStringProperty("minrperday"))) {
+                // case 0:
+                // combo2.setSelectedIndex(0);
+                // break;
+                // case SMALL:
+                // combo2.setSelectedIndex(1);
+                // break;
+                // case MEDIUM:
+                // combo2.setSelectedIndex(2);
+                // break;
+                // case BIG:
+                // combo2.setSelectedIndex(3);
+                // break;
+                // case SUPERSIZE:
+                // combo2.setSelectedIndex(4);
+                // break;
+                // case BUSINESS:
+                // combo2.setSelectedIndex(5);
+                // break;
+                // }
+                // new ContainerDialog(UserIO.NO_ICON | UserIO.NO_COUNTDOWN,
+                // JDL.LF("jd.plugins.hoster.Rapidshare.UpgradeDialog.title",
+                // "Upgrade & Downgrade Settings for %s", account.getUser()),
+                // content, null,
+                // JDL.L("jd.plugins.hoster.Rapidshare.UpgradeDialog.save",
+                // "Save"), null) {
+                // /**
+                // *
+                // */
+                // private static final long serialVersionUID =
+                // -6731126041686901174L;
+                //
+                // @Override
+                // protected void setReturnValue(final boolean b) {
+                // super.setReturnValue(b);
+                // if (b) {
+                //
+                // int rmin = 0;
+                // int rmax = 0;
+                // switch (combo.getSelectedIndex()) {
+                // case 0:
+                // rmax = 0;
+                // break;
+                // case 1:
+                // rmax = SMALL;
+                // break;
+                // case 2:
+                // rmax = MEDIUM;
+                // break;
+                // case 3:
+                // rmax = BIG;
+                // break;
+                // case 4:
+                // rmax = SUPERSIZE;
+                // break;
+                // case 5:
+                // rmax = 0;
+                // break;
+                // }
+                //
+                // switch (combo2.getSelectedIndex()) {
+                // case 0:
+                // rmin = 0;
+                // break;
+                // case 1:
+                // rmin = SMALL;
+                // break;
+                // case 2:
+                // rmin = MEDIUM;
+                // break;
+                // case 3:
+                // rmin = BIG;
+                // break;
+                // case 4:
+                // rmin = SUPERSIZE;
+                // break;
+                // case 5:
+                // rmin = 0;
+                // break;
+                // }
+                // try {
+                // while (true) {
+                // Browser browser = br.cloneBrowser();
+                // queryAPI(browser,
+                // "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=setaccountdetails_v1&cookie="
+                // + account.getStringProperty("cookie") + "&minrperday=" + rmin
+                // + "&maxrperday=" + rmax);
+                // if (browser.containsHTML("ERROR: E-mail invalid.")) {
+                // String mail =
+                // UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN,
+                // JDL.L("jd.plugins.hoster.Rapidshare.actionPerformed.emailmissing.title",
+                // "E-Mail missing"),
+                // JDL.L("jd.plugins.hoster.Rapidshare.actionPerformed.emailmissing.message",
+                // "To use this feature, you have to set a E-Mail adress in your RapidShare Account.\r\nPlease enter your Email."),
+                // null, null, null, null);
+                // if (mail == null) return;
+                // queryAPI(browser,
+                // "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=setaccountdetails_v1&email="
+                // + mail + "&cookie=" + account.getStringProperty("cookie") +
+                // "&minrperday=" + rmin + "&maxrperday=" + rmax);
+                // } else if (!browser.containsHTML("OK")) {
+                // if (browser.containsHTML("minrperday is bigger")) {
+                // UserIO.getInstance().requestMessageDialog("Error:\r\nCurrent selected RapidShare package is bigger than your wished minimal package!");
+                // return;
+                // }
+                // if (browser.containsHTML("rperday is bigger")) {
+                // UserIO.getInstance().requestMessageDialog("Error:\r\nCurrent selected RapidShare package is bigger than your wished maximal package!");
+                // return;
+                // }
+                // logger.severe("RapidShare Setter failed: " + browser);
+                // UserIO.getInstance().requestMessageDialog("Failed. Please Upload Log and contact JDownloader Support: "
+                // + browser);
+                // return;
+                // } else {
+                // break;
+                // }
+                // }
+                // account.setTempDisabled(false);
+                // } catch (Exception e) {
+                // // TODO Auto-generated catch block
+                // e.printStackTrace();
+                // }
+                //
+                // }
+                //
+                // }
+                // }.getReturnValue();
+                //
+                // }
             } catch (Exception e2) {
                 e2.printStackTrace();
             }
