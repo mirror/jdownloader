@@ -689,7 +689,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public HtmlFrameController createParentFrameController(ExtHTMLFrameImpl extHTMLFrameImpl) {
-        HtmlFrameController parent = (HtmlFrameController) getHtmlRendererContext();
+
         HtmlFrameController rContext = new HtmlFrameController(this.extBrowser, extHTMLFrameImpl);
         rContext.parentFrameController = this;
         return rContext;
