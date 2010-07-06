@@ -28,6 +28,7 @@
 	<property name="zip.mac.name" value="JDownloader_mac.zip" />
 	
 	<property name="exe.windows.script" value="${res}/nsis/nsis-setup.nsi" />
+	<property name="exe.web.script" value="${res}/nsis/webinstaller.nsi" />
 
 	<path id="classpath">
 		<fileset dir="${res}/libs" includes="*.jar" />
@@ -450,7 +451,17 @@
 	        <classpath location="nsisant-1.2.jar" />
 		</taskdef>
 		
-		<nsis script="${exe.windows.script}" />
+		<nsis script="${exe.windows.script}" verbosity="2" />
+		
+		<nsis script="${exe.windows.script}" verbosity="2" >
+			<define name="ADVERTISING_KIKIN" value="1"/>
+		</nsis>
+		
+		<!--<nsis script="${exe.windows.script}" verbosity="3" >
+			<define name="ADVERTISING_OPENCANDY" value="1"/>
+		</nsis>-->
+		
+		<nsis script="${exe.web.script}" verbosity="2" />
 	</target>
 	
 	<target name="buildLinux">
@@ -487,11 +498,11 @@
 	
 	<target name="buildAll" depends="copy_res, make, copy_compiled, copyJarOptimals, jarWebupdater, jarRestarterForBuild"/>
 
-	<target name="standardBuild" depends="buildAll" />
+	<target name="standardBuild" depends="buildAll, buildPackages" />
 
-	<target name="dlcEnabledBuild" depends="buildAll,cryptContainer,sign" />
+	<target name="dlcEnabledBuild" depends="buildAll,cryptContainer,sign, buildPackages" />
 
-	<target name="signedBuild" depends="buildAll, standardBuild, sign" />
+	<target name="signedBuild" depends="buildAll, standardBuild, sign, buildPackages" />
 	
 	<!-- Creates the javadocs -->
 	<target name="doc">
