@@ -96,6 +96,7 @@ public class XSevenTo extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
+        br.setFollowRedirects(false);
         String dllink = null;
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
@@ -113,7 +114,7 @@ public class XSevenTo extends PluginForHost {
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

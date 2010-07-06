@@ -29,9 +29,9 @@ import jd.plugins.PluginForDecrypt;
  * @author typek_pb
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://[\\w\\.]*?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile)/.+" }, flags = { 0 }, names = { "avaxhome.ws" })
-public class AvaxHomeWs extends PluginForDecrypt {
+public class AvxHmeW extends PluginForDecrypt {
 
-    public AvaxHomeWs(PluginWrapper wrapper) {
+    public AvxHmeW(PluginWrapper wrapper) {
         super(wrapper);
     }
 
