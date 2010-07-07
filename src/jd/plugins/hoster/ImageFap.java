@@ -36,7 +36,6 @@ public class ImageFap extends PluginForHost {
     public ImageFap(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(500l);
-
         Browser.setRequestIntervalLimitGlobal(getHost(), 200);
     }
 
@@ -72,18 +71,21 @@ public class ImageFap extends PluginForHost {
         return null;
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://imagefap.com/faq.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
             String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String gallery_name = new Regex(br, Pattern.compile("<a href=\"gallery\\.php\\?gid=\\d+\"><font face=verdana size=3>(.*?)uploaded", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String uploader_name = new Regex(br, Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String orderid = downloadLink.getStringProperty("orderid");
+            if (orderid == null)
+                orderid = "";
+            else
+                orderid += "_";
             if (gallery_name != null) {
                 gallery_name = gallery_name.trim();
             }
@@ -91,9 +93,9 @@ public class ImageFap extends PluginForHost {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(uploader_name);
                 if (gallery_name != null) {
-                    downloadLink.setName(gallery_name + " + " + picture_name);
+                    downloadLink.setFinalFileName(orderid + gallery_name + " + " + picture_name);
                 } else {
-                    downloadLink.setName(picture_name);
+                    downloadLink.setFinalFileName(orderid + picture_name);
                 }
                 downloadLink.setFilePackage(fp);
                 return AvailableStatus.TRUE;
@@ -104,12 +106,6 @@ public class ImageFap extends PluginForHost {
         return AvailableStatus.FALSE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         String pfilename = downloadLink.getName();
@@ -125,10 +121,8 @@ public class ImageFap extends PluginForHost {
         /* DownloadLink holen */
         String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
 
-        // String filename = Plugin.extractFileNameFromURL(imagelink);
-        // downloadLink.setFinalFileName(filename);
         if (gallery_name != null) downloadLink.addSubdirectory(gallery_name);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, imagelink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, imagelink);
         if (dl.getConnection().getResponseCode() == 404) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -137,20 +131,16 @@ public class ImageFap extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

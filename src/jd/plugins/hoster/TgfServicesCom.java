@@ -98,7 +98,7 @@ public class TgfServicesCom extends PluginForHost {
         String postURL2 = "http://tgf-services.com/pages/getDownloadPage.php?start=1&hash=" + theHash + "&PHPSESSID=" + br.getCookie("http://tgf-services.com", "PHPSESSID") + "&" + System.currentTimeMillis() * 10 + "-xml";
         br.postPage(postURL2, "dump=1");
         // stupid download limit ... one file per day?
-        if (br.containsHTML("You have reached your daily free downloads limits\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML("You have reached your daily free downloads limits\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 120 * 60 * 1000l);
         String dllink = br.getRegex("<a href=\\\\\"(.*?)\\\\\"").getMatch(0);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);

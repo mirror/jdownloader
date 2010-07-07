@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -32,26 +33,22 @@ public class MgfpCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
         if (!parameter.contains("view=2")) parameter += "&view=2";
-
         br.getPage(parameter);
         String links[] = br.getRegex("image\\.php\\?id=(.*?)\">").getColumn(0);
-        progress.setRange(links.length);
+        if (links == null || links.length == 0) return null;
+        double counter = 0.001;
         for (String element : links) {
             DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
+            link.setProperty("orderid", new Regex(String.format("&orderid=%.3f&", counter), "\\&orderid=0\\.(\\d+)").getMatch(0));
             decryptedLinks.add(link);
-            progress.increase(1);
+            counter += 0.001;
         }
-
         return decryptedLinks;
     }
-
-    // @Override
 
 }
