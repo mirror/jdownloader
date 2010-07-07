@@ -331,11 +331,13 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
         wrapper.setOverwrite(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_OVERWRITE, true));
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         ArrayList<String> pwList = new ArrayList<String>();
+        /* file package pw */
         pwList.add(link.getFilePackage().getPassword());
+        /* download link pw */
         pwList.addAll(link.getFilePackage().getPasswordAuto());
+        /* plugin based pw */
         String dlpw = link.getStringProperty("pass", null);
         if (dlpw != null) pwList.add(dlpw);
-        pwList.addAll(PasswordListController.getInstance().getPasswordList());
         // Adds the archive name at the end of the password list
         // (example.part01.rar)
         String archiveName = this.getArchiveName(link);
@@ -343,7 +345,6 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
         pwList.add(archiveName + ".rar"); // example.rar
         pwList.add(new File(link.getFileOutput()).getName()); // example.part01.rar
         wrapper.setPasswordList(pwList);
-
         queue.add(wrapper);
         queue.start();
         ArrayList<DownloadLink> list = this.getArchiveList(link);

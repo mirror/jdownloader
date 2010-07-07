@@ -33,7 +33,7 @@ public class Account extends Property {
     private transient boolean tempDisabled = false;
     private transient long tmpDisabledTime = 0;
 
-    private transient String hoster = null;
+    private String hoster = null;
     private AccountInfo accinfo = null;
 
     private long updatetime = 0;
@@ -127,7 +127,6 @@ public class Account extends Property {
         stream.defaultReadObject();
         tmpDisabledIntervalv3 = 10 * 60 * 1000l;
         tempDisabled = false;
-        hoster = null;
         tmpDisabledTime = 0;
     }
 
@@ -201,22 +200,8 @@ public class Account extends Property {
     }
 
     public boolean equals(final Account account2) {
+        if (account2 == null) return false;
         if (account2 == this) return true;
-        // if (this.user == null) {
-        // if (account2.user != null) return false;
-        // } else {
-        // if (account2.user == null) return false;
-        // if (!this.user.trim().equalsIgnoreCase(account2.user.trim())) return
-        // false;
-        // }
-        //
-        // if (this.pass == null) {
-        // if (account2.pass != null) return false;
-        // } else {
-        // if (account2.pass == null) return false;
-        // if (!this.pass.trim().equalsIgnoreCase(account2.pass.trim())) return
-        // false;
-        // }
         if (this.user == null) {
             if (account2.user != null) { return false; }
         } else {

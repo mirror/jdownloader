@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
+import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
@@ -194,6 +195,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     @Override
     public void run() {
+        /*
+         * update pw list here in case several links are queued and user entered
+         * correct link on first one, we dont have to ask again
+         */
+        passwordList.addAll(PasswordListController.getInstance().getPasswordList());
         try {
             fireEvent(JDUnrarConstants.WRAPPER_STARTED);
             if (open()) {

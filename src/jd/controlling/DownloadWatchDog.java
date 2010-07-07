@@ -501,13 +501,19 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         nextDownloadLink = it2.next();
                         if (nextDownloadLink.getPlugin() == null) continue;
                         if (nextDownloadLink.isEnabled() && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                            /* check if we have a valid account for this host */
-                            String host = AccountController.getInstance().getHosterName(acc);
-                            if (host == null || host.equalsIgnoreCase(nextDownloadLink.getHost()) || !tryAcc) {
-                                if (tryAcc && nextDownloadLink.getPlugin().hasAccountSupport()) {
+                            if (!tryAcc) {
+                                /* accounts global disabled */
+                                acc = null;
+                            } else {
+                                /* host of current account */
+                                String host = AccountController.getInstance().getHosterName(acc);
+                                if (host == null || !host.equalsIgnoreCase(nextDownloadLink.getHost())) {
+                                    /*
+                                     * in case there is no current account or
+                                     * account host does not match download
+                                     * host, get new account
+                                     */
                                     acc = AccountController.getInstance().getValidAccount(nextDownloadLink.getPlugin());
-                                } else {
-                                    acc = null;
                                 }
                             }
                             /* check for account or non blocked */
@@ -571,12 +577,19 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             boolean tryAcc = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             for (final DownloadLink link : links) {
                 if (!link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                    /* check if we have a valid account for this host */
-                    if (acc == null || !acc.getHoster().equalsIgnoreCase(link.getHost()) || !tryAcc) {
-                        if (tryAcc && link.getPlugin().hasAccountSupport()) {
+                    if (!tryAcc) {
+                        /* accounts global disabled */
+                        acc = null;
+                    } else {
+                        /* host of current account */
+                        String host = AccountController.getInstance().getHosterName(acc);
+                        if (host == null || !host.equalsIgnoreCase(link.getHost())) {
+                            /*
+                             * in case there is no current account or account
+                             * host does not match download host, get new
+                             * account
+                             */
                             acc = AccountController.getInstance().getValidAccount(link.getPlugin());
-                        } else {
-                            acc = null;
                         }
                     }
                     if (acc != null || (getRemainingIPBlockWaittime(link.getHost()) <= 0 && getRemainingTempUnavailWaittime(link.getHost()) <= 0)) {
