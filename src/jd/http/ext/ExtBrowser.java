@@ -49,7 +49,7 @@ public class ExtBrowser {
         br.getCommContext().forceDebug(true);
 
         ExtBrowser eb = new ExtBrowser();
-        eb.setUserAgent(new jd.http.ext.BasicBrowserEnviroment(null, null));
+        eb.setUserAgent(new jd.http.ext.BasicBrowserEnviroment(new String[] { ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null));
         try {
             eb.getPage("http://www.mediafire.com/?dzmzuzmh2md");
 
@@ -57,19 +57,26 @@ public class ExtBrowser {
             eb.cleanUp();
             org.w3c.dom.html2.HTMLCollection links = eb.getDocument().getLinks();
             String txt = eb.getHtmlText();
+            // HTMLDivElementImpl div2 = (HTMLDivElementImpl)
+            // eb.getElementByID(null, "412cacf7d447cade9f1650e05f0193f8");
+            // AbstractCSS2Properties cstyle = div2.getComputedStyle(null);
+            // String display = cstyle.getDisplay();
+            // String html = div2.getOuterHTML();
             for (int i = 0; i < links.getLength(); i++) {
                 org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
-                String inner = l.getInnerHTML();
-                System.out.println(inner + " - " + l);
-                if (inner.toLowerCase().contains("start download")) {
-                    org.lobobrowser.html.domimpl.HTMLDivElementImpl div = (org.lobobrowser.html.domimpl.HTMLDivElementImpl) l.getParentNode();
-                    System.out.println("          *    " + inner + " - " + div.getOuterHTML());
-                    org.lobobrowser.html.style.AbstractCSS2Properties s = div.getStyle();
-                    if (!"-250px".equalsIgnoreCase(s.getTop()) && !"none".equalsIgnoreCase(s.getDisplay())) {
+                if (RendererUtilities.isVisible(l)) {
+                    String inner = l.getInnerHTML();
+                    System.out.println(inner + " - " + l);
+
+                    if (inner.toLowerCase().contains("start download")) {
+                        org.lobobrowser.html.domimpl.HTMLDivElementImpl div = (org.lobobrowser.html.domimpl.HTMLDivElementImpl) l.getParentNode();
+                        System.out.println("          *    " + inner + " - " + div.getOuterHTML());
+
                         String myURL = l.getAbsoluteHref();
 
-                    }
+                        eb.getCommContext().openGetConnection(myURL);
 
+                    }
                 }
             }
         } catch (Exception e) {
@@ -172,13 +179,13 @@ public class ExtBrowser {
     public ExtBrowser() {
 
         uac = new UserAgentDelegate(this);
-        htmlFrameController = new HtmlFrameController(this);
 
         // Context.enter().setDebugger(new ExtDebugger(), null);
 
         commContext = new Browser();
         commContext.setFollowRedirects(true);
         commContext.setCookiesExclusive(true);
+        htmlFrameController = new HtmlFrameController(this);
         inputController = new InputController();
 
     }
@@ -193,13 +200,14 @@ public class ExtBrowser {
 
     public ExtBrowser(Browser br) {
         uac = new UserAgentDelegate(this);
-        htmlFrameController = new HtmlFrameController(this);
 
         // Context.enter().setDebugger(new ExtDebugger(), null);
 
         commContext = br.cloneBrowser();
         commContext.setFollowRedirects(true);
         commContext.setCookiesExclusive(true);
+        htmlFrameController = new HtmlFrameController(this);
+
         inputController = new InputController();
     }
 

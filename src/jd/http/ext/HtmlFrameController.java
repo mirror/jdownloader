@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import jd.http.Browser;
 import jd.http.Request;
 import jd.http.ext.events.HtmlFrameControllerEventsender;
 import jd.http.ext.events.JSInteraction;
@@ -60,6 +61,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     private ExtHTMLFrameImpl frame = null;
     private HashMap<String, ArrayList<JSEventListener>> listenerMap = new HashMap<String, ArrayList<JSEventListener>>();
     private boolean loaded;
+    private Browser comContext;
 
     public ExtHTMLFrameImpl getFrame() {
         return frame;
@@ -67,6 +69,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
     public HtmlFrameController(ExtBrowser extBrowser) {
         this.extBrowser = extBrowser;
+        comContext = extBrowser.getCommContext();
         eventSender = new HtmlFrameControllerEventsender();
 
     }
@@ -74,7 +77,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     public HtmlFrameController(ExtBrowser extBrowser, ExtHTMLFrameImpl f) {
         this.extBrowser = extBrowser;
         eventSender = new HtmlFrameControllerEventsender();
-
+        comContext = extBrowser.getCommContext().cloneBrowser();
         frame = f;
 
     }
@@ -385,11 +388,11 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
             if (actualMethod.equals("GET")) {
                 if (formInputs == null || formInputs.length == 0) {
-                    Request request = extBrowser.getCommContext().createGetRequest(action + "");
+                    Request request = comContext.createGetRequest(action + "");
                     if (extBrowser.getBrowserEnviroment().doLoadContent(request)) {
-                        extBrowser.getCommContext().openRequestConnection(request);
-                        extBrowser.getCommContext().loadConnection(null);
-                        extBrowser.getBrowserEnviroment().prepareContents(extBrowser.getCommContext().getRequest());
+                        comContext.openRequestConnection(request);
+                        comContext.loadConnection(null);
+                        extBrowser.getBrowserEnviroment().prepareContents(comContext.getRequest());
                     } else {
                         return;
                     }
@@ -411,10 +414,10 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
                     }
 
-                    Request request = extBrowser.getCommContext().createFormRequest(form);
+                    Request request = comContext.createFormRequest(form);
                     if (extBrowser.getBrowserEnviroment().doLoadContent(request)) {
-                        extBrowser.getCommContext().openRequestConnection(request);
-                        extBrowser.getCommContext().loadConnection(null);
+                        comContext.openRequestConnection(request);
+                        comContext.loadConnection(null);
                     } else {
                         return;
                     }
@@ -438,41 +441,42 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public void eval() throws ExtBrowserException {
-        WritableLineReader wis = new WritableLineReader(new StringReader(extBrowser.getCommContext() + "")) {
+        WritableLineReader wis = new WritableLineReader(new StringReader(comContext + "")) {
             public void write(String text) throws IOException {
                 super.write(text);
 
                 System.out.println("Wrote to doc:\r\n" + text);
             }
 
-            // public int read() throws IOException {
-            //
-            // int ret = super.read();
-            // System.out.print(" " + new String(new byte[] { (byte) ret }));
-            // return ret;
-            // }
-            //
-            // /*
-            // * (non-Javadoc) Note: Not implicitly thread safe.
-            // *
-            // * @see java.io.Reader#read(byte[], int, int)
-            // */
-            // public int read(char[] b, int off, int len) throws IOException {
-            // int ret = super.read(b, off, len);
-            // System.out.println("Read " + new String(b));
-            // return ret;
-            // }
+            public int read() throws IOException {
+
+                int ret = super.read();
+                // System.out.print(new String(new byte[] { (byte) ret }));
+                return ret;
+            }
+
+            /*
+             * (non-Javadoc) Note: Not implicitly thread safe.
+             * 
+             * @see java.io.Reader#read(byte[], int, int)
+             */
+            public int read(char[] b, int off, int len) throws IOException {
+                int ret = super.read(b, off, len);
+                System.out.println("Read " + new String(b));
+                return ret;
+            }
 
         };
 
-        htmlDocument = new ExtHTMLDocumentImpl(this.getUserAgentContext(), this, wis, extBrowser.getCommContext().getURL() + "");
+        htmlDocument = new ExtHTMLDocumentImpl(this.getUserAgentContext(), this, wis, comContext.getURL() + "");
 
         try {
             htmlDocument.load();
             loaded = true;
-            // if (extBrowser.getBrowserEnviroment().isAutoProcessSubFrames()) {
-            // processFrames();
-            // }
+            System.out.println("Load Frames");
+            if (extBrowser.getBrowserEnviroment().isAutoProcessSubFrames()) {
+                processFrames();
+            }
             if (this.frame != null) {
                 if (frame.getSrc() != null && frame.getSrc().length() > 0) {
                     dispatch(new BasicEvent("load", frame.getImpl()));
@@ -500,7 +504,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
     public void processFrames() throws ExtBrowserException {
         for (ExtHTMLFrameImpl frame : extBrowser.getFrames(this)) {
-            if (CssUtilities.isVisible(frame.getImpl())) {
+            if (RendererUtilities.isVisible(frame.getImpl())) {
                 System.out.println("Load frame " + frame.getSrc());
                 processFrame(frame);
             } else {
@@ -516,7 +520,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
                 try {
 
-                    ((HtmlFrameController) ((HTMLIFrameElementImpl) f.getImpl()).getBrowserFrame()).submitForm("GET", new URL(extBrowser.getCommContext().getURL(f.getSrc())), null, null, null);
+                    ((HtmlFrameController) ((HTMLIFrameElementImpl) f.getImpl()).getBrowserFrame()).submitForm("GET", new URL(comContext.getURL(f.getSrc())), null, null, null);
 
                     return f;
                 } catch (Exception e) {
@@ -655,7 +659,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public void loadURL(final URL url) {
-        if (!loaded) {
+        if (this.getParent() != null && !((HtmlFrameController) getParent()).loaded) {
             System.out.println("NOT LOADED FRAME " + url + " not loaded yet. QUEUED");
             return;
         }
@@ -667,7 +671,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
         new Thread("URLLOADER") {
             public void run() {
 
-                // submitForm("GET", url, null, null, null);
+                submitForm("GET", url, null, null, null);
             }
         }.start();
 

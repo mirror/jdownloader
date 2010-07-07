@@ -2,6 +2,7 @@ package jd.http.ext;
 
 import org.lobobrowser.html.UserAgentContext;
 import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
+import org.lobobrowser.html.domimpl.HTMLIFrameElementImpl;
 import org.lobobrowser.html.io.WritableLineReader;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Element;
@@ -21,10 +22,7 @@ public class ExtHTMLDocumentImpl extends HTMLDocumentImpl {
         Element ret = super.createElement(tagName);
         if ("iframe".equalsIgnoreCase(tagName)) {
 
-            // ((HTMLIFrameElementImpl)
-            // ret).setBrowserFrame(((HtmlFrameController)
-            // getHtmlRendererContext()).createParentFrameController(new
-            // ExtHTMLFrameImpl((HTMLIFrameElementImpl) ret)));
+            ((HTMLIFrameElementImpl) ret).setBrowserFrame(((HtmlFrameController) getHtmlRendererContext()).createParentFrameController(new ExtHTMLFrameImpl((HTMLIFrameElementImpl) ret)));
         }
         return ret;
     }
