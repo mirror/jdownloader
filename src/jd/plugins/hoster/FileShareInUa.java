@@ -33,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshare.in.ua" }, urls = { "http://[\\w\\.]*?fileshare\\.in\\.ua/[0-9]+" }, flags = { 2 })
 public class FileShareInUa extends PluginForHost {
@@ -41,6 +42,8 @@ public class FileShareInUa extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://fileshare.in.ua/premium.aspx");
     }
+
+    private static final String TEMPORARYUNAVAILABLE = "<b>Файл временно недоступен</b>";
 
     @Override
     public String getAGBLink() {
@@ -57,7 +60,7 @@ public class FileShareInUa extends PluginForHost {
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(true);
         br.submitForm(form);
-        if (!br.containsHTML("\">Премиум</a> до") && !br.containsHTML("Тип премиума: <b style=\"color: black;\">обычный</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://fileshare.in.ua/", "bfileshare_uid") == null || br.getCookie("http://fileshare.in.ua/", "bfileshare_hash") == null || br.getCookie("http://fileshare.in.ua/", "bfileshare_pass") == null || !br.containsHTML("обычный премиум</a> до")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -69,7 +72,7 @@ public class FileShareInUa extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String expires = br.getRegex("Премиум</a> до(.*?)<br>").getMatch(0);
+        String expires = br.getRegex("обычный премиум</a> до (.*?)<br>").getMatch(0);
         if (expires == null) {
             account.setValid(false);
             return ai;
@@ -84,15 +87,16 @@ public class FileShareInUa extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FileShareInUa.errors.temporaryunavailable", "This file is temporary unavailable"));
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         String getlink = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
         if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         getlink = "http://fileshare.in.ua" + getlink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, true, 0);
-        if (!(dl.getConnection().isContentDisposition())) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Воcстановление файла...")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            if (br.containsHTML("Воcстановление файла\\.\\.\\.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -121,6 +125,7 @@ public class FileShareInUa extends PluginForHost {
         }
         String filesize = br.getRegex("Размер: <b>(.*?)</b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileShareInUa.errors.temporaryunavailable", "This file is temporary unavailable"));
         link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -129,20 +134,32 @@ public class FileShareInUa extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FileShareInUa.errors.temporaryunavailable", "This file is temporary unavailable"));
         if (br.containsHTML("Именно эта ссылка битая. Однако, это не значит, что вам нечего тут искать")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String continueLink = br.getRegex("id=\"popunder_lnk\" href=\"(/.*?)\"").getMatch(0);
         if (continueLink == null) continueLink = br.getRegex("\"(/dl\\d+\\?c=[a-z0-9]+)\"").getMatch(0);
-        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        continueLink = "http://fileshare.in.ua" + continueLink;
-        br.getPage(continueLink);
-        String captchapart = br.getRegex("id=\"capture\".*?src=\"(.*?)\"").getMatch(0);
-        Form captchaForm = br.getForm(2);
-        // This is a part of the captcha stuff. They always have one big captcha
-        // with random letters (about 10) but only 4 are needed. With this
-        // number and an other default number the plugin knows which part of the
-        // captcha it needsa
-        String captchacut = br.getRegex("<style>.*?margin-[a-z]+:-(\\d+)px;").getMatch(0);
-        if (captchapart != null && captchaForm != null && captchacut != null) {
+        if (continueLink == null && !br.containsHTML("\\?free"))
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        else if (continueLink == null) {
+            // Some countries got captchas
+            br.getPage(downloadLink.getDownloadURL() + "?free");
+            String captchapart = br.getRegex("id=\"capture\".*?src=\"(.*?)\"").getMatch(0);
+            Form captchaForm = null;
+            Form[] allForms = br.getForms();
+            for (Form singleForm : allForms) {
+                if (singleForm.containsHTML("capture")) {
+                    captchaForm = singleForm;
+                    break;
+                }
+            }
+            // This is a part of the captcha stuff. They always have one big
+            // captcha
+            // with random letters (about 10) but only 4 are needed. With this
+            // number and an other default number the plugin knows which part of
+            // the
+            // captcha it needsa
+            String captchacut = br.getRegex("<style>.*?margin-[a-z]+:-(\\d+)px;").getMatch(0);
+            if (captchapart == null || captchaForm == null || captchacut == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaurl = "http://fileshare.in.ua" + captchapart;
             File file = this.getLocalCaptchaFile();
             Browser.download(file, br.cloneBrowser().openGetConnection(captchaurl));
@@ -150,9 +167,22 @@ public class FileShareInUa extends PluginForHost {
             captchaForm.put("capture", code);
             br.submitForm(captchaForm);
             if (br.containsHTML("Цифры введены неверно")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            allForms = br.getForms();
+            if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            Form fastFreeform = null;
+            for (Form singleForm : allForms) {
+                if (singleForm.containsHTML("(dl_fast_btn|hitit)")) {
+                    fastFreeform = singleForm;
+                    break;
+                }
+            }
+            if (fastFreeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.submitForm(fastFreeform);
+        } else {
+            continueLink = "http://fileshare.in.ua" + continueLink;
+            br.getPage(continueLink);
         }
         String dlframe = downloadLink.getDownloadURL() + "?fr";
-
         br.getPage(dlframe);
         String dllink0 = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
         if (dllink0 == null) dllink0 = br.getRegex("<span id=\"time_yes\"><a  href=\"(/.*?)\"").getMatch(0);
