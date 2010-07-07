@@ -38,25 +38,34 @@ public class RemixShareCom extends PluginForHost {
 
     public RemixShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(500l);
+        this.setStartIntervall(3000l);
     }
 
     public String getAGBLink() {
         return "http://remixshare.com/information/";
     }
 
+    public static final String BLOCKED = "(class=\"blocked\"|>Von Deiner IP Adresse kamen zu viele Anfragen innerhalb kurzer Zeit\\.)";
+    public static final Object LOCK = new Object();
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        synchronized (LOCK) {
+            if (this.isAborted(downloadLink)) return AvailableStatus.TRUE;
+            /* wait 1.5 seconds between filechecks */
+            Thread.sleep(1500);
+        }
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://remixshare.com", "lang_en", "english");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(BLOCKED)) return AvailableStatus.UNCHECKABLE;
         br.setFollowRedirects(false);
         if (br.containsHTML("Error Code: 500.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title='(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title='([0-9]{10}_)?(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(1));
         if (filename == null) filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex(">\\&nbsp;\\((.*?)\\)<").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("(>|\\.\\.\\.)\\&nbsp;\\((.*?)\\)<").getMatch(1);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         if (filesize != null) {
             filesize = filesize.replace("&nbsp;", " ");
@@ -72,7 +81,7 @@ public class RemixShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-
+        if (br.containsHTML(BLOCKED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
         if (br.containsHTML("Download password")) {
             Form pw = br.getFormbyProperty("name", "pass");
             String pass = downloadLink.getStringProperty("pass", null);
@@ -94,8 +103,6 @@ public class RemixShareCom extends PluginForHost {
         br.getPage(fCKU);
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // this.sleep(12000, downloadLink); // uncomment when they find a better
-        // way to force wait time
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {

@@ -126,8 +126,10 @@ public class KewlshareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (hour * 3600 + minute * 60 + sec) * 1001);
         }
         if (br.containsHTML("free download limit is reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Sorry, your Country's free download limit is reached", 60 * 60 * 1000l);
+        if (br.containsHTML("<b>Parse error</b>:  syntax error, unexpected")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error, reconnect");
         br.setFollowRedirects(false);
         Form form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(form);
         String dllink = br.getRegex("\"proceed\">.*?<form action=\"(.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.kewlshare\\.com/dl/.*?/.*?/.*?/.*?)\"").getMatch(0);

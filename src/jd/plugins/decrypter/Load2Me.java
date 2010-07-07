@@ -47,7 +47,7 @@ public class Load2Me extends PluginForDecrypt {
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             return new ArrayList<DownloadLink>();
         }
-        String[] links = br.getRegex("/><a href=\"(http.*?)\"").getColumn(0);
+        String[] links = br.getRegex("<a href=\"(http.*?)\"").getColumn(0);
         if (links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));

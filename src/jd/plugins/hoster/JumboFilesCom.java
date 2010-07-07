@@ -93,8 +93,8 @@ public class JumboFilesCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        String dllink = br.getRegex("Download</B><BR><A HREF=\"(http.*?)\"").getMatch(0);
-        if(dllink == null)dllink = br.getRegex("\"(http://www[0-9]+\\.jumbofiles.com/.*?/.{12}/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("SRC=\"http://jumbofiles\\.com/images/dd\\.gif\" WIDTH=\"5\" HEIGHT=\"5\"><BR> <form name=\".*?\" action=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
@@ -106,7 +106,7 @@ public class JumboFilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
