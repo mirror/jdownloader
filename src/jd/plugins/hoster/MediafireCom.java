@@ -22,8 +22,11 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
+import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.ext.BasicBrowserEnviroment;
 import jd.http.ext.ExtBrowser;
+import jd.http.ext.RendererUtilities;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -39,6 +42,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
+import org.w3c.dom.html2.HTMLCollection;
 
 //import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
 //import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
@@ -91,7 +97,8 @@ public class MediafireCom extends PluginForHost {
         br.submitForm(form);
         br.getPage("http://www.mediafire.com/myfiles.php");
         String acc = br.getRegex("Account:.*?style=\"margin.*?\">(.*?)</").getMatch(0);
-        if (br.getCookie("http://www.mediafire.com", "user").equals("x") || !acc.equals("MediaPro")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String cookie = br.getCookie("http://www.mediafire.com", "user");
+        if (cookie.equals("x") || !acc.equals("MediaPro")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (CONFIGURATION_KEYS.get(account) == null) {
             br.getPage("http://www.mediafire.com/myaccount/download_options.php");
             String configurationKey = br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
@@ -154,22 +161,16 @@ public class MediafireCom extends PluginForHost {
             fileID = new Regex(downloadLink.getDownloadURL(), "file/(.*)").getMatch(0);
         }
 
-        // br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php",
-        // "premium_key=" + CONFIGURATION_KEYS.get(account) + "&files=" +
-        // fileID);
-
-        br.forceDebug(true);
-
-        br.getPage(downloadLink.getDownloadURL());
-        String url = null;
-        if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
-            logger.info("DirectDownload");
-            url = br.getRedirectLocation();
-        } else {
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            handlePW(downloadLink);
-            url = getDownloadUrl();
+        br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + CONFIGURATION_KEYS.get(account) + "&files=" + fileID);
+        String url = br.getRegex("<url>(http.*?)</url>").getMatch(0);
+        if ("-204".equals(br.getRegex("<flags>(.*?)</").getMatch(0))) {
+            // password protected TODO:better passwordsupport
+            String password = UserIO.getInstance().requestInputDialog("Password for " + this.getHost() + "/" + downloadLink.getName());
+            br.forceDebug(true);
+            br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "file_1=" + fileID + "&password_1=" + password + "&premium_key=" + CONFIGURATION_KEYS.get(account) + "&files=" + fileID);
+            url = br.getRegex("<url>(http.*?)</url>").getMatch(0);
         }
+
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
@@ -249,27 +250,33 @@ public class MediafireCom extends PluginForHost {
 
     private String getDownloadUrl() throws Exception {
         if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Use Nightly"); }
-        ExtBrowser eb = new ExtBrowser();
-        eb.setUserAgent(new jd.http.ext.BasicBrowserEnviroment(new String[] { ".*blank.html", "http://www.mediafire.com/", "http://www.mediafire.com/.*?/.*?/.*" }, null));
         try {
+            ExtBrowser eb = new ExtBrowser();
+            //
+            // Set the browserenviroment. We blacklist a few urls here, because
+            // we do not need css, and several other sites
+            // we enable css evaluation, because we need this to find invisible
+            // links
+            // internal css is enough.
+            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null) {
+
+                public boolean isInternalCSSEnabled() {
+                    // TODO Auto-generated method stub
+                    return true;
+                }
+            });
+            // Start Evaluation of br
             eb.eval(br);
-            eb.cleanUp();
-            org.w3c.dom.html2.HTMLCollection links = eb.getDocument().getLinks();
-            String txt = eb.getHtmlText();
+            // wait for workframe2, but max 30 seconds
+            eb.waitForFrame("workframe2", 30000);
+            // get all links now
+            HTMLCollection links = eb.getDocument().getLinks();
+
             for (int i = 0; i < links.getLength(); i++) {
-                org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
-                String inner = l.getInnerHTML();
-                System.out.println(inner + " - " + l);
-                if (inner.toLowerCase().contains("start download")) {
-                    org.lobobrowser.html.domimpl.HTMLDivElementImpl div = (org.lobobrowser.html.domimpl.HTMLDivElementImpl) l.getParentNode();
-                    System.out.println("          *    " + inner + " - " + div.getOuterHTML());
-                    org.lobobrowser.html.style.AbstractCSS2Properties s = div.getStyle();
-                    if (!"-250px".equalsIgnoreCase(s.getTop()) && !"none".equalsIgnoreCase(s.getDisplay())) {
-                        String myURL = l.getAbsoluteHref();
-
-                        return myURL;
-                    }
-
+                HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
+                // check if the link is visible in browser
+                if (RendererUtilities.isVisible(l)) {
+                    if (l.getInnerHTML().toLowerCase().contains("start download")) { return l.getAbsoluteHref(); }
                 }
             }
         } catch (Exception e) {
