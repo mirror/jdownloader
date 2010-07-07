@@ -55,6 +55,7 @@ public class ExtBrowser {
 
             System.out.println(eb.getHtmlText());
             eb.cleanUp();
+            Thread.sleep(10000);
             org.w3c.dom.html2.HTMLCollection links = eb.getDocument().getLinks();
             String txt = eb.getHtmlText();
             // HTMLDivElementImpl div2 = (HTMLDivElementImpl)
