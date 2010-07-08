@@ -1352,6 +1352,7 @@ plugins.hoster.filefactorycom.errors.nofreeslots = Δεν υπάρχουν δι�
 plugins.hoster.fileflyercom.errors.only4premium = Διαθέσιμο μόνο σε  premium χρήστες
 plugins.hoster.filehosterru.errors.hostertemporaryunavailable = Αυτός ο πάροχος δεν είναι προσωρινά διαθέσιμος!
 plugins.hoster.filernet.errors.nofreeslots = Όλες οι ελεύθερες θέσεις λήψεων είναι απασχολημένες
+plugins.hoster.fileshareinua.errors.temporaryunavailable = Το αρχείο είναι προσωρινά μη διαθέσιμο
 plugins.hoster.filesmailru.inprocess = Το αρχείο αποστέλλεται ακόμη
 plugins.hoster.filesmonstercom.maintenance = Συντήρηση
 plugins.hoster.filesmonstercom.noslotwaittime = Χωρίς χρόνο αναμονής
