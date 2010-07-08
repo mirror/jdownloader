@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.pl" }, urls = { "http://[\\w\\.]*?uploader\\.pl/\\?d=[A-F0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.pl" }, urls = { "http://[\\w\\.]*?uploader.pl/([a-z]{2}/)?file/\\d+/" }, flags = { 2 })
 public class UploaderPl extends PluginForHost {
 
     private int simultanpremium = 1;
@@ -44,21 +44,19 @@ public class UploaderPl extends PluginForHost {
         enablePremium("http://uploader.pl/register.php");
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/pl/", "/en/"));
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        // this.sleep(30000, downloadLink); // uncomment when they find a better
-        // way to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
-        dl.startDownload();
+        handleFree0(downloadLink);
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return -1;
     }
 
     public void handleFree0(DownloadLink downloadLink) throws Exception {
@@ -66,9 +64,11 @@ public class UploaderPl extends PluginForHost {
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        // this.sleep(15000, downloadLink); // uncomment when they find a better
-        // way to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -143,15 +143,17 @@ public class UploaderPl extends PluginForHost {
         }
         if (free) {
             handleFree0(downloadLink);
-            return;
+        } else {
+            String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        // this.sleep(30000, downloadLink); // uncomment when they find a better
-        // way to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
-        dl.startDownload();
     }
 
     @Override
@@ -168,7 +170,7 @@ public class UploaderPl extends PluginForHost {
         String filename = Encoding.htmlDecode(br.getRegex("File name:</b></td>\\s*<td[^>]*>\\s*(.+?)\\s*</td>").getMatch(0));
         String filesize = br.getRegex("File size:</b></td>\\s*<td[^>]*>\\s*(.+?)\\s*</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
+        downloadLink.setFinalFileName((filename));
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
