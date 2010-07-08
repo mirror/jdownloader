@@ -539,11 +539,6 @@ public class Rapidshare extends PluginForHost {
             /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
-            if (downloadLink.getDownloadSize() > 0) {
-                dl.setFilesize(downloadLink.getDownloadSize());
-                dl.setFileSizeVerified(true);
-            }
-
             URLConnectionAdapter con;
             try {
                 // connect() throws an exception if there is a location header
@@ -561,10 +556,6 @@ public class Rapidshare extends PluginForHost {
                     } catch (Throwable ee) {
                     }
                     dl = new RAFDownload(this, downloadLink, request);
-                    if (downloadLink.getDownloadSize() > 0) {
-                        dl.setFilesize(downloadLink.getDownloadSize());
-                        dl.setFileSizeVerified(true);
-                    }
                     con = dl.connect();
                 } else {
                     throw e;
@@ -821,10 +812,6 @@ public class Rapidshare extends PluginForHost {
              **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
-            if (downloadLink.getDownloadSize() > 0) {
-                dl.setFilesize(downloadLink.getDownloadSize());
-                dl.setFileSizeVerified(true);
-            }
             dl.setResume(true);
             dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             URLConnectionAdapter urlConnection;
@@ -843,10 +830,6 @@ public class Rapidshare extends PluginForHost {
                 logger.info("Load from " + request.getUrl().toString().substring(0, 35));
                 // Download
                 dl = new RAFDownload(this, downloadLink, request);
-                if (downloadLink.getDownloadSize() > 0) {
-                    dl.setFilesize(downloadLink.getDownloadSize());
-                    dl.setFileSizeVerified(true);
-                }
                 dl.setResume(true);
                 dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
                 urlConnection = dl.connect(br);
