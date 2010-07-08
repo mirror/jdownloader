@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -66,10 +65,12 @@ public class IfolderRu extends PluginForHost {
         } else {
             downloadLink.setFinalFileName(filename);
         }
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replace("Мб", "Mb").replace("кб", "Kb")));
+        downloadLink.setDownloadSize(Regex.getSize(filesize.replace("Мб", "Mb").replace("кб", "Kb").replace("Гб", "Gb")));
         return AvailableStatus.TRUE;
     }
 
+    // If they change back to the "secret" value in the last form(s) look into
+    // revision 11681
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -122,36 +123,12 @@ public class IfolderRu extends PluginForHost {
         for (int retry = 1; retry <= 5; retry++) {
             Form captchaForm = br.getFormbyProperty("name", "form1");
             String captchaurl = br.getRegex("(/random/images/.*?)\"").getMatch(0);
-            String tag = br.getRegex("tag\\.value = \"(.*?)\"").getMatch(0);
-            String secret = br.getRegex("var\\s+s=\\s+'(.*?)';").getMatch(0);
+            String ints_session = br.getRegex("tag\\.value = \"(.*?)\"").getMatch(0);
             if (captchaForm == null || captchaurl == null) {
-                logger.warning("captchaForm or captchaurl equals null, stopping...");
+                logger.warning("captchaForm or captchaurl or ints_session equals null, stopping...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (tag != null && secret != null) {
-                /* first sort of download form */
-                /* ads first, download then */
-                secret = secret.substring(2);
-                captchaForm.put("interstitials_session", tag);
-                InputField nv = new InputField(secret, "1");
-                captchaForm.addInputField(nv);
-            } else {
-                /* second sort of download form */
-                /* download while viewing ads */
-                secret = br.getRegex("var . = \\[.*?'.*?'.*?'(.*?)'").getMatch(0);
-                String name = br.getRegex("var . = \\[.*?'(.*?)'").getMatch(0);
-                if (name != null && secret != null) {
-                    secret = secret.substring(2);
-                    captchaForm.put(name, secret);
-                    captchaForm.remove("activate_ads_free");
-                    captchaForm.remove("activate_ads_free");
-                    captchaForm.remove("activate_ads_free");
-                    captchaForm.put("activate_ads_free", "0");
-                } else {
-                    logger.warning("name or secret equals null");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            captchaForm.put("ints_session", ints_session);
             captchaForm.setAction(br.getURL());
             if (!captchaurl.contains(br.getHost())) captchaurl = "http://" + br.getHost() + captchaurl;
             /* Captcha */
