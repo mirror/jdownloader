@@ -95,6 +95,14 @@ public class DirectHTTP extends PluginForHost {
         return "(" + contentType + ")" + parameter.getName();
     }
 
+    public void setDownloadLink(DownloadLink link) {
+        try {
+            super.setDownloadLink(link);
+            customFavIconHost = Browser.getHost(new URL(link.getDownloadURL()));
+        } catch (Throwable e) {
+        }
+    }
+
     private String getBasicAuth(DownloadLink link) {
         String username = null;
         String password = null;
@@ -157,10 +165,6 @@ public class DirectHTTP extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        try {
-            customFavIconHost = Browser.getHost(new URL(downloadLink.getDownloadURL()));
-        } catch (Throwable e) {
-        }
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
         br.getHeaders().put("Accept-Encoding", "");

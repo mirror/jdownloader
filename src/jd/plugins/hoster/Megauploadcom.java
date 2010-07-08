@@ -395,6 +395,7 @@ public class Megauploadcom extends PluginForHost {
                 if (dl.getConnection().getResponseCode() == 503) {
                     limitReached(link, 10 * 60, "Limit Reached (2)!");
                 }
+                if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File no longer available or server error!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (!dl.getConnection().isContentDisposition()) {

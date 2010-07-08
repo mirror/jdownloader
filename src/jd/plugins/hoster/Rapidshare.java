@@ -190,7 +190,8 @@ public class Rapidshare extends PluginForHost {
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
-    private String selectedServer;
+    private String selectedServer = null;
+    private String accName = null;
     private static boolean updateNeeded = false;
 
     public Rapidshare(PluginWrapper wrapper) {
@@ -419,7 +420,12 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        accName = "FreeUser";
         workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
+        /* we need file size to calculate left traffic */
+        if (downloadLink.getDownloadSize() <= 0) {
+            requestFileInformation(downloadLink);
+        }
         try {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -533,8 +539,10 @@ public class Rapidshare extends PluginForHost {
             /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
-            dl.setFilesize(downloadLink.getDownloadSize());
-            dl.setFileSizeVerified(true);
+            if (downloadLink.getDownloadSize() > 0) {
+                dl.setFilesize(downloadLink.getDownloadSize());
+                dl.setFileSizeVerified(true);
+            }
 
             URLConnectionAdapter con;
             try {
@@ -553,8 +561,10 @@ public class Rapidshare extends PluginForHost {
                     } catch (Throwable ee) {
                     }
                     dl = new RAFDownload(this, downloadLink, request);
-                    dl.setFilesize(downloadLink.getDownloadSize());
-                    dl.setFileSizeVerified(true);
+                    if (downloadLink.getDownloadSize() > 0) {
+                        dl.setFilesize(downloadLink.getDownloadSize());
+                        dl.setFileSizeVerified(true);
+                    }
                     con = dl.connect();
                 } else {
                     throw e;
@@ -569,6 +579,7 @@ public class Rapidshare extends PluginForHost {
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
+                accName = null;
             }
         }
     }
@@ -606,7 +617,11 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public String getSessionInfo() {
-        if (selectedServer != null) return " @ " + selectedServer;
+        if (this.accName != null && selectedServer != null) {
+            return accName + " @ " + selectedServer;
+        } else if (selectedServer != null) {
+            return selectedServer;
+        } else if (accName != null) return accName;
         return "";
     }
 
@@ -708,16 +723,21 @@ public class Rapidshare extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
+        /* we need file size to calculate left traffic */
+        if (downloadLink.getDownloadSize() <= 0) {
+            requestFileInformation(downloadLink);
+        }
         try {
             br.forceDebug(true);
             String freeOrPremiumSelectPostURL = null;
             Request request = null;
-
             if (account == dummyAccount) {
+                accName = "DirectDownload";
                 /* dummyAccount aka Trafficshare DirectLink */
                 br = new Browser();
                 workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
             } else {
+                accName = account.getUser();
                 /* synchronized check of account, package handling */
                 synchronized (LOCK) {
                     /*
@@ -733,10 +753,6 @@ public class Rapidshare extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     br = login(account, false);
-                    /* we need file size to calculate left traffic */
-                    if (downloadLink.getDownloadSize() <= 0) {
-                        requestFileInformation(downloadLink);
-                    }
                     /* check for happy hour */
                     boolean happyhour = Integer.parseInt(account.getStringProperty("happyhours", "0")) == 1 ? true : false;
                     /* only download while happyHour */
@@ -805,8 +821,10 @@ public class Rapidshare extends PluginForHost {
              **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
-            dl.setFilesize(downloadLink.getDownloadSize());
-            dl.setFileSizeVerified(true);
+            if (downloadLink.getDownloadSize() > 0) {
+                dl.setFilesize(downloadLink.getDownloadSize());
+                dl.setFileSizeVerified(true);
+            }
             dl.setResume(true);
             dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             URLConnectionAdapter urlConnection;
@@ -825,8 +843,10 @@ public class Rapidshare extends PluginForHost {
                 logger.info("Load from " + request.getUrl().toString().substring(0, 35));
                 // Download
                 dl = new RAFDownload(this, downloadLink, request);
-                dl.setFilesize(downloadLink.getDownloadSize());
-                dl.setFileSizeVerified(true);
+                if (downloadLink.getDownloadSize() > 0) {
+                    dl.setFilesize(downloadLink.getDownloadSize());
+                    dl.setFileSizeVerified(true);
+                }
                 dl.setResume(true);
                 dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
                 urlConnection = dl.connect(br);
@@ -854,6 +874,7 @@ public class Rapidshare extends PluginForHost {
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
+                accName = null;
             }
             downloadLink.getLinkStatus().setStatusText(JDL.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", account.getUser()));
         }
