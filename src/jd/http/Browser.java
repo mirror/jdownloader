@@ -1036,7 +1036,6 @@ public class Browser {
         if (con == null) {
             requ = request;
         } else {
-
             requ = new Request(con) {
 
                 @Override
@@ -1052,17 +1051,11 @@ public class Browser {
                 }
 
             };
-            checkContentLengthLimit(requ);
-            con = requ.getHttpConnection();
-            requ.read();
-
         }
-
         try {
             checkContentLengthLimit(requ);
             con = requ.getHttpConnection();
             requ.read();
-
         } catch (BrowserException e) {
             throw e;
         } catch (IOException e) {
