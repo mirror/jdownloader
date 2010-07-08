@@ -58,7 +58,7 @@ public class UploadComUa extends PluginForHost {
         String filename = br.getRegex("\">Скачать (.*?)</a>").getMatch(0);
         String filesize = br.getRegex("file_size\">(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String md5 = br.getRegex("\\(md5\\):</b>(.*?)<br>").getMatch(0);
+        String md5 = br.getRegex("<b>Хэш \\(md5\\):</b></td>[\t\r\n ]+<td style=\"font-size: 11px;\">([a-z0-9]+)</td>").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5.trim());
         }
