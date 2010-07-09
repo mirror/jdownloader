@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickupload.net" }, urls = { "http://[\\w\\.]*?(quickupload|ezyfile)\\.net/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickupload.net" }, urls = { "http://[\\w\\.]*?quickupload\\.net/([a-z0-9]{12}/uploads/.*?\\.html|[a-z0-9]{12})" }, flags = { 2 })
 public class QuickUploadDotNet extends PluginForHost {
 
     public QuickUploadDotNet(PluginWrapper wrapper) {
@@ -48,16 +48,11 @@ public class QuickUploadDotNet extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://www.quickupload.net";
     public boolean nopremium = false;
+    private static final String FILEOFFLINE = "(No such file with this filename|No such user exist|File not found)";
 
     @Override
     public String getAGBLink() {
         return "http://quickupload.net/tos.html";
-    }
-
-    // ezyfile went down so the userswill see that ezyfile is now quickupload
-    // een if all old ezyfile links are down
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("ezyfile.net", "quickupload.net"));
     }
 
     @Override
@@ -65,9 +60,7 @@ public class QuickUploadDotNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("<input type=\"hidden\" name=\"fname\" value=\"(.*?)\">").getMatch(0));
         String filesize = br.getRegex("You have requested <font color=\"red\">http://quickupload.net/.*?/.*?</font> \\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -446,6 +439,8 @@ public class QuickUploadDotNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
+        if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"err\">Error happened when generating Download Link\\.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         // Errorhandling for only-premium links
         if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
             String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);

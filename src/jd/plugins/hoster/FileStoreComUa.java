@@ -105,7 +105,7 @@ public class FileStoreComUa extends PluginForHost {
         if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         String dllink = br.getRegex("<input.*document.location=\"(.*?)\";").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         String check = br.getURL();
         if (check.contains("FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if ((dl.getConnection().getContentType().contains("html"))) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

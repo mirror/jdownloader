@@ -110,6 +110,7 @@ public class FileShareInUa extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         // Using the link + "?free" we can get to the page with the captcha but
         // atm we do it without captcha
         // String freepage = link.getDownloadURL() + "?free";

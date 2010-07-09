@@ -53,7 +53,7 @@ public class MilleDriveCom extends PluginForHost {
             this.sleep(2000, downloadLink);
             br.getPage(firstlink);
         }
-        if (br.containsHTML("URL does not exist") || br.containsHTML("404 not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(URL does not exist|onclick=\"javascript:alert\\('This video has been Removed|404 not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugin.hoster.milledrive.com.stillencoding", "This video is still being encoded"));
         String filename, filesize;
         if (!firstlink.contains("/files/")) // for videos & music links
