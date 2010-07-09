@@ -7,7 +7,7 @@
 OutFile ".\..\..\dist\JDownloaderSetup_kikin.exe"
 
 !macro ADVERTISING_PAGE
-Page custom KikinPage
+Page custom KikinPage KikinPageLeave
 !macroend
 
 !macro ADVERTISING_GENERAL
@@ -73,10 +73,29 @@ Function KikinPage
   CreateFont $FONT "$(^Font)" "$(^FontSize)" "700" 
   SendMessage $DLGITEM ${WM_SETFONT} $FONT 1
   
+  #Disable Next button
+  GetDlgItem $1 $HWNDPARENT 1 
+  EnableWindow $1 0 
+  !insertmacro KikinOptInCheck
   ; We are done with all the customization. Show dialog.
   !insertmacro INSTALLOPTIONS_SHOW
 FunctionEnd
  
+Function KikinPageLeave
+  !insertmacro KikinOptInCheck
+  ReadINIStr $0 "$(KIKIN_PITCH_PAGE_DIALOG)" "Settings" "State"
+  StrCmp $0 0 +2  ; Next button?
+  Abort
+FunctionEnd 
+ 
+!macroend
+
+!macro KikinOptInCheck
+  !insertmacro INSTALLOPTIONS_READ $R0 "$(KIKIN_PITCH_PAGE_DIALOG)" "Field 4" "State"
+  !insertmacro INSTALLOPTIONS_READ $R1 "$(KIKIN_PITCH_PAGE_DIALOG)" "Field 5" "State"
+  StrCmp $R0 $R1 +3 0
+    GetDlgItem $1 $HWNDPARENT 1 
+    EnableWindow $1 1
 !macroend
 
 !macro ADVERTISING_ONINIT
