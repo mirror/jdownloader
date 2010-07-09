@@ -13,8 +13,6 @@ import java.util.Iterator;
 
 import jd.http.Browser;
 import jd.http.Request;
-import jd.http.ext.events.HtmlFrameControllerEventsender;
-import jd.http.ext.events.JSInteraction;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
@@ -50,14 +48,13 @@ import org.w3c.dom.html2.HTMLLinkElement;
  * @author thomas
  * 
  */
-public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameElement, BrowserFrame {
+public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement, BrowserFrame {
 
     private static final String DOM_CONTENT_LOADED = "DOMContentLoaded";
     private ExtBrowser extBrowser;
     private HTMLDocumentImpl htmlDocument;
-    private HtmlFrameController parentFrameController;
+    private FrameController parentFrameController;
 
-    private HtmlFrameControllerEventsender eventSender;
     private ExtHTMLFrameImpl frame = null;
     private HashMap<String, ArrayList<JSEventListener>> listenerMap = new HashMap<String, ArrayList<JSEventListener>>();
     private boolean loaded;
@@ -67,28 +64,23 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
         return frame;
     }
 
-    public HtmlFrameController(ExtBrowser extBrowser) {
+    public FrameController(ExtBrowser extBrowser) {
         this.extBrowser = extBrowser;
         comContext = extBrowser.getCommContext();
-        eventSender = new HtmlFrameControllerEventsender();
 
     }
 
-    public HtmlFrameController(ExtBrowser extBrowser, ExtHTMLFrameImpl f) {
+    public FrameController(ExtBrowser extBrowser, ExtHTMLFrameImpl f) {
         this.extBrowser = extBrowser;
-        eventSender = new HtmlFrameControllerEventsender();
+
         comContext = extBrowser.getCommContext().cloneBrowser();
         frame = f;
 
     }
 
-    public HtmlFrameControllerEventsender getEventSender() {
-        return eventSender;
-    }
-
     public void alert(String arg0) {
+        this.extBrowser.onAlert(this, arg0);
 
-        getEventSender().fireEvent(new JSInteraction(this, JSInteraction.Types.ALERT, arg0));
     }
 
     public void back() {
@@ -113,9 +105,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public boolean confirm(String arg0) {
-        JSInteraction event = new JSInteraction(this, JSInteraction.Types.CONFIRM, arg0);
-        getEventSender().fireEvent(event);
-        return event.getAnswer() == JSInteraction.AnswerTypes.OK;
+        return this.extBrowser.onConfirm(arg0, this);
 
     }
 
@@ -148,9 +138,8 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     /**
-     * For internal use only. Use
-     * {@link ExtBrowser#getFrames(HtmlFrameController)} or
-     * {@link ExtBrowser#getFrames(HTMLFrameElementImpl)}
+     * For internal use only. Use {@link ExtBrowser#getFrames(FrameController)}
+     * or {@link ExtBrowser#getFrames(HTMLFrameElementImpl)}
      */
     public HTMLCollection getFrames() {
         return htmlDocument.getFrames();
@@ -323,9 +312,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public String prompt(String arg0, String arg1) {
-        JSInteraction event = new JSInteraction(this, JSInteraction.Types.PROMPT, arg0, arg1);
-        getEventSender().fireEvent(event);
-        return event.getAnswerString();
+        return this.extBrowser.onPrompt(arg0, arg1, this);
     }
 
     public void reload() {
@@ -384,6 +371,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
     public void submitForm(String method, URL action, String target, String encoding, FormInput[] formInputs) {
         try {
+            this.extBrowser.onFrameLoadStart(this);
             final String actualMethod = method.toUpperCase();
 
             if (actualMethod.equals("GET")) {
@@ -391,7 +379,8 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
                     Request request = comContext.createGetRequest(action + "");
                     if (extBrowser.getBrowserEnviroment().doLoadContent(request)) {
                         comContext.openRequestConnection(request);
-                        comContext.loadConnection(null);
+                        String htmlCode = ExtHTTPRequest.read(request.getHttpConnection());
+                        request.setHtmlCode(htmlCode);
                         extBrowser.getBrowserEnviroment().prepareContents(comContext.getRequest());
                     } else {
                         return;
@@ -428,7 +417,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
                 Log.exception(e);
                 throw e;
             }
-
+            this.extBrowser.onFrameLoadEnd(this);
             eval();
 
         } catch (Exception e) {
@@ -441,6 +430,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public void eval() throws ExtBrowserException {
+        this.extBrowser.onFrameEvalStart(this);
         WritableLineReader wis = new WritableLineReader(new StringReader(comContext + "")) {
             public void write(String text) throws IOException {
                 super.write(text);
@@ -488,6 +478,8 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
         } catch (Exception e) {
             throw new ExtBrowserException(e);
+        } finally {
+            this.extBrowser.onFrameEvalEnd(this);
         }
     }
 
@@ -520,7 +512,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
                 try {
 
-                    ((HtmlFrameController) ((HTMLIFrameElementImpl) f.getImpl()).getBrowserFrame()).submitForm("GET", new URL(comContext.getURL(f.getSrc())), null, null, null);
+                    ((FrameController) ((HTMLIFrameElementImpl) f.getImpl()).getBrowserFrame()).submitForm("GET", new URL(comContext.getURL(f.getSrc())), null, null, null);
 
                     return f;
                 } catch (Exception e) {
@@ -547,7 +539,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
         return null;
     }
 
-    public HtmlFrameController getHtmlFrameController() {
+    public FrameController getHtmlFrameController() {
         // TODO Auto-generated method stub
         return this;
     }
@@ -659,7 +651,7 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
     }
 
     public void loadURL(final URL url) {
-        if (this.getParent() != null && !((HtmlFrameController) getParent()).loaded) {
+        if (this.getParent() != null && !((FrameController) getParent()).loaded) {
             System.out.println("NOT LOADED FRAME " + url + " not loaded yet. QUEUED");
             return;
         }
@@ -692,9 +684,9 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
 
     }
 
-    public HtmlFrameController createParentFrameController(ExtHTMLFrameImpl extHTMLFrameImpl) {
+    public FrameController createParentFrameController(ExtHTMLFrameImpl extHTMLFrameImpl) {
 
-        HtmlFrameController rContext = new HtmlFrameController(this.extBrowser, extHTMLFrameImpl);
+        FrameController rContext = new FrameController(this.extBrowser, extHTMLFrameImpl);
         rContext.parentFrameController = this;
         return rContext;
     }
@@ -704,6 +696,19 @@ public class HtmlFrameController implements HtmlRendererContext, ExtHTMLFrameEle
         return null;
     }
 
+    public String getID() {
+        if (frame == null) return null;
+        return frame.getID();
+    }
+
+    public boolean isLoaded() {
+        return this.loaded;
+
+    }
+
+    public void setCommContext(Browser commContext) {
+        this.comContext = commContext;
+    }
     // public void addEventListener(Object nodeImpl, String type, BaseFunction
     // listener, Object useCapture) {
     //

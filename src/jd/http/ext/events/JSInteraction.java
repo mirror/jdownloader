@@ -1,8 +1,9 @@
 package jd.http.ext.events;
 
-import jd.http.ext.HtmlFrameController;
+import jd.http.ext.ExtBrowser;
+import jd.http.ext.FrameController;
 
-public class JSInteraction extends HtmlFrameControllerEvent {
+public class JSInteraction extends ExtBrowserEvent {
     public static enum AnswerTypes {
         CANCEL, OK, SKIP
     }
@@ -17,15 +18,13 @@ public class JSInteraction extends HtmlFrameControllerEvent {
 
     private String message = null;
 
-    private Types type = null;
-
-    public JSInteraction(HtmlFrameController caller, Types type, String msg) {
-        this(caller, type, msg, null);
+    public JSInteraction(ExtBrowser extBrowser, FrameController caller, Types type, String msg) {
+        this(extBrowser, caller, type, msg, null);
     }
 
-    public JSInteraction(HtmlFrameController caller, Types type, String msg, String def) {
-        super(caller, 0, null);
-        this.type = type;
+    public JSInteraction(ExtBrowser owner, FrameController caller, Types type, String msg, String def) {
+        super(owner, caller, type.ordinal(), null);
+
         this.message = msg;
         answerString = def;
     }
@@ -43,7 +42,7 @@ public class JSInteraction extends HtmlFrameControllerEvent {
     }
 
     public Types getType() {
-        return type;
+        return Types.values()[this.getEventID()];
     }
 
     public void setAnswer(AnswerTypes answer) {

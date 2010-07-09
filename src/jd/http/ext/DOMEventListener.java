@@ -16,13 +16,13 @@ import org.w3c.dom.events.EventListener;
 
 public class DOMEventListener implements EventListener {
 
-    private HtmlFrameController owner;
+    private FrameController owner;
     private Object node;
     private String type;
     private BaseFunction action;
     private Object useCapture;
 
-    public DOMEventListener(HtmlFrameController htmlFrameController, Object nodeImpl, String type, BaseFunction listener, Object useCapture2) {
+    public DOMEventListener(FrameController htmlFrameController, Object nodeImpl, String type, BaseFunction listener, Object useCapture2) {
         this.owner = htmlFrameController;
         this.node = nodeImpl;
         this.type = type;
@@ -30,7 +30,7 @@ public class DOMEventListener implements EventListener {
         this.useCapture = useCapture2;
     }
 
-    public HtmlFrameController getOwner() {
+    public FrameController getOwner() {
         return owner;
     }
 

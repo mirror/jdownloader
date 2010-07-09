@@ -5,12 +5,17 @@ import java.util.ArrayList;
 
 import jd.http.Browser;
 import jd.http.Request;
+import jd.http.ext.events.ExtBrowserEvent;
+import jd.http.ext.events.ExtBrowserEventSender;
+import jd.http.ext.events.ExtBrowserListener;
+import jd.http.ext.events.JSInteraction;
 import jd.http.ext.interfaces.BrowserEnviroment;
 import jd.http.ext.security.JSPermissionRestricter;
 import jd.parser.Regex;
 
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.UserAgentContext;
+import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
 import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
 import org.lobobrowser.html.domimpl.HTMLFormElementImpl;
 import org.lobobrowser.html.domimpl.HTMLFrameElementImpl;
@@ -34,7 +39,7 @@ public class ExtBrowser {
     public static void main(String args[]) throws ExtBrowserException, InterruptedException {
 
         ExtBrowser br = new ExtBrowser();
-        br.setUserAgent(new FullBrowserEnviroment() {
+        br.setBrowserEnviroment(new FullBrowserEnviroment() {
             public void prepareContents(Request req) {
 
                 req = req;
@@ -49,29 +54,21 @@ public class ExtBrowser {
         br.getCommContext().forceDebug(true);
 
         ExtBrowser eb = new ExtBrowser();
-        eb.setUserAgent(new jd.http.ext.BasicBrowserEnviroment(new String[] { ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null));
+        eb.setBrowserEnviroment(new jd.http.ext.BasicBrowserEnviroment(new String[] { ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null));
         try {
             eb.getPage("http://www.mediafire.com/?dzmzuzmh2md");
-
+            eb.waitForFrame("workframe2", 10000);
             System.out.println(eb.getHtmlText());
-            eb.cleanUp();
-            Thread.sleep(10000);
-            org.w3c.dom.html2.HTMLCollection links = eb.getDocument().getLinks();
-            String txt = eb.getHtmlText();
-            // HTMLDivElementImpl div2 = (HTMLDivElementImpl)
-            // eb.getElementByID(null, "412cacf7d447cade9f1650e05f0193f8");
-            // AbstractCSS2Properties cstyle = div2.getComputedStyle(null);
-            // String display = cstyle.getDisplay();
-            // String html = div2.getOuterHTML();
+
+            HTMLCollection links = eb.getDocument().getLinks();
+
             for (int i = 0; i < links.getLength(); i++) {
                 org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
                 if (RendererUtilities.isVisible(l)) {
                     String inner = l.getInnerHTML();
-                    System.out.println(inner + " - " + l);
 
                     if (inner.toLowerCase().contains("start download")) {
-                        org.lobobrowser.html.domimpl.HTMLDivElementImpl div = (org.lobobrowser.html.domimpl.HTMLDivElementImpl) l.getParentNode();
-                        System.out.println("          *    " + inner + " - " + div.getOuterHTML());
+                        HTMLDivElementImpl div = (HTMLDivElementImpl) l.getParentNode();
 
                         String myURL = l.getAbsoluteHref();
 
@@ -83,9 +80,7 @@ public class ExtBrowser {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        while (true) {
-            Thread.sleep(100);
-        }
+
         // br.getPage("http://ifile.it/uvkog7y");
         // br.getPage("http://jdownloader.net:8081/advert/jstest.html");
         // ArrayList<HTMLFormElementImpl> forms = br.getForms(null);
@@ -124,20 +119,58 @@ public class ExtBrowser {
 
     }
 
+    // TODO: this should use AppWorks Statemachine later
+    public void waitForFrame(final String frameID, int msTimeout) throws InterruptedException {
+
+        for (ExtHTMLFrameImpl frame : this.getFrames(null)) {
+            if (frameID.equalsIgnoreCase(frame.getID()) && frame.getInternalFrameController().isLoaded()) {
+
+                System.out.println("Frame already loaded");
+                return;
+
+            }
+        }
+        ExtBrowserListener listener = new ExtBrowserListener() {
+
+            public void onFrameEvent(ExtBrowserEvent event) {
+                if (event instanceof FrameStatusEvent) {
+                    if (((FrameStatusEvent) event).getType() == FrameStatusEvent.Types.EVAL_END && frameID.equalsIgnoreCase(((ExtHTMLFrameElement) ((FrameStatusEvent) event).getCaller()).getID())) {
+                        synchronized (this) {
+
+                            this.notify();
+                        }
+
+                    }
+
+                }
+
+            }
+
+        };
+        this.getEventSender().addListener(listener);
+
+        synchronized (listener) {
+
+            listener.wait(msTimeout);
+
+        }
+
+    }
+
     private InputController getInputController() {
 
         return this.inputController;
     }
 
     private Element getElementByID(ExtHTMLFrameElement frame, String id) {
-        if (frame == null) frame = this.getHtmlFrameController();
+        if (frame == null) frame = this.getFrameController();
         Element ret = frame.getDocument().getElementById(id);
         return ret;
 
     }
 
     private ArrayList<HTMLFormElementImpl> getForms(ExtHTMLFrameElement frame) {
-        if (frame == null) frame = this.getHtmlFrameController();
+        if (frame == null) frame = this.getFrameController();
         HTMLCollection forms = frame.getDocument().getForms();
         return getList(forms, new ArrayList<HTMLFormElementImpl>());
 
@@ -153,9 +186,9 @@ public class ExtBrowser {
 
     /**
      * 
-     * @return The root {@link jd.http.ext.HtmlFrameController} of thes Instance
+     * @return The root {@link jd.http.ext.FrameController} of thes Instance
      */
-    public HtmlFrameController getHtmlFrameController() {
+    public FrameController getFrameController() {
 
         return this.htmlFrameController;
     }
@@ -171,24 +204,29 @@ public class ExtBrowser {
     }
 
     // private HTMLDocumentImpl document;
-    private HtmlFrameController htmlFrameController;
+    private FrameController htmlFrameController;
     private UserAgentDelegate uac;
     private Browser commContext;
     private String url;
     private InputController inputController;
+    private ExtBrowserEventSender eventSender;
 
     public ExtBrowser() {
 
         uac = new UserAgentDelegate(this);
 
         // Context.enter().setDebugger(new ExtDebugger(), null);
-
+        eventSender = new ExtBrowserEventSender();
         commContext = new Browser();
         commContext.setFollowRedirects(true);
         commContext.setCookiesExclusive(true);
-        htmlFrameController = new HtmlFrameController(this);
+        htmlFrameController = new FrameController(this);
         inputController = new InputController();
 
+    }
+
+    public ExtBrowserEventSender getEventSender() {
+        return eventSender;
     }
 
     public void setInputController(InputController inputController) {
@@ -201,13 +239,13 @@ public class ExtBrowser {
 
     public ExtBrowser(Browser br) {
         uac = new UserAgentDelegate(this);
-
+        eventSender = new ExtBrowserEventSender();
         // Context.enter().setDebugger(new ExtDebugger(), null);
 
         commContext = br.cloneBrowser();
         commContext.setFollowRedirects(true);
         commContext.setCookiesExclusive(true);
-        htmlFrameController = new HtmlFrameController(this);
+        htmlFrameController = new FrameController(this);
 
         inputController = new InputController();
     }
@@ -238,7 +276,7 @@ public class ExtBrowser {
         return browserEnviroment;
     }
 
-    public void setUserAgent(BrowserEnviroment userAgent) {
+    public void setBrowserEnviroment(BrowserEnviroment userAgent) {
         this.browserEnviroment = userAgent;
 
         commContext.setCookiesExclusive(false);
@@ -262,7 +300,8 @@ public class ExtBrowser {
         commContext = br.cloneBrowser();
         commContext.setFollowRedirects(true);
         commContext.setCookiesExclusive(true);
-
+        commContext.setRequest(br.getRequest());
+        htmlFrameController.setCommContext(commContext);
         try {
             htmlFrameController.eval();
 
@@ -282,7 +321,7 @@ public class ExtBrowser {
      * @return
      */
     public ArrayList<ExtHTMLFrameImpl> getFrames(ExtHTMLFrameElement baseFrame) {
-        if (baseFrame == null) baseFrame = getHtmlFrameController();
+        if (baseFrame == null) baseFrame = getFrameController();
         HTMLCollection frames = baseFrame.getHtmlFrameController().getFrames();
         ArrayList<ExtHTMLFrameImpl> ret = new ArrayList<ExtHTMLFrameImpl>();
         for (int i = 0; i < frames.getLength(); i++) {
@@ -299,13 +338,49 @@ public class ExtBrowser {
     }
 
     public String getScriptableVariable(String string) {
-        return this.getHtmlFrameController().getScriptableVariable(string);
+        return this.getFrameController().getScriptableVariable(string);
 
     }
 
     public void cleanUp() {
         // TODO Auto-generated method stub
 
+    }
+
+    public void onFrameEvalStart(FrameController htmlFrameController2) {
+        getEventSender().fireEvent(new FrameStatusEvent(this, htmlFrameController2, FrameStatusEvent.Types.EVAL_START));
+
+    }
+
+    public void onFrameLoadStart(FrameController htmlFrameController2) {
+        getEventSender().fireEvent(new FrameStatusEvent(this, htmlFrameController2, FrameStatusEvent.Types.LOAD_START));
+
+    }
+
+    public void onFrameLoadEnd(FrameController htmlFrameController2) {
+        getEventSender().fireEvent(new FrameStatusEvent(this, htmlFrameController2, FrameStatusEvent.Types.LOAD_END));
+
+    }
+
+    public void onFrameEvalEnd(FrameController htmlFrameController2) {
+        getEventSender().fireEvent(new FrameStatusEvent(this, htmlFrameController2, FrameStatusEvent.Types.EVAL_END));
+
+    }
+
+    public void onAlert(FrameController htmlFrameController2, String arg0) {
+        getEventSender().fireEvent(new JSInteraction(this, htmlFrameController2, JSInteraction.Types.ALERT, arg0));
+    }
+
+    public boolean onConfirm(String arg0, FrameController htmlFrameController) {
+        JSInteraction event = new JSInteraction(this, htmlFrameController, JSInteraction.Types.CONFIRM, arg0);
+        getEventSender().fireEvent(event);
+        return event.getAnswer() == JSInteraction.AnswerTypes.OK;
+    }
+
+    public String onPrompt(String arg0, String arg1, FrameController htmlFrameController2) {
+        JSInteraction event = new JSInteraction(this, htmlFrameController2, JSInteraction.Types.PROMPT, arg0, arg1);
+        getEventSender().fireEvent(event);
+        return event.getAnswerString();
     }
 
 }

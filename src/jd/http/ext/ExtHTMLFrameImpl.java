@@ -40,11 +40,11 @@ public class ExtHTMLFrameImpl implements ExtHTMLFrameElement {
         }
     }
 
-    public HtmlFrameController getHtmlFrameController() {
+    public FrameController getHtmlFrameController() {
         if (type == Type.FRAME) {
-            return (HtmlFrameController) ((HTMLFrameElementImpl) _impl).getHtmlRendererContext();
+            return (FrameController) ((HTMLFrameElementImpl) _impl).getHtmlRendererContext();
         } else {
-            return (HtmlFrameController) ((HTMLIFrameElementImpl) _impl).getHtmlRendererContext();
+            return (FrameController) ((HTMLIFrameElementImpl) _impl).getHtmlRendererContext();
         }
     }
 
@@ -110,6 +110,22 @@ public class ExtHTMLFrameImpl implements ExtHTMLFrameElement {
 
     public HTMLDocumentImpl getDocument() {
         return this.getHtmlFrameController().getDocument();
+    }
+
+    public String getID() {
+        if (type == Type.FRAME) {
+            return ((HTMLFrameElementImpl) _impl).getId();
+        } else {
+            return ((HTMLIFrameElementImpl) _impl).getId();
+        }
+    }
+
+    public FrameController getInternalFrameController() {
+        if (type == Type.FRAME) {
+            return (FrameController) ((HTMLFrameElementImpl) _impl).getBrowserFrame();
+        } else {
+            return (FrameController) ((HTMLIFrameElementImpl) _impl).getBrowserFrame();
+        }
     }
 
 }

@@ -1,13 +1,19 @@
 package jd.http.ext;
 
 import java.awt.Image;
+import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
+import java.util.zip.GZIPInputStream;
 
 import jd.http.Browser;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.HttpRequest;
@@ -197,7 +203,9 @@ public class ExtHTTPRequest implements HttpRequest {
                 br.openRequestConnection(request);
 
                 changeReadyState(NetworkRequest.STATE_LOADED);
-                br.loadConnection(null);
+
+                String htmlCode = read(request.getHttpConnection());
+                request.setHtmlCode(htmlCode);
                 browser.getBrowserEnviroment().prepareContents(br.getRequest());
 
                 changeReadyState(NetworkRequest.STATE_INTERACTIVE);
@@ -207,6 +215,60 @@ public class ExtHTTPRequest implements HttpRequest {
 
         }
 
+    }
+
+    public static String read(URLConnectionAdapter con) throws IOException {
+        BufferedReader rd;
+        InputStreamReader isr;
+        InputStream is = null;
+        if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+            if (con.getInputStream() != null) is = new GZIPInputStream(con.getInputStream());
+        } else {
+            if (con.getInputStream() != null) is = con.getInputStream();
+        }
+        if (is == null) return null;
+        String cs = con.getCharset();
+        if (cs == null) {
+            /* default encoding ist ISO-8859-1, falls nicht anders angegeben */
+            isr = new InputStreamReader(is, "ISO-8859-1");
+        } else {
+            cs = cs.toUpperCase();
+            try {
+                isr = new InputStreamReader(is, cs);
+            } catch (Exception e) {
+                // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
+                // "Could not Handle Charset " + cs, e);
+                try {
+                    isr = new InputStreamReader(is, cs.replace("-", ""));
+                } catch (Exception e2) {
+                    // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
+                    // "Could not Handle Charset " + cs, e);
+                    isr = new InputStreamReader(is);
+                }
+            }
+        }
+        rd = new BufferedReader(isr);
+        String line;
+        StringBuilder htmlCode = new StringBuilder();
+        /* workaround for premature eof */
+        try {
+            while ((line = rd.readLine()) != null) {
+                htmlCode.append(line + "\r\n");
+            }
+        } catch (EOFException e) {
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
+        } catch (IOException e) {
+            if (e.toString().contains("end of ZLIB") || e.toString().contains("Premature")) {
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
+            } else
+                throw e;
+        } finally {
+            try {
+                rd.close();
+            } catch (Exception e) {
+            }
+        }
+        return htmlCode.toString();
     }
 
 }

@@ -23,8 +23,10 @@ public interface ExtHTMLFrameElement {
 
     public HTMLDocumentImpl getDocument();
 
-    public HtmlFrameController getHtmlFrameController();
+    public FrameController getHtmlFrameController();
 
     public HTMLElementImpl getImpl();
+
+    public String getID();
 
 }

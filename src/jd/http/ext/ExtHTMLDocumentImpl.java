@@ -9,7 +9,7 @@ import org.w3c.dom.Element;
 
 public class ExtHTMLDocumentImpl extends HTMLDocumentImpl {
 
-    public ExtHTMLDocumentImpl(UserAgentContext userAgentContext, HtmlFrameController htmlFrameController, WritableLineReader wis, String string) {
+    public ExtHTMLDocumentImpl(UserAgentContext userAgentContext, FrameController htmlFrameController, WritableLineReader wis, String string) {
         super(userAgentContext, htmlFrameController, wis, string);
 
     }
@@ -22,7 +22,7 @@ public class ExtHTMLDocumentImpl extends HTMLDocumentImpl {
         Element ret = super.createElement(tagName);
         if ("iframe".equalsIgnoreCase(tagName)) {
 
-            ((HTMLIFrameElementImpl) ret).setBrowserFrame(((HtmlFrameController) getHtmlRendererContext()).createParentFrameController(new ExtHTMLFrameImpl((HTMLIFrameElementImpl) ret)));
+            ((HTMLIFrameElementImpl) ret).setBrowserFrame(((FrameController) getHtmlRendererContext()).createParentFrameController(new ExtHTMLFrameImpl((HTMLIFrameElementImpl) ret)));
         }
         return ret;
     }
