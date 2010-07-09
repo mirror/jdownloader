@@ -27,6 +27,8 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
@@ -38,6 +40,14 @@ import jd.utils.locale.JDL;
  */
 @OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 5)
 public class Neembuu extends PluginOptional {
+
+    private static final int CONTEXT_MENU_ID_WATCH_LINK = 1000;
+
+    private static final int CONTEXT_MENU_ID_OPEN_LINK = 1001;
+
+    private static final int CONTEXT_MENU_ID_WATCH_PACKAGE = 1002;
+
+    private static final int CONTEXT_MENU_ID_OPEN_PACKAGE = 1003;
 
     private MenuAction activateAction;
 
@@ -54,6 +64,31 @@ public class Neembuu extends PluginOptional {
         // Enable/disable GUI Tab
         if (e.getSource() == activateAction) {
             setGuiEnable(activateAction.isSelected());
+        } else if (e.getSource() instanceof MenuAction) {
+            actionPerformedOnMenuItem((MenuAction) e.getSource());
+        }
+    }
+
+    private void actionPerformedOnMenuItem(MenuAction source) {
+        DownloadLink link;
+        FilePackage fp;
+
+        switch (source.getActionID()) {
+        case CONTEXT_MENU_ID_WATCH_LINK:
+            link = (DownloadLink) source.getProperty("LINK");
+            fp = link.getFilePackage();
+            break;
+
+        case CONTEXT_MENU_ID_OPEN_LINK:
+            link = (DownloadLink) source.getProperty("LINK");
+            fp = link.getFilePackage();
+            break;
+        case CONTEXT_MENU_ID_WATCH_PACKAGE:
+            fp = (FilePackage) source.getProperty("PACKAGE");
+            break;
+        case CONTEXT_MENU_ID_OPEN_PACKAGE:
+            fp = (FilePackage) source.getProperty("PACKAGE");
+            break;
         }
     }
 
@@ -61,6 +96,38 @@ public class Neembuu extends PluginOptional {
     public void onControlEvent(ControlEvent event) {
         // receiver all control events. reconnects,
         // downloadstarts/end,pluginstart/pluginend
+
+        DownloadLink link;
+        switch (event.getID()) {
+
+        case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
+            ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
+            MenuAction m;
+            MenuAction container = new MenuAction("jd.plugins.optional.neembuu.Neembuu.menu.container", 0);
+            container.setIcon(this.getIconKey());
+            items.add(container);
+            if (event.getSource() instanceof DownloadLink) {
+                link = (DownloadLink) event.getSource();
+
+                container.addMenuItem(m = new MenuAction("jd.plugins.optional.neembuu.Neembuu.menu.watch.link", CONTEXT_MENU_ID_WATCH_LINK));
+                m.setProperty("LINK", link);
+                m.setActionListener(this);
+                container.addMenuItem(m = new MenuAction("jd.plugins.optional.neembuu.Neembuu.menu.open.link", CONTEXT_MENU_ID_OPEN_LINK));
+                m.setActionListener(this);
+                m.setProperty("LINK", link);
+
+            } else {
+                FilePackage fp = (FilePackage) event.getSource();
+
+                container.addMenuItem(m = new MenuAction("jd.plugins.optional.neembuu.Neembuu.menu.watch.package", CONTEXT_MENU_ID_WATCH_PACKAGE));
+                m.setProperty("PACKAGE", fp);
+                m.setActionListener(this);
+                container.addMenuItem(m = new MenuAction("jd.plugins.optional.neembuu.Neembuu.menu.open.package", CONTEXT_MENU_ID_OPEN_PACKAGE));
+                m.setActionListener(this);
+                m.setProperty("PACKAGE", fp);
+            }
+            break;
+        }
     }
 
     @Override
