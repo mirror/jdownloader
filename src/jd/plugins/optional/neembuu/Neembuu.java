@@ -40,6 +40,7 @@ public class Neembuu extends PluginOptional {
 
     public Neembuu(PluginWrapper wrapper) {
         super(wrapper);
+        initConfigEntries();
 
     }
 
@@ -76,7 +77,7 @@ public class Neembuu extends PluginOptional {
     public boolean initAddon() {
         // this method is called ones after the addon has been loaded
 
-        activateAction = new MenuAction("chat", 0);
+        activateAction = new MenuAction("neembuu", 0);
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);

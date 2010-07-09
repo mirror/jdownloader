@@ -11,6 +11,8 @@ import net.miginfocom.swing.MigLayout;
 public class NeembuuTab extends ClosableView {
 
     public NeembuuTab() {
+        super();
+        init();
         SwitchPanel frame = new SwitchPanel() {
 
             @Override
