@@ -1306,6 +1306,7 @@ plugins.hoster.filefactorycom.errors.nofreeslots = Нет свободных с�
 plugins.hoster.fileflyercom.errors.only4premium = Доступен только премиум-пользователям
 plugins.hoster.filehosterru.errors.hostertemporaryunavailable = Хост временно недоступен!
 plugins.hoster.filernet.errors.nofreeslots = Все свободные\бесплатные слоты  заняты
+plugins.hoster.fileshareinua.errors.temporaryunavailable = Файл временно недоступен
 plugins.hoster.filesmailru.inprocess = Файл всё-ещё выгружается.
 plugins.hoster.filesmonstercom.maintenance = Обслуживание
 plugins.hoster.filesmonstercom.noslotwaittime = Нет слотов, ждите 
