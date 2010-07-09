@@ -1253,6 +1253,7 @@ public class Rapidshare extends PluginForHost {
         ai.setSpecialTraffic(true);
         /* reset expired flag */
         ai.setExpired(false);
+        ai.setValidUntil(-1);
         try {
             String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             HashMap<String, String> data = getMap(matches);
