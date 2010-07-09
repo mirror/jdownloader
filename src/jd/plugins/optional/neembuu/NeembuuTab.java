@@ -1,6 +1,7 @@
 package jd.plugins.optional.neembuu;
 
 import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -32,6 +33,7 @@ public class NeembuuTab extends ClosableView {
         // Layout your gui here. we use MIglayout
         frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
         frame.add(new JLabel("Hello World"));
+        // todo : lot of stuff here 
     }
 
     @Override

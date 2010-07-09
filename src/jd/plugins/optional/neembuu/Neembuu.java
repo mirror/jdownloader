@@ -18,6 +18,8 @@ package jd.plugins.optional.neembuu;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -32,13 +34,18 @@ import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
+import jpfm.FileAttributesProvider;
+import jpfm.JPfmMount;
 
 /**
- *
+ * order :
+ * # isJPfmUsable
+ * # prepare > if mount locaiton not set or problematic > ignore > end
+ * # User selected to mount a file > if file alreadty present > ignore else watch() invoked
+ * # volumes automatically unmounted and all kernel resources freed on exit.
  * @author Shashank Tulsyan
- * @author Coalado
  */
-@OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 5, minJVM=1.7, linux=false, windows=true, mac=false )
 public class Neembuu extends PluginOptional {
 
     private static final int CONTEXT_MENU_ID_WATCH_LINK = 1000;
@@ -52,6 +59,8 @@ public class Neembuu extends PluginOptional {
     private MenuAction activateAction;
 
     private NeembuuTab tab;
+
+    private VirtualFolderManager vfm = new VirtualFolderManager(this);
 
     public Neembuu(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,6 +86,7 @@ public class Neembuu extends PluginOptional {
         case CONTEXT_MENU_ID_WATCH_LINK:
             link = (DownloadLink) source.getProperty("LINK");
             fp = link.getFilePackage();
+            watch(link);
             break;
 
         case CONTEXT_MENU_ID_OPEN_LINK:
@@ -90,6 +100,58 @@ public class Neembuu extends PluginOptional {
             fp = (FilePackage) source.getProperty("PACKAGE");
             break;
         }
+    }
+
+    private void watch(DownloadLink link){
+
+        //for now let 's use the vlc installed in out system
+        //to play the file.
+
+        if(!isJPfmUsable()){
+            //no error messages shown for now, we simply log this
+            logger.log(Level.WARNING,"Not ready and user wants to watch a file");
+            return;
+        }
+        prepare();
+
+        FileAttributesProvider file;
+
+        // it is here that we can decide in which subfolder we want the file
+        // for now keeping the file in virtual folder root
+        if( (file=vfm.getRootDirectory().get(link.getFinalFileName()))!=null){
+            if(file instanceof JDFile){
+
+                //file already added to virtual folder
+                // ignore
+
+                // todo :
+                // start jvlc and open using the file using the path :
+                // jpfmMountinstance.mountLocation() + java.io.File.separatorChar + link.getFinalFileName()
+                // or simply open this file in vlc that is installed in the system
+                return;
+            }else {
+                // todo :
+                // a file of some other kind
+                // example : BasicRealFile,
+                // is present with the same name, so add this with a different
+                // name which does not exists.
+                // For now ignoring
+
+                // jpfm.volume.BasicRealFile  could be used to add
+                // real files in the volume, like subtitles
+                // so that it easier for user and/or vlc to find it.
+            }
+        }else {
+            // we need to add this file in the volume
+            JDFile jDFile = new JDFile(link, vfm.getRootDirectory());
+            vfm.getRootDirectory().add(jDFile);
+
+            // todo :
+            // start jvlc and open using the file using the path :
+            // jpfmMountinstance.mountLocation() + java.io.File.separatorChar + link.getFinalFileName()
+            // or simply open this file in vlc that is installed in the system
+        }
+        
     }
 
     @Override
@@ -149,7 +211,7 @@ public class Neembuu extends PluginOptional {
     public boolean initAddon() {
         // this method is called ones after the addon has been loaded
 
-        activateAction = new MenuAction("neembuu", 0);
+        activateAction = new MenuAction("Neembuu", 0);
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
@@ -159,11 +221,14 @@ public class Neembuu extends PluginOptional {
 
     private void initConfigEntries() {
 
+        // note : mount location cannot be changed when the virtual folder is mounted
         // create a browsefile setting entry
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, getPluginConfig(), "MOUNTLOCATION", "Mountlocation"));
         // combobox entry.
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), "MODE", new String[] { "No restrictions", "limit download to required speed", "..." }, JDL.L("plugins.jdchat.userlistposition", "Download AI Mode:")).setDefaultValue(0));
+
+        //config.getEntries().get(0).
     }
 
     @SuppressWarnings("unchecked")
@@ -216,4 +281,36 @@ public class Neembuu extends PluginOptional {
         return "gui.images.chat";
     }
 
+
+    private boolean isJPfmUsable(){
+        try{
+            // invoking static function in JPfmMount
+            // that initialize native side structures
+            JPfmMount.class.getName();
+        }catch(Exception any){
+            // this would
+            logger.log(Level.SEVERE, "JPfmMount static functions failed", any);
+            return false;
+        }
+        // if jpfm.dll is not in path
+        // we might do a System.load here
+        // System.load("<jpfm lib path here>" );
+
+        return true;
+    }
+
+    /*package private*/ Logger getLogger(){
+        return logger;
+    }
+
+    private void prepare(){
+        if(!isJPfmUsable()){
+            //("JPfm not usuable") ;
+            throw new IllegalStateException("JPfm not usable");
+        }
+        if(vfm==null){
+            //
+        }
+        
+    }
 }
