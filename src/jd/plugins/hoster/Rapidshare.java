@@ -726,6 +726,9 @@ public class Rapidshare extends PluginForHost {
                 accName = "DirectDownload";
                 /* dummyAccount aka Trafficshare DirectLink */
                 br = new Browser();
+                br.setAcceptLanguage(ACCEPT_LANGUAGE);
+                br.setFollowRedirects(false);
+                br.getPage(downloadLink.getDownloadURL());
                 workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
             } else {
                 accName = account.getUser();
@@ -859,7 +862,11 @@ public class Rapidshare extends PluginForHost {
                 selectedServer = null;
                 accName = null;
             }
-            downloadLink.getLinkStatus().setStatusText(JDL.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", account.getUser()));
+            if (account == dummyAccount) {
+                downloadLink.getLinkStatus().setStatusText(JDL.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", "DirectDownload"));
+            } else {
+                downloadLink.getLinkStatus().setStatusText(JDL.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", account.getUser()));
+            }
         }
     }
 
