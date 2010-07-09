@@ -31,6 +31,11 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
 
+/**
+ *
+ * @author Shashank Tulsyan
+ * @author Coalado
+ */
 @OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 5)
 public class Neembuu extends PluginOptional {
 
