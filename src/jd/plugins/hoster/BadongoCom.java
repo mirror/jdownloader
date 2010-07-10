@@ -29,11 +29,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+/?\\d?/?\\w?\\w?" }, flags = { PluginWrapper.LOAD_ON_INIT })
@@ -190,18 +190,11 @@ public class BadongoCom extends PluginForHost {
             if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
             if (!dl.getConnection().isContentDisposition()) {
-                String page = br.loadConnection(dl.getConnection()) + "";// +""
-                                                                         // due
-                                                                         // to
-                                                                         // refaktor
-                                                                         // compatibilities.
-                                                                         // old
-                                                                         // <ref10000
-                                                                         // returns
-                                                                         // String.
-                                                                         // else
-                                                                         // Request
-                                                                         // INstance
+                /*
+                 * +"" due to refaktor compatibilities. old <ref10000 returns
+                 * String. else Request INstance
+                 */
+                br.loadConnection(dl.getConnection());
                 dl.getConnection().disconnect();
                 handleErrors(br);
             }

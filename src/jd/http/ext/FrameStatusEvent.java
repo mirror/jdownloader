@@ -31,6 +31,6 @@ public class FrameStatusEvent extends ExtBrowserEvent {
          * Download of the frames main content is finished LOAD_END
          */
         LOAD_END
-    };
+    }
 
 }

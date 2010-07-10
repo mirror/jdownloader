@@ -33,9 +33,9 @@ import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -45,11 +45,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -148,13 +148,6 @@ public class Rapidshare extends PluginForHost {
     }
 
     private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
-
-    /* different RS Packages with number of rapidpoints */
-    private static final int SMALL = 4;
-    private static final int MEDIUM = 20;
-    private static final int BIG = 78;
-    private static final int SUPERSIZE = 229;
-    private static final int BUSINESS = 449;
 
     private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
 
@@ -1073,6 +1066,7 @@ public class Rapidshare extends PluginForHost {
     /**
      * Erzeugt den Configcontainer für die Gui
      */
+    @SuppressWarnings("deprecation")
     private void setConfigElements() {
         ConfigEntry ce;
         ConfigEntry cond;
@@ -1292,6 +1286,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     /* DO NOT REMOVE, ANTI DDOS PROTECTION */
+    @SuppressWarnings("deprecation")
     @Override
     public boolean isPremiumDownload() {
         /*
@@ -1305,7 +1300,6 @@ public class Rapidshare extends PluginForHost {
     @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> ret = super.createMenuitems();
-        int i = 0;
         synchronized (menuLock) {
             if (ret != null) {
                 /* here we can add it every time */

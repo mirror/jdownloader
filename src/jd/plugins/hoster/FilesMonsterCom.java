@@ -45,6 +45,7 @@ public class FilesMonsterCom extends PluginForHost {
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
+    @SuppressWarnings("deprecation")
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonstercom.noslotwaittime", "No slot wait time (seconds)"), 30, 86400).setDefaultValue(60).setStep(30));
     }

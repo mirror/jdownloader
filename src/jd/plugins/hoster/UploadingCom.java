@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/\\w+" }, flags = { 2 })
@@ -350,10 +350,11 @@ public class UploadingCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /*
+    /**
      * TODO: remove with next major update, DownloadWatchDog/AccountController
      * handle blocked accounts now
      */
+    @SuppressWarnings("deprecation")
     @Override
     public boolean isPremiumDownload() {
         /* free user accounts are no premium accounts */
