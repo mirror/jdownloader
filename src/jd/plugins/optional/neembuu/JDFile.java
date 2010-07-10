@@ -1,6 +1,8 @@
 package jd.plugins.optional.neembuu;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import jd.plugins.DownloadLink;
@@ -24,7 +26,8 @@ public class JDFile extends BasicAbstractFile {
     private final ConcurrentLinkedQueue<ReadRequest> pendingReadRequests = new ConcurrentLinkedQueue<ReadRequest>();
     private final Object lock = new Object();
     private ReadThread readThread = null;
-
+    //an example implementation
+    private AsynchronousFileChannel fileChannel;
 
     public JDFile(
                 DownloadLink downloadLink,
@@ -35,6 +38,13 @@ public class JDFile extends BasicAbstractFile {
         // Object of CommonFileAttributesProvider contains
         // info like creation date, can have junk values and
         // can be changed during runtime
+        try{
+            fileChannel = AsynchronousFileChannel.open(
+                    downloadLink.getDownloadInstance().getFile().toPath());
+            // assuming
+        }catch(IOException ioe) {
+
+        }
     }
 
 
@@ -65,12 +75,14 @@ public class JDFile extends BasicAbstractFile {
         // In Neembuu 's demo implementation
         // We start downloading only when the file is opened
         // In JDownloader, we could have different download
-        // modes. #1) Download goes on does not care file is open or not
+        // modes. #1) Download goes on does not care if virtual file is open or not
         // #2) Download stictly follows request. That is starts when the
-        // file is opened, stop when it is closed.
+        // file is opened, stops when it is closed.
         // @see #close()
 
 
+        //start read dispatcher when file opened, and stop the
+        //thread when file closed.
         readThread = new ReadThread(super.getName());
         this.readThread.start();
     }
@@ -116,8 +128,13 @@ public class JDFile extends BasicAbstractFile {
         //to implement in non-bloking fashion, other could be to dispatch each and every arequest in
         //a separate thread. // todo ^^^ remove all this
     private void readImpl(ReadRequest read){
-        // for now be deny access to each read request
-        read.complete(JPfmError.ACCESS_DENIED, 0, null);
+
+        // if data present read from saved file
+        // otherwise make sure that region is downloaded.
+        // do not wait while that region is being downloaded
+        // somehow do this in non-blocking fashion
+
+        fileChannel.read(read.getByteBuffer(), read.getFileOffset(), read, jpfm.util.ReadCompletionHandler.INSTANCE );
     }
 
     @Override
@@ -130,20 +147,43 @@ public class JDFile extends BasicAbstractFile {
                 }
             }
         }
+        // ???
+        //downloadLink.getDownloadLinkController().abortDownload();
     }
 
     @Override
     public FileFlags getFileFlags() {
         //super.getFileFlags() is fake and useless
 
+        // if the file is executable
+        // setExecutable should also be invoked
+        // Having executable files in virtual folder is dangerous
+        //      as the executable can be a malicious program, and
+        //      antivirus programs are not able to heal the files
+        //      since these are readonly in the virtual folder
+        // Also I don 't think any user will do a watch as you download
+        // on an executable.
+
         return new FileFlags.Builder()
                 .setOffline()//these 2 flags means
                 .setNoIndex()//  that thumnail rendering by explorer/nautilus is disabled :)
                 // these flags also result in a small cross appearing on the file.
-                .setReadOnly()
+                .setReadOnly()// this does not make any difference as we are
+                // already in read only filesystem
                 .build();
     }
 
+    public void setVirtualFileSize(long newFileSize){
+        synchronized(this){
+            super.fileSize = newFileSize;
+            super.setInvalid(); // if the file was open now
+            // it will not be readable any more.
+            // the file will have to re-opened in the media player.
+            // Also, if the file was cached in a HashMap against
+            // (this is the case in writable virtual filesystem )
+            // fileid, then the old entry should be removed.
+        }
+    }
 
     private final class ReadThread extends Thread {
         public ReadThread(String filename) {
@@ -152,7 +192,9 @@ public class JDFile extends BasicAbstractFile {
 
         @Override
         public void run() {
-            for(;isOpen();){ //service till pending call present of this file is open
+            for(;isOpen();){ //service till this file is open
+                // a new thread is created everytime all instance of
+                // the file are  closed and atleast one instance opened.
                 Iterator<ReadRequest> it = pendingReadRequests.iterator();
                 while(it.hasNext()){
                     ReadRequest read = it.next();

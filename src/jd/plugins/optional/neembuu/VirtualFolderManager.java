@@ -12,6 +12,7 @@ import jpfm.volume.vector.VectorRootDirectory;
 /**
  * This class is bascially an interface to jfpm.JPfmMount.
  * JPfmMount should not be used directly.
+ * For every virtual folder we will have a VirtualFolderManager.
  * @author Shashank Tulsyan
  */
 public final class VirtualFolderManager {

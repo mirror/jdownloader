@@ -40,8 +40,8 @@ import jpfm.JPfmMount;
 /**
  * order :
  * # isJPfmUsable
- * # prepare > if mount locaiton not set or problematic > ignore > end
- * # User selected to mount a file > if file alreadty present > ignore else watch() invoked
+ * # prepare --> if mount locaiton not set or problematic --> ignore --> end
+ * # User selected to mount a file -> if file alreadty present -> ignore else watch() invoked
  * # volumes automatically unmounted and all kernel resources freed on exit.
  * @author Shashank Tulsyan
  */
@@ -116,8 +116,8 @@ public class Neembuu extends PluginOptional {
 
         FileAttributesProvider file;
 
-        // it is here that we can decide in which subfolder we want the file
-        // for now keeping the file in virtual folder root
+        // it is here that we can decide in which subfolder (inside virtual folder) 
+        // we want the file for now keeping the file in virtual folder root
         if( (file=vfm.getRootDirectory().get(link.getFinalFileName()))!=null){
             if(file instanceof JDFile){
 
