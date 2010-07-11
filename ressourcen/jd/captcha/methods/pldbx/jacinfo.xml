@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="uploadbox.com" author="DwD" services="uploadbox.com_DEAD"/>
-  <format type="png" letterNum="6" />
+  <method name="uploadbox.com" author="DwD" services="uploadbox.com"/>
+  <format type="jpg" letterNum="6" />
 </jDownloader>
