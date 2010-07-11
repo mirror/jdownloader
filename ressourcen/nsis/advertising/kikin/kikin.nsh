@@ -58,7 +58,10 @@ SectionEnd
 Function KikinPage
   ; Set header text using localized strings.
   !insertmacro MUI_HEADER_TEXT "$(KIKIN_PITCH_PAGE_TITLE)" ""
-
+  
+  !ifdef KIKIN_OPTOUT
+    !insertmacro INSTALLOPTIONS_WRITE "$(KIKIN_PITCH_PAGE_DIALOG)" "Field 4" "State" "1"
+  !endif
   ; Initialize dialog but don't show it yet because we have to send some messages
   ; to the controls in the dialog.
   Var /GLOBAL WINDOW_HANDLE
@@ -73,19 +76,26 @@ Function KikinPage
   CreateFont $FONT "$(^Font)" "$(^FontSize)" "700" 
   SendMessage $DLGITEM ${WM_SETFONT} $FONT 1
   
-  #Disable Next button
-  GetDlgItem $1 $HWNDPARENT 1 
-  EnableWindow $1 0 
-  !insertmacro KikinOptInCheck
+  !ifndef KIKIN_OPTOUT
+    #Disable Next button
+    GetDlgItem $1 $HWNDPARENT 1 
+    EnableWindow $1 0 
+    !insertmacro KikinOptInCheck
+  !endif
+  
+  
   ; We are done with all the customization. Show dialog.
   !insertmacro INSTALLOPTIONS_SHOW
 FunctionEnd
  
 Function KikinPageLeave
-  !insertmacro KikinOptInCheck
+  !ifndef KIKIN_OPTOUT
+    !insertmacro KikinOptInCheck
+  !endif
   ReadINIStr $0 "$(KIKIN_PITCH_PAGE_DIALOG)" "Settings" "State"
   StrCmp $0 0 +2  ; Next button?
   Abort
+  
 FunctionEnd 
  
 !macroend
