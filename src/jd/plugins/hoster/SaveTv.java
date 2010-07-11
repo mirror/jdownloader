@@ -46,11 +46,14 @@ public class SaveTv extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String ORIGFILENAME = "";
+    private static final String NORANDOMNUMBERS = "";
+    private static final String USEORIGINALFILENAME = "";
 
     private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ORIGFILENAME, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Dateiname unverändert lassen (kann Probleme verursachen)")).setDefaultValue(false);
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NORANDOMNUMBERS, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Keine Zufallszahlen an Dateinamen anhängen (kann Probleme verursachen)")).setDefaultValue(false);
+        ConfigEntry cond2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false);
         config.addEntry(cond);
+        config.addEntry(cond2);
     }
 
     @Override
@@ -137,6 +140,11 @@ public class SaveTv extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
+        if (useOriginalFilename)
+            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        else
+            downloadLink.setFinalFileName(downloadLink.getName());
         dl.startDownload();
     }
 
@@ -174,9 +182,9 @@ public class SaveTv extends PluginForHost {
                                 filename = filename.replace(unneededSpace, " ");
                             }
                         }
-                        boolean dontModifyFilename = getPluginConfig().getBooleanProperty(ORIGFILENAME);
+                        boolean dontModifyFilename = getPluginConfig().getBooleanProperty(NORANDOMNUMBERS);
                         if (!dontModifyFilename) filename = filename + new Random().nextInt(10);
-                        dl.setFinalFileName(filename + ".avi");
+                        dl.setName(filename + ".avi");
                         dl.setAvailable(true);
                     } else {
                         dl.setAvailable(false);

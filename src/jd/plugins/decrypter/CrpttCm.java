@@ -80,7 +80,7 @@ public class CrpttCm extends PluginForDecrypt {
 
         if (name.equals("redir.ccf") || !name.contains(".ccf")) {
             logger.severe("Container not found");
-            return null;
+            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
 
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");

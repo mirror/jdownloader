@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com" }, urls = { "http://[\\w\\.]*?(urlcrypt\\.com|xeem\\.in)/open-.*?\\.htm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com", "xeem.in" }, urls = { "http://[\\w\\.]*?urlcrypt\\.com/open-.*?\\.htm", "http://[\\w\\.]*?xeem\\.in/open-.*?\\.htm" }, flags = { 0, 0 })
 public class UlCrptCm extends PluginForDecrypt {
 
     public UlCrptCm(PluginWrapper wrapper) {
