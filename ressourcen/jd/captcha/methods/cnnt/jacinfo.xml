@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="uu.canna.to" author="DwD" services="uu.canna.to"/>
-  <format type="png" letterNum="3" />
+<method name="canna.to" author="DwD"  services="canna.to" /> 
+<format type="jpg" letterNum="3" />
 </jDownloader>
