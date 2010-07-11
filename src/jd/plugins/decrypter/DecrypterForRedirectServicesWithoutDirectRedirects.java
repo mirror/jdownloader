@@ -141,7 +141,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             }
         } else if (parameter.contains("trailerzone.info/")) {
             finallink = br.getRegex("var xlink = '(.*?)';").getMatch(0);
-            System.out.print(br.toString());
         } else if (parameter.contains("short.sa3idy.net/")) {
             String id = new Regex(parameter, "").getMatch(0);
             br.getPage("http://short.sa3idy.net/2-" + id);
