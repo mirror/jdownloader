@@ -27,28 +27,36 @@ import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
+/**
+ * The infopanel where the logcontrol buttons are placed.
+ */
 public class LogInfoPanel extends InfoPanel implements ActionListener {
-
     private static final long serialVersionUID = -1910950245889164423L;
+
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.info.LogInfoPanel.";
 
-    public static final int ACTION_SAVE = 1;
     public static final int ACTION_UPLOAD = 2;
 
-    private JButton btnSave;
     private JButton btnUpload;
 
     public LogInfoPanel() {
         super("gui.images.taskpanes.log");
 
-        btnSave = createButton(JDL.L(JDL_PREFIX + "save", "Save Log As"), JDTheme.II("gui.images.save", 16, 16));
         btnUpload = createButton(JDL.L(JDL_PREFIX + "upload", "Upload Log"), JDTheme.II("gui.images.upload", 16, 16));
 
-        addComponent(btnSave, 1, 0);
         addComponent(btnUpload, 1, 1);
     }
 
-    public JButton createButton(String string, Icon i) {
+    /**
+     * Creates a button with specific properties.
+     * 
+     * @param The
+     *            text for the button.
+     * @param The
+     *            icon for the button.
+     * @return The created JButton.
+     */
+    private JButton createButton(String string, Icon i) {
         final JButton bt = new JButton(string, i);
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt.setFocusPainted(false);
@@ -59,12 +67,12 @@ public class LogInfoPanel extends InfoPanel implements ActionListener {
         return bt;
     }
 
+    /**
+     * The eventhandler for uploading the log file.
+     */
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnSave) {
-            this.broadcastEvent(new ActionEvent(this, ACTION_SAVE, e.getActionCommand()));
-        } else if (e.getSource() == btnUpload) {
+        if (e.getSource() == btnUpload) {
             this.broadcastEvent(new ActionEvent(this, ACTION_UPLOAD, e.getActionCommand()));
         }
     }
-
 }

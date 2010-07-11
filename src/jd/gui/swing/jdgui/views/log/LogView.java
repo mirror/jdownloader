@@ -27,8 +27,10 @@ import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
+/**
+ * The tab for the log.
+ */
 public class LogView extends ClosableView {
-
     private static final long serialVersionUID = -4440872942373187410L;
 
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.log.";
@@ -102,5 +104,4 @@ public class LogView extends ClosableView {
     public String getID() {
         return "logview";
     }
-
 }

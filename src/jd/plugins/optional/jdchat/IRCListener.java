@@ -17,7 +17,6 @@
 package jd.plugins.optional.jdchat;
 
 import java.util.TreeMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.controlling.JDLogger;
@@ -166,7 +165,7 @@ class IRCListener implements IRCEventListener {
                 public void run() {
                     if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, JDL.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name))) {
 
-                        String url = Upload.toJDownloader(JDLogger.getLog(Level.ALL), "JDChatuser:\r\n\r\n" + owner.getNick());
+                        String url = Upload.toJDownloader(JDLogger.getLog(), "JDChatuser:\r\n\r\n" + owner.getNick());
                         if (url == null) {
                             UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.loguploadfailed", "Upload of logfile failed!"));
                         } else {

@@ -16,25 +16,38 @@
 
 package jd.controlling;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import jd.utils.JDUtilities;
+
+/**
+ * The logging class for jDownloader. The logger will put the log to the
+ * JDownloader.log file located in the JDownloader home directory and also to
+ * the console. The console output will be removed, if you start JDownloader
+ * without -DEBUG.
+ * 
+ * The logger is a singleton and not instantiateable. You will get the logger
+ * with JDLogger.getLogger.
+ */
 public final class JDLogger {
-    /**
-     * Don't let anyone instantiate this class.
-     */
     private JDLogger() {
     }
 
     private static Logger LOGGER = null;
-    public static final String LOGGER_NAME = "java_downloader";
+    public static final String LOGGER_NAME = "JDownloader";
     private static ConsoleHandler console;
+    private static FileHandler filehandler;
+    private static String logpath;
 
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
@@ -54,20 +67,44 @@ public final class JDLogger {
             LOGGER.addHandler(console);
 
             LOGGER.setLevel(Level.ALL);
-            LOGGER.addHandler(JDLogHandler.getHandler());
-            JDLogHandler.getHandler().setFormatter(formatter);
+
+            try {
+                logpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/JDownloader.log";
+                filehandler = new FileHandler(logpath);
+                filehandler.setFormatter(formatter);
+                LOGGER.addHandler(filehandler);
+            } catch (SecurityException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return LOGGER;
     }
 
+    /**
+     * Adds a message with the time to the log.
+     * 
+     * @param The
+     *            message.
+     */
     public static void timestamp(final String msg) {
         getLogger().warning(jd.nutils.Formatter.formatMilliseconds(System.currentTimeMillis()) + " : " + msg);
     }
 
+    /**
+     * Adds a exception message to the log with the logging level SERVE.
+     * 
+     * @param The
+     *            exception.
+     */
     public static void exception(final Throwable e) {
         exception(Level.SEVERE, e);
     }
 
+    /**
+     * Removes the consoleoutput from the logger.
+     */
     public static void removeConsoleHandler() {
         if (console != null) {
             getLogger().removeHandler(console);
@@ -75,27 +112,51 @@ public final class JDLogger {
         System.err.println("Removed Consolehandler. Start with -debug to see console output");
     }
 
+    /**
+     * Adds a haeder in the log.
+     * 
+     * @param The
+     *            name of the header.
+     */
     public static void addHeader(final String string) {
         getLogger().info("\r\n\r\n--------------------------------------" + string + "-----------------------------------");
     }
 
+    /**
+     * Adds a exception message to the log.
+     * 
+     * @param The
+     *            log level for the exception.
+     * @param The
+     *            exception.
+     */
     public static void exception(final Level level, final Throwable e) {
         getLogger().log(level, level.getName() + " Exception occurred", e);
     }
 
+    /**
+     * Prints the position form the caller.
+     */
     public static void quickLog() {
         System.out.println("Footstep: " + new Exception().getStackTrace()[1]);
     }
 
+    /**
+     * Adda a warning message to the log.
+     * 
+     * @param The
+     *            toString will be logged.
+     */
     static public void warning(final Object o) {
         getLogger().warning(o.toString());
     }
 
     /**
-     * Returns a StackTrace of an Exception
+     * Converts a exception to the stacktrace.
      * 
-     * @param thrown
-     * @return
+     * @param The
+     *            exception.
+     * @return The stacktrace of the exceptions.
      */
     public static String getStackTrace(final Throwable thrown) {
         final StringWriter sw = new StringWriter();
@@ -106,26 +167,27 @@ public final class JDLogger {
     }
 
     /**
-     * Retuns al log entries as string.. filtered with loglevel level
+     * Reads and formats the log from the log file.
      * 
-     * @param all
-     * @return
+     * @return The log file.
      */
-    public static String getLog(final Level level) {
-        final Logger logger = getLogger();
-        final Level tmp = logger.getLevel();
-        logger.setLevel(level);
+    public static String getLog() {
+        StringBuilder sb = new StringBuilder();
         try {
-            final ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
-            final StringBuilder sb = new StringBuilder();
-            final Formatter formatter = JDLogHandler.getHandler().getFormatter();
-            for (LogRecord lr : buff) {
-                sb.append(formatter.format(lr));
-            }
-            return sb.toString();
-        } finally {
-            logger.setLevel(tmp);
-        }
-    }
+            BufferedReader in = new BufferedReader(new FileReader(logpath));
+            String input;
 
+            while ((input = in.readLine()) != null) {
+                sb.append(input + "\n");
+            }
+
+            in.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return sb.toString();
+    }
 }

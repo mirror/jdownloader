@@ -338,7 +338,9 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert das Basisverzeichnis fuer jD zurueck.
+     * Liefert das Basisverzeichnis fuer jD zurueck. Don't use a logger in this
+     * method. It will cause a NullpointerException, because the logger need
+     * this method for initialisation.
      * 
      * @return ein File, dass das Basisverzeichnis angibt
      */
@@ -357,7 +359,6 @@ public class JDUtilities {
             if (!JD_HOME.exists()) {
                 JD_HOME.mkdirs();
             }
-            LOGGER.info("JD_HOME:" + JD_HOME);
             return JD_HOME;
         }
     }

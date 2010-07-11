@@ -18,10 +18,8 @@ package jd.gui.swing.jdgui.views.log;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -30,7 +28,6 @@ import javax.swing.JTextPane;
 import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 
-import jd.controlling.JDLogHandler;
 import jd.controlling.JDLogger;
 import jd.controlling.LogFormatter;
 import jd.event.ControlEvent;
@@ -40,19 +37,21 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import jd.utils.Upload;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+/**
+ * The panel for the log file.
+ */
 public class LogPane extends SwitchPanel implements ActionListener, ControlListener {
-
     private static final long serialVersionUID = -5753733398829409112L;
+
     private static final Object LOCK = new Object();
 
     /**
-     * JTextField wo der Logger Output eingetragen wird
+     * JTextField where the log will be shown.
      */
     private JTextPane logField;
 
@@ -67,16 +66,11 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         add(new JScrollPane(logField));
     }
 
+    /**
+     * The eventhandler for uploading the log.
+     */
     public void actionPerformed(ActionEvent e) {
         switch (e.getID()) {
-        case LogInfoPanel.ACTION_SAVE:
-            File[] files = UserIO.getInstance().requestFileChooser(null, null, null, null, null, null, UserIO.SAVE_DIALOG);
-            if (files == null) return;
-
-            String content = toString();
-            JDIO.writeLocalFile(files[0], toString());
-            JDLogger.getLogger().info("Log saved to file: " + files[0].getAbsolutePath());
-            break;
         case LogInfoPanel.ACTION_UPLOAD:
             Level level = JDLogger.getLogger().getLevel();
 
@@ -84,7 +78,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                 int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"), JDL.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
                 if (JDFlags.hasSomeFlags(status, UserIO.RETURN_CANCEL, UserIO.RETURN_COUNTDOWN_TIMEOUT)) return;
             }
-            content = null;
+            String content;
             synchronized (LOCK) {
                 content = logField.getSelectedText();
                 if (content == null || content.length() == 0) {
@@ -128,27 +122,12 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
     @Override
     public void onShow() {
-        /*
-         * enable autoscrolling by setting the caret to the last position
-         */
-        /**
-         * TODO: not synchronized properbly in loop.
-         */
         try {
 
             JDUtilities.getController().addControlListener(this);
-            ArrayList<LogRecord> buff = new ArrayList<LogRecord>();
 
-            buff.addAll(JDLogHandler.getHandler().getBuffer());
-
-            LogFormatter formater = (LogFormatter) JDLogHandler.getHandler().getFormatter();
-            StringBuilder sb = new StringBuilder();
-
-            for (LogRecord lr : buff) {
-                sb.append(format(lr, formater));
-            }
             synchronized (LOCK) {
-                logField.setText(sb.toString());
+                logField.setText(JDLogger.getLog());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -168,6 +147,12 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         JDUtilities.getController().removeControlListener(this);
     }
 
+    /**
+     * Appends a String onto the log of the textfield.
+     * 
+     * @param The
+     *            to appending text.
+     */
     public void append(String sb) {
         synchronized (LOCK) {
             Document doc = logField.getDocument();
@@ -182,10 +167,13 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         }
     }
 
+    /**
+     * Tracks if a logging information was thrown and appends it to the logging
+     * textfield.
+     */
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
-            append(format((LogRecord) event.getParameter(), (LogFormatter) JDLogHandler.getHandler().getFormatter()));
+            append(format((LogRecord) event.getParameter(), (LogFormatter) JDLogger.getLogger().getHandlers()[0].getFormatter()));
         }
     }
-
 }
