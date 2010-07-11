@@ -1404,6 +1404,7 @@ plugins.hoster.rapidshare.com.preselection = Accetta pre-selezione (*2)
 plugins.hoster.rapidshare.com.telekom = Usa server Telecom se disponibile
 plugins.hoster.rapidshare.com.waithosterfull = Attendere se tutti gli slot gratuiti sono occupati
 plugins.hoster.savetv.dontmodifyfilename = Lascia il nome file inalterato (può causare problemi)
+plugins.hoster.savetv.useoriginalfilename = Nome file originale (visibile solo durante il download) 
 plugins.hoster.scribdcom.nodownloadavailable = Il download è disabilitato per questo file!
 plugins.hoster.sendspacecom.errors.servererror = Errore sconosciuto del server
 plugins.hoster.sendspacecom.errors.serverfull = Capacità di servizio gratuito completo
