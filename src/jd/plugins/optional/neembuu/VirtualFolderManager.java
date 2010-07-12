@@ -1,5 +1,6 @@
 package jd.plugins.optional.neembuu;
 
+import java.util.logging.Level;
 import jpfm.JPfmMount;
 import jpfm.JPfmReadOnlyFileSystem;
 import jpfm.MountException;
@@ -71,13 +72,19 @@ public final class VirtualFolderManager {
         }
     }
 
+    /*package private*/synchronized void detached(VolumeListener vl){
+        if(vl==null)throw new RuntimeException();
+        this.mount = null;
+    }
+
     public boolean isMounted(){
         /*if(mount==null)return false;
         return ((JPfmMount)mount).isMounted();*/
-        return mount==null;
+        return mount!=null;
     }
 
     /*package private*/ void mount(){
+        neembuu.getLogger().entering(VirtualFolderManager.class.getName(),"mount()");
         if(mount!=null){
             //tis is to ensure that, virtual folders are not left
             // like zombies here and there.
@@ -105,7 +112,7 @@ public final class VirtualFolderManager {
                        mountLocation,
                        new MountFlags.Builder().build(), // we might like to
                          // add options to control this parameter using the gui
-                       new VolumeListener(neembuu),
+                       new VolumeListener(neembuu,this),
                        /*exit on unmount*/false,
                        VolumeVisibility.GLOBAL
                            //this is used to limit visibility to
@@ -125,9 +132,10 @@ public final class VirtualFolderManager {
                    );
             }catch(MountException exception){
                 //do something , show some error message
-
+                neembuu.getLogger().log(Level.INFO,"Could not mount"+this, exception) ;
             }
         }
+        neembuu.getLogger().exiting(VirtualFolderManager.class.getName(),"mount()");
     }
 
 }

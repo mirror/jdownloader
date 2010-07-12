@@ -39,10 +39,9 @@ public class JDFile extends BasicAbstractFile {
         // info like creation date, can have junk values and
         // can be changed during runtime
         try{
-            fileChannel = AsynchronousFileChannel.open(
-                    downloadLink.getDownloadInstance().getFile().toPath());
-            // assuming
-        }catch(IOException ioe) {
+            //fileChannel = AsynchronousFileChannel.open(
+                    //downloadLink.getDownloadInstance().getFile().toPath());
+        }catch(Exception ioe) {
 
         }
     }
@@ -133,8 +132,8 @@ public class JDFile extends BasicAbstractFile {
         // otherwise make sure that region is downloaded.
         // do not wait while that region is being downloaded
         // somehow do this in non-blocking fashion
-
-        fileChannel.read(read.getByteBuffer(), read.getFileOffset(), read, jpfm.util.ReadCompletionHandler.INSTANCE );
+        read.complete(JPfmError.ACCESS_DENIED,0, null);
+        //fileChannel.read(read.getByteBuffer(), read.getFileOffset(), read, jpfm.util.ReadCompletionHandler.INSTANCE );
     }
 
     @Override

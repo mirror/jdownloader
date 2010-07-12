@@ -38,14 +38,14 @@ import jpfm.FileAttributesProvider;
 import jpfm.JPfmMount;
 
 /**
- * order :
- * # isJPfmUsable
- * # prepare --> if mount locaiton not set or problematic --> ignore --> end
- * # User selected to mount a file -> if file alreadty present -> ignore else watch() invoked
- * # volumes automatically unmounted and all kernel resources freed on exit.
+ * order : # isJPfmUsable # prepare --> if mount location not set or problematic
+ * --> ignore --> end # User selected to mount a file -> if file already present
+ * -> ignore else watch() invoked # volumes automatically unmounted and all
+ * kernel resources freed on exit.
+ * 
  * @author Shashank Tulsyan
  */
-@OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 5, minJVM=1.7, linux=false, windows=true, mac=false )
+@OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 5, minJVM = 1.7, linux = false, windows = true, mac = false)
 public class Neembuu extends PluginOptional {
 
     private static final int CONTEXT_MENU_ID_WATCH_LINK = 1000;
@@ -102,34 +102,37 @@ public class Neembuu extends PluginOptional {
         }
     }
 
-    private void watch(DownloadLink link){
+    private void watch(DownloadLink link) {
 
-        //for now let 's use the vlc installed in out system
-        //to play the file.
-
-        if(!isJPfmUsable()){
-            //no error messages shown for now, we simply log this
-            logger.log(Level.WARNING,"Not ready and user wants to watch a file");
+        // for now let 's use the vlc installed in out system
+        // to play the file.
+        logger.entering(Neembuu.class.getName(), "watch(DownloadLink)");
+        if (!isJPfmUsable()) {
+            // no error messages shown for now, we simply log this
+            logger.log(Level.WARNING, "Not ready and user wants to watch a file");
             return;
         }
         prepare();
 
-        FileAttributesProvider file;
+        FileAttributesProvider file = null;
 
-        // it is here that we can decide in which subfolder (inside virtual folder) 
+        // it is here that we can decide in which subfolder (inside virtual
+        // folder)
         // we want the file for now keeping the file in virtual folder root
-        if( (file=vfm.getRootDirectory().get(link.getFinalFileName()))!=null){
-            if(file instanceof JDFile){
+        if ((file = vfm.getRootDirectory().get(link.getFinalFileName())) != null) {
+            if (file instanceof JDFile) {
 
-                //file already added to virtual folder
+                // file already added to virtual folder
                 // ignore
 
                 // todo :
                 // start jvlc and open using the file using the path :
-                // jpfmMountinstance.mountLocation() + java.io.File.separatorChar + link.getFinalFileName()
-                // or simply open this file in vlc that is installed in the system
+                // jpfmMountinstance.mountLocation() +
+                // java.io.File.separatorChar + link.getFinalFileName()
+                // or simply open this file in vlc that is installed in the
+                // system
                 return;
-            }else {
+            } else {
                 // todo :
                 // a file of some other kind
                 // example : BasicRealFile,
@@ -137,21 +140,23 @@ public class Neembuu extends PluginOptional {
                 // name which does not exists.
                 // For now ignoring
 
-                // jpfm.volume.BasicRealFile  could be used to add
+                // jpfm.volume.BasicRealFile could be used to add
                 // real files in the volume, like subtitles
                 // so that it easier for user and/or vlc to find it.
             }
-        }else {
+        } else {
             // we need to add this file in the volume
             JDFile jDFile = new JDFile(link, vfm.getRootDirectory());
             vfm.getRootDirectory().add(jDFile);
 
             // todo :
             // start jvlc and open using the file using the path :
-            // jpfmMountinstance.mountLocation() + java.io.File.separatorChar + link.getFinalFileName()
+            // jpfmMountinstance.mountLocation() + java.io.File.separatorChar +
+            // link.getFinalFileName()
             // or simply open this file in vlc that is installed in the system
         }
-        
+        logger.exiting(Neembuu.class.getName(), "watch(DownloadLink)");
+
     }
 
     @Override
@@ -221,14 +226,15 @@ public class Neembuu extends PluginOptional {
 
     private void initConfigEntries() {
 
-        // note : mount location cannot be changed when the virtual folder is mounted
+        // note : mount location cannot be changed when the virtual folder is
+        // mounted
         // create a browsefile setting entry
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, getPluginConfig(), "MOUNTLOCATION", "Mountlocation"));
         // combobox entry.
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), "MODE", new String[] { "No restrictions", "limit download to required speed", "..." }, JDL.L("plugins.jdchat.userlistposition", "Download AI Mode:")).setDefaultValue(0));
 
-        //config.getEntries().get(0).
+        // config.getEntries().get(0).
     }
 
     @SuppressWarnings("unchecked")
@@ -281,13 +287,12 @@ public class Neembuu extends PluginOptional {
         return "gui.images.chat";
     }
 
-
-    private boolean isJPfmUsable(){
-        try{
+    private boolean isJPfmUsable() {
+        try {
             // invoking static function in JPfmMount
             // that initialize native side structures
             JPfmMount.class.getName();
-        }catch(Exception any){
+        } catch (Exception any) {
             // this would
             logger.log(Level.SEVERE, "JPfmMount static functions failed", any);
             return false;
@@ -299,18 +304,20 @@ public class Neembuu extends PluginOptional {
         return true;
     }
 
-    /*package private*/ Logger getLogger(){
+    /* package private */Logger getLogger() {
         return logger;
     }
 
-    private void prepare(){
-        if(!isJPfmUsable()){
-            //("JPfm not usuable") ;
+    private void prepare() {
+        logger.finest("Preparing virtual folder for use");
+        if (!isJPfmUsable()) {
+            // ("JPfm not usuable") ;
             throw new IllegalStateException("JPfm not usable");
         }
-        if(vfm==null){
-            //
+        if (!vfm.isMounted()) {
+            vfm.mount();
         }
-        
+        logger.finest("Done preparing virtual folder for use");
+
     }
 }

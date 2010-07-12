@@ -11,9 +11,12 @@ import jpfm.UnderprivilegedFormatterListener;
  */
 public class VolumeListener implements UnderprivilegedFormatterListener {
     private final Neembuu neembuu;
-
-    /*package private*/ VolumeListener(final Neembuu neembuu) {
+    private final VirtualFolderManager virtuaFolderManager;
+    /*package private*/ VolumeListener(
+            final Neembuu neembuu,
+            final VirtualFolderManager folderManager) {
         this.neembuu = neembuu;
+        this.virtuaFolderManager = folderManager;
     }
 
     public void eventOccurred(FormatterEvent event) {
@@ -46,6 +49,9 @@ public class VolumeListener implements UnderprivilegedFormatterListener {
         }
 
         neembuu.getLogger().log(level, event.getMessage(), event.getException());
+        if(event.getEventType()==FormatterEvent.EVENT.DETACHED){
+            virtuaFolderManager.detached(this);
+        }
     }
 
 }
