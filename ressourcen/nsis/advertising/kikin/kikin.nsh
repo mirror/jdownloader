@@ -4,7 +4,11 @@
 
 #!undef LICENSE
 #!define LICENSE ".\res\license_sample.txt"
+!ifdef KIKIN_OPTOUT
+OutFile ".\..\..\dist\JDownloaderSetup_kikin_optout.exe"
+!else
 OutFile ".\..\..\dist\JDownloaderSetup_kikin.exe"
+!endif
 
 !macro ADVERTISING_PAGE
 Page custom KikinPage KikinPageLeave
@@ -92,7 +96,7 @@ Function KikinPageLeave
   !ifndef KIKIN_OPTOUT
     !insertmacro KikinOptInCheck
   !endif
-  ReadINIStr $0 "$(KIKIN_PITCH_PAGE_DIALOG)" "Settings" "State"
+  !insertmacro INSTALLOPTIONS_READ $0 "$(KIKIN_PITCH_PAGE_DIALOG)" "Settings" "State"
   StrCmp $0 0 +2  ; Next button?
   Abort
   
