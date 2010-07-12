@@ -53,7 +53,8 @@ import jd.utils.locale.JDL;
 public class WebUpdate {
     private static final Logger LOG = JDLogger.getLogger();
     private static int waitingUpdates = 0;
-
+    //
+    //
     private static boolean DYNAMIC_PLUGINS_FINISHED = false;
     private static boolean UPDATE_IN_PROGRESS = false;
 
