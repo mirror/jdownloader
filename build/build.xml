@@ -72,6 +72,7 @@
 		
 		<copy todir="${jd}">
 			<fileset dir="${res}" includes="*.txt" />
+			<fileset dir="${res}" includes="outdated.dat" />
 		</copy>
 		
 		<delete dir="${jd}/jd/osx" />
@@ -177,8 +178,8 @@
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Restarter" />
 		</manifest>
-
-		<jar file="${jd}/tinyupdate.jar" manifest="Manifest.MF">
+		<mkdir dir="${jd}/tools/tinyupdate.jar" />
+		<jar file="${jd}/tools/tinyupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/Restarter*.class" />
 				<include name="jd/nutils/OutdatedParser*.class" />
@@ -192,9 +193,7 @@
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
 	
-	<target name="jarRestarterForBuild" depends="jarRestarter">
-		<copy file="${jd}/tinyupdate.jar" tofile="${jd}/tools/tinyupdate.jar" />
-	</target>
+
 
 	<!-- Use this to build an addon -->
 	<macrodef name="buildAddon" description="Function for creating an optional addon">
@@ -496,7 +495,7 @@
 		</zip>
 	</target>
 	
-	<target name="buildAll" depends="copy_res, make, copy_compiled, copyJarOptimals, jarWebupdater, jarRestarterForBuild"/>
+	<target name="buildAll" depends="copy_res, make, copy_compiled, copyJarOptimals, jarWebupdater"/>
 
 	<target name="standardBuild" depends="buildAll, buildPackages" />
 
