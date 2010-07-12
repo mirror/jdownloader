@@ -123,7 +123,7 @@ public class FileServeCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (br.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry...</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time)")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
+                handleErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -196,6 +196,7 @@ public class FileServeCom extends PluginForHost {
             br.followConnection();
             String wait = br.getRegex("You have to wait (\\d+) seconds to start another download").getMatch(0);
             if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
+            handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -273,6 +274,10 @@ public class FileServeCom extends PluginForHost {
             return false;
         }
         return true;
+    }
+
+    private void handleErrors() throws PluginException {
+        if (br.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry...</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time)")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
     }
 
     @Override

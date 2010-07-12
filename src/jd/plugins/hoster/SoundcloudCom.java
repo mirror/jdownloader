@@ -18,12 +18,14 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://[//w//.]*?soundcloud\\.com/.*?/[a-z\\-_0-9]+" }, flags = { 0 })
 public class SoundcloudCom extends PluginForHost {
@@ -59,15 +61,23 @@ public class SoundcloudCom extends PluginForHost {
         String type = br.getRegex("title=\"Uploaded format\">(.*?)<").getMatch(0);
         if (type == null) type = "mp3";
         filename += "." + type;
-        String[] data = br.getRegex("\"uid\":\"(.*?)\".*?\"token\":\"(.*?)\"").getRow(0);
-        url = "http://media.soundcloud.com/stream/" + data[0] + "?stream_token=" + data[1];
-        URLConnectionAdapter con = br.openGetConnection(url);
-        if (!con.getContentType().contains("html"))
-            parameter.setDownloadSize(con.getContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.containsHTML("class=\"download pl-button\"")) {
+            String[] data = br.getRegex("\"uid\":\"(.*?)\".*?\"token\":\"(.*?)\"").getRow(0);
+            url = "http://media.soundcloud.com/stream/" + data[0] + "?stream_token=" + data[1];
+            URLConnectionAdapter con = br.openGetConnection(url);
+            if (!con.getContentType().contains("html"))
+                parameter.setDownloadSize(con.getContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            con.disconnect();
+            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview is downloadable"));
+        } else {
+            String filesize = br.getRegex("The file you're about to download has a size of (.*?)\"").getMatch(0);
+            if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
+            url = parameter.getDownloadURL() + "/download";
+            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
+        }
         parameter.setFinalFileName(filename);
-        con.disconnect();
         return AvailableStatus.TRUE;
     }
 

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -74,20 +75,18 @@ public class WrzutaPl extends PluginForHost {
         if (fileid == null || filetype == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String linkurl = null;
         if (filetype.equalsIgnoreCase("audio")) {
-            linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
-            if (linkurl == null)
-                linkurl = downloadLink.getDownloadURL().replaceFirst("audio", "sr/f");
-            else
-                addext = false;
-        }
-        if (filetype.equalsIgnoreCase("film")) {
+            String xmlAudioPage = "http://" + br.getHost() + "/xml/plik/" + fileid + "/wrzuta.pl/sa/" + new Random().nextInt(100000);
+            br.getPage(xmlAudioPage);
+            linkurl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            addext = false;
+        } else if (filetype.equalsIgnoreCase("film")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
             if (linkurl == null)
                 linkurl = downloadLink.getDownloadURL().replaceFirst("film", "sr/f");
             else
                 addext = false;
-        }
-        if (filetype.equalsIgnoreCase("obraz")) {
+        } else if (filetype.equalsIgnoreCase("obraz")) {
             linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
             if (linkurl == null)
                 linkurl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
@@ -99,6 +98,10 @@ public class WrzutaPl extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
         URLConnectionAdapter con = dl.getConnection();
+        if (con.getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false) {
             if (con.getContentType().contains("mpeg3") || con.getContentType().contains("audio/mpeg")) {
                 downloadLink.setFinalFileName(filename.trim() + ".mp3");
@@ -126,7 +129,6 @@ public class WrzutaPl extends PluginForHost {
                 logger.info("Unknown filetype: " + con.getContentType() + ", cannot determine file extension...");
             }
         }
-        System.out.println(con.getContentType());
         dl.startDownload();
     }
 

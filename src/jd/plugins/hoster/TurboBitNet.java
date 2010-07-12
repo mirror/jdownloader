@@ -85,7 +85,7 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile(".*/(.*?)\\.html")).getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("turbobit\\.net/(.*?)/.*?\\.html")).getMatch(0);
         br.getPage("http://turbobit.net/download/free/" + id);
         if (br.containsHTML("(Попробуйте повторить через|The limit of connection was succeeded for your|Try to repeat after)")) {
             String waittime = br.getRegex("<span id='timeout'>(\\d+)</span></h1>").getMatch(0);
