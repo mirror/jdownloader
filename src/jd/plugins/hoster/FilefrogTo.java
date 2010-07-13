@@ -129,19 +129,19 @@ public class FilefrogTo extends PluginForHost {
         requestFileInformation(downloadLink);
         br.forceDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
         Form form = br.getForms()[0];
         // workaround a base. Not required in browser versions above Rev 11067
         form.setAction(downloadLink.getDownloadURL());
         // not required
         // this.sleep(30000, downloadLink);
         br.submitForm(form);
-        if (br.getRedirectLocation().equals("http://www.filefrog.to/error/traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
         dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation());
 
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
-            if (br.getURL().equals("http://www.filefrog.to/error/traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+            if (br.getURL().contains("traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
             // server error. for some files it returns 0 byte text files.
             if (con.getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
