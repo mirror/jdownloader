@@ -150,38 +150,52 @@ public class EasyShareCom extends PluginForHost {
                 }
             }
         }
+
         String id = br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0);
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
 
         if (id == null) br.getPage(downloadLink.getDownloadURL());
         // br = br;
-        id = br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0);
-        Browser rcBr = br.cloneBrowser();
-        /* follow redirect needed as google redirects to another domain */
-        rcBr.setFollowRedirects(true);
-        rcBr.getPage("http://api.recaptcha.net/challenge?k=" + id);
-        String challenge = rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
-        String server = rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
-        if (challenge == null || server == null) {
-            JDLogger.getLogger().severe("Recaptcha Module fails: " + br.getHttpConnection());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String captchaAddress = server + "image?c=" + challenge;
-        File cf = getLocalCaptchaFile();
-        Browser.download(cf, rcBr.openGetConnection(captchaAddress));
-        Form form = br.getForm(3);
-        String code = getCaptchaCode("recaptcha", cf, downloadLink);
+        int tries = 0;
+        while (true) {
+            tries++;
 
-        form.put("recaptcha_challenge_field", challenge);
-        form.put("recaptcha_response_field", Encoding.urlEncode(code));
+            id = br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0);
+            Browser rcBr = br.cloneBrowser();
+            /* follow redirect needed as google redirects to another domain */
+            rcBr.setFollowRedirects(true);
+            rcBr.getPage("http://api.recaptcha.net/challenge?k=" + id);
+            String challenge = rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
+            String server = rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+            if (challenge == null || server == null) {
+                JDLogger.getLogger().severe("Recaptcha Module fails: " + br.getHttpConnection());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String captchaAddress = server + "image?c=" + challenge;
+            File cf = getLocalCaptchaFile();
+            Browser.download(cf, rcBr.openGetConnection(captchaAddress));
+            Form form = br.getForm(3);
+            String code = getCaptchaCode("recaptcha", cf, downloadLink);
 
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            if (br.containsHTML("file_contents/captcha") || br.containsHTML("freeTimer")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (br.containsHTML("Invalid characters")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            form.put("recaptcha_challenge_field", challenge);
+            form.put("recaptcha_response_field", Encoding.urlEncode(code));
+
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+                if (br.containsHTML("Entered code is invalid")) {
+                    if (tries <= 5) {
+                        continue;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+
+                }
+
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            break;
         }
         dl.startDownload();
     }
