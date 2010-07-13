@@ -46,7 +46,7 @@ public class NakidoCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("The page you have requested is not exists")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        String filesize = br.getRegex(">Size:</td>.*?<td class=\"content\">(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex(">Size:</td>[\n\r\t ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("lass=\"content\"><span>(.*?)</span>").getMatch(0);
             if (filename == null) {
@@ -71,17 +71,16 @@ public class NakidoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        // 2 regexes for the final downloadlink because i think the first one
-        // might break soon
         String dllink = br.getRegex("else.*?x\\.href='(.*?)'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("'(/[A-Z0-9]+/[A-Z0-9]+\\?attach.*?)'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (dllink.matches("javascript:void(0)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available!");
+        if (dllink.equals("javascript:void(0)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available!");
         dllink = "http://www.nakido.com" + dllink;
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            if (br.containsHTML("You have reach concurrent connection to the server")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
+            if (br.containsHTML("You have reach concurrent connection to the server")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            if (br.getURL().contains("SERVER_BUSY")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server busy");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
