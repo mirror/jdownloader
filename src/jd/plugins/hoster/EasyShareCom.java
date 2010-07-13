@@ -16,10 +16,13 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -112,8 +115,8 @@ public class EasyShareCom extends PluginForHost {
         br.followConnection();
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("You need a premium membership to download this file")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
-        String filename = br.getRegex(Pattern.compile("You are requesting (.*?)\\(", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String filesize = br.getRegex("You are requesting.*? \\((.*?)\\)<").getMatch(0);
+        String filename = br.getRegex(Pattern.compile("You are requesting:</span>(.*?)<span class=\"txtgray\">.*?\\((.*?)\\)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("You are requesting:</span>(.*?)<span class=\"txtgray\">.*?\\((.*?)\\)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -141,20 +144,37 @@ public class EasyShareCom extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
             } else {
-                sleep(waittime * 1000l, downloadLink);
+
+                if (br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0) == null) {
+                    sleep(waittime * 1000l, downloadLink);
+                }
             }
         }
-        br.getPage(downloadLink.getDownloadURL());
+        String id = br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0);
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        Form form = br.getForm(3);
-        String captcha = br.getRegex("<img src=\"/(kapt.*?)\"").getMatch(0);
-        String captchaUrl = "http://" + br.getHost() + "/" + captcha;
-        br.setDebug(true);
-        if (captcha != null) {
-            String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
-            form.put("captcha", captchaCode);
+
+        if (id == null) br.getPage(downloadLink.getDownloadURL());
+        // br = br;
+        id = br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0);
+        Browser rcBr = br.cloneBrowser();
+        /* follow redirect needed as google redirects to another domain */
+        rcBr.setFollowRedirects(true);
+        rcBr.getPage("http://api.recaptcha.net/challenge?k=" + id);
+        String challenge = rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
+        String server = rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+        if (challenge == null || server == null) {
+            JDLogger.getLogger().severe("Recaptcha Module fails: " + br.getHttpConnection());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* Datei herunterladen */
+        String captchaAddress = server + "image?c=" + challenge;
+        File cf = getLocalCaptchaFile();
+        Browser.download(cf, rcBr.openGetConnection(captchaAddress));
+        Form form = br.getForm(3);
+        String code = getCaptchaCode("recaptcha", cf, downloadLink);
+
+        form.put("recaptcha_challenge_field", challenge);
+        form.put("recaptcha_response_field", Encoding.urlEncode(code));
+
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
