@@ -160,7 +160,7 @@ public class EasyShareCom extends PluginForHost {
         while (true) {
             tries++;
 
-            id = br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0);
+            id = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
             Browser rcBr = br.cloneBrowser();
             /* follow redirect needed as google redirects to another domain */
             rcBr.setFollowRedirects(true);
@@ -197,6 +197,7 @@ public class EasyShareCom extends PluginForHost {
             }
             break;
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 

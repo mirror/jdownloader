@@ -84,8 +84,9 @@ public class KewlshareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("the file you requested is either deleted or not found in our database")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("the file you requested is either deleted or not found in our database") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("NO_FILE_FOUND"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1>(.*?)\\|\\|.*?</h1>").getMatch(0);
         String filesize = br.getRegex("<h1>.*?\\|\\|(.*?)</h1>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

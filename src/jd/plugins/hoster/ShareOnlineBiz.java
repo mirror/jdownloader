@@ -196,6 +196,8 @@ public class ShareOnlineBiz extends PluginForHost {
         login(account);
         if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(parameter.getDownloadURL());
+        // Account banned/deactivated because too many IPs used it
+        if (br.containsHTML(">DL_GotMaxIPPerUid<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         // Sometimes the API is wrong so a file is marked as online but it's
         // offline so here we chack that
         if (br.containsHTML("(strong>Your desired download could not be found|/>There isn't any usable file behind the URL)")) {
@@ -203,7 +205,6 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("You have got max allowed threads from same download session")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
-
         Form form = br.getForm(0);
         if (form == null) {
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("FileNotFound")) {

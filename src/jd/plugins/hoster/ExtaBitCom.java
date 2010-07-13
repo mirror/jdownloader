@@ -24,11 +24,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -40,7 +40,9 @@ public class ExtaBitCom extends PluginForHost {
         this.enablePremium("http://extabit.com/premium.jsp");
     }
 
-    private static String NOTAVAILABLETEXT = ">File is temporary unavailable<";
+    private static final String NOTAVAILABLETEXT = ">File is temporary unavailable<";
+    private static final String NOMIRROR = ">No download mirror<";
+    private static final String PREMIUMONLY = ">Only premium users can download files of this size";
 
     @Override
     public String getAGBLink() {
@@ -66,8 +68,11 @@ public class ExtaBitCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
-        if (br.containsHTML(">Only premium users can download files of this size")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
-        if (br.containsHTML(NOTAVAILABLETEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
+        if (br.containsHTML(PREMIUMONLY))
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
+        else if (br.containsHTML(NOTAVAILABLETEXT))
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
+        else if (br.containsHTML(NOMIRROR)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.NoMirror", "Extabit error: \"No download mirror\", contact extabit support."));
         return AvailableStatus.TRUE;
     }
 
@@ -75,8 +80,11 @@ public class ExtaBitCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (br.containsHTML(NOTAVAILABLETEXT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
-        if (br.containsHTML(">Only premium users can download files of this size")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
+        if (br.containsHTML(PREMIUMONLY))
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
+        else if (br.containsHTML(NOTAVAILABLETEXT))
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
+        else if (br.containsHTML(NOMIRROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.NoMirror", "Extabit error: \"No download mirror\", contact extabit support."), 120 * 60 * 1000l);
         String addedlink = br.getURL();
         if (!addedlink.equals(link.getDownloadURL())) link.setUrlDownload(addedlink);
         if (br.containsHTML("The daily downloads limit from your IP is exceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
