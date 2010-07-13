@@ -172,6 +172,11 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
      * textfield.
      */
     public void controlEvent(ControlEvent event) {
+        /**
+         * TODO: After the refactoring of the logger, this controlevent will
+         * never be thrown! There is no JDLogHandler anymore, which throws this
+         * event!
+         */
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
             append(format((LogRecord) event.getParameter(), (LogFormatter) JDLogger.getLogger().getHandlers()[0].getFormatter()));
         }

@@ -159,6 +159,7 @@ public class Neembuu extends PluginOptional {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onControlEvent(ControlEvent event) {
         // receiver all control events. reconnects,
@@ -237,7 +238,6 @@ public class Neembuu extends PluginOptional {
         // config.getEntries().get(0).
     }
 
-    @SuppressWarnings("unchecked")
     private void initGUI() {
 
         tab = new NeembuuTab();
