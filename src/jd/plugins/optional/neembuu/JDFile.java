@@ -1,6 +1,7 @@
 package jd.plugins.optional.neembuu;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 

@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.views.log;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -94,8 +93,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             if (url != null) {
                 try {
                     JLink.openURL(url);
-                    append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
-                    append(url);
+                    append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n" + url);
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
                 }
@@ -110,20 +108,8 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
     }
 
     @Override
-    public String toString() {
-        synchronized (LOCK) {
-            String content = logField.getSelectedText();
-            if (content == null || content.length() == 0) {
-                content = logField.getText();
-            }
-            return content;
-        }
-    }
-
-    @Override
     public void onShow() {
         try {
-
             JDUtilities.getController().addControlListener(this);
 
             synchronized (LOCK) {
@@ -150,15 +136,18 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
     /**
      * Appends a String onto the log of the textfield.
      * 
-     * @param The
-     *            to appending text.
+     * @param sb
+     *            The to appending text.
      */
     public void append(String sb) {
+        /**
+         * TODO: No autoscrolling anymore!
+         */
         synchronized (LOCK) {
             Document doc = logField.getDocument();
 
             EditorKit editorkit = logField.getEditorKit();
-            Reader r = new StringReader(sb);
+            StringReader r = new StringReader(sb);
             try {
                 editorkit.read(r, doc, doc.getEndPosition().getOffset() - 1);
             } catch (Exception e1) {
