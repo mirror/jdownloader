@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -35,6 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://[\\w\\.]*?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
@@ -62,6 +64,7 @@ public class FileServeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
@@ -142,38 +145,44 @@ public class FileServeCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users"));
         String fileId = br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         br.setFollowRedirects(false);
+        String captchaJSPage = br.getRegex("\"(/landing/.*?/download_captcha\\.js)\"").getMatch(0);
+        if (captchaJSPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        captchaJSPage = "http://fileserve.com" + captchaJSPage;
         Browser br2 = br.cloneBrowser();
         // It doesn't work without accessing this page!!
-        br2.getPage("http://www.fileserve.com/landing/DL13/download_captcha.js");
+        br2.getPage(captchaJSPage);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        Boolean failed = true;
-        for (int i = 0; i <= 3; i++) {
-            String id = br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);
-            if (!br.containsHTML("api.recaptcha.net") || id == null || fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            Form reCaptchaForm = new Form();
-            reCaptchaForm.setMethod(Form.MethodType.POST);
-            reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
-            reCaptchaForm.put("recaptcha_shortencode_field", fileId);
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setForm(reCaptchaForm);
-            rc.setId(id);
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.getForm().put("recaptcha_response_field", c);
-            rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
-            br2.submitForm(rc.getForm());
-            if (br2.containsHTML("incorrect-captcha")) {
-                br.getPage(downloadLink.getDownloadURL());
-                continue;
+        if (!br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">") || !br2.containsHTML("//showCaptcha\\(\\);")) {
+            Boolean failed = true;
+            for (int i = 0; i <= 3; i++) {
+                String id = br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);
+                if (!br.containsHTML("api.recaptcha.net") || id == null || fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                Form reCaptchaForm = new Form();
+                reCaptchaForm.setMethod(Form.MethodType.POST);
+                reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
+                reCaptchaForm.put("recaptcha_shortencode_field", fileId);
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setForm(reCaptchaForm);
+                rc.setId(id);
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.getForm().put("recaptcha_response_field", c);
+                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+                br2.submitForm(rc.getForm());
+                if (br2.containsHTML("incorrect-captcha")) {
+                    br.getPage(downloadLink.getDownloadURL());
+                    continue;
+                }
+                failed = false;
+                break;
             }
-            failed = false;
-            break;
+            if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
         // Ticket Time
         String reconTime = br.getRegex("(\\d+)").getMatch(0);
@@ -187,7 +196,7 @@ public class FileServeCom extends PluginForHost {
         br.postPage(downloadLink.getDownloadURL(), "download=normal");
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            String wait = br.getRegex("You have to wait (\\d+) seconds to start another download").getMatch(0);
+            String wait = br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
             if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -277,7 +286,7 @@ public class FileServeCom extends PluginForHost {
     }
 
     private void handleErrors() throws PluginException {
-        if (br.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry...</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time)")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
+        if (br.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry...</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time|URL=http://www\\.fileserve\\.com/landing-403\\.php\")")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
     }
 
     @Override
