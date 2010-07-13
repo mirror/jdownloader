@@ -15,6 +15,7 @@ public class AdBlocker implements AdBlockerInterface {
     }
 
     private ArrayList<Pattern> blackList;
+    private ArrayList<Pattern> whiteList;
 
     private AdBlocker() {
         this.blackList = new ArrayList<Pattern>();
@@ -30,10 +31,22 @@ public class AdBlocker implements AdBlockerInterface {
         // addthis
         blackList.add(Pattern.compile(".*\\.addthis\\.com.*", Pattern.CASE_INSENSITIVE));
 
+        this.whiteList = new ArrayList<Pattern>();
+        // google login
+        whiteList.add(Pattern.compile("https://www.google.com/accounts/ServiceLogin.*"));
+
     }
 
     public boolean doBlockRequest(Request request) {
         String url = request.getUrl().toExternalForm();
+        for (Pattern p : whiteList) {
+            if (p.matcher(url).matches()) {
+                //
+                Log.L.info("ADWhitelist: " + url);
+                return false;
+                //
+            }
+        }
         for (Pattern p : blackList) {
             if (p.matcher(url).matches()) {
                 //
