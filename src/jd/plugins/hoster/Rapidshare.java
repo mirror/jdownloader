@@ -33,9 +33,9 @@ import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -45,11 +45,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -1225,14 +1225,6 @@ public class Rapidshare extends PluginForHost {
             return ai;
         }
         updateAccountInfo(account, br);
-        if (!br.containsHTML("type=prem")) {
-            /* no premium account */
-            account.setValid(false);
-            AccountInfo ai = account.getAccountInfo();
-            if (ai == null) ai = new AccountInfo();
-            ai.setStatus("No PremiumAccount");
-            return ai;
-        }
         return account.getAccountInfo();
     }
 
