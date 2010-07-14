@@ -58,7 +58,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 dl.setFilePackage(fp);
                 decryptedLinks.add(dl);
             } else if (images.length == 0) {
-                return null;
+                return decryptedLinks;
             } else {
                 String domain = "4chan.org";
                 String cat = br.getRegex("<div class=\"logo\">.*?<span>/.{1,3}/ - (.*?)</span>").getMatch(0).replace("&amp;", "&");
@@ -74,7 +74,4 @@ public class Brds4Chnrg extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    // @Override
-
 }
