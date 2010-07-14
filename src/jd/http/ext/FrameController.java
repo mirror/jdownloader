@@ -50,7 +50,7 @@ import org.w3c.dom.html2.HTMLLinkElement;
  */
 public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement, BrowserFrame {
 
-    private static final String DOM_CONTENT_LOADED = "DOMContentLoaded";
+    // private static final String DOM_CONTENT_LOADED = "DOMContentLoaded";
     private ExtBrowser extBrowser;
     private HTMLDocumentImpl htmlDocument;
     private FrameController parentFrameController;
