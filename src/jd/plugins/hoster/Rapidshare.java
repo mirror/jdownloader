@@ -614,6 +614,7 @@ public class Rapidshare extends PluginForHost {
         if (error == null) return;
 
         logger.warning(error);
+        if (Regex.matches(error, Pattern.compile("Diese Datei ist noch nicht vollst"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is incomplete. Upload may still be in progress!", 10 * 60 * 1000l);
         if (Regex.matches(error, Pattern.compile("Der Downloadlink wurde manipuliert und ist damit "))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (Regex.matches(error, Pattern.compile("(Diese Datei steht im Verdacht illegal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(Verletzung unserer Nutzungsbedingungen)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -654,6 +655,7 @@ public class Rapidshare extends PluginForHost {
         if (error == null) return;
 
         logger.warning(error);
+        if (Regex.matches(error, Pattern.compile("Diese Datei ist noch nicht vollst"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is incomplete. Upload may still be in progress!", 10 * 60 * 1000l);
         if (Regex.matches(error, Pattern.compile("Der Downloadlink wurde manipuliert und ist damit "))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (Regex.matches(error, Pattern.compile("(Diese Datei steht im Verdacht illegal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(Der Uploader hat diese Datei)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -1264,6 +1266,7 @@ public class Rapidshare extends PluginForHost {
         } catch (Exception e) {
             logger.severe("RS-API change detected, please inform support!");
         }
+        account.setValid(true);
     }
 
     private HashMap<String, String> getMap(String[][] matches) {
