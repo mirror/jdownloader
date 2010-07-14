@@ -44,6 +44,11 @@ public class DropIo extends PluginForHost {
         return "http://drop.io/terms";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        // Remove subdomains
+        link.setUrlDownload("http://drop.io/" + new Regex(link.getDownloadURL(), "drop\\.io/(.+)").getMatch(0));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

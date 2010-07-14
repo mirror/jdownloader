@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movieshare.in" }, urls = { "http://[\\w\\.]*?movieshare\\.in/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movieshare.in" }, urls = { "http://[\\w\\.]*?(movieshare\\.in|sharejunky.com)/[a-z0-9]{12}" }, flags = { 0 })
 public class MovieShareIn extends PluginForHost {
 
     public MovieShareIn(PluginWrapper wrapper) {
@@ -51,10 +51,14 @@ public class MovieShareIn extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("movieshare.in", "sharejunky.com"));
+    }
+
     public String brbefore = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://movieshare.in";
+    private static final String COOKIE_HOST = "http://sharejunky.com";
     public boolean nopremium = false;
 
     @Override
