@@ -209,9 +209,9 @@ public class IFileIt extends PluginForHost {
         if (br2.containsHTML("(\"retry\":\"retry\"|\"retry\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br2.containsHTML("an error has occured while processing your request")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (!br2.containsHTML("status\":\"ok\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://ifile.it/dl");
+        br.getPage(downloadLink.getDownloadURL());
         try {
-            br.getPage("http://ifile.it/dl");
+            br.getPage(downloadLink.getDownloadURL());
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
