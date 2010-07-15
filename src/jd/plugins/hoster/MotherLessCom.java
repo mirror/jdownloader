@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|motherlesspictures\\.com/[a-zA-Z0-9/.]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|motherlesspictures\\.com/[a-zA-Z0-9/.]+|motherlessvideos\\.com/[a-zA-Z0-9/.]+)" }, flags = { 0 })
 public class MotherLessCom extends PluginForHost {
 
     public MotherLessCom(PluginWrapper wrapper) {
@@ -43,6 +43,7 @@ public class MotherLessCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("motherlesspictures", "motherless"));
+        link.setUrlDownload(link.getDownloadURL().replace("motherlessvideos", "motherless"));
     }
 
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {

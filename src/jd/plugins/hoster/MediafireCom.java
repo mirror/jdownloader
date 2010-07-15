@@ -249,7 +249,9 @@ public class MediafireCom extends PluginForHost {
     }
 
     private String getDownloadUrl() throws Exception {
-        if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Use Nightly"); }
+        // if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) <
+        // 10000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT,
+        // "Use Nightly"); }
         try {
             ExtBrowser eb = new ExtBrowser();
             //

@@ -415,6 +415,7 @@ public class JDExternInterface extends PluginOptional {
                                 direct.setProperty("post", post);
                                 direct.setProperty("referer", referer);
                                 plg.correctDownloadLink(direct);
+                                direct.setLoadedPlugin(plg);
                                 links.add(direct);
                             }
                         }

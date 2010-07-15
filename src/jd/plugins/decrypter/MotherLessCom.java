@@ -54,8 +54,8 @@ public class MotherLessCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             filelink = rot13(filelink);
-            String downloadlink = "http://members.motherless.com/movies/" + filelink + ".flv?start=0&id=player&client=FLASH%20WIN%2010,0,32,18&version=4.1.60";
-            DownloadLink dlink = createDownloadlink(downloadlink);
+            String downloadlink = matches.replaceAll("'(.*?)__file_url.*", filelink + ".flv?start=0&id=player&client=FLASH%20WIN%2010,1,53,64&version=4.1.60");
+            DownloadLink dlink = createDownloadlink(downloadlink.replace("motherless", "motherlessvideos"));
             dlink.setBrowserUrl(parm);
             dlink.setFinalFileName(filelink.split("-")[0] + ".flv");
             decryptedLinks.add(dlink);

@@ -68,7 +68,7 @@ public class FileServeCom extends PluginForHost {
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        }
+        } else if (!link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return link.getAvailableStatus();
     }
 
