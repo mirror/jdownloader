@@ -34,6 +34,8 @@ public class FileHippoCom extends PluginForHost {
         super(wrapper);
     }
 
+    private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found)";
+
     @Override
     public String getAGBLink() {
         return "http://www.filehippo.com/info/disclaimer/";
@@ -53,7 +55,20 @@ public class FileHippoCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found)") || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().equals("http://www.filehippo.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String realLink = br.getRegex("id=\"_ctl0_contentMain_lblPath\"> <strong>\\&#187;</strong>.*?<a href=\"(/download_.*?/\\d+/)\">").getMatch(0);
+        // If the user adds a wrong link we have to find the right one here and
+        // set it
+        if (realLink != null) {
+            realLink = "http://www.filehippo.com" + realLink + "tech/";
+            link.setUrlDownload(realLink);
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("Filename:</b></td><td>(.*?)</td>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Download (.*?) - Technical Details - FileHippo\\.com</title>").getMatch(0);

@@ -62,7 +62,7 @@ public class GettyFileRu extends PluginForHost {
         String dllink = br.getRegex("var filelink = '(http://.*?)'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("'(http://dl\\d+\\.gettyfile\\.ru:\\d+/\\d+/\\d+/.*?)'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
