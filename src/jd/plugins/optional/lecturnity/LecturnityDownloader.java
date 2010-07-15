@@ -1,5 +1,6 @@
 package jd.plugins.optional.lecturnity;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -7,6 +8,7 @@ import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
+import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.parser.Regex;
@@ -36,18 +38,40 @@ public class LecturnityDownloader extends PluginOptional {
         if (e.getSource() == inputAction) {
             String url = UserIO.getInstance().requestInputDialog("Type in URL of the Lecturnity-Webplayer! (Could take a few seconds!)");
             if (url == null || url.trim().length() == 0) return;
-            try {
-                url = url.trim();
-                String name = url.substring(url.substring(0, url.length() - 1).lastIndexOf('/') + 1, url.length() - 1);
-
-                ArrayList<DownloadLink> links = listFiles(name, name + "/", url);
-                LinkGrabberController.getInstance().addLinks(links, true, false);
-                UserIO.getInstance().requestMessageDialog("Successfully added " + links.size() + " links to downloadlist!");
-            } catch (Exception e1) {
-                JDLogger.exception(e1);
-                UserIO.getInstance().requestMessageDialog("An error occured while parsing the site!\r\n(" + url + ")");
-            }
+            getLinks(url.trim());
         }
+    }
+
+    private void getLinks(final String url) {
+        new Thread(new Runnable() {
+
+            public void run() {
+                ProgressController progress = new ProgressController("Lecturnity: Parsing " + url, null);
+                progress.setInitials("LE");
+                progress.setIndeterminate(true);
+
+                String message;
+                try {
+                    String name = url.substring(url.substring(0, url.length() - 1).lastIndexOf('/') + 1, url.length() - 1);
+
+                    ArrayList<DownloadLink> links = listFiles(name, name + "/", url);
+                    LinkGrabberController.getInstance().addLinks(links, true, false);
+
+                    message = "Successfully added " + links.size() + " links to downloadlist!";
+                } catch (Exception e1) {
+                    JDLogger.exception(e1);
+
+                    message = "An error occured while parsing the site " + url + "! See Log for more informations!";
+                    progress.setColor(Color.RED);
+                }
+
+                progress.setStatusText("Lecturnity: " + message);
+                progress.doFinalize(5 * 1000l);
+
+                UserIO.getInstance().requestMessageDialog(message);
+            }
+
+        }).start();
     }
 
     private ArrayList<DownloadLink> listFiles(String name, String subDir, String source) throws Exception {

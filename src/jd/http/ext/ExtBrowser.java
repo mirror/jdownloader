@@ -4,7 +4,6 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import jd.http.Browser;
-import jd.http.Request;
 import jd.http.ext.events.ExtBrowserEvent;
 import jd.http.ext.events.ExtBrowserEventSender;
 import jd.http.ext.events.ExtBrowserListener;
@@ -15,7 +14,6 @@ import jd.parser.Regex;
 
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.UserAgentContext;
-import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
 import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
 import org.lobobrowser.html.domimpl.HTMLFormElementImpl;
 import org.lobobrowser.html.domimpl.HTMLFrameElementImpl;
@@ -28,25 +26,13 @@ public class ExtBrowser {
         // this is important to disallow js to execute java methods/classes
         try {
             JSPermissionRestricter.init();
-
         } catch (Throwable e) {
-
         }
-
     }
 
-    @SuppressWarnings("all")
     public static void main(String args[]) throws ExtBrowserException, InterruptedException {
-
         ExtBrowser br = new ExtBrowser();
-        br.setBrowserEnviroment(new FullBrowserEnviroment() {
-            public void prepareContents(Request req) {
-
-                req = req;
-
-            }
-
-        });
+        br.setBrowserEnviroment(new FullBrowserEnviroment());
 
         Browser.init();
         Browser.setLogger(Log.L);
@@ -66,14 +52,10 @@ public class ExtBrowser {
                 org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
                 if (RendererUtilities.isVisible(l)) {
                     String inner = l.getInnerHTML();
-
                     if (inner.toLowerCase().contains("start download")) {
-                        HTMLDivElementImpl div = (HTMLDivElementImpl) l.getParentNode();
-
                         String myURL = l.getAbsoluteHref();
 
                         eb.getCommContext().openGetConnection(myURL);
-
                     }
                 }
             }
@@ -119,7 +101,9 @@ public class ExtBrowser {
 
     }
 
-    // TODO: this should use AppWorks Statemachine later
+    /**
+     * TODO: this should use AppWorks Statemachine later
+     */
     public void waitForFrame(final String frameID, int msTimeout) throws InterruptedException {
 
         for (ExtHTMLFrameImpl frame : this.getFrames(null)) {
@@ -136,29 +120,22 @@ public class ExtBrowser {
                 if (event instanceof FrameStatusEvent) {
                     if (((FrameStatusEvent) event).getType() == FrameStatusEvent.Types.EVAL_END && frameID.equalsIgnoreCase(((ExtHTMLFrameElement) ((FrameStatusEvent) event).getCaller()).getID())) {
                         synchronized (this) {
-
                             this.notify();
                         }
-
                     }
-
                 }
-
             }
 
         };
         this.getEventSender().addListener(listener);
 
         synchronized (listener) {
-
             listener.wait(msTimeout);
-
         }
 
     }
 
     private InputController getInputController() {
-
         return this.inputController;
     }
 
@@ -166,14 +143,12 @@ public class ExtBrowser {
         if (frame == null) frame = this.getFrameController();
         Element ret = frame.getDocument().getElementById(id);
         return ret;
-
     }
 
     private ArrayList<HTMLFormElementImpl> getForms(ExtHTMLFrameElement frame) {
         if (frame == null) frame = this.getFrameController();
         HTMLCollection forms = frame.getDocument().getForms();
         return getList(forms, new ArrayList<HTMLFormElementImpl>());
-
     }
 
     @SuppressWarnings("unchecked")
@@ -194,7 +169,6 @@ public class ExtBrowser {
     }
 
     public String getHtmlText() {
-        // TODO Auto-generated method stub
         return this.getDocument().getInnerHTML();
     }
 
@@ -263,10 +237,10 @@ public class ExtBrowser {
     }
 
     // private HTMLDocumentImpl createDocument(String url) {
-    //       
+    //
     // // HTMLDocumentImpl document = new HTMLDocumentImpl(uac, renderContext,
     // null, url);
-    //       
+    //
     // return document;
     // }
 
@@ -285,12 +259,10 @@ public class ExtBrowser {
     }
 
     public UserAgentContext getUserAgentContext() {
-        // TODO Auto-generated method stub
         return uac;
     }
 
     public Browser getCommContext() {
-        // TODO Auto-generated method stub
         return commContext;
     }
 
