@@ -16,15 +16,16 @@
 
 package jd.plugins.hoster;
 
+import java.util.Random;
+
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 /**
  * @author typek_pb
@@ -79,13 +80,12 @@ public class CeknitoSk extends PluginForHost {
         }
         if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        StringBuilder linkSB = new StringBuilder("http://vid.ceknito.sk/shared/");
-        String dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "<param name=\"flashvars\" value=\"fid=(.*?)&").getMatch(0);
+        // Set random a video server. The file is available on all server.
+        dlink = "http://vid" + new Random().nextInt(6) + ".ceknito.sk/v.php?";
+        String dlinkPart = new Regex(br.toString(), "<param name=\"flashvars\" value=\"f(id=.*?)&").getMatch(0);
         if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        linkSB.append(dlinkPart);
-        linkSB.append(".mp4");
+        dlink += dlinkPart;
 
-        dlink = linkSB.toString();
         if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         filename = filename.trim();
@@ -115,5 +115,4 @@ public class CeknitoSk extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
