@@ -1328,6 +1328,7 @@ public class Rapidshare extends PluginForHost {
                         RESET_WAITING_ACCOUNTS.clear();
                     }
                 }
+                getPluginConfig().save();
             }
         } else {
             super.actionPerformed(e);
