@@ -28,13 +28,13 @@ public class Response {
 
     public final static String ERROR = "404 ERROR";
 
-    private StringBuilder data = new StringBuilder();
+    private final StringBuilder data = new StringBuilder();
 
     public StringBuilder getData() {
         return data;
     }
 
-    private HashMap<String, String> headers = new HashMap<String, String>();
+    private final HashMap<String, String> headers = new HashMap<String, String>();
 
     private String returnStatus = Response.OK;
 
@@ -43,31 +43,31 @@ public class Response {
     public Response() {
     }
 
-    public void addHeader(String key, String value) {
+    public void addHeader(final String key, final String value) {
         headers.put(key, value);
     }
 
-    public void setReturnStatus(String returnStatus) {
+    public void setReturnStatus(final String returnStatus) {
         this.returnStatus = returnStatus;
     }
 
-    public void addContent(Object content) {
+    public void addContent(final Object content) {
         data.append(content.toString());
     }
 
-    public void setReturnType(String returnType) {
+    public void setReturnType(final String returnType) {
         this.returnType = returnType;
     }
 
-    public void writeToStream(OutputStream out) throws IOException {
-        StringBuilder help = new StringBuilder();
+    public void writeToStream(final OutputStream out) throws IOException {
+        final StringBuilder help = new StringBuilder();
         help.append("HTTP/1.1 ").append(returnStatus).append("\r\n");
         help.append("Connection: close\r\n");
         help.append("Server: jDownloader HTTP Server\r\n");
         help.append("Content-Type: ").append(returnType).append("\r\n");
         help.append("Content-Length: ").append(data.toString().getBytes(Executer.CODEPAGE).length).append("\r\n");
 
-        for (String key : headers.keySet()) {
+        for (final String key : headers.keySet()) {
             help.append(key).append(": ").append(headers.get(key)).append("\r\n");
         }
 

@@ -32,49 +32,49 @@ public class Request {
 
     private String data = "";
 
-    private long contentLength=-1;
+    private long contentLength = -1;
 
     private byte[] postData;
 
     public Request() {
     }
 
-    protected void setData(String data) {
+    protected void setData(final String data) {
         this.data = data;
     }
 
-    protected void setRequestUrl(String requestUrl) {
+    protected void setRequestUrl(final String requestUrl) {
         this.requestUrl = requestUrl;
     }
 
-    protected void setRequestType(String requestType) {
+    protected void setRequestType(final String requestType) {
         this.requestType = requestType;
     }
 
-    protected void setHttpType(String httpType) {
+    protected void setHttpType(final String httpType) {
         this.httpType = httpType;
     }
 
-    protected void addHeader(String key, String value) {
+    protected void addHeader(final String key, final String value) {
         headers.put(key, value);
         if (key.equalsIgnoreCase("Content-Length")) {
-            try{
-            contentLength = Long.parseLong(value.trim());
-            }catch(Exception e){
-                
+            try {
+                contentLength = Long.parseLong(value.trim());
+            } catch (Exception e) {
+
             }
         }
     }
 
-    protected void setHeader(HashMap<String, String> headers) {
+    protected void setHeader(final HashMap<String, String> headers) {
         this.headers = headers;
     }
 
-    protected void addParameter(String key, String value) {
+    protected void addParameter(final String key, final String value) {
         parameter.put(key, value);
     }
 
-    protected void setParameter(HashMap<String, String> parameter) {
+    protected void setParameter(final HashMap<String, String> parameter) {
         this.parameter = parameter;
     }
 
@@ -94,7 +94,7 @@ public class Request {
         return httpType;
     }
 
-    public String getHeader(String key) {
+    public String getHeader(final String key) {
         return headers.get(key);
     }
 
@@ -102,7 +102,7 @@ public class Request {
         return headers;
     }
 
-    public String getParameter(String key) {
+    public String getParameter(final String key) {
         return parameter.get(key);
     }
 
@@ -115,12 +115,11 @@ public class Request {
     }
 
     public long getContentLength() {
-      return contentLength;
+        return contentLength;
     }
 
-    public void setPostData(byte[] buffer) {
-      postData=buffer;
-        
+    public void setPostData(final byte[] buffer) {
+        postData = buffer;
     }
 
     public byte[] getPostData() {

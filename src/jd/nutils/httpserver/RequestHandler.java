@@ -24,34 +24,50 @@ import java.net.Socket;
 import jd.controlling.JDLogger;
 
 public class RequestHandler extends Thread {
-    private Socket socket;
-    private Handler handler;
+
+    /**
+     * The CR/LF pair.
+     */
+    private static final String CRLF = "\r\n";
+
+    /**
+     * The CR octet.
+     */
+    private static final int CR = 13;
+
+    /**
+     * The LF octet.
+     */
+    private static final int LF = 10;
+
+    private final Socket socket;
+    private final Handler handler;
     private boolean eof = false;
 
-    public RequestHandler(Socket socket, Handler handler) {
+    public RequestHandler(final Socket socket, final Handler handler) {
         this.socket = socket;
         this.handler = handler;
     }
 
     public void run() {
         try {
-            BufferedInputStream reader = new BufferedInputStream(socket.getInputStream());
+            final BufferedInputStream reader = new BufferedInputStream(socket.getInputStream());
             String line = "";
 
-            Request req = new Request();
+            final Request req = new Request();
 
             while (!eof && (line = readline(reader)) != null) {
                 String key = null;
                 String value = null;
-                if (line.equals("\r\n") && req.getRequestType().equals("GET")) {
+                if (line.equals(CRLF) && req.getRequestType().equals("GET")) {
                     eof = true;
                     continue;
                 }
 
-                if (line.equals("\r\n") && req.getRequestType().equals("POST")) {
+                if (line.equals(CRLF) && req.getRequestType().equals("POST")) {
                     // TODO: only post data < 2 gb (int range) possible
-                    int data = (int) req.getContentLength();
-                    byte[] buffer = new byte[data];
+                    final int data = (int) req.getContentLength();
+                    final byte[] buffer = new byte[data];
                     int offset = 0;
                     while (data - offset > 0) {
                         offset += reader.read(buffer, offset, data - offset);
@@ -63,15 +79,16 @@ public class RequestHandler extends Thread {
                 }
                 line = line.trim();
                 if (line.startsWith("GET ") || line.startsWith("POST ")) {
-                    String[] help = line.split(" ");
+                    final String[] help = line.split(" ");
                     req.setRequestType(help[0]);
                     req.setHttpType(help[2]);
 
                     if (help[1].indexOf("?") > 0) {
                         req.setRequestUrl(help[1].substring(0, help[1].indexOf("?")));
                         parseParameter(req, help[1].substring(help[1].indexOf("?") + 1));
-                    } else
+                    } else {
                         req.setRequestUrl(help[1]);
+                    }
                 } else if (line.indexOf(": ") > 0) {
                     key = line.substring(0, line.indexOf(": ")).toLowerCase();
                     value = line.substring(line.indexOf(": ") + 2);
@@ -81,7 +98,7 @@ public class RequestHandler extends Thread {
                 }
             }
 
-            Response res = new Response();
+            final Response res = new Response();
             try {
                 handler.handle(req, res);
             } catch (Exception e) {
@@ -89,7 +106,7 @@ public class RequestHandler extends Thread {
                 res.setReturnStatus(Response.ERROR);
                 res.addContent(e.toString());
             }
-            OutputStream out = socket.getOutputStream();
+            final OutputStream out = socket.getOutputStream();
             res.writeToStream(out);
             out.close();
 
@@ -104,12 +121,12 @@ public class RequestHandler extends Thread {
         }
     }
 
-    public void parseParameter(Request req, String parameter) {
-        String[] help = parameter.split("\\&");
+    public void parseParameter(final Request req, final String parameter) {
+        final String[] help = parameter.split("\\&");
 
         for (String entry : help) {
             entry = entry.trim();
-            int index = entry.indexOf("=");
+            final int index = entry.indexOf("=");
 
             if (index > 0) {
                 req.addParameter(entry.substring(0, index), entry.substring(index + 1));
@@ -119,24 +136,24 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private String readline(BufferedInputStream reader) {
-        StringBuilder sb = new StringBuilder();
+    private String readline(final BufferedInputStream reader) {
+        final StringBuilder ret = new StringBuilder();
 
         int byteread = -6;
         try {
 
             while ((byteread = reader.read()) != -1) {
 
-                if (byteread == 10 || byteread == 13) {
+                if (byteread == LF || byteread == CR) {
 
                     reader.mark(0);
 
-                    sb.append((char) byteread);
+                    ret.append((char) byteread);
                     if ((byteread = reader.read()) != -1) {
 
-                        if (byteread == 13 || byteread == 10) {
+                        if (byteread == CR || byteread == LF) {
 
-                            sb.append((char) byteread);
+                            ret.append((char) byteread);
                             break;
                         } else {
                             reader.reset();
@@ -146,7 +163,7 @@ public class RequestHandler extends Thread {
 
                 }
 
-                sb.append((char) byteread);
+                ret.append((char) byteread);
 
             }
             if (byteread == -1) {
@@ -156,6 +173,6 @@ public class RequestHandler extends Thread {
             JDLogger.exception(e);
         }
 
-        return sb.toString();
+        return ret.toString();
     }
 }

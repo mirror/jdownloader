@@ -27,20 +27,21 @@ import jd.controlling.JDLogger;
 public class HttpServer extends Thread {
     private ServerSocket ssocket;
     private Socket csocket;
-    private Handler handler;
+    private final Handler handler;
     private boolean running = true;
     private Thread run;
-    private int port;
-    private boolean uselocalhost = false;
+    private final int port;
+    private final boolean uselocalhost;
 
-    public HttpServer(int port, Handler handler) throws IOException {
-        super("HTTP-Server");
-        this.handler = handler;
-        this.port = port;
-        this.uselocalhost = false;
+    public HttpServer(final int port, final Handler handler) throws IOException {
+        // super("HTTP-Server");
+        // this.handler = handler;
+        // this.port = port;
+        // this.uselocalhost = false;
+        this(port, handler, false);
     }
 
-    public HttpServer(int port, Handler handler, boolean localhost) throws IOException {
+    public HttpServer(final int port, final Handler handler, final boolean localhost) throws IOException {
         super("HTTP-Server");
         this.handler = handler;
         this.port = port;
@@ -55,14 +56,14 @@ public class HttpServer extends Thread {
     public void start() {
         running = true;
         try {
-            InetAddress localhost = getLocalHost();
+            final InetAddress localhost = getLocalHost();
             if (localhost != null && uselocalhost) {
                 ssocket = new ServerSocket(port, 5, localhost);
             } else {
                 ssocket = new ServerSocket(port, 5);
             }
             // ssocket.setSoTimeout(1000);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             JDLogger.exception(e);
         }
         run = new Thread(this, "Http-Server Consumer");
@@ -76,17 +77,18 @@ public class HttpServer extends Thread {
         } catch (UnknownHostException e1) {
             JDLogger.getLogger().severe("could not find localhost!");
         }
-        if (localhost != null) return localhost;
-        try {
-            localhost = InetAddress.getByName(null);
-        } catch (UnknownHostException e1) {
-            JDLogger.getLogger().severe("could not find localhost!");
+        if (localhost == null) {
+            try {
+                localhost = InetAddress.getByName(null);
+            } catch (UnknownHostException e1) {
+                JDLogger.getLogger().severe("could not find localhost!");
+            }
         }
         return localhost;
     }
 
     public void run() {
-        Thread thisThread = Thread.currentThread();
+        final Thread thisThread = Thread.currentThread();
         while (run == thisThread && running) {
             if (ssocket == null) return;
             try {
