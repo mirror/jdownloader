@@ -48,38 +48,39 @@ public class ColorLetterComperator {
     /**
      * vergleicht Farbebenen eignet sich um echte Bilder zu vergleichen
      */
-    public ColorLetterComperator(Letter a, Letter b) {
+    public ColorLetterComperator(final Letter a, final Letter b) {
         this.a = a;
         this.b = b;
-        if (a.owner != null)
+        if (a.owner != null) {
             owner = a.owner;
-        else if (b.owner != null) owner = b.owner;
+        } else if (b.owner != null) {
+            owner = b.owner;
+        }
     }
 
-    public void setLetterA(Letter a) {
+    public void setLetterA(final Letter a) {
         this.a = a;
         ca = null;
         aLayers = null;
     }
 
-    public void setLetterB(Letter b) {
+    public void setLetterB(final Letter b) {
         this.b = b;
         cb = null;
         bLayers = null;
     }
 
-    private Letter getSWLetter(PixelObject obj) {
+    private Letter getSWLetter(final PixelObject obj) {
         int[][] lgrid = new int[obj.getWidth()][obj.getHeight()];
         for (int x = 0; x < obj.getWidth(); x++) {
             for (int y = 0; y < obj.getHeight(); y++) {
                 lgrid[x][y] = 0xffffff;
-
             }
         }
         int w = 0;
         for (int d = 0; d < obj.getSize(); d++) {
             w++;
-            int[] akt = obj.elementAt(d);
+            final int[] akt = obj.elementAt(d);
             lgrid[akt[0] - obj.getXMin()][akt[1] - obj.getYMin()] = 0x000000;
 
         }
@@ -94,12 +95,12 @@ public class ColorLetterComperator {
                 }
             }
         }
-        Letter l = obj.owner.createLetter();
-        l.setElementPixel(obj.getSize());
-        l.setLocation(new int[] { obj.getXMin(), obj.getYMin() });
-        l.setGrid(lgrid);
-        l.detected = obj.detected;
-        return l;
+        final Letter ret = obj.owner.createLetter();
+        ret.setElementPixel(obj.getSize());
+        ret.setLocation(new int[] { obj.getXMin(), obj.getYMin() });
+        ret.setGrid(lgrid);
+        ret.detected = obj.detected;
+        return ret;
     }
 
     /**
@@ -110,7 +111,9 @@ public class ColorLetterComperator {
      */
     public double run() {
         if (aLayers != null && bLayers != null) return valityPercent;
-        if ((a.getArea() / 5) > b.getArea() || (b.getArea() / 5) > a.getArea()) {
+        final int aArea = a.getArea();
+        final int bArea = b.getArea();
+        if ((aArea / 5) > bArea || (bArea / 5) > aArea) {
             valityPercent = 10000.0;
             return valityPercent;
         }
@@ -128,11 +131,11 @@ public class ColorLetterComperator {
             bLayers = getObjects(cb);
         }
         double ret = 0;
-        int minl = Math.min(aLayers.length, bLayers.length);
+        final int minl = Math.min(aLayers.length, bLayers.length);
         int perf = 0;
-        int maxl = Math.max(aLayers.length, bLayers.length);
-        boolean minla = aLayers.length == minl;
-        PixelObject[][] bestarray = new PixelObject[minl][2];
+        final int maxl = Math.max(aLayers.length, bLayers.length);
+        final boolean minla = aLayers.length == minl;
+        final PixelObject[][] bestarray = new PixelObject[minl][2];
         for (int i = 0; i < minl; i++) {
             double best = Double.MAX_VALUE;
             PixelObject[] bestobj = null;
@@ -158,17 +161,18 @@ public class ColorLetterComperator {
             }
             bestarray[i] = bestobj;
         }
-        for (int i = 0; i < bestarray.length; i++) {
+        final int bestarrayLength = bestarray.length;
+        for (int i = 0; i < bestarrayLength; i++) {
             if (Colors.getColorDifference(bestarray[i][0].getAverage(), bestarray[i][1].getAverage()) > maxColorDifference)
                 ret += 100;
             else {
                 try {
-                    Letter leta = getSWLetter(bestarray[i][0]);
-                    LetterComperator lc = new LetterComperator(leta, getSWLetter(bestarray[i][1]));
+                    final Letter leta = getSWLetter(bestarray[i][0]);
+                    final LetterComperator lc = new LetterComperator(leta, getSWLetter(bestarray[i][1]));
                     lc.setOwner(getJac());
                     bestarray[i][0].detected = lc;
                     lc.run();
-                    double vall = lc.getValityPercent();
+                    final double vall = lc.getValityPercent();
                     if (vall < lettersPerfectPercent) {
                         perf++;
                         valityPercent = 0;
@@ -187,9 +191,10 @@ public class ColorLetterComperator {
     }
 
     private JAntiCaptcha getJac() {
-        if (owner != null) return owner;
-        String hoster = "EasyCaptcha";
-        owner = new JAntiCaptcha(hoster);
+        if (owner == null) {
+            final String hoster = "EasyCaptcha";
+            owner = new JAntiCaptcha(hoster);
+        }
         return owner;
     }
 
@@ -200,26 +205,34 @@ public class ColorLetterComperator {
      * @param grid
      * @return
      */
-    public static PixelObject[] getObjects(PixelGrid grid) {
-        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
+    public static PixelObject[] getObjects(final PixelGrid grid) {
+        final ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
         ArrayList<PixelObject> merge;
-        for (int x = 0; x < grid.getWidth(); x++) {
-            for (int y = 0; y < grid.getHeight(); y++) {
-                PixelObject n = new PixelObject(grid);
-                n.add(x, y, grid.getGrid()[x][y]);
+
+        final int gridWidth = grid.getWidth();
+        final int gridHeight = grid.getHeight();
+        final int[][] gridGrid = grid.getGrid();
+
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                final PixelObject n = new PixelObject(grid);
+                final int color = gridGrid[x][y];
+                n.add(x, y, color);
 
                 merge = new ArrayList<PixelObject>();
-                for (PixelObject o : ret) {
-                    if (grid.getGrid()[x][y] == o.getAverage()) {
+                for (final PixelObject o : ret) {
+                    if (color == o.getAverage()) {
                         merge.add(o);
                     }
                 }
-                if (merge.size() == 0) {
+
+                final int mergeSize = merge.size();
+                if (mergeSize == 0) {
                     ret.add(n);
-                } else if (merge.size() == 1) {
+                } else if (mergeSize == 1) {
                     merge.get(0).add(n);
                 } else {
-                    for (PixelObject po : merge) {
+                    for (final PixelObject po : merge) {
                         ret.remove(po);
                         n.add(po);
                     }
@@ -233,15 +246,15 @@ public class ColorLetterComperator {
     }
 
     /**
-     * reduziert die farben (colorLevels)
+     * reduces the color (colorLevels)
      * 
      * @param letter
      * @return
      */
-    private Captcha reduceColors(Letter letter) {
-        PosterizeFilter qf = new PosterizeFilter();
-        BufferedImage image = letter.getImage();
-        BufferedImage dest = qf.createCompatibleDestImage(image, ColorModel.getRGBdefault());
+    private Captcha reduceColors(final Letter letter) {
+        final PosterizeFilter qf = new PosterizeFilter();
+        final BufferedImage image = letter.getImage();
+        final BufferedImage dest = qf.createCompatibleDestImage(image, ColorModel.getRGBdefault());
         qf.setNumLevels(colorLevels);
         qf.filter(image, dest);
         return getJac().createCaptcha(dest);
