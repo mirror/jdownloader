@@ -21,8 +21,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
@@ -49,10 +49,10 @@ import jd.nutils.httpserver.Response;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
 import jd.plugins.optional.scriptlauncher.JDScriptLauncher;
 import jd.utils.JDUtilities;
@@ -848,10 +848,10 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/action/downloads/removeall")) {
             // remove all packages in download list
 
-            ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
+            final ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
             packages.addAll(DownloadController.getInstance().getPackages());
 
-            for (FilePackage fp : packages) {
+            for (final FilePackage fp : packages) {
                 DownloadController.getInstance().removePackage(fp);
             }
 
@@ -859,16 +859,17 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/action/downloads/remove/.+")) {
             // remove denoted packages from download list
 
-            ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
-            ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
-            String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
+            final ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
+            final ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
+            final String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
 
             packages.addAll(DownloadController.getInstance().getPackages());
 
-            for (int i = 0; i < packages.size(); i++) {
-                FilePackage fp = packages.get(i);
+            final int packagesSize = packages.size();
+            for (int i = 0; i < packagesSize; i++) {
+                final FilePackage fp = packages.get(i);
 
-                for (String name : packagenames) {
+                for (final String name : packagenames) {
                     if (name.equalsIgnoreCase(fp.getName())) {
                         DownloadController.getInstance().removePackage(fp);
                         removelist.add(fp);
@@ -878,25 +879,28 @@ public class Serverhandler implements Handler {
 
             response.addContent("The following packages were removed from download list: ");
 
-            for (int i = 0; i < removelist.size(); i++) {
-                if (i != 0) response.addContent(", ");
+            final int removelistSize = removelist.size();
+            for (int i = 0; i < removelistSize; i++) {
+                if (i != 0) {
+                    response.addContent(", ");
+                }
                 response.addContent("'" + removelist.get(i).getName() + "'");
             }
         } else if (request.getRequestUrl().matches("(?is).*/special/check/.+")) {
 
-            ArrayList<String> links = new ArrayList<String>();
+            final ArrayList<String> links = new ArrayList<String>();
 
-            String link = new Regex(request.getRequestUrl(), ".*/special/check/(.+)").getMatch(0);
+            final String link = new Regex(request.getRequestUrl(), ".*/special/check/(.+)").getMatch(0);
 
-            for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
+            for (final String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                 links.add(tlink);
             }
 
             if (request.getParameters().size() > 0) {
-                Iterator<String> it = request.getParameters().keySet().iterator();
+                final Iterator<String> it = request.getParameters().keySet().iterator();
 
                 while (it.hasNext()) {
-                    String help = it.next();
+                    final String help = it.next();
 
                     if (!request.getParameter(help).equals("")) {
                         links.add(request.getParameter(help));
@@ -906,15 +910,15 @@ public class Serverhandler implements Handler {
 
             // check all links sequentially
             ArrayList<DownloadLink> dls = new ArrayList<DownloadLink>();
-            for (String chklink : links) {
+            for (final String chklink : links) {
 
                 dls = new DistributeData(chklink, false).findLinks();
 
-                Element element = xml.createElement("link");
+                final Element element = xml.createElement("link");
                 xml.getFirstChild().appendChild(element);
                 element.setAttribute("url", chklink);
 
-                for (DownloadLink dl : dls) {
+                for (final DownloadLink dl : dls) {
                     dl.getAvailableStatus(); // force update
                     LinkGrabberFilePackage pack = LinkGrabberController.getInstance().getGeneratedPackage(dl);
                     dl.getFilePackage().setName(pack.getName());
@@ -924,13 +928,12 @@ public class Serverhandler implements Handler {
 
             response.addContent(JDUtilities.createXmlString(xml));
         } else if (request.getRequestUrl().matches("(?is).*/addon/scriptlauncher/getlist")) {
-            OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("scriptlauncher");
+            final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("scriptlauncher");
 
             if (plg != null && plg.isLoaded() && plg.isEnabled()) {
-                for (File script : JDScriptLauncher.getScripts()) {
-                    Element script_xml = addScriptName(xml, script);
+                for (final File script : JDScriptLauncher.getScripts()) {
+                    final Element script_xml = addScriptName(xml, script);
                     script_xml.appendChild(addScriptPath(xml, script));
-
                 }
 
                 response.addContent(JDUtilities.createXmlString(xml));
@@ -938,7 +941,7 @@ public class Serverhandler implements Handler {
                 response.addContent("Addon 'JDScriptLauncher' isn't loaded and/or enabled");
             }
         } else if (request.getRequestUrl().matches("(?is).*/addon/scriptlauncher/launch/.+")) {
-            OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("scriptlauncher");
+            final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("scriptlauncher");
             String scriptname = null;
             scriptname = new Regex(request.getRequestUrl(), "(?is).*/addon/scriptlauncher/launch/(.+)").getMatch(0);
 
@@ -956,10 +959,11 @@ public class Serverhandler implements Handler {
         }
     }
 
-    private String[] getHTMLDecoded(String[] arr) {
-        String[] retval = new String[arr.length];
+    private String[] getHTMLDecoded(final String[] arr) {
+        final int arrLength = arr.length;
+        final String[] retval = new String[arrLength];
 
-        for (int i = 0; i < arr.length; ++i) {
+        for (int i = 0; i < arrLength; ++i) {
             retval[i] = Encoding.htmlDecode(arr[i]);
         }
 
@@ -968,8 +972,8 @@ public class Serverhandler implements Handler {
 
     private DecimalFormat f = new DecimalFormat("#0.00");
 
-    private Element addFilePackage(Document xml, FilePackage fp) {
-        Element element = xml.createElement("package");
+    private Element addFilePackage(final Document xml, final FilePackage fp) {
+        final Element element = xml.createElement("package");
         xml.getFirstChild().appendChild(element);
         element.setAttribute("package_name", fp.getName());
         element.setAttribute("package_percent", f.format(fp.getPercent()));
@@ -983,8 +987,8 @@ public class Serverhandler implements Handler {
         return element;
     }
 
-    private Element addDownloadLink(Document xml, DownloadLink dl) {
-        Element element = xml.createElement("file");
+    private Element addDownloadLink(final Document xml, final DownloadLink dl) {
+        final Element element = xml.createElement("file");
         element.setAttribute("file_name", dl.getName());
         element.setAttribute("file_package", dl.getFilePackage().getName());
         element.setAttribute("file_percent", f.format(dl.getDownloadCurrent() * 100.0 / Math.max(1, dl.getDownloadSize())));
@@ -996,12 +1000,12 @@ public class Serverhandler implements Handler {
         return element;
     }
 
-    private Element addGrabberLink(Document xml, DownloadLink dl) {
-        Element element = xml.createElement("file");
+    private Element addGrabberLink(final Document xml, final DownloadLink dl) {
+        final Element element = xml.createElement("file");
 
         // fetch available status in advance - also updates other stuff like
         // file size
-        AvailableStatus status = dl.getAvailableStatus();
+        final AvailableStatus status = dl.getAvailableStatus();
 
         element.setAttribute("file_name", dl.getName());
         element.setAttribute("file_package", dl.getFilePackage().getName());
@@ -1014,23 +1018,23 @@ public class Serverhandler implements Handler {
         return element;
     }
 
-    private Element addGrabberPackage(Document xml, LinkGrabberFilePackage fp) {
-        Element element = xml.createElement("package");
+    private Element addGrabberPackage(final Document xml, final LinkGrabberFilePackage fp) {
+        final Element element = xml.createElement("package");
         xml.getFirstChild().appendChild(element);
         element.setAttribute("package_name", fp.getName());
         element.setAttribute("package_linkstotal", fp.size() + "");
         return element;
     }
 
-    private Element addScriptName(Document xml, File script) {
-        Element element = xml.createElement("script");
+    private Element addScriptName(final Document xml, final File script) {
+        final Element element = xml.createElement("script");
         xml.getFirstChild().appendChild(element);
         element.setAttribute("name", script.getName().split("\\.")[0]);
         return element;
     }
 
-    private Element addScriptPath(Document xml, File script) {
-        Element element = xml.createElement("absolute_path");
+    private Element addScriptPath(final Document xml, final File script) {
+        final Element element = xml.createElement("absolute_path");
         xml.getFirstChild().appendChild(element);
         element.setTextContent(script.getAbsolutePath());
         return element;

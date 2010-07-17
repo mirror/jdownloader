@@ -46,7 +46,7 @@ public class JDRemoteControl extends PluginOptional {
     private HttpServer server;
     private MenuAction activate;
 
-    public JDRemoteControl(PluginWrapper wrapper) {
+    public JDRemoteControl(final PluginWrapper wrapper) {
         super(wrapper);
         subConfig = getPluginConfig();
         initConfig();
@@ -58,7 +58,7 @@ public class JDRemoteControl extends PluginOptional {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(final ActionEvent e) {
         try {
             subConfig.setProperty(PARAM_ENABLED, activate.isSelected());
             subConfig.save();
@@ -78,7 +78,7 @@ public class JDRemoteControl extends PluginOptional {
 
     @Override
     public ArrayList<MenuAction> createMenuitems() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+        final ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         menu.add(activate);
 
