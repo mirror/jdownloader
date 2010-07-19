@@ -202,6 +202,14 @@ public class FileVoCom extends PluginForHost {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
+            if (rc.getId() == null || rc.getId().isEmpty()) {
+                String id = br.getRegex("\\?k=(.*?)\"").getMatch(0);
+                if (id == null) {
+                    logger.warning("Manual regexed recaptcha ID equals null, stopping...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                rc.setId(id);
+            }
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);

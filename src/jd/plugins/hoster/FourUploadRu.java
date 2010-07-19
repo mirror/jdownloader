@@ -44,10 +44,14 @@ public class FourUploadRu extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("box4upload.com", "4upload.ru"));
         link.setUrlDownload(link.getDownloadURL().replace("/wait/", "/file/"));
+        link.setUrlDownload(link.getDownloadURL().replace("www.", ""));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().contains("www.")) {
+            link.setUrlDownload(link.getDownloadURL().replace("www.", ""));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("UTF-8");
@@ -55,9 +59,11 @@ public class FourUploadRu extends PluginForHost {
         if (br.containsHTML("Ошибка 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"fileName\">.*?<p>(.*?)</p>").getMatch(0);
         if (filename == null) filename = br.getRegex("\"/(wait|file)/.*?/(.*?)\\.html\"").getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim());
-        String filesize = br.getRegex("class=\"fileSize\">.*?<p>(.*?)</p>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // When downloading the server sometimes sends crippeled filenames so
+        // let's set the correct one here
+        link.setFinalFileName(filename.trim());
+        String filesize = br.getRegex("class=\"db_right\">(.*?)</div>").getMatch(0);
         if (filesize != null) {
             filesize = filesize.trim();
             filesize = filesize.replaceAll("Г", "G");
@@ -75,9 +81,12 @@ public class FourUploadRu extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL().replace("/file/", "/wait/"));
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL().replace("/file/", "/free_download/"));
+        br.setFollowRedirects(false);
         // This should only happen if the user tries to start multiple dls (if
         // one download is already running in the browser and he starts a 2nd
-        // download in jd
+        // download in jd)
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/file/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);

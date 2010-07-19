@@ -63,11 +63,12 @@ public class LoadTo extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("action=\"(http.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("\"(http://s\\d+\\.load\\.to/\\?t=\\d+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (linkurl == null) linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<form method=\"post\" action=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, "", true, 1);
         URLConnectionAdapter con = dl.getConnection();
         /* Überprüfung auf serverprobleme, nach 6 versuchen geben wir auf */
         if (con.getContentType().contains("html")) {

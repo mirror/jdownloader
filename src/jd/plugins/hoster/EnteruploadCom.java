@@ -63,9 +63,12 @@ public class EnteruploadCom extends PluginForHost {
         // the available status (and delete it here)
         Form freeform = br.getForm(1);
         if (freeform != null) {
+            freeform.remove(null);
             freeform.remove("method_premium");
+            freeform.put("method_free", "Free+Download");
             br.submitForm(freeform);
         }
+        System.out.print(br.toString());
         checkErrors(downloadLink);
         String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
@@ -405,7 +408,8 @@ public class EnteruploadCom extends PluginForHost {
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<center><h2>Download File(.*?)</h2>").getMatch(0));
+        String filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("name=\"fname\" value=\"(.*?)\"").getMatch(0);
         String filesize = br.getRegex("</font>.*?\\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
