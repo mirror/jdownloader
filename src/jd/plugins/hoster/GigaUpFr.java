@@ -48,14 +48,14 @@ public class GigaUpFr extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|Le code de vérification entré est incorrecte|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal|Vous ne pouvez télécharger ce fichier car il est \"Supprimé automatiquement\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>GigaUP\\.fr \\| (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("").getMatch(0);
-        String filesize = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\| GigaUP\\.fr</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
+        String filesize = br.getRegex("<br />Taille de (.*?)<br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filesize = filesize + "b";
+        filesize = filesize.replace("Mo", "Mb");
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
-        String md5 = br.getRegex("Md5Sum : ([a-z0-9]+)</p>").getMatch(0);
+        String md5 = br.getRegex("Md5Sum : ([a-z0-9]+)").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }

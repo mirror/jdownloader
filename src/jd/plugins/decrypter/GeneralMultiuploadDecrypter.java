@@ -28,8 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com", "kewlfile.com", "mirrorafile.com", "klurk.com", "uploadsharefiles.com", "lougyl.com", "maishare.com", "uploadground.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "nahraj.me", "megaupper.com", "mirrory.pl" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?kewlfile\\.com/dl/\\d+", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?klurk\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadsharefiles\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?maishare\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadground\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.com/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?nahraj\\.me/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrory\\.pl/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com", "kewlfile.com", "mirrorafile.com", "klurk.com", "uploadsharefiles.com", "lougyl.com", "maishare.com", "uploadground.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "nahraj.me", "megaupper.com", "mirrory.pl", "shrta.com", "1filesharing.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?kewlfile\\.com/dl/\\d+", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?klurk\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadsharefiles\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?maishare\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadground\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}",
+        "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.com/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?nahraj\\.me/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrory\\.pl/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/mirror/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -43,11 +43,11 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         // Only uploadmirrors.com has those "/download/" links so we need to
         // correct them
-        parameter = parameter.replace("/download/", "/files/");
+        parameter = parameter.replace("/download/", "/files/").replaceAll("(/dl/|/mirror/)", "/files/");
         String host = new Regex(parameter, "(.+)/(files|dl)").getMatch(0);
         // At the moment kewlfile.com is the only host in this plugin which has
         // this "kewlfile.com/rd/" links
-        String id = new Regex(parameter, "(files|dl)/([0-9A-Z]+)").getMatch(1);
+        String id = new Regex(parameter, "files/([0-9A-Z]+)").getMatch(0);
         // This should never happen but in case a dev changes the plugin without
         // much testing he ll see the error later!
         if (host == null || id == null) {
@@ -75,6 +75,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 br.getPage(host + singlelink);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+                // For 1filesharing.com links
+                if (dllink == null) dllink = br.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
             } else {
                 // Handling for already regexed final-links
                 dllink = singlelink;

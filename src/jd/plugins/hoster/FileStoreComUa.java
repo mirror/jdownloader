@@ -17,8 +17,10 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -103,13 +105,27 @@ public class FileStoreComUa extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        String dllink = br.getRegex("<input.*document.location=\"(.*?)\";").getMatch(0);
+        String dllink = findLink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         String check = br.getURL();
         if (check.contains("FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if ((dl.getConnection().getContentType().contains("html"))) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl.startDownload();
+    }
+
+    private String findLink() throws Exception {
+        String finalLink = null;
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+        return finalLink;
     }
 
     @Override

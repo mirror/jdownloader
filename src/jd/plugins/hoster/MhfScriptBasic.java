@@ -151,7 +151,7 @@ public class MhfScriptBasic extends PluginForHost {
         dl.startDownload();
     }
 
-    public String findLink() throws Exception {
+    private String findLink() throws Exception {
         String finalLink = null;
         String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
         if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
