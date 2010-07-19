@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -45,6 +46,8 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        boolean decrypterBroken = true;
+        if (decrypterBroken) return null;
 
         /* Error handling */
         if (br.containsHTML("This data has been removed by the owner")) {
@@ -75,11 +78,25 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         if (br.containsHTML("Captcha is not valid")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String fpName = br.getRegex("h1 class=\"pmclass\">(.*?)</h1></td>").getMatch(0).trim();
         fp.setName(fpName);
-        String[] links = br.getRegex("><a href='(.*?)'").getColumn(0);
+        String[] links = br.getRegex("><a href='(/\\?p=.*?)'").getColumn(0);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String psp : links) {
-            decryptedLinks.add(createDownloadlink(psp));
+            br.getPage("http://protect-my-links.com" + psp);
+            String c = br.getRegex("javascript>c=\"(.*?)\";").getMatch(0);
+            String d = "";
+            for (int i = 0; i < c.length(); i++) {
+                if (i % 3 == 0) {
+                    d += "%";
+                } else {
+                    d += c.charAt(i);
+                }
+            }
+            d = Encoding.htmlDecode(d);
+            // Java script continues here ;)
+            String finallink = "";
+            if (finallink == null) return null;
+            decryptedLinks.add(createDownloadlink(finallink));
             progress.increase(1);
         }
         fp.addLinks(decryptedLinks);
