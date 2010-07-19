@@ -771,6 +771,7 @@ jd.plugins.optional.langfileeditor.langfileeditor.btn.readmore = Gehiago irakurr
 jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.checklogins.failed = Erabiltzaile edo pasahitz okerra!
 jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.checklogins.succeeded = Kredentzialak zuzenak dira.
 jd.plugins.pluginsforhost.account = Kontua
+jd.update.main.error.title.old = Eguneraketak aurkitu dira!
 jd.utils.webupdate.ballon.title = Eguneratu
 linkgrabber.onlinestatus.offline = Lineaz kanpo
 linkgrabber.onlinestatus.online = Linean
