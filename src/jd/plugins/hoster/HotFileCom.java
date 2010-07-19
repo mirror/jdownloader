@@ -81,8 +81,8 @@ public class HotFileCom extends PluginForHost {
             if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://hotfile.com/premiuminfo.html?lang=en");
-        if (!br.containsHTML(">Premium Membership<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
+        if (isPremium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.setFollowRedirects(false);
     }
 
@@ -96,11 +96,12 @@ public class HotFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String validUntil = br.getRegex("<td>Until.*?</td><td>(.*?)</td>").getMatch(0);
-        if (validUntil == null) {
+        String validUntil[] = br.getRegex("Premium until.*?>(.*?)<.*?>(\\d+:\\d+:\\d+)").getRow(0);
+        if (validUntil == null || validUntil[0] == null || validUntil[1] == null) {
             account.setValid(false);
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm:ss", null));
+            String valid = validUntil[0].trim() + " " + validUntil[1].trim() + " CDT";
+            ai.setValidUntil(Regex.getMilliSeconds(valid, "yyyy-MM-dd HH:mm:ss zzz", null));
             account.setValid(true);
         }
         return ai;
