@@ -182,8 +182,9 @@ public class SaveTv extends PluginForHost {
                                 filename = filename.replace(unneededSpace, " ");
                             }
                         }
+                        boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
                         boolean dontModifyFilename = getPluginConfig().getBooleanProperty(NORANDOMNUMBERS);
-                        if (!dontModifyFilename) filename = filename + new Random().nextInt(10);
+                        if (!dontModifyFilename || useOriginalFilename) filename = filename + new Random().nextInt(10);
                         dl.setName(filename + ".avi");
                         dl.setAvailable(true);
                     } else {

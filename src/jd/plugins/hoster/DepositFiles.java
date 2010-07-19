@@ -65,6 +65,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        String passCode = null;
         br.forceDebug(true);
         requestFileInformation(downloadLink);
         String link = downloadLink.getDownloadURL();
@@ -93,7 +94,7 @@ public class DepositFiles extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            logger.info("dllink was null, going into captcha handling!");
+            logger.info("Entering form-handling.");
             Form form = br.getFormBySubmitvalue("Kostenloser+download");
             if (form == null) {
                 logger.warning("Form by submitvalue Kostenloser+download is null!");
@@ -101,11 +102,27 @@ public class DepositFiles extends PluginForHost {
             }
             br.submitForm(form);
             checkErrors();
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (br.containsHTML("\"file_password\"")) {
+                logger.info("This file seems to be password protected.");
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                br.postPage(br.getURL(), "file_password=" + passCode);
+                logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+                if (br.containsHTML("(>The file's password is incorrect. Please check your password and try to enter it again\\.<|\"file_password\")")) {
+                    logger.info("The entered password (" + passCode + ") was wrong, retrying...");
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
             dllink = br.getRegex(DLLINKREGEX).getMatch(0);
             String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
             /* check for captcha */
             if ((dllink == null || dllink.equals("")) && icid != null) {
+                logger.info("dllink was null, going into captcha handling!");
                 Form cap = new Form();
                 cap.setAction(link);
                 cap.setMethod(Form.MethodType.POST);
@@ -131,6 +148,9 @@ public class DepositFiles extends PluginForHost {
             if (!con.isContentDisposition()) {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
             }
             dl.startDownload();
         }
@@ -291,6 +311,7 @@ public class DepositFiles extends PluginForHost {
         return ai;
     }
 
+    // TODO: The handleFree supports password protected links, handlePremium not
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         boolean free = false;

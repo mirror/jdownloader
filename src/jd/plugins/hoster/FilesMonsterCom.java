@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonster\\.com/download.php\\?id=.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?(decryptedfilesmonster\\.com/download.php\\?id=|(decrypted)?filesmonster\\.com/dl/.*?/free/(2|1)/).+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
     private static final String PROPERTY_NO_SLOT_WAIT_TIME = "NO_SLOT_WAIT_TIME";
 
@@ -45,9 +45,18 @@ public class FilesMonsterCom extends PluginForHost {
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
+    private static final String POSTTHATREGEX = "\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"";
+    private static final String POSTTHATREGEX2 = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
+    private static final String TEMPORARYUNAVAILABLE = "Download not available at the moment";
+    private static final String REDIRECTFNF = "DL_FileNotFound";
+
     @SuppressWarnings("deprecation")
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonstercom.noslotwaittime", "No slot wait time (seconds)"), 30, 86400).setDefaultValue(60).setStep(30));
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("decryptedfilesmonster.com", "filesmonster.com"));
     }
 
     public void login(Account account) throws Exception {
@@ -110,6 +119,7 @@ public class FilesMonsterCom extends PluginForHost {
         login(account);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"), 120 * 60 * 1000l);
         String premlink = br.getRegex("\"(http://filesmonster\\.com/get/.*?)\"").getMatch(0);
         if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(premlink);
@@ -136,15 +146,31 @@ public class FilesMonsterCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        String filesize = br.getRegex("File size: <span class=\"em\">(.*?)</span>").getMatch(0);
-        String filename = br.getRegex("File name: <span class=\"em\">(.*?)</span>").getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) {
-            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        br.setFollowRedirects(false);
+        if (downloadLink.getDownloadURL().contains("/free/2/")) {
+            String mainlinkpart = new Regex(downloadLink.getDownloadURL(), "filesmonster\\.com/dl/(.*?)/").getMatch(0);
+            br.getPage("http://filesmonster.com/download.php?id=" + mainlinkpart);
+            if (br.getRedirectLocation() != null) {
+                if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setName(downloadLink.getName());
+            downloadLink.setDownloadSize(downloadLink.getDownloadSize());
+        } else {
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() != null) {
+                if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String filesize = br.getRegex("File size: <span class=\"em\">(.*?)</span>").getMatch(0);
+            String filename = br.getRegex("File name: <span class=\"em\">(.*?)</span>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+            if (filesize != null) {
+                downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+            }
         }
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));
         return AvailableStatus.TRUE;
 
     }
@@ -152,11 +178,18 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"), 120 * 60 * 1000l);
         br.setFollowRedirects(true);
         String wait = br.getRegex("You can wait for the start of downloading (\\d+)").getMatch(0);
         if (wait != null && br.containsHTML("You reached your")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1000l);
         wait = br.getRegex("is already in use (\\d+)").getMatch(0);
-        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1000l);
+        wait = br.getRegex("You can start new download in (\\d+)").getMatch(0);
+        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1000l);
+        // The code below will always cause a reconnect and i don't know how
+        // filesmonster detects that...
+        boolean pluginBroken = true;
+        if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* get file id */
         String fmurl = br.getRegex("(http://[\\w\\.\\d]*?filesmonster\\.com/)").getMatch(0);
         if (fmurl == null) {
@@ -172,9 +205,33 @@ public class FilesMonsterCom extends PluginForHost {
             }
 
         }
-        String postThat = br.getRegex("\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"").getMatch(0);
+        String postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
+        if (postThat == null) postThat = new Regex(downloadLink.getDownloadURL(), POSTTHATREGEX2).getMatch(0);
         if (postThat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(postThat, "");
+        if (!downloadLink.getDownloadURL().contains("/free/2/")) {
+            br.postPage(postThat, "");
+        } else {
+            downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
+            // Find a new temporary link
+            String mainlinkpart = new Regex(downloadLink.getDownloadURL(), "filesmonster\\.com/dl/(.*?)/").getMatch(0);
+            String originalfilename = downloadLink.getStringProperty("origfilename");
+            String originalfilesize = downloadLink.getStringProperty("origsize");
+            String oldTemporaryLinkPart = new Regex(downloadLink.getDownloadURL(), "/free/2/(.+)").getMatch(0);
+            br.getPage("http://filesmonster.com/download.php?id=" + mainlinkpart);
+            postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
+            if (postThat == null) postThat = new Regex(downloadLink.getDownloadURL(), POSTTHATREGEX2).getMatch(0);
+            if (postThat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage(postThat, "");
+            String findOtherLinks = br.getRegex("reserve_ticket\\('(/dl/rft/.*?)'\\)").getMatch(0);
+            if (findOtherLinks == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("http://filesmonster.com" + findOtherLinks);
+            String regexToFindANewTemporaryLinkInfo = "\\{(\"dlcode\":\"[A-Za-z0-9_.-]+\",\"name\":\"" + originalfilename + ")\",\"size\":\\d+,\"cutted_name\":\".{38}\"\\}";
+            String tempLinkInfo = br.getRegex(regexToFindANewTemporaryLinkInfo).getMatch(0);
+            if (tempLinkInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String newTemporaryLinkPart = new Regex(tempLinkInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
+            downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace(oldTemporaryLinkPart, newTemporaryLinkPart));
+            br.getPage(downloadLink.getDownloadURL());
+        }
         /* now we have the data page, check for wait time and data id */
         // Captcha handling
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -185,15 +242,18 @@ public class FilesMonsterCom extends PluginForHost {
         String c = getCaptchaCode(cf, downloadLink);
         rc.setCode(c);
         if (br.containsHTML("(Captcha number error or expired|api\\.recaptcha\\.net)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String finalPage = br.getRegex("reserve_ticket\\('(/dl/.*?)'\\)").getMatch(0);
-        if (finalPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /* request ticket for this file */
-        br.getPage("http://filesmonster.com" + finalPage);
-        String linkPart = br.getRegex("dlcode\":\"(.*?)\"").getMatch(0);
-        String firstPart = new Regex(postThat, "(http://filesmonster\\.com/dl/.*?/free/)").getMatch(0);
-        if (linkPart == null || firstPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String nextLink = firstPart + "2/" + linkPart + "/";
-        br.getPage(nextLink);
+        if (!downloadLink.getDownloadURL().contains("/free/2/")) {
+            String finalPage = br.getRegex("reserve_ticket\\('(/dl/.*?)'\\)").getMatch(0);
+            if (finalPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* request ticket for this file */
+            br.getPage("http://filesmonster.com" + finalPage);
+            String linkPart = br.getRegex("dlcode\":\"(.*?)\"").getMatch(0);
+            String firstPart = new Regex(postThat, "(http://filesmonster\\.com/dl/.*?/free/)").getMatch(0);
+            if (linkPart == null || firstPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String nextLink = firstPart + "2/" + linkPart + "/";
+            br.getPage(nextLink);
+        }
+        if (br.containsHTML("(>You've downloaded the file recently\\.<|>You've downloaded file recently\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 45 * 60 * 1001l);
         String strangeLink = br.getRegex("get_link\\('(/dl/.*?)'\\)").getMatch(0);
         if (strangeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         strangeLink = "http://filesmonster.com" + strangeLink;
@@ -201,8 +261,11 @@ public class FilesMonsterCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int shortWaittime = 45;
         if (regexedwaittime != null) shortWaittime = Integer.parseInt(regexedwaittime);
-        sleep(shortWaittime * 1001l, downloadLink);
-        br.getPage(strangeLink);
+        sleep(shortWaittime * 1100l, downloadLink);
+        try {
+            br.getPage(strangeLink);
+        } catch (Exception e) {
+        }
         String dllink = br.getRegex("url\":\"(http:.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final link equals null!");
