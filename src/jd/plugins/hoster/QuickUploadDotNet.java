@@ -48,7 +48,7 @@ public class QuickUploadDotNet extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://www.quickupload.net";
     public boolean nopremium = false;
-    private static final String FILEOFFLINE = "(No such file with this filename|No such user exist|File not found)";
+    private static final String FILEOFFLINE = "<b>(No such file with this filename|No such user exist|File not found)</b>";
 
     @Override
     public String getAGBLink() {
@@ -98,11 +98,12 @@ public class QuickUploadDotNet extends PluginForHost {
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-            int tt = Integer.parseInt(ttt);
-            sleep(tt * 1001, downloadLink);
-        }
+        // no wait - looks work without
+        /*
+         * if (ttt != null) { logger.info("Waittime detected, waiting " +
+         * ttt.trim() + " seconds from now on..."); int tt =
+         * Integer.parseInt(ttt); sleep(tt * 1001, downloadLink); }
+         */
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
