@@ -111,7 +111,12 @@ public class RmFrksNt extends PluginForDecrypt {
             if (frameto == null) return null;
             br.getPage(frameto);
             String[] links0 = br.getRegex("<iframe src=\"(.*?)\"").getColumn(0);
-            if (links0 == null || links0.length == 0) return null;
+            if (links0 == null || links0.length == 0) {
+                logger.warning("links0 equals null");
+                logger.warning("This link failed: " + parameter);
+                logger.warning(br.toString());
+                return null;
+            }
             progress.setRange(links0.length);
             for (String link : links0) {
                 decryptedLinks.add(createDownloadlink(link));
