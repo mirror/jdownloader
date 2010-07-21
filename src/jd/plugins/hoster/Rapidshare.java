@@ -70,7 +70,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
 
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_3 = Pattern.compile("<!-- E#[\\d]{1,2} --><p>(.*?)<\\/p>", Pattern.DOTALL);
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_3 = Pattern.compile("<!-- E#[\\d]{1,2} -->.*?<p>(.*?)<\\/p>", Pattern.DOTALL);
 
     private static final Pattern PATTERN_FIND_MIRROR_URL = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
 
@@ -865,7 +865,7 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
-    private String findError(Browser br) {
+    public static String findError(Browser br) {
         String error = null;
         error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE).getMatch(0);
 
