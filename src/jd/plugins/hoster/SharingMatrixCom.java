@@ -279,7 +279,7 @@ public class SharingMatrixCom extends PluginForHost {
         br2.getPage("/ajax_scripts/_get2.php?link_id=" + linkid + "&link_name=" + link_name + "&dl_id=" + dl_id + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode)));
         if (br2.containsHTML("server_down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharingmatrixcom.failure", "Serverfailure, Please try again later!"), 30 * 60 * 1000l);
         String linkurl = br2.getRegex("serv:\"([^\"]+)\"").getMatch(0) + "/download/" + br2.getRegex("hash:\"([^\"]+)\"").getMatch(0) + "/" + dl_id.trim() + "/" + (passCode == null ? "" : "&password=" + Encoding.urlEncode(passCode));
-        dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, linkurl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, linkurl, false, 1);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Incorrect password for this file.")) {
