@@ -91,11 +91,15 @@ public class FilerNet extends PluginForHost {
 
         }
         Form[] forms = br.getForms();
-        if (forms.length < 2) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 60l); }
-        br.submitForm(forms[1]);
+        if (forms == null || forms.length < 2) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 60l);
+        br.submitForm(forms[0]);
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.setAllowFilenameFromURL(true);
         dl.startDownload();
     }

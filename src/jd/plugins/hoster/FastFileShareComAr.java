@@ -129,7 +129,6 @@ public class FastFileShareComAr extends PluginForHost {
             return ai;
         }
         String expires = br.getRegex("Your Account Expires on (.*?, \\d+), ").getMatch(0);
-        expires = null;
         if (expires != null) {
             // Your Account Expires on July 3, 2010, 1:26 pm<br>
             ai.setValidUntil(Regex.getMilliSeconds(expires, "MMMM d, yyyy", null));
