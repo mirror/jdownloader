@@ -63,7 +63,7 @@ public class DropIo extends PluginForHost {
         String filesize = br.getRegex("\"filesize\":(\\d+),\"").getMatch(0);
         // the filesize of videolinks is null so we only check if the filename
         // is null
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename);
         if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -73,7 +73,7 @@ public class DropIo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        String id = br.getRegex("id\":(\\d+),\"").getMatch(0);
+        String id = br.getRegex("id\":(\\d+)").getMatch(0);
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String playerUrl = downloadLink.getDownloadURL() + "/asset/" + id + "/player";
         br.postPage(playerUrl, "");

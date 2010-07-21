@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,52 +27,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://[\\w\\.]*?u\\.115\\.com/file/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://[\\w\\.]*?u\\.115\\.com/file/[a-z0-9]+" }, flags = { 0 })
 public class U115Com extends PluginForHost {
-
-    private static String u115servers = "u115servers";
-
-    /** The list of servers displayed in the plugin configuration pane */
-    // private static final String[] U115_SERVERS = new String[] { "cnc", "tel",
-    // "bak" };
-    private static final String[] U115_SERVERS;
-
-    static {
-        U115_SERVERS = new String[] { "cnc", "tel", "bak" };
-    }
 
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
         this.setStartIntervall(5000l);
     }
 
     @Override
     public String getAGBLink() {
         return "http://u.115.com/tos.html";
-    }
-
-    private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), u115servers, U115_SERVERS, JDL.L("plugins.host.U115Com.servers", "Use this server: ")).setDefaultValue(0));
-    }
-
-    private int getConfiguredServer() {
-        switch (getPluginConfig().getIntegerProperty(u115servers, -1)) {
-        case 0:
-            logger.fine("The server " + U115_SERVERS[0] + " is configured");
-            return 0;
-        case 1:
-            logger.fine("The server " + U115_SERVERS[1] + " is configured");
-            return 1;
-        case 2:
-            logger.fine("The server " + U115_SERVERS[2] + " is configured");
-            return 2;
-        default:
-            logger.fine("No server is configured, returning default server [" + U115_SERVERS[2] + "]");
-            return 2;
-        }
     }
 
     @Override
@@ -105,24 +69,15 @@ public class U115Com extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        int maxchunks = 0;
-        int chosenServer = getConfiguredServer();
-        if (chosenServer == 0)
-            maxchunks = -2;
-        else if (chosenServer == 1) maxchunks = -3;
         requestFileInformation(link);
         String dllink = findLink();
-        if (dllink == null) {
-            maxchunks = -2;
-            dllink = findLink2();
-        }
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.urlDecode(dllink, true);
         dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(help_down.html|onclick=\"WaittingManager|action=submit_feedback|\"report_box\"|UploadErrorMsg)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
@@ -131,26 +86,9 @@ public class U115Com extends PluginForHost {
         dl.startDownload();
     }
 
-    public String secondServerregexPart = "\\.[a-z0-9.]+\\.com(:\\d+)?/.*?\\?key=.*?\\&key1=.*?(\\&file=.*?)?\\&key2=[a-z0-9]+)";
-
     public String findLink() throws Exception {
-        int chosenServer = getConfiguredServer();
-        String serverext = U115_SERVERS[chosenServer];
-        String finalRegex = "(http://\\d+\\." + serverext + secondServerregexPart;
-        String dllink = br.getRegex(finalRegex).getMatch(0);
-        if (dllink == null) logger.info("Dllink for chosen server " + U115_SERVERS[chosenServer] + " couldn't be found");
-        return dllink;
-    }
-
-    public String findLink2() throws Exception {
-        String dllink = null;
-        for (int i = 0; i <= U115_SERVERS.length - 1; i++) {
-            String serverext = U115_SERVERS[i];
-            String finalRegex = "(http://\\d+\\." + serverext + secondServerregexPart;
-            dllink = br.getRegex(finalRegex).getMatch(0);
-            if (dllink != null) break;
-        }
-        return dllink;
+        String linkToDownload = br.getRegex("class=\"normal-down\" href=\"(.*?)\"").getMatch(0);
+        return linkToDownload;
     }
 
     @Override
@@ -165,12 +103,7 @@ public class U115Com extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        int maxdls = -1;
-        int chosenServer = getConfiguredServer();
-        if (chosenServer == 0)
-            maxdls = 1;
-        else if (chosenServer == 1) maxdls = 2;
-        return maxdls;
+        return 1;
     }
 
 }

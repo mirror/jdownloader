@@ -69,15 +69,17 @@ public class TurboBitNet extends PluginForHost {
         if (fileName == null) {
             fileName = br.getRegex("<span class='file-icon.*?'>(.*?)</span>").getMatch(0);
         }
-        String fileSize = br.getRegex("<b>(File size|Размер файла):</b>(.*?)</div>").getMatch(1);
+        String fileSize = br.getRegex("(File size|Dateiumfang):</b>(.*?)</div>").getMatch(1);
         if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        fileSize = fileSize.replace("М", "M");
-        fileSize = fileSize.replace("к", "k");
-        fileSize = fileSize.replace("Г", "g");
-        fileSize = fileSize.replace("б", "");
-        if (!fileSize.endsWith("b")) fileSize = fileSize + "b";
         downloadLink.setName(fileName.trim());
-        if (fileSize != null) downloadLink.setDownloadSize(Regex.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
+        if (fileSize != null) {
+            fileSize = fileSize.replace("М", "M");
+            fileSize = fileSize.replace("к", "k");
+            fileSize = fileSize.replace("Г", "g");
+            fileSize = fileSize.replace("б", "");
+            if (!fileSize.endsWith("b")) fileSize = fileSize + "b";
+            downloadLink.setDownloadSize(Regex.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
