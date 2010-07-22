@@ -117,7 +117,9 @@ public class JDController implements ControlListener {
                     eventStart = 0;
                     synchronized (controlListener) {
                         if (controlListener.size() > 0) {
-                            for (ControlListener cl : controlListener) {
+                            currentcontrolListener.clear();
+                            currentcontrolListener.addAll(controlListener);
+                            for (ControlListener cl : currentcontrolListener) {
                                 eventStart = System.currentTimeMillis();
                                 try {
                                     cl.controlEvent(event);
@@ -156,6 +158,7 @@ public class JDController implements ControlListener {
      * {@link #fireControlEvent(ControlEvent)} ein Event losgeschickt wird.
      */
     private transient ArrayList<ControlListener> controlListener = new ArrayList<ControlListener>();
+    private transient ArrayList<ControlListener> currentcontrolListener = new ArrayList<ControlListener>();
     private transient ArrayList<ControlListener> removeList = new ArrayList<ControlListener>();
 
     private ArrayList<ControlEvent> eventQueue = new ArrayList<ControlEvent>();

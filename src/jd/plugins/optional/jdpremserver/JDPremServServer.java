@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.HttpServer;
@@ -63,9 +64,25 @@ public class JDPremServServer implements Handler {
                     /* finished? */
                     File file = new File(ret.getFileOutput());
                     if (file.exists() && file.isFile()) {
-                        /* OK: 1 = finished and still available on disk */
-                        response.setReturnStatus(Response.OK);
-                        response.addContent(new String("OK: 100 || " + ret.getDownloadSize()));
+                        if (request.getParameter("download") != null) {
+                            /* download file */
+                            response.setReturnStatus(Response.OK);
+                            if (request.getParameter("range") == null) {
+                                response.setFileServe(ret.getFileOutput(), 0, -1, new File(ret.getFileOutput()).length(), false);
+                            } else {
+                                String[] dat = new Regex(request.getParameter("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
+                                if (dat[1] == null) {
+                                    response.setFileServe(ret.getFileOutput(), Long.parseLong(dat[0]), -1, new File(ret.getFileOutput()).length(), true);
+                                } else {
+                                    response.setFileServe(ret.getFileOutput(), Long.parseLong(dat[0]), Long.parseLong(dat[1]), new File(ret.getFileOutput()).length(), true);
+                                }
+                            }
+                        } else {
+                            /* request status info */
+                            /* OK: 1 = finished and still available on disk */
+                            response.setReturnStatus(Response.OK);
+                            response.addContent(new String("OK: 100 || " + ret.getDownloadSize()));
+                        }
                     } else {
                         /*
                          * ERROR: -100 = finished but no longer available on

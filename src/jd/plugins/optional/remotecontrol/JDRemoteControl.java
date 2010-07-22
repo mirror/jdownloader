@@ -27,9 +27,9 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.nutils.httpserver.HttpServer;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.interfaces.HttpServer;
 import jd.utils.locale.JDL;
 
 /**
@@ -64,7 +64,7 @@ public class JDRemoteControl extends PluginOptional {
             subConfig.save();
 
             if (activate.isSelected()) {
-                server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
+                server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler(), false);
                 server.start();
                 UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.remotecontrol.startedonport2", "%s started on port %s\nhttp://127.0.0.1:%s\n/help for Developer Information.", getHost(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
             } else {
@@ -96,7 +96,7 @@ public class JDRemoteControl extends PluginOptional {
 
         if (enabled) {
             try {
-                server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
+                server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler(), false);
                 server.start();
             } catch (Exception e) {
                 JDLogger.exception(e);
