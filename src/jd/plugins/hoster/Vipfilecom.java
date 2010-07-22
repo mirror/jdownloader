@@ -117,7 +117,7 @@ public class Vipfilecom extends PluginForHost {
         /* we have to wait little because server too buggy */
         sleep(5000, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
