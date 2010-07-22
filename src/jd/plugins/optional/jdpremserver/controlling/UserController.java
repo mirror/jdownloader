@@ -87,7 +87,7 @@ public class UserController implements ControlListener {
         return true;
     }
 
-    private PremServUser getUserByUserName(String username) {
+    public PremServUser getUserByUserName(String username) {
         username = username.toLowerCase();
         for (PremServUser u : premServUsers) {
             if (u.getUsername().equals(username)) return u;
