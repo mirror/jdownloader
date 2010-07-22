@@ -77,13 +77,20 @@ public class UserController implements ControlListener {
 
     }
 
-    public boolean isUserAllowedToDownload(String username, String password, String hoster, long traffic) {
+    public boolean isUserAllowed(String username, String password, String domain) {
+        return isUserAllowed(username, password, domain, 0);
+    }
+
+    public boolean isUserAllowed(String username, String password) {
+
+        return isUserAllowed(username, password, null, 0);
+    }
+
+    public boolean isUserAllowed(String username, String password, String domain, long filesize) {
         PremServUser user = getUserByUserName(username);
-        hoster = hoster.toLowerCase();
         if (user == null) return false;
         if (!user.getPassword().equals(password)) return false;
-
-        if (user.calculateTrafficLeft(hoster.toLowerCase()) < traffic) return false;
+        if (user.calculateTrafficLeft(domain) < filesize) return false;
         return true;
     }
 

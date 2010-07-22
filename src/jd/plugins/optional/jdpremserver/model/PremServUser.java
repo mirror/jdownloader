@@ -63,19 +63,19 @@ public class PremServUser {
         cleanTrafficLog();
     }
 
-    public long calculateTrafficLeft(String hoster) {
-        hoster = hoster.toLowerCase();
-        PremServHoster hosterImpl = getHosters().get(hoster);
+    public long calculateTrafficLeft(String domain) {
+        domain = domain.toLowerCase();
+        PremServHoster hosterImpl = getHosters().get(domain);
         if (hosterImpl == null) return Long.MAX_VALUE;
-        long trafficUsed = calculateTrafficUsed(hoster);
+        long trafficUsed = calculateTrafficUsed(domain);
         return hosterImpl.getTraffic() - trafficUsed;
     }
 
-    private long calculateTrafficUsed(String hoster) {
-        hoster = hoster.toLowerCase();
+    public long calculateTrafficUsed(String domain) {
+        domain = domain.toLowerCase();
         long ret = 0;
         for (TrafficLog l : trafficLog) {
-            if (l.getDomain().equals(hoster)) ret += l.getTraffic();
+            if (l.getDomain().equals(domain)) ret += l.getTraffic();
         }
         return ret;
     }
