@@ -351,6 +351,8 @@ public class JDUtilities {
             Application.setApplication(".jd_home");
             URL ressource = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class");
             /* we have 2 different Main classes */
+            //
+            ressource = ressource;
             if (ressource != null) {
                 JD_HOME = new File(Application.getRoot(jd.Main.class));
             } else {
