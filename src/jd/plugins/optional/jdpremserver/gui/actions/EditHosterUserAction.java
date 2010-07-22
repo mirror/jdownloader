@@ -37,7 +37,7 @@ public class EditHosterUserAction extends AbstractAction {
             sb.append(hoster.getTraffic());
             sb.append("\r\n");
         }
-        String ret = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "SetHoster for " + obj.getUsername(), "", sb.toString(), null, null, null);
+        String ret = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "SetHoster for " + obj.getUsername(), "Format: domain.com,trafficpermonthinbytes\r\n", sb.toString(), null, null, null);
         if (ret == null) return;
         hosters = new HashMap<String, PremServHoster>();
 
