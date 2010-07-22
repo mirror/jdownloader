@@ -19,6 +19,7 @@ package jd.plugins.optional.jdpremserver;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.Main;
 import jd.PluginWrapper;
 import jd.event.ControlEvent;
 import jd.gui.swing.SwingGui;
@@ -50,10 +51,12 @@ public class JDPremServ extends PluginOptional {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onControlEvent(ControlEvent event) {
-
+        switch (event.getID()) {
+        case ControlEvent.CONTROL_INIT_COMPLETE:
+            startServer();
+        }
     }
 
     @Override
@@ -71,6 +74,22 @@ public class JDPremServ extends PluginOptional {
         return menu;
     }
 
+    private void startServer() {
+        try {
+            JDPremServServer.getInstance().start();
+        } catch (Exception e) {
+            logger.severe("Could not start JDPremServer: " + e.getMessage());
+        }
+    }
+
+    private void stopServer() {
+        try {
+            JDPremServServer.getInstance().stop();
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+        }
+    }
+
     @Override
     public boolean initAddon() {
         // this method is called ones after the addon has been loaded
@@ -79,6 +98,8 @@ public class JDPremServ extends PluginOptional {
         activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
+
+        if (Main.isInitComplete()) startServer();
 
         return true;
     }
@@ -105,7 +126,7 @@ public class JDPremServ extends PluginOptional {
 
     @Override
     public void onExit() {
-        // addon disabled/tabe closed
+        stopServer();
     }
 
     @Override

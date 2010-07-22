@@ -109,13 +109,13 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public void stopAddon() {
         if (!isRunning()) return;
-
         onExit();
 
         /*
          * if addon is running, remove it from the ControlListener list
          */
         JDController.getInstance().removeControlListener(this);
+        running = false;
     }
 
     @Override

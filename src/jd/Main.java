@@ -352,6 +352,12 @@ public class Main {
         }
     }
 
+    private static boolean Init_Complete = false;
+
+    public static boolean isInitComplete() {
+        return Init_Complete;
+    }
+
     private void go() {
         final JDInit init = new JDInit();
         final JDController controller = JDController.getInstance();
@@ -428,6 +434,7 @@ public class Main {
 
         init.checkUpdate();
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
+        Init_Complete = true;
 
         try {
             Thread.sleep(3000);
