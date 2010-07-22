@@ -89,6 +89,7 @@ public class UserController implements ControlListener {
     public boolean isUserAllowed(String username, String password, String domain, long filesize) {
         PremServUser user = getUserByUserName(username);
         if (user == null) return false;
+        if (!user.isEnabled()) return false;
         if (!user.getPassword().equals(password)) return false;
         if (user.calculateTrafficLeft(domain) < filesize) return false;
         return true;
