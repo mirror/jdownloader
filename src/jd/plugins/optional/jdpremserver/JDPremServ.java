@@ -27,6 +27,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.jdpremserver.gui.JDPremServGui;
 
 @OptionalPlugin(rev = "$Revision: 11760 $", id = "jdpremserv", hasGui = true, interfaceversion = 5, minJVM = 1.6, linux = true, windows = true, mac = true)
 public class JDPremServ extends PluginOptional {

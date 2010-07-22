@@ -1,7 +1,7 @@
-package jd.plugins.optional.jdpremserver;
+package jd.plugins.optional.jdpremserver.gui;
 
 import javax.swing.Icon;
-import javax.swing.JLabel;
+import javax.swing.JScrollPane;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
@@ -31,8 +31,8 @@ public class JDPremServGui extends ClosableView {
 
     private void layoutContents(SwitchPanel frame) {
         // Layout your gui here. we use MIglayout
-        frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
-        frame.add(new JLabel("Hello World"));
+        frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]"));
+        frame.add(new JScrollPane(PremServUserTable.getInstance()));
         // todo : lot of stuff here
     }
 
