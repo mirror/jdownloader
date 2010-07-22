@@ -1039,4 +1039,9 @@ public class Serverhandler implements Handler {
         element.setTextContent(script.getAbsolutePath());
         return element;
     }
+
+    public void finish(Request req, Response res) {
+        // TODO Auto-generated method stub
+
+    }
 }

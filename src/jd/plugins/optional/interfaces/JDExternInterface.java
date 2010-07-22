@@ -463,6 +463,11 @@ public class JDExternInterface extends PluginOptional {
 
         }
 
+        public void finish(Request req, Response res) {
+            // TODO Auto-generated method stub
+
+        }
+
     }
 
 }

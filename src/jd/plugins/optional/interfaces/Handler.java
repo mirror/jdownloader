@@ -20,4 +20,6 @@ public interface Handler {
 
     public void handle(Request request, Response response);
 
+    public void finish(Request req, Response res);
+
 }

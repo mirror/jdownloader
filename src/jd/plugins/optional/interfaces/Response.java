@@ -50,9 +50,21 @@ public class Response {
 
     private long filesize = 0;
 
+    private long fileBytesServed = -1;
+
     private boolean range = false;
 
+    private Object additionalData = null;
+
     public Response() {
+    }
+
+    public void setAdditionalData(Object obj) {
+        additionalData = obj;
+    }
+
+    public Object getAdditionalData() {
+        return additionalData;
     }
 
     public void setFileServe(String path, long start, long end, long filesize, boolean range) {
@@ -82,6 +94,10 @@ public class Response {
 
     public void setReturnType(String returnType) {
         this.returnType = returnType;
+    }
+
+    public long getFileBytesServed() {
+        return fileBytesServed;
     }
 
     public void writeToStream(OutputStream out) throws IOException {
@@ -148,6 +164,7 @@ public class Response {
                 }
                 raf.close();
             } finally {
+                fileBytesServed = served;
                 try {
                     raf.close();
                 } catch (Exception e) {

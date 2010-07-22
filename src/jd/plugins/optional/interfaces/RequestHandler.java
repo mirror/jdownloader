@@ -89,13 +89,17 @@ public class RequestHandler extends Thread {
                 res.setReturnStatus(Response.ERROR);
                 res.addContent(e.toString());
             }
-            OutputStream out = socket.getOutputStream();
-            res.writeToStream(out);
-            out.close();
-
+            try {
+                OutputStream out = socket.getOutputStream();
+                res.writeToStream(out);
+                out.close();
+            } finally {
+                handler.finish(req, res);
+            }
         } catch (IOException e) {
             JDLogger.exception(e);
         } finally {
+
             try {
                 socket.close();
             } catch (IOException e) {
