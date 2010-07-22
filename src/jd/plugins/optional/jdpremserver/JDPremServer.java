@@ -26,15 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 
-/**
- * order : # isJPfmUsable # prepare --> if mount location not set or problematic
- * --> ignore --> end # User selected to mount a file -> if file already present
- * -> ignore else watch() invoked # volumes automatically unmounted and all
- * kernel resources freed on exit.
- * 
- * @author Shashank Tulsyan
- */
-@OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 5, minJVM = 1.7, linux = false, windows = true, mac = false)
+@OptionalPlugin(rev = "$Revision: 11760 $", id = "premiumserver", hasGui = false, interfaceversion = 5, minJVM = 1.7, linux = true, windows = true, mac = true)
 public class JDPremServer extends PluginOptional {
 
     public JDPremServer(PluginWrapper wrapper) {
@@ -51,8 +43,6 @@ public class JDPremServer extends PluginOptional {
     @SuppressWarnings("unchecked")
     @Override
     public void onControlEvent(ControlEvent event) {
-        // receiver all control events. reconnects,
-        // downloadstarts/end,pluginstart/pluginend
 
         DownloadLink link;
         switch (event.getID()) {
