@@ -101,6 +101,14 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
         });
 
-    }
+        this.addColumn(new ExtTextColumn<PremServUser>("Allowed Hosters", this) {
 
+            @Override
+            protected String getStringValue(PremServUser value) {
+
+                return value.getHosters() + "";
+            }
+
+        });
+    }
 }

@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import jd.plugins.optional.jdpremserver.controlling.UserController;
 import jd.plugins.optional.jdpremserver.model.PremServUser;
 
 public class EnableDisableUserAction extends AbstractAction {
@@ -25,7 +24,7 @@ public class EnableDisableUserAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent arg0) {
 
-        UserController.getInstance().setUserEnabled(obj, !obj.isEnabled());
+        obj.setEnabled(!obj.isEnabled());
     }
 
 }

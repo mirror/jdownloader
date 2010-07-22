@@ -8,6 +8,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
 import jd.plugins.optional.jdpremserver.gui.actions.AddUserAction;
+import jd.plugins.optional.jdpremserver.gui.actions.EditHosterUserAction;
 import jd.plugins.optional.jdpremserver.gui.actions.EnableDisableUserAction;
 import jd.plugins.optional.jdpremserver.gui.actions.RemoveUserAction;
 import jd.plugins.optional.jdpremserver.model.PremServUser;
@@ -56,7 +57,7 @@ public class PremServUserTable extends ExtTable<PremServUser> {
         if (contextObject != null) {
             popup.add(new RemoveUserAction(contextObject));
             popup.add(new EnableDisableUserAction(contextObject));
-
+            popup.add(new EditHosterUserAction(contextObject));
         }
         return popup;
 
