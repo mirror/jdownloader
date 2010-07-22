@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.jdpremserver;
+package jd.plugins.optional.jdpremserv;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.plugins.optional.jdpremserver.gui.JDPremServGui;
+import jd.plugins.optional.jdpremserv.gui.JDPremServGui;
 
 @OptionalPlugin(rev = "$Revision: 11760 $", id = "jdpremserv", hasGui = true, interfaceversion = 5, minJVM = 1.6, linux = true, windows = true, mac = true)
 public class JDPremServ extends PluginOptional {

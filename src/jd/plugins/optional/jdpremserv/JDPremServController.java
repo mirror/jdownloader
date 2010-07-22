@@ -1,4 +1,4 @@
-package jd.plugins.optional.jdpremserver;
+package jd.plugins.optional.jdpremserv;
 
 import java.util.ArrayList;
 import java.util.HashMap;

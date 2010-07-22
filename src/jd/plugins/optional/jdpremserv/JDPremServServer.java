@@ -1,4 +1,4 @@
-package jd.plugins.optional.jdpremserver;
+package jd.plugins.optional.jdpremserv;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,8 +13,8 @@ import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.HttpServer;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
-import jd.plugins.optional.jdpremserver.controlling.UserController;
-import jd.plugins.optional.jdpremserver.model.PremServUser;
+import jd.plugins.optional.jdpremserv.controlling.UserController;
+import jd.plugins.optional.jdpremserv.model.PremServUser;
 
 public class JDPremServServer implements Handler {
 
