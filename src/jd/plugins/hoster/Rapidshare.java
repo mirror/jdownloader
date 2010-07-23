@@ -33,9 +33,9 @@ import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -45,11 +45,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -868,13 +868,15 @@ public class Rapidshare extends PluginForHost {
     public static String findError(Browser br) {
         String error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE).getMatch(0);
 
-        if (error == null || error.trim().length() == 0) {
+        if (error == null || Encoding.htmlDecode(error).trim().length() < 3) {
             error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_3).getMatch(0);
         }
-        if (error == null || error.trim().length() == 0) {
+        // <3to filter &nbsp;
+        // error = error.trim();
+        if (error == null || Encoding.htmlDecode(error).trim().length() < 3) {
             error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_2).getMatch(0);
         }
-        if (error == null || error.trim().length() == 0) {
+        if (error == null || Encoding.htmlDecode(error).trim().length() < 3) {
             error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_1).getMatch(0);
         }
 
