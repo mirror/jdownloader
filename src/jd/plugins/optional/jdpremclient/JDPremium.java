@@ -35,7 +35,7 @@ class PremShareHost extends HostPluginWrapper {
     private HostPluginWrapper replacedone = null;
 
     public PremShareHost(String host, String className, String patternSupported, int flags) {
-        super(host, "jd.plugins.optional.premcol.", "PremShare", patternSupported, flags, "$Revision: 6506 $");
+        super(host, "jd.plugins.optional.jdpremclient.", "PremShare", patternSupported, flags, "$Revision: 6506 $");
         for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
         }

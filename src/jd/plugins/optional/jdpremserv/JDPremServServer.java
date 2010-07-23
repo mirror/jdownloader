@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -46,13 +45,17 @@ public class JDPremServServer implements Handler {
     }
 
     public void handle(Request request, Response response) {
-        String[] splitPath = request.getRequestUrl().substring(1).split("[/|\\\\]");
-        String namespace = splitPath[0];
-        JDLogger.getLogger().finer(request.toString());
-        JDLogger.getLogger().finer(namespace);
-        JDLogger.getLogger().finer(request.getParameters().toString());
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+        if (username != null) username = Encoding.urlDecode(username, false);
+        if (password != null) password = Encoding.urlDecode(password, false);
+        if (username == null || username.length() == 0 || password == null || password.length() == 0 || !UserController.getInstance().isUserAllowed(username, password)) {
+            /* ERROR: -10 = invalid user */
+            response.setReturnStatus(Response.ERROR);
+            response.addContent(new String("ERROR: -10"));
+            return;
+        }
+
         if (request.getParameter("get") != null || request.getParameter("force") != null) {
             String wantedUrl = request.getParameter("force");
             if (wantedUrl == null) wantedUrl = request.getParameter("get");
@@ -63,81 +66,75 @@ public class JDPremServServer implements Handler {
                 /* ERROR: 0 = no downloadlink available */
                 response.setReturnStatus(Response.ERROR);
                 response.addContent(new String("ERROR: 0"));
-            } else if (username != null && password != null) {
-                if (!UserController.getInstance().isUserAllowed(username, password, ret.getHost())) {
-                    /* ERROR: -20 = not allowed */
-                    response.setReturnStatus(Response.ERROR);
-                    response.addContent(new String("ERROR: -20"));
-                } else {
-                    if (ret.getLinkStatus().isFinished()) {
-                        /* finished? */
-                        File file = new File(ret.getFileOutput());
-                        if (file.exists() && file.isFile()) {
-                            if (request.getParameter("download") != null) {
-                                /* download file */
-                                response.setReturnStatus(Response.OK);
-                                JDPremServController.getInstance().addRequestedDownload(ret);
-                                if (request.getParameter("range") == null) {
-                                    response.setFileServe(ret.getFileOutput(), 0, -1, new File(ret.getFileOutput()).length(), false);
-                                } else {
-                                    String[] dat = new Regex(request.getParameter("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
-                                    if (dat[1] == null) {
-                                        response.setFileServe(ret.getFileOutput(), Long.parseLong(dat[0]), -1, new File(ret.getFileOutput()).length(), true);
-                                    } else {
-                                        response.setFileServe(ret.getFileOutput(), Long.parseLong(dat[0]), Long.parseLong(dat[1]), new File(ret.getFileOutput()).length(), true);
-                                    }
-                                }
-                            } else {
-                                /* request status info */
-                                /* OK: 1 = finished and still available on disk */
-                                response.setReturnStatus(Response.OK);
-                                response.addContent(new String("OK: 100 || " + ret.getDownloadSize()));
-                            }
-                        } else {
-                            /*
-                             * ERROR: -100 = finished but no longer available on
-                             * disk
-                             */
-                            response.setReturnStatus(Response.ERROR);
-                            response.addContent(new String("ERROR: -100"));
-                        }
-                    } else if (ret.getLinkStatus().isFailed()) {
-                        /* download failed */
-                        /* ERROR: -50 = failed */
-                        response.setReturnStatus(Response.ERROR);
-                        response.addContent(new String("ERROR: -50"));
-                    } else {
-                        /* not finished? */
-                        if (ret.getLinkStatus().isPluginActive()) {
-                            /* download läuft */
-                            response.setReturnStatus(Response.OK);
-                            StringBuilder sb = new StringBuilder("OK: 1 || ");
-                            sb.append(ret.getDownloadCurrent() + "/" + ret.getDownloadSize() + "/" + ret.getDownloadSpeed());
-                            response.addContent(sb.toString());
-                        } else {
-                            if (request.getParameter("force") != null) {
-                                /* forced download */
-                                ArrayList<DownloadLink> forced = new ArrayList<DownloadLink>();
-                                forced.add(ret);
-                                DownloadWatchDog.getInstance().forceDownload(forced);
-                            } else {
-                                /* normal download */
-                                DownloadWatchDog.getInstance().startDownloads();
-                            }
-                            /* download läuft nicht */
-                            response.setReturnStatus(Response.OK);
-                            StringBuilder sb = new StringBuilder("OK: 0 || ");
-                            sb.append(ret.getDownloadCurrent() + "/" + ret.getDownloadSize());
-                            response.addContent(sb.toString());
-                        }
-                    }
-                }
-            } else {
-                /* ERROR: -10 = invalid user */
-                response.setReturnStatus(Response.ERROR);
-                response.addContent(new String("ERROR: -10"));
+                return;
             }
-            return;
+            if (!UserController.getInstance().isUserAllowed(username, password, ret.getHost())) {
+                /* ERROR: -20 = not allowed */
+                response.setReturnStatus(Response.ERROR);
+                response.addContent(new String("ERROR: -20"));
+                return;
+            }
+            if (ret.getLinkStatus().isFinished()) {
+                /* finished? */
+                File file = new File(ret.getFileOutput());
+                if (file.exists() && file.isFile()) {
+                    if (request.getParameter("download") != null) {
+                        /* download file */
+                        response.setReturnStatus(Response.OK);
+                        JDPremServController.getInstance().addRequestedDownload(ret);
+                        if (request.getParameter("range") == null) {
+                            response.setFileServe(ret.getFileOutput(), 0, -1, new File(ret.getFileOutput()).length(), false);
+                        } else {
+                            String[] dat = new Regex(request.getParameter("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
+                            if (dat[1] == null) {
+                                response.setFileServe(ret.getFileOutput(), Long.parseLong(dat[0]), -1, new File(ret.getFileOutput()).length(), true);
+                            } else {
+                                response.setFileServe(ret.getFileOutput(), Long.parseLong(dat[0]), Long.parseLong(dat[1]), new File(ret.getFileOutput()).length(), true);
+                            }
+                        }
+                    } else {
+                        /* request status info */
+                        /* OK: 1 = finished and still available on disk */
+                        response.setReturnStatus(Response.OK);
+                        response.addContent(new String("OK: 100 || " + ret.getDownloadSize()));
+                    }
+                } else {
+                    /*
+                     * ERROR: -100 = finished but no longer available on disk
+                     */
+                    response.setReturnStatus(Response.ERROR);
+                    response.addContent(new String("ERROR: -100"));
+                }
+            } else if (ret.getLinkStatus().isFailed()) {
+                /* download failed */
+                /* ERROR: -50 = failed */
+                response.setReturnStatus(Response.ERROR);
+                response.addContent(new String("ERROR: -50"));
+            } else {
+                /* not finished? */
+                if (ret.getLinkStatus().isPluginActive()) {
+                    /* download läuft */
+                    response.setReturnStatus(Response.OK);
+                    StringBuilder sb = new StringBuilder("OK: 1 || ");
+                    sb.append(ret.getDownloadCurrent() + "/" + ret.getDownloadSize() + "/" + ret.getDownloadSpeed());
+                    response.addContent(sb.toString());
+                } else {
+                    if (request.getParameter("force") != null) {
+                        /* forced download */
+                        ArrayList<DownloadLink> forced = new ArrayList<DownloadLink>();
+                        forced.add(ret);
+                        DownloadWatchDog.getInstance().forceDownload(forced);
+                    } else {
+                        /* normal download */
+                        DownloadWatchDog.getInstance().startDownloads();
+                    }
+                    /* download läuft nicht */
+                    response.setReturnStatus(Response.OK);
+                    StringBuilder sb = new StringBuilder("OK: 0 || ");
+                    sb.append(ret.getDownloadCurrent() + "/" + ret.getDownloadSize());
+                    response.addContent(sb.toString());
+                }
+            }
         }
     }
 
