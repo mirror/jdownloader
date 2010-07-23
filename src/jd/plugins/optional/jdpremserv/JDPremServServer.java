@@ -87,7 +87,7 @@ public class JDPremServServer implements Handler {
                         if (request.getHeader("range") == null) {
                             response.setFileServe(ret.getFileOutput(), 0, -1, new File(ret.getFileOutput()).length(), false);
                         } else {
-                            String[] dat = new Regex(request.getParameter("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
+                            String[] dat = new Regex(request.getHeader("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
                             if (dat[1] == null) {
                                 response.setFileServe(ret.getFileOutput(), Long.parseLong(dat[0]), -1, new File(ret.getFileOutput()).length(), true);
                             } else {
