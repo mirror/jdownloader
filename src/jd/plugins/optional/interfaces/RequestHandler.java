@@ -50,11 +50,18 @@ public class RequestHandler extends Thread {
 
                 if (line.equals("\r\n") && req.getRequestType().equals("POST")) {
                     // TODO: only post data < 2 gb (int range) possible
-                    int data = (int) req.getContentLength();
-                    byte[] buffer = new byte[data];
+                    int left = (int) req.getContentLength();
+                    byte[] buffer = new byte[left];
                     int offset = 0;
-                    while (data - offset > 0) {
-                        offset += reader.read(buffer, offset, data - offset);
+                    int read = -1;
+                    while (left > 0) {
+                        read = reader.read(buffer, offset, left);
+                        if (read > 0) {
+                            left = left - read;
+                            offset = offset + read;
+                        } else {
+                            break;
+                        }
                     }
                     req.setPostData(buffer);
                     this.parseParameter(req, new String(buffer));
