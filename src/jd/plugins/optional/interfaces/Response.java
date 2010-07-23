@@ -134,7 +134,6 @@ public class Response {
             help.append(key).append(": ").append(headers.get(key)).append("\r\n");
         }
         help.append("\r\n");
-        help.append("\r\n");
         out.write(help.toString().getBytes("UTF-8"));
 
         if (fileServe != null) {
@@ -144,13 +143,22 @@ public class Response {
                 raf = new RandomAccessFile(fileServe, "r");
                 raf.seek(filestart);
                 byte[] buffer = new byte[102400];
-                int todo = (int) Math.max(0, fileend - filestart);
+                long todo = Math.max(0, fileend - filestart);
                 int read = 0;
-                int toRead = Math.min(102400, todo);
+                int toRead = 0;
+                if (todo > buffer.length) {
+                    toRead = buffer.length;
+                } else {
+                    toRead = Math.min(buffer.length, (int) todo);
+                }
                 while ((read = raf.read(buffer, 0, toRead)) != -1) {
                     todo = todo - read;
                     served = served + read;
-                    toRead = Math.min(102400, todo);
+                    if (todo > buffer.length) {
+                        toRead = buffer.length;
+                    } else {
+                        toRead = Math.min(buffer.length, (int) todo);
+                    }
                     if (read > 0) out.write(buffer, 0, read);
                     if (todo == 0) break;
                 }
