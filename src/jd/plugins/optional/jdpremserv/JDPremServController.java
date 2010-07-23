@@ -141,6 +141,8 @@ public class JDPremServController {
         } else {
             ret++;
         }
+        link.getLinkStatus().setStatusText(ret + " progressing this link");
+        link.requestGuiUpdate();
         requestedDownloads.put(link, ret);
         return ret;
     }
@@ -153,6 +155,12 @@ public class JDPremServController {
         } else {
             ret--;
         }
+        if (ret > 0) {
+            link.getLinkStatus().setStatusText(ret + " progressing this link");
+        } else {
+            link.getLinkStatus().setStatusText(null);
+        }
+        link.requestGuiUpdate();
         requestedDownloads.put(link, ret);
         return ret;
     }

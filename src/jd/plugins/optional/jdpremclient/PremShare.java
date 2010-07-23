@@ -220,13 +220,12 @@ public class PremShare extends PluginForHost {
             try {
                 br.getPage(jdpremServer);
             } catch (Exception e) {
-                if (jdpremServer == null || jdpremServer.length() == 0) {
-                    account.setValid(false);
-                    ac.setStatus("No JDPremServ set!");
-                    return ac;
-                }
                 account.setValid(false);
-                ac.setStatus("Invalid JDPremServ set!");
+                if (jdpremServer == null || jdpremServer.length() == 0) {
+                    ac.setStatus("No JDPremServ set!");
+                } else {
+                    ac.setStatus("Invalid JDPremServ set!");
+                }
                 return ac;
             }
             /* user info */
@@ -235,8 +234,12 @@ public class PremShare extends PluginForHost {
             form.setMethod(MethodType.POST);
             form.put("username", Encoding.urlEncode(account.getUser()));
             form.put("password", Encoding.urlEncode(account.getPass()));
-            br.submitForm(form);
-            account.setValid(true);
+            String page = br.submitForm(form);
+            if (page.contains("OK: USER")) {
+                account.setValid(true);
+            } else {
+                account.setValid(false);
+            }
             return ac;
         } else
             return plugin.fetchAccountInfo(account);
