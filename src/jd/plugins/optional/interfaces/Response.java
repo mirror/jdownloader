@@ -151,7 +151,7 @@ public class Response {
                     todo = todo - read;
                     served = served + read;
                     toRead = Math.min(102400, todo);
-                    out.write(buffer);
+                    if (read > 0) out.write(buffer, 0, read);
                     if (todo == 0) break;
                 }
                 raf.close();
