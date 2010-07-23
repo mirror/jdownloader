@@ -58,13 +58,13 @@ public class PremServUser {
         this.password = password;
     }
 
-    public void addTrafficLog(String domain, long traffic) {
+    public synchronized void addTrafficLog(String domain, long traffic) {
         trafficLog.add(new TrafficLog(domain.toLowerCase(), traffic));
         cleanTrafficLog();
         if (UserController.getInstance() != null) UserController.getInstance().fireUserUpdate(this);
     }
 
-    public long calculateTrafficLeft(String domain) {
+    public synchronized long calculateTrafficLeft(String domain) {
         domain = domain.toLowerCase();
         PremServHoster hosterImpl = getHosters().get(domain);
         if (hosterImpl == null) return Long.MAX_VALUE;
@@ -72,7 +72,7 @@ public class PremServUser {
         return hosterImpl.getTraffic() - trafficUsed;
     }
 
-    public long calculateTrafficUsed(String domain) {
+    public synchronized long calculateTrafficUsed(String domain) {
         domain = domain.toLowerCase();
         long ret = 0;
         for (TrafficLog l : trafficLog) {
@@ -81,7 +81,7 @@ public class PremServUser {
         return ret;
     }
 
-    public void setTrafficLog(ArrayList<TrafficLog> trafficLog) {
+    public synchronized void setTrafficLog(ArrayList<TrafficLog> trafficLog) {
 
         this.trafficLog = trafficLog;
         cleanTrafficLog();
@@ -91,7 +91,7 @@ public class PremServUser {
     /**
      * Removes traffic log entries that are older than 30 days
      */
-    private void cleanTrafficLog() {
+    private synchronized void cleanTrafficLog() {
         TrafficLog next;
         for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
             next = it.next();
@@ -106,7 +106,7 @@ public class PremServUser {
         return trafficLog;
     }
 
-    public HashMap<String, Long> createTrafficStats() {
+    public synchronized HashMap<String, Long> createTrafficStats() {
         HashMap<String, Long> ret = new HashMap<String, Long>();
         TrafficLog next;
         for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
