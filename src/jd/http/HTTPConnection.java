@@ -54,13 +54,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
         super(url, p, handler);
         requestProperties = new HashMap<String, List<String>>();
-        Map<String, List<String>> tmp = getRequestProperties();
-        Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
-        while (set.hasNext()) {
-            Entry<String, List<String>> next = set.next();
-            requestProperties.put(next.getKey(), next.getValue());
-        }
-
     }
 
     public void connect() throws IOException {

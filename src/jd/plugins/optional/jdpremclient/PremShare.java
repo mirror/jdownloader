@@ -192,7 +192,8 @@ public class PremShare extends PluginForHost {
             logger.info(br.toString());
             return false;
         }
-        return dl.startDownload();
+        dl.startDownload();
+        return true;
     }
 
     private void showMessage(DownloadLink link, String message) {

@@ -196,9 +196,10 @@ abstract public class DownloadInterface {
                 Browser br = plugin.getBrowser().cloneBrowser();
                 br.setReadTimeout(getReadTimeout());
                 br.setConnectTimeout(getRequestTimeout());
+                /* set requested range */
+                connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
 
                 Map<String, List<String>> request = connection.getRequestProperties();
-
                 if (request != null) {
                     String value;
                     for (Entry<String, List<String>> next : request.entrySet()) {
@@ -210,7 +211,6 @@ abstract public class DownloadInterface {
                     /* only forward referer if referer already has been sent! */
                     br.setCurrentURL(null);
                 }
-                br.getHeaders().put("Range", "bytes=" + start + "-" + end);
                 URLConnectionAdapter con;
                 if (connection.getDoOutput()) {
                     con = br.openRequestConnection(connection.getRequest());

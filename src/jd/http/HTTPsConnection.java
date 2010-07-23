@@ -43,18 +43,10 @@ public class HTTPsConnection extends HTTPConnection {
 
     private HttpsURLConnectionImpl delegate;
 
-    @SuppressWarnings("unchecked")
     public HTTPsConnection(URLConnection openConnection, Proxy p) {
         super(openConnection.getURL(), p, null);
         delegate = (HttpsURLConnectionImpl) openConnection;
         requestProperties = new HashMap<String, List<String>>();
-
-        Map<String, List<String>> tmp = delegate.getRequestProperties();
-        Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
-        while (set.hasNext()) {
-            Entry<String, List<String>> next = set.next();
-            requestProperties.put(next.getKey(), next.getValue());
-        }
     }
 
     public void connect() throws IOException {

@@ -107,11 +107,11 @@ public class Response {
         help.append("Server: jDownloader HTTP Server\r\n");
         help.append("Content-Type: ").append(returnType).append("\r\n");
         try {
-            help.append("Content-Length: ");
             if (fileServe != null) {
                 /* serve file */
                 if (!this.range) {
                     /* no range requested */
+                    help.append("Content-Length: ");
                     help.append(this.filesize).append("\r\n");
                 } else {
                     /* requested range */
@@ -126,6 +126,7 @@ public class Response {
                 help.append("Accept-Ranges: bytes").append("\r\n");
             } else {
                 /* serve string content */
+                help.append("Content-Length: ");
                 help.append(data.toString().getBytes("UTF-8").length).append("\r\n");
             }
         } catch (Exception e) {
