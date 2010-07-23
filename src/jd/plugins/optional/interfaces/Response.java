@@ -143,23 +143,16 @@ public class Response {
             try {
                 raf = new RandomAccessFile(fileServe, "r");
                 raf.seek(filestart);
-                long curpos = filestart;
-                int toread = 102400;
-                int read = 0;
                 byte[] buffer = new byte[102400];
-                if (fileend - curpos < 102400) {
-                    toread = (int) (fileend - curpos);
-                }
-                while ((read = raf.read(buffer, 0, toread)) != -1) {
-                    curpos += read;
-                    served += read;
+                int todo = (int) Math.max(0, fileend - filestart);
+                int read = 0;
+                int toRead = Math.min(102400, todo);
+                while ((read = raf.read(buffer, 0, toRead)) != -1) {
+                    todo = todo - read;
+                    served = served + read;
+                    toRead = Math.min(102400, todo);
                     out.write(buffer);
-                    if ((fileend - curpos) < 102400) {
-                        toread = (int) (fileend - curpos);
-                    }
-                    if (toread == 0 || fileend == curpos) {
-                        break;
-                    }
+                    if (todo == 0) break;
                 }
                 raf.close();
             } finally {

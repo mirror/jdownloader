@@ -372,10 +372,4 @@ public class PremShare extends PluginForHost {
         return super.getPremiumAccounts();
     }
 
-    @Override
-    public String getCustomFavIconURL() {
-        if (proxyused) return "http://www.jdownloader.org/";
-        return null;
-    }
-
 }
