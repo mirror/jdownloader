@@ -146,23 +146,25 @@ public class PremShare extends PluginForHost {
         showMessage(link, "Add Link to Queue");
         /* first request,with force */
         String status = br.submitForm(form);
-        if (status == null) status = "";
-        if (status.contains("ERROR: -10")) {
-            /* account invalid */
-            acc.setEnabled(false);
-            logger.info("JDPremium account invalid");
-            return false;
-        }
         int refresh = 10 * 1000;
         while (true) {
+            if (status.contains("ERROR: -20")) {
+                synchronized (premiumHosts) {
+                    premiumHosts.remove(link.getHost());
+                }
+                logger.info("account has no rights to use this host");
+                return false;
+            }
+            if (status.contains("ERROR: -10")) {
+                /* account invalid */
+                acc.setEnabled(false);
+                logger.info("JDPremium account invalid");
+                return false;
+            }
             if (status.length() == 0 || status.contains("ERROR")) {
                 /* error found */
                 logger.info(status);
                 return false;
-            }
-            /* add host from available premium list */
-            synchronized (premiumHosts) {
-                if (!premiumHosts.contains(link.getHost())) premiumHosts.add(link.getHost());
             }
             if (status.contains("OK: 100")) {
                 /* download complete */
@@ -190,6 +192,7 @@ public class PremShare extends PluginForHost {
             }
             Thread.sleep(refresh);
             status = br.submitForm(form);
+            if (status == null) status = "";
         }
         /* download now */
         form.setAction("/?download=1&force=" + link.getDownloadURL());
@@ -243,6 +246,7 @@ public class PremShare extends PluginForHost {
                 br.getPage(jdpremServer);
             } catch (Exception e) {
                 account.setTempDisabled(true);
+                account.setValid(true);
                 /* no jdpremium available */
                 synchronized (LOCK) {
                     premiumHosts.clear();

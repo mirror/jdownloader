@@ -65,6 +65,7 @@ public class JDPremServController {
             if (reqs == null) reqs = 0;
             if (reqs == 0 && (last + (1000 * 60 * 10)) < System.currentTimeMillis()) {
                 remove.add(link);
+                link.deleteFile(true, true);
                 requestedDownloads.remove(link);
                 lastAccessLinks.remove(link);
             }
@@ -124,6 +125,7 @@ public class JDPremServController {
         if (ret == null) {
             /* none found, so we add it */
             ret = found.get(0);
+            /* first disabled, maybe user has not enough rights */
             ret.setEnabled(false);
             premServFilePackage.add(ret);
         }
