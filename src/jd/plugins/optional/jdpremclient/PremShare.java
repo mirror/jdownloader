@@ -258,8 +258,24 @@ public class PremShare extends PluginForHost {
             form.put("password", Encoding.urlEncode(account.getPass()));
             String page = br.submitForm(form);
             if (page.contains("OK: USER")) {
-                account.setValid(true);
-                ac.setStatus("Account valid");
+                String supportedHosts = new Regex(page, "HOSTS:(.+)").getMatch(0);
+                synchronized (LOCK) {
+                    premiumHosts.clear();
+                    if (supportedHosts != null) {
+                        String hosts[] = new Regex(supportedHosts, "(.*?)\\|\\|").getColumn(0);
+                        if (hosts != null) {
+                            for (String host : hosts) {
+                                premiumHosts.add(host.trim());
+                            }
+                        }
+                    }
+                    account.setValid(true);
+                    if (premiumHosts.size() == 0) {
+                        ac.setStatus("Account valid: no jdpremium available");
+                    } else {
+                        ac.setStatus("Account valid: " + premiumHosts.size() + " jdpremium available");
+                    }
+                }
             } else {
                 account.setValid(false);
                 ac.setStatus("Account invalid");
