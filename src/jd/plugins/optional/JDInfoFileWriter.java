@@ -17,6 +17,7 @@
 package jd.plugins.optional;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -24,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
@@ -33,6 +35,7 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
@@ -58,6 +61,8 @@ public class JDInfoFileWriter extends PluginOptional {
 
     private static final String PARAM_INFO_STRING = "INFO_STRING";
 
+    private static final String PARAM_CREATE_FILE = "CREATE_FILE";
+
     private static final long serialVersionUID = 7680205811276541375L;
 
     private ConfigEntry cmbVars;
@@ -68,22 +73,51 @@ public class JDInfoFileWriter extends PluginOptional {
 
     public JDInfoFileWriter(PluginWrapper wrapper) {
         super(wrapper);
+
         subConfig = SubConfiguration.getConfig("JDInfoFileWriter");
+
         initConfig();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onControlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
+        switch (event.getID()) {
+        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            if (!(event.getSource() instanceof PluginForHost)) return;
+
+            DownloadLink dl = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) {
-                if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
-                    writeInfoFile(lastDownloadFinished);
+                FilePackage fp = dl.getFilePackage();
+                if (fp.getRemainingLinks() == 0 && fp.getBooleanProperty(PARAM_CREATE_FILE, true)) {
+                    writeInfoFile(dl);
                 }
             } else {
-                writeInfoFile(lastDownloadFinished);
+                if (dl.getBooleanProperty(PARAM_CREATE_FILE, true)) {
+                    writeInfoFile(dl);
+                }
             }
+            break;
+        case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
+            if (event.getSource() instanceof DownloadLink && subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) return;
+            if (event.getSource() instanceof FilePackage && subConfig.getIntegerProperty(PARAM_CREATION, 0) == 1) return;
+
+            final Property obj = (Property) event.getSource();
+            final MenuAction m = new MenuAction(JDL.L(JDL_PREFIX + "createInfoFile", "Create Info File"), 1337);
+            m.setIcon(this.getIconKey());
+            m.setSelected(obj.getBooleanProperty(PARAM_CREATE_FILE, true));
+            m.setActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    obj.setProperty(PARAM_CREATE_FILE, m.isSelected());
+                }
+
+            });
+
+            ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
+            items.add(m);
+            break;
         }
     }
 

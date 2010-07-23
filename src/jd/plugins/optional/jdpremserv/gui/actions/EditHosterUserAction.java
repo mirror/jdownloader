@@ -13,17 +13,17 @@ import org.appwork.utils.swing.dialog.Dialog;
 
 public class EditHosterUserAction extends AbstractAction {
 
+    private static final long serialVersionUID = -9025882574366289273L;
     private PremServUser obj;
 
     public EditHosterUserAction(PremServUser obj) {
-        this.obj = obj;
+        super("Edit allowed Hosters");
 
-        putValue(AbstractAction.NAME, "Edit allowed Hosters");
+        this.obj = obj;
     }
 
     @Override
     public boolean isEnabled() {
-
         return true;
     }
 
@@ -47,9 +47,7 @@ public class EditHosterUserAction extends AbstractAction {
             if (p.length == 2) {
                 PremServHoster h = new PremServHoster(p[0], Long.parseLong(p[1].trim()));
                 hosters.put(h.getDomain(), h);
-
             }
-
         }
         obj.setHosters(hosters);
 

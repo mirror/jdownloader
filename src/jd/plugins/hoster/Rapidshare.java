@@ -33,9 +33,9 @@ import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -45,11 +45,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -866,8 +866,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     public static String findError(Browser br) {
-        String error = null;
-        error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE).getMatch(0);
+        String error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE).getMatch(0);
 
         if (error == null || error.trim().length() == 0) {
             error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_3).getMatch(0);
@@ -899,7 +898,8 @@ public class Rapidshare extends PluginForHost {
         JDL.L("plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e", "This file seems to be illegal and is locked. Downloading this file is prohibited by Rapidshare.");
         JDL.L("plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692", "10 GB limit reached.");
         JDL.L("plugins.host.rapidshare.errors.8b1fa6afcc062650ad29d80989022f39", "Account is expired,");
-        String error2 = JDL.L("plugins.host.rapidshare.errors." + JDHash.getMD5(error) + "", error);
+
+        String error2 = JDL.L("plugins.host.rapidshare.errors." + JDHash.getMD5(error), error);
         if (error.equals(error2)) {
             logger.warning("NO TRANSLATIONKEY FOUND FOR: " + error + "(" + JDHash.getMD5(error) + ")");
         }

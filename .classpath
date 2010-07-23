@@ -78,5 +78,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-junit-4.5-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-junit-4.5-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-util-1.1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-util-1.1.2-sources.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/jackson-core.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/jackson-mapper.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

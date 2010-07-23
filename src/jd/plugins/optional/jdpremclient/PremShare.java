@@ -14,15 +14,13 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 public class PremShare extends PluginForHost {
 
     private boolean proxyused = false;
-    // private static ImageIcon Icon = new
-    // ImageIcon(JDImage.getImage("logo/logo_16_16"));
     private String infostring = null;
     private PluginForHost plugin = null;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
@@ -35,26 +33,27 @@ public class PremShare extends PluginForHost {
         super(wrapper);
         this.enablePremium();
         infostring = "JDPremium @ " + wrapper.getHost();
-        // if (((PremShareHost) wrapper).getReplacedPlugin() != null) plugin =
-        // (PluginForHost) ((PremShareHost)
-        // wrapper).getReplacedPlugin().getNewPluginInstance();
     }
 
+    @Override
     public synchronized int getFreeConnections() {
         if (plugin != null) return plugin.getFreeConnections();
         return super.getFreeConnections();
     }
 
+    @Override
     public int getMaxConnections() {
         if (plugin != null) return plugin.getMaxConnections();
         return super.getMaxConnections();
     }
 
+    @Override
     public String getVersion() {
         if (plugin == null) return getVersion("$Revision: 86 $");
         return plugin.getVersion();
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (plugin != null) {
             plugin.actionPerformed(e);
@@ -63,26 +62,31 @@ public class PremShare extends PluginForHost {
         }
     }
 
+    @Override
     public String getHost() {
         if (plugin == null) return "jdownloader.org";
         return plugin.getHost();
     }
 
+    @Override
     public boolean isAGBChecked() {
         if (plugin == null) return true;
         return plugin.isAGBChecked();
     }
 
+    @Override
     public void setAGBChecked(boolean value) {
         if (plugin == null) return;
         plugin.setAGBChecked(value);
     }
 
+    @Override
     public ConfigContainer getConfig() {
         if (plugin == null) return super.getConfig();
         return plugin.getConfig();
     }
 
+    @Override
     public String getBuyPremiumUrl() {
         if (plugin == null) return "http://www.jdownloader.org";
         return plugin.getBuyPremiumUrl();
@@ -108,6 +112,7 @@ public class PremShare extends PluginForHost {
         plugin.handleFree(link);
     }
 
+    @Override
     public void clean() {
         super.clean();
         if (plugin != null) plugin.clean();
@@ -212,6 +217,7 @@ public class PremShare extends PluginForHost {
         if (plugin != null) plugin.reset();
     }
 
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
             AccountInfo ac = new AccountInfo();
@@ -246,6 +252,7 @@ public class PremShare extends PluginForHost {
             return plugin.fetchAccountInfo(account);
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
@@ -264,15 +271,18 @@ public class PremShare extends PluginForHost {
         if (plugin != null) plugin.resetDownloadlink(link);
     }
 
+    @Override
     public String getSessionInfo() {
         if (proxyused || plugin == null) return infostring;
         return plugin.getSessionInfo();
     }
 
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         if (plugin != null) plugin.correctDownloadLink(link);
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         if (plugin != null) {
             synchronized (premiumHosts) {
@@ -283,6 +293,7 @@ public class PremShare extends PluginForHost {
         return super.getMaxSimultanFreeDownloadNum();
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         if (plugin != null) {
             synchronized (premiumHosts) {
@@ -293,6 +304,7 @@ public class PremShare extends PluginForHost {
         return super.getMaxSimultanPremiumDownloadNum();
     }
 
+    @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
             synchronized (premiumHosts) {
@@ -303,26 +315,31 @@ public class PremShare extends PluginForHost {
         return 0;
     }
 
+    @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (plugin == null) return false;
         return plugin.checkLinks(urls);
     }
 
+    @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         if (proxyused || plugin == null) return "";
         return plugin.getFileInformationString(downloadLink);
     }
 
+    @Override
     public ArrayList<jd.gui.swing.jdgui.menu.MenuAction> createMenuitems() {
         if (plugin == null) return super.createMenuitems();
         return plugin.createMenuitems();
     }
 
+    @Override
     public ArrayList<Account> getPremiumAccounts() {
         if (plugin != null) return plugin.getPremiumAccounts();
         return super.getPremiumAccounts();
     }
 
+    @Override
     public String getCustomFavIconURL() {
         if (proxyused) return "http://www.jdownloader.org/";
         return null;

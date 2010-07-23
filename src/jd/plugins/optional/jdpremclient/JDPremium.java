@@ -1,5 +1,3 @@
-package jd.plugins.optional.jdpremclient;
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team support@jdownloader.org
 //
@@ -16,17 +14,19 @@ package jd.plugins.optional.jdpremclient;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.optional.jdpremclient;
+
 import java.util.ArrayList;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
 import jd.plugins.OptionalPlugin;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
@@ -37,7 +37,7 @@ class PremShareHost extends HostPluginWrapper {
     private HostPluginWrapper replacedone = null;
 
     public PremShareHost(String host, String className, String patternSupported, int flags) {
-        super(host, "jd.plugins.optional.jdpremclient.", "PremShare", patternSupported, flags, "$Revision: 6506 $");
+        super(host, "jd.plugins.optional.jdpremclient.", "PremShare", patternSupported, flags, "$Revision$");
         for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
         }
@@ -53,50 +53,44 @@ class PremShareHost extends HostPluginWrapper {
 
     @Override
     public synchronized PluginForHost getPlugin() {
-        Plugin tmp = super.getPlugin();
+        PluginForHost tmp = super.getPlugin();
         if (replacedone != null) {
-            PluginForHost tmp2 = (PluginForHost) replacedone.getPlugin();
-            ((PremShare) tmp).setReplacedPlugin(tmp2);
+            ((PremShare) tmp).setReplacedPlugin(replacedone.getPlugin());
         }
-        return (PluginForHost) tmp;
+        return tmp;
     }
 
     @Override
     public PluginForHost getNewPluginInstance() {
         PluginForHost tmp = super.getNewPluginInstance();
         if (replacedone != null) {
-            PluginForHost tmp2 = (PluginForHost) replacedone.getNewPluginInstance();
-            ((PremShare) tmp).setReplacedPlugin(tmp2);
+            ((PremShare) tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
         }
         return tmp;
     }
 }
 
-@OptionalPlugin(rev = "$Revision: 6506 $", id = "jdpremium", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "jdpremium", interfaceversion = 5)
 public class JDPremium extends PluginOptional {
 
     private static PremShareHost jdpremium = null;
 
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "Server"));
 
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "Server"));
     }
 
     private void replaceHosterPlugin(String host) {
         PluginForHost old = JDUtilities.getPluginForHost(host);
         if (old != null) {
             logger.info("Replacing " + host + " Plugin with JDPremium Plugin");
-            new PremShareHost(old.getHost(), "PremShare", old.getWrapper().getPattern().toString(), ((HostPluginWrapper) old.getWrapper()).getFlags() + PluginWrapper.ALLOW_DUPLICATE);
+            new PremShareHost(old.getHost(), "PremShare", old.getWrapper().getPattern().toString(), (old.getWrapper()).getFlags() + PluginWrapper.ALLOW_DUPLICATE);
         }
     }
 
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    // @Override
+    @Override
     public boolean initAddon() {
         replaceHosterPlugin("rapidshare.com");
         replaceHosterPlugin("uploaded.to");
@@ -118,24 +112,24 @@ public class JDPremium extends PluginOptional {
         return jdpremium.getPlugin();
     }
 
+    @Override
     public void onExit() {
         logger.info("Cannot replace Plugins on runtime. Restart is neccessary!");
     }
 
+    @Override
     public String getIconKey() {
-        return "gui.images.taskpanes.premium";
+        return "gui.images.premium";
     }
 
+    @Override
     public String getHost() {
         return JDL.L("plugins.optional.jdpremium.name", "JDPremium");
     }
 
+    @Override
     public String getVersion() {
-        return getVersion("$Revision: 5887 $");
-    }
-
-    public static int getAddonInterfaceVersion() {
-        return 3;
+        return getVersion("$Revision$");
     }
 
     @Override
