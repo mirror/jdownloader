@@ -20,6 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 
 import jd.controlling.JDLogger;
 
@@ -59,6 +60,8 @@ public class RequestHandler extends Thread {
                         if (read > 0) {
                             left = left - read;
                             offset = offset + read;
+                        } else if (read == 0) {
+                            sleep(50);
                         } else {
                             break;
                         }
@@ -100,10 +103,14 @@ public class RequestHandler extends Thread {
                 OutputStream out = socket.getOutputStream();
                 res.writeToStream(out);
                 out.close();
+            } catch (SocketException e) {
+                // nothing
             } finally {
                 handler.finish(req, res);
             }
         } catch (IOException e) {
+            JDLogger.exception(e);
+        } catch (InterruptedException e) {
             JDLogger.exception(e);
         } finally {
 

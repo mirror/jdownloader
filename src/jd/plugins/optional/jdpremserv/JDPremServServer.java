@@ -25,7 +25,7 @@ public class JDPremServServer implements Handler {
 
     public synchronized void start() throws IOException {
         if (server != null) return;
-        server = new HttpServer(31000, this, false);
+        server = new HttpServer(8080, this, false);
         server.start();
         JDPremServController.getInstance().start();
     }
