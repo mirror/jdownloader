@@ -118,6 +118,7 @@ public class JDPremServController implements ControlListener {
         if (requestedLinks.containsKey(url)) {
             /* url already in requestedLinks */
             DownloadLink ret = requestedLinks.get(url);
+            ret.getPlugin().setAGBChecked(true);
             lastAccessLinks.put(ret, System.currentTimeMillis());
             return ret;
         }
@@ -140,6 +141,7 @@ public class JDPremServController implements ControlListener {
             ret = found.get(0);
             premServFilePackage.add(ret);
         }
+        ret.getPlugin().setAGBChecked(true);
         requestedLinks.put(url, ret);
         DownloadController.getInstance().addPackage(premServFilePackage);
         lastAccessLinks.put(ret, System.currentTimeMillis());

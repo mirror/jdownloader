@@ -64,7 +64,7 @@ public class JDPremServServer implements Handler {
                 response.setReturnStatus(Response.ERROR);
                 response.addContent(new String("ERROR: 0"));
             } else if (username != null && password != null) {
-                if (false && !UserController.getInstance().isUserAllowed(username, password, ret.getHost())) {
+                if (!UserController.getInstance().isUserAllowed(username, password, ret.getHost())) {
                     /* ERROR: -20 = not allowed */
                     response.setReturnStatus(Response.ERROR);
                     response.addContent(new String("ERROR: -20"));

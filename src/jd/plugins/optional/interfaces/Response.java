@@ -145,17 +145,17 @@ public class Response {
                 raf = new RandomAccessFile(fileServe, "r");
                 raf.seek(filestart);
                 long curpos = filestart;
-                int toread = 1024;
+                int toread = 1024 * 100;
                 int read = 0;
-                byte[] buffer = new byte[1024];
-                if (fileend - curpos < 1024) {
+                byte[] buffer = new byte[1024 * 100];
+                if (fileend - curpos < 1024 * 100) {
                     toread = (int) (fileend - curpos);
                 }
                 while ((read = raf.read(buffer, 0, toread)) != -1) {
                     curpos += read;
                     served += read;
                     out.write(buffer);
-                    if ((fileend - curpos) < 1024) {
+                    if ((fileend - curpos) < 1024 * 100) {
                         toread = (int) (fileend - curpos);
                     }
                     if (toread == 0 || fileend == curpos) {
