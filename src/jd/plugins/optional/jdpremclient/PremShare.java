@@ -131,7 +131,7 @@ public class PremShare extends PluginForHost {
         /* add and force download */
         Form form = new Form();
         form.setAction("/?force=" + link.getDownloadURL());
-        form.setMethod(MethodType.POST);
+        form.setMethod(MethodType.GET);
         form.put("username", Encoding.urlEncode(acc.getUser()));
         form.put("password", Encoding.urlEncode(acc.getPass()));
         showMessage(link, "Add Link to Queue");
@@ -232,7 +232,7 @@ public class PremShare extends PluginForHost {
             /* user info */
             Form form = new Form();
             form.setAction("/?info=1");
-            form.setMethod(MethodType.POST);
+            form.setMethod(MethodType.GET);
             form.put("username", Encoding.urlEncode(account.getUser()));
             form.put("password", Encoding.urlEncode(account.getPass()));
             String page = br.submitForm(form);

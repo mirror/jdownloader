@@ -197,7 +197,6 @@ abstract public class DownloadInterface {
                 br.setReadTimeout(getReadTimeout());
                 br.setConnectTimeout(getRequestTimeout());
                 /* set requested range */
-                connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
 
                 Map<String, List<String>> request = connection.getRequestProperties();
                 if (request != null) {
@@ -213,8 +212,10 @@ abstract public class DownloadInterface {
                 }
                 URLConnectionAdapter con;
                 if (connection.getDoOutput()) {
+                    connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
                     con = br.openRequestConnection(connection.getRequest());
                 } else {
+                    br.getHeaders().put("Range", "bytes=" + start + "-" + end);
                     con = br.openGetConnection(connection.getURL() + "");
                 }
                 if (!con.isOK()) {
