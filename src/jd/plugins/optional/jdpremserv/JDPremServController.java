@@ -124,6 +124,7 @@ public class JDPremServController {
         if (ret == null) {
             /* none found, so we add it */
             ret = found.get(0);
+            ret.setEnabled(false);
             premServFilePackage.add(ret);
         }
         ret.getPlugin().setAGBChecked(true);

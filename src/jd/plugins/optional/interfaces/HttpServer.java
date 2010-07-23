@@ -59,7 +59,7 @@ public class HttpServer extends Thread {
             } else {
                 ssocket = new ServerSocket(port, 5);
             }
-            // ssocket.setSoTimeout(1000);
+            ssocket.setSoTimeout(30 * 1000);
         } catch (IOException e) {
             JDLogger.exception(e);
         }
@@ -89,10 +89,9 @@ public class HttpServer extends Thread {
         while (run == thisThread && running) {
             if (ssocket == null) return;
             try {
-
                 Socket csocket = ssocket.accept();
+                csocket.setSoTimeout(30 * 1000);
                 addSocket(csocket);
-
             } catch (Exception e) {
                 JDLogger.exception(e);
             }

@@ -129,6 +129,7 @@ public class JDPremServServer implements Handler {
                     } else {
                         /* normal download */
                         DownloadWatchDog.getInstance().startDownloads();
+                        if (!ret.isEnabled()) ret.setEnabled(true);
                     }
                     /* download läuft nicht */
                     response.setReturnStatus(Response.OK);
