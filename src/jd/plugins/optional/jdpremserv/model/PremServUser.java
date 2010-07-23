@@ -61,6 +61,7 @@ public class PremServUser {
     public void addTrafficLog(String domain, long traffic) {
         trafficLog.add(new TrafficLog(domain.toLowerCase(), traffic));
         cleanTrafficLog();
+        if (UserController.getInstance() != null) UserController.getInstance().fireUserUpdate(this);
     }
 
     public long calculateTrafficLeft(String domain) {

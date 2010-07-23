@@ -91,11 +91,12 @@ public class UserController implements ControlListener {
         if (user == null) return false;
         if (!user.isEnabled()) return false;
         if (!user.getPassword().equals(password)) return false;
-        if (user.calculateTrafficLeft(domain) < filesize) return false;
+        if (domain != null && user.calculateTrafficLeft(domain) < filesize) return false;
         return true;
     }
 
     public PremServUser getUserByUserName(String username) {
+        if (username == null) return null;
         username = username.toLowerCase();
         for (PremServUser u : premServUsers) {
             if (u.getUsername().equals(username)) return u;
