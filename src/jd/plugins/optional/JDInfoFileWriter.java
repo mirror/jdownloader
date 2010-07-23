@@ -65,6 +65,8 @@ public class JDInfoFileWriter extends PluginOptional {
 
     private static final long serialVersionUID = 7680205811276541375L;
 
+    private static final String PARAM_ONLYPASSWORD = "ONLYPASSWORD";
+
     private ConfigEntry cmbVars;
 
     private ConfigEntry txtInfo;
@@ -88,6 +90,11 @@ public class JDInfoFileWriter extends PluginOptional {
             if (!(event.getSource() instanceof PluginForHost)) return;
 
             DownloadLink dl = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+
+            if (subConfig.getBooleanProperty(PARAM_ONLYPASSWORD, false)) {
+                // only set if password is availale
+                if ((dl.getFilePackage().getPassword() == null || dl.getFilePackage().getPassword().trim().length() == 0) && (dl.getFilePackage().getPasswordAuto() == null || dl.getFilePackage().getPasswordAuto().size() == 0)) return;
+            }
             if (subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) {
                 FilePackage fp = dl.getFilePackage();
                 if (fp.getRemainingLinks() == 0 && fp.getBooleanProperty(PARAM_CREATE_FILE, true)) {
@@ -135,6 +142,8 @@ public class JDInfoFileWriter extends PluginOptional {
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_CREATION, new String[] { JDL.L(JDL_PREFIX + "packages", "packages"), JDL.L(JDL_PREFIX + "downloadlinks", "downloadlinks") }, "Create info file for complete ...").setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_ONLYPASSWORD, JDL.L("plugins.optional.infofilewriter.onlywithpassword", "Use only if password is enabled")).setDefaultValue(false));
+
         config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, "VARS", Replacer.getKeyList(), JDL.L("plugins.optional.infofilewriter.variables", "Available variables")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infofilewriter.insertKey.short", "Insert"), JDL.L("plugins.optional.infofilewriter.insertKey", "Insert selected Key into the Content"), JDTheme.II("gui.icons.paste", 16, 16)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDL.L("plugins.optional.infofilewriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
