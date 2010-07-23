@@ -55,8 +55,10 @@ public class JDPremServServer implements Handler {
             response.addContent(new String("ERROR: -10"));
             return;
         }
-
-        if (request.getParameter("get") != null || request.getParameter("force") != null) {
+        if (request.getParameter("info") != null) {
+            response.setReturnStatus(Response.OK);
+            response.addContent(new String("OK: USER"));
+        } else if (request.getParameter("get") != null || request.getParameter("force") != null) {
             String wantedUrl = request.getParameter("force");
             if (wantedUrl == null) wantedUrl = request.getParameter("get");
             /* user wants to download the give url */
@@ -82,7 +84,7 @@ public class JDPremServServer implements Handler {
                         /* download file */
                         response.setReturnStatus(Response.OK);
                         JDPremServController.getInstance().addRequestedDownload(ret);
-                        if (request.getParameter("range") == null) {
+                        if (request.getHeader("range") == null) {
                             response.setFileServe(ret.getFileOutput(), 0, -1, new File(ret.getFileOutput()).length(), false);
                         } else {
                             String[] dat = new Regex(request.getParameter("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
@@ -135,6 +137,10 @@ public class JDPremServServer implements Handler {
                     response.addContent(sb.toString());
                 }
             }
+        } else {
+            /* ERROR: -1000 = unknown request */
+            response.setReturnStatus(Response.ERROR);
+            response.addContent(new String("ERROR: -1000"));
         }
     }
 

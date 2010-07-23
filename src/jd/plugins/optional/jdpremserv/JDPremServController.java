@@ -6,15 +6,11 @@ import java.util.HashMap;
 import jd.config.Configuration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
-import jd.controlling.SingleDownloadController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-public class JDPremServController implements ControlListener {
+public class JDPremServController {
 
     private static final String PackageName = "JDPremServ";
     private static final JDPremServController INSTANCE = new JDPremServController();
@@ -44,6 +40,7 @@ public class JDPremServController implements ControlListener {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    cleanUp();
                 }
             }
 
@@ -99,18 +96,6 @@ public class JDPremServController implements ControlListener {
             }
         }
         return found;
-    }
-
-    public void controlEvent(ControlEvent event) {
-        switch (event.getID()) {
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getSource() instanceof PluginForHost)) return;
-            DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-            if (lastDownloadFinished.getLinkStatus().isFinished()) {
-                /* react on finished */
-            }
-            break;
-        }
     }
 
     public synchronized DownloadLink getDownloadLink(String url) {

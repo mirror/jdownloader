@@ -25,6 +25,7 @@ public class PremShare extends PluginForHost {
     // ImageIcon(JDImage.getImage("logo/logo_16_16"));
     private String infostring = null;
     private PluginForHost plugin = null;
+    private static ArrayList<String> premiumHosts = new ArrayList<String>();
 
     public void setReplacedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
@@ -98,6 +99,10 @@ public class PremShare extends PluginForHost {
         if (plugin == null) return;
         proxyused = false;
         if (handleJDPremServ(link)) return;
+        /* remove host from available premium list */
+        synchronized (premiumHosts) {
+            premiumHosts.remove(link.getHost());
+        }
         proxyused = false;
         plugin.clean();
         plugin.handleFree(link);
@@ -110,34 +115,56 @@ public class PremShare extends PluginForHost {
 
     private boolean handleJDPremServ(DownloadLink link) throws Exception {
         Account acc = JDPremium.getAccount();
-        if (acc == null) return false;
+        /* enabled account found? */
+        if (acc == null || !acc.isEnabled()) return false;
         proxyused = true;
         requestFileInformation(link);
         br = new Browser();
         br.setDebug(true);
-        Form form = new Form();
-        br.getPage(JDUtilities.getOptionalPlugin("PremShare").getPluginConfig().getStringProperty("SERVER"));
+        String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
+        try {
+            if (jdpremServer == null || jdpremServer.length() == 0) return false;
+            br.getPage(jdpremServer);
+        } catch (Exception e) {
+            return false;
+        }
         /* add and force download */
+        Form form = new Form();
         form.setAction("/?force=" + link.getDownloadURL());
         form.setMethod(MethodType.POST);
         form.put("username", Encoding.urlEncode(acc.getUser()));
         form.put("password", Encoding.urlEncode(acc.getPass()));
-
+        showMessage(link, "Add Link to Queue");
         /* first request,with force */
         String status = br.submitForm(form);
+        if (status == null) status = "";
+        if (status.contains("ERROR: -10")) {
+            /* account invalid */
+            acc.setEnabled(false);
+            logger.info("JDPremium account invalid");
+            return false;
+        }
         int refresh = 10 * 1000;
         while (true) {
-            if (status.contains("OK: 100")) {
-                break;
-            }
-            if (status == null || status.length() == 0 || status.contains("ERROR")) {
+            if (status.length() == 0 || status.contains("ERROR")) {
+                /* error found */
                 logger.info(status);
                 return false;
             }
+            /* add host from available premium list */
+            synchronized (premiumHosts) {
+                if (!premiumHosts.contains(link.getHost())) premiumHosts.add(link.getHost());
+            }
+            if (status.contains("OK: 100")) {
+                /* download complete */
+                break;
+            }
             if (status.contains("OK: 0")) {
+                /* download queued */
                 refresh = 10 * 1000;
-                link.getLinkStatus().setStatusText("Queued");
+                showMessage(link, "Queued");
             } else if (status.contains("OK: 1")) {
+                /* download in progress */
                 /* show speed and ETA */
                 String ints[] = new Regex(status, "(\\d+)/(\\d+)/(\\d+)").getRow(0);
                 Long size = Long.parseLong(ints[1]);
@@ -146,9 +173,9 @@ public class PremShare extends PluginForHost {
                 String sp = Formatter.formatReadable(speed) + "/s";
                 if (speed != 0 && size > 0) {
                     Long left = (size - current) / speed;
-                    link.getLinkStatus().setStatusText("Downloading " + Formatter.formatSeconds(left) + " " + sp);
+                    showMessage(link, "Downloading " + Formatter.formatSeconds(left) + " " + sp);
                 } else {
-                    link.getLinkStatus().setStatusText("Downloading " + sp);
+                    showMessage(link, "Downloading " + sp);
                 }
                 refresh = 5 * 1000;
             }
@@ -157,13 +184,20 @@ public class PremShare extends PluginForHost {
         }
         /* download now */
         form.setAction("/?download=1&force=" + link.getDownloadURL());
+        showMessage(link, "Request Download");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
+            /* unknown error */
             br.followConnection();
             logger.info(br.toString());
             return false;
         }
         return dl.startDownload();
+    }
+
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
+        link.requestGuiUpdate();
     }
 
     @Override
@@ -180,6 +214,28 @@ public class PremShare extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
             AccountInfo ac = new AccountInfo();
+            String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
+            br = new Browser();
+            br.setDebug(true);
+            try {
+                br.getPage(jdpremServer);
+            } catch (Exception e) {
+                if (jdpremServer == null || jdpremServer.length() == 0) {
+                    account.setValid(false);
+                    ac.setStatus("No JDPremServ set!");
+                    return ac;
+                }
+                account.setValid(false);
+                ac.setStatus("Invalid JDPremServ set!");
+                return ac;
+            }
+            /* user info */
+            Form form = new Form();
+            form.setAction("/?info=1");
+            form.setMethod(MethodType.POST);
+            form.put("username", Encoding.urlEncode(account.getUser()));
+            form.put("password", Encoding.urlEncode(account.getPass()));
+            br.submitForm(form);
             account.setValid(true);
             return ac;
         } else
@@ -190,6 +246,10 @@ public class PremShare extends PluginForHost {
         if (plugin == null) return;
         proxyused = false;
         if (handleJDPremServ(downloadLink)) return;
+        /* remove host from available premium list */
+        synchronized (premiumHosts) {
+            premiumHosts.remove(downloadLink.getHost());
+        }
         proxyused = false;
         plugin.clean();
         plugin.handlePremium(downloadLink, account);
@@ -210,17 +270,32 @@ public class PremShare extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        if (plugin == null) return super.getMaxSimultanFreeDownloadNum();
-        return plugin.getMaxSimultanFreeDownloadNum();
+        if (plugin != null) {
+            synchronized (premiumHosts) {
+                if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+            }
+            return plugin.getMaxSimultanFreeDownloadNum();
+        }
+        return super.getMaxSimultanFreeDownloadNum();
     }
 
     public int getMaxSimultanPremiumDownloadNum() {
-        if (plugin == null) return super.getMaxSimultanPremiumDownloadNum();
-        return plugin.getMaxSimultanPremiumDownloadNum();
+        if (plugin != null) {
+            synchronized (premiumHosts) {
+                if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+            }
+            return plugin.getMaxSimultanPremiumDownloadNum();
+        }
+        return super.getMaxSimultanPremiumDownloadNum();
     }
 
     public int getMaxSimultanDownload(final Account account) {
-        if (plugin != null) return plugin.getMaxSimultanDownload(account);
+        if (plugin != null) {
+            synchronized (premiumHosts) {
+                if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+            }
+            return plugin.getMaxSimultanDownload(account);
+        }
         return 0;
     }
 
@@ -242,11 +317,6 @@ public class PremShare extends PluginForHost {
     public ArrayList<Account> getPremiumAccounts() {
         if (plugin != null) return plugin.getPremiumAccounts();
         return super.getPremiumAccounts();
-    }
-
-    public boolean hasAccountSupport() {
-        if (plugin != null) return plugin.hasAccountSupport();
-        return false;
     }
 
     public String getCustomFavIconURL() {

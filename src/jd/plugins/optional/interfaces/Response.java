@@ -109,26 +109,25 @@ public class Response {
         try {
             help.append("Content-Length: ");
             if (fileServe != null) {
+                /* serve file */
                 if (!this.range) {
-                    help.append(this.filesize);
-                    help.append("\r\n");
+                    /* no range requested */
+                    help.append(this.filesize).append("\r\n");
                 } else {
+                    /* requested range */
                     if (this.fileend == -1) {
                         this.fileend = this.filesize;
                     }
-                    help.append(Math.max(0, fileend - filestart));
-                    help.append("\r\n");
-                    help.append("Content-Range: bytes " + filestart + "-" + fileend + "/" + filesize);
-                    help.append("\r\n");
+                    help.append(Math.max(0, fileend - filestart)).append("\r\n");
+                    help.append("Content-Range: bytes " + filestart + "-" + fileend + "/" + filesize).append("\r\n");
                 }
-                help.append("Content-Disposition: attachment;filename*=UTF-8''" + Encoding.urlEncode(fileServe.getName()));
-                help.append("\r\n");
-                help.append("Accept-Ranges: bytes");
-                help.append("\r\n");
+                /* filename */
+                help.append("Content-Disposition: attachment;filename*=UTF-8''" + Encoding.urlEncode(fileServe.getName())).append("\r\n");
+                help.append("Accept-Ranges: bytes").append("\r\n");
             } else {
-                help.append(data.toString().getBytes("UTF-8").length);
+                /* serve string content */
+                help.append(data.toString().getBytes("UTF-8").length).append("\r\n");
             }
-            help.append("\r\n");
         } catch (Exception e) {
         }
         for (String key : headers.keySet()) {
@@ -145,17 +144,17 @@ public class Response {
                 raf = new RandomAccessFile(fileServe, "r");
                 raf.seek(filestart);
                 long curpos = filestart;
-                int toread = 1024 * 100;
+                int toread = 102400;
                 int read = 0;
-                byte[] buffer = new byte[1024 * 100];
-                if (fileend - curpos < 1024 * 100) {
+                byte[] buffer = new byte[102400];
+                if (fileend - curpos < 102400) {
                     toread = (int) (fileend - curpos);
                 }
                 while ((read = raf.read(buffer, 0, toread)) != -1) {
                     curpos += read;
                     served += read;
                     out.write(buffer);
-                    if ((fileend - curpos) < 1024 * 100) {
+                    if ((fileend - curpos) < 102400) {
                         toread = (int) (fileend - curpos);
                     }
                     if (toread == 0 || fileend == curpos) {
