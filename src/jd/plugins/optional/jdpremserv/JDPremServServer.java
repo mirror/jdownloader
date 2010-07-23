@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jd.HostPluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.DownloadWatchDog;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -14,6 +16,7 @@ import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
 import jd.plugins.optional.jdpremserv.controlling.UserController;
 import jd.plugins.optional.jdpremserv.model.PremServUser;
+import jd.utils.JDUtilities;
 
 public class JDPremServServer implements Handler {
 
@@ -57,7 +60,13 @@ public class JDPremServServer implements Handler {
         }
         if (request.getParameter("info") != null) {
             response.setReturnStatus(Response.OK);
-            response.addContent(new String("OK: USER"));
+            StringBuilder sb = new StringBuilder("OK: USER || HOSTS: ");
+            for (HostPluginWrapper plugin : JDUtilities.getPremiumPluginsForHost()) {
+                if (AccountController.getInstance().getValidAccount(plugin.getHost()) != null) {
+                    sb.append(plugin.getHost() + "||");
+                }
+            }
+            response.addContent(sb.toString());
         } else if (request.getParameter("get") != null || request.getParameter("force") != null) {
             String wantedUrl = request.getParameter("force");
             if (wantedUrl == null) wantedUrl = request.getParameter("get");

@@ -14,8 +14,8 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 public class PremShare extends PluginForHost {
@@ -24,6 +24,7 @@ public class PremShare extends PluginForHost {
     private String infostring = null;
     private PluginForHost plugin = null;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
+    private static final Object LOCK = new Object();
 
     public void setReplacedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
@@ -103,10 +104,6 @@ public class PremShare extends PluginForHost {
         if (plugin == null) return;
         proxyused = false;
         if (handleJDPremServ(link)) return;
-        /* remove host from available premium list */
-        synchronized (premiumHosts) {
-            premiumHosts.remove(link.getHost());
-        }
         proxyused = false;
         plugin.clean();
         plugin.handleFree(link);
@@ -119,9 +116,16 @@ public class PremShare extends PluginForHost {
     }
 
     private boolean handleJDPremServ(DownloadLink link) throws Exception {
-        Account acc = JDPremium.getAccount();
-        /* enabled account found? */
-        if (acc == null || !acc.isEnabled()) return false;
+        Account acc = null;
+        synchronized (LOCK) {
+            /* jdpremium enabled */
+            if (!JDPremium.isEnabled()) return false;
+            /* premium available for this host */
+            if (!premiumHosts.contains(link.getHost())) return false;
+            acc = JDPremium.getAccount();
+            /* enabled account found? */
+            if (acc == null || !acc.isEnabled()) return false;
+        }
         proxyused = true;
         requestFileInformation(link);
         br = new Browser();
@@ -194,7 +198,9 @@ public class PremShare extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             /* unknown error */
             br.followConnection();
-            logger.info(br.toString());
+            synchronized (LOCK) {
+                premiumHosts.remove(link.getHost());
+            }
             return false;
         }
         dl.startDownload();
@@ -222,17 +228,26 @@ public class PremShare extends PluginForHost {
         if (plugin == null) {
             AccountInfo ac = new AccountInfo();
             String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
+            if (jdpremServer == null || jdpremServer.length() == 0) {
+                ac.setStatus("No JDPremServ set!");
+                account.setValid(false);
+                synchronized (LOCK) {
+                    /* no jdpremium available */
+                    premiumHosts.clear();
+                }
+                return ac;
+            }
             br = new Browser();
             br.setDebug(true);
             try {
                 br.getPage(jdpremServer);
             } catch (Exception e) {
-                account.setValid(false);
-                if (jdpremServer == null || jdpremServer.length() == 0) {
-                    ac.setStatus("No JDPremServ set!");
-                } else {
-                    ac.setStatus("Invalid JDPremServ set!");
+                account.setTempDisabled(true);
+                /* no jdpremium available */
+                synchronized (LOCK) {
+                    premiumHosts.clear();
                 }
+                ac.setStatus("JDPrem Server Error, temp disabled");
                 return ac;
             }
             /* user info */
@@ -244,8 +259,14 @@ public class PremShare extends PluginForHost {
             String page = br.submitForm(form);
             if (page.contains("OK: USER")) {
                 account.setValid(true);
+                ac.setStatus("Account valid");
             } else {
                 account.setValid(false);
+                ac.setStatus("Account invalid");
+                /* no jdpremium available */
+                synchronized (LOCK) {
+                    premiumHosts.clear();
+                }
             }
             return ac;
         } else
@@ -257,10 +278,6 @@ public class PremShare extends PluginForHost {
         if (plugin == null) return;
         proxyused = false;
         if (handleJDPremServ(downloadLink)) return;
-        /* remove host from available premium list */
-        synchronized (premiumHosts) {
-            premiumHosts.remove(downloadLink.getHost());
-        }
         proxyused = false;
         plugin.clean();
         plugin.handlePremium(downloadLink, account);
@@ -285,7 +302,7 @@ public class PremShare extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         if (plugin != null) {
-            synchronized (premiumHosts) {
+            synchronized (LOCK) {
                 if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
             }
             return plugin.getMaxSimultanFreeDownloadNum();
@@ -296,7 +313,7 @@ public class PremShare extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         if (plugin != null) {
-            synchronized (premiumHosts) {
+            synchronized (LOCK) {
                 if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
             }
             return plugin.getMaxSimultanPremiumDownloadNum();
@@ -307,7 +324,7 @@ public class PremShare extends PluginForHost {
     @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
-            synchronized (premiumHosts) {
+            synchronized (LOCK) {
                 if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
             }
             return plugin.getMaxSimultanDownload(account);

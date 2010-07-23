@@ -74,10 +74,12 @@ class PremShareHost extends HostPluginWrapper {
 public class JDPremium extends PluginOptional {
 
     private static PremShareHost jdpremium = null;
+    private static final Object LOCK = new Object();
+    private static boolean replaced = false;
+    private static boolean enabled = false;
 
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
-
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "Server"));
     }
@@ -92,13 +94,18 @@ public class JDPremium extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        replaceHosterPlugin("rapidshare.com");
-        replaceHosterPlugin("uploaded.to");
-        replaceHosterPlugin("megaUpload.com");
-        replaceHosterPlugin("netload.in");
-        replaceHosterPlugin("hotfile.com");
-        jdpremium = new PremShareHost("jdownloader.org", "PremShare", "NEVERUSETHISREGEX:\\)", 2);
-        logger.info("JDPremium init ok!");
+        synchronized (LOCK) {
+            if (!replaced) {
+                ArrayList<HostPluginWrapper> all = JDUtilities.getPremiumPluginsForHost();
+                for (HostPluginWrapper plugin : all) {
+                    replaceHosterPlugin(plugin.getHost());
+                }
+                jdpremium = new PremShareHost("jdownloader.org", "PremShare", "NEVERUSETHISREGEX:\\)", 2);
+            }
+            logger.info("JDPremium init ok!");
+            replaced = true;
+            enabled = true;
+        }
         return true;
     }
 
@@ -114,7 +121,13 @@ public class JDPremium extends PluginOptional {
 
     @Override
     public void onExit() {
-        logger.info("Cannot replace Plugins on runtime. Restart is neccessary!");
+        synchronized (LOCK) {
+            enabled = false;
+        }
+    }
+
+    public static boolean isEnabled() {
+        return enabled;
     }
 
     @Override
