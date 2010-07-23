@@ -97,8 +97,8 @@ public class PremShare extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        // if (handleProxy(link)) return;
         if (handleJDPremServ(link)) return;
+        proxyused = false;
         plugin.clean();
         plugin.handleFree(link);
     }
@@ -111,6 +111,7 @@ public class PremShare extends PluginForHost {
     private boolean handleJDPremServ(DownloadLink link) throws Exception {
         Account acc = JDPremium.getAccount();
         if (acc == null) return false;
+        proxyused = true;
         requestFileInformation(link);
         br = new Browser();
         br.setDebug(true);
@@ -188,8 +189,8 @@ public class PremShare extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        // if (handleProxy(link)) return;
         if (handleJDPremServ(downloadLink)) return;
+        proxyused = false;
         plugin.clean();
         plugin.handlePremium(downloadLink, account);
     }

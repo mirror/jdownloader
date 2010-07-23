@@ -99,7 +99,7 @@ public class JDPremium extends PluginOptional {
         replaceHosterPlugin("megaUpload.com");
         replaceHosterPlugin("netload.in");
         replaceHosterPlugin("hotfile.com");
-        jdpremium = new PremShareHost("jdownloader.org", "JDPremServ", "NEVERUSETHISREGEX:\\)", 2);
+        jdpremium = new PremShareHost("jdownloader.org", "PremShare", "NEVERUSETHISREGEX:\\)", 2);
         logger.info("JDPremium init ok!");
         return true;
     }
