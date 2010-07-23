@@ -21,6 +21,8 @@ import java.util.ArrayList;
 
 import jd.Main;
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.event.ControlEvent;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
@@ -29,6 +31,7 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.jdpremserv.gui.JDPremServGui;
+import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision: 11760 $", id = "jdpremserv", hasGui = true, interfaceversion = 5, minJVM = 1.6, linux = true, windows = true, mac = true)
 public class JDPremServ extends PluginOptional {
@@ -105,6 +108,7 @@ public class JDPremServ extends PluginOptional {
     }
 
     private void initConfigEntries() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "MODE", new String[] { "No restrictions", "limit download to required speed", "..." }, JDL.L("plugins.jdchat.userlistposition", "Download AI Mode:")).setDefaultValue(0));
 
     }
 

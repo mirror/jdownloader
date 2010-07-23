@@ -105,4 +105,17 @@ public class PremServUser {
         return trafficLog;
     }
 
+    public HashMap<String, Long> createTrafficStats() {
+        HashMap<String, Long> ret = new HashMap<String, Long>();
+        TrafficLog next;
+        for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
+            next = it.next();
+            Long value = ret.get(next.getDomain());
+            if (value == null) value = 0l;
+            value += next.getTraffic();
+            ret.put(next.getDomain(), value);
+        }
+        return ret;
+    }
+
 }

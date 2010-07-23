@@ -110,5 +110,15 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
             }
 
         });
+
+        this.addColumn(new ExtTextColumn<PremServUser>("Traffic", this) {
+
+            @Override
+            protected String getStringValue(PremServUser value) {
+
+                return value.createTrafficStats() + "";
+            }
+
+        });
     }
 }
