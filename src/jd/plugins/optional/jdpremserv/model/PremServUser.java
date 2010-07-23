@@ -19,6 +19,7 @@ public class PremServUser {
 
     public void setAllowedTrafficPerMonth(long traffic) {
         this.allowedTrafficPerMonth = traffic;
+        if (UserController.getInstance() != null) UserController.getInstance().fireUserUpdate(this);
     }
 
     private String password;
