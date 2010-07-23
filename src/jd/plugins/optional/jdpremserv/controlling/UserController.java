@@ -92,6 +92,7 @@ public class UserController implements ControlListener {
         if (!user.isEnabled()) return false;
         if (!user.getPassword().equals(password)) return false;
         if (domain != null && user.calculateTrafficLeft(domain) < filesize) return false;
+        if (user.calculateTotalTrafficLeft() <= 0) return false;
         return true;
     }
 

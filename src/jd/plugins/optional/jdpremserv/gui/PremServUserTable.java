@@ -9,6 +9,7 @@ import javax.swing.ListSelectionModel;
 
 import jd.plugins.optional.jdpremserv.gui.actions.AddUserAction;
 import jd.plugins.optional.jdpremserv.gui.actions.EditHosterUserAction;
+import jd.plugins.optional.jdpremserv.gui.actions.EditTrafficUserAction;
 import jd.plugins.optional.jdpremserv.gui.actions.EnableDisableUserAction;
 import jd.plugins.optional.jdpremserv.gui.actions.RemoveUserAction;
 import jd.plugins.optional.jdpremserv.model.PremServUser;
@@ -58,6 +59,7 @@ public class PremServUserTable extends ExtTable<PremServUser> {
             popup.add(new RemoveUserAction(contextObject));
             popup.add(new EnableDisableUserAction(contextObject));
             popup.add(new EditHosterUserAction(contextObject));
+            popup.add(new EditTrafficUserAction(contextObject));
         }
         return popup;
 

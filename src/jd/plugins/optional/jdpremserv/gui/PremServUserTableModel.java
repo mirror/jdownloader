@@ -1,12 +1,16 @@
 package jd.plugins.optional.jdpremserv.gui;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import jd.plugins.optional.jdpremserv.controlling.UserController;
+import jd.plugins.optional.jdpremserv.model.PremServHoster;
 import jd.plugins.optional.jdpremserv.model.PremServUser;
 
 import org.appwork.utils.event.BasicEvent;
 import org.appwork.utils.event.BasicListener;
+import org.appwork.utils.formatter.SizeFormater;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 
@@ -101,7 +105,24 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
         });
 
-        this.addColumn(new ExtTextColumn<PremServUser>("Allowed Hosters", this) {
+        this.addColumn(new ExtTextColumn<PremServUser>("Limited Hosters", this) {
+            public String getToolTip(PremServUser value) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("<html>");
+                sb.append("<h1>Limit hosters</h1>");
+                Entry<String, PremServHoster> next;
+                for (Iterator<Entry<String, PremServHoster>> it = value.getHosters().entrySet().iterator(); it.hasNext();) {
+                    next = it.next();
+                    sb.append("<b>");
+                    sb.append(next.getKey());
+                    sb.append("</b>: ");
+                    sb.append(SizeFormater.formatBytes(next.getValue().getTraffic()));
+                    sb.append("<br>");
+
+                }
+                sb.append("</html>");
+                return sb.toString();
+            }
 
             @Override
             protected String getStringValue(PremServUser value) {
@@ -111,12 +132,42 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
         });
 
-        this.addColumn(new ExtTextColumn<PremServUser>("Traffic", this) {
+        this.addColumn(new ExtTextColumn<PremServUser>("Used Traffic", this) {
+
+            public String getToolTip(PremServUser value) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("<html>");
+                sb.append("<h1>Total");
+                sb.append(SizeFormater.formatBytes(value.calculateTotalTraffic()));
+                sb.append("</h1>");
+                Entry<String, Long> next;
+                for (Iterator<Entry<String, Long>> it = value.createTrafficStats().entrySet().iterator(); it.hasNext();) {
+                    next = it.next();
+                    sb.append("<b>");
+                    sb.append(next.getKey());
+                    sb.append("</b>: ");
+                    sb.append(SizeFormater.formatBytes(next.getValue()));
+                    sb.append("<br>");
+
+                }
+                sb.append("</html>");
+                return sb.toString();
+            }
 
             @Override
             protected String getStringValue(PremServUser value) {
 
-                return value.createTrafficStats() + "";
+                return SizeFormater.formatBytes(value.calculateTotalTraffic());
+            }
+
+        });
+
+        this.addColumn(new ExtTextColumn<PremServUser>("Traffic/Month", this) {
+
+            @Override
+            protected String getStringValue(PremServUser value) {
+
+                return SizeFormater.formatBytes(value.getAllowedTrafficPerMonth());
             }
 
         });
