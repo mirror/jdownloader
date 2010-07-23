@@ -20,6 +20,8 @@ import java.util.ArrayList;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
@@ -42,6 +44,7 @@ class PremShareHost extends HostPluginWrapper {
         if (replacedone != null) {
             HostPluginWrapper.getHostWrapper().remove(replacedone);
         }
+
     }
 
     public HostPluginWrapper getReplacedPlugin() {
@@ -76,6 +79,7 @@ public class JDPremium extends PluginOptional {
 
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "Server"));
 
     }
 

@@ -16,6 +16,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 public class PremShare extends PluginForHost {
 
@@ -24,7 +25,6 @@ public class PremShare extends PluginForHost {
     // ImageIcon(JDImage.getImage("logo/logo_16_16"));
     private String infostring = null;
     private PluginForHost plugin = null;
-    private static final String server = "";
 
     public void setReplacedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
@@ -116,7 +116,7 @@ public class PremShare extends PluginForHost {
         br = new Browser();
         br.setDebug(true);
         Form form = new Form();
-        br.getPage(server);
+        br.getPage(JDUtilities.getOptionalPlugin("PremShare").getPluginConfig().getStringProperty("SERVER"));
         /* add and force download */
         form.setAction("/?force=" + link.getDownloadURL());
         form.setMethod(MethodType.POST);
