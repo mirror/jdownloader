@@ -105,6 +105,12 @@ public class MegasharesCom extends PluginForHost {
         }
     }
 
+    private String findDownloadUrl() {
+        String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
+        if (url == null) url = br.getRegex("<div id=\"show_download_button(_\\d+)?\".*?>[^<]*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
+        return url;
+    }
+
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
@@ -113,8 +119,7 @@ public class MegasharesCom extends PluginForHost {
         loadpage(downloadLink.getDownloadURL());
         if (!checkPassword(downloadLink)) { return; }
         if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
-        if (url == null) url = br.getRegex("<div id=\"show_download_button(_\\d+)?\".*?>\\n*?\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
+        String url = findDownloadUrl();
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -10);
@@ -167,8 +172,7 @@ public class MegasharesCom extends PluginForHost {
             if (!checkPassword(downloadLink)) { return; }
         }
         // Downloadlink
-        String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
-        if (url == null) url = br.getRegex("<div id=\"show_download_button(_\\d+)?\".*?>\\n*?\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
+        String url = findDownloadUrl();
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Dateigröße holen
         br.setFollowRedirects(true);
