@@ -22,7 +22,6 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.ext.BasicBrowserEnviroment;
 import jd.http.ext.ExtBrowser;
@@ -50,6 +49,7 @@ import org.w3c.dom.html2.HTMLCollection;
 //import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
 //import org.lobobrowser.html.style.AbstractCSS2Properties;
 //import org.w3c.dom.html2.HTMLCollection;
+//API:  http://support.mediafire.com/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=68
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?(?!sharekey)|file/).+" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
@@ -134,7 +134,7 @@ public class MediafireCom extends PluginForHost {
             DownloadLink link = downloadLink;
             Form form = br.getFormbyProperty("name", "form_password");
             if (link.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput(null, link);
+                passCode = Plugin.getUserInput("Downloadpassword for " + this.getHost() + "/" + downloadLink.getName(), link);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = link.getStringProperty("pass", null);
@@ -165,10 +165,8 @@ public class MediafireCom extends PluginForHost {
         String url = br.getRegex("<url>(http.*?)</url>").getMatch(0);
         if ("-204".equals(br.getRegex("<flags>(.*?)</").getMatch(0))) {
             // password protected TODO:better passwordsupport
-            String password = UserIO.getInstance().requestInputDialog("Password for " + this.getHost() + "/" + downloadLink.getName());
-            br.forceDebug(true);
-            br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "file_1=" + fileID + "&password_1=" + password + "&premium_key=" + CONFIGURATION_KEYS.get(account) + "&files=" + fileID);
-            url = br.getRegex("<url>(http.*?)</url>").getMatch(0);
+            handlePremiumPassword(downloadLink, account);
+            return;
         }
 
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -180,6 +178,24 @@ public class MediafireCom extends PluginForHost {
             if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
                 logger.info("Error (3)");
             }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private void handlePremiumPassword(DownloadLink downloadLink, Account account) throws Exception {
+        // API currently does not work
+        // http://support.mediafire.com/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=68
+        br.getPage(downloadLink.getDownloadURL());
+        handlePW(downloadLink);
+        String url = getDownloadUrl();
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+
+        if (!dl.getConnection().isContentDisposition()) {
+            logger.info("Error (3)");
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -277,6 +293,7 @@ public class MediafireCom extends PluginForHost {
             for (int i = 0; i < links.getLength(); i++) {
                 HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
                 // check if the link is visible in browser
+                System.out.println(l.getOuterHTML());
                 if (RendererUtilities.isVisible(l)) {
                     if (l.getInnerHTML().toLowerCase().contains("start download")) { return l.getAbsoluteHref(); }
                 }
