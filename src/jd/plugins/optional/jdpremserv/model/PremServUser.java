@@ -76,7 +76,9 @@ public class PremServUser {
      * @param traffic
      */
     public synchronized void addTrafficLog(String domain, long traffic) {
-        trafficLog.add(new TrafficLog(domain.toLowerCase(), traffic));
+        synchronized (trafficLog) {
+            trafficLog.add(new TrafficLog(domain.toLowerCase(), traffic));
+        }
         cleanTrafficLog();
         if (UserController.getInstance() != null) UserController.getInstance().fireUserUpdate(this);
     }
@@ -112,8 +114,10 @@ public class PremServUser {
     public synchronized long calculateTrafficUsed(String domain) {
         domain = domain.toLowerCase();
         long ret = 0;
-        for (TrafficLog l : trafficLog) {
-            if (l.getDomain().equals(domain)) ret += l.getTraffic();
+        synchronized (trafficLog) {
+            for (TrafficLog l : trafficLog) {
+                if (l.getDomain().equals(domain)) ret += l.getTraffic();
+            }
         }
         return ret;
     }
@@ -131,10 +135,12 @@ public class PremServUser {
      */
     private synchronized void cleanTrafficLog() {
         TrafficLog next;
-        for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
-            next = it.next();
-            if ((System.currentTimeMillis() - next.getTimestamp()) > 30 * 24 * 60 * 60 * 1000l) {
-                it.remove();
+        synchronized (trafficLog) {
+            for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
+                next = it.next();
+                if ((System.currentTimeMillis() - next.getTimestamp()) > 30 * 24 * 60 * 60 * 1000l) {
+                    it.remove();
+                }
             }
         }
 
@@ -147,7 +153,9 @@ public class PremServUser {
      */
     @SuppressWarnings("unchecked")
     public ArrayList<TrafficLog> getTrafficLog() {
-        return (ArrayList<TrafficLog>) trafficLog.clone();
+        synchronized (trafficLog) {
+            return (ArrayList<TrafficLog>) trafficLog.clone();
+        }
     }
 
     /**
@@ -159,16 +167,18 @@ public class PremServUser {
     public synchronized HashMap<String, Long> createTrafficStats() {
         HashMap<String, Long> ret = new HashMap<String, Long>();
         TrafficLog next;
-        for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
-            next = it.next();
-            if ((System.currentTimeMillis() - next.getTimestamp()) > 30 * 24 * 60 * 60 * 1000l) {
-                it.remove();
-                continue;
+        synchronized (trafficLog) {
+            for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
+                next = it.next();
+                if ((System.currentTimeMillis() - next.getTimestamp()) > 30 * 24 * 60 * 60 * 1000l) {
+                    it.remove();
+                    continue;
+                }
+                Long value = ret.get(next.getDomain());
+                if (value == null) value = 0l;
+                value += next.getTraffic();
+                ret.put(next.getDomain(), value);
             }
-            Long value = ret.get(next.getDomain());
-            if (value == null) value = 0l;
-            value += next.getTraffic();
-            ret.put(next.getDomain(), value);
         }
         return ret;
     }
@@ -182,13 +192,15 @@ public class PremServUser {
     public long calculateTotalTraffic() {
         TrafficLog next;
         long ret = 0;
-        for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
-            next = it.next();
-            if ((System.currentTimeMillis() - next.getTimestamp()) > 30 * 24 * 60 * 60 * 1000l) {
-                it.remove();
-                continue;
+        synchronized (trafficLog) {
+            for (Iterator<TrafficLog> it = trafficLog.iterator(); it.hasNext();) {
+                next = it.next();
+                if ((System.currentTimeMillis() - next.getTimestamp()) > 30 * 24 * 60 * 60 * 1000l) {
+                    it.remove();
+                    continue;
+                }
+                ret += next.getTraffic();
             }
-            ret += next.getTraffic();
         }
         return ret;
     }
