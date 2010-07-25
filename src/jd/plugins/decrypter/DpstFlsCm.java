@@ -44,7 +44,7 @@ public class DpstFlsCm extends PluginForDecrypt {
         // Get Pagecount //
         if (url.contains("page")) url = url.split("\\?")[0];
         br.getPage(url);
-        if (br.containsHTML("&gt;&gt;&gt;")) pagecount = Integer.parseInt(br.getRegex("<a href=\\\"/de/folders/[0-9A-Z]+\\?page=[0-9]+\\\">([0-9]+)</a>\\s+<a href=\\\"/de/folders/[0-9A-Z]+\\?page=[0-9]+\\\">&gt;&gt;&gt;</a>").getMatch(0));
+        if (br.containsHTML("\\&gt;\\&gt;\\&gt;")) pagecount = Integer.parseInt(br.getRegex("<a href=\\\"/de/folders/[0-9A-Z]+\\?page=[0-9]+\\\">([0-9]+)</a>\\s+<a href=\\\"/de/folders/[0-9A-Z]+\\?page=[0-9]+\\\">&gt;&gt;&gt;</a>").getMatch(0));
         //
 
         progress.setRange(pagecount * 18);

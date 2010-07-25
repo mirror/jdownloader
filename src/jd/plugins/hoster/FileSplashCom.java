@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesplash.com" }, urls = { "http://[\\w\\.]*?(filesplash|hitlisted)\\.com/[0-9a-z]{12}" }, flags = { 0 })
 public class FileSplashCom extends PluginForHost {
@@ -59,8 +59,8 @@ public class FileSplashCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        String dllink = br.getRegex("\"(http://cherryload\\.us/files/.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<br>.*?<br>.*?<a href=\"(http.*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://cherryload\\.us/(test/)?files/.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("</script>[\r\t\n ]+<br>[\r\t\n ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);

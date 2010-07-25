@@ -90,8 +90,9 @@ public class ExtaBitCom extends PluginForHost {
         if (br.containsHTML("The daily downloads limit from your IP is exceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         if (br.containsHTML("Next free download from your ip will be available")) {
             String wait = br.getRegex("will be available in <b>(.*?)minutes").getMatch(0);
-            int waitTime = 15 * 60 * 1000;
-            if (wait != null) waitTime = Integer.parseInt(wait.trim());
+            int minutes = 15;
+            if (wait != null) minutes = Integer.parseInt(wait.trim());
+            int waitTime = minutes * 60 * 1001;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
         // If the waittime was forced it yould be here but it isn't!
