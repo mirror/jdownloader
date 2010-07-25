@@ -88,7 +88,7 @@ public class JDPremium extends PluginOptional {
         PluginForHost old = JDUtilities.getPluginForHost(host);
         if (old != null) {
             logger.info("Replacing " + host + " Plugin with JDPremium Plugin");
-            new PremShareHost(old.getHost(), "PremShare", old.getWrapper().getPattern().toString(), (old.getWrapper()).getFlags() + PluginWrapper.ALLOW_DUPLICATE);
+            new PremShareHost(old.getHost(), "PremShare", old.getWrapper().getPattern().toString(), old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
         }
     }
 

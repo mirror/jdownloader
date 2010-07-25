@@ -26,7 +26,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/clink170.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.6.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mail.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs_ext/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/ui.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/debug-1.0.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jcip-annotations-1.0.jar"/>
@@ -80,5 +79,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-util-1.1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-util-1.1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/jackson-core.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/jackson-mapper.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

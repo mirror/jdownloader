@@ -10,6 +10,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class JDPremServGui extends ClosableView {
 
+    private static final long serialVersionUID = 1506791566826744246L;
+
     public JDPremServGui() {
         super();
         init();

@@ -16,9 +16,6 @@ import org.appwork.utils.swing.table.columns.ExtTextColumn;
 
 public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -161419710915552207L;
     private static final PremServUserTableModel INSTANCE = new PremServUserTableModel();
 
@@ -67,29 +64,25 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.rapidshare.rsmanager.gui.components.table.JDTableModel#initColumns()
-     */
     @Override
     protected void initColumns() {
 
         this.addColumn(new ExtTextColumn<PremServUser>("Username", this) {
 
+            private static final long serialVersionUID = 6114502185773645379L;
+
             @Override
             protected String getStringValue(PremServUser value) {
-
                 return value.getUsername();
             }
 
         });
         this.addColumn(new ExtTextColumn<PremServUser>("Password", this) {
 
+            private static final long serialVersionUID = -5058123494364026340L;
+
             @Override
             protected String getStringValue(PremServUser value) {
-
                 return value.getPassword();
             }
 
@@ -97,15 +90,20 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
         this.addColumn(new ExtTextColumn<PremServUser>("Enabled", this) {
 
+            private static final long serialVersionUID = -3601520285751677052L;
+
             @Override
             protected String getStringValue(PremServUser value) {
-
                 return value.isEnabled() ? "YES" : "NO";
             }
 
         });
 
         this.addColumn(new ExtTextColumn<PremServUser>("Limited Hosters", this) {
+
+            private static final long serialVersionUID = 9056465387709191600L;
+
+            @Override
             public String getToolTip(PremServUser value) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
@@ -126,7 +124,6 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
             @Override
             protected String getStringValue(PremServUser value) {
-
                 return value.getHosters() + "";
             }
 
@@ -134,6 +131,9 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
         this.addColumn(new ExtTextColumn<PremServUser>("Used Traffic", this) {
 
+            private static final long serialVersionUID = 779114113156820814L;
+
+            @Override
             public String getToolTip(PremServUser value) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
@@ -156,7 +156,6 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
             @Override
             protected String getStringValue(PremServUser value) {
-
                 return SizeFormater.formatBytes(value.calculateTotalTraffic());
             }
 
@@ -164,9 +163,10 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
         this.addColumn(new ExtTextColumn<PremServUser>("Traffic/Month", this) {
 
+            private static final long serialVersionUID = 4904311453829598265L;
+
             @Override
             protected String getStringValue(PremServUser value) {
-
                 return SizeFormater.formatBytes(value.getAllowedTrafficPerMonth());
             }
 

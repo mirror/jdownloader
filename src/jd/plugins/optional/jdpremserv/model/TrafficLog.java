@@ -1,8 +1,6 @@
 package jd.plugins.optional.jdpremserv.model;
 
 public class TrafficLog {
-    private TrafficLog() {
-    }
 
     private String domain;
 

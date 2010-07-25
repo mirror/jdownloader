@@ -54,7 +54,7 @@ public class PremServUserTable extends ExtTable<PremServUser> {
     @Override
     protected JPopupMenu onContextMenu(JPopupMenu popup, PremServUser contextObject, ArrayList<PremServUser> selection) {
 
-        popup.add(new AddUserAction(contextObject));
+        popup.add(new AddUserAction());
         if (contextObject != null) {
             popup.add(new RemoveUserAction(contextObject));
             popup.add(new EnableDisableUserAction(contextObject));

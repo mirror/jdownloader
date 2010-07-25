@@ -7,8 +7,6 @@ import java.util.Iterator;
 import jd.plugins.optional.jdpremserv.controlling.UserController;
 
 public class PremServUser {
-    private PremServUser() {
-    }
 
     private String username;
     private long allowedTrafficPerMonth = -1;

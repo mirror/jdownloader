@@ -6,9 +6,6 @@ public class PremServHoster implements Comparable<PremServHoster> {
     private String domain;
     private long traffic = -1;
 
-    private PremServHoster() {
-    }
-
     public PremServHoster(String domain, long traffic) {
         this.domain = domain.toLowerCase();
         this.traffic = traffic;
@@ -28,14 +25,13 @@ public class PremServHoster implements Comparable<PremServHoster> {
 
     public void setTraffic(long traffic) {
         this.traffic = traffic;
-    };
+    }
 
     public String toString() {
         return domain + "(" + SizeFormater.formatBytes(traffic) + ")";
     }
 
     public int compareTo(PremServHoster o) {
-
         return domain.compareToIgnoreCase(o.domain);
     }
 }
