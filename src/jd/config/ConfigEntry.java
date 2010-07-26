@@ -31,18 +31,18 @@ public class ConfigEntry implements Serializable {
     public static enum PropertyType {
         NONE, NORMAL, NEEDS_RESTART;
 
-        public static PropertyType getMax(PropertyType... changes) {
-            ArrayList<PropertyType> sorter = new ArrayList<PropertyType>();
-            for (PropertyType type : changes) {
+        public static PropertyType getMax(final PropertyType... changes) {
+            final ArrayList<PropertyType> sorter = new ArrayList<PropertyType>();
+            for (final PropertyType type : changes) {
                 sorter.add(type);
             }
             Collections.sort(sorter);
-            PropertyType ret = sorter.get(sorter.size() - 1);
+            final PropertyType ret = sorter.get(sorter.size() - 1);
 
             return ret;
         }
 
-        public PropertyType getMax(PropertyType propertyType) {
+        public PropertyType getMax(final PropertyType propertyType) {
             return getMax(propertyType, this);
         }
 
@@ -53,7 +53,7 @@ public class ConfigEntry implements Serializable {
     /**
      * Generelle Variablen
      */
-    private int type;
+    private final int type;
     private ConfigGroup group;
     private String label;
     private Object defaultValue;
@@ -68,7 +68,7 @@ public class ConfigEntry implements Serializable {
      */
     private ConfigEntry conditionEntry;
     private Boolean compareValue;
-    private ArrayList<ConfigEntry> listener = new ArrayList<ConfigEntry>();
+    private final ArrayList<ConfigEntry> listener = new ArrayList<ConfigEntry>();
 
     /**
      * Variablen fuer einen Button-Eintrag.
@@ -106,7 +106,7 @@ public class ConfigEntry implements Serializable {
      * @param type
      * @see ConfigContainer#TYPE_SEPARATOR
      */
-    public ConfigEntry(int type) {
+    public ConfigEntry(final int type) {
         this.type = type;
     }
 
@@ -119,7 +119,7 @@ public class ConfigEntry implements Serializable {
      * @param constraints
      * @see ConfigContainer#TYPE_COMPONENT
      */
-    public ConfigEntry(int type, JComponent component, String constraints) {
+    public ConfigEntry(final int type, final JComponent component, final String constraints) {
         this.type = type;
         this.component = component;
         this.constraints = constraints;
@@ -137,7 +137,7 @@ public class ConfigEntry implements Serializable {
      *            Label fuer die Komponente
      * @see ConfigContainer#TYPE_BUTTON
      */
-    public ConfigEntry(int type, ActionListener actionListener, String description, String label, ImageIcon icon) {
+    public ConfigEntry(final int type, final ActionListener actionListener, final String description, final String label, final ImageIcon icon) {
         this.type = type;
         this.actionListener = actionListener;
         this.description = description;
@@ -148,7 +148,7 @@ public class ConfigEntry implements Serializable {
     /**
      * @see ConfigContainer#TYPE_LISTCONTROLLED
      */
-    public ConfigEntry(int type, ListController controller, String label) {
+    public ConfigEntry(final int type, final ListController controller, final String label) {
         this.type = type;
         this.controller = controller;
         this.label = label;
@@ -173,7 +173,7 @@ public class ConfigEntry implements Serializable {
      * @see ConfigContainer#TYPE_COMBOBOX_INDEX
      * @see ConfigContainer#TYPE_RADIOFIELD
      */
-    public ConfigEntry(int type, Property propertyInstance, String propertyName, Object[] list, String label) {
+    public ConfigEntry(final int type, final Property propertyInstance, final String propertyName, final Object[] list, final String label) {
         this.type = type;
         this.propertyInstance = propertyInstance;
         this.propertyName = propertyName;
@@ -202,7 +202,7 @@ public class ConfigEntry implements Serializable {
      * @see ConfigContainer#TYPE_TEXTAREA
      * @see ConfigContainer#TYPE_TEXTFIELD
      */
-    public ConfigEntry(int type, Property propertyInstance, String propertyName, String label) {
+    public ConfigEntry(final int type, final Property propertyInstance, final String propertyName, final String label) {
         this.type = type;
         this.propertyInstance = propertyInstance;
         this.propertyName = propertyName;
@@ -230,7 +230,7 @@ public class ConfigEntry implements Serializable {
      *            Schrittweite
      * @see ConfigContainer#TYPE_SPINNER
      */
-    public ConfigEntry(int type, Property propertyInstance, String propertyName, String label, int start, int end, int step) {
+    public ConfigEntry(final int type, final Property propertyInstance, final String propertyName, final String label, final int start, final int end, final int step) {
         this.type = type;
         this.propertyInstance = propertyInstance;
         this.propertyName = propertyName;
@@ -246,7 +246,7 @@ public class ConfigEntry implements Serializable {
      *             instead.
      */
     @Deprecated
-    public ConfigEntry(int type, Property propertyInstance, String propertyName, String label, int start, int end) {
+    public ConfigEntry(final int type, final Property propertyInstance, final String propertyName, final String label, final int start, final int end) {
         this(type, propertyInstance, propertyName, label, start, end, 1);
     }
 
@@ -256,7 +256,7 @@ public class ConfigEntry implements Serializable {
      *             instead.
      */
     @Deprecated
-    public ConfigEntry setStep(int step) {
+    public ConfigEntry setStep(final int step) {
         this.step = step;
         return this;
     }
@@ -268,7 +268,7 @@ public class ConfigEntry implements Serializable {
      * @param label
      * @see ConfigContainer#TYPE_LABEL
      */
-    public ConfigEntry(int type, String label) {
+    public ConfigEntry(final int type, final String label) {
         this.type = type;
         this.label = label;
     }
@@ -332,7 +332,7 @@ public class ConfigEntry implements Serializable {
                     return "";
                 }
 
-                public void setList(String list) {
+                public void setList(final String list) {
                 }
             };
         }
@@ -368,9 +368,8 @@ public class ConfigEntry implements Serializable {
         return type;
     }
 
-    public boolean isConditionalEnabled(ConfigEntry source, Object newData) {
-        if (source == conditionEntry) return compareValue.equals(newData);
-        return true;
+    public boolean isConditionalEnabled(final ConfigEntry source, final Object newData) {
+        return (source == conditionEntry) ? compareValue.equals(newData) : true;
     }
 
     public boolean isEnabled() {
@@ -386,33 +385,37 @@ public class ConfigEntry implements Serializable {
      *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
      *         moeglich
      */
-    public ConfigEntry setDefaultValue(Object defaultValue) {
+    public ConfigEntry setDefaultValue(final Object defaultValue) {
         this.defaultValue = defaultValue;
         return this;
     }
 
-    public ConfigEntry setEnabled(boolean enabled) {
+    public ConfigEntry setEnabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
-    public ConfigEntry setEnabledCondidtion(ConfigEntry conditionEntry, boolean compareValue) {
+    public ConfigEntry setEnabledCondidtion(final ConfigEntry conditionEntry, final boolean compareValue) {
         this.conditionEntry = conditionEntry;
         this.compareValue = compareValue;
         conditionEntry.addListener(this);
         return this;
     }
 
-    public void addListener(ConfigEntry listener) {
-        if (listener != null) this.listener.add(listener);
+    public void addListener(final ConfigEntry listener) {
+        if (listener != null) {
+            this.listener.add(listener);
+        }
     }
 
-    public void setGroup(ConfigGroup group) {
+    public void setGroup(final ConfigGroup group) {
         this.group = group;
     }
 
-    public void setGuiListener(GuiConfigListener guiListener) {
-        if (this.guiListener == null) this.guiListener = guiListener;
+    public void setGuiListener(final GuiConfigListener guiListener) {
+        if (this.guiListener == null) {
+            this.guiListener = guiListener;
+        }
     }
 
     /**
@@ -421,15 +424,16 @@ public class ConfigEntry implements Serializable {
      * @param propertyType
      * @return
      */
-    public ConfigEntry setPropertyType(PropertyType propertyType) {
+    public ConfigEntry setPropertyType(final PropertyType propertyType) {
         this.propertyType = propertyType;
         return this;
     }
 
-    public void valueChanged(Object newValue) {
-        for (ConfigEntry next : listener) {
-            if (next.getGuiListener() != null) {
-                next.getGuiListener().dataChanged(this, newValue);
+    public void valueChanged(final Object newValue) {
+        for (final ConfigEntry next : listener) {
+            final GuiConfigListener nextGuiListener = next.getGuiListener();
+            if (nextGuiListener != null) {
+                nextGuiListener.dataChanged(this, newValue);
             }
         }
     }

@@ -20,10 +20,10 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 
 public abstract class ConfigPropertyListener implements ControlListener {
-    private String[] list;
+    private final String[] list;
     private boolean strict;
 
-    public ConfigPropertyListener(String... args) {
+    public ConfigPropertyListener(final String... args) {
         super();
         list = args;
         strict = true;
@@ -38,15 +38,16 @@ public abstract class ConfigPropertyListener implements ControlListener {
      * 
      * @param strict
      */
-    public void setStrict(boolean strict) {
+    public void setStrict(final boolean strict) {
         this.strict = strict;
     }
 
-    public void controlEvent(ControlEvent event) {
+    public void controlEvent(final ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            for (String key : list) {
+            for (final String key : list) {
                 if (strict) {
-                    //if an addon sets property.setProperty(null,bla) rthis leads to nullpointers here
+                    // if an addon sets property.setProperty(null,bla) rthis
+                    // leads to nullpointers here
                     if ((event.getParameter() == null && key == null) || (event.getParameter() != null && event.getParameter().equals(key))) {
                         onPropertyChanged((Property) event.getSource(), key);
                     }

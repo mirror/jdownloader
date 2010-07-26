@@ -134,7 +134,7 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_COMBOBOX_INDEX = 15;
 
-    private ArrayList<ConfigEntry> content;
+    private final ArrayList<ConfigEntry> content;
     private String title;
     private ConfigGroup group;
     private ImageIcon icon;
@@ -143,7 +143,7 @@ public class ConfigContainer implements Serializable {
         this.content = new ArrayList<ConfigEntry>();
     }
 
-    public ConfigContainer(String title) {
+    public ConfigContainer(final String title) {
         this();
         this.title = title;
     }
@@ -154,9 +154,10 @@ public class ConfigContainer implements Serializable {
      * @param entry
      *            Der Eintrag, der hinzugefügt werden soll
      */
-    public void addEntry(ConfigEntry entry) {
-        if (entry.getGroup() == null) entry.setGroup(group);
-
+    public void addEntry(final ConfigEntry entry) {
+        if (entry.getGroup() == null) {
+            entry.setGroup(group);
+        }
         content.add(entry);
     }
 
@@ -179,7 +180,7 @@ public class ConfigContainer implements Serializable {
      * 
      * @param configGroup
      */
-    public void setGroup(ConfigGroup configGroup) {
+    public void setGroup(final ConfigGroup configGroup) {
         this.group = configGroup;
     }
 
@@ -193,7 +194,7 @@ public class ConfigContainer implements Serializable {
      * 
      * @param icon
      */
-    public void setIcon(ImageIcon icon) {
+    public void setIcon(final ImageIcon icon) {
         this.icon = icon;
     }
 

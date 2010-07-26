@@ -28,11 +28,11 @@ public class ConfigGroup implements Serializable {
     private final String name;
     private final ImageIcon icon;
 
-    public ConfigGroup(String name, String iconKey) {
+    public ConfigGroup(final String name, final String iconKey) {
         this(name, JDTheme.II(iconKey, 32, 32));
     }
 
-    public ConfigGroup(String name, ImageIcon icon) {
+    public ConfigGroup(final String name, final ImageIcon icon) {
         this.name = name;
         this.icon = icon;
     }
