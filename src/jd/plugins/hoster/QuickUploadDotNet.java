@@ -255,12 +255,21 @@ public class QuickUploadDotNet extends PluginForHost {
         }
         if (error2 == true) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML("File Not Found")) {
-                logger.warning("Server says link offline, please recheck that!");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // Experimental errorhandling
+            boolean exception = false;
+            try {
+                br.followConnection();
+            } catch (Exception e) {
+                logger.info("The final dllink seems to be a file, trying to download...");
+                exception = true;
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!exception) {
+                if (br.containsHTML("File Not Found")) {
+                    logger.warning("Server says link offline, please recheck that!");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }

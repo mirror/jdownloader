@@ -171,9 +171,11 @@ public class TurboBitNet extends PluginForHost {
             return ai;
         }
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<u>Turbo Access</u> to(.*?)<a").getMatch(0);
-        // For the russian version
-        if (expire == null) expire = br.getRegex("<u>Турбо доступ</u> до(.*?)<a").getMatch(0);
+        String expire = br.getRegex("<u>(Turbo Access|Turbo Zugang)</u> to(.*?)<a").getMatch(1);
+        if (expire == null) {
+            expire = br.getRegex("<u>Турбо доступ</u> до(.*?)<a").getMatch(0);
+            if (expire == null) expire = br.getRegex("<img src='/img/icon/yesturbo\\.png'> <u>.{5,20}</u> .{1,5} (.*?) <a href='/turbo'>").getMatch(0);
+        }
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
@@ -190,8 +192,8 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<h1><a href='(http://.*?)'><b>Download it").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("('|\")(http://www\\.turbobit\\.net//download/redirect/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)('|\")").getMatch(1);
+        String dllink = br.getRegex("<h1><a href='(.*?)'>").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("('|\")(http://(www\\.)?turbobit\\.net//download/redirect/.*?)('|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (!dllink.contains("turbobit.net")) dllink = "http://turbobit.net" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
