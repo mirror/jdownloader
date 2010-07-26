@@ -125,20 +125,20 @@ public class JDPremServController {
             /* only one hostlink may exist */
             if (found == null || found.size() != 1) return null;
             String hostUrl = found.get(0).getDownloadURL();
-            DownloadLink ret = null;
+            retLink = null;
             /* search premservfilepackage for downloadlink with this url */
             for (DownloadLink current : premServFilePackage.getDownloadLinkList()) {
                 if (current.getDownloadURL().equalsIgnoreCase(hostUrl)) {
-                    ret = current;
+                    retLink = current;
                     break;
                 }
             }
-            if (ret == null) {
+            if (retLink == null) {
                 /* none found, so we add it */
-                ret = found.get(0);
+                retLink = found.get(0);
                 /* first disabled, maybe user has not enough rights */
-                ret.setEnabled(false);
-                premServFilePackage.add(ret);
+                retLink.setEnabled(false);
+                premServFilePackage.add(retLink);
             }
             requestedLinks.put(url, retLink);
         }
