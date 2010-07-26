@@ -65,7 +65,7 @@ public class SplashScreen implements ControlListener {
 
         GraphicsDevice gd = null;
         try {
-            Object loc = GUIUtils.getConfig().getProperty("LOCATION_OF_MAINFRAME");
+            final Object loc = GUIUtils.getConfig().getProperty("LOCATION_OF_MAINFRAME");
             if (loc instanceof Point) {
                 final Point point = (Point) loc;
                 if (point.x < 0) {
@@ -138,17 +138,19 @@ public class SplashScreen implements ControlListener {
     }
 
     public void controlEvent(final ControlEvent event) {
-        if (event.getID() == SPLASH_PROGRESS) {
-            if (event.getParameter() instanceof String) {
+        final int id = event.getID();
+        if (id == SPLASH_PROGRESS) {
+            final Object parameter = event.getParameter();
+            if (parameter instanceof String) {
                 synchronized (curString) {
-                    curString = (String) event.getParameter();
+                    curString = (String) parameter;
                 }
             }
             incProgress();
-        } else if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+        } else if (id == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             JDUtilities.getController().removeControlListener(this);
             finish();
-        } else if (event.getID() == SPLASH_FINISH) {
+        } else if (id == SPLASH_FINISH) {
             JDUtilities.getController().removeControlListener(this);
             finish();
         }
