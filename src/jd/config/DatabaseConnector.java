@@ -225,7 +225,7 @@ public class DatabaseConnector implements Serializable {
     public synchronized Object getData(final String name) {
         synchronized (LOCK) {
             Object ret = null;
-            if (isDatabaseShutdown()) {
+            if (!isDatabaseShutdown()) {
                 ret = dbdata.get(name);
                 Statement statement = null;
                 ResultSet rs = null;
