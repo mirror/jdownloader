@@ -43,6 +43,10 @@ public class UptalCom extends PluginForHost {
         return "http://www.uptal.com/faq.php";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("uptal.com", "uptal.org"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();

@@ -65,31 +65,18 @@ public class DuckLoad extends PluginForHost {
             capurl = "/design/Captcha2" + capurl;
             String code = getCaptchaCode(capurl, link);
             // Check this part first if the plugin is defect!
-            String applcode = null;
-            applcode = br.getRegex("src=\"/design/Captcha.*?php\\?.*?\".*?<input name=\"(.*?)\"").getMatch(0);
             String[] matches = br.getRegex("<input( id=\".*?\" |.*?)name=\"(.*?)\"").getColumn(1);
             if (matches == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             ArrayList<String> matchList = new ArrayList<String>();
             for (String match : matches) {
                 if (!matchList.contains(match)) matchList.add(match);
             }
-            if (applcode == null) {
-                logger.warning("regex for applcode is defect!");
-                if (form.containsHTML("a_code")) {
-                    applcode = "a_code";
-                } else if (form.containsHTML("b_code")) {
-                    applcode = "b_code";
-                } else if (form.containsHTML("appl_code")) {
-                    applcode = "appl_code";
-                } else if (applcode == null) {
-                    logger.warning("No standard captcha inputname found, using humpf!");
-                    applcode = "humpf";
-                }
-            }
             String fileid = new Regex(link.getDownloadURL(), "duckload\\.com/download/(\\d+)/").getMatch(0);
             String filenamefromlink = new Regex(link.getDownloadURL(), "duckload\\.com/download/.*?/(.+)").getMatch(0);
             String postlink = "http://duckload.com/index.php?Modul=download&id=" + fileid + "&name=" + filenamefromlink + "&Ajax=true";
             form = new Form();
+            form.put("_____download.x", "0");
+            form.put("_____download.y", "0");
             form.setAction(postlink);
             form.setMethod(MethodType.POST);
             for (String omg : matchList) {
