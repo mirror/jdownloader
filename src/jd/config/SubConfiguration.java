@@ -38,7 +38,7 @@ public class SubConfiguration extends Property implements Serializable {
      * 
      * @param listener
      */
-    public void addConfigurationListener(ConfigurationListener listener) {
+    public void addConfigurationListener(final ConfigurationListener listener) {
         if (this.listener == null) {
             this.listener = new ArrayList<ConfigurationListener>();
         }
@@ -47,32 +47,35 @@ public class SubConfiguration extends Property implements Serializable {
     }
 
     private void fireEventPreSave() {
-        if (listener == null) return;
-        for (ConfigurationListener listener : this.listener) {
-            listener.onPreSave(this);
+        if (listener != null) {
+            for (final ConfigurationListener listener : this.listener) {
+                listener.onPreSave(this);
+            }
         }
     }
 
     private void fireEventPostSave() {
-        if (listener == null) return;
-        for (ConfigurationListener listener : this.listener) {
-            listener.onPostSave(this);
+        if (listener != null) {
+            for (final ConfigurationListener listener : this.listener) {
+                listener.onPostSave(this);
+            }
         }
     }
 
-    public void removeConfigurationListener(ConfigurationListener listener) {
-        if (listener == null) return;
-        this.listener.remove(listener);
+    public void removeConfigurationListener(final ConfigurationListener listener) {
+        if (listener != null) {
+            this.listener.remove(listener);
+        }
     }
 
     public SubConfiguration() {
     }
 
     @SuppressWarnings("unchecked")
-    public SubConfiguration(String name) {
+    public SubConfiguration(final String name) {
         valid = true;
         this.name = name;
-        Object props = JDUtilities.getDatabaseConnector().getData(name);
+        final Object props = JDUtilities.getDatabaseConnector().getData(name);
         if (props != null && props instanceof HashMap) {
             this.setProperties((HashMap<String, Object>) props);
         } else {
@@ -84,29 +87,33 @@ public class SubConfiguration extends Property implements Serializable {
     }
 
     public void save() {
-        if (!valid) return;
-        this.fireEventPreSave();
-        JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
-        this.fireEventPostSave();
-        changes = false;
+        if (valid) {
+            this.fireEventPreSave();
+            JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
+            this.fireEventPostSave();
+            changes = false;
+        }
     }
 
+    @Override
     public String toString() {
         return name;
     }
 
-    public synchronized static SubConfiguration getConfig(String name) {
+    public synchronized static SubConfiguration getConfig(final String name) {
         if (SUBCONFIG_LOCK) {
             JDLogger.exception(new Exception("Static Database init error!!"));
         }
         SUBCONFIG_LOCK = true;
         try {
-            if (SUB_CONFIGS.containsKey(name)) return SUB_CONFIGS.get(name);
-
-            SubConfiguration cfg = new SubConfiguration(name);
-            SUB_CONFIGS.put(name, cfg);
-            cfg.save();
-            return cfg;
+            if (SUB_CONFIGS.containsKey(name)) {
+                return SUB_CONFIGS.get(name);
+            } else {
+                final SubConfiguration cfg = new SubConfiguration(name);
+                SUB_CONFIGS.put(name, cfg);
+                cfg.save();
+                return cfg;
+            }
         } finally {
             SubConfiguration.SUBCONFIG_LOCK = false;
         }
