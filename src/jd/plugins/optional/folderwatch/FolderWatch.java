@@ -287,16 +287,19 @@ public class FolderWatch extends PluginOptional {
         }
     }
 
+    @SuppressWarnings("unused")
     private void deleteContainer(File container) {
         if (isContainer(container)) {
             container.delete();
         }
     }
 
+    @SuppressWarnings("unused")
     private void openFolder(File folder) {
 
     }
 
+    @SuppressWarnings("unused")
     private boolean emptyFolder(File folder) {
         if (folder.isDirectory()) {
             for (File file : folder.listFiles()) {

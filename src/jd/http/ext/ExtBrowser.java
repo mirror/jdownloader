@@ -15,10 +15,8 @@ import jd.parser.Regex;
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.UserAgentContext;
 import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
-import org.lobobrowser.html.domimpl.HTMLFormElementImpl;
 import org.lobobrowser.html.domimpl.HTMLFrameElementImpl;
 import org.lobobrowser.html.domimpl.HTMLIFrameElementImpl;
-import org.w3c.dom.Element;
 import org.w3c.dom.html2.HTMLCollection;
 
 public class ExtBrowser {
@@ -135,29 +133,27 @@ public class ExtBrowser {
 
     }
 
-    private InputController getInputController() {
-        return this.inputController;
-    }
+    // private Element getElementByID(ExtHTMLFrameElement frame, String id) {
+    // if (frame == null) frame = this.getFrameController();
+    // Element ret = frame.getDocument().getElementById(id);
+    // return ret;
+    // }
 
-    private Element getElementByID(ExtHTMLFrameElement frame, String id) {
-        if (frame == null) frame = this.getFrameController();
-        Element ret = frame.getDocument().getElementById(id);
-        return ret;
-    }
+    // private ArrayList<HTMLFormElementImpl> getForms(ExtHTMLFrameElement
+    // frame) {
+    // if (frame == null) frame = this.getFrameController();
+    // HTMLCollection forms = frame.getDocument().getForms();
+    // return getList(forms, new ArrayList<HTMLFormElementImpl>());
+    // }
 
-    private ArrayList<HTMLFormElementImpl> getForms(ExtHTMLFrameElement frame) {
-        if (frame == null) frame = this.getFrameController();
-        HTMLCollection forms = frame.getDocument().getForms();
-        return getList(forms, new ArrayList<HTMLFormElementImpl>());
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E> ArrayList<E> getList(HTMLCollection forms, ArrayList<E> arrayList) {
-        for (int i = 0; i < forms.getLength(); i++) {
-            arrayList.add((E) forms.item(i));
-        }
-        return arrayList;
-    }
+    // @SuppressWarnings("unchecked")
+    // private <E> ArrayList<E> getList(HTMLCollection forms, ArrayList<E>
+    // arrayList) {
+    // for (int i = 0; i < forms.getLength(); i++) {
+    // arrayList.add((E) forms.item(i));
+    // }
+    // return arrayList;
+    // }
 
     /**
      * 
@@ -182,30 +178,20 @@ public class ExtBrowser {
     private UserAgentDelegate uac;
     private Browser commContext;
     private String url;
-    private InputController inputController;
+    // private InputController inputController;
     private ExtBrowserEventSender eventSender;
 
     public ExtBrowser() {
-
-        uac = new UserAgentDelegate(this);
-
-        // Context.enter().setDebugger(new ExtDebugger(), null);
-        eventSender = new ExtBrowserEventSender();
-        commContext = new Browser();
-        commContext.setFollowRedirects(true);
-        commContext.setCookiesExclusive(true);
-        htmlFrameController = new FrameController(this);
-        inputController = new InputController();
-
+        this(new Browser());
     }
 
     public ExtBrowserEventSender getEventSender() {
         return eventSender;
     }
 
-    public void setInputController(InputController inputController) {
-        this.inputController = inputController;
-    }
+    // public void setInputController(InputController inputController) {
+    // this.inputController = inputController;
+    // }
 
     public Regex getRegex(final String pattern) {
         return htmlFrameController.getRegex(pattern);
@@ -221,7 +207,7 @@ public class ExtBrowser {
         commContext.setCookiesExclusive(true);
         htmlFrameController = new FrameController(this);
 
-        inputController = new InputController();
+        // inputController = new InputController();
     }
 
     public void getPage(String url) throws ExtBrowserException {
