@@ -46,7 +46,7 @@ public class DatabaseConnector implements Serializable {
 
     private static String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
 
-    private HashMap<String, Object> dbdata = new HashMap<String, Object>();
+    private final HashMap<String, Object> dbdata = new HashMap<String, Object>();
 
     public static final Object LOCK = new Object();
 
@@ -58,11 +58,11 @@ public class DatabaseConnector implements Serializable {
 
         try {
             Class.forName("org.hsqldb.jdbcDriver").newInstance();
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             e.printStackTrace();
-        } catch (InstantiationException e) {
+        } catch (final InstantiationException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
             e.printStackTrace();
         }
 
@@ -103,15 +103,15 @@ public class DatabaseConnector implements Serializable {
             con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)");
             con.createStatement().executeUpdate("CREATE TABLE links (name VARCHAR(256), obj OTHER)");
 
-            PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
+            final PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
             logger.finer("Starting database wrapper");
             // cfg file conversion
-            for (String tmppath : new File(configpath).list()) {
+            for (final String tmppath : new File(configpath).list()) {
                 try {
                     if (tmppath.endsWith(".cfg")) {
                         logger.finest("Wrapping " + tmppath);
 
-                        Object props = JDIO.loadObject(JDUtilities.getResourceFile("config/" + tmppath), false);
+                        final Object props = JDIO.loadObject(JDUtilities.getResourceFile("config/" + tmppath), false);
 
                         if (props != null) {
                             pst.setString(1, tmppath.split(".cfg")[0]);
@@ -119,7 +119,7 @@ public class DatabaseConnector implements Serializable {
                             pst.execute();
                         }
                     }
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     JDLogger.exception(e);
                 }
             }
@@ -134,7 +134,7 @@ public class DatabaseConnector implements Serializable {
      */
     private boolean checkDatabaseHeader() {
         logger.finer("Checking database");
-        File f = new File(configpath + "database.script");
+        final File f = new File(configpath + "database.script");
         if (!f.exists()) return true;
         boolean databaseok = true;
 
@@ -199,21 +199,21 @@ public class DatabaseConnector implements Serializable {
                 }
             }
 
-        } catch (FileNotFoundException e) {
+        } catch (final FileNotFoundException e) {
             databaseok = false;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             databaseok = false;
 
         } finally {
             try {
                 in.close();
 
-            } catch (IOException e1) {
+            } catch (final IOException e1) {
             }
             try {
 
                 fis.close();
-            } catch (IOException e1) {
+            } catch (final IOException e1) {
             }
         }
         return databaseok;
@@ -222,42 +222,43 @@ public class DatabaseConnector implements Serializable {
     /**
      * Returns a CONFIGURATION
      */
-    public synchronized Object getData(String name) {
+    public synchronized Object getData(final String name) {
         synchronized (LOCK) {
-            if (isDatabaseShutdown()) return null;
             Object ret = null;
-            ret = dbdata.get(name);
-            Statement statement = null;
-            ResultSet rs = null;
+            if (isDatabaseShutdown()) {
+                ret = dbdata.get(name);
+                Statement statement = null;
+                ResultSet rs = null;
 
-            try {
-                if (ret == null) {
-                    // try to init the table
-                    statement = con.createStatement();
-                    rs = statement.executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
-                    if (rs.next()) {
-                        ret = rs.getObject(2);
-                        dbdata.put(rs.getString(1), ret);
+                try {
+                    if (ret == null) {
+                        // try to init the table
+                        statement = con.createStatement();
+                        rs = statement.executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
+                        if (rs.next()) {
+                            ret = rs.getObject(2);
+                            dbdata.put(rs.getString(1), ret);
+                        }
+
+                    }
+                } catch (final Exception e) {
+                    JDLogger.getLogger().warning("Database not available. Create new one: " + name);
+                    JDLogger.exception(Level.FINEST, e);
+                } finally {
+                    if (rs != null) {
+                        try {
+                            rs.close();
+                        } catch (final SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
 
-                }
-            } catch (Exception e) {
-                JDLogger.getLogger().warning("Database not available. Create new one: " + name);
-                JDLogger.exception(Level.FINEST, e);
-            } finally {
-                if (rs != null) {
-                    try {
-                        rs.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                if (statement != null) {
-                    try {
-                        statement.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
+                    if (statement != null) {
+                        try {
+                            statement.close();
+                        } catch (final SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -273,7 +274,7 @@ public class DatabaseConnector implements Serializable {
     public ArrayList<SubConfiguration> getSubConfigurationKeys() {
         synchronized (LOCK) {
             if (isDatabaseShutdown()) return null;
-            ArrayList<SubConfiguration> ret = new ArrayList<SubConfiguration>();
+            final ArrayList<SubConfiguration> ret = new ArrayList<SubConfiguration>();
             Statement statement = null;
             ResultSet rs = null;
 
@@ -282,18 +283,18 @@ public class DatabaseConnector implements Serializable {
                 rs = statement.executeQuery("SELECT * FROM config");
 
                 while (rs.next()) {
-                    SubConfiguration conf = SubConfiguration.getConfig(rs.getString(1));
+                    final SubConfiguration conf = SubConfiguration.getConfig(rs.getString(1));
                     if (conf.getProperties().size() > 0) {
                         ret.add(conf);
                     }
                 }
-            } catch (SQLException e) {
+            } catch (final SQLException e) {
                 e.printStackTrace();
             } finally {
                 if (rs != null) {
                     try {
                         rs.close();
-                    } catch (SQLException e) {
+                    } catch (final SQLException e) {
                         e.printStackTrace();
                     }
                 }
@@ -301,7 +302,7 @@ public class DatabaseConnector implements Serializable {
                 if (statement != null) {
                     try {
                         statement.close();
-                    } catch (SQLException e) {
+                    } catch (final SQLException e) {
                         e.printStackTrace();
                     }
                 }
@@ -313,35 +314,36 @@ public class DatabaseConnector implements Serializable {
     /**
      * Saves a CONFIGURATION into the database
      */
-    public void saveConfiguration(String name, Object data) {
+    public void saveConfiguration(final String name, final Object data) {
 
         synchronized (LOCK) {
-            if (isDatabaseShutdown()) return;
-            dbdata.put(name, data);
-            try {
-                ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
-                rs.next();
-                if (rs.getInt(1) > 0) {
-                    PreparedStatement pst = con.prepareStatement("UPDATE config SET obj = ? WHERE name = '" + name + "'");
-                    pst.setObject(1, data);
-                    pst.execute();
-                } else {
-                    PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
-                    pst.setString(1, name);
-                    pst.setObject(2, data);
-                    pst.execute();
-                }
-
-            } catch (Exception e) {
+            if (!isDatabaseShutdown()) {
+                dbdata.put(name, data);
                 try {
-                    System.out.println("First save " + name);
-                    PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
-                    pst.setString(1, name);
-                    pst.setObject(2, data);
-                    pst.execute();
-                } catch (Exception e2) {
-                    JDLogger.getLogger().warning("Database save error: " + name);
-                    JDLogger.exception(Level.FINEST, e2);
+                    final ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
+                    rs.next();
+                    if (rs.getInt(1) > 0) {
+                        final PreparedStatement pst = con.prepareStatement("UPDATE config SET obj = ? WHERE name = '" + name + "'");
+                        pst.setObject(1, data);
+                        pst.execute();
+                    } else {
+                        final PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
+                        pst.setString(1, name);
+                        pst.setObject(2, data);
+                        pst.execute();
+                    }
+
+                } catch (final Exception e) {
+                    try {
+                        System.out.println("First save " + name);
+                        final PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
+                        pst.setString(1, name);
+                        pst.setObject(2, data);
+                        pst.execute();
+                    } catch (final Exception e2) {
+                        JDLogger.getLogger().warning("Database save error: " + name);
+                        JDLogger.exception(Level.FINEST, e2);
+                    }
                 }
             }
         }
@@ -352,12 +354,13 @@ public class DatabaseConnector implements Serializable {
      */
     public void shutdownDatabase() {
         synchronized (LOCK) {
-            if (isDatabaseShutdown()) return;
-            try {
-                dbshutdown = true;
-                con.close();
-            } catch (SQLException e) {
-                JDLogger.exception(e);
+            if (!isDatabaseShutdown()) {
+                try {
+                    dbshutdown = true;
+                    con.close();
+                } catch (final SQLException e) {
+                    JDLogger.exception(e);
+                }
             }
         }
     }
@@ -367,33 +370,34 @@ public class DatabaseConnector implements Serializable {
      */
     public Object getLinks() {
         synchronized (LOCK) {
-            if (isDatabaseShutdown()) return null;
+            if (!isDatabaseShutdown()) {
 
-            Statement statement = null;
-            ResultSet rs = null;
+                Statement statement = null;
+                ResultSet rs = null;
 
-            try {
-                statement = con.createStatement();
-                rs = statement.executeQuery("SELECT * FROM links");
-                rs.next();
-                return rs.getObject(2);
-            } catch (Exception e) {
-                JDLogger.exception(Level.FINEST, e);
-                JDLogger.getLogger().warning("Database not available. Create new one: links");
-            } finally {
-                if (rs != null) {
-                    try {
-                        rs.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
+                try {
+                    statement = con.createStatement();
+                    rs = statement.executeQuery("SELECT * FROM links");
+                    rs.next();
+                    return rs.getObject(2);
+                } catch (final Exception e) {
+                    JDLogger.exception(Level.FINEST, e);
+                    JDLogger.getLogger().warning("Database not available. Create new one: links");
+                } finally {
+                    if (rs != null) {
+                        try {
+                            rs.close();
+                        } catch (final SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
 
-                if (statement != null) {
-                    try {
-                        statement.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
+                    if (statement != null) {
+                        try {
+                            statement.close();
+                        } catch (final SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -404,22 +408,23 @@ public class DatabaseConnector implements Serializable {
     /**
      * Saves the linklist into the database
      */
-    public void saveLinks(Object obj) {
+    public void saveLinks(final Object obj) {
         synchronized (LOCK) {
-            if (isDatabaseShutdown()) return;
-            try {
-                if (getLinks() == null) {
-                    PreparedStatement pst = con.prepareStatement("INSERT INTO links VALUES (?,?)");
-                    pst.setString(1, "links");
-                    pst.setObject(2, obj);
-                    pst.execute();
-                } else {
-                    PreparedStatement pst = con.prepareStatement("UPDATE links SET obj=? WHERE name='links'");
-                    pst.setObject(1, obj);
-                    pst.execute();
+            if (!isDatabaseShutdown()) {
+                try {
+                    if (getLinks() == null) {
+                        final PreparedStatement pst = con.prepareStatement("INSERT INTO links VALUES (?,?)");
+                        pst.setString(1, "links");
+                        pst.setObject(2, obj);
+                        pst.execute();
+                    } else {
+                        final PreparedStatement pst = con.prepareStatement("UPDATE links SET obj=? WHERE name='links'");
+                        pst.setObject(1, obj);
+                        pst.execute();
+                    }
+                } catch (final Exception e) {
+                    JDLogger.exception(e);
                 }
-            } catch (Exception e) {
-                JDLogger.exception(e);
             }
         }
     }
