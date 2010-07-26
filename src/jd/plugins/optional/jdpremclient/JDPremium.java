@@ -19,6 +19,7 @@ package jd.plugins.optional.jdpremclient;
 import java.util.ArrayList;
 
 import jd.HostPluginWrapper;
+import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -95,6 +96,10 @@ public class JDPremium extends PluginOptional {
     @Override
     public boolean initAddon() {
         synchronized (LOCK) {
+            if (Main.isInitComplete() && replaced == false) {
+                logger.info("JDPremium cannot be initiated during runtime. JDPremium must be enabled at startup!");
+                return false;
+            }
             if (!replaced) {
                 ArrayList<HostPluginWrapper> all = JDUtilities.getPremiumPluginsForHost();
                 for (HostPluginWrapper plugin : all) {

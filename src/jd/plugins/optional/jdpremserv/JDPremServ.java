@@ -79,7 +79,7 @@ public class JDPremServ extends PluginOptional {
 
     private void startServer() {
         try {
-            JDPremServServer.getInstance().start();
+            JDPremServServer.getInstance().start(getPluginConfig().getIntegerProperty("PORT", 8080));
         } catch (Exception e) {
             logger.severe("Could not start JDPremServer: " + e.getMessage());
         }
@@ -109,7 +109,7 @@ public class JDPremServ extends PluginOptional {
 
     private void initConfigEntries() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "MODE", new String[] { "No restrictions", "limit download to required speed", "..." }, JDL.L("plugins.jdchat.userlistposition", "Download AI Mode:")).setDefaultValue(0));
-
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PORT", "Server", 1024, 65535, 1).setDefaultValue(8080));
     }
 
     private void initGUI() {
@@ -157,7 +157,6 @@ public class JDPremServ extends PluginOptional {
 
     @Override
     public String getIconKey() {
-        // should use an own icon later
         return "gui.images.chat";
     }
 

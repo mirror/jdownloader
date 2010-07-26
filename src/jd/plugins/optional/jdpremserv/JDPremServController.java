@@ -18,13 +18,15 @@ public class JDPremServController {
     private boolean running = false;
     private Thread cleanupThread = null;
 
-    private HashMap<String, DownloadLink> requestedLinks = new HashMap<String, DownloadLink>();
-    private HashMap<DownloadLink, Integer> requestedDownloads = new HashMap<DownloadLink, Integer>();
-    private HashMap<DownloadLink, Long> lastAccessLinks = new HashMap<DownloadLink, Long>();
+    private HashMap<String, DownloadLink> requestedLinks = null;
+    private HashMap<DownloadLink, Integer> requestedDownloads = null;
+    private HashMap<DownloadLink, Long> lastAccessLinks = null;
 
     private JDPremServController() {
+        requestedLinks = new HashMap<String, DownloadLink>();
+        requestedDownloads = new HashMap<DownloadLink, Integer>();
+        lastAccessLinks = new HashMap<DownloadLink, Long>();
         premServFilePackage = getPremServFilePackage();
-        /* WORKAROUND: we don't remove finishd download links at the moment */
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3);
     }
 
@@ -68,6 +70,7 @@ public class JDPremServController {
                 link.deleteFile(true, true);
                 requestedDownloads.remove(link);
                 lastAccessLinks.remove(link);
+                requestedLinks.values().remove(link);
             }
         }
         premServFilePackage.remove(remove);
@@ -77,6 +80,7 @@ public class JDPremServController {
         return INSTANCE;
     }
 
+    /* get the filepackage to use for jdpremserv */
     private FilePackage getPremServFilePackage() {
         FilePackage found = null;
         for (FilePackage current : DownloadController.getInstance().getPackages()) {
@@ -89,51 +93,62 @@ public class JDPremServController {
             found = FilePackage.getInstance();
             found.setName(PackageName);
         }
+        /* we dont want postprocessing for this filepackage */
         found.setPostProcessing(false);
         if (found.getDownloadLinkList() != null) {
             for (DownloadLink link : found.getDownloadLinkList()) {
-                /* TODO: nullpointer */
-                // lastAccessLinks.put(link, System.currentTimeMillis());
+                lastAccessLinks.put(link, System.currentTimeMillis());
             }
         }
         return found;
     }
 
-    public synchronized DownloadLink getDownloadLink(String url) {
-        if (url == null || url.length() == 0) return null;
-        if (requestedLinks.containsKey(url)) {
-            /* url already in requestedLinks */
-            DownloadLink ret = requestedLinks.get(url);
-            ret.getPlugin().setAGBChecked(true);
-            lastAccessLinks.put(ret, System.currentTimeMillis());
-            return ret;
-        }
-        /* search url for valid hostlinks */
-        DistributeData search = new DistributeData(url);
-        ArrayList<DownloadLink> found = search.findLinks();
-        /* only one hostlink may exist */
-        if (found == null || found.size() != 1) return null;
-        String hostUrl = found.get(0).getDownloadURL();
-        DownloadLink ret = null;
-        /* search premservfilepackage for downloadlink with this url */
-        for (DownloadLink current : premServFilePackage.getDownloadLinkList()) {
-            if (current.getDownloadURL().equalsIgnoreCase(hostUrl)) {
-                ret = current;
-                break;
+    public synchronized boolean resetDownloadLink(String url) {
+        DownloadLink retLink = requestedLinks.get(url);
+        if (retLink != null) {
+            if (retLink.getLinkStatus().isFailed() && !retLink.getLinkStatus().isPluginActive()) {
+                retLink.reset();
+                return true;
             }
         }
-        if (ret == null) {
-            /* none found, so we add it */
-            ret = found.get(0);
-            /* first disabled, maybe user has not enough rights */
-            ret.setEnabled(false);
-            premServFilePackage.add(ret);
+        return false;
+    }
+
+    public synchronized DownloadLink getDownloadLink(String url) {
+        if (url == null || url.length() == 0) return null;
+        DownloadLink retLink = null;
+        retLink = requestedLinks.get(url);
+        if (retLink == null) {
+            /* search url for valid hostlinks */
+            DistributeData search = new DistributeData(url);
+            ArrayList<DownloadLink> found = search.findLinks();
+            /* only one hostlink may exist */
+            if (found == null || found.size() != 1) return null;
+            String hostUrl = found.get(0).getDownloadURL();
+            DownloadLink ret = null;
+            /* search premservfilepackage for downloadlink with this url */
+            for (DownloadLink current : premServFilePackage.getDownloadLinkList()) {
+                if (current.getDownloadURL().equalsIgnoreCase(hostUrl)) {
+                    ret = current;
+                    break;
+                }
+            }
+            if (ret == null) {
+                /* none found, so we add it */
+                ret = found.get(0);
+                /* first disabled, maybe user has not enough rights */
+                ret.setEnabled(false);
+                premServFilePackage.add(ret);
+            }
+            requestedLinks.put(url, retLink);
         }
-        ret.getPlugin().setAGBChecked(true);
-        requestedLinks.put(url, ret);
+
+        retLink.getPlugin().setAGBChecked(true);
+        /* add jdpremserv package to downloadlist */
         DownloadController.getInstance().addPackage(premServFilePackage);
-        lastAccessLinks.put(ret, System.currentTimeMillis());
-        return ret;
+        /* update last access */
+        lastAccessLinks.put(retLink, System.currentTimeMillis());
+        return retLink;
     }
 
     public synchronized int addRequestedDownload(DownloadLink link) {

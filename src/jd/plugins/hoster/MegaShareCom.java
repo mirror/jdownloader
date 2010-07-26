@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -52,7 +53,7 @@ public class MegaShareCom extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String post = "loginid=" + account.getUser() + "&passwd=" + account.getPass() + "&yes=submit";
+        String post = "loginid=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&yes=submit";
         br.postPage("http://www.megashare.com/login.php", post);
         br.setFollowRedirects(false);
         if (br.getCookie("http://www.megashare.com", "username") == null || br.getCookie("http://www.megashare.com", "password") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

@@ -14,6 +14,8 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
@@ -50,7 +52,7 @@ public class PremShare extends PluginForHost {
 
     @Override
     public String getVersion() {
-        if (plugin == null) return getVersion("$Revision: 86 $");
+        if (plugin == null) return getVersion("$Revision$");
         return plugin.getVersion();
     }
 
@@ -104,6 +106,7 @@ public class PremShare extends PluginForHost {
         if (plugin == null) return;
         proxyused = false;
         if (handleJDPremServ(link)) return;
+        link.getTransferStatus().usePremium(false);
         proxyused = false;
         plugin.clean();
         plugin.handleFree(link);
@@ -117,6 +120,7 @@ public class PremShare extends PluginForHost {
 
     private boolean handleJDPremServ(DownloadLink link) throws Exception {
         Account acc = null;
+        String jdpremServer = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
             if (!JDPremium.isEnabled()) return false;
@@ -125,24 +129,27 @@ public class PremShare extends PluginForHost {
             acc = JDPremium.getAccount();
             /* enabled account found? */
             if (acc == null || !acc.isEnabled()) return false;
+            jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
+            if (jdpremServer == null || jdpremServer.length() == 0) return false;
         }
         proxyused = true;
         requestFileInformation(link);
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br = new Browser();
         br.setDebug(true);
-        String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
         try {
-            if (jdpremServer == null || jdpremServer.length() == 0) return false;
             br.getPage(jdpremServer);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
         /* add and force download */
         Form form = new Form();
-        form.setAction("/?force=" + link.getDownloadURL());
+        form.setAction("/");
         form.setMethod(MethodType.GET);
+        form.put("force", Encoding.urlEncode(link.getDownloadURL()));
         form.put("username", Encoding.urlEncode(acc.getUser()));
         form.put("password", Encoding.urlEncode(acc.getPass()));
+        if (link.getStringProperty("pass", null) != null) form.put("dlpw", Encoding.urlEncode(link.getStringProperty("pass", null)));
         showMessage(link, "Add Link to Queue");
         /* first request,with force */
         String status = br.submitForm(form);
@@ -166,6 +173,11 @@ public class PremShare extends PluginForHost {
                 logger.info(status);
                 return false;
             }
+            if (status.contains("ERROR: -50")) {
+                String reason = new Regex(status, "\\|\\|(.+)").getMatch(0);
+                if (reason != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, reason);
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
+            }
             if (status.contains("OK: 100")) {
                 /* download complete */
                 break;
@@ -174,19 +186,23 @@ public class PremShare extends PluginForHost {
                 /* download queued */
                 refresh = 10 * 1000;
                 showMessage(link, "Queued");
-            } else if (status.contains("OK: 1")) {
+            } else if (status.contains("OK: 1") || status.contains("OK: 2")) {
+                boolean premium = status.contains("OK: 1");
                 /* download in progress */
-                /* show speed and ETA */
+                /* update premium flag */
+                link.getTransferStatus().usePremium(premium);
                 String ints[] = new Regex(status, "(\\d+)/(\\d+)/(\\d+)").getRow(0);
                 Long size = Long.parseLong(ints[1]);
                 Long current = Long.parseLong(ints[0]);
                 Long speed = Long.parseLong(ints[2]);
                 String sp = Formatter.formatReadable(speed) + "/s";
+                String done = Formatter.formatReadable(current) + "/" + Formatter.formatReadable(size);
+                /* show speed and ETA */
                 if (speed != 0 && size > 0) {
                     Long left = (size - current) / speed;
-                    showMessage(link, "Downloading " + Formatter.formatSeconds(left) + " " + sp);
+                    showMessage(link, done + " | " + Formatter.formatSeconds(left) + " | " + sp);
                 } else {
-                    showMessage(link, "Downloading " + sp);
+                    showMessage(link, "Downloading with " + sp);
                 }
                 refresh = 5 * 1000;
             }
@@ -195,12 +211,15 @@ public class PremShare extends PluginForHost {
             if (status == null) status = "";
         }
         /* download now */
-        form.setAction("/?download=1&force=" + link.getDownloadURL());
+        form.setAction("/");
+        form.put("download", "1");
         showMessage(link, "Request Download");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             /* unknown error */
             br.followConnection();
+            logger.severe("JDPremServServer: error!");
+            logger.severe(br.toString());
             synchronized (LOCK) {
                 premiumHosts.remove(link.getHost());
             }
@@ -223,7 +242,15 @@ public class PremShare extends PluginForHost {
 
     @Override
     public void reset() {
-        if (plugin != null) plugin.reset();
+        if (plugin != null) {
+            plugin.reset();
+        }
+    }
+
+    private void resetAvailablePremium() {
+        synchronized (LOCK) {
+            premiumHosts.clear();
+        }
     }
 
     @Override
@@ -234,23 +261,16 @@ public class PremShare extends PluginForHost {
             if (jdpremServer == null || jdpremServer.length() == 0) {
                 ac.setStatus("No JDPremServ set!");
                 account.setValid(false);
-                synchronized (LOCK) {
-                    /* no jdpremium available */
-                    premiumHosts.clear();
-                }
+                resetAvailablePremium();
                 return ac;
             }
             br = new Browser();
-            br.setDebug(true);
             try {
                 br.getPage(jdpremServer);
             } catch (Exception e) {
                 account.setTempDisabled(true);
                 account.setValid(true);
-                /* no jdpremium available */
-                synchronized (LOCK) {
-                    premiumHosts.clear();
-                }
+                resetAvailablePremium();
                 ac.setStatus("JDPrem Server Error, temp disabled");
                 return ac;
             }
@@ -262,6 +282,7 @@ public class PremShare extends PluginForHost {
             form.put("password", Encoding.urlEncode(account.getPass()));
             String page = br.submitForm(form);
             if (page.contains("OK: USER")) {
+                /* parse available premium hosts */
                 String supportedHosts = new Regex(page, "HOSTS:(.+)").getMatch(0);
                 synchronized (LOCK) {
                     premiumHosts.clear();
@@ -283,10 +304,7 @@ public class PremShare extends PluginForHost {
             } else {
                 account.setValid(false);
                 ac.setStatus("Account invalid");
-                /* no jdpremium available */
-                synchronized (LOCK) {
-                    premiumHosts.clear();
-                }
+                resetAvailablePremium();
             }
             return ac;
         } else
@@ -306,6 +324,26 @@ public class PremShare extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         if (plugin != null) plugin.resetDownloadlink(link);
+        synchronized (LOCK) {
+            if (JDPremium.isEnabled() && premiumHosts.contains(link.getHost())) {
+                String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
+                try {
+                    if (jdpremServer == null || jdpremServer.length() == 0) return;
+                    br = new Browser();
+                    br.setConnectTimeout(5000);
+                    br.setReadTimeout(5000);
+                    br.getPage(jdpremServer);
+                    Form form = new Form();
+                    form.setAction("/?reset=1");
+                    form.setMethod(MethodType.GET);
+                    form.put("link", Encoding.urlEncode(link.getDownloadURL()));
+                    br.submitForm(form);
+                    logger.info("Remote Queue file reset: " + br.toString());
+                } catch (Throwable e) {
+                    logger.severe("Could not reset Remote Queue file");
+                }
+            }
+        }
     }
 
     @Override
