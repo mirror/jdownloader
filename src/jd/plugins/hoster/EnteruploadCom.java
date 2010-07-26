@@ -48,6 +48,8 @@ public class EnteruploadCom extends PluginForHost {
 
     // XfileSharingProBasic Version 1.6 only doFree, dllink regexes changed
     private static final String COOKIE_HOST = "http://enterupload.com";
+    private static final String FREETEXT = "title=\"Premium\">Premium<";
+    private static final String PREMIUMTEXT = "Premium-Account expire";
     public boolean nopremium = false;
 
     @Override
@@ -61,14 +63,21 @@ public class EnteruploadCom extends PluginForHost {
         int maxchunks = 0;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
-        Form freeform = br.getForm(1);
+        Form freeform = null;
+        Form[] allForms = br.getForms();
+        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (Form singleForm : allForms) {
+            if (singleForm.containsHTML("download1")) {
+                freeform = singleForm;
+                break;
+            }
+        }
         if (freeform != null) {
             freeform.remove(null);
             freeform.remove("method_premium");
             freeform.put("method_free", "Free+Download");
             br.submitForm(freeform);
         }
-        System.out.print(br.toString());
         checkErrors(downloadLink);
         String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
@@ -259,8 +268,8 @@ public class EnteruploadCom extends PluginForHost {
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire")) nopremium = true;
+        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML(FREETEXT)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML(PREMIUMTEXT)) nopremium = true;
     }
 
     @Override

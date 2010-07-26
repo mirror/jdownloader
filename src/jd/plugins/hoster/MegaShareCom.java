@@ -23,7 +23,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -53,14 +52,10 @@ public class MegaShareCom extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://www.megashare.com/login.php");
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("loginid", Encoding.urlEncode(account.getUser()));
-        form.put("passwd", Encoding.urlEncode(account.getPass()));
-        br.submitForm(form);
+        String post = "loginid=" + account.getUser() + "&passwd=" + account.getPass() + "&yes=submit";
+        br.postPage("http://www.megashare.com/login.php", post);
         br.setFollowRedirects(false);
-        if (!br.containsHTML("You are logged in as a PREMIUM Member") || br.containsHTML("Invalid Username or Password") || br.getCookie("http://www.megashare.com", "username") == null || br.getCookie("http://www.megashare.com", "username") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.megashare.com", "username") == null || br.getCookie("http://www.megashare.com", "password") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -81,23 +76,16 @@ public class MegaShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
-        Form premform = br.getForm(0);
-        if (premform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        premform.setPreferredSubmit("PREMIUM");
-        br.submitForm(premform);
+        br.postPage(br.getURL(), "PremDz.x=" + new Random().nextInt(10) + "&PremDz.y=" + new Random().nextInt(10) + "&PremDz=PREMIUM");
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form form = br.getFormbyProperty("name", "downloader");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String accel = br.getRegex("name=\"(accel.*?)\"").getMatch(0);
-        if (accel == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Form dlForm = new Form();
-        dlForm.put("yesss", "Download");
-        dlForm.put("id", form.getVarsMap().get("id"));
-        dlForm.put("time_diff", form.getVarsMap().get("time_diff"));
-        dlForm.put("req_auth", form.getVarsMap().get("req_auth"));
-        dlForm.setAction(downloadLink.getDownloadURL());
-        dlForm.setMethod(Form.MethodType.POST);
+        String id = form.getVarsMap().get("id");
+        String timeDiff = form.getVarsMap().get("time_diff");
+        if (id == null || timeDiff == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String post = "yesss.x=" + new Random().nextInt(10) + "&yesss.y=" + new Random().nextInt(10) + "&yesss=Download&id=" + id + "&time_diff=" + timeDiff + "&req_auth=n";
         String passCode = null;
+        // This password handling is probably broken
         if (br.containsHTML("This file is password protected.")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -105,10 +93,10 @@ public class MegaShareCom extends PluginForHost {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);
             }
-            dlForm.put("auth_nm", passCode);
+            post += "&auth_nm=" + passCode;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), post, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("This file is password protected.")) {
