@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
@@ -69,13 +70,15 @@ public class Property implements Serializable {
      * @return the saved object casted to its correct type
      */
     @SuppressWarnings("unchecked")
-    public <E> E getGenericProperty(String key, E def) {
-        Object r = getProperty(key, def);
+    public <E> E getGenericProperty(final String key, final E def) {
+        final Object r = getProperty(key, def);
         try {
-            E ret = (E) r;
+            final E ret = (E) r;
             return ret;
-        } catch (Exception e) {
-            logger.finer("Could not cast " + r.getClass().getSimpleName() + " to " + e.getClass().getSimpleName() + " for key " + key);
+        } catch (final Exception e) {
+            // logger.finer("Could not cast " + r.getClass().getSimpleName() +
+            // " to " + e.getClass().getSimpleName() + " for key " + key);
+            logger.finer("Could not cast " + r.getClass().getSimpleName() + " to " + def.getClass().getSimpleName() + " for key " + key);
             return def;
         }
     }
@@ -87,11 +90,11 @@ public class Property implements Serializable {
      * @param key
      * @return
      */
-    public Boolean getBooleanProperty(String key) {
+    public Boolean getBooleanProperty(final String key) {
         return getBooleanProperty(key, false);
     }
 
-    public Boolean getBooleanProperty(String key, boolean def) {
+    public Boolean getBooleanProperty(final String key, final boolean def) {
         try {
             Object r = getProperty(key, def);
             if (!(r instanceof Boolean)) {
@@ -102,9 +105,9 @@ public class Property implements Serializable {
                     r = ((String) r).length() > 0;
                 }
             }
-            Boolean ret = (Boolean) r;
+            final Boolean ret = (Boolean) r;
             return ret;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return false;
         }
     }
@@ -116,19 +119,19 @@ public class Property implements Serializable {
      * @param key
      * @return
      */
-    public Double getDoubleProperty(String key) {
+    public Double getDoubleProperty(final String key) {
         return getDoubleProperty(key, -1.0);
     }
 
-    public Double getDoubleProperty(String key, Double def) {
+    public Double getDoubleProperty(final String key, final Double def) {
         try {
             Object r = getProperty(key, def);
             if (r instanceof String) {
                 r = Double.parseDouble((String) r);
             }
-            Double ret = (Double) r;
+            final Double ret = (Double) r;
             return ret;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return def;
         }
     }
@@ -141,56 +144,69 @@ public class Property implements Serializable {
      *            Schlüssel des Wertes
      * @return Der Wert
      */
-    public int getIntegerProperty(String key) {
+    public int getIntegerProperty(final String key) {
         return getIntegerProperty(key, -1);
     }
 
-    public int getIntegerProperty(String key, int def) {
+    public int getIntegerProperty(final String key, final int def) {
         try {
             Object r = getProperty(key, def);
             if (r instanceof String) {
                 r = Integer.parseInt((String) r);
             }
-            Integer ret = (Integer) r;
+            final Integer ret = (Integer) r;
             return ret;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return def;
         }
     }
 
     /**
-     * Gibt die interne Properties HashMap zurück
+     * Returns the internal HashMap Properties
      */
     public HashMap<String, Object> getProperties() {
         return properties;
     }
 
     /**
-     * Gibt den Wert zu key zurück
      * 
-     * @param key
-     * @return Value zu key
+     * @return
      */
-    public Object getProperty(String key) {
+    private HashMap<String, Object> getPropertiesNotNull() {
         if (properties == null) {
             properties = new HashMap<String, Object>();
         }
-
-        return properties.get(key);
+        return properties;
     }
 
     /**
-     * Gibt den Wert zu key zurück und falls keiner festgelegt ist def
+     * Returns the value for key
+     * 
+     * @param key
+     * @return Value for key
+     */
+    public Object getProperty(final String key) {
+        // if (properties == null) {
+        // properties = new HashMap<String, Object>();
+        // }
+        //
+        // return properties.get(key);
+        return getPropertiesNotNull().get(key);
+    }
+
+    /**
+     * Returns the value for key, and if none is set def
      * 
      * @param key
      * @param def
      * @return value
      */
-    public Object getProperty(String key, Object def) {
-        if (properties == null) {
-            properties = new HashMap<String, Object>();
-        }
-        if (properties.get(key) == null) {
+    public Object getProperty(final String key, final Object def) {
+        // if (properties == null) {
+        // properties = new HashMap<String, Object>();
+        // }
+        // if (properties.get(key) == null) {
+        if (getProperty(key) == null) {
             setProperty(key, def);
             return def;
         }
@@ -204,21 +220,21 @@ public class Property implements Serializable {
      * @param key
      * @return
      */
-    public String getStringProperty(String key) {
+    public String getStringProperty(final String key) {
         return getStringProperty(key, null);
     }
 
-    public String getStringProperty(String key, String def) {
+    public String getStringProperty(final String key, final String def) {
         try {
-            Object r = getProperty(key, def);
-            String ret = (r == null) ? null : r.toString();
+            final Object r = getProperty(key, def);
+            final String ret = (r == null) ? null : r.toString();
             return ret;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return def;
         }
     }
 
-    public boolean hasProperty(String key) {
+    public boolean hasProperty(final String key) {
         return properties.containsKey(key);
     }
 
@@ -227,30 +243,29 @@ public class Property implements Serializable {
      * 
      * @param properties
      */
-    public void setProperties(HashMap<String, Object> properties) {
+    public void setProperties(final HashMap<String, Object> properties) {
         this.properties = properties;
         propertiesHashes = new HashMap<String, Integer>();
     }
 
     /**
-     * Speichert einen Wert ab.
+     * Stores a value.
      * 
      * @param key
      * @param value
      */
     @SuppressWarnings("unchecked")
-    public void setProperty(String key, Object value) {
+    public void setProperty(final String key, final Object value) {
 
+        final JDController controller = JDUtilities.getController();
         if (value == NULL) {
             if (properties.containsKey(key)) {
                 properties.remove(key);
                 propertiesHashes.remove(key);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                 this.changes = true;
-
             }
             return;
-
         }
         if (properties == null) {
             properties = new HashMap<String, Object>();
@@ -259,39 +274,37 @@ public class Property implements Serializable {
             propertiesHashes = new HashMap<String, Integer>();
         }
 
-        Object old = getProperty(key);
+        final Object old = getProperty(key);
 
         properties.put(key, value);
 
-        Integer oldHash = propertiesHashes.get(key);
+        final Integer oldHash = propertiesHashes.get(key);
 
         /*
          * check for null to avoid nullpointer due to .toString() method
          */
         propertiesHashes.put(key, (value == null) ? null : value.toString().hashCode());
 
-        if (JDUtilities.getController() == null) return;
-        try {
-            if (old == null && value != null) {
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+        if (controller != null) {
+            try {
+                if (old == null && value != null) {
+                    controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                    this.changes = true;
+                } else if (value instanceof Comparable) {
+                    if (((Comparable<Comparable<?>>) value).compareTo((Comparable<?>) old) != 0) {
+                        controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                        this.changes = true;
+                    }
+                } else {
+                    if (!value.equals(old) || oldHash != value.hashCode()) {
+                        controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                        this.changes = true;
+                    }
+                }
+            } catch (final Exception e) {
+                controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                 this.changes = true;
-                return;
-            } else if (value instanceof Comparable) {
-                if (((Comparable<Comparable<?>>) value).compareTo((Comparable<?>) old) != 0) {
-                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-                    this.changes = true;
-                }
-                return;
-            } else {
-                if (!value.equals(old) || oldHash != value.hashCode()) {
-                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-                    this.changes = true;
-                }
-                return;
             }
-        } catch (Exception e) {
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-            this.changes = true;
         }
     }
 
@@ -305,9 +318,9 @@ public class Property implements Serializable {
      * @return PropertyString
      */
     // @Override
+    @Override
     public String toString() {
-        if (properties.size() == 0) return "";
-        return "Property: " + properties;
+        return (properties.size() == 0) ? "" : "Property: " + properties;
     }
 
 }
