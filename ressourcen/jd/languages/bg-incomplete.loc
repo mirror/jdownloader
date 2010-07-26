@@ -1,0 +1,16 @@
+action.customize.addsetting.ask = Моля въведете името на новата настройка:
+action.premiumview.removeacc.ask = Искате ли да изтриете избраното?
+addons.jdshutdown.statusmessage.disabled = Системата НЯМА да бъде изключена от JDownloader.
+addons.jdshutdown.statusmessage.enabled = JDownloader ще излючи системата след като всички файлове за сваляне бъдат привършени.
+ballon.download.connectionlost.message = <b>%s<b><hr>Връзката се разпадна
+ballon.download.error.title = Грешка
+ballon.download.failed.message = <b>%s<b><hr>грешка
+ballon.download.fatalerror.message = <b>%s<b><hr>Фатална грешка предизивикана от разширение
+ballon.download.fnf.message = <b>%s<b><hr>Файлът не може да бъде намерен
+ballon.download.plugindefect.message = <b>%s<b><hr>Грешка в разширението
+ballon.download.successfull.message = <b>%s<b><hr>приключи успешно
+ballon.download.successfull.title = Свалянето
+ballon.download.title = Сваляне
+container.message.comment = Коментар
+container.message.created = Създадени с
+container.message.password = Парола
