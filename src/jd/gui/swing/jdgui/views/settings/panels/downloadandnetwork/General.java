@@ -21,6 +21,7 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.ByteBufferController;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
@@ -40,22 +41,20 @@ public class General extends ConfigPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
-    private SubConfiguration config;
-
     public General() {
         super();
-
-        config = SubConfiguration.getConfig("DOWNLOAD");
 
         init();
     }
 
     @Override
     protected ConfigContainer setupContainer() {
+        SubConfiguration config = SubConfiguration.getConfig("DOWNLOAD");
+
         ConfigContainer container = new ConfigContainer();
         ConfigEntry ce, cond;
 
-        /* DESTINATION PATH */
+        /* Download Directory */
         container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.userhome"));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, ""));
@@ -68,7 +67,7 @@ public class General extends ConfigPanel {
         ce.setDefaultValue(false);
         ce.setEnabledCondidtion(cond, true);
 
-        /* control */
+        /* Download Control */
         container.setGroup(new ConfigGroup(JDL.L("gui.config.download.download.tab", "Download Control"), "gui.images.downloadorder"));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, JDL.L("gui.config.download.simultan_downloads_per_host", "Maximum of simultaneous downloads per host (0 = no limit)"), 0, 20, 1).setDefaultValue(0));
@@ -86,6 +85,11 @@ public class General extends ConfigPanel {
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("DOWNLOAD"), "PARAM_DOWNLOAD_PREFER_RECONNECT", JDL.L("gui.config.download.preferreconnect", "Do not start new links if reconnect requested")).setDefaultValue(true));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in kb/s"), 10, 500, 10).setDefaultValue(10));
+
+        /* File Writing */
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), "gui.images.save"));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc", "SFV/CRC check when possible")).setDefaultValue(true));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000, 100).setDefaultValue(500));
 
         return container;
     }

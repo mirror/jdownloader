@@ -43,10 +43,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_DO_CRC = "DO_CRC";
 
-    // // TODO!
-    // public static final String PARAM_REDOWNLOAD_AFTER_CRC_ERROR =
-    // "REDOWNLOAD_AFTER_CRC_ERROR";
-
     public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT = "DOWNLOAD_CONNECT_TIMEOUT_V3";
 
     public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";

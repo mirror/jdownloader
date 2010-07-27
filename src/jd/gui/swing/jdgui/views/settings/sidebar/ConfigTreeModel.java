@@ -45,7 +45,6 @@ public class ConfigTreeModel implements TreeModel {
 
         teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.General.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.InternetAndNetwork.class));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.Advanced.class));
 
         teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.General.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.ToolbarController.class));

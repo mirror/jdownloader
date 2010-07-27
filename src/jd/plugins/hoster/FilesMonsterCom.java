@@ -27,11 +27,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -214,8 +214,10 @@ public class FilesMonsterCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             // Find a new temporary link
             String mainlinkpart = new Regex(downloadLink.getDownloadURL(), "filesmonster\\.com/dl/(.*?)/").getMatch(0);
+            /*
+             * TODO: This Property is never set!
+             */
             String originalfilename = downloadLink.getStringProperty("origfilename");
-            String originalfilesize = downloadLink.getStringProperty("origsize");
             String oldTemporaryLinkPart = new Regex(downloadLink.getDownloadURL(), "/free/2/(.+)").getMatch(0);
             br.getPage("http://filesmonster.com/download.php?id=" + mainlinkpart);
             postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
