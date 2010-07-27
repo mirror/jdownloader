@@ -136,6 +136,7 @@ public class PremShare extends PluginForHost {
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br = new Browser();
+        br.setConnectTimeout(10000);
         br.setDebug(true);
         try {
             br.getPage(jdpremServer);
@@ -180,6 +181,7 @@ public class PremShare extends PluginForHost {
             }
             if (status.contains("OK: 100")) {
                 /* download complete */
+                link.getTransferStatus().usePremium(true);
                 break;
             }
             if (status.contains("OK: 0")) {
@@ -265,6 +267,7 @@ public class PremShare extends PluginForHost {
                 return ac;
             }
             br = new Browser();
+            br.setConnectTimeout(10000);
             try {
                 br.getPage(jdpremServer);
             } catch (Exception e) {
@@ -295,6 +298,7 @@ public class PremShare extends PluginForHost {
                         }
                     }
                     account.setValid(true);
+                    account.setTempDisabled(false);
                     if (premiumHosts.size() == 0) {
                         ac.setStatus("Account valid: no jdpremium available");
                     } else {
@@ -303,6 +307,7 @@ public class PremShare extends PluginForHost {
                 }
             } else {
                 account.setValid(false);
+                account.setTempDisabled(false);
                 ac.setStatus("Account invalid");
                 resetAvailablePremium();
             }
@@ -331,7 +336,6 @@ public class PremShare extends PluginForHost {
                     if (jdpremServer == null || jdpremServer.length() == 0) return;
                     br = new Browser();
                     br.setConnectTimeout(5000);
-                    br.setReadTimeout(5000);
                     br.getPage(jdpremServer);
                     Form form = new Form();
                     form.setAction("/?reset=1");

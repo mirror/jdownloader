@@ -110,9 +110,13 @@ public class JDPremium extends PluginOptional {
             logger.info("JDPremium init ok!");
             replaced = true;
             enabled = true;
-            for (Account acc : AccountController.getInstance().getAllAccounts("jdownloader.org")) {
-                AccountController.getInstance().updateAccountInfo("jdownloader.org", acc, true);
-            }
+            new Thread(new Runnable() {
+                public void run() {
+                    for (Account acc : AccountController.getInstance().getAllAccounts("jdownloader.org")) {
+                        AccountController.getInstance().updateAccountInfo("jdownloader.org", acc, true);
+                    }
+                }
+            }).start();
         }
 
         return true;

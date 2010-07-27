@@ -158,7 +158,9 @@ public class Srnnks extends PluginForDecrypt {
                         bestdist = dist;
                     }
                 }
-                if (bestdist > 100) form = null;
+                if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
+                    /* this form contains captcha image, so it must be valid */
+                } else if (bestdist > 100) form = null;
 
                 if (form == null) throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!");
                 progress.increase(5);
