@@ -31,11 +31,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/(.*?(v|d)=|v/)[a-zA-Z0-9]+" }, flags = { 2 })
 public class MegaVideo extends PluginForHost {
@@ -142,6 +142,7 @@ public class MegaVideo extends PluginForHost {
             url = "http://www" + s + ".megavideo.com/files/" + decrypt(un, Integer.parseInt(k1), Integer.parseInt(k2)) + "/";
         }
         link.setName(link.getName() + ".flv");
+
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
         if (dl.getConnection().getContentLength() == -1) {

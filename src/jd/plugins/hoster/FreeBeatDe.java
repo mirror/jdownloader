@@ -20,13 +20,13 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-beat.com" }, urls = { "http://[\\w\\.]*?free-beat\\.com/audios/[0-9]+/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-beat.de" }, urls = { "http://[\\w\\.]*?free-beat\\.de/jgs_db,action-show,eintrags_id-[0-9]+,(katid-[0-9]+,sid-\\.|sid-\\.|sid-[a-z0-9]+\\.)htm" }, flags = { 2 })
 public class FreeBeatDe extends PluginForHost {
 
     public FreeBeatDe(PluginWrapper wrapper) {
@@ -43,7 +43,8 @@ public class FreeBeatDe extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Der Benutzername existiert nicht. Du kannst dich sofort") || br.containsHTML("Die Datei ist keine MP3 und kann nicht im Player abgespielt werden") || !br.containsHTML("FlashVars")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        String filename = br.getRegex("<span class=\"normalfont\"><b>(.*?)</b>").getMatch(0);
+        if (filename == null) filename = br.getRegex("Datenbank</a>.*?href=.*?>.*?</a> »(.*?)</b>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.trim() + ".mp3");
         return AvailableStatus.TRUE;
@@ -52,10 +53,8 @@ public class FreeBeatDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("'audioid','([0-9]+)'").getMatch(0);
+        String dllink = br.getRegex("FlashVars\" value=.*?(http.*?)\"").getMatch(0);
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dllink = "http://free-beat.com/adata/" + dllink + ".mp3";
-        downloadLink.setUrlDownload(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
         dl.startDownload();
     }
