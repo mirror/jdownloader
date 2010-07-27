@@ -275,7 +275,6 @@ jd/plugins/decrypter/MultiShareXCom.class
 jd/plugins/decrypter/MvTwn.class
 jd/plugins/decrypter/PrtcLnksRT.class
 jd/plugins/decrypter/PrtctBxn.class
-jd/plugins/hoster/BigFileIn.class
 jd/plugins/decrypter/Q1Q1QCm.class
 jd/plugins/decrypter/RckHsn.class
 jd/plugins/decrypter/Rpdlrn.class
