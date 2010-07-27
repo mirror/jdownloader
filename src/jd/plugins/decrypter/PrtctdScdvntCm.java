@@ -77,7 +77,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
             String finallink = br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http.*?)\"").getMatch(0);
             if (finallink == null) {
                 // Handlings for more hosters will come soon i think
-                if (br.containsHTML("turbobit.net")) {
+                if (br.containsHTML("turbobit\\.net")) {
                     br.getPage("http://protected.socadvnet.com/plugin/turbobit.net.free.php?out_name=" + postvar + "&link_id=" + i);
                     if (br.getRedirectLocation() == null) {
                         logger.warning("Redirect location for this link is null: " + parameter);
@@ -89,6 +89,8 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
                         return null;
                     }
                     finallink = "http://turbobit.net/" + turboId + ".html";
+                } else if (br.containsHTML("hotfile\\.com")) {
+                    finallink = br.getRegex("style=\"margin:0;padding:0;\" action=\"(.*?)\"").getMatch(0);
                 }
             }
             if (finallink == null) {

@@ -27,11 +27,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -215,7 +215,9 @@ public class FilesMonsterCom extends PluginForHost {
             // Find a new temporary link
             String mainlinkpart = new Regex(downloadLink.getDownloadURL(), "filesmonster\\.com/dl/(.*?)/").getMatch(0);
             /*
-             * TODO: This Property is never set!
+             * This property is set in the decrypter plugin, another property
+             * which we don't use here ("origsize") is also set in the
+             * decrypterplugin for this host
              */
             String originalfilename = downloadLink.getStringProperty("origfilename");
             String oldTemporaryLinkPart = new Regex(downloadLink.getDownloadURL(), "/free/2/(.+)").getMatch(0);
