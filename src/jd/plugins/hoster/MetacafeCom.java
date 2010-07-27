@@ -1,15 +1,14 @@
 package jd.plugins.hoster;
 
-import java.net.URLDecoder;
-
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision: 10609 $", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://[\\w\\.]*?metacafe\\.com/watch/\\d+.*" }, flags = { 0 })
 public class MetacafeCom extends PluginForHost {
@@ -49,8 +48,10 @@ public class MetacafeCom extends PluginForHost {
         String fileName = br.getRegex("name=\"title\" content=\"(.*?) - Video\"").getMatch(0);
         if (fileName == null) fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
         if (fileName != null) link.setName(fileName.trim() + ".flv");
-        dlink = br.getRegex("mediaURL=(.*?\\.flv)&").getMatch(0);
-        dlink = URLDecoder.decode(dlink, "utf-8");
+        System.out.println(br);
+        dlink = br.getRegex("mediaURL.*?(www.*?mp4)").getMatch(0);
+        // dlink = URLDecoder.decode(dlink, "utf-8");
+        dlink = Encoding.UTF8Decode(dlink);
         if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
