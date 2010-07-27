@@ -62,6 +62,10 @@ public class PremServUser {
         if (UserController.getInstance() != null) UserController.getInstance().fireUserUpdate(this);
     }
 
+    @SuppressWarnings("unused")
+    private PremServUser() {
+    }
+
     public PremServUser(String username, String password) {
         this.username = username.toLowerCase();
         this.password = password;

@@ -62,7 +62,6 @@ public class UserController implements ControlListener {
     }
 
     private void save() {
-
         ConfigInterface.storeTo(STORAGEPATH, premServUsers);
     }
 
