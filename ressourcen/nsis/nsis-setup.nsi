@@ -7,8 +7,6 @@ RequestExecutionLevel user
 #TODO Better UAC Handling http://nsis.sourceforge.net/UAC_plug-in
 
 !define COMPANY "AppWork UG (haftungsbeschränkt)"
-!define ADVERTISING_KIKIN "JA"
-!define KIKIN_OPTOUT "JA"
 !define URL http://www.jdownloader.org
 !define APPNAME "JDownloader"
 !define APPNAME_SHORT "JDownloader" # Name without spaces etc (Jay Downloader -> JayDownloader)
