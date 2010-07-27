@@ -42,6 +42,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.locale.Loc;
 import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
 import org.w3c.dom.html2.HTMLCollection;
 
@@ -68,6 +69,8 @@ public class MediafireCom extends PluginForHost {
      * Map to cache the configuration keys
      */
     private static final HashMap<Account, String> CONFIGURATION_KEYS = new HashMap<Account, String>();
+
+    private String fileID;
 
     public MediafireCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -130,43 +133,57 @@ public class MediafireCom extends PluginForHost {
 
     private void handlePW(DownloadLink downloadLink) throws Exception {
         if (br.containsHTML("dh\\(''\\)")) {
-            String passCode;
-            DownloadLink link = downloadLink;
-            Form form = br.getFormbyProperty("name", "form_password");
-            if (link.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Downloadpassword for " + this.getHost() + "/" + downloadLink.getName(), link);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = link.getStringProperty("pass", null);
-            }
-            form.put("downloadp", passCode);
-            br.submitForm(form);
-            form = br.getFormbyProperty("name", "form_password");
-            if (form != null && br.containsHTML("dh\\(''\\)")) {
-                link.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
-            } else {
-                link.setProperty("pass", passCode);
-            }
+            new PasswordSolver(this, br, downloadLink) {
+
+                @Override
+                protected void handlePassword(String password) throws Exception {
+                    Form form = br.getFormbyProperty("name", "form_password");
+                    form.put("downloadp", password);
+                    br.submitForm(form);
+                }
+
+                @Override
+                protected boolean isCorrect() {
+                    return br.getFormbyProperty("name", "form_password") != null && !br.containsHTML("dh\\(''\\)");
+                }
+
+            }.run();
         }
+
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
 
-        String fileID = new Regex(downloadLink.getDownloadURL(), "\\?(.*)").getMatch(0);
+        fileID = new Regex(downloadLink.getDownloadURL(), "\\?(.*)").getMatch(0);
         if (fileID == null) {
             fileID = new Regex(downloadLink.getDownloadURL(), "file/(.*)").getMatch(0);
         }
 
         br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + CONFIGURATION_KEYS.get(account) + "&files=" + fileID);
         String url = br.getRegex("<url>(http.*?)</url>").getMatch(0);
+        boolean passwordprotected = false;
         if ("-204".equals(br.getRegex("<flags>(.*?)</").getMatch(0))) {
-            // password protected TODO:better passwordsupport
-            handlePremiumPassword(downloadLink, account);
-            return;
+            passwordprotected = true;
+            new PasswordSolver(this, br, downloadLink) {
+
+                @Override
+                protected void handlePassword(String password) throws Exception {
+                    br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "file_1=" + fileID + "&password_1=" + password + "&premium_key=" + CONFIGURATION_KEYS.get(account) + "&files=" + fileID);
+
+                }
+
+                @Override
+                protected boolean isCorrect() {
+                    return br.getRegex("<url>(http.*?)</url>").getMatch(0) != null;
+                }
+
+            }.run();
+
+            url = br.getRegex("<url>(http.*?)</url>").getMatch(0);
+
         }
 
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -177,6 +194,11 @@ public class MediafireCom extends PluginForHost {
             br.followConnection();
             if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
                 logger.info("Error (3)");
+            } else if (br.getRequest().getHttpConnection().getResponseCode() == 200 && passwordprotected) {
+                // workaround for api error:
+                // try website password solving
+                handlePremiumPassword(downloadLink, account);
+                return;
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -376,5 +398,56 @@ public class MediafireCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("type", "");
+    }
+
+    public static abstract class PasswordSolver {
+
+        protected Browser br;
+        protected PluginForHost plg;
+        protected DownloadLink dlink;
+        private int maxTries;
+        private int currentTry;
+
+        public PasswordSolver(PluginForHost plg, Browser br, DownloadLink downloadLink) {
+            this.plg = plg;
+            this.br = br;
+            this.dlink = downloadLink;
+            this.maxTries = 3;
+            this.currentTry = 0;
+        }
+
+        public void run() throws Exception {
+            while (currentTry++ < maxTries) {
+                String password = null;
+                if (dlink.getStringProperty("PasswordSolver.downloadpassword", null) != null) {
+                    password = dlink.getStringProperty("PasswordSolver.downloadpassword", null);
+                } else if (plg.getPluginConfig().getStringProperty("PasswordSolver.downloadpassword", null) != null) {
+                    password = plg.getPluginConfig().getStringProperty("PasswordSolver.downloadpassword", null);
+
+                } else {
+                    password = Plugin.getUserInput(Loc.LF("PasswordSolver.askdialog", "Downloadpassword for %s/%s", plg.getHost(), dlink.getName()), dlink);
+
+                }
+                if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong")); }
+                handlePassword(password);
+                if (!isCorrect()) {
+                    dlink.setProperty("PasswordSolver.downloadpassword", null);
+                    plg.getPluginConfig().setProperty("PasswordSolver.downloadpassword", null);
+                    plg.getPluginConfig().save();
+                    continue;
+                } else {
+                    dlink.setProperty("PasswordSolver.downloadpassword", password);
+                    plg.getPluginConfig().setProperty("PasswordSolver.downloadpassword", password);
+                    plg.getPluginConfig().save();
+                    return;
+                }
+
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+        }
+
+        abstract protected boolean isCorrect();
+
+        abstract protected void handlePassword(String password) throws Exception;
     }
 }
