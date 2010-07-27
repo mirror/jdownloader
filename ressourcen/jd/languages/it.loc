@@ -922,7 +922,6 @@ jd.gui.swing.jdgui.settings.panels.configpanelcaptcha.captchasize = Dimensione d
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.general.title = Generale
 jd.gui.swing.jdgui.settings.panels.configpanelpluginforhost.host.title = Server & Premium
 jd.gui.swing.jdgui.settings.panels.configpanelpluginforhost.useall = Usa tutti gli host
-jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.download.advanced.title = Avanzate
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message = E' stato disabilitato il controllo IP. Questo aumenterà in modo pesante il tempo di riconnessione!\r\n\r\nAlcuni moduli come il Registratore riconnession saranno disabilitati.
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title = Controllo IP disabilitato!
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.download.title = Download & connessioni
