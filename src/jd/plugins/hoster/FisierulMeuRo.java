@@ -21,11 +21,11 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fisierulmeu.ro" }, urls = { "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html" }, flags = { 0 })
 public class FisierulMeuRo extends PluginForHost {
@@ -45,12 +45,12 @@ public class FisierulMeuRo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
         if (br.containsHTML("Ne pare rau, dar acest fisier are o adresa gresita.") || br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String name = br.getRegex(Pattern.compile("<div class=\"dwn_text\" style=\"overflow:hidden;\"><b>Numele Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0);
+        String name = br.getRegex(Pattern.compile("Numele Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filesize = br.getRegex(Pattern.compile("<div class=\"dwn_text\"><b>Marimea Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("<div class=\"dwn_text\"><b>Marimea Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();
         if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(name.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        downloadLink.setName(name);
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
 
         return AvailableStatus.TRUE;
     }
@@ -65,7 +65,7 @@ public class FisierulMeuRo extends PluginForHost {
         requestFileInformation(downloadLink);
 
         String downloadUrl = br.getRegex(Pattern.compile("action=!!!(.*?)!!!")).getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         dl.startDownload();
     }
 
