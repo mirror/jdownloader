@@ -6,11 +6,11 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision: 10609 $", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://[\\w\\.]*?metacafe\\.com/watch/\\d+.*" }, flags = { 0 })
 public class MetacafeCom extends PluginForHost {
@@ -51,10 +51,11 @@ public class MetacafeCom extends PluginForHost {
         if (fileName == null) fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
         if (fileName != null) link.setName(fileName.trim() + ".mp4");
         dlink = br.getRegex("mediaURL(.*?)&").getMatch(0);
+        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlink = URLDecoder.decode(dlink, "utf-8");
         dlink = dlink.replace("\\", "");
         dlink = new Regex(dlink, ":\"(.*?)\"").getMatch(0) + "?__gda__=" + new Regex(dlink, "key\":\"(.*?)\"").getMatch(0);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlink == null || dlink.contains("null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
