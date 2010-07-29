@@ -42,40 +42,48 @@ public class FileFrontCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML("Error 404") || br.containsHTML("<h1>File is Unavailable.</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("File name: </td> <td> <div style=\"width:.*?;\">(.*?)</").getMatch(0);
-        String filesize = br.getRegex("File size: </td> <td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().contains("errno=ERROR_CONTENT_QUICKKEY_INVALID")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getRedirectLocation().matches(".*?filefront\\.com/\\d+/.+")) {
+                downloadLink.setUrlDownload(br.getRedirectLocation());
+                br.getPage(downloadLink.getDownloadURL());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        String filename = br.getRegex("File name:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<div style=\"width: 300px; overflow: hidden; margin-top: 0;\">(.*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<div id=\"left_column\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+        String filesize = br.getRegex("File size:[\t\n\r ]+</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.trim();
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String fileID = new Regex(downloadLink.getDownloadURL(), "filefront\\.com/(\\d+)/").getMatch(0);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        String nextpageurl = br.getRegex("\"(http://www\\.filefront\\.com/thankyou\\.php\\?f=.*?k=.*?)\"").getMatch(0);
-        if (nextpageurl == null) {
-            nextpageurl = br.getRegex("age_gate_[0-9]\" style=\"\"><a href=\"(.*?)\"").getMatch(0);
+        String thankYouPage = "http://www.filefront.com/thankyou.php?f=" + fileID;
+        br.getPage(thankYouPage);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, thankYouPage, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (nextpageurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(nextpageurl);
-        String linkurl = br.getRegex("Your download will begin.*?<a href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
         dl.startDownload();
 
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
