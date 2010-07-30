@@ -11,7 +11,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "wickedweasel.com" }, urls = { "http://[\\w\\.]*?wickedweasel\\.com/.*?_galleries/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wickedweasel.com" }, urls = { "http://[\\w\\.]*?wickedweasel\\.com/.*?_galleries/\\d+" }, flags = { 0 })
 public class WckdWsl extends PluginForDecrypt {
 
     public WckdWsl(PluginWrapper wrapper) {
@@ -38,7 +38,6 @@ public class WckdWsl extends PluginForDecrypt {
             ret.add(add);
         }
         fp.addLinks(ret);
-        int i = 1;
         return ret;
     }
 
