@@ -615,7 +615,19 @@ public class JDController implements ControlListener {
         }.start();
     }
 
+    /**
+     * Saves a list of given links in a DLC.
+     * 
+     * @param file
+     *            Path the DLC file
+     * @param links
+     *            The links ehich should saved
+     */
     public void saveDLC(File file, ArrayList<DownloadLink> links) {
+        if (!file.getAbsolutePath().endsWith("dlc")) {
+            file = new File(file.getAbsolutePath() + ".dlc");
+        }
+
         String xml = JDUtilities.createContainerString(links, "dlc");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
