@@ -56,7 +56,7 @@ public class HTACCESSController implements ActionListener, ListController {
     }
 
     public void add(final String url, String username, String passwd) {
-        if (url != null && !url.isEmpty()) {
+        if (url != null && url.length() > 0) {
             final String host = Browser.getHost(url.trim()).toLowerCase();
             if (username == null) username = "";
             if (passwd == null) passwd = "";
@@ -68,7 +68,7 @@ public class HTACCESSController implements ActionListener, ListController {
     }
 
     public static String[] getUserDatafromBasicauth(String basicauth) {
-        if (basicauth == null || basicauth.isEmpty()) return null;
+        if (basicauth == null || basicauth.length() == 0) return null;
         if (basicauth.startsWith("Basic")) basicauth = new Regex(basicauth, "Basic (.*?)$").getMatch(0);
         basicauth = Encoding.Base64Decode(basicauth);
         final String[] dat = new Regex(basicauth, ("(.*?):(.*?)$")).getRow(0);
@@ -76,7 +76,7 @@ public class HTACCESSController implements ActionListener, ListController {
     }
 
     public void add(final String url, final String basicauth) {
-        if (url != null && !url.isEmpty()) {
+        if (url != null && url.length() > 0) {
             final String host = Browser.getHost(url.trim()).toLowerCase();
             final String[] user = getUserDatafromBasicauth(basicauth);
             if (user == null) return;
@@ -88,7 +88,7 @@ public class HTACCESSController implements ActionListener, ListController {
     }
 
     public String get(final String url) {
-        if (url != null && !url.isEmpty()) {
+        if (url != null && url.length() > 0) {
             final String host = Browser.getHost(url.trim()).toLowerCase();
             synchronized (LIST) {
                 if (!LIST.containsKey(host)) return null;
@@ -99,7 +99,7 @@ public class HTACCESSController implements ActionListener, ListController {
     }
 
     public void remove(final String url) {
-        if (url != null && !url.isEmpty()) {
+        if (url != null && url.length() > 0) {
             final String host = Browser.getHost(url.trim()).toLowerCase();
             synchronized (LIST) {
                 LIST.remove(host);

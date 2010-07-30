@@ -199,7 +199,7 @@ public class MegaShareCom extends PluginForHost {
         br.submitForm(form);
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            if (br.containsHTML("get premium access") || br.toString().isEmpty()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("get premium access") || br.toString().length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             logger.warning("dllink equals null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

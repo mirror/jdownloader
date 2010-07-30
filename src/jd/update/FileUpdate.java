@@ -331,7 +331,7 @@ public class FileUpdate {
      */
     private String getURL() {
         Server serv;
-        if (url == null || url.trim().isEmpty()) {
+        if (url == null || url.trim().length() == 0) {
             serv = Server.selectServer(serverList);
             this.currentServer = serv;
             serverList.remove(serv);

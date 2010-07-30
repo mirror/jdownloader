@@ -56,7 +56,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 String filename = new Regex(fileInfo, "\"name\":\"(.*?)\"").getMatch(0);
                 String filesize = new Regex(fileInfo, "\"size\":(\\d+)").getMatch(0);
                 String filelinkPart = new Regex(fileInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
-                if (filename.isEmpty() || filesize.isEmpty() || filelinkPart.isEmpty()) {
+                if (filename == null || filesize == null || filelinkPart == null || filename.length() == 0 || filesize.length() == 0 || filelinkPart.length() == 0) {
                     logger.warning("Filesmonsterdecrypter failed while decrypting link:" + parameter);
                     return null;
                 }

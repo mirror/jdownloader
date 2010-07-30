@@ -93,7 +93,7 @@ public class AwesomeTextField extends JTextField implements FocusListener, KeyLi
     }
 
     private void checkText(String checktext) {
-        if (checktext.isEmpty()) {
+        if (checktext == null || checktext.trim().length() == 0) {
             checkText(false);
         } else {
             checkText(true);

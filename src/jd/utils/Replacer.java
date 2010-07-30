@@ -183,7 +183,7 @@ public final class Replacer {
     }
 
     private static String replace(final String in, final String remove, final String replace) {
-        if (in == null || remove == null || remove.isEmpty()) {
+        if (in == null || remove == null || remove.length() == 0) {
             return in;
         } else {
             final StringBuilder sb = new StringBuilder();
