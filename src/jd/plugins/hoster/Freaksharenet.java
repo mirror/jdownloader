@@ -22,6 +22,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -147,6 +148,7 @@ public class Freaksharenet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         /*
          * set english language in phpsession
          */
@@ -182,10 +184,11 @@ public class Freaksharenet extends PluginForHost {
         int tt = 0;
         if (ttt != null) tt = Integer.parseInt(ttt);
         if (tt > 180) {
-            if (waitReconnecttime && tt < 701)
+            if (waitReconnecttime && tt < 701) {
                 sleep((tt + 2) * 1001l, downloadLink);
-            else
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, tt * 1001l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            }
         }
         if (!waitReconnecttime) sleep((tt + 2) * 1001l, downloadLink);
         br.submitForm(form);
