@@ -38,11 +38,14 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        // Is the file offline ? If so, let's stop here and just add it to the
+        // downloadlist so the user can see the status
         if (br.getRedirectLocation() != null) {
-            DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "decryptedfilesmonster.com"));
+            DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             decryptedLinks.add(finalOne);
             return decryptedLinks;
         }
+        DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
         String postThat = br.getRegex("\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"").getMatch(0);
         if (postThat == null) return null;
         br.postPage(postThat, "");
@@ -60,7 +63,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     logger.warning("Filesmonsterdecrypter failed while decrypting link:" + parameter);
                     return null;
                 }
-                String dllink = "http://decryptedfilesmonster.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
+                String dllink = "http://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
                 DownloadLink finalOne = createDownloadlink(dllink);
                 finalOne.setName(filename.replace("amp;", ""));
                 finalOne.setDownloadSize(Integer.parseInt(filesize));
@@ -68,9 +71,10 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 finalOne.setProperty("origfilename", filename);
                 finalOne.setProperty("origsize", filesize);
                 decryptedLinks.add(finalOne);
+                thebigone.setProperty("PREMIUMONLY", "true");
             }
         }
-        decryptedLinks.add(createDownloadlink(parameter.replace("filesmonster.com", "decryptedfilesmonster.com")));
+        decryptedLinks.add(thebigone);
 
         return decryptedLinks;
     }

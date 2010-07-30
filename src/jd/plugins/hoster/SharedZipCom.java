@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -46,6 +47,9 @@ public class SharedZipCom extends PluginForHost {
     public String getAGBLink() {
         return "http://www.sharedzip.com/tos.html";
     }
+
+    private String brbefore = "";
+    private static final String COOKIE_HOST = "http://sharedzip.com";
 
     public void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
@@ -97,17 +101,54 @@ public class SharedZipCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.sharedzip.com", "lang", "english");
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<Title>File Not Found</Title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileName = br.getRegex("You have requested <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(1);
-        long fileSize = Regex.getSize(br.getRegex("You have requested <font color=\"red\">http://www.sharedzip.com/(.*?)/(.*?)</font> \\((.*?)\\)</font>").getMatch(2));
-        if (fileName == null || fileSize <= 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(fileName.trim());
-        downloadLink.setDownloadSize(fileSize);
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(brbefore, "fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(brbefore, "<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(brbefore, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(brbefore, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = new Regex(brbefore, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
+        String filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
+            if (filesize == null) {
+                filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+            }
+        }
+        if (filename == null || filename.equals("")) {
+            if (brbefore.contains("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setName(filename.trim());
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -142,11 +183,20 @@ public class SharedZipCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        Form form = br.getFormBySubmitvalue("Free+Download");
-        br.forceDebug(true);
-        br.submitForm(form);
+        Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
+        if (freeform == null) {
+            freeform = br.getFormBySubmitvalue("Free+Download");
+            if (freeform == null) {
+                freeform = br.getFormbyKey("download1");
+            }
+        }
+        if (freeform != null) {
+            freeform.remove("method_premium");
+            br.submitForm(freeform);
+            doSomething();
+        }
         checkErrors(downloadLink);
-        Form download = br.getFormBySubmitvalue("Download+File");
+        Form download = br.getFormbyProperty("name", "F1");
         if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
@@ -259,6 +309,26 @@ public class SharedZipCom extends PluginForHost {
                 logger.warning("Only downloadable via premium");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
+        }
+    }
+
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
         }
     }
 
