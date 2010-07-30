@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://[\\w\\.]*?cramit\\.in/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://[\\w\\.]*?(cramit\\.in|cramitin\\.net)/[a-z0-9]{12}" }, flags = { 2 })
 public class CraMitIn extends PluginForHost {
 
     public CraMitIn(PluginWrapper wrapper) {
@@ -61,6 +61,10 @@ public class CraMitIn extends PluginForHost {
     public String brbefore = "";
     private static final String COOKIE_HOST = "http://cramit.in";
     public boolean nopremium = false;
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("cramitin.net", "cramit.in"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -92,7 +96,7 @@ public class CraMitIn extends PluginForHost {
         }
         String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+            filesize = br.getRegex("</font>(</a>)?[ ]+\\((.*?)\\)(.*?)</font>").getMatch(1);
             if (filesize == null) {
                 filesize = br.getRegex(">http://cramit\\.in/[a-z0-9]{12}</font> \\((.*?)\\)</font>").getMatch(0);
             }

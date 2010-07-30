@@ -61,6 +61,8 @@ public class SoftPediaCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String nextPage = br.getRegex("<div align=\"center\">[\t\n\r ]+<a href=\"(.*?)\"").getMatch(0);
         br.getPage(nextPage);
+        // They have many mirrors, we just pick a random one here because all
+        // downloadlinks look pretty much the same
         String dllink = br.getRegex("\"(http://download\\.softpedia\\.(com|ro)/dl/.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("class=\"fontsize11\"><a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
