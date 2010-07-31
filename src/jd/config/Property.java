@@ -275,7 +275,10 @@ public class Property implements Serializable {
         }
 
         final Object old = getProperty(key);
-
+        if (old == null && value == null) {
+            /* old and new values are null , so nothing changed */
+            return;
+        }
         properties.put(key, value);
 
         final Integer oldHash = propertiesHashes.get(key);
