@@ -18,18 +18,20 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -64,81 +66,91 @@ public class HotFileCom extends PluginForHost {
         return "http://hotfile.com/terms-of-service.html";
     }
 
-    public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", ua);
-        br.setCookie("http://hotfile.com", "lang", "en");
-        if (account.getUser().trim().equalsIgnoreCase("cookie")) {
-            /* cookie login */
-            br.setCookie("http://hotfile.com", "auth", account.getPass());
-            br.getPage("http://hotfile.com/");
-        } else {
-            /* normal login */
-            br.setFollowRedirects(true);
-            br.getPage("http://hotfile.com/");
-            br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-            Form form = br.getForm(0);
-            if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private HashMap<String, String> callAPI(Browser br, String action, Account account, HashMap<String, String> addParams) throws Exception {
+        if (action == null || action.length() == 0) return null;
+        Browser tbr = br;
+        if (tbr == null) {
+            tbr = new Browser();
         }
-        if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
-        if (isPremium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.setFollowRedirects(false);
+        tbr.setDebug(true);
+        tbr.getPage("http://api.hotfile.com");
+        Form form = new Form();
+        form.setAction("/");
+        form.setMethod(MethodType.POST);
+        form.put("action", action);
+        if (account != null) {
+            String pwMD5 = JDHash.getMD5(account.getPass());
+            form.put("username", Encoding.urlEncode(account.getUser()));
+            form.put("passwordmd5", pwMD5);
+        }
+        if (addParams != null) {
+            for (String param : addParams.keySet()) {
+                form.put(param, addParams.get(param));
+            }
+        }
+        tbr.submitForm(form);
+        HashMap<String, String> ret = new HashMap<String, String>();
+        ret.put("httpresponse", tbr.toString());
+        String vars[][] = tbr.getRegex("(.*?)=(.*?)(&|$)").getMatches();
+        for (String var[] : vars) {
+            ret.put(var[0] != null ? var[0].trim() : null, var[1]);
+        }
+        return ret;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
+        if (account.getUser().trim().equalsIgnoreCase("cookie")) {
             account.setValid(false);
+            ai.setStatus("Cookie login no longer possible! API does not support it!");
             return ai;
         }
-        String validUntil[] = br.getRegex("Premium until.*?>(.*?)<.*?>(\\d+:\\d+:\\d+)").getRow(0);
-        if (validUntil == null || validUntil[0] == null || validUntil[1] == null) {
+        HashMap<String, String> info = callAPI(null, "getuserinfo", account, null);
+        if (!info.containsKey("is_premium") || !"1".equalsIgnoreCase(info.get("is_premium"))) {
+            account.setValid(false);
+            if (info.get("httpresponse").contains("invalid username")) {
+                ai.setStatus("invalid username or password");
+            } else {
+                ai.setStatus("No Premium Account");
+            }
+            return ai;
+        }
+        String validUntil = info.get("premium_until");
+        if (validUntil == null) {
             account.setValid(false);
         } else {
-            String valid = validUntil[0].trim() + " " + validUntil[1].trim() + " CDT";
-            ai.setValidUntil(Regex.getMilliSeconds(valid, "yyyy-MM-dd HH:mm:ss zzz", null));
             account.setValid(true);
+            validUntil = validUntil.replaceAll(":|T", "");
+            validUntil = validUntil.replaceFirst("-", "");
+            validUntil = validUntil.replaceFirst("-", "");
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyyMMddHHmmssZ", null));
+            ai.setStatus("Premium");
         }
         return ai;
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
-        String finalUrl = null;
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            finalUrl = br.getRedirectLocation();
-        } else {
-            if (br.containsHTML("span>Free</span")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "ISP blocked by Hotfile, Premium not possible", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
-            if (finalUrl == null) finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
-        }
-        br.setFollowRedirects(true);
-        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Set the meximum connections per file
-        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(UNLIMITEDMAXCON, false);
-        int maxcon = -5;
-        if (waitReconnecttime) maxcon = 0;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, maxcon);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
-            if (finalUrl == null) finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
-            if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, maxcon);
-        }
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("link", Encoding.urlEncode(downloadLink.getDownloadURL() + "\n\r"));
+        HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params);
+        if (info.get("httpresponse").contains("file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (info.get("httpresponse").contains("premium required")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String finalUrl = info.get("httpresponse").trim();
+        if (finalUrl == null || !finalUrl.startsWith("http://")) {
+            logger.severe(finalUrl);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* filename workaround */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, getPluginConfig().getBooleanProperty(UNLIMITEDMAXCON, false) == true ? 0 : -5);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            logger.severe(finalUrl);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* filename workaround , MAYBE no longer needed because of api */
         String urlFileName = Plugin.getFileNameFromURL(new URL(br.getURL()));
         urlFileName = Encoding.htmlDecode(urlFileName);
         downloadLink.setFinalFileName(urlFileName);
@@ -172,6 +184,10 @@ public class HotFileCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        /*
+         * for free users we dont use api filecheck, cause we have to call
+         * website anyway
+         */
         requestFileInformation(link);
         br.setDebug(true);
         if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
@@ -232,66 +248,62 @@ public class HotFileCom extends PluginForHost {
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
-            Browser br = new Browser();
-            br.setCookiesExclusive(true);
-            br.getHeaders().put("User-Agent", ua);
-            br.setCookie("http://hotfile.com", "lang", "en");
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sbIDS = new StringBuilder();
+            StringBuilder sbKEYS = new StringBuilder();
+            HashMap<String, String> params = new HashMap<String, String>();
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             while (true) {
-                br.getPage("http://hotfile.com/checkfiles.html");
                 links.clear();
+                params.clear();
                 while (true) {
                     if (index == urls.length || links.size() > 25) break;
                     links.add(urls[index]);
                     index++;
                 }
-                sb.delete(0, sb.capacity());
-                sb.append("files=");
+                sbIDS.delete(0, sbIDS.capacity());
+                sbKEYS.delete(0, sbKEYS.capacity());
+                sbIDS.append("");
+                sbKEYS.append("");
                 int c = 0;
                 for (DownloadLink dl : links) {
-                    /*
-                     * append fake filename, because api will not report
-                     * anything else
-                     */
-                    if (c > 0) sb.append("%0D%0A");
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL() + "filecheck.html"));
+                    if (c > 0) {
+                        sbIDS.append(",");
+                        sbKEYS.append(",");
+                    }
+                    String id = new Regex(dl.getDownloadURL(), "/dl/(\\d+)/").getMatch(0);
+                    String key = new Regex(dl.getDownloadURL(), "/dl/\\d+/([0-9a-zA-Z]+)").getMatch(0);
+                    sbIDS.append(id);
+                    sbKEYS.append(key);
                     c++;
                 }
-                sb.append("&but=+Check+Urls+");
-                br.postPage("http://hotfile.com/checkfiles.html", sb.toString());
+                /* we want id,status,name, size , md5 and sha1 info */
+                params.put("fields", "id,status,name,size,md5,sha1");
+                params.put("ids", sbIDS.toString());
+                params.put("keys", sbKEYS.toString());
+                HashMap<String, String> info = callAPI(null, "checklinks", null, params);
+                String response = info.get("httpresponse");
                 for (DownloadLink dl : links) {
-                    String id = new Regex(dl.getDownloadURL(), "hotfile\\.com(/dl/\\d+/[0-9a-zA-Z]+/)").getMatch(0);
-
-                    String[] dat = br.getRegex("<b>Results</b>.*<tr>.*?<td>(.*?" + id + ".*?)</td>.*?<td>(.*?)</td>.*?<td.*?>.*?<span.*?>(.*?)</span>.*?</td>.*?</tr>").getRow(0);
+                    String id = new Regex(dl.getDownloadURL(), "/dl/(\\d+)").getMatch(0);
+                    String[] dat = new Regex(response, id + ",(\\d+),(.*?),(\\d+),(.*?),(.*?)(\n|$)").getRow(0);
                     if (dat != null) {
-                        String name = dat[0].trim();
-                        String size = dat[1].trim();
-                        String status = dat[2].trim();
-
-                        if (name.startsWith("<a href")) {
-                            name = new Regex(name, "hotfile.com.*\\/(.*?)\\<").getMatch(0);
-                        } else {
-                            name = name.substring(name.lastIndexOf("/") + 1);
-                        }
-
-                        if (name != null && size != null && status.equalsIgnoreCase("Existent")) {
-                            name = name.replaceAll("\\.html", "").trim();
-                            dl.setName(name);
-                            dl.setDownloadSize(Regex.getSize(size.trim()));
+                        dl.setName(dat[1]);
+                        dl.setDownloadSize(Long.parseLong(dat[2]));
+                        dl.setMD5Hash(dat[3]);
+                        dl.setSha1Hash(dat[4]);
+                        if ("1".equalsIgnoreCase(dat[0])) {
                             dl.setAvailable(true);
+                        } else if ("0".equalsIgnoreCase(dat[0])) {
+                            dl.setAvailable(false);
+                        } else if ("2".equalsIgnoreCase(dat[0])) {
+                            dl.setAvailable(true);
+                            dl.getLinkStatus().setStatusText("HotLink");
                         } else {
                             dl.setAvailable(false);
+                            dl.getLinkStatus().setStatusText("Unknown FileStatus " + dat[0]);
                         }
                     } else {
-                        /* fallbackCheck */
-
-                        try {
-                            this.requestFileInformation(dl);
-                        } catch (Exception e) {
-                            dl.setAvailable(false);
-                        }
+                        dl.setAvailable(false);
                     }
                 }
                 if (index == urls.length) break;

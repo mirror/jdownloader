@@ -319,6 +319,7 @@ public class OronCom extends PluginForHost {
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Some waittimes...
+        if (brbefore.contains("files sized up to 1024 Mb")) throw new PluginException(LinkStatus.ERROR_FATAL, "Free Users can only download files sized up to 1024 Mb");
         if (brbefore.contains("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);

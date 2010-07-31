@@ -91,6 +91,7 @@ public class NarodRu extends PluginForHost {
             if (br.containsHTML("href=\"/disk/start/")) break;
             br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
             String captchaKey = br.getRegex(Pattern.compile("<number.*>(.*?)</number>")).getMatch(0);
+            if (captchaKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaUrl = "http://u.captcha.yandex.net/image?key=" + captchaKey;
 
             Form form = new Form();
