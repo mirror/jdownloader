@@ -40,7 +40,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[\\w]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/download.php\\?id\\=[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
@@ -55,6 +55,8 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
+        // We do not have to change anything here, the regexp also works for
+        // egoshare links!
         String id = new Regex(link.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
         link.setUrlDownload("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
     }

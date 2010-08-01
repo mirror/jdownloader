@@ -87,9 +87,9 @@ public class UpNitoSk extends PluginForHost {
         }
         String thisDamnToken = new Regex(downloadLink.getDownloadURL(), "dwToken=([a-z0-9]+)").getMatch(0);
         Browser br2 = br.cloneBrowser();
-        br2.getPage("http://dl1.upnito.sk/getwait.php?dwToken=" + thisDamnToken);
+        br2.getPage("http://dl2.upnito.sk/getwait.php?dwToken=" + thisDamnToken);
         String gwt_validate = br2.toString().trim();
-        freeform.put("gwt_validate", Encoding.htmlDecode(gwt_validate));
+        freeform.put("gwt_validate", Encoding.urlEncode(gwt_validate));
         int sleepTime = 600;
         String ttt = br2.getRegex("(\\d+);").getMatch(0);
         if (ttt != null) {
