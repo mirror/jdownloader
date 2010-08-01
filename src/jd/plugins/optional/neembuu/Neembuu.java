@@ -80,6 +80,7 @@ public class Neembuu extends PluginOptional {
 
     private void actionPerformedOnMenuItem(MenuAction source) {
         DownloadLink link;
+        @SuppressWarnings("unused")
         FilePackage fp;
 
         switch (source.getActionID()) {
@@ -88,7 +89,6 @@ public class Neembuu extends PluginOptional {
             fp = link.getFilePackage();
             watch(link);
             break;
-
         case CONTEXT_MENU_ID_OPEN_LINK:
             link = (DownloadLink) source.getProperty("LINK");
             fp = link.getFilePackage();
@@ -262,21 +262,16 @@ public class Neembuu extends PluginOptional {
     @Override
     public void setGuiEnable(boolean b) {
         if (b) {
-
             if (tab == null) {
                 initGUI();
-
             }
             SwingGui.getInstance().setContent(tab);
-
         } else {
-
             if (tab != null) {
                 SwingGui.getInstance().disposeView(tab);
                 this.stopAddon();
                 tab = null;
             }
-
         }
         if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }

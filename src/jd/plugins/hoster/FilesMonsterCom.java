@@ -27,11 +27,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -221,8 +221,10 @@ public class FilesMonsterCom extends PluginForHost {
              * which we don't use here ("origsize") is also set in the
              * decrypterplugin for this host
              */
-            String originalfilename = downloadLink.getStringProperty("origfilename");
-            String oldTemporaryLinkPart = new Regex(downloadLink.getDownloadURL(), "/free/2/(.+)").getMatch(0);
+            // String originalfilename =
+            // downloadLink.getStringProperty("origfilename");
+            // String oldTemporaryLinkPart = new
+            // Regex(downloadLink.getDownloadURL(), "/free/2/(.+)").getMatch(0);
             br.getPage("http://filesmonster.com/download.php?id=" + mainlinkpart);
             postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
             if (postThat == null) postThat = new Regex(downloadLink.getDownloadURL(), POSTTHATREGEX2).getMatch(0);
