@@ -401,6 +401,10 @@ public class DirectHTTP extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 id = form.getRegex("k=(.*?)\"").getMatch(0);
+                if (id == null)
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                else
+                    id = id.replace("&amp;error=1", "");
             }
         }
 

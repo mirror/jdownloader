@@ -82,15 +82,16 @@ public class ShareRapidCz extends PluginForHost {
         // not to show any traffic-information
         String trafficleft = br.getMatch("Kredit:</td><td>(.*?)<a");
         if (trafficleft != null) {
-            // ai.setTrafficLeft(trafficleft);
             logger.info("Free traffic equals" + trafficleft);
-        }
+            trafficleft = ", " + trafficleft.trim() + " traffic left";
+        } else
+            trafficleft = "";
         ai.setUnlimitedTraffic();
         String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
         if (expires != null) {
             ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
         }
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium User" + trafficleft);
         account.setValid(true);
         return ai;
     }
