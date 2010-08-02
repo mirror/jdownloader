@@ -67,9 +67,10 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.downloadview.movedown");
         WHITELIST.add("action.downloadview.movetobottom");
 
-        // config
+        // config & log
         WHITELIST.add("separator");
         WHITELIST.add("action.settings");
+        WHITELIST.add("action.log");
 
         // quickconfig
         WHITELIST.add("separator");
