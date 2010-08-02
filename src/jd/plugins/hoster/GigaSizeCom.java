@@ -61,9 +61,7 @@ public class GigaSizeCom extends PluginForHost {
         ff.put("d", "Login");
         ff.put("login", "1");
         br.submitForm(ff);
-        String cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[pass]");
-        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[user]");
+        String cookie = br.getCookie("http://www.gigasize.com", "GigSizeCookieJar");
         if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -87,11 +85,10 @@ public class GigaSizeCom extends PluginForHost {
             account.setValid(true);
             return ai;
         }
-        br.getPage("http://www.gigasize.com/myfiles.php");
         String expirein = br.getRegex("Ihr Premium Account.*?ab in(.*?)Tag.*?</p>").getMatch(0);
-        String points = br.getRegex("Erworbene Gigapoints: <span>(.*?)</span>").getMatch(0);
+        String points = br.getRegex("Tauschen Sie GigaPoints.*?<span>(\\d+)</span>").getMatch(0);
         if (expirein != null) {
-            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expirein.trim()) * 24 * 50 * 50 * 1000));
+            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expirein.trim()) * 24 * 60 * 60 * 1000));
         }
         if (points != null) {
             ai.setPremiumPoints(points);
