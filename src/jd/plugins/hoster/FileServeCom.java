@@ -204,7 +204,7 @@ public class FileServeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            String wait = br.getRegex("You have to wait (\\d+) seconds to start another download").getMatch(0);
+            String wait = br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
             if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
             handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
