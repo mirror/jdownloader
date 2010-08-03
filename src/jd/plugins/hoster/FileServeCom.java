@@ -146,6 +146,7 @@ public class FileServeCom extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users"));
+        if (br.containsHTML(">Your download link has expired\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link expired, contact fileserve support", 30 * 60 * 1000l);
         String fileId = br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         br.setFollowRedirects(false);
         String captchaJSPage = br.getRegex("\"(/landing/.*?/download_captcha\\.js)\"").getMatch(0);

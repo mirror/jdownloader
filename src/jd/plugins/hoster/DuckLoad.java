@@ -115,7 +115,7 @@ public class DuckLoad extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL().equals("http://www.duckload.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 10 * 60 * 1000l);
+            if (br.getURL().equals("http://www.duckload.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 5 * 60 * 1000l);
             if (br.toString().trim().equals("no")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
