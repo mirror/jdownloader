@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/download/\\d+/rs\\.0|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/download/\\d+/[a-z]{2}\\.0|http://[\\w\\.]*?anime-loads\\.org/media/\\d+" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
 
     public NmLdsrg(PluginWrapper wrapper) {
