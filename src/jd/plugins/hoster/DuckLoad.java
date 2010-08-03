@@ -36,6 +36,7 @@ public class DuckLoad extends PluginForHost {
 
     public DuckLoad(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(3000l);
     }
 
     @Override
@@ -114,6 +115,7 @@ public class DuckLoad extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getURL().equals("http://www.duckload.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 10 * 60 * 1000l);
             if (br.toString().trim().equals("no")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -178,13 +180,10 @@ public class DuckLoad extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    // They allow 4 connections at all
     @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$");
-     * }
-     */
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
 }

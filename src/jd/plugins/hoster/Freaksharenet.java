@@ -187,7 +187,9 @@ public class Freaksharenet extends PluginForHost {
             if (waitReconnecttime && tt < 701) {
                 sleep((tt + 2) * 1001l, downloadLink);
             } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+                // 10 Minutes reconnect-waittime is not enough, let's wait one
+                // hour
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             }
         }
         if (!waitReconnecttime) sleep((tt + 2) * 1001l, downloadLink);
