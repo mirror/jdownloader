@@ -618,7 +618,7 @@ public class Rapidshare extends PluginForHost {
         if (Regex.matches(error, Pattern.compile("Der Downloadlink wurde manipuliert und ist damit "))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (Regex.matches(error, Pattern.compile("(Diese Datei steht im Verdacht illegal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(Verletzung unserer Nutzungsbedingungen)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount|kann daher nur 10 mal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(Der Uploader hat diese Datei)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(Zeit nicht mehr angefordert)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
@@ -661,7 +661,7 @@ public class Rapidshare extends PluginForHost {
         if (Regex.matches(error, Pattern.compile("(Der Uploader hat diese Datei)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(Zeit nicht mehr angefordert)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(als 200 Megabyte)"))) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugin.rapidshare.error.filetolarge", "This file is larger than 200 MB, you need a premium-account to download this file."));
-        if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount|kann daher nur 10 mal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (Regex.matches(error, Pattern.compile("(keine freien Slots)")) || Regex.matches(error, Pattern.compile("(Sie sind nicht angemeldet)")) || Regex.matches(error, Pattern.compile("(Diese Datei k.*?Sie nur als)")) || Regex.matches(error, Pattern.compile("(Es sind derzeit keine freien Download)"))) {
             if (getPluginConfig().getBooleanProperty(WAIT_HOSTERFULL, true)) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugin.host.rapidshare.status.inuse", "All free slots in use"), 2 * 60 * 1000l);
