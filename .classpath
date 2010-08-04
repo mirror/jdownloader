@@ -80,5 +80,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/jackson-core.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/jackson-mapper.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/trident.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
