@@ -64,7 +64,7 @@ public class OneFichierCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         if (filesize != null) {
-            filesize = filesize.replace("Go", "Gb");
+            filesize = filesize.replace("Go", "Gb").replace("Mo", "Mb").replace("Ko", "Kb");
             link.setDownloadSize(Regex.getSize(filesize));
         }
         return AvailableStatus.TRUE;

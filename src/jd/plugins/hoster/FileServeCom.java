@@ -76,6 +76,7 @@ public class FileServeCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&loginFormSubmit=Login");
+        br.getPage("http://fileserve.com/dashboard.php");
         String accType = br.getRegex("<h5>Account type:</h5>[\r\n ]+<h3>(Premium|Free)</h3>").getMatch(0);
         if (accType == null) accType = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium|Free)([ ]+)?</h5>").getMatch(0);
         if (br.getCookie("http://fileserve.com", "cookie") == null || accType == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

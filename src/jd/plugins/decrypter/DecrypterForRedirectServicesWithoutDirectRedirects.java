@@ -137,14 +137,17 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 finallink = sb.toString();
             }
         } else if (parameter.contains("trailerzone.info/")) {
-            parameter = parameter.replace("protect.php?key", "wait2.php?u");
+            br.setDebug(true);
+            // Re Captcha can be skipped, even when entering wrong information
+            // we'll get the link
             br.getPage(parameter);
             finallink = br.getRegex("var xlink = '(.*?)';").getMatch(0);
             if (finallink == null) {
                 String timeStamp = br.getRegex("name=\"timestamp\" value=\"(.*?)\"").getMatch(0);
                 String link = br.getRegex("name=\"link\" value=\"(.*?)\"").getMatch(0);
                 if (timeStamp == null || link == null) return null;
-                br.postPage("http://trailerzone.info/show.php", "timestamp=" + timeStamp + "&link=" + link + "&redir=");
+                String challenge = "03AHJ_VusGRRezb1i7XGv_tm9wvGyyXVozFjURzI5CBQvHjU6_-hUUI9fZh5nPeH922cGdQAl9P-6GPxNSigJIdCqm_JPH9IfYvuJlng2WlMb2DEqlGbCffyQ";
+                br.postPage("http://trailerzone.info/go.php", "timestamp=" + timeStamp + "&link=" + link + "&recaptcha_challenge_field=" + challenge + "&recaptcha_response_field=manual_challenge" + "&redir=Weiter+zum+Link");
                 finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("imagetwist.com/")) {
