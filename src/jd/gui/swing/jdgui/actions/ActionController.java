@@ -39,6 +39,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.AccountDialog;
@@ -524,7 +525,7 @@ public class ActionController {
                 int index = 0;
                 ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
                 Collections.sort(plugins);
-                HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
+                final HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
                 if (e.getSource() instanceof HostPluginWrapper) {
                     for (int i = 0; i < data.length; i++) {
                         HostPluginWrapper w = data[i];
@@ -534,7 +535,14 @@ public class ActionController {
                         }
                     }
                 }
-                int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, index, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
+                final int i = index;
+                int selection = new GuiRunnable<Integer>() {
+
+                    @Override
+                    public Integer runSave() {
+                        return UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, i, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
+                    }
+                }.getReturnValue();
                 if (selection < 0) return;
 
                 try {
