@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptal.com" }, urls = { "http://[\\w\\.]*?uptal\\.com/\\?d=[A-Fa-f0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptal.com" }, urls = { "http://[\\w\\.]*?uptal\\.(com|org)/\\?d=[A-Fa-f0-9]+" }, flags = { 0 })
 public class UptalCom extends PluginForHost {
 
     public UptalCom(PluginWrapper wrapper) {
@@ -70,9 +70,9 @@ public class UptalCom extends PluginForHost {
         br.setFollowRedirects(true);
         getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
         if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
-        if (getlink == null && br.containsHTML("captcha.php")) {
+        if (getlink == null && br.containsHTML("captcha\\.php")) {
             /* captcha? */
-            String code = getCaptchaCode("http://www.uptal.com/captcha.php", downloadLink);
+            String code = getCaptchaCode("http://www.uptal.org/captcha.php", downloadLink);
             Form form = br.getForm(1);
             form.put("captchacode", code);
             br.submitForm(form);
@@ -96,7 +96,7 @@ public class UptalCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

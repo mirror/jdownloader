@@ -93,6 +93,7 @@ public class MovieShareIn extends PluginForHost {
             filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) filesize = new Regex(brbefore, "<b>Size:</b></font></td>[\t\n\r ]+<td>\\&nbsp;<font face=\"Calibri, Verdana\" size=\"\\d+\" color=\".*?\">(.*?)</font>").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -306,15 +307,21 @@ public class MovieShareIn extends PluginForHost {
         // Some waittimes...
         if (brbefore.contains("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
-            String tmphrs = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            // >You have to wait <font color=red>4 minutes
+            String tmphrs = new Regex(brbefore, "Y>You have to wait <font.*?(\\d+) hour(s)?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(brbefore, ">You have to wait <font.*?(\\d+) minute").getMatch(0);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
             String tmpsec = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+            if (waittime != 0) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+            } else {
+                logger.info("Waittime regexes seem to be broken");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
         }
         if (brbefore.contains("You have reached the download-limit")) {
             String tmphrs = new Regex(brbefore, "\\s+(\\d+)\\s+hours?").getMatch(0);
