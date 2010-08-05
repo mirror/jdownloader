@@ -155,7 +155,7 @@ public class CraMitIn extends PluginForHost {
             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
             tt = Integer.parseInt(ttt);
         }
-        sleep(tt * 1001, downloadLink);
+        sleep((tt + 2) * 1001, downloadLink);
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
@@ -534,6 +534,10 @@ public class CraMitIn extends PluginForHost {
                 logger.warning("Only downloadable via premium");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
+        }
+        if (brbefore.contains(">Skipped countdown<")) {
+            logger.info("Server says that the countdown was skipped, please check if this could be true!");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror");
         }
     }
 

@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "furk.net" }, urls = { "http(s)?://[\\w\\.]*?furk\\.net/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "furk.net" }, urls = { "http(s)?://[\\w\\.]*?furk\\.net/(.*?\\.html|df/[a-z0-9]+)" }, flags = { 0 })
 public class FurkNet extends PluginForHost {
 
     public FurkNet(PluginWrapper wrapper) {

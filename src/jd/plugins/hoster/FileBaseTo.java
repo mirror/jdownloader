@@ -132,6 +132,9 @@ public class FileBaseTo extends PluginForHost {
         br.getPage(url);
         downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
         if (br.containsHTML("eider\\s+nicht\\s+gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("<b>Downloading: </b>.*? <b>\\((.*?)\\)</b><br").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>(.*?)</strong></center>").getMatch(0);
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
 
     }
