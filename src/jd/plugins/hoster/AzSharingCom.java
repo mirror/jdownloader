@@ -25,7 +25,6 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -199,18 +198,8 @@ public class AzSharingCom extends PluginForHost {
             logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
         } else if (br.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard captcha\" for this host");
-            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            String captchaurl = null;
-            if (sitelinks == null || sitelinks.length == 0) {
-                logger.warning("Standard captcha captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (String link : sitelinks) {
-                if (link.matches(".*?/captchas/.*?\\.[a-zA-Z0-9]{2,4}") && !link.contains("clear")) {
-                    captchaurl = link;
-                    break;
-                }
-            }
+            String captchaurl = br.getRegex("<b>Enter code below:</b></td></tr>[\t\n\r ]+<tr><td>[\t\n\r ]+<img src=\"(.*?/captchas/.*?\\..*?)\"").getMatch(0);
+            if (captchaurl == null) captchaurl = br.getRegex("\"(http://azsharing\\.com/captchas/[a-z0-9]+\\.azimg)\"").getMatch(0);
             if (captchaurl == null) {
                 logger.warning("Standard captcha captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

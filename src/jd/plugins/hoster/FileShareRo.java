@@ -60,7 +60,13 @@ public class FileShareRo extends PluginForHost {
         String dllink = br.getRegex(Pattern.compile("action=\"(/download/.*?)\"", Pattern.DOTALL)).getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = "http://www.fileshare.ro" + dllink;
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1).startDownload();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (!br.getURL().contains("fileshare.ro")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Servererror");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

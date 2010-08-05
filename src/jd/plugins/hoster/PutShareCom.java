@@ -373,7 +373,22 @@ public class PutShareCom extends PluginForHost {
         br.setCookie("http://putshare.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such (file|user)|File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0));
+        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(br.toString(), "fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(br.toString(), "<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(br.toString(), "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(br.toString(), "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = new Regex(br.toString(), "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
         String filesize = br.getRegex("</font>\\s*\\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.replace(" - www.putShare.com - free data hosting ", "").replace("www.putShare.com", "").replace("free data hosting", "").trim());
