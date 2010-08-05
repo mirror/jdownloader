@@ -111,6 +111,7 @@ public class ShragleCom extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType() != null && con.getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("bereits eine Datei herunter")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l);
             if (br.containsHTML("The selected file was not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if ((br.containsHTML("Die von Ihnen angeforderte Datei") && br.containsHTML("Bitte versuchen Sie es"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -163,6 +164,7 @@ public class ShragleCom extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType() != null && con.getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("bereits eine Datei herunter")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l);
             if (br.containsHTML("The selected file was not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if ((br.containsHTML("Die von Ihnen angeforderte Datei") && br.containsHTML("Bitte versuchen Sie es")) || mayfail) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
