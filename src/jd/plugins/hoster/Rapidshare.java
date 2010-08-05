@@ -1179,6 +1179,12 @@ public class Rapidshare extends PluginForHost {
 
             String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             queryAPI(br, req);
+            String error = br.getRegex("ERROR:(.*)").getMatch(0);
+            if (error != null) {
+                account.setProperty(COOKIEPROP, null);
+                logger.severe("10 " + br.toString());
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             if (br.containsHTML("Login failed")) {
                 account.setProperty(COOKIEPROP, null);
                 logger.severe("1 " + br.toString());
@@ -1215,21 +1221,18 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
-        queryAPI(br, api);
-        String error = br.getRegex("ERROR:(.*)").getMatch(0);
-        if (error != null) {
-            /*
-             * error occured, disable account and show error message in status
-             * column
-             */
-            account.setProperty(COOKIEPROP, null);
-            AccountInfo ai = new AccountInfo();
-            ai.setStatus(JDL.LF("plugins.host.rapidshare.apierror", "Rapidshare reports that %s", error.trim()));
-            account.setValid(false);
-            return ai;
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            if (e.getValue() != PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
+                if (account.getAccountInfo() == null) {
+                    account.setAccountInfo(new AccountInfo());
+                }
+                account.getAccountInfo().setStatus(e.getErrorMessage());
+                account.setValid(false);
+            }
+            return account.getAccountInfo();
         }
-        updateAccountInfo(account, br);
         return account.getAccountInfo();
     }
 
