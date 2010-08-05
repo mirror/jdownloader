@@ -267,7 +267,8 @@ public class SingleDownloadController extends Thread {
             logger.finest(currentPlugin2.getBrowser() + "");
         } catch (Exception e) {
         }
-        downloadLink2.getLinkStatus().setErrorMessage(JDL.L("controller.status.plugindefective", "Plugin out of date"));
+        String orgMessage = downloadLink2.getLinkStatus().getErrorMessage();
+        downloadLink2.getLinkStatus().setErrorMessage(JDL.L("controller.status.plugindefective", "Plugin out of date") + (orgMessage == null ? "" : " " + orgMessage));
         downloadLink.requestGuiUpdate();
     }
 
