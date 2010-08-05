@@ -614,6 +614,7 @@ public class Rapidshare extends PluginForHost {
         if (error == null) return;
 
         logger.warning(error);
+        if (Regex.matches(error, Pattern.compile("RapidPro ist in ihrem Account nicht aktiviert"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         if (Regex.matches(error, Pattern.compile("Diese Datei ist noch nicht vollst"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is incomplete. Upload may still be in progress!", 10 * 60 * 1000l);
         if (Regex.matches(error, Pattern.compile("Der Downloadlink wurde manipuliert und ist damit "))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (Regex.matches(error, Pattern.compile("(Diese Datei steht im Verdacht illegal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
