@@ -65,8 +65,7 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?herunterladen:.*?<p>(.*?)</p", Pattern.DOTALL);
-
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p.*?>(.*?)</p", Pattern.DOTALL);
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p.*?</p>.*?<p.*?>(.*?)</p", Pattern.DOTALL);
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
 
@@ -614,6 +613,7 @@ public class Rapidshare extends PluginForHost {
         if (error == null) return;
 
         logger.warning(error);
+        if (Regex.matches(error, Pattern.compile("Leider sind unsere Server derzeit"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unfortunately right now our servers are overloaded!", 10 * 60 * 1000l);
         if (Regex.matches(error, Pattern.compile("RapidPro ist in ihrem Account nicht aktiviert"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         if (Regex.matches(error, Pattern.compile("Diese Datei ist noch nicht vollst"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is incomplete. Upload may still be in progress!", 10 * 60 * 1000l);
         if (Regex.matches(error, Pattern.compile("Der Downloadlink wurde manipuliert und ist damit "))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -656,6 +656,7 @@ public class Rapidshare extends PluginForHost {
         if (error == null) return;
 
         logger.warning(error);
+        if (Regex.matches(error, Pattern.compile("Leider sind unsere Server derzeit"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unfortunately right now our servers are overloaded!", 10 * 60 * 1000l);
         if (Regex.matches(error, Pattern.compile("Diese Datei ist noch nicht vollst"))) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is incomplete. Upload may still be in progress!", 10 * 60 * 1000l);
         if (Regex.matches(error, Pattern.compile("Der Downloadlink wurde manipuliert und ist damit "))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (Regex.matches(error, Pattern.compile("(Diese Datei steht im Verdacht illegal)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -867,16 +868,21 @@ public class Rapidshare extends PluginForHost {
     }
 
     public static String findError(Browser br) {
-        String error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE).getMatch(0);
+        String error = null;
 
         if (error == null || Encoding.htmlDecode(error).trim().length() < 3) {
-            error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_3).getMatch(0);
+            error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_2).getMatch(0);
         }
         // <3to filter &nbsp;
         // error = error.trim();
         if (error == null || Encoding.htmlDecode(error).trim().length() < 3) {
-            error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_2).getMatch(0);
+            error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_3).getMatch(0);
         }
+
+        if (error == null || Encoding.htmlDecode(error).trim().length() < 3) {
+            error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE).getMatch(0);
+        }
+
         if (error == null || Encoding.htmlDecode(error).trim().length() < 3) {
             error = br.getRegex(PATTERN_FIND_ERROR_MESSAGE_1).getMatch(0);
         }
