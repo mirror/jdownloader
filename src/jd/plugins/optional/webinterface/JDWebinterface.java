@@ -42,6 +42,7 @@ public class JDWebinterface extends PluginOptional {
     static final String PROPERTY_PORT = "PARAM_PORT";
     static final String PROPERTY_REFRESH = "PARAM_REFRESH";
     static final String PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
+    static final String PROPERTY_LOCALHOST_ONLY = "PROPERTY_LOCALHOST_ONLY";
 
     static final String PROPERTY_USER = "PARAM_USER";
 
@@ -57,6 +58,7 @@ public class JDWebinterface extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, JDL.L("plugins.optional.webinterface.refresh", "AutoRefresh")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_REFRESH_INTERVAL, JDL.L("plugins.optional.webinterface.refresh_interval", "Refresh Interval"), 5, 60, 1).setDefaultValue(5));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDL.L("plugins.optional.webinterface.port", "Port"), 1, 65000, 1).setDefaultValue(8765));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOCALHOST_ONLY, JDL.L("plugins.optional.webinterface.localhostonly", "Access only from this Computer")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDL.L("plugins.optional.webinterface.needlogin", "Need User Authentication")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDL.L("plugins.optional.webinterface.https", "Use HTTPS")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDL.L("plugins.optional.webinterface.loginname", "Login Name")).setDefaultValue("JD"));

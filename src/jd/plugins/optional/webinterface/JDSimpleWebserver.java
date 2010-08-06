@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -291,14 +292,24 @@ public class JDSimpleWebserver extends Thread {
         Boolean https = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_HTTPS, false);
         AuthUser = "Basic " + Encoding.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
         NeedAuth = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOGIN, true);
+        boolean localhostonly = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOCALHOST_ONLY, false);
         int port = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 8765);
         try {
             if (!https) {
-                Server_Socket = new ServerSocket(port);
+                if (localhostonly) {
+                    Server_Socket = new ServerSocket(port, -1, InetAddress.getByName("localhost"));
+                } else {
+                    Server_Socket = new ServerSocket(port);
+                }
             } else {
                 try {
                     ServerSocketFactory ssocketFactory = setupSSL();
-                    Server_Socket = ssocketFactory.createServerSocket(port);
+
+                    if (localhostonly) {
+                        Server_Socket = ssocketFactory.createServerSocket(port, -1, InetAddress.getByName("localhost"));
+                    } else {
+                        Server_Socket = ssocketFactory.createServerSocket(port);
+                    }
                 } catch (Exception e) {
                     logger.severe("WebInterface: Server failed to start (SSL Setup Failed)!");
                     return;
