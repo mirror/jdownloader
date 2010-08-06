@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -477,6 +478,7 @@ public class Megauploadcom extends PluginForHost {
             }
             i++;
         }
+        /* no customized header here, because they try block jd */
         int checked = 0;
         try {
             String[] Dls = br.postPage("http://" + wwwWorkaround + "megaupload.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
@@ -768,6 +770,18 @@ public class Megauploadcom extends PluginForHost {
         br.setFollowRedirects(false);
         String dlID = getDownloadID(link);
         br.setDebug(true);
+        /*
+         * here the customized headers are needed because without api download
+         * does not work
+         */
+        br.getHeaders().clear();
+        br.getHeaders().setDominant(true);
+        br.getHeaders().put("Accept", "text/plain,text/html,*/*;q=0.3");
+        br.getHeaders().put("Accept-Encoding", "*;q=0.1");
+        br.getHeaders().put("TE", "trailers");
+        br.getHeaders().put("Host", "" + wwwWorkaround + "megaupload.com");
+        br.getHeaders().put("Connection", "TE");
+        br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
         String user = null;
         if (account != null) user = account.getStringProperty("user", null);
         if (user != null) {
@@ -778,6 +792,8 @@ public class Megauploadcom extends PluginForHost {
         if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) limitReached(link, 10 * 60, "API Limit reached!");
 
         String url = br.getRedirectLocation();
+        br.getHeaders().put("Host", new URL(url).getHost());
+        br.getHeaders().put("Connection", "Keep-Alive,TE");
         doDownload(link, url, true, account);
     }
 
