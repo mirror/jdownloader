@@ -22,7 +22,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -42,6 +41,7 @@ import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import jd.plugins.optional.interfaces.HttpServer;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
@@ -297,7 +297,7 @@ public class JDSimpleWebserver extends Thread {
         try {
             if (!https) {
                 if (localhostonly) {
-                    Server_Socket = new ServerSocket(port, -1, InetAddress.getByName("localhost"));
+                    Server_Socket = new ServerSocket(port, -1, HttpServer.getLocalHost());
                 } else {
                     Server_Socket = new ServerSocket(port);
                 }
@@ -306,7 +306,7 @@ public class JDSimpleWebserver extends Thread {
                     ServerSocketFactory ssocketFactory = setupSSL();
 
                     if (localhostonly) {
-                        Server_Socket = ssocketFactory.createServerSocket(port, -1, InetAddress.getByName("localhost"));
+                        Server_Socket = ssocketFactory.createServerSocket(port, -1, HttpServer.getLocalHost());
                     } else {
                         Server_Socket = ssocketFactory.createServerSocket(port);
                     }

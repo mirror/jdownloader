@@ -17,6 +17,7 @@
 package jd.plugins.optional.interfaces;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -69,13 +70,13 @@ public class HttpServer extends Thread {
     public static InetAddress getLocalHost() {
         InetAddress localhost = null;
         try {
-            localhost = InetAddress.getByName("127.0.0.1");
+            localhost = Inet4Address.getByName("127.0.0.1");
         } catch (UnknownHostException e1) {
             JDLogger.getLogger().severe("could not find localhost!");
         }
         if (localhost != null) return localhost;
         try {
-            localhost = InetAddress.getByName(null);
+            localhost = Inet4Address.getByName(null);
         } catch (UnknownHostException e1) {
             JDLogger.getLogger().severe("could not find localhost!");
         }

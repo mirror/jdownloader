@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/[0-9]+(/.+)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
     public FileSonicCom(PluginWrapper wrapper) {
@@ -47,7 +47,7 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         /* convert sharingmatrix to filesonic that set english language */
-        String id = new Regex(link.getDownloadURL(), "file/(\\d+)").getMatch(0);
+        String id = new Regex(link.getDownloadURL(), "file/(\\d+.+)").getMatch(0);
         link.setUrlDownload("http://www.filesonic.com/en/file/" + id);
     }
 
@@ -148,6 +148,12 @@ public class FileSonicCom extends PluginForHost {
         String filename = br.getRegex("Filename: </span> <strong>(.*?)<").getMatch(0);
         String filesize = br.getRegex("<span class=\"size\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename.contains("...")) {
+            String otherName = new Regex(parameter.getDownloadURL(), "file/\\d+/(.+)").getMatch(0);
+            if (otherName != null && otherName.length() > filename.length()) {
+                filename = otherName;
+            }
+        }
         filesize = filesize.replace("&nbsp;", "");
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));

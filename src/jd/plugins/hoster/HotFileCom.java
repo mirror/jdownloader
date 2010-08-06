@@ -305,11 +305,11 @@ public class HotFileCom extends PluginForHost {
                     String id = new Regex(dl.getDownloadURL(), "/dl/(\\d+)").getMatch(0);
                     String[] dat = new Regex(response, id + ",(\\d+),(.*?),(\\d+),(.*?),(.*?)(\n|$)").getRow(0);
                     if (dat != null) {
-                        dl.setName(dat[1]);
-                        dl.setDownloadSize(Long.parseLong(dat[2]));
-                        dl.setMD5Hash(dat[3]);
+                        dl.setName(dat[1].trim());
+                        dl.setDownloadSize(Long.parseLong(dat[2].trim()));
+                        dl.setMD5Hash(dat[3].trim());
                         // SHA1 hashes seems to be wrong sometimes
-                        // dl.setSha1Hash(dat[4]);
+                        // dl.setSha1Hash(dat[4].trim());
                         if ("1".equalsIgnoreCase(dat[0])) {
                             dl.setAvailable(true);
                         } else if ("0".equalsIgnoreCase(dat[0])) {

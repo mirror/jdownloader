@@ -65,7 +65,7 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?herunterladen:.*?<p>(.*?)</p", Pattern.DOTALL);
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p.*?</p>.*?<p.*?>(.*?)</p", Pattern.DOTALL);
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p.*?>(.*?</p.*?<p.*?)</p", Pattern.DOTALL);
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
 
@@ -888,12 +888,14 @@ public class Rapidshare extends PluginForHost {
         }
 
         error = Encoding.htmlDecode(error);
-        String[] er = Regex.getLines(error);
+        String[] errs = Regex.getLines(error);
 
-        if (er == null || er.length == 0) return null;
-        er[0] = HTMLEntities.unhtmlentities(er[0]);
-        if (er[0] == null || er[0].length() == 0) return null;
-        return er[0];
+        if (errs == null || errs.length == 0) return null;
+        StringBuilder sb = new StringBuilder("");
+        for (String err : errs) {
+            sb.append(HTMLEntities.unhtmlentities(err) + "\r\n");
+        }
+        return sb.toString().trim();
     }
 
     private String dynTranslate(String error) {
