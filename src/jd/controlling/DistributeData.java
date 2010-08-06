@@ -498,7 +498,7 @@ public class DistributeData extends Thread {
                 final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDL.L("gui.btn_continue", "Continue"), null);
 
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
-                    data = getLoadLinkString(data);
+                    data = getLoadLinkString(ls);
                     links = findLinks();
                 }
             }
@@ -512,9 +512,9 @@ public class DistributeData extends Thread {
         return data;
     }
 
-    private static String getLoadLinkString(final String linkstring) {
+    private String getLoadLinkString(String[] links) {
+        if (links == null || links.length == 0) return "";
         final StringBuffer sb = new StringBuffer();
-        final String[] links = HTMLParser.getHttpLinks(linkstring, null);
         final ProgressController pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length, null);
         int count = 0;
 
@@ -525,22 +525,32 @@ public class DistributeData extends Thread {
                 new URL(l);
                 pc.setStatusText(JDL.LF("gui.addurls.progress.get", "Parse %s URL(s). Get %s links", links.length, l));
 
-                br.getPage(l);
-
-                final String[] found = HTMLParser.getHttpLinks(br.toString(), l);
-                for (final String f : found) {
+                br.openGetConnection(l);
+                if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
+                    /* downloadable content, use directhttp */
+                    sb.append("directhttp://" + l + "\r\n");
                     count++;
-                    sb.append("\r\n" + f);
+                } else {
+                    /* parse webpage for links */
+                    br.followConnection();
+                    final String[] found = HTMLParser.getHttpLinks(br.toString(), l);
+                    for (final String link : found) {
+                        sb.append(link + "\r\n");
+                    }
+                    count += found.length;
                 }
-            } catch (Exception e1) {
+            } catch (Throwable e) {
+            } finally {
+                try {
+                    br.getHttpConnection().disconnect();
+                } catch (Throwable e) {
+                }
             }
             pc.setStatusText(JDL.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, count));
             pc.increase(1);
-
         }
         JDLogger.getLogger().info("Found Links " + sb);
         pc.doFinalize(2000);
         return sb.toString();
     }
-
 }

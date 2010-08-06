@@ -147,6 +147,15 @@ public class HotFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, getPluginConfig().getBooleanProperty(UNLIMITEDMAXCON, false) == true ? 0 : -5);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("Invalid link")) {
+                String newLink = br.getRegex("href=\"(http://.*?)\"").getMatch(0);
+                if (newLink != null) {
+                    /* set new downloadlink */
+                    logger.warning("invalid link -> use new link");
+                    downloadLink.setUrlDownload(newLink.trim());
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
             logger.severe(finalUrl);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -230,6 +239,15 @@ public class HotFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("Invalid link")) {
+                String newLink = br.getRegex("href=\"(http://.*?)\"").getMatch(0);
+                if (newLink != null) {
+                    /* set new downloadlink */
+                    logger.warning("invalid link -> use new link");
+                    link.setUrlDownload(newLink.trim());
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
             if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -290,7 +308,8 @@ public class HotFileCom extends PluginForHost {
                         dl.setName(dat[1]);
                         dl.setDownloadSize(Long.parseLong(dat[2]));
                         dl.setMD5Hash(dat[3]);
-                        dl.setSha1Hash(dat[4]);
+                        // SHA1 hashes seems to be wrong sometimes
+                        // dl.setSha1Hash(dat[4]);
                         if ("1".equalsIgnoreCase(dat[0])) {
                             dl.setAvailable(true);
                         } else if ("0".equalsIgnoreCase(dat[0])) {
