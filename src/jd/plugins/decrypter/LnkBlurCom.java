@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkblur.com" }, urls = { "http://[\\w\\.]*?linkblur\\.com/.*?/[a-zA-Z0-9=/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkblur.com" }, urls = { "http://[\\w\\.]*?linkblur\\.com/(\\?http://.+|.*?/[a-zA-Z0-9=/]+)" }, flags = { 0 })
 public class LnkBlurCom extends PluginForDecrypt {
 
     public LnkBlurCom(PluginWrapper wrapper) {
