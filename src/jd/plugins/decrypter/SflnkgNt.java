@@ -96,7 +96,7 @@ public class SflnkgNt extends PluginForDecrypt {
             }
             if (br.containsHTML(RECAPTCHATEXT) || br.getRegex(CAPTCHAREGEX1).getMatch(0) != null || br.getRegex(CAPTCHAREGEX2).getMatch(0) != null) throw new DecrypterException(DecrypterException.CAPTCHA);
             if (br.containsHTML(PASSWORDPROTECTEDTEXT)) throw new DecrypterException(DecrypterException.PASSWORD);
-
+            if (br.containsHTML(">All links are dead\\.<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             // container handling (if no containers found, use webprotection
             if (br.containsHTML("\\.dlc")) {
                 decryptedLinks = loadcontainer(".dlc", param);
