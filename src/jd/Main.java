@@ -28,9 +28,9 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.TreeSet;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,6 +89,8 @@ public class Main {
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         // only use ipv4, because debian changed default stack to ipv6
         System.setProperty("java.net.preferIPv4Stack", "true");
+        // Disable the GUI rendering on the graphic card
+        System.setProperty("sun.java2d.d3d", "false");
         LOG = JDLogger.getLogger();
 
         LOG.info("Start JDownloader");
