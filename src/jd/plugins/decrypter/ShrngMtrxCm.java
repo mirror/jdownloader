@@ -20,13 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharingmatrix.com" }, urls = { "http://[\\w\\.]*?sharingmatrix\\.com/folder/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharingmatrix.com" }, urls = { "http://[\\w\\.]*?sharingmatrix\\.com/.*?folder/[0-9a-z]+" }, flags = { 0 })
 public class ShrngMtrxCm extends PluginForDecrypt {
 
     public ShrngMtrxCm(PluginWrapper wrapper) {
@@ -35,33 +34,8 @@ public class ShrngMtrxCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        boolean failed = false;
-        br.getPage(parameter);
-        String[] links = br.getRegex("<td width=\"70%\" align=\"left\" valign=\"top\">(.*?)</tr>").getColumn(0);
-        if (links == null || links.length == 0) {
-            failed = true;
-            links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\"(http://sharingmatrix\\.com/file/\\d+/.*?)\"").getColumn(0);
-        }
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String data : links) {
-            if (failed) {
-                if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
-            } else {
-                String filename = new Regex(data, "sharingmatrix\\.com/file/.*?/(.*?)\"").getMatch(0);
-                String filesize = new Regex(data, "valign=\"top\">.*?\\|.*?\\|.*?\\|.*?\\|(.*?)\\(.*?</td>").getMatch(0);
-                String dlink = new Regex(data, "href=\"(http.*?)\"").getMatch(0);
-                if (dlink == null) return null;
-                DownloadLink aLink = createDownloadlink(dlink);
-                if (filename != null) aLink.setName(filename.trim());
-                if (filesize != null) aLink.setDownloadSize(Regex.getSize(filesize.trim()));
-                if (filename != null && filesize != null) aLink.setAvailable(true);
-                if (!dlink.contains("/folder/")) decryptedLinks.add(createDownloadlink(dlink));
-            }
-            progress.increase(1);
-        }
+        DownloadLink aLink = createDownloadlink(param.getCryptedUrl().replaceAll("sharingmatrix", "filesonic"));
+        decryptedLinks.add(aLink);
         return decryptedLinks;
     }
 }
