@@ -30,19 +30,20 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[\\w\\.]*?qriist\\.livedrive\\.com/(frameset\\.php\\?path=/)?files/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[\\w\\.]*?\\.livedrive\\.com/(frameset\\.php\\?path=/)?files/\\d+" }, flags = { 0 })
 public class LiveDriveComFolder extends PluginForDecrypt {
 
     public LiveDriveComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String DECRYPTEDLINKPART = "http://qriist.decryptedlivedrive.com/frameset.php?path=/files";
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("/frameset.php?path=", "");
         br.getPage(parameter);
+        String liveDriveUrlUserPart = new Regex(parameter, "(.*?)\\.livedrive\\.com").getMatch(0);
+        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
+        String decryptedlinkpart = "http://" + liveDriveUrlUserPart + ".decryptedlivedrive.com/frameset.php?path=/files";
         if (br.containsHTML("Item not found</span>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("class=\"data_holder\">.*?'s Livedrive - (.*?)</span>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>.*?'s Livedrive - (.*?)</title>").getMatch(0);
@@ -57,7 +58,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
                 logger.warning("Failed on single file, link = " + parameter);
                 return null;
             }
-            DownloadLink theFinalLink = createDownloadlink(DECRYPTEDLINKPART + "/" + pathID);
+            DownloadLink theFinalLink = createDownloadlink(decryptedlinkpart + "/" + pathID);
             theFinalLink.setProperty("DOWNLOADID", ID);
             decryptedLinks.add(theFinalLink);
         } else {
@@ -68,7 +69,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
             }
             Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.postPage("http://qriist.livedrive.com/WebService/AjaxHandler.ashx", "Method=GetFileList&Page=1&ParentID=" + thereIsThisSecretID);
+            br2.postPage("http://" + liveDriveUrlUserPart + ".livedrive.com/WebService/AjaxHandler.ashx", "Method=GetFileList&Page=1&ParentID=" + thereIsThisSecretID);
             // Regex those information
             String[] fileInformation = br2.getRegex("(\\{\".*?\"\\})").getColumn(0);
             if (fileInformation == null || fileInformation.length == 0) {
@@ -91,9 +92,9 @@ public class LiveDriveComFolder extends PluginForDecrypt {
                 // livedrive
                 // Do we have a file ? Add it with all given information
                 if (filetype.equals("Folder")) {
-                    decryptedLinks.add(createDownloadlink("http://qriist.livedrive.com/frameset.php?path=/files" + fileOrFolderPath));
+                    decryptedLinks.add(createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrive.com/frameset.php?path=/files" + fileOrFolderPath));
                 } else {
-                    DownloadLink theFinalLink = createDownloadlink(DECRYPTEDLINKPART + fileOrFolderPath);
+                    DownloadLink theFinalLink = createDownloadlink(decryptedlinkpart + fileOrFolderPath);
                     theFinalLink.setName(filename);
                     theFinalLink.setDownloadSize(Long.parseLong(filesize));
                     theFinalLink.setProperty("DOWNLOADID", ID);

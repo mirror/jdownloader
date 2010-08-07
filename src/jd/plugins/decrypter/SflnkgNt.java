@@ -58,7 +58,6 @@ public class SflnkgNt extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("(\"This link does not exist\\.\"|ERROR - this link does not exist)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        if (br.containsHTML(">Unknown link</span>")) throw new DecrypterException("Unknown link");
         if (br.containsHTML(">Not yet checked</span>")) throw new DecrypterException("Not yet checked");
         if (!parameter.contains("/d/")) {
             Form capForm = new Form();

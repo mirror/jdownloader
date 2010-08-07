@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //This plugin only takes decrypted links from the livedrive decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[\\w\\.]*?qriist\\.decryptedlivedrive\\.com/frameset\\.php\\?path=/files/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[\\w\\.]*?\\.decryptedlivedrive\\.com/frameset\\.php\\?path=/files/\\d+" }, flags = { 0 })
 public class LiveDriveCom extends PluginForHost {
 
     public LiveDriveCom(PluginWrapper wrapper) {
@@ -44,11 +45,14 @@ public class LiveDriveCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("decryptedlivedrive", "livedrive"));
     }
 
-    private static final String DLLINKPART = "http://qriist.livedrive.com/WebService/AjaxHandler.ashx?Type=Query&Method=DownloadData&ID=";
+    private String DLLINKPART;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        String liveDriveUrlUserPart = new Regex(link.getDownloadURL(), "(.*?)\\.livedrive\\.com").getMatch(0);
+        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
+        DLLINKPART = "http://" + liveDriveUrlUserPart + ".livedrive.com/WebService/AjaxHandler.ashx?Type=Query&Method=DownloadData&ID=";
         URLConnectionAdapter con = br.openGetConnection(DLLINKPART + link.getStringProperty("DOWNLOADID"));
         if (con.getContentType().contains("html")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
