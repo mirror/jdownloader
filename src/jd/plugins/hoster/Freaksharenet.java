@@ -128,11 +128,9 @@ public class Freaksharenet extends PluginForHost {
             String url = null;
             if (br.getRedirectLocation() == null) {
                 if (br.containsHTML("No Downloadserver. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
+                if (br.containsHTML("Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 Form form = br.getForm(0);
-                if (form == null) {
-                    if (br.containsHTML("Sorry, your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.submitForm(form);
                 url = br.getRedirectLocation();
             } else {

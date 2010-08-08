@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/[0-9]+(/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/(.*?/)?[0-9]+(/.+)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
     public FileSonicCom(PluginWrapper wrapper) {
@@ -47,7 +47,7 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         /* convert sharingmatrix to filesonic that set english language */
-        String id = new Regex(link.getDownloadURL(), "file/(\\d+.+)").getMatch(0);
+        String id = new Regex(link.getDownloadURL(), "file/(.*?/)?(\\d+.+)").getMatch(1);
         link.setUrlDownload("http://www.filesonic.com/en/file/" + id);
     }
 
@@ -192,7 +192,11 @@ public class FileSonicCom extends PluginForHost {
         }
         String countDownDelay = br.getRegex("countDownDelay = (\\d+)").getMatch(0);
         if (countDownDelay != null) {
-            if (Long.parseLong(countDownDelay) > 300) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1000l);
+            /*
+             * we have to wait a little longer than needed cause its not exactly
+             * the same time
+             */
+            if (Long.parseLong(countDownDelay) > 300) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay + 120) * 1000l);
             this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
         }
         String downloadUrl = br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
