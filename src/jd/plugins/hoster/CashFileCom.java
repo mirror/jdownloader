@@ -36,29 +36,24 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movieshare.in" }, urls = { "http://[\\w\\.]*?(movieshare\\.in|sharejunky.com)/[a-z0-9]{12}" }, flags = { 0 })
-public class MovieShareIn extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cash-file.com" }, urls = { "http://[\\w\\.]*?cash-file\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class CashFileCom extends PluginForHost {
 
-    public MovieShareIn(PluginWrapper wrapper) {
+    public CashFileCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.7, modified dllink regexes & freeform
-    // handling
+    // XfileSharingProBasic Version 1.8
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("movieshare.in", "sharejunky.com"));
-    }
-
-    public String brbefore = "";
+    private String brbefore = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://sharejunky.com";
+    private static final String COOKIE_HOST = "http://cash-file.com";
     public boolean nopremium = false;
 
     @Override
@@ -68,7 +63,7 @@ public class MovieShareIn extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains("File Not Found")) {
+        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -88,12 +83,11 @@ public class MovieShareIn extends PluginForHost {
                 }
             }
         }
-        String filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
+        String filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
-            filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) filesize = new Regex(brbefore, "<b>Size:</b></font></td>[\t\n\r ]+<td>\\&nbsp;<font face=\"Calibri, Verdana\" size=\"\\d+\" color=\".*?\">(.*?)</font>").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -119,12 +113,11 @@ public class MovieShareIn extends PluginForHost {
         int maxchunks = 0;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
-        Form freeform = null;
-        Form[] allForms = br.getForms();
-        for (Form singleForm : allForms) {
-            if (singleForm.containsHTML("download1")) {
-                freeform = singleForm;
-                break;
+        Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
+        if (freeform == null) {
+            freeform = br.getFormBySubmitvalue("Free+Download");
+            if (freeform == null) {
+                freeform = br.getFormbyKey("download1");
             }
         }
         if (freeform != null) {
@@ -146,7 +139,7 @@ public class MovieShareIn extends PluginForHost {
         String ttt = new Regex(brbefore, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = new Regex(brbefore, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
         if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }
@@ -227,21 +220,18 @@ public class MovieShareIn extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
-        if (dl.getConnection().getContentType().contains("html")) {
+        boolean error = false;
+        try {
+            if (dl.getConnection().getContentType().contains("html")) error = true;
+        } catch (Exception e) {
+            error = true;
+        }
+        if (error) {
             br.followConnection();
             logger.info("followed connection...");
             doSomething();
             checkErrors(downloadLink, true, passCode);
-            String dllink = new Regex(brbefore, "name=\"src\" value=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(brbefore, "name=\"video/divx\" value=\"(http://.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(brbefore, "bgcolor=\"#ffffff\"><tr><td><a href=\"(http://.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(brbefore, "face=\"Calibri, Verdana\" size=\"5\"><a href=\"(http://.*?)\"").getMatch(0);
-                    }
-                }
-            }
+            String dllink = getDllink();
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -284,6 +274,20 @@ public class MovieShareIn extends PluginForHost {
         return passCode;
     }
 
+    public String getDllink() {
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = new Regex(brbefore, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = new Regex(brbefore, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                if (dllink == null) {
+                    dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
+                }
+            }
+        }
+        return dllink;
+    }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (brbefore.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (brbefore.contains("File Not Found") || brbefore.contains("<h1>404 Not Found</h1>")) {
@@ -307,16 +311,15 @@ public class MovieShareIn extends PluginForHost {
         // Some waittimes...
         if (brbefore.contains("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
-            // >You have to wait <font color=red>4 minutes
-            String tmphrs = new Regex(brbefore, "Y>You have to wait <font.*?(\\d+) hour(s)?").getMatch(0);
+            String tmphrs = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = new Regex(brbefore, ">You have to wait <font.*?(\\d+) minute").getMatch(0);
+            String tmpmin = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
             String tmpsec = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-            logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
             if (waittime != 0) {
+                logger.info("Detected waittime #1, waiting " + waittime + " milliseconds");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             } else {
                 logger.info("Waittime regexes seem to be broken");
@@ -345,7 +348,7 @@ public class MovieShareIn extends PluginForHost {
         if (brbefore.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
         if (brbefore.contains(" can download files up to ") || brbefore.contains("Upgrade your account to download bigger files") || brbefore.contains("This file reached max downloads") || brbefore.contains(">Upgrade your account to download larger files")) {
-            String filesizelimit = new Regex(brbefore, " can download files up to(.*?)only").getMatch(0);
+            String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");

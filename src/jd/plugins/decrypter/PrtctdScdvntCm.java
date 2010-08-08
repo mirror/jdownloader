@@ -20,11 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "http://[\\w\\.]*?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" }, flags = { 0 })
 public class PrtctdScdvntCm extends PluginForDecrypt {
@@ -39,26 +42,28 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String postvar = new Regex(parameter, "protected\\.socadvnet\\.com/\\?(.+)").getMatch(0);
         if (postvar == null) return null;
-        String security = br.getRegex("<div id =\"cp\">.*?(.*?)= \\&nbsp;<input").getMatch(0);
+        br.getPage(parameter);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://protected.socadvnet.com/index.php")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        String security = br.getRegex("(style=\"margin-top:200px;\">[\t\n\r ]+\\d+ <img  border=\"0\" style=\"margin-top: 20px;\" src=\"plugin/[a-z]+\\.jpg\"> (\\d+) =)").getMatch(0);
         br.postPage("http://protected.socadvnet.com/allinks.php", "LinkName=" + postvar);
         String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:eopp)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) return null;
         int linkCounter = linksCount.length;
         if (security != null) {
-            security = security.trim();
-            Regex theNumbers = new Regex(security, "(\\d+) (-|\\+) (\\d+)");
-            String num1 = theNumbers.getMatch(0);
-            String num2 = theNumbers.getMatch(2);
-            String plusMinus = theNumbers.getMatch(1);
+            Regex numberRegex = new Regex(security, "style=\"margin-top:200px;\">[\t\n\r ]+(\\d+) <img  border=\"0\" style=\"margin-top: 20px;\" src=\"plugin/(plus|minus)\\.jpg\"> (\\d+) =");
+            String num1 = numberRegex.getMatch(0);
+            String num2 = numberRegex.getMatch(2);
+            String plusMinus = numberRegex.getMatch(1);
             if (num1 == null || num2 == null || plusMinus == null) {
                 logger.warning("Error in doing the maths for link: " + parameter);
                 return null;
             }
             int equals = 0;
-            if (plusMinus.equals("+")) {
+            if (plusMinus.equals("plus")) {
                 equals = Integer.parseInt(num1) + Integer.parseInt(num2);
             } else {
                 equals = Integer.parseInt(num1) - Integer.parseInt(num2);
@@ -78,7 +83,8 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
             if (finallink == null) {
                 // Handlings for more hosters will come soon i think
                 if (br.containsHTML("turbobit\\.net")) {
-                    br.getPage("http://protected.socadvnet.com/plugin/turbobit.net.free.php?out_name=" + postvar + "&link_id=" + i);
+                    String singleProtectedLink = "http://protected.socadvnet.com/plugin/turbobit.net.free.php?out_name=" + postvar + "&link_id=" + i;
+                    br.getPage(singleProtectedLink);
                     if (br.getRedirectLocation() == null) {
                         logger.warning("Redirect location for this link is null: " + parameter);
                         return null;

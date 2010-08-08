@@ -52,6 +52,7 @@ public class MhfScriptBasic extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://Only4Devs2Test.com";
+    private static final String IPBLOCKED = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
@@ -64,8 +65,8 @@ public class MhfScriptBasic extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
+        if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+width=[\r\t\n ]+>(.*?)</td>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
             if (filename == null) {
@@ -75,7 +76,8 @@ public class MhfScriptBasic extends PluginForHost {
                 }
             }
         }
-        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<b>File size:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)</td>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
         if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
@@ -119,7 +121,7 @@ public class MhfScriptBasic extends PluginForHost {
                     link.setProperty("pass", null);
                     continue;
                 }
-                if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+                if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML(IPBLOCKED)) {
                     logger.warning("Wrong captcha or wrong password!");
                     link.setProperty("pass", null);
                     continue;
@@ -132,7 +134,7 @@ public class MhfScriptBasic extends PluginForHost {
             link.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+        if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML(IPBLOCKED)) {
             logger.warning("Wrong captcha or wrong password!");
             link.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -140,10 +142,10 @@ public class MhfScriptBasic extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         String finalLink = findLink();
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -197,26 +199,26 @@ public class MhfScriptBasic extends PluginForHost {
         }
 
         br.getPage(COOKIE_HOST + "/members.php");
-        String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
+        String premium = br.getRegex("<b>Your Package</b></td>[\r\t\n ]+<b>(.*?)</b></A>").getMatch(0);
         if (!premium.equals("Premium")) {
             account.setValid(true);
             return ai;
         }
-        String expired = br.getRegex("Expired\\?</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
+        String expired = br.getRegex("Expired\\?</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)<").getMatch(0);
         if (expired != null) {
             if (expired.trim().equalsIgnoreCase("No"))
                 ai.setExpired(false);
             else if (expired.equalsIgnoreCase("Yes")) ai.setExpired(true);
         }
 
-        String expires = br.getRegex("Package Expire Date</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        String expires = br.getRegex("Package Expire Date</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)</td>").getMatch(0);
         if (expires != null) {
             String[] e = expires.split("/");
             Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
             ai.setValidUntil(cal.getTimeInMillis());
         }
 
-        String create = br.getRegex("Register Date</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
+        String create = br.getRegex("Register Date</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)<").getMatch(0);
         if (create != null) {
             String[] c = create.split("/");
             Calendar cal = new GregorianCalendar(Integer.parseInt("20" + c[2]), Integer.parseInt(c[0]) - 1, Integer.parseInt(c[1]));
@@ -224,13 +226,13 @@ public class MhfScriptBasic extends PluginForHost {
         }
 
         ai.setFilesNum(0);
-        String files = br.getRegex("<b>Hosted Files</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
+        String files = br.getRegex("<b>Hosted Files</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)<").getMatch(0);
         if (files != null) {
             ai.setFilesNum(Integer.parseInt(files.trim()));
         }
 
         ai.setPremiumPoints(0);
-        String points = br.getRegex("<b>Total Points</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        String points = br.getRegex("<b>Total Points</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)</td>").getMatch(0);
         if (points != null) {
             ai.setPremiumPoints(Integer.parseInt(points.trim()));
         }
