@@ -36,6 +36,8 @@ public class RpdshrCmFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String PASSWORDTEXT = "input type=\"password\" name=\"password\"";
+
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
@@ -44,9 +46,18 @@ public class RpdshrCmFldr extends PluginForDecrypt {
         String password = "";
 
         for (int retry = 1; retry < 5; retry++) {
-            if (page.contains("input type=\"password\" name=\"password\"")) {
-                password = getUserInput(null, param);
+            if (page.contains(PASSWORDTEXT)) {
+                password = this.getPluginConfig().getStringProperty("PASSWORD", null);
+                if (password == null) password = getUserInput(null, param);
                 page = br.postPage(parameter, "password=" + password);
+                if (br.containsHTML(PASSWORDTEXT)) {
+                    getPluginConfig().setProperty("PASSWORD", null);
+                    getPluginConfig().save();
+                } else {
+                    // Save actual password if it is valid
+                    getPluginConfig().setProperty("PASSWORD", password);
+                    getPluginConfig().save();
+                }
             } else {
                 break;
             }

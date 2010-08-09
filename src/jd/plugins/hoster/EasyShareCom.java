@@ -159,8 +159,8 @@ public class EasyShareCom extends PluginForHost {
         int tries = 0;
         while (true) {
             tries++;
-
             id = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Browser rcBr = br.cloneBrowser();
             /* follow redirect needed as google redirects to another domain */
             rcBr.setFollowRedirects(true);

@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.ro" }, urls = { "(http://[\\w\\.]*?(filebox|fbx)\\.ro/(download|down)\\.php\\?key=[0-9a-z]{16})|(http://[\\w\\.]*?(filebox|fbx)\\.ro/video/play_video\\.php\\?key=[0-9a-z]{16})|(http://[\\w\\.]*?fbx\\.ro/[0-9a-z]{16})|(http://[\\w\\.]*?fbx\\.ro/v/[0-9a-z]{16})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.ro" }, urls = { "(http://[\\w\\.]*?(filebox|fbx)\\.ro/(download|down)\\.php\\?k=[0-9a-z]{16})|(http://[\\w\\.]*?(filebox|fbx)\\.ro/video/play_video\\.php\\?k=[0-9a-z]{16})|(http://[\\w\\.]*?fbx\\.ro/[0-9a-z]{16})|(http://[\\w\\.]*?fbx\\.ro/v/[0-9a-z]{16})" }, flags = { 0 })
 public class FileboxRo extends PluginForHost {
 
     private boolean isVideo = false;
@@ -41,12 +41,12 @@ public class FileboxRo extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(link.getDownloadURL(), "filebox_language", "en");
-        if (!Regex.matches(link.getDownloadURL(), "http://[\\w\\.]*?filebox\\.ro/download\\.php\\?key=[0-9a-z]{16}")) {
+        if (!Regex.matches(link.getDownloadURL(), "http://[\\w\\.]*?filebox\\.ro/download\\.php\\?k=[0-9a-z]{16}")) {
             if (!Regex.matches(link.getDownloadURL(), ".+(/video/|/v/).+")) {
                 br.setFollowRedirects(true);
                 br.getPage(link.getDownloadURL());
-                String urlpart = "http://www.filebox.ro/download.php?key=";
-                String correctUrl = urlpart + br.getRegex("window\\.location\\.href='http://www\\.filebox\\.ro/download\\.php\\?key=([0-9a-z]{16})';").getMatch(0);
+                String urlpart = "http://www.filebox.ro/download.php?k=";
+                String correctUrl = urlpart + br.getRegex("window\\.location\\.href='http://(www\\.)?filebox\\.ro/download\\.php\\?k=([0-9a-z]{16})';").getMatch(1);
                 link.setUrlDownload(correctUrl);
             }
         }
@@ -70,19 +70,13 @@ public class FileboxRo extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } else {
-            String redirect = br.getRegex("window.location.href='(.*?)'").getMatch(0);
-            br.setCookie(redirect, "filebox_language", "en");
-            br.getPage(redirect);
-            if (!(br.containsHTML("File deleted or file lifespan expired") || br.containsHTML("Wrong link") || br.containsHTML("Filebox.ro is temporarily not available."))) {
-                String filename = br.getRegex("<h3>(.*?)</h3>.*?<hr />").getMatch(0);
-                String filesize = br.getRegex("Size:</span>(.*?)</li>").getMatch(0);
-
-                if (!(filename == null || filesize == null)) {
-                    downloadLink.setName(filename);
-                    downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-                    return AvailableStatus.TRUE;
-                }
-            }
+            if (br.containsHTML("(File deleted or file lifespan expired|Wrong link|Filebox.ro is temporarily not available\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            String filesize = br.getRegex("Dimensiune: </span>(.*?)<hr/>").getMatch(0);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setName(filename);
+            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+            return AvailableStatus.TRUE;
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
@@ -97,7 +91,7 @@ public class FileboxRo extends PluginForHost {
             linkurl = urlpart + "?file=" + key + "&start=0";
         } else {
             br.setFollowRedirects(true);
-            String id = new Regex(downloadLink.getDownloadURL(), ".+key=([0-9a-z]{16})").getMatch(0);
+            String id = new Regex(downloadLink.getDownloadURL(), ".+k=([0-9a-z]{16})").getMatch(0);
             br.getPage("http://www.filebox.ro/js/wait.js.php?key=" + id);
             String strwait = br.getRegex("wait=(\\d+)").getMatch(0);
 
@@ -129,7 +123,7 @@ public class FileboxRo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override

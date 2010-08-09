@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -42,6 +41,8 @@ public class UptalCom extends PluginForHost {
     public String getAGBLink() {
         return "http://www.uptal.com/faq.php";
     }
+
+    private static final String CAPTCHATEXT = "captcha\\.php";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("uptal.com", "uptal.org"));
@@ -64,32 +65,29 @@ public class UptalCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String getlink = null;
         String filename = downloadLink.getName();
         br.setDebug(true);
         br.setFollowRedirects(true);
-        getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-        if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
-        if (getlink == null && br.containsHTML("captcha\\.php")) {
-            /* captcha? */
-            String code = getCaptchaCode("http://www.uptal.org/captcha.php", downloadLink);
-            Form form = br.getForm(1);
-            form.put("captchacode", code);
-            br.submitForm(form);
-            if (!br.containsHTML("com/getfile.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-            if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
+        if (br.containsHTML(CAPTCHATEXT)) {
+            String post = "captchacode=" + getCaptchaCode("http://www.uptal.org/captcha.php", downloadLink) + "&x=0&y=0";
+            br.postPage(br.getURL(), post);
+            if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
+        String getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
+        if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
         if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         getlink = getlink.replaceAll(" ", "%20");
-        this.sleep(3000, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, true, 1);
         downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
+        if (con.getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
