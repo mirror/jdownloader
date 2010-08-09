@@ -298,7 +298,7 @@ public class MediafireCom extends PluginForHost {
             // we enable css evaluation, because we need this to find invisible
             // links
             // internal css is enough.
-            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null) {
+            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*yahoo.com.*", ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null) {
 
                 public boolean isInternalCSSEnabled() {
                     // TODO Auto-generated method stub
@@ -419,10 +419,10 @@ public class MediafireCom extends PluginForHost {
         public void run() throws Exception {
             while (currentTry++ < maxTries) {
                 String password = null;
-                if (dlink.getStringProperty("PasswordSolver.downloadpassword", null) != null) {
-                    password = dlink.getStringProperty("PasswordSolver.downloadpassword", null);
-                } else if (plg.getPluginConfig().getStringProperty("PasswordSolver.downloadpassword", null) != null) {
-                    password = plg.getPluginConfig().getStringProperty("PasswordSolver.downloadpassword", null);
+                if (dlink.getStringProperty("pass", null) != null) {
+                    password = dlink.getStringProperty("pass", null);
+                } else if (plg.getPluginConfig().getStringProperty("pass", null) != null) {
+                    password = plg.getPluginConfig().getStringProperty("pass", null);
 
                 } else {
                     password = Plugin.getUserInput(Loc.LF("PasswordSolver.askdialog", "Downloadpassword for %s/%s", plg.getHost(), dlink.getName()), dlink);
@@ -431,13 +431,13 @@ public class MediafireCom extends PluginForHost {
                 if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong")); }
                 handlePassword(password);
                 if (!isCorrect()) {
-                    dlink.setProperty("PasswordSolver.downloadpassword", null);
-                    plg.getPluginConfig().setProperty("PasswordSolver.downloadpassword", null);
+                    dlink.setProperty("pass", null);
+                    plg.getPluginConfig().setProperty("pass", null);
                     plg.getPluginConfig().save();
                     continue;
                 } else {
-                    dlink.setProperty("PasswordSolver.downloadpassword", password);
-                    plg.getPluginConfig().setProperty("PasswordSolver.downloadpassword", password);
+                    dlink.setProperty("pass", password);
+                    plg.getPluginConfig().setProperty("pass", password);
                     plg.getPluginConfig().save();
                     return;
                 }
