@@ -51,10 +51,16 @@ public class FileSonicCom extends PluginForHost {
         link.setUrlDownload("http://www.filesonic.com/en/file/" + id);
     }
 
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 500;
+    }
+
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage("http://www.filesonic.com/en");
+        br.getPage("http://www.filesonic.com/en/user/login");
+        br.getPage("http://www.filesonic.com/en/user/login");
         br.postPage("http://www.filesonic.com/en/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         String premCookie = br.getCookie("http://www.filesonic.com", "role");
         if (premCookie == null || !premCookie.equalsIgnoreCase("premium")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
@@ -102,6 +108,7 @@ public class FileSonicCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
+        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         /* first download try, without password */
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
