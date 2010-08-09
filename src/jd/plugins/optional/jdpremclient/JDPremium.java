@@ -103,6 +103,7 @@ public class JDPremium extends PluginOptional {
             if (!replaced) {
                 ArrayList<HostPluginWrapper> all = JDUtilities.getPremiumPluginsForHost();
                 for (HostPluginWrapper plugin : all) {
+                    if (plugin.getHost().contains("youtube")) continue;
                     replaceHosterPlugin(plugin.getHost());
                 }
                 jdpremium = new PremShareHost("jdownloader.org", "PremShare", "NEVERUSETHISREGEX:\\)", 2);

@@ -72,18 +72,35 @@ public class Youtube extends PluginForHost {
             if (plugin == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink");
             if (downloadLink.getStringProperty("fmtNew", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
             if (downloadLink.getStringProperty("videolink", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
-            HashMap<Integer, String> links = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), prem, this.br);
+            HashMap<Integer, String> html5LinksFound = ((TbCm) plugin).getLinksHTML5(downloadLink.getStringProperty("videolink", null), prem, this.br);
             boolean oldLayout = false;
-            if (links != null) oldLayout = true;
-            if (links == null) links = ((TbCm) plugin).getLinksNew(downloadLink.getStringProperty("videolink", null), prem, this.br);
-            if (links == null || links.size() == 0) {
+
+            HashMap<Integer, String> linksFound = ((TbCm) plugin).getLinksNew(downloadLink.getStringProperty("videolink", null), prem, this.br);
+            if (linksFound == null || linksFound.size() == 0) {
+                linksFound = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), prem, this.br);
+                if (linksFound != null && linksFound.size() > 0) oldLayout = true;
+            }
+
+            if (linksFound == null || linksFound.size() == 0) {
+                linksFound = html5LinksFound;
+            } else {
+                if (html5LinksFound != null) {
+                    for (Integer format : html5LinksFound.keySet()) {
+                        if (!linksFound.containsKey(format)) {
+                            linksFound.put(format, html5LinksFound.get(format));
+                        }
+                    }
+                }
+            }
+
+            if (linksFound == null || linksFound.size() == 0) {
                 if (br.containsHTML("verify_age")) throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (oldLayout) {
-                downloadLink.setUrlDownload(links.get(0) + "&fmt=" + downloadLink.getIntegerProperty("fmtNew", 0));
+                downloadLink.setUrlDownload(linksFound.get(0) + "&fmt=" + downloadLink.getIntegerProperty("fmtNew", 0));
             } else {
-                downloadLink.setUrlDownload(links.get(downloadLink.getIntegerProperty("fmtNew", 0)));
+                downloadLink.setUrlDownload(linksFound.get(downloadLink.getIntegerProperty("fmtNew", 0)));
             }
             return AvailableStatus.TRUE;
         }

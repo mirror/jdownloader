@@ -73,11 +73,14 @@ public class ConvertDialog extends AbstractDialog {
     private static final long serialVersionUID = -9146764850581039090L;
 
     public static enum ConversionMode {
-        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)", new String[] { ".mp3", ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" })
-        /** width=804, hight=640 bitrate=480 */
-        , VIDEOPODCAST("Video (MP4-Podcast)", new String[] { ".mp4" })
-        /** width=426, hight=320 bitrate=404 */
-        , VIDEOIPHONE("Video (iPhone)", new String[] { ".mp4" });
+        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),
+        VIDEOFLV("Video (FLV)", new String[] { ".flv" }),
+        AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)", new String[] { ".mp3", ".flv" }),
+        VIDEOMP4("Video (MP4)", new String[] { ".mp4" }),
+        VIDEOWEBM("Video (Webm)", new String[] { ".webm" }),
+        VIDEO3GP("Video (3GP)", new String[] { ".3gp" }),
+        VIDEOPODCAST("Video (MP4-Podcast)", new String[] { ".mp4" }),
+        VIDEOIPHONE("Video (iPhone)", new String[] { ".mp4" });
 
         private String text;
         private String[] ext;
