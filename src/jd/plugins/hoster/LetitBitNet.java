@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/download/[0-9a-zA-z/.-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/[0-9a-zA-z/.-]+" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
     public LetitBitNet(PluginWrapper wrapper) {
@@ -50,10 +50,17 @@ public class LetitBitNet extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(DownloadLink link) {
+        /* convert directdownload links to normal links */
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download"));
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
+        /* set english language */
         br.postPage(downloadLink.getDownloadURL(), "en.x=10&en.y=8&vote_cr=en");
         String filename = br.getRegex("<span>File::</span>(.*?)</h1>").getMatch(0);
         String filesize = br.getRegex("<span>Size of file::</span>(.*?)</h1>").getMatch(0);
@@ -63,7 +70,7 @@ public class LetitBitNet extends PluginForHost {
         // that when in the filenames from other hosting services there are
         // "-"'s, letitbit uses "_"'s so let's correct this here ;)
         downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
