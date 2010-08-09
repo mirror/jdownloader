@@ -106,9 +106,12 @@ public class JDPremServController {
     public synchronized boolean resetDownloadLink(String url) {
         DownloadLink retLink = requestedLinks.get(url);
         if (retLink != null) {
-            if (retLink.getLinkStatus().isFailed() && !retLink.getLinkStatus().isPluginActive()) {
-                retLink.reset();
-                return true;
+            Integer ret = requestedDownloads.get(retLink);
+            if (ret == null || ret == 0) {
+                if (!retLink.getLinkStatus().isPluginActive()) {
+                    retLink.reset();
+                    return true;
+                }
             }
         }
         return false;

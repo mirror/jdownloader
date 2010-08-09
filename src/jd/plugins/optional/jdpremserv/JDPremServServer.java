@@ -69,11 +69,14 @@ public class JDPremServServer implements Handler, ControlListener {
         if (username != null) username = Encoding.urlDecode(username, false);
         if (password != null) password = Encoding.urlDecode(password, false);
         if (dlpw != null) dlpw = Encoding.urlDecode(dlpw, false);
-        if (username == null || username.length() == 0 || password == null || password.length() == 0 || !UserController.getInstance().isUserAllowed(username, password)) {
-            /* ERROR: -10 = invalid user */
-            response.setReturnStatus(Response.ERROR);
-            response.addContent(new String("ERROR: -10"));
-            return;
+        if (resetUrl == null) {
+            /* do not validate userinfo if reset function is called */
+            if (username == null || username.length() == 0 || password == null || password.length() == 0 || !UserController.getInstance().isUserAllowed(username, password)) {
+                /* ERROR: -10 = invalid user */
+                response.setReturnStatus(Response.ERROR);
+                response.addContent(new String("ERROR: -10"));
+                return;
+            }
         }
         if (request.getParameter("reset") != null) {
             /* reset downloadlink if possible */

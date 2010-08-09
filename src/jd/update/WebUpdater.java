@@ -493,9 +493,12 @@ public class WebUpdater implements Serializable {
                 String path = getListPath(trycount);
                 if (path == null) continue;
                 br.getPage(path + "?t=" + System.currentTimeMillis());
-                if (br.getRequest().getHttpConnection().getResponseCode() != 404l) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 404l) {
+                    /*
+                     * if branchname is not available on any server then its no
+                     * longer valid
+                     */
                     fnf = false;
-
                 }
                 if (br.getRequest().getHttpConnection().getResponseCode() != 200l) {
                     errorWait();
