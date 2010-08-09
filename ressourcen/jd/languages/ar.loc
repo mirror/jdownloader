@@ -1100,6 +1100,7 @@ updater.beta.rlyupdate.title = تحديث الى النسخة التجريبية
 updater.newbeta.message = هل تريد تجربة الاصدار التجريبي الجديد؟\r\n اضغط هنا للمزيد من المعلومات
 updater.newbeta.title = يوجد إصدار تجريبي متاح
 userio.errorregex = .*(خطأ|فشل).*
+userio.input.title = الرجاء أدخل!
 wrapper.webupdate.updatenewupdater = جاري تحميل jdupdate.jar جديد
 wrapper.webupdate.updateupdater.error_rename = لم نستطع إعادة تسمة jdupdate.jar.tmp الى jdupdate.jar
 wrapper.webupdate.updateupdater.error_reqeust2 = لم نستطع تحميل jdupdate.jar
