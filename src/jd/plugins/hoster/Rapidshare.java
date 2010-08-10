@@ -634,20 +634,22 @@ public class Rapidshare extends PluginForHost {
         }
         if (Regex.matches(error, Pattern.compile("IP"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
-        if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
-            if (account != null) account.setProperty(COOKIEPROP, null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) {
-            if (account != null) account.setProperty(COOKIEPROP, null);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
-            if (account != null) account.setProperty(COOKIEPROP, null);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else {
-            if (account != null) account.setProperty(COOKIEPROP, null);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dynTranslate(error));
+        synchronized (LOCK) {
+            if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
+                if (account != null) account.setProperty(COOKIEPROP, null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) {
+                if (account != null) account.setProperty(COOKIEPROP, null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
+                if (account != null) account.setProperty(COOKIEPROP, null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                if (account != null) account.setProperty(COOKIEPROP, null);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dynTranslate(error));
+            }
         }
     }
 
@@ -771,10 +773,6 @@ public class Rapidshare extends PluginForHost {
                 String directurl = br.getRedirectLocation();
                 if (directurl == null) {
                     logger.finest("InDirect-Download: Server-Selection available!");
-                    if (account.getStringProperty(COOKIEPROP, null) == null) {
-                        logger.info("LOGIN ERROR");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
                     handleErrorsPremium(account);
 
                     // posturl für auswahl wird gesucht
@@ -1175,7 +1173,7 @@ public class Rapidshare extends PluginForHost {
                 }
             }
             /* cookie login or not? */
-            if (cookieLogin && cookies.get("enc") != null && cookies.get("enc").length() != 0) {
+            if (cookieLogin && cookies != null && cookies.get("enc") != null && cookies.get("enc").length() != 0) {
                 logger.finer("Cookie Login");
                 for (Entry<String, String> cookie : cookies.entrySet()) {
                     br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
