@@ -58,12 +58,16 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public void handleFree(DownloadLink link) throws Exception {
-        if (!link.getDownloadURL().contains("/img/"))
+        if (!link.getDownloadURL().contains("/img/") && !link.getDownloadURL().contains("/dev"))
             requestFileInformation(link);
         else {
             // Access the page first to make the finallink valid
             String fileid = new Regex(link.getDownloadURL(), "/img/([A-Z0-9]+)").getMatch(0);
-            if (fileid != null) br.getPage("http://motherless.com/" + fileid);
+            if (fileid != null)
+                br.getPage("http://motherless.com/" + fileid);
+            else {
+                br.getPage(link.getBrowserUrl());
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

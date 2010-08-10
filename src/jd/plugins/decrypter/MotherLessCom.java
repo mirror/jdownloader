@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -54,10 +55,12 @@ public class MotherLessCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             filelink = rot13(filelink);
-            String downloadlink = matches.replaceAll("'(.*?)__file_url.*", filelink + ".flv?start=0&id=player&client=FLASH%20WIN%2010,1,53,64&version=4.1.60");
+            String downloadlink = matches.replaceAll("'(.*?)__file_url(.*?)'", filelink).replaceAll("&image=[^&]*", "").replaceAll("&link=[^&]*", "&start=0&id=player&client=FLASH%20WIN%2010,1,53,64&version=4.1.60");
             DownloadLink dlink = createDownloadlink(downloadlink.replace("motherless", "motherlessvideos"));
             dlink.setBrowserUrl(parm);
-            dlink.setFinalFileName(filelink.split("-")[0] + ".flv");
+            Regex regexName = new Regex(matches, ".*&link=[^&]*/([^&]*)'");
+            String finalName = regexName.getMatch(0);
+            dlink.setFinalFileName(finalName + ".flv");
             decryptedLinks.add(dlink);
         } else if (br.containsHTML("class=\"media_image\"")) {
             ArrayList<String> pages = new ArrayList<String>();
