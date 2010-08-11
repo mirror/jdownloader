@@ -1220,8 +1220,20 @@ public class Browser {
             if (LOGGER != null) LOGGER.warning("Request has already been read");
             return null;
         }
-        checkContentLengthLimit(request);
-        return request.read().getHtmlCode();
+        try {
+            checkContentLengthLimit(request);
+            request.read();
+        } catch (BrowserException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new BrowserException(e.getMessage(), request.getHttpConnection(), e).closeConnection();
+        }
+        if (isVerbose()) {
+            if (LOGGER != null) {
+                LOGGER.finest("\r\n" + request + "\r\n");
+            }
+        }
+        return request.getHtmlCode();
     }
 
     public boolean isDebug() {

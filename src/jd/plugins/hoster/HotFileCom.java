@@ -18,6 +18,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -136,30 +137,98 @@ public class HotFileCom extends PluginForHost {
         if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("link", Encoding.urlEncode(downloadLink.getDownloadURL() + "\n\r"));
+        params.put("alllinks", "1");
         HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params);
         if (info.get("httpresponse").contains("file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (info.get("httpresponse").contains("premium required")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        String finalUrl = info.get("httpresponse").trim();
-        if (finalUrl == null || !finalUrl.startsWith("http://")) {
-            logger.severe(finalUrl);
+        String finalUrls = info.get("httpresponse").trim();
+        if (finalUrls == null || finalUrls.startsWith(".")) {
+            logger.severe(finalUrls);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, getPluginConfig().getBooleanProperty(UNLIMITEDMAXCON, false) == true ? 0 : -5);
+        String dlUrls[] = Regex.getLines(finalUrls);
+        StringBuilder errorSb = new StringBuilder("");
+        if (dlUrls == null || dlUrls.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        boolean contentHeader = false;
+        for (String url : dlUrls) {
+            if (!url.startsWith("http")) {
+                errorSb.append(url + "\n\r");
+                continue;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, getPluginConfig().getBooleanProperty(UNLIMITEDMAXCON, false) == true ? 0 : -5);
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+                errorSb.append(br.toString() + "\n\r");
+            } else {
+                contentHeader = true;
+                break;
+            }
+        }
+        logger.info("APIDebug:" + errorSb.toString());
+        if (contentHeader) {
+            /* filename workaround , MAYBE no longer needed because of api */
+            String urlFileName = Plugin.getFileNameFromURL(new URL(br.getURL()));
+            urlFileName = Encoding.htmlDecode(urlFileName);
+            downloadLink.setFinalFileName(urlFileName);
+            dl.startDownload();
+        } else {
+            /* try website workaround */
+            handlePremiumWebsite(downloadLink, account);
+        }
+    }
+
+    public void loginWebsite(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", ua);
+        br.setCookie("http://hotfile.com", "lang", "en");
+        if (account.getUser().trim().equalsIgnoreCase("cookie")) {
+            /* cookie login */
+            br.setCookie("http://hotfile.com", "auth", account.getPass());
+            br.getPage("http://hotfile.com/");
+        } else {
+            /* normal login */
+            br.setFollowRedirects(true);
+            br.getPage("http://hotfile.com/");
+            br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+            Form form = br.getForm(0);
+            if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
+        if (isPremium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.setFollowRedirects(false);
+    }
+
+    public void handlePremiumWebsite(DownloadLink downloadLink, Account account) throws Exception {
+        loginWebsite(account);
+        String finalUrl = null;
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            finalUrl = br.getRedirectLocation();
+        } else {
+            if (br.containsHTML("span>Free</span")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "ISP blocked by Hotfile, Premium not possible", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
+            if (finalUrl == null) finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
+        }
+        br.setFollowRedirects(true);
+        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Set the meximum connections per file
+        boolean maxChunks = getPluginConfig().getBooleanProperty(UNLIMITEDMAXCON, false);
+        int maxcon = -5;
+        if (maxChunks) maxcon = 0;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, maxcon);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("Invalid link")) {
-                String newLink = br.getRegex("href=\"(http://.*?)\"").getMatch(0);
-                if (newLink != null) {
-                    /* set new downloadlink */
-                    logger.warning("invalid link -> use new link");
-                    downloadLink.setUrlDownload(newLink.trim());
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-            logger.severe(finalUrl);
+            finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
+            if (finalUrl == null) finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
+            if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, maxcon);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* filename workaround , MAYBE no longer needed because of api */
+        /* filename workaround */
         String urlFileName = Plugin.getFileNameFromURL(new URL(br.getURL()));
         urlFileName = Encoding.htmlDecode(urlFileName);
         downloadLink.setFinalFileName(urlFileName);

@@ -80,7 +80,9 @@ public class FileSonicCom extends PluginForHost {
         String daysleft = br.getRegex("Premium membership valid until.*?<span>.*?,.*?(\\d+)").getMatch(0);
         if (expiredate != null) {
             ai.setStatus("Premium User");
-            ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd", null));
+            /* expire date is buggy at the moment */
+            // ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd",
+            // null));
             account.setValid(true);
             return ai;
         }
@@ -105,7 +107,8 @@ public class FileSonicCom extends PluginForHost {
         String url = br.getRedirectLocation();
         if (url == null) {
             /* no redirect, what the frak */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning(br.toString());
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         br.setFollowRedirects(true);
         br.setDebug(true);
