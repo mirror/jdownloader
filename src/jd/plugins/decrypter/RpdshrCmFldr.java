@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare.com/users/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/users/[A-Z0-9]+(\\&pw=.+)?" }, flags = { 0 })
 public class RpdshrCmFldr extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -38,21 +38,22 @@ public class RpdshrCmFldr extends PluginForDecrypt {
 
     private static final String PASSWORDTEXT = "input type=\"password\" name=\"password\"";
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
-
         String page = br.getPage(parameter);
         String password = "";
-
         for (int retry = 1; retry < 5; retry++) {
             if (page.contains(PASSWORDTEXT)) {
-                password = this.getPluginConfig().getStringProperty("PASSWORD", null);
-                if (password == null) password = getUserInput(null, param);
+                password = new Regex(parameter, "\\&pw=(.+)").getMatch(0);
+                if (password == null) {
+                    password = this.getPluginConfig().getStringProperty("PASSWORD", null);
+                    if (password == null) password = getUserInput(null, param);
+                }
                 page = br.postPage(parameter, "password=" + password);
                 if (br.containsHTML(PASSWORDTEXT)) {
                     getPluginConfig().setProperty("PASSWORD", null);
                     getPluginConfig().save();
+                    parameter = parameter.replace(new Regex(parameter, "(\\&pw=.+)").getMatch(0), "");
                 } else {
                     // Save actual password if it is valid
                     getPluginConfig().setProperty("PASSWORD", password);
