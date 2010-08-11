@@ -39,7 +39,7 @@ convert.progress.convertingto = تحويل إلى
 convert.progress.unknownintype = صيغة غير معروفه
 decrypter.invalidaccount = لا يوجد حساب فعال 
 decrypter.unknownerror = خطا غير معروف
-decrypter.wrongcaptcha = خاطئة Captcha كلمة التحقق
+decrypter.wrongcaptcha = خاطئة (Captcha) كلمة التحقق
 decrypter.wrongpassword = كلمة المرور خاطئة
 dialogs.premiumstatus.global.message = ؟Premium هل تريد حقاً تعطيل استخدام الحسابات التجارية
 dialogs.premiumstatus.global.title = ؟Premium تعطيل الحسابات التجارية
@@ -57,7 +57,7 @@ download.error.message.unavailable = الخدمة غير متاحة مؤقتا
 download.system.waitforconnection = اتصالاً... جاري الانتظار %s/%s تشغيل
 downloadlink.status.error = لا توجد مساحة كافية في القرص الصلب
 downloadlink.status.error.agb_not_signed = لم تتم الموافقة على شروط الخدمة
-downloadlink.status.error.captcha_wrong = خاطئة Captcha كلمة التحقق
+downloadlink.status.error.captcha_wrong = خاطئة (Captcha) كلمة التحقق
 downloadlink.status.error.defect = (البرنامج المساعد قديم (غير محدث
 downloadlink.status.error.download_limit = لقد بلغت الحد الأقصى للتحميلات
 downloadlink.status.error.downloadfailed = فشل التحميل
@@ -90,17 +90,17 @@ easycaptcha.finished = انتهى
 easycaptcha.foreground = الصورة الأمامية
 easycaptcha.images = صور:
 easycaptcha.labeled = المسمى:
-easycaptcha.loadcaptchas = Captchas تحميل صور التحقق 
-easycaptcha.loadcaptchas.clickoncaptcha = Captcha أنقر على صورة التحقق
+easycaptcha.loadcaptchas = (Captchas) تحميل صور التحقق 
+easycaptcha.loadcaptchas.clickoncaptcha = (Captcha) أنقر على صورة التحقق
 easycaptcha.loadcaptchas.followlinks = (اتباع الروابط العادية (بطيء جداً
-easycaptcha.loadcaptchas.howmuch = المطلوبة؟ Captchas كم عدد صور التحقق
+easycaptcha.loadcaptchas.howmuch = المطلوبة؟ (Captchas) كم عدد صور التحقق
 easycaptcha.loadcaptchas.link = وصلة
 easycaptcha.loadcaptchas.loaddirect = (تحميل مباشر إن أمكن (أسرع
 easycaptcha.loadcaptchas.loadimages = تحميل الصور
 easycaptcha.loadcaptchas.threaded = (تحميل متزامن للصور (سريع جداً
-easycaptcha.loadcaptchas.title = Captchas تحميل صور التحقق 
+easycaptcha.loadcaptchas.title = (Captchas) تحميل صور التحقق 
 easycaptcha.mask = غطاء:
-easycaptcha.needcaptchas = أولاً Captchas تحتاج إلى صور تحقق
+easycaptcha.needcaptchas = أولاً (Captchas) تحتاج إلى صور تحقق
 easycaptcha.opencaptchafolder = فتح مجلد الـCaptcha
 easycaptcha.orginal = أصلي:
 easycaptcha.remove = إزالة:
@@ -109,7 +109,7 @@ easycaptcha.threshold = بداية:
 easycaptcha.tool.btn.background = إزالة الخلفيات
 easycaptcha.tool.btn.colortrainer = تجريب الألوان
 easycaptcha.tool.btn.letterdb = عرض قاعدة بيانات الحروف
-easycaptcha.tool.btn.loadcaptchas = Captchas تحميل صور التحقق 
+easycaptcha.tool.btn.loadcaptchas = (Captchas) تحميل صور التحقق  
 easycaptcha.tool.btn.train = تجريب
 easycaptcha.tool.continuelastsession = أكمل آخر جلسة
 easycaptcha.tool.createmethode = إنشاء طريقة
@@ -159,7 +159,7 @@ gui.config.antistandby.whilejd = يعمل JD منع خضوع الجهاز لوض
 gui.config.captcha.jac_disable = تعطيل الاكتشاف التلقائي لكلمة التحقق Captcha
 gui.config.captcha.settings = AntiCaptcha اكتشاف كلمة التحقق
 gui.config.captcha.train.level = (% عتبة عرض صورة التحقق على المستخدم للاكتشاف اليدوي (بالنسبة المئوية
-gui.config.captcha.train.show_timeout = Captcha مهلة عرض نافذة الاكتشاف اليدوي لكلمة التحقق
+gui.config.captcha.train.show_timeout = مهلة عرض نافذة الاكتشاف اليدوي لكلمة التحقق
 gui.config.download.autoresume = السماح لإعادة الإتصال بمقاطعة الملفات القابلة لاستكمال التحميل
 gui.config.download.buffersize2 = [الحد الأقصى لمساحة التخزين المؤقت [بالكيلوبايت
 gui.config.download.crc = حالما كان ذلك ممكناً SFV/CRC القيام بفحص أكواد
@@ -188,7 +188,7 @@ gui.config.download.timeout = فقد الاتصال ومهلة المحاولا�
 gui.config.download.timeout.connect = (مهلة انتهاء محاولة الاتصال (بالميلي ثانية
 gui.config.download.timeout.read = (مهلة القراءة (بالميلي ثانية
 gui.config.download.use_proxy = استخدام البروكسي
-gui.config.download.use_socks = "استخدام بروكسي "سوكس
+gui.config.download.use_socks = (Socks-Proxy) استخدام السوكس بروكسي 
 gui.config.download.write = كتابة الملف
 gui.config.general.changelog.auto = فتح سجل التغييرات بعد التحديث
 gui.config.general.createsubfolders = إنشاء مجلد فرعى يحتوى على إسم الحزمة لو أمكن 
@@ -278,7 +278,7 @@ gui.config.unrar.remove_infofile = حذف ملف التفاصيل بعد نجا�
 gui.config.unrar.subpath = المسار الفرعى
 gui.config.unrar.use_extractto = إستخدم مسار مخصص لفك الضغط
 gui.config.unrar.use_subpath = إستخدم المسار الفرعى
-gui.dialog.addurl.okoption_parse = تحليل الرابط
+gui.dialog.addurl.okoption_parse = تحليل الوصلات
 gui.dialog.addurl.title = أضف روابط
 gui.dialogs.agb_tos.agbaccepted = موافق على كل شروط الإستخدام
 gui.dialogs.agb_tos.description = شرزط الاستخدام الخاصبة بـ%s لم تتم قراءتها او الموافقة عليها
