@@ -16,11 +16,14 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -48,26 +51,28 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://protected.socadvnet.com/index.php")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        String security = br.getRegex("(style=\"margin-top:200px;\">[\t\n\r ]+\\d+ <img  border=\"0\" style=\"margin-top: 20px;\" src=\"plugin/[a-z]+\\.jpg\"> (\\d+) =)").getMatch(0);
+        String security = br.getRegex("(style=\"margin-top:200px;\">[\t\n\r ]+\\d+ <img  border=\"0\" style=\"margin-top: 20px;\" src=\".*?\"> (\\d+) =)").getMatch(0);
         br.postPage("http://protected.socadvnet.com/allinks.php", "LinkName=" + postvar);
         String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:eopp)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) return null;
         int linkCounter = linksCount.length;
         if (security != null) {
-            Regex numberRegex = new Regex(security, "style=\"margin-top:200px;\">[\t\n\r ]+(\\d+) <img  border=\"0\" style=\"margin-top: 20px;\" src=\"plugin/(plus|minus)\\.jpg\"> (\\d+) =");
+            Regex numberRegex = new Regex(security, "style=\"margin-top:200px;\">[\t\n\r ]+(\\d+) <img  border=\"0\" style=\"margin-top: 20px;\" src=\"(.*?)\"> (\\d+) =");
             String num1 = numberRegex.getMatch(0);
             String num2 = numberRegex.getMatch(2);
-            String plusMinus = numberRegex.getMatch(1);
-            if (num1 == null || num2 == null || plusMinus == null) {
+            String aPage = numberRegex.getMatch(1);
+            if (num1 == null || num2 == null || aPage == null) {
                 logger.warning("Error in doing the maths for link: " + parameter);
                 return null;
             }
             int equals = 0;
-            if (plusMinus.equals("plus")) {
-                equals = Integer.parseInt(num1) + Integer.parseInt(num2);
-            } else {
+            File aFile = getLocalCaptchaFile();
+            Browser.download(aFile, br.cloneBrowser().openGetConnection("http://protected.socadvnet.com/" + aPage));
+            String hash = JDHash.getMD5(aFile);
+            if (hash.equals("1022cbc696d52cb9f5d95e069c6e7c28"))
                 equals = Integer.parseInt(num1) - Integer.parseInt(num2);
-            }
+            else
+                equals = Integer.parseInt(num1) + Integer.parseInt(num2);
             br.postPage("http://protected.socadvnet.com/cp_code.php", "res_code=" + equals);
             if (!br.toString().trim().equals("1")) {
                 logger.warning("Error in doing the maths for link: " + parameter);
@@ -79,6 +84,10 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         for (int i = 0; i <= linkCounter - 1; i++) {
             String actualPage = "http://protected.socadvnet.com/allinks.php?out_name=" + postvar + "&&link_id=" + i;
             br.getPage(actualPage);
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Found one offline link for link " + parameter + " linkid:" + i);
+                continue;
+            }
             String finallink = br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http.*?)\"").getMatch(0);
             if (finallink == null) {
                 // Handlings for more hosters will come soon i think
@@ -97,6 +106,10 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
                     finallink = "http://turbobit.net/" + turboId + ".html";
                 } else if (br.containsHTML("hotfile\\.com")) {
                     finallink = br.getRegex("style=\"margin:0;padding:0;\" action=\"(.*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        finallink = br.getRegex("onmouseout=\"hoverFuncRemove\\(this\\)\" ><a href=\"(/dl.*?\\.html)\\?uploadid=").getMatch(0);
+                        if (finallink != null) finallink = "http://hotfile.com" + finallink;
+                    }
                 }
             }
             if (finallink == null) {

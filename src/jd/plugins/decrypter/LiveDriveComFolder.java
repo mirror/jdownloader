@@ -95,7 +95,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrive.com/frameset.php?path=/files" + fileOrFolderPath));
                 } else {
                     DownloadLink theFinalLink = createDownloadlink(decryptedlinkpart + fileOrFolderPath);
-                    theFinalLink.setName(filename);
+                    theFinalLink.setName(filename.replace("\\u0027", "'"));
                     theFinalLink.setDownloadSize(Long.parseLong(filesize));
                     theFinalLink.setProperty("DOWNLOADID", ID);
                     theFinalLink.setAvailable(true);
