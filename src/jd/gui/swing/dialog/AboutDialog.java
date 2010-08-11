@@ -27,6 +27,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.config.SubConfiguration;
+import jd.controlling.ClipboardHandler;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -51,11 +52,12 @@ public class AboutDialog extends JDialog {
         JLabel lbl = new JLabel("JDownloader");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
-        String branch = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE, null);
-        if (branch == null) {
+        String b = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE, null);
+        final String branch;
+        if (b == null) {
             branch = "";
         } else {
-            branch = "-" + branch + "- ";
+            branch = "-" + b + "- ";
         }
 
         JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
@@ -78,12 +80,30 @@ public class AboutDialog extends JDialog {
             e1.printStackTrace();
         }
 
-        this.setLayout(new MigLayout("ins 10, wrap 2"));
-        this.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "spany 4, gapright 10");
-        this.add(lbl, "gaptop 5");
-        this.add(new JLabel(branch + JDL.LF(JDL_PREFIX + "build", "Build %s", JDUtilities.getRevision())));
-        this.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2010"), "gaptop 5");
-        this.add(new JLabel("Synthetica License Registration Number (#289416475)"), "gaptop 15");
+        JButton btn = Factory.createButton(JDL.L(JDL_PREFIX + "copy", "Copy"), JDTheme.II("gui.icons.copy", 16, 16), new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("JDownloader ").append(branch).append("Build ").append(JDUtilities.getRevision()).append("\r\n");
+                sb.append("Java Vendor: ").append(System.getProperty("java.vendor")).append("\r\n");
+                sb.append("Java Version: ").append(System.getProperty("java.version"));
+                ClipboardHandler.getClipboard().copyTextToClipboard(sb.toString());
+            }
+
+        });
+        btn.setBorder(null);
+        btn.setVerticalTextPosition(JButton.BOTTOM);
+        btn.setHorizontalTextPosition(JButton.CENTER);
+
+        this.setLayout(new MigLayout("ins 10, wrap 3", "[]15[]push[right]"));
+        this.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "aligny center, spany 6");
+        this.add(lbl, "spanx");
+        this.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2010"), "spanx");
+        this.add(new JLabel("JDownloader " + branch + JDL.LF(JDL_PREFIX + "build", "Build %s", JDUtilities.getRevision())), "gaptop 10");
+        this.add(btn, "aligny center, spany 3");
+        this.add(new JLabel("JRE Vendor: " + System.getProperty("java.vendor")));
+        this.add(new JLabel("JRE Version: " + System.getProperty("java.version")));
+        this.add(new JLabel("Synthetica License Registration Number (#289416475)"), "gaptop 10, spanx");
         this.add(links, "gaptop 15, growx, pushx, spanx");
         this.pack();
 
