@@ -92,7 +92,7 @@ public class MotherLessCom extends PluginForDecrypt {
         } else {
             String finallink = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(0);
+                finallink = br.getRegex("full_sized.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
                 if (finallink == null) {
                     finallink = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
                 }

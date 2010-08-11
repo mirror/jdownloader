@@ -69,7 +69,11 @@ public class MotherLessCom extends PluginForHost {
                 br.getPage(link.getBrowserUrl());
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+
+        if (link.getDownloadURL().endsWith(".flv"))
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        else
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL());
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
