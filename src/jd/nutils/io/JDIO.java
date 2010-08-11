@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import javax.swing.JFileChooser;
+
 import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.utils.StringUtil;
@@ -317,6 +319,19 @@ public final class JDIO {
 
         if (i3 > 0) return str.substring(i3 + 1);
         return null;
+    }
+
+    public static String getFileType(String ext) {
+        File file = null;
+        try {
+            file = File.createTempFile("icon", "." + ext);
+
+            return new JFileChooser().getTypeDescription(file);
+        } catch (IOException e) {
+            return "." + ext;
+        } finally {
+            if (file != null) file.delete();
+        }
     }
 
     /**

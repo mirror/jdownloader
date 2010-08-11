@@ -62,6 +62,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     private JLabel lblSizeDl;
     private JLabel lblHoster;
     private JLabel lblType;
+    private JLabel lblChunks;
     private JLabel lblETA;
     private JLabel lblSpeed;
     private JLabel lblFiles;
@@ -173,9 +174,9 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     private JPanel createLinkInfo() {
         progressBarDownloadLink = new MultiProgressBar();
         panel = new JPanel(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
-        panel.add(lblHoster = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
+        panel.add(lblHoster = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 3");
         panel.add(lblType = new JLabel(JDTheme.II("gui.images.sort", 16, 16)));
-        lblType.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
+        panel.add(lblChunks = new JLabel(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks")));
         panel.add(progressBarDownloadLink, "spanx, growx, pushx, split 2, h 18!");
         panel.add(lblSizeDl = new JLabel("0B/0B"), "alignx right");
         panel.add(lblETA = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta2", "ETA: %s", "0")));
@@ -264,7 +265,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             if (downloadLink.getChunksProgress() != null && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                                 long fileSize = downloadLink.getDownloadSize();
                                 int chunks = downloadLink.getChunksProgress().length;
-                                lblType.setText(chunks + " " + JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
+                                lblChunks.setText(chunks + " " + JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
                                 long part = fileSize / chunks;
 
                                 long[] max = new long[chunks];
@@ -365,7 +366,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
             }
 
             lblHoster.setToolTipText(downloadLink.getHost());
-            lblType.setToolTipText(downloadLink.getHost());
+            lblType.setToolTipText(downloadLink.getType());
             lblSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadCurrent()) + "/" + Formatter.formatReadable(downloadLink.getDownloadSize()));
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
                 txtURL.setText(downloadLink.getBrowserUrl());

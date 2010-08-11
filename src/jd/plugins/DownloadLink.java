@@ -1125,6 +1125,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return icon;
     }
 
+    public String getType() {
+        return JDIO.getFileType(JDIO.getFileExtension(getFileOutput()));
+    }
+
     public static Set<String> getHosterList(ArrayList<DownloadLink> links) {
         HashMap<String, String> hosters = new HashMap<String, String>();
         for (DownloadLink dl : links) {
