@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/(.*?/)?[0-9]+(/.+)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
     public FileSonicCom(PluginWrapper wrapper) {
@@ -47,7 +47,8 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         /* convert sharingmatrix to filesonic that set english language */
-        String id = new Regex(link.getDownloadURL(), "file/(.*?/)?(\\d+.+)").getMatch(1);
+        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
+        if (id == null) id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
         link.setUrlDownload("http://www.filesonic.com/en/file/" + id);
     }
 
