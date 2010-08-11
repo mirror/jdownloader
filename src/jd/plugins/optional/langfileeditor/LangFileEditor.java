@@ -25,8 +25,9 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
+import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
@@ -42,7 +43,6 @@ import jd.utils.locale.JDL;
  * Editor for jDownloader language files. Gets JDL.L() and JDL.LF() entries from
  * source and compares them to the keypairs in the language file.
  * 
- * @author eXecuTe
  * @author Greeny
  * @author coalado
  */
@@ -141,9 +141,12 @@ public class LangFileEditor extends PluginOptional {
 
                 });
             }
-            SwingGui.getInstance().setContent(lfeView);
+            JDGui.getInstance().setContent(lfeView);
         } else {
-            if (lfeView != null) lfeView.close();
+            if (lfeView != null) {
+                lfeView.getLFEGui().saveChanges(false);
+                lfeView.close();
+            }
         }
         if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }
@@ -156,6 +159,15 @@ public class LangFileEditor extends PluginOptional {
         activateAction.setSelected(false);
 
         return true;
+    }
+
+    @Override
+    public void onControlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+            if (lfeView != null && JDGui.getInstance().getMainTabbedPane().contains(lfeView)) {
+                lfeView.getLFEGui().saveChanges(false);
+            }
+        }
     }
 
     @Override

@@ -201,7 +201,7 @@ public class FilesMonsterCom extends PluginForHost {
             String isPay = br.getRegex("<input type=\"hidden\" name=\"showpayment\" value=\"(1)").getMatch(0);
             Boolean isFree = br.containsHTML("slowdownload");
             if (!isFree && isPay != null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.premiumonly", JDL.L("plugins.hoster.filesmonstercom.only4premium", "Only downloadable via premium")));
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", "Only downloadable via premium"));
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

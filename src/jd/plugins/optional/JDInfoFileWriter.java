@@ -63,8 +63,6 @@ public class JDInfoFileWriter extends PluginOptional {
 
     private static final String PARAM_CREATE_FILE = "CREATE_FILE";
 
-    private static final long serialVersionUID = 7680205811276541375L;
-
     private static final String PARAM_ONLYPASSWORD = "ONLYPASSWORD";
 
     private ConfigEntry cmbVars;

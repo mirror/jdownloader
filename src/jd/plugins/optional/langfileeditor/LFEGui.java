@@ -283,7 +283,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
                                     public void actionPerformed(ActionEvent e) {
                                         if (languageFile != null) {
-                                            saveChanges();
+                                            saveChanges(true);
                                         }
                                         languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
                                         initLocaleData();
@@ -322,7 +322,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == mnuCompleteReload || e.getSource() == mnuReload) {
-            saveChanges();
+            saveChanges(false);
 
             new Thread(new Runnable() {
                 public void run() {
@@ -426,11 +426,17 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     }
 
-    private void saveChanges() {
+    public void saveChanges(boolean upload) {
         if (!changed) return;
-        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(LOCALE_PREFIX + "saveChanges", "Save changes?"), JDL.LF(LOCALE_PREFIX + "saveChanges.message", "Save your changes to %s?", this.languageFile), null, JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+        String message;
+        if (upload) {
+            message = JDL.LF(LOCALE_PREFIX + "saveChanges.message.upload", "Save and upload your changes to %s?", this.languageFile);
+        } else {
+            message = JDL.LF(LOCALE_PREFIX + "saveChanges.message", "Save your changes to %s?", this.languageFile);
+        }
+        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(LOCALE_PREFIX + "saveChanges", "Save changes?"), message, null, JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
         if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
-            saveLanguageFile(languageFile, true);
+            saveLanguageFile(languageFile, upload);
         }
     }
 
@@ -789,10 +795,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             updater.interrupt();
         } catch (Exception e) {
             e.printStackTrace();
-
         }
-        saveChanges();
-
     }
 
     public void initMenu(JMenuBar menubar) {
