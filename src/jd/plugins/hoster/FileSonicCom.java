@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -37,11 +39,19 @@ public class FileSonicCom extends PluginForHost {
     public FileSonicCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filesonic.com/en/premium");
+        setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.filesonic.com/en/contact-us";
+    }
+
+    private static String WAIT = "WAIT";
+
+    private void setConfigElements() {
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT, JDL.L("plugins.hoster.filesoniccom.reconnectInsteadOfWaiting", "Execute a reconnect if the waittime is bigger than 5 minutes.")).setDefaultValue(false);
+        config.addEntry(cond);
     }
 
     @Override
@@ -201,17 +211,18 @@ public class FileSonicCom extends PluginForHost {
             br.submitForm(form);
 
         }
+        String downloadUrl = br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
+        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        boolean doReconnect = getPluginConfig().getBooleanProperty(WAIT, false);
         String countDownDelay = br.getRegex("countDownDelay = (\\d+)").getMatch(0);
         if (countDownDelay != null) {
             /*
              * we have to wait a little longer than needed cause its not exactly
              * the same time
              */
-            if (Long.parseLong(countDownDelay) > 300) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay + 120) * 1000l);
-            this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
+            if (Long.parseLong(countDownDelay) > 300 && doReconnect) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay + 2) * 1001l);
+            this.sleep((Long.parseLong(countDownDelay) + 2) * 1001, downloadLink);
         }
-        String downloadUrl = br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
-        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)

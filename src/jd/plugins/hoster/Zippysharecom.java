@@ -49,13 +49,14 @@ public class Zippysharecom extends PluginForHost {
         try {
             prepareBrowser(downloadLink);
             if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filesize = br.getRegex(Pattern.compile("Size:</font>            <font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!br.containsHTML(">Share movie:")) {
+                String filesize = br.getRegex(Pattern.compile("Size:</font>            <font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+            }
             String u = getURL();
             con = br.openGetConnection(u);
             downloadLink.setName(getFileNameFromHeader(con));
-
-            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
             return AvailableStatus.TRUE;
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
