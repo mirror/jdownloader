@@ -17,6 +17,8 @@
 package jd.utils;
 
 import java.io.UnsupportedEncodingException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
 
@@ -32,10 +34,21 @@ public final class JDHexUtils {
     public static final String REGEX_FIND_ALL_HEX = "[[a-fA-F0-9]{2}]*?";
     public static final String REGEX_MATCH_ALL_HEX = "([[a-fA-F0-9]{2}]*?)";
     public static final String REGEX_HTTP_NEWLINE = JDHexUtils.getHexString("\r") + "{1}" + JDHexUtils.getHexString("\n") + "{1}";
+    public static final Pattern PATTERN_JAVASCRIPT_HEX = Pattern.compile("\\\\x([a-f0-9]{2})", Pattern.CASE_INSENSITIVE);
 
     public static String toString(final String hexString) {
         if (hexString == null) return null;
         return new String(JDHexUtils.getByteArray(hexString));
+    }
+
+    public static String decodeJavascriptHex(final String javascriptHexString) {
+        StringBuffer sb = new StringBuffer();
+        Matcher m = PATTERN_JAVASCRIPT_HEX.matcher(javascriptHexString);
+        while (m.find()) {
+            m.appendReplacement(sb, toString(m.group(1)));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     public static byte[] getByteArray(final String hexString) {

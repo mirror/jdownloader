@@ -24,6 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDHexUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bing.com" }, urls = { "http://[\\w\\.]*?bing\\.com/videos/watch/video/.*?/[a-z0-9]+" }, flags = { 0 })
 public class BingCom extends PluginForDecrypt {
@@ -44,9 +45,9 @@ public class BingCom extends PluginForDecrypt {
         }
         String[] regexes = { "formatCode: 1003, url: \\'(http.*?\\.flv)'\\}", "formatCode: 1002, url: '(http.*?\\.wmv)'\\}" };
         for (String regex : regexes) {
-            // TODO: Set the right encoding here
             String finallink = br.getRegex(regex).getMatch(0);
             if (finallink != null) {
+                finallink = JDHexUtils.decodeJavascriptHex(finallink);
                 DownloadLink fnllink = createDownloadlink(finallink);
                 if (setFilename) {
                     if (finallink.endsWith(".flv"))
