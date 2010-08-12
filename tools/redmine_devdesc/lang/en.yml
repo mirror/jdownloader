@@ -1,0 +1,5 @@
+# English strings go here for Rails i18n
+en:
+   field_devdesc: "Developer Description"
+   permission_devdesc_show: "Show Developer Description"
+   permission_devdesc_form: "Input Developer Description"
