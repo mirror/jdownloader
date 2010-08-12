@@ -68,6 +68,9 @@ public class UniBytesCom extends PluginForHost {
         String regexedTime = br.getRegex("evaluate>startSlow\\('.*?', (\\d+)\\)</evaluate>").getMatch(0);
         if (br.containsHTML("showNotUniqueIP\\(\\);")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads");
         if (regexedTime != null) iwait = Integer.parseInt(regexedTime);
+        String ipBlockedTime = br.getRegex("guestDownloadDelayValue\">(\\d+)</span>").getMatch(0);
+        if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
+        if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
         String s = br.getRegex("startSlow\\('(.*?)'").getMatch(0);
         if (s == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(iwait * 1001l, downloadLink);
