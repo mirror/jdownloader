@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
+import jd.config.ConfigurationListener;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -34,8 +35,11 @@ import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.nutils.JDHash;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.folderwatch.history.FolderWatchHistory;
+import jd.plugins.optional.folderwatch.history.FolderWatchHistoryEntry;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import name.pachler.nio.file.ClosedWatchServiceException;
@@ -47,10 +51,11 @@ import name.pachler.nio.file.WatchEvent;
 import name.pachler.nio.file.WatchKey;
 import name.pachler.nio.file.WatchService;
 
-@OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = true, interfaceversion = 5)
-public class FolderWatch extends PluginOptional {
+@SuppressWarnings("unused")
+@OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 5)
+public class JDFolderWatch extends PluginOptional implements ConfigurationListener {
 
-    private static final String JDL_PREFIX = "plugins.optional.FolderWatch.";
+    private static final String JDL_PREFIX = "plugins.optional.folderwatch.JDFolderWatch.";
 
     private final SubConfiguration subConfig;
 
@@ -64,9 +69,13 @@ public class FolderWatch extends PluginOptional {
 
     private String folder;
 
+    private FolderWatchHistory history = new FolderWatchHistory();
+
     private class WatchServiceThread extends Thread {
 
         private WatchService watchService;
+
+        private volatile boolean isDone = false;
 
         public WatchServiceThread() {
             this.watchService = FileSystems.getDefault().newWatchService();
@@ -80,7 +89,6 @@ public class FolderWatch extends PluginOptional {
         public void register(String path) {
             Path watchedPath = Paths.get(path);
 
-            @SuppressWarnings("unused")
             WatchKey key = null;
 
             try {
@@ -94,8 +102,12 @@ public class FolderWatch extends PluginOptional {
             }
         }
 
+        public void done() {
+            isDone = true;
+        }
+
         public void run() {
-            while (true) {
+            while (!isDone) {
                 // take() will block until a file has been created/deleted
                 WatchKey signalledKey;
                 try {
@@ -127,7 +139,13 @@ public class FolderWatch extends PluginOptional {
                         message = filename + " created";
 
                         if (isContainer(filename)) {
-                            importContainer(folder + "/" + filename);
+                            String absPath = folder + "/" + filename;
+
+                            String md5Hash = importContainer(absPath);
+
+                            history.add(new FolderWatchHistoryEntry(filename, absPath, md5Hash));
+                            subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, history);
+                            subConfig.save();
                         }
                     } else if (e.kind() == StandardWatchEventKind.ENTRY_DELETE) {
                         Path context = (Path) e.context();
@@ -142,10 +160,15 @@ public class FolderWatch extends PluginOptional {
         }
     }
 
-    public FolderWatch(PluginWrapper wrapper) {
+    private WatchServiceThread watchingServiceThread;
+
+    public JDFolderWatch(PluginWrapper wrapper) {
         super(wrapper);
 
         subConfig = getPluginConfig();
+
+        history = subConfig.getGenericProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, new FolderWatchHistory());
+
         initConfig();
     }
 
@@ -156,21 +179,30 @@ public class FolderWatch extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        this.isEnabled = subConfig.getBooleanProperty(FolderWatchConstants.CONFIG_KEY_ENABLED, true);
+        isEnabled = subConfig.getBooleanProperty(FolderWatchConstants.CONFIG_KEY_ENABLED, true);
+        folder = subConfig.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER, "/tmp");
 
-        if (this.isEnabled) {
-            this.folder = subConfig.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER, "/tmp");
-
-            if (this.folder != null && (this.folder.equals("") == false)) {
-                // TODO: After changing folder restart thread
-                WatchServiceThread watching = new WatchServiceThread(this.folder);
-                watching.start();
-            }
-
-        }
+        startWatching(isEnabled);
 
         logger.info("FolderWatch: OK");
+
         return true;
+    }
+
+    private boolean startWatching(boolean value) {
+        if (isEnabled) if (folder != null && (folder.equals("") == false)) {
+            watchingServiceThread = new WatchServiceThread(folder);
+            watchingServiceThread.start();
+
+            return true;
+        } else {
+            if (watchingServiceThread.isAlive()) {
+                watchingServiceThread.done();
+            }
+
+            watchingServiceThread = null;
+        }
+        return false;
     }
 
     @Override
@@ -183,7 +215,7 @@ public class FolderWatch extends PluginOptional {
                 JDLogger.exception(ex);
             }
 
-            // do something
+            startWatching(isEnabled);
         } else if (e.getID() == 1) {
             if (showGuiAction.isSelected()) {
                 showGui();
@@ -199,7 +231,7 @@ public class FolderWatch extends PluginOptional {
 
         toggleAction = new MenuAction("folderwatch.toggle", 0);
         toggleAction.setActionListener(this);
-        toggleAction.setSelected(this.isEnabled);
+        toggleAction.setSelected(isEnabled);
 
         showGuiAction = new MenuAction("folderwatch.history", 1);
         showGuiAction.setActionListener(this);
@@ -235,13 +267,8 @@ public class FolderWatch extends PluginOptional {
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_AUTODELETE, JDL.L(JDL_PREFIX + "autodelete", "Delete container after importing?")).setDefaultValue(false));
         ce.setEnabled(false);
 
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_RADIOFIELD,
-        // subConfig, FolderWatchConstants.CONFIG_KEY_AUTODOWNLOAD,
-        // JDL.L(JDL_PREFIX + "autodownload",
-        // "import and download containers")));
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_RADIOFIELD,
-        // subConfig, FolderWatchConstants.CONFIG_KEY_IMPORTONLY,
-        // JDL.L(JDL_PREFIX + "importonly", "just import containers")));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_HISTORYONLY, JDL.L(JDL_PREFIX + "history-only", "Adds containers to history but doesn't import them.")).setDefaultValue(false));
+        ce.setEnabled(false);
     }
 
     private void showGui() {
@@ -265,41 +292,35 @@ public class FolderWatch extends PluginOptional {
     }
 
     @Override
-    public void setGuiEnable(boolean value) {
-        if (value) {
-            showGui();
-        } else {
-            if (view != null) view.close();
-        }
-    }
-
-    @Override
     public void onExit() {
     }
 
-    private void importContainer(String path) {
-        importContainer(new File(path));
+    private String importContainer(String path) {
+        return importContainer(new File(path));
     }
 
-    private void importContainer(File container) {
+    private String importContainer(File container) {
         if (isContainer(container)) {
             JDController.loadContainerFile(container, false, false);
         }
+
+        return JDHash.getMD5(container);
     }
 
-    @SuppressWarnings("unused")
+    private void deleteContainer(String path) {
+        deleteContainer(new File(path));
+    }
+
     private void deleteContainer(File container) {
         if (isContainer(container)) {
             container.delete();
         }
     }
 
-    @SuppressWarnings("unused")
-    private void openFolder(File folder) {
-
+    private boolean emptyFolder(String path) {
+        return emptyFolder(new File(path));
     }
 
-    @SuppressWarnings("unused")
     private boolean emptyFolder(File folder) {
         if (folder.isDirectory()) {
             for (File file : folder.listFiles()) {
@@ -309,16 +330,26 @@ public class FolderWatch extends PluginOptional {
             }
             return true;
         }
-
         return false;
-    }
-
-    private boolean isContainer(File file) {
-        return isContainer(file.getName());
     }
 
     private boolean isContainer(String path) {
         return path.matches(".+\\.(dlc|ccf|rsdf)");
     }
 
+    private boolean isContainer(File file) {
+        return isContainer(file.getName());
+    }
+
+    private void openInFilebrowser(String path) {
+
+    }
+
+    public void onPreSave(SubConfiguration subConfiguration) {
+        startWatching(false);
+    }
+
+    public void onPostSave(SubConfiguration subConfiguration) {
+        startWatching(true);
+    }
 }

@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@ public class FolderWatchConstants {
     public static final String CONFIG_KEY_ENABLED = "ENABLED";
     public static final String CONFIG_KEY_FOLDER = "FOLDER";
     public static final String CONFIG_KEY_OPENFOLDER = "OPENFOLDER";
-    public static final String CONFIG_KEY_TIMEINTERVAL = "TIMEINTERVAL";
     public static final String CONFIG_KEY_RECURSIVE = "RECURSIVE";
     public static final String CONFIG_KEY_AUTODELETE = "AUTODELETE";
-    public static final String CONFIG_KEY_AUTODOWNLOAD = "AUTODOWNLOAD";
-    public static final String CONFIG_KEY_IMPORTONLY = "IMPORTONLY";
+    public static final String CONFIG_KEY_HISTORYONLY = "CONFIG_KEY_HISTORYONLY";
+
+    public static final String CONFIG_KEY_HISTORY = "CONFIG_KEY_HISTORY";
 }

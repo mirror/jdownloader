@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -43,7 +43,6 @@ public class JDScriptLauncher extends PluginOptional {
     private ArrayList<MenuAction> menuitems = new ArrayList<MenuAction>();
     private ArrayList<String> scriptconfig = new ArrayList<String>();
 
-    private static final String UNIX_INFINITE_LOOP = "UNIX_INFINITE_LOOP";
     private static final String ADD_CHECKBOX = "ADD_CHECKBOX";
 
     public JDScriptLauncher(PluginWrapper wrapper) {
@@ -52,7 +51,7 @@ public class JDScriptLauncher extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        this.scripts = JDScriptLauncher.getScripts();
+        scripts = JDScriptLauncher.getScripts();
 
         try {
             initMenuActions();
@@ -72,8 +71,6 @@ public class JDScriptLauncher extends PluginOptional {
 
             if (JDScriptLauncher.processlist.get(index) == null) {
                 launch(index);
-            } else if (scriptconfig.contains(UNIX_INFINITE_LOOP)) {
-                kill(index);
             }
         }
     }
@@ -94,30 +91,6 @@ public class JDScriptLauncher extends PluginOptional {
 
         if (index != null) {
             JDScriptLauncher.launch(index);
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * UNIX-only method (killing processes)
-     */
-    private static void kill(int index) {
-        String[] cmd = { "/bin/sh", "-c", "killall " + JDScriptLauncher.getScripts().get(index).getName() };
-
-        try {
-            Runtime.getRuntime().exec(cmd);
-        } catch (IOException e) {
-            logger.warning(e.toString());
-        }
-    }
-
-    public static boolean kill(String name) {
-        Integer index = JDScriptLauncher.getScriptIndexByName(name);
-
-        if (index != null) {
-            JDScriptLauncher.kill(index);
             return true;
         }
 
@@ -150,21 +123,23 @@ public class JDScriptLauncher extends PluginOptional {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        for (int i = 0; i < this.menuitems.size(); i++) {
-            menu.add(this.menuitems.get(i));
+        MenuAction ma;
+        menu.add(ma = new MenuAction(getHost(), 0));
+
+        for (int i = 0; i < menuitems.size(); i++) {
+            ma.addMenuItem(menuitems.get(i));
         }
 
-        if (menu.size() == 0) {
-            MenuAction ma = new MenuAction(JDL.L("plugins.optional.JDScriptLauncher.noscripts", "No scripts were found."), 1);
+        if (menuitems.size() == 0) {
+            ma.addMenuItem(ma = new MenuAction(JDL.L("plugins.optional.JDScriptLauncher.noscripts", "No scripts were found."), 0));
             ma.setEnabled(false);
-            menu.add(ma);
         }
 
         return menu;
     }
 
     private ArrayList<String> readScriptConfiguration(int index) throws IOException {
-        FileReader fr = new FileReader(this.scripts.get(index));
+        FileReader fr = new FileReader(scripts.get(index));
         BufferedReader in = new BufferedReader(fr);
         String line = "";
 
@@ -183,16 +158,16 @@ public class JDScriptLauncher extends PluginOptional {
     private void initMenuActions() throws IOException {
         MenuAction ma = null;
 
-        for (int i = 0; i < this.scripts.size(); i++) {
+        for (int i = 0; i < scripts.size(); i++) {
             ArrayList<String> launcherprops = readScriptConfiguration(i);
-            String scriptname = this.scripts.get(i).getName().split("\\.")[0];
+            String scriptname = scripts.get(i).getName().split("\\.")[0];
             ma = new MenuAction(scriptname, i + 1000);
 
             if (launcherprops.contains(ADD_CHECKBOX)) {
                 ma.setSelected(false);
             }
 
-            this.menuitems.add(ma);
+            menuitems.add(ma);
             ma.setActionListener(this);
         }
     }
