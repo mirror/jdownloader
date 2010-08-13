@@ -152,23 +152,23 @@ public class TbCm extends PluginForDecrypt {
                     decryptedLinks.add(thislink);
                     return decryptedLinks;
                 }
-                boolean oldLayout = false;
                 HashMap<Integer, String> html5LinksFound = getLinksHTML5(parameter, prem, this.br);
                 HashMap<Integer, String> linksFound = getLinksNew(parameter, prem, this.br);
-
                 if (linksFound != null && linksFound.size() == 0) {
                     linksFound = getLinks(parameter, prem, this.br);
-                    if (linksFound != null && linksFound.size() > 0) oldLayout = true;
+                    if (linksFound != null && linksFound.size() > 0) {
+                        for (Integer format : linksFound.keySet()) {
+                            if (format != 0) {
+                                linksFound.put(format, linksFound.get(format) + "&fmt=" + format);
+                            }
+                        }
+                    }
                 }
                 if (linksFound == null || linksFound.size() == 0) {
                     linksFound = html5LinksFound;
                 } else {
                     if (html5LinksFound != null) {
-                        for (Integer format : html5LinksFound.keySet()) {
-                            if (!linksFound.containsKey(format)) {
-                                linksFound.put(format, html5LinksFound.get(format));
-                            }
-                        }
+                        linksFound.putAll(html5LinksFound);
                     }
                 }
                 if ((linksFound == null || linksFound.size() == 0) && br.containsHTML("verify_age")) throw new DecrypterException(DecrypterException.ACCOUNT);
@@ -176,11 +176,30 @@ public class TbCm extends PluginForDecrypt {
                 String name = Encoding.htmlDecode(br.getRegex(YT_FILENAME).getMatch(0).trim());
                 /* check for wished formats first */
                 HashMap<Integer, String> links = new HashMap<Integer, String>();
-                if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEO3GP) && linksFound.keySet().contains(13)) {
-                    links.put(13, linksFound.get(13));
-                } else if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4) && (linksFound.keySet().contains(18) || linksFound.keySet().contains(22) || linksFound.keySet().contains(34) || linksFound.keySet().contains(35) || linksFound.keySet().contains(37) || linksFound.keySet().contains(43) || linksFound.keySet().contains(45))) {
-                    Integer mp4[] = new Integer[] { 18, 22, 34, 35, 37, 43, 45 };
+                if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOFLV) && (linksFound.keySet().contains(0) || linksFound.keySet().contains(5) || linksFound.keySet().contains(6) || linksFound.keySet().contains(34) || linksFound.keySet().contains(35))) {
+                    Integer flv[] = new Integer[] { 0, 5, 6, 34, 35 };
+                    for (Integer f : flv) {
+                        if (linksFound.containsKey(f)) {
+                            links.put(f, linksFound.get(f));
+                        }
+                    }
+                } else if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEO3GP) && (linksFound.keySet().contains(13) || linksFound.keySet().contains(17))) {
+                    Integer tgp[] = new Integer[] { 13, 17 };
+                    for (Integer f : tgp) {
+                        if (linksFound.containsKey(f)) {
+                            links.put(f, linksFound.get(f));
+                        }
+                    }
+                } else if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4) && (linksFound.keySet().contains(18) || linksFound.keySet().contains(22) || linksFound.keySet().contains(37) || linksFound.keySet().contains(38))) {
+                    Integer mp4[] = new Integer[] { 18, 22, 37, 38 };
                     for (Integer f : mp4) {
+                        if (linksFound.containsKey(f)) {
+                            links.put(f, linksFound.get(f));
+                        }
+                    }
+                } else if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOWEBM) && (linksFound.keySet().contains(43) || linksFound.keySet().contains(45))) {
+                    Integer webm[] = new Integer[] { 43, 45 };
+                    for (Integer f : webm) {
                         if (linksFound.containsKey(f)) {
                             links.put(f, linksFound.get(f));
                         }
@@ -188,64 +207,96 @@ public class TbCm extends PluginForDecrypt {
                 } else {
                     links = linksFound;
                 }
-                br.setCookie("youtube.com", "PREF", "f2=40000000");
+
+                /*
+                 * Source: http://en.wikipedia.org/wiki/YouTube
+                 * 
+                 * **** FLV ***** 0 = Standard 5 = 240p 6 = High 34 = 360p 35 =
+                 * 480p**************
+                 * 
+                 * **** 3GP ***** 13 = Mobile 17 = Mobile**************
+                 * 
+                 * **** MP4 ***** 18 = Medium 22 = 720p 37 = 1080p 38 = 4K
+                 * **************
+                 * 
+                 * **** WebM ***** 43 = 480p 45 = 720p***************
+                 */
+
                 /* Konvertierungsmöglichkeiten adden */
                 for (Integer format : links.keySet()) {
-                    String link = links.get(format);
-                    String dlLink;
-                    if (format == 0) {
-                        dlLink = link;
-                    } else {
-                        dlLink = link + (oldLayout == true ? "&fmt=" + format : "");
-                    }
+                    String dlLink = links.get(format);
                     try {
                         switch (format) {
-                        case 18:
+                        case 0:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(18)", format);
+                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(Standard)", format);
+                                addtopos(ConversionMode.AUDIOMP3, dlLink, br.getHttpConnection().getLongContentLength(), "(MP3 64Kbit)", format);
                             }
                             break;
-                        case 22:
+                        case 5:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(22,720p)", format);
+                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(240p)", format);
+                                addtopos(ConversionMode.AUDIOMP3, dlLink, br.getHttpConnection().getLongContentLength(), "(MP3 64Kbit)", format);
+                            }
+                            break;
+                        case 6:
+                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(High)", format);
                             }
                             break;
                         case 34:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(HQ)", format);
+                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(360p)", format);
                             }
                             break;
                         case 35:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(35,720p/HQ)", format);
+                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(480p)", format);
+                            }
+                            break;
+                        case 13:
+                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                addtopos(ConversionMode.VIDEO3GP, dlLink, br.getHttpConnection().getLongContentLength(), "(Mobile)", format);
+                            }
+                            break;
+                        case 17:
+                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                addtopos(ConversionMode.VIDEO3GP, dlLink, br.getHttpConnection().getLongContentLength(), "(Mobile)", format);
+                            }
+                            break;
+                        case 18:
+                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(Medium)", format);
+                            }
+                            break;
+                        case 22:
+                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(720p)", format);
                             }
                             break;
                         case 37:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(37,1080p)", format);
+                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(1080p)", format);
                             }
-                            if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4)) break;
                             break;
-                        case 13:
+                        case 38:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEO3GP, dlLink, br.getHttpConnection().getLongContentLength(), "(13)", format);
+                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(4k)", format);
                             }
                             break;
                         case 43:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOWEBM, dlLink, br.getHttpConnection().getLongContentLength(), "(360p)", format);
+                                addtopos(ConversionMode.VIDEOWEBM, dlLink, br.getHttpConnection().getLongContentLength(), "(480p)", format);
                             }
                             break;
                         case 45:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConvertDialog.ConversionMode.VIDEOWEBM, dlLink, br.getHttpConnection().getLongContentLength(), "(720p)", format);
+                                addtopos(ConversionMode.VIDEOWEBM, dlLink, br.getHttpConnection().getLongContentLength(), "(720p)", format);
                             }
                             break;
                         default:
                             if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "", format);
-                                addtopos(ConversionMode.AUDIOMP3, dlLink, br.getHttpConnection().getLongContentLength(), "", format);
-                                addtopos(ConversionMode.AUDIOMP3_AND_VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "", format);
+                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(Unknown)", format);
                             }
                         }
                     } finally {
@@ -264,7 +315,15 @@ public class TbCm extends PluginForDecrypt {
                     thislink.setFinalFileName(name + info.desc + convertTo.getExtFirst());
                     thislink.setSourcePluginComment("Convert to " + convertTo.getText());
                     thislink.setProperty("size", Long.valueOf(info.size));
-                    thislink.setProperty("name", name + info.desc + convertTo.getExtFirst());
+                    if (convertTo != ConversionMode.AUDIOMP3) {
+                        thislink.setProperty("name", name + info.desc + convertTo.getExtFirst());
+                    } else {
+                        /*
+                         * because demuxer will fail when mp3 file already
+                         * exists
+                         */
+                        thislink.setProperty("name", name + info.desc + ".tmp");
+                    }
                     thislink.setProperty("convertto", convertTo.name());
                     thislink.setProperty("videolink", parameter);
                     thislink.setProperty("valid", true);
@@ -329,7 +388,7 @@ public class TbCm extends PluginForDecrypt {
     public HashMap<Integer, String> getLinksNew(String video, boolean prem, Browser br) throws Exception {
         if (br == null) br = this.br;
         /* reset this cookie to see old video formats */
-        br.setCookie("youtube.com", "PREF", null);
+        br.setCookie("youtube.com", "PREF", "f1=10000000");
         br.setFollowRedirects(true);
         br.getPage(video);
         /* age verify with activated premium? */
@@ -367,7 +426,7 @@ public class TbCm extends PluginForDecrypt {
         if (br == null) br = this.br;
         br.setFollowRedirects(true);
         /* reset this cookie to see old video formats */
-        br.setCookie("youtube.com", "PREF", null);
+        br.setCookie("youtube.com", "PREF", "f1=10000000");
         br.getPage(video);
         /* age verify with activated premium? */
         if (br.containsHTML("verify_age") && prem) {

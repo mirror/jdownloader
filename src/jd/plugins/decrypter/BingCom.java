@@ -17,6 +17,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,6 +30,8 @@ import jd.utils.JDHexUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bing.com" }, urls = { "http://[\\w\\.]*?bing\\.com/videos/watch/video/.*?/[a-z0-9]+" }, flags = { 0 })
 public class BingCom extends PluginForDecrypt {
+
+    public static final Pattern PATTERN_JAVASCRIPT_HEX = Pattern.compile("\\\\x([a-f0-9]{2})", Pattern.CASE_INSENSITIVE);
 
     public BingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,7 +51,7 @@ public class BingCom extends PluginForDecrypt {
         for (String regex : regexes) {
             String finallink = br.getRegex(regex).getMatch(0);
             if (finallink != null) {
-                finallink = JDHexUtils.decodeJavascriptHex(finallink);
+                finallink = decodeJavascriptHex(finallink);
                 DownloadLink fnllink = createDownloadlink(finallink);
                 if (setFilename) {
                     if (finallink.endsWith(".flv"))
@@ -59,5 +63,15 @@ public class BingCom extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    public String decodeJavascriptHex(final String javascriptHexString) {
+        StringBuffer sb = new StringBuffer();
+        Matcher m = PATTERN_JAVASCRIPT_HEX.matcher(javascriptHexString);
+        while (m.find()) {
+            m.appendReplacement(sb, JDHexUtils.toString(m.group(1)));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 }

@@ -16,9 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -69,12 +72,21 @@ public class FileSonicCom extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        br.setCookie("http://www.filesonic.com/", "lang", "en");
+        br.getPage("http://www.filesonic.com/");
+        XMLRequest(br, "http://www.filesonic.com/en/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         br.setFollowRedirects(false);
-        br.getPage("http://www.filesonic.com/en/user/login");
-        br.getPage("http://www.filesonic.com/en/user/login");
-        br.postPage("http://www.filesonic.com/en/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         String premCookie = br.getCookie("http://www.filesonic.com", "role");
         if (premCookie == null || !premCookie.equalsIgnoreCase("premium")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+    }
+
+    private void XMLRequest(Browser br, String url, String post) throws IOException {
+        if (br == null) br = this.br;
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage(url, post);
+        br.getHeaders().put("X-Requested-With", null);
     }
 
     @Override
@@ -161,9 +173,11 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage("http://www.filesonic.com/en");
+        br.setFollowRedirects(true);
+        br.setCookie("http://www.filesonic.com/", "lang", "en");
+        br.getPage("http://www.filesonic.com/");
         br.getPage(parameter.getDownloadURL());
+        br.setFollowRedirects(false);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Filename: </span> <strong>(.*?)<").getMatch(0);

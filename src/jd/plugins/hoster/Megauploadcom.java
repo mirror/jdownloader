@@ -635,6 +635,7 @@ public class Megauploadcom extends PluginForHost {
         String code = null;
         while (captchTries-- >= 0) {
             br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(link));
+            boolean HappyHour = br.containsHTML("It's happy hour");
             /* check for iplimit */
             String red = br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null) {

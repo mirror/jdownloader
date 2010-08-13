@@ -332,7 +332,7 @@ public class JDExternInterface extends PluginOptional {
 
                             // TODO: Bugtracker Issue #1729
                             String url = Encoding.htmlDecode(request.getParameters().get("url"));
-                            String urlSupported = new Boolean(DistributeData.hasPluginFor(url, true)).toString();
+                            String urlSupported = Boolean.valueOf(DistributeData.hasPluginFor(url, true)).toString();
                             response.addContent(addJSONPCallback(urlSupported, request.getParameters().get("callback")));
                         } else {
                             response.addContent(addJSONPCallback("unknowncommand", request.getParameters().get("callback")));
