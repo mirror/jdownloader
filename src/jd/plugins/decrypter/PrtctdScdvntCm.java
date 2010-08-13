@@ -82,6 +82,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         logger.info("Found " + linkCounter + " links, decrypting now...");
         progress.setRange(linkCounter);
         for (int i = 0; i <= linkCounter - 1; i++) {
+            br.postPage("http://protected.socadvnet.com/cp_code.php", "move=1");
             String actualPage = "http://protected.socadvnet.com/allinks.php?out_name=" + postvar + "&&link_id=" + i;
             br.getPage(actualPage);
             if (br.containsHTML("No htmlCode read")) {
