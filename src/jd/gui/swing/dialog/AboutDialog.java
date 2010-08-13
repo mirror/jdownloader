@@ -52,12 +52,12 @@ public class AboutDialog extends JDialog {
         JLabel lbl = new JLabel("JDownloader");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
-        String b = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE, null);
-        final String branch;
-        if (b == null) {
-            branch = "";
+        String branch = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE, null);
+        final String version;
+        if (branch == null) {
+            version = "JDownloader Build " + JDUtilities.getRevision();
         } else {
-            branch = "-" + b + "- ";
+            version = "JDownloader -" + branch + "- Build " + JDUtilities.getRevision();
         }
 
         JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
@@ -84,7 +84,7 @@ public class AboutDialog extends JDialog {
 
             public void actionPerformed(ActionEvent e) {
                 StringBuilder sb = new StringBuilder();
-                sb.append("JDownloader ").append(branch).append("Build ").append(JDUtilities.getRevision()).append("\r\n");
+                sb.append(version).append("\r\n");
                 sb.append("Java Vendor: ").append(System.getProperty("java.vendor")).append("\r\n");
                 sb.append("Java Version: ").append(System.getProperty("java.version"));
                 ClipboardHandler.getClipboard().copyTextToClipboard(sb.toString());
@@ -99,7 +99,7 @@ public class AboutDialog extends JDialog {
         this.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "aligny center, spany 6");
         this.add(lbl, "spanx");
         this.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2010"), "spanx");
-        this.add(new JLabel("JDownloader " + branch + JDL.LF(JDL_PREFIX + "build", "Build %s", JDUtilities.getRevision())), "gaptop 10");
+        this.add(new JLabel(version), "gaptop 10");
         this.add(btn, "aligny center, spany 3");
         this.add(new JLabel("JRE Vendor: " + System.getProperty("java.vendor")));
         this.add(new JLabel("JRE Version: " + System.getProperty("java.version")));

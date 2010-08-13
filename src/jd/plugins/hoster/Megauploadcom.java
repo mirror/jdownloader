@@ -31,22 +31,22 @@ import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaupload.com" }, urls = { "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[0-9A-Za-z]+" }, flags = { 2 })
@@ -635,7 +635,6 @@ public class Megauploadcom extends PluginForHost {
         String code = null;
         while (captchTries-- >= 0) {
             br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(link));
-            boolean HappyHour = br.containsHTML("It's happy hour");
             /* check for iplimit */
             String red = br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null) {
