@@ -16,17 +16,20 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://[\\w\\.]*?extreme-protect\\.com/(linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" }, flags = { 0 })
@@ -36,26 +39,24 @@ public class ExtremeProtectCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
+    private static final String RECAPTCHATEXT2 = "google\\.com/recaptcha/api/challenge";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("linkidwoc", "linkcheck");
         br.getPage(parameter);
-        Form decryptForm = null;
-        Form[] allForms = br.getForms();
-        if (allForms == null || allForms.length == 0) return null;
-        for (Form aForm : allForms) {
-            if (aForm.containsHTML("security_code")) {
-                decryptForm = aForm;
-                break;
-            }
-        }
         boolean failed = true;
-        for (int i = 0; i <= 3; i++) {
-            if (!br.containsHTML("captcha/image\\.php") || decryptForm == null) return null;
-            String code = getCaptchaCode("http://extreme-protect.com/captcha/image.php?x=" + System.currentTimeMillis(), param);
-            decryptForm.put("security_code", code.toUpperCase());
-            br.submitForm(decryptForm);
-            if (br.containsHTML("The security code is <font color='red'>incorrect</font>")) {
+        for (int i = 0; i <= 5; i++) {
+            if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) return null;
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, param);
+            rc.setCode(c);
+            if (br.containsHTML("(The security code is <font color='red'>incorrect</font>|The CAPTCHA wasn't entered correctly)")) {
                 br.getPage(parameter);
                 continue;
             }

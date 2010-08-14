@@ -49,7 +49,6 @@ public class YouPornCom extends PluginForHost {
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("invalid video_id")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) - Free Porn Videos - YouPorn\\.com Lite \\(BETA\\)</title>").getMatch(0);
-        // "http://youporn.com/download/1326532/?download=1&ll=1&t=dd"
         dlLink = br.getRegex("\"(http://youporn\\.com/download/\\d+/(flv/\\d+|\\?download=).*?)\"").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll(" ", "-") + ".flv");

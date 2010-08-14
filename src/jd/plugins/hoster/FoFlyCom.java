@@ -389,11 +389,11 @@ public class FoFlyCom extends PluginForHost {
         } catch (Exception e) {
         }
 
+        String finallink = null;
         if (decoded != null) {
-            Regex link = new Regex(decoded, "'file','(.*?)'");
-            if (link.matches()) decoded = link.getMatch(0);
+            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
+            if (finallink == null) finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
         }
-
         return decoded;
     }
 }
