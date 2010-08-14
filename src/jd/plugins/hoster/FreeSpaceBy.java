@@ -85,18 +85,23 @@ public class FreeSpaceBy extends PluginForHost {
         String dllink = null;
         String shortWaittime = br.getRegex("id=\"remaining_time\">(\\d+)</span>").getMatch(0);
         if (shortWaittime != null) {
+            logger.info("Fount waittime, waiting...");
             sleep(Integer.parseInt(shortWaittime) * 1001l, downloadLink);
             String postPage = "http://freespace.by/api.php?format=ajax&lang=ru&PHPSESSID=" + br.getCookie(MAINPAGE, "PHPSESSID") + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml";
-            String post = "tion[0]=Download.getFreeDownloadLink&download_token[0]=" + new Regex(downloadLink.getDownloadURL(), "freespace\\.by/download/([a-z0-9]+)").getMatch(0);
+            String post = "action[0]=Download.getFreeDownloadLink&download_token[0]=" + new Regex(downloadLink.getDownloadURL(), "freespace\\.by/download/([a-z0-9]+)").getMatch(0);
             br.postPage(postPage, post);
             dllink = br.getRegex("response\":\"(http:.*?)\"").getMatch(0);
         } else {
+            logger.info("Fount no waittime, trying to start the download...");
             dllink = br.getRegex("id=\"free_download_link_wrapper\">[\n\t\r ]+<a href=\"http://.*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/get/.*?)\"").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink couldn't be found, plugin seems to be broken!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replace("\\", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -138,7 +143,7 @@ public class FreeSpaceBy extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

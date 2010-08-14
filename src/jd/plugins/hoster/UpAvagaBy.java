@@ -60,15 +60,12 @@ public class UpAvagaBy extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
+        // Waittime is there for all files exept files under 5 MB
         Regex waittime = br.getRegex("id='myclock'>(\\d+)\\.(\\d+)</span>");
         if (waittime.getMatch(0) == null || waittime.getMatch(1) == null) waittime = br.getRegex("var t=(\\d+)\\.(\\d+);");
         String minutes = waittime.getMatch(0);
         String seconds = waittime.getMatch(1);
-        if (minutes == null || seconds == null) {
-            logger.warning("The waittime regex is broken...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        sleep(((Integer.parseInt(minutes) * 60) + Integer.parseInt(seconds)) * 1001l, downloadLink);
+        if (minutes != null & seconds != null) sleep(((Integer.parseInt(minutes) * 60) + Integer.parseInt(seconds)) * 1001l, downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getCookie(MAINPAGE, "PHPSESSID") == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = null;
@@ -84,7 +81,7 @@ public class UpAvagaBy extends PluginForHost {
             break;
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -98,7 +95,7 @@ public class UpAvagaBy extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
