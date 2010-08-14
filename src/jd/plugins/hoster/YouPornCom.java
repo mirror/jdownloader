@@ -46,19 +46,11 @@ public class YouPornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage(parameter.getDownloadURL(), "user_choice=Enter");
-        String matches = br.getRegex("flashvars\\.file = encodeURIComponent\\('(http://.*?)'\\)").getMatch(0);
-        if (matches == null) {
-            matches = br.getRegex("'(http://download\\.youporn\\.com/download/\\d+/flv/.*?\\.flv\\?ll=1\\&xml=1)'").getMatch(0);
-            if (matches == null) dlLink = br.getRegex("\"(http://download\\.youporn\\.com/download/\\d+/\\?download=.*?)\"").getMatch(0);
-        }
-        String filename = br.getRegex("<title>(.*?)- Free Porn Videos - YouPorn.com Lite \\(BETA\\)</title>").getMatch(0);
-        if ((matches == null && dlLink == null) || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (matches != null && dlLink == null) {
-            br.getPage(matches);
-            dlLink = br.getRegex("location>(http://.*?)<").getMatch(0);
-        }
-        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        dlLink = dlLink.trim().replace("amp;", "");
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        if (br.containsHTML("invalid video_id")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) - Free Porn Videos - YouPorn\\.com Lite \\(BETA\\)</title>").getMatch(0);
+        dlLink = br.getRegex("\"(http://youporn\\.com/download/\\d+/flv/\\d+.*?)\"").getMatch(0);
+        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll(" ", "-") + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -73,7 +65,6 @@ public class YouPornCom extends PluginForHost {
 
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dlLink = Encoding.htmlDecode(dlLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

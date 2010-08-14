@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "http://[\\w\\.]*?tnaflix\\.com/view_video\\.php\\?viewkey=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "http://[\\w\\.]*?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)" }, flags = { 0 })
 public class TnaFlixCom extends PluginForHost {
 
     public TnaFlixCom(PluginWrapper wrapper) {
@@ -44,7 +44,14 @@ public class TnaFlixCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("errormsg=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().contains("errormsg=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (downloadLink.getDownloadURL().contains("viewkey=")) {
+                downloadLink.setUrlDownload(br.getRedirectLocation());
+                br.getPage(downloadLink.getDownloadURL());
+            } else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String filename = br.getRegex("<title>(.*?), Free Porn.*?</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("playIcon\">(.*?)</h2>").getMatch(0);
@@ -55,7 +62,7 @@ public class TnaFlixCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         if (!filename.endsWith(".")) {
             downloadLink.setFinalFileName(filename + ".flv");
