@@ -40,6 +40,9 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.folderwatch.history.FolderWatchHistory;
 import jd.plugins.optional.folderwatch.history.FolderWatchHistoryEntry;
+import jd.plugins.optional.remotecontrol.helppage.HelpPage;
+import jd.plugins.optional.remotecontrol.helppage.Table;
+import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import name.pachler.nio.file.ClosedWatchServiceException;
@@ -53,23 +56,24 @@ import name.pachler.nio.file.WatchService;
 
 @SuppressWarnings("unused")
 @OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 5)
-public class JDFolderWatch extends PluginOptional implements ConfigurationListener {
+public class JDFolderWatch extends PluginOptional implements ConfigurationListener, RemoteSupport {
 
     private static final String JDL_PREFIX = "plugins.optional.folderwatch.JDFolderWatch.";
 
     private final SubConfiguration subConfig;
+    private FolderWatchHistory history = new FolderWatchHistory();
 
+    // option/mode flags
     private boolean isEnabled = false;
-
-    private FolderWatchView view;
+    private boolean isRecursive = false;
+    private boolean isAutodelete = false;
+    private boolean isHistoryOnly = false;
 
     private MenuAction toggleAction;
-
     private MenuAction showGuiAction;
 
+    private FolderWatchView view;
     private String folder;
-
-    private FolderWatchHistory history = new FolderWatchHistory();
 
     private class WatchServiceThread extends Thread {
 
@@ -149,11 +153,17 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
                         }
                     } else if (e.kind() == StandardWatchEventKind.ENTRY_DELETE) {
                         Path context = (Path) e.context();
+
+                        history.updateEntries();
+                        subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, history);
+                        subConfig.save();
+
                         message = context.toString() + " deleted";
                     } else if (e.kind() == StandardWatchEventKind.OVERFLOW) {
                         message = "OVERFLOW: more changes happened than we could retreive";
                     }
 
+                    // debugging only
                     System.out.println(message);
                 }
             }
@@ -166,7 +176,6 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
         super(wrapper);
 
         subConfig = getPluginConfig();
-
         history = subConfig.getGenericProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, new FolderWatchHistory());
 
         initConfig();
@@ -185,7 +194,6 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
         startWatching(isEnabled);
 
         logger.info("FolderWatch: OK");
-
         return true;
     }
 
@@ -193,13 +201,11 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
         if (isEnabled) if (folder != null && (folder.equals("") == false)) {
             watchingServiceThread = new WatchServiceThread(folder);
             watchingServiceThread.start();
-
             return true;
         } else {
             if (watchingServiceThread.isAlive()) {
                 watchingServiceThread.done();
             }
-
             watchingServiceThread = null;
         }
         return false;
@@ -214,14 +220,12 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
             } catch (Exception ex) {
                 JDLogger.exception(ex);
             }
-
             startWatching(isEnabled);
         } else if (e.getID() == 1) {
-            if (showGuiAction.isSelected()) {
+            if (showGuiAction.isSelected())
                 showGui();
-            } else {
+            else
                 view.close();
-            }
         }
     }
 
@@ -280,13 +284,11 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
                 public void onPanelEvent(SwitchPanelEvent event) {
                     if (event.getID() == SwitchPanelEvent.ON_REMOVE) showGuiAction.setSelected(false);
                 }
-
             });
             // FolderWatchGui gui = new FolderWatchGui(getPluginConfig());
             // view.setContent(gui);
             // view.setInfoPanel(gui.getInfoPanel());
         }
-
         showGuiAction.setSelected(true);
         JDGui.getInstance().setContent(view);
     }
@@ -303,7 +305,6 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
         if (isContainer(container)) {
             JDController.loadContainerFile(container, false, false);
         }
-
         return JDHash.getMD5(container);
     }
 
@@ -312,9 +313,7 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
     }
 
     private void deleteContainer(File container) {
-        if (isContainer(container)) {
-            container.delete();
-        }
+        if (isContainer(container)) container.delete();
     }
 
     private boolean emptyFolder(String path) {
@@ -342,7 +341,6 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
     }
 
     private void openInFilebrowser(String path) {
-
     }
 
     public void onPreSave(SubConfiguration subConfiguration) {
@@ -351,5 +349,19 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
 
     public void onPostSave(SubConfiguration subConfiguration) {
         startWatching(true);
+    }
+
+    public Object handleRemoteCmd(String cmd) {
+        return null;
+    }
+
+    public void initCmdTable() {
+        Table t = HelpPage.createTable(new Table(this.getHost()));
+
+        t.setCommand("/addon/folderwatch/(start|stop)");
+        t.setInfo("Start or stop JD FolderWatch watching service.");
+
+        t.setCommand("/addon/folderwatch/registerfolder/%X%");
+        t.setInfo("Adds a path to the list of folders that will be watched. You can register as many folders as you like.");
     }
 }

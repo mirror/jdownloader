@@ -16,14 +16,17 @@
 
 package jd.plugins.optional.folderwatch.history;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class FolderWatchHistoryEntry {
+public class FolderWatchHistoryEntry implements Serializable {
+
+    private static final long serialVersionUID = -8824175672927232845L;
 
     private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    private String basename;
+    private String filename;
 
     private String absolutePath;
 
@@ -33,28 +36,28 @@ public class FolderWatchHistoryEntry {
 
     private boolean isPhysical;
 
-    public FolderWatchHistoryEntry(String basename, String absolutePath, String md5Hash, boolean isPhysical) {
-        set(basename, absolutePath, md5Hash, isPhysical);
+    public FolderWatchHistoryEntry(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
+        set(filename, absolutePath, md5Hash, isPhysical);
     }
 
-    public FolderWatchHistoryEntry(String basename, String absolutePath, String md5Hash) {
-        set(basename, absolutePath, md5Hash, true);
+    public FolderWatchHistoryEntry(String filename, String absolutePath, String md5Hash) {
+        set(filename, absolutePath, md5Hash, true);
     }
 
-    public void set(String basename, String absolutePath, String md5Hash, boolean isPhysical) {
-        this.setBasename(basename);
+    public void set(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
+        this.setFilename(filename);
         this.setAbsolutePath(absolutePath);
         this.setMd5Hash(md5Hash);
         this.setImportDate();
         this.setPhysical(isPhysical);
     }
 
-    public void setBasename(String basename) {
-        this.basename = basename;
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 
-    public String getBasename() {
-        return basename;
+    public String getFilename() {
+        return filename;
     }
 
     public void setAbsolutePath(String absolutePath) {

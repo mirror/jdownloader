@@ -1,11 +1,12 @@
 package jd.plugins.optional.folderwatch.history;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class FolderWatchHistory extends ArrayList<FolderWatchHistoryEntry> {
+public class FolderWatchHistory extends ArrayList<FolderWatchHistoryEntry> implements Serializable {
 
-    private static final long serialVersionUID = 9207966324383256468L;
+    private static final long serialVersionUID = -4826024531349749042L;
 
     public FolderWatchHistory() {
     }
@@ -21,8 +22,10 @@ public class FolderWatchHistory extends ArrayList<FolderWatchHistoryEntry> {
 
         boolean value;
         for (FolderWatchHistoryEntry entry : entries) {
-            value = isFileExisting(entry.getAbsolutePath());
-            entry.setPhysical(value);
+            if (entry.isPhysical()) {
+                value = isFileExisting(entry.getAbsolutePath());
+                entry.setPhysical(value);
+            }
         }
     }
 

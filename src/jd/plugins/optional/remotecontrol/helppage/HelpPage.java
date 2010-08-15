@@ -30,13 +30,13 @@ public class HelpPage {
     private static ArrayList<Table> tables = null;
     private static OptionalPluginWrapper rc = JDUtilities.getOptionalPlugin("remotecontrol");
 
-    private static Table createTable(Table table) {
-        tables.add(table);
-        return table;
+    public static ArrayList<Table> getTables() {
+        return tables;
     }
 
-    public static Table createAddonTable(Table table) {
-        return createTable(table);
+    public static Table createTable(Table table) {
+        tables.add(table);
+        return table;
     }
 
     private static void initTables() {
@@ -247,7 +247,6 @@ public class HelpPage {
                 PluginOptional addonIntance = addon.getPlugin();
 
                 if (addonIntance instanceof RemoteSupport) {
-                    ((RemoteSupport) addonIntance).setCmdTableName();
                     ((RemoteSupport) addonIntance).initCmdTable();
                 }
             }
