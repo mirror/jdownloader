@@ -17,9 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -147,7 +149,7 @@ public class ExtaBitCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://extabit.com", "language", "en");
         br.setFollowRedirects(false);
-        br.postPage("http://extabit.com/login.jsp", "email=" + account.getUser() + "&pass=" + account.getPass() + "&remember=1&auth_submit_login.x=0&auth_submit_login.y=0&auth_submit_login=Enter");
+        br.postPage("http://extabit.com/login.jsp", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&remember=1&auth_submit_login.x=" + new Random().nextInt(10) + "&auth_submit_login.y=" + new Random().nextInt(10) + "&auth_submit_login=Enter");
         if (br.getCookie("http://extabit.com/", "auth_uid") == null || br.getCookie("http://extabit.com/", "auth_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -162,15 +164,20 @@ public class ExtaBitCom extends PluginForHost {
         }
         br.getPage("http://extabit.com/");
         String expire = br.getRegex("Premium is active till <span class=\"green\"><strong>(.*?)</strong>").getMatch(0);
-        if (expire == null) {
+        String downloadsLeft = br.getRegex("You have <span class=\"green\"><strong>(\\d+) downloads</strong>").getMatch(0);
+        if (downloadsLeft != null)
+            downloadsLeft = " " + downloadsLeft + " downloads left";
+        else
+            downloadsLeft = "";
+        if (expire == null && downloadsLeft == null || downloadsLeft.equals("0")) {
             ai.setExpired(true);
             account.setValid(false);
             return ai;
-        } else {
+        } else if (expire != null) {
             ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", null));
         }
         ai.setUnlimitedTraffic();
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium User" + downloadsLeft);
         return ai;
     }
 
