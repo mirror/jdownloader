@@ -20,7 +20,10 @@ import java.io.BufferedInputStream;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -30,11 +33,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsx.hu" }, urls = { "http://s.*?.fsx.hu/.+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsx.hu" }, urls = { "http://s.*?.fsx.hu/.+/.+" }, flags = { 2 })
 public class FsxHu extends PluginForHost {
 
     public FsxHu(PluginWrapper wrapper) {
         super(wrapper);
+        // this.enablePremium();
     }
 
     @Override
@@ -45,6 +49,8 @@ public class FsxHu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
+        br.clearCookies("www.fsx.hu");
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("V.lassz az ingyenes let.lt.s .s a regisztr.ci. k.z.l!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
@@ -72,9 +78,11 @@ public class FsxHu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setCookiesExclusive(true);
-        br.clearCookies("www.fsx.hu");
         requestFileInformation(downloadLink);
+        handleFree0(downloadLink);
+    }
+
+    public void handleFree0(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(false);
 
         downloadImage("http://www.fsx.hu/img/button-letoltes1.gif");
@@ -112,6 +120,57 @@ public class FsxHu extends PluginForHost {
 
             br.getPage("http://www.fsx.hu/download.php");
         }
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
+        br.clearCookies("www.fsx.hu");
+        br.setCustomCharset("iso-8859-2");
+        br.getPage("http://fsx.hu/index.php?m=home&o=admin");
+        br.postPage("http://fsx.hu/index.php?m=home&o=admin", "u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&x=0&y=0");
+        System.out.print(br.toString());
+        if (!br.containsHTML("Előfizetésed a következő időpontig érvényes")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("következő időpontig érvényes: <b>(.*?)</b>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            expire = expire.replaceAll("(<b>|</b>)", "");
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "yyyy-MMMM-dd hh:mm:ss", null));
+        }
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        handleFree0(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
     }
 
     @Override
