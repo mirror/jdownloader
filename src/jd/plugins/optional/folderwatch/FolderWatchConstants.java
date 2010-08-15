@@ -22,7 +22,7 @@ public class FolderWatchConstants {
     public static final String CONFIG_KEY_OPENFOLDER = "OPENFOLDER";
     public static final String CONFIG_KEY_RECURSIVE = "RECURSIVE";
     public static final String CONFIG_KEY_AUTODELETE = "AUTODELETE";
-    public static final String CONFIG_KEY_HISTORYONLY = "CONFIG_KEY_HISTORYONLY";
+    public static final String CONFIG_KEY_HISTORYONLY = "HISTORYONLY";
 
-    public static final String CONFIG_KEY_HISTORY = "CONFIG_KEY_HISTORY";
+    public static final String CONFIG_KEY_HISTORY = "HISTORY";
 }

@@ -54,6 +54,8 @@ import name.pachler.nio.file.WatchEvent;
 import name.pachler.nio.file.WatchKey;
 import name.pachler.nio.file.WatchService;
 
+import org.appwork.utils.Regex;
+
 @SuppressWarnings("unused")
 @OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 5)
 public class JDFolderWatch extends PluginOptional implements ConfigurationListener, RemoteSupport {
@@ -92,7 +94,6 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
 
         public void register(String path) {
             Path watchedPath = Paths.get(path);
-
             WatchKey key = null;
 
             try {
@@ -197,10 +198,12 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
         return true;
     }
 
-    private boolean startWatching(boolean value) {
-        if (isEnabled) if (folder != null && (folder.equals("") == false)) {
-            watchingServiceThread = new WatchServiceThread(folder);
-            watchingServiceThread.start();
+    private boolean startWatching(boolean param) {
+        if (param == true) {
+            if (folder != null && !folder.equals("")) {
+                watchingServiceThread = new WatchServiceThread(folder);
+                watchingServiceThread.start();
+            }
             return true;
         } else {
             if (watchingServiceThread.isAlive()) {
@@ -220,7 +223,7 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
             } catch (Exception ex) {
                 JDLogger.exception(ex);
             }
-            startWatching(isEnabled);
+            startWatching(toggleAction.isSelected());
         } else if (e.getID() == 1) {
             if (showGuiAction.isSelected())
                 showGui();
@@ -352,14 +355,38 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
     }
 
     public Object handleRemoteCmd(String cmd) {
+        if (cmd.matches("(?is).*/addon/folderwatch/start")) {
+            toggleAction.setSelected(true);
+            subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_ENABLED, true);
+            subConfig.save();
+            startWatching(true);
+
+            return "JD FolderWatch has been started.";
+        } else if (cmd.matches("(?is).*/addon/folderwatch/stop")) {
+            toggleAction.setSelected(false);
+            subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_ENABLED, false);
+            subConfig.save();
+            startWatching(false);
+
+            return "JD FolderWatch has been stopped.";
+        } else if (cmd.matches("(?is).*/addon/folderwatch/registerfolder/.+")) {
+            String folder = new Regex(cmd, "(?is).*/addon/folderwatch/registerfolder/(.+)").getMatch(0);
+            watchingServiceThread.register(folder);
+
+            return folder + " has been registered to be watched.";
+        }
         return null;
     }
 
+    // More commands to come ;)
     public void initCmdTable() {
         Table t = HelpPage.createTable(new Table(this.getHost()));
 
-        t.setCommand("/addon/folderwatch/(start|stop)");
-        t.setInfo("Start or stop JD FolderWatch watching service.");
+        t.setCommand("/addon/folderwatch/start");
+        t.setInfo("Starts JD FolderWatch watching service.");
+
+        t.setCommand("/addon/folderwatch/stop");
+        t.setInfo("Stops JD FolderWatch watching service.");
 
         t.setCommand("/addon/folderwatch/registerfolder/%X%");
         t.setInfo("Adds a path to the list of folders that will be watched. You can register as many folders as you like.");
