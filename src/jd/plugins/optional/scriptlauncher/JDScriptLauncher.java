@@ -28,12 +28,14 @@ import jd.PluginWrapper;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.w3c.dom.Element;
 
 @OptionalPlugin(rev = "$Revision$", id = "scriptlauncher", interfaceversion = 5)
-public class JDScriptLauncher extends PluginOptional {
+public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
 
     private static final String scriptdir = "./scripts/";
 
@@ -190,5 +192,45 @@ public class JDScriptLauncher extends PluginOptional {
         }
 
         return scripts;
+    }
+
+    public Object handleRemoteCmd(String cmd) {
+
+        if (cmd.matches("(?is).*/addon/scriptlauncher/getlist")) {
+            for (File script : getScripts()) {
+                Element element = xmlDocument.createElement("script");
+                xmlDocument.getFirstChild().appendChild(element);
+                element.setAttribute("name", script.getName().split("\\.")[0]);
+
+                element = xmlDocument.createElement("absolutePath");
+                xmlDocument.getFirstChild().appendChild(element);
+                element.setTextContent(script.getAbsolutePath());
+
+                return xmlDocument;
+            }
+
+        } else if (cmd.matches("(?is).*/addon/scriptlauncher/launch/.+")) {
+            String scriptname = new Regex(cmd, "(?is).*/addon/scriptlauncher/launch/(.+)").getMatch(0);
+
+            if (launch(scriptname)) {
+                return "Script " + scriptname + " has been launched.";
+            } else {
+                return "Script " + scriptname + " doesn't exist.";
+            }
+        }
+
+        return null;
+    }
+
+    public void initCmdTable() {
+        t.setCommand("/addon/scriptlauncher/getlist");
+        t.setInfo("Get list of all available scripts");
+
+        t.setCommand("/addon/scriptlauncher/launch/%X%");
+        t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon");
+    }
+
+    public void setCmdTableName() {
+        t.setName(this.getHost());
     }
 }

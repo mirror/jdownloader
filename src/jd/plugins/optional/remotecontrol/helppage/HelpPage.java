@@ -19,6 +19,8 @@ package jd.plugins.optional.remotecontrol.helppage;
 import java.util.ArrayList;
 
 import jd.OptionalPluginWrapper;
+import jd.plugins.PluginOptional;
+import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDUtilities;
 
 public class HelpPage {
@@ -28,9 +30,13 @@ public class HelpPage {
     private static ArrayList<Table> tables = null;
     private static OptionalPluginWrapper rc = JDUtilities.getOptionalPlugin("remotecontrol");
 
-    private static Table create(Table table) {
+    private static Table createTable(Table table) {
         tables.add(table);
         return table;
+    }
+
+    public static Table createAddonTable(Table table) {
+        return createTable(table);
     }
 
     private static void initTables() {
@@ -39,7 +45,7 @@ public class HelpPage {
         StringBuilder info = null;
 
         // Table: Get main information/configuration
-        t = create(new Table("Get main information/configuration"));
+        t = createTable(new Table("Get main information/configuration"));
 
         t.setCommand("/get/rcversion");
         t.setInfo("Get RemoteControl version");
@@ -69,7 +75,7 @@ public class HelpPage {
         t.setInfo("Get whether reconnect is enabled or not");
 
         // Table: Get linkgrabber information
-        t = create(new Table("Get linkgrabber information"));
+        t = createTable(new Table("Get linkgrabber information"));
 
         t.setCommand("/get/grabber/list");
         t.setInfo("Get all links that are currently held by the link grabber (XML)");
@@ -87,7 +93,7 @@ public class HelpPage {
         t.setInfo("Get whether packages in the linkgrabber list should be added automatically after their availability was checked.");
 
         // Table: Get download list information
-        t = create(new Table("Get download list information"));
+        t = createTable(new Table("Get download list information"));
 
         t.setCommand("/get/downloads/all/count");
         t.setInfo("Get number of all downloads");
@@ -108,7 +114,7 @@ public class HelpPage {
         t.setInfo("Get list of finished downloads (XML)");
 
         // Table: Set (download-/grabber-)configuration
-        t = create(new Table("Set (download-/grabber-)configuration", "set-values"));
+        t = createTable(new Table("Set (download-/grabber-)configuration", "set-values"));
 
         t.setCommand("/set/reconnect/(true|false)");
         t.setInfo("Set reconnect enabled or not");
@@ -132,7 +138,7 @@ public class HelpPage {
         t.setInfo("Set whether the packages should be added to the downloadlist automatically after linkcheck.");
 
         // Table: Control downloads
-        t = create(new Table("Control downloads"));
+        t = createTable(new Table("Control downloads"));
 
         t.setCommand("/action/start");
         t.setInfo("Start downloads");
@@ -150,7 +156,7 @@ public class HelpPage {
         t.setInfo("Reconnect");
 
         // Table: Client actions
-        t = create(new Table("Client actions"));
+        t = createTable(new Table("Client actions"));
 
         t.setCommand("/action/(force)update");
         t.setInfo("Do a webupdate - /action/forceupdate will activate auto-restart if update is possible");
@@ -162,7 +168,7 @@ public class HelpPage {
         t.setInfo("Shutdown JDownloader");
 
         // Table: Add downloads
-        t = create(new Table("Add downloads"));
+        t = createTable(new Table("Add downloads"));
 
         t.setCommand("/action/add/links/%X%");
         info = new StringBuilder();
@@ -181,13 +187,13 @@ public class HelpPage {
         t.setInfo(info.toString());
 
         // Table: Export download packages
-        t = create(new Table("Export download packages"));
+        t = createTable(new Table("Export download packages"));
 
         t.setCommand("/action/save/container(/fromgrabber)/%X%");
         t.setInfo("Save DLC-container with all links to %X%<br/>" + "e.g. /action/add/container/%X%" + "<p>fromgrabber: save DLC-container from grabber list instead from download list</p>");
 
         // Table: Edit linkgrabber packages
-        t = create(new Table("Edit linkgrabber packages"));
+        t = createTable(new Table("Edit linkgrabber packages"));
 
         t.setCommand("/action/grabber/add/archivepassword/%X%/%Y%");
         t.setInfo("Add an archive password %Y% to one or more packages with packagename %X% hold by the linkgrabber, each packagename seperated by a slash)");
@@ -217,7 +223,7 @@ public class HelpPage {
         t.setInfo("Move %Y% (single link or list of links, each separated by NEWLINE char) to package %X%. In case the package given is not available, it will be newly created. Please note that if there are multiple packages named equally, the links will be put into the first one that is found. The term 'link' equals the 'browser url' you've provided previously, not the final download url. Package will be searched by case insensitive search.");
 
         // Table: Edit download packages
-        t = create(new Table("Edit download packages"));
+        t = createTable(new Table("Edit download packages"));
 
         t.setCommand("/action/downloads/removeall");
         t.setInfo("Remove all scheduled downloads");
@@ -226,23 +232,27 @@ public class HelpPage {
         t.setInfo("Remove packages %X% from download list, each packagename seperated by a slash");
 
         // Table: Specials
-        t = create(new Table("Specials"));
+        t = createTable(new Table("Specials"));
 
         t.setCommand("/special/check/%X%");
         t.setInfo("Check links in %X% without adding them to the linkgrabber or the download list. %X% may be a list of urls. Note: Links must be URLEncoded. Use NEWLINE between links!");
 
-        // Addon-Table: JDScriptLaucher
-        OptionalPluginWrapper sl = JDUtilities.getOptionalPlugin("scriptlauncher");
+        // Generates tables for all addons that are able to communicate with
+        // RemoteControl
+        ArrayList<OptionalPluginWrapper> addons = OptionalPluginWrapper.getOptionalWrapper();
 
-        if (sl != null && sl.isLoaded() && sl.isEnabled()) {
-            t = create(new Table("Addon: JDScriptLauncher"));
+        for (OptionalPluginWrapper addon : addons) {
 
-            t.setCommand("/addon/scriptlauncher/getlist");
-            t.setInfo("Get list of all available scripts");
+            if (addon != null && addon.isLoaded() && addon.isEnabled()) {
+                PluginOptional addonIntance = addon.getPlugin();
 
-            t.setCommand("/addon/scriptlauncher/launch/%X%");
-            t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon");
+                if (addonIntance instanceof RemoteSupport) {
+                    ((RemoteSupport) addonIntance).setCmdTableName();
+                    ((RemoteSupport) addonIntance).initCmdTable();
+                }
+            }
         }
+
     }
 
     public static String getHTML() {

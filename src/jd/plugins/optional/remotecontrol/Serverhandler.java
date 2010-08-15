@@ -49,12 +49,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginOptional;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
-import jd.plugins.optional.scriptlauncher.JDScriptLauncher;
+import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
@@ -71,6 +72,7 @@ public class Serverhandler implements Handler {
 
     private static final String ERROR_MALFORMED_REQUEST = "JDRemoteControl - Malformed request. Use /help";
     private static final String ERROR_LINK_GRABBER_RUNNING = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
+    private static final String ERROR_UNKNOWN_RESPONSE_TYPE = "Error: Unknown response type. Please inform us.";
 
     public void handle(Request request, Response response) {
         Document xml = JDUtilities.parseXmlString("<jdownloader></jdownloader>", false);
@@ -927,33 +929,31 @@ public class Serverhandler implements Handler {
             }
 
             response.addContent(JDUtilities.createXmlString(xml));
-        } else if (request.getRequestUrl().matches("(?is).*/addon/scriptlauncher/getlist")) {
-            final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("scriptlauncher");
+        } else if (request.getRequestUrl().matches("(?is).*/addon/.+")) {
+            // search in addons
+            ArrayList<OptionalPluginWrapper> addons = OptionalPluginWrapper.getOptionalWrapper();
+            Object cmdResponse = null;
 
-            if (plg != null && plg.isLoaded() && plg.isEnabled()) {
-                for (final File script : JDScriptLauncher.getScripts()) {
-                    final Element script_xml = addScriptName(xml, script);
-                    script_xml.appendChild(addScriptPath(xml, script));
+            for (OptionalPluginWrapper addon : addons) {
+
+                if (addon != null && addon.isLoaded() && addon.isEnabled()) {
+                    PluginOptional addonIntance = addon.getPlugin();
+
+                    if (addonIntance instanceof RemoteSupport) {
+                        cmdResponse = ((RemoteSupport) addonIntance).handleRemoteCmd(request.getRequestUrl());
+                    }
                 }
-
-                response.addContent(JDUtilities.createXmlString(xml));
-            } else {
-                response.addContent("Addon 'JDScriptLauncher' isn't loaded and/or enabled");
             }
-        } else if (request.getRequestUrl().matches("(?is).*/addon/scriptlauncher/launch/.+")) {
-            final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("scriptlauncher");
-            String scriptname = null;
-            scriptname = new Regex(request.getRequestUrl(), "(?is).*/addon/scriptlauncher/launch/(.+)").getMatch(0);
 
-            if (plg != null && plg.isLoaded() && plg.isEnabled()) {
-                if (JDScriptLauncher.launch(scriptname)) {
-                    response.addContent("Script " + scriptname + " has been launched.");
-                } else {
-                    response.addContent("Script " + scriptname + " doesn't exist.");
-                }
-            } else {
-                response.addContent("Addon 'JDScriptLauncher' isn't loaded and/or enabled");
-            }
+            if (cmdResponse != null) {
+                if (cmdResponse instanceof String) {
+                    response.addContent((String) cmdResponse);
+                } else if (cmdResponse instanceof Document) {
+                    response.addContent(JDUtilities.createXmlString((Document) cmdResponse));
+                } else
+                    response.addContent(ERROR_UNKNOWN_RESPONSE_TYPE);
+            } else
+                response.addContent(ERROR_MALFORMED_REQUEST);
         } else {
             response.addContent(ERROR_MALFORMED_REQUEST);
         }
@@ -1023,20 +1023,6 @@ public class Serverhandler implements Handler {
         xml.getFirstChild().appendChild(element);
         element.setAttribute("package_name", fp.getName());
         element.setAttribute("package_linkstotal", fp.size() + "");
-        return element;
-    }
-
-    private Element addScriptName(final Document xml, final File script) {
-        final Element element = xml.createElement("script");
-        xml.getFirstChild().appendChild(element);
-        element.setAttribute("name", script.getName().split("\\.")[0]);
-        return element;
-    }
-
-    private Element addScriptPath(final Document xml, final File script) {
-        final Element element = xml.createElement("absolute_path");
-        xml.getFirstChild().appendChild(element);
-        element.setTextContent(script.getAbsolutePath());
         return element;
     }
 
