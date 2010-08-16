@@ -57,14 +57,22 @@ public class SuperMovCom extends PluginForHost {
         if (dllink == null) dllink = br.getRegex("type=\"video/divx\" src=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();
-        URLConnectionAdapter con = br2.openGetConnection(dllink);
-        if (!con.getContentType().contains("html")) {
-            downloadLink.setDownloadSize(con.getLongContentLength());
-            downloadLink.setName(getFileNameFromHeader(con));
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setName(getFileNameFromHeader(con));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
         }
-        return AvailableStatus.TRUE;
     }
 
     @Override
