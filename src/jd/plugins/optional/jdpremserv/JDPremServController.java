@@ -1,5 +1,6 @@
 package jd.plugins.optional.jdpremserv;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -142,6 +143,10 @@ public class JDPremServController {
                 /* first disabled, maybe user has not enough rights */
                 retLink.setEnabled(false);
                 premServFilePackage.add(retLink);
+            }
+            if (retLink.getLinkStatus().isFinished() && !retLink.getLinkStatus().isPluginActive()) {
+                File file = new File(retLink.getFileOutput());
+                if (!file.exists()) retLink.reset();
             }
             requestedLinks.put(url, retLink);
         }

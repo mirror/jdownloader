@@ -163,7 +163,7 @@ public class PremShare extends PluginForHost {
                 logger.info("account has no rights to use this host");
                 return false;
             }
-            if (status.contains("ERROR: -10")) {
+            if (status.contains("ERROR: -10") && !status.contains("ERROR: -100")) {
                 /* account invalid */
                 acc.setEnabled(false);
                 logger.info("JDPremium account invalid");
