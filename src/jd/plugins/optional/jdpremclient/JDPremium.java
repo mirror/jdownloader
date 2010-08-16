@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
@@ -69,6 +70,68 @@ class PremShareHost extends HostPluginWrapper {
         }
         return tmp;
     }
+
+    @Override
+    public String getVersion() {
+        if (replacedone != null) return replacedone.getVersion();
+        return super.getVersion();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        if (replacedone != null) return replacedone.isEnabled();
+        return super.isEnabled();
+    }
+
+    @Override
+    public void setEnabled(final boolean bool) {
+        if (replacedone != null) {
+            replacedone.setEnabled(bool);
+        } else {
+            super.setEnabled(bool);
+        }
+    }
+
+    @Override
+    public boolean isAGBChecked() {
+        if (replacedone != null) return replacedone.isAGBChecked();
+        return true;
+    }
+
+    @Override
+    public void setAGBChecked(final Boolean value) {
+        if (replacedone != null) {
+            replacedone.setAGBChecked(value);
+        }
+    }
+
+    @Override
+    public SubConfiguration getPluginConfig() {
+        if (replacedone != null) {
+            return replacedone.getPluginConfig();
+        } else {
+            return super.getPluginConfig();
+        }
+    }
+
+    @Override
+    public boolean hasConfig() {
+        if (replacedone != null) {
+            return replacedone.hasConfig();
+        } else {
+            return super.hasConfig();
+        }
+    }
+
+    @Override
+    public String getConfigName() {
+        if (replacedone != null) {
+            return replacedone.getConfigName();
+        } else {
+            return super.getConfigName();
+        }
+    }
+
 }
 
 @OptionalPlugin(rev = "$Revision$", id = "jdpremium", interfaceversion = 5)

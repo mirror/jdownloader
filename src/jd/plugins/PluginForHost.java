@@ -571,12 +571,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     public void resetPluginGlobals() {
     }
 
-    public void setAGBChecked(boolean value) {
-        final SubConfiguration pluginConfig = getPluginConfig();
-        pluginConfig.setProperty(AGB_CHECKED, value);
-        pluginConfig.save();
-    }
-
     public static synchronized void setCurrentConnections(final int CurrentConnections) {
         currentConnections = CurrentConnections;
     }
@@ -720,6 +714,10 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     public DownloadLink getDownloadLink() {
         return link;
+    }
+
+    public void setAGBChecked(boolean b) {
+        ((HostPluginWrapper) wrapper).setAGBChecked(b);
     }
 
 }

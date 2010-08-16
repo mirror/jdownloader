@@ -72,18 +72,6 @@ public class PremShare extends PluginForHost {
     }
 
     @Override
-    public boolean isAGBChecked() {
-        if (plugin == null) return true;
-        return plugin.isAGBChecked();
-    }
-
-    @Override
-    public void setAGBChecked(boolean value) {
-        if (plugin == null) return;
-        plugin.setAGBChecked(value);
-    }
-
-    @Override
     public ConfigContainer getConfig() {
         if (plugin == null) return super.getConfig();
         return plugin.getConfig();
