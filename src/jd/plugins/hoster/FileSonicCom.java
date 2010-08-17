@@ -17,11 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -39,15 +42,17 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
+    private static final Object LOCK = new Object();
+
     public FileSonicCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.filesonic.com/en/premium");
+        this.enablePremium("http://www.filesonic.com/premium");
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.filesonic.com/en/contact-us";
+        return "http://www.filesonic.com/contact-us";
     }
 
     private static String WAIT = "WAIT";
@@ -62,7 +67,7 @@ public class FileSonicCom extends PluginForHost {
         /* convert sharingmatrix to filesonic that set english language */
         String id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
         if (id == null) id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
-        link.setUrlDownload("http://www.filesonic.com/en/file/" + id);
+        link.setUrlDownload("http://www.filesonic.com/file/" + id);
     }
 
     @Override
@@ -70,16 +75,55 @@ public class FileSonicCom extends PluginForHost {
         return 500;
     }
 
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        br.setFollowRedirects(true);
-        br.setCookie("http://www.filesonic.com/", "lang", "en");
-        br.getPage("http://www.filesonic.com/");
-        XMLRequest(br, "http://www.filesonic.com/en/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        br.setFollowRedirects(false);
-        String premCookie = br.getCookie("http://www.filesonic.com", "role");
-        if (premCookie == null || !premCookie.equalsIgnoreCase("premium")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+    @SuppressWarnings("unchecked")
+    public void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            br.setDebug(true);
+            br.setFollowRedirects(true);
+            try {
+                br.setCookie("http://www.filesonic.com/", "lang", "en");
+                Object ret = account.getProperty("cookies", null);
+                if (ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (cookies.containsKey("role") && account.isValid()) {
+                        for (String key : cookies.keySet()) {
+                            br.setCookie("http://www.filesonic.com/", key, cookies.get(key));
+                        }
+                        return;
+                    }
+                }
+                try {
+                    br.getPage("http://www.filesonic.com/");
+                    XMLRequest(br, "http://www.filesonic.com/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                } catch (Exception e) {
+                }
+                br.setFollowRedirects(false);
+                String premCookie = br.getCookie("http://www.filesonic.com", "role");
+                if (premCookie == null) {
+                    AccountInfo ai = account.getAccountInfo();
+                    if (ai == null) {
+                        ai = new AccountInfo();
+                        account.setAccountInfo(ai);
+                    }
+                    ai.setStatus("ServerProblems, will try again in few minutes!");
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                if (premCookie.equalsIgnoreCase("free")) {
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                HashMap<String, String> cookies = new HashMap<String, String>();
+                Cookies add = br.getCookies("http://www.filesonic.com");
+                for (Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("cookies", cookies);
+            } finally {
+                br.setFollowRedirects(false);
+            }
+        }
     }
 
     private void XMLRequest(Browser br, String url, String post) throws IOException {
@@ -91,40 +135,38 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
+        synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
+            try {
+                login(account, true);
+            } catch (PluginException e) {
+                if (account.getAccountInfo() != null) ai = account.getAccountInfo();
+                if (e.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
+                    account.setValid(true);
+                } else {
+                    account.setValid(false);
+                }
+                return ai;
+            }
+            if (account.getAccountInfo() != null) ai = account.getAccountInfo();
+            br.getPage("http://www.filesonic.com/user/settings");
+            String expiredate = br.getRegex("settingsExpireDate\">(.*?)<").getMatch(0);
+            if (expiredate != null) {
+                ai.setStatus("Premium User");
+                ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", null));
+                account.setValid(true);
+                return ai;
+            }
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://www.filesonic.com/en/dashboard");
-        String expiredate = br.getRegex("Premium membership valid until.*?<span>(.*?),").getMatch(0);
-        String daysleft = br.getRegex("Premium membership valid until.*?<span>.*?,.*?(\\d+)").getMatch(0);
-        if (expiredate != null) {
-            ai.setStatus("Premium User");
-            /* expire date is buggy at the moment */
-            // ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd",
-            // null));
-            account.setValid(true);
-            return ai;
-        }
-        if (daysleft != null) {
-            /* days left seems buggy atm */
-            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysleft) * 24 * 60 * 60 * 1000));
-            ai.setStatus("Premium User");
-            account.setValid(true);
-            return ai;
-        }
-        account.setValid(false);
-        return ai;
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(downloadLink);
-        login(account);
+        login(account, false);
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
         String url = br.getRedirectLocation();
@@ -173,11 +215,8 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.setCookie("http://www.filesonic.com/", "lang", "en");
-        br.getPage("http://www.filesonic.com/");
         br.getPage(parameter.getDownloadURL());
-        br.setFollowRedirects(false);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Filename: </span> <strong>(.*?)<").getMatch(0);
@@ -196,6 +235,7 @@ public class FileSonicCom extends PluginForHost {
     }
 
     private void errorHandling(DownloadLink downloadLink) throws PluginException {
+        if (br.containsHTML("Free user can not download files")) throw new PluginException(LinkStatus.ERROR_FATAL, "Free user can not download files over 400MB");
         if (br.containsHTML("Download session in progress")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", 10 * 60 * 1000l);
         if (br.containsHTML("This file is password protected")) {
             downloadLink.setProperty("pass", null);
@@ -210,7 +250,7 @@ public class FileSonicCom extends PluginForHost {
         String passCode = null;
         String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
-        br.getPage("http://www.filesonic.com/en/download-free/" + id);
+        br.getPage("http://www.filesonic.com/download-free/" + id);
         errorHandling(downloadLink);
         if (br.containsHTML("This file is password protected")) {
             /* password handling */
@@ -234,7 +274,10 @@ public class FileSonicCom extends PluginForHost {
              * we have to wait a little longer than needed cause its not exactly
              * the same time
              */
-            if (Long.parseLong(countDownDelay) > 300 && doReconnect) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay + 2) * 1001l);
+            if (Long.parseLong(countDownDelay) > 300 && doReconnect) {
+                logger.info(br.toString());
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay + 2) * 1001l);
+            }
             this.sleep((Long.parseLong(countDownDelay) + 2) * 1001, downloadLink);
         }
         /*
