@@ -172,6 +172,13 @@ public class GigaSizeCom extends PluginForHost {
         }
         Form download = br.getFormbyProperty("id", "formDownload");
         if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int waittime = 60;
+        String regexedWaittime = br.getRegex("id=\"d2\">(\\d+)</strong>").getMatch(0);
+        if (regexedWaittime != null)
+            waittime = Integer.parseInt(regexedWaittime);
+        else
+            logger.info("The regexed waittime is not found, waiting the default waittime...");
+        sleep(waittime * 1001l, downloadLink);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, true, 1);
         if (!dl.getConnection().isContentDisposition()) {

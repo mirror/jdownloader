@@ -109,7 +109,7 @@ public class Vipfilecom extends PluginForHost {
         }
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Ваша ссылка для скачивания:<br><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(1));
         if (url == null) url = br.getRegex("(http://[0-9]+\\.[0-9]+\\.[0-9]+\\..*?/downloadp[0-9]+/.*?)'>").getMatch(0);
-        if (url == null && br.containsHTML("Wrong password")) {
+        if (url == null && br.containsHTML("(Wrong password|>This password expired<)")) {
             logger.info("Downloadpassword seems to be wrong, disabeling account now!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
