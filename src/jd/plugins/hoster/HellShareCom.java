@@ -90,10 +90,11 @@ public class HellShareCom extends PluginForHost {
         }
         String hostedFiles = br.getRegex(">Number of your files:</label></th>.*?<td id=\"info_files_counter\"><strong>(\\d+)</strong></td>").getMatch(0);
         if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
-        String trafficleft = br.getRegex("id=\"info_credit\">.*?<strong>(.*?)</strong>").getMatch(0);
+        String trafficleft = br.getRegex("id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>").getMatch(0);
         if (trafficleft != null) {
             ai.setTrafficLeft(Regex.getSize(trafficleft));
         }
+        ai.setStatus("Premium User");
         account.setValid(true);
         return ai;
     }
