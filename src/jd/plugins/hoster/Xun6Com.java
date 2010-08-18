@@ -91,14 +91,14 @@ public class Xun6Com extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             captchaform.put("captchacode", code);
             br.submitForm(captchaform);
-            if (br.containsHTML("name=\"captchacode\"") || br.containsHTML("name=\"downloadpw\"")) {
+            if (br.containsHTML("captcha\\.php\\?")) {
                 logger.warning("Wrong captcha or wrong password");
                 downloadLink.setProperty("pass", null);
                 continue;
             }
             break;
         }
-        if (br.containsHTML("name=\"captchacode\"") || br.containsHTML("name=\"downloadpw\"")) {
+        if (br.containsHTML("captcha\\.php\\?")) {
             logger.warning("Wrong captcha or wrong password");
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
