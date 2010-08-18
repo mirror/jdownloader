@@ -134,7 +134,7 @@ public class ExtaBitCom extends PluginForHost {
         }
         if (br.containsHTML("api.recaptcha.net") || !xmlbrowser.containsHTML("\"ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = br.getRegex("Turn your download manager off and[ ]+<a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"h(ttp://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if ((dl.getConnection().getContentType().contains("html"))) {
