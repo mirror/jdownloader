@@ -49,7 +49,8 @@ public class TubeLoadTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(File kann nicht abgespielt werden|Sie werden weitergeleitet in )")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Sie schauen:(.*?)</h2>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) filename = br.getRegex(";font-weight:bold;text-indent:20px;color:#fff;line-height:33px\">(.*?)</div>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename);
         dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
         if (dllink == null) {

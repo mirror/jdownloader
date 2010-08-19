@@ -62,9 +62,9 @@ public class FlCrpCm extends PluginForDecrypt {
                 if (br.containsHTML("(captcha.php?|red>Invalid access code)")) throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         }
-        String finallink = br.getRegex("color=red>Downloading(.*?)\\(file hosted").getMatch(0);
+        String finallink = br.getRegex("Downloading</b> (.*?) <font").getMatch(0);
         if (finallink == null) {
-            finallink = br.getRegex("<center><a rel=nofollow href=\"(.*?)\"").getMatch(0);
+            finallink = br.getRegex("class=\"direct_link\" rel=nofollow href=\"(.*?)\"F").getMatch(0);
         }
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));
