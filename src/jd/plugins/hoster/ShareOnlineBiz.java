@@ -197,7 +197,10 @@ public class ShareOnlineBiz extends PluginForHost {
         requestFileInformation(parameter);
         login(account);
         if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage(parameter.getDownloadURL());
+
+        String startURL = parameter.getDownloadURL();
+        // workaround to bypass new layout and use old site
+        br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
         // Account banned/deactivated because too many IPs used it
         if (br.containsHTML(">DL_GotMaxIPPerUid<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         // Sometimes the API is wrong so a file is marked as online but it's
@@ -255,7 +258,10 @@ public class ShareOnlineBiz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+
+        String startURL = downloadLink.getDownloadURL();
+        // workaround to bypass new layout and use old site
+        br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
         // Sometimes the API is wrong so a file is marked as online but it's
         // offline so here we chack that
         if (br.containsHTML("(strong>Your desired download could not be found|/>There isn't any usable file behind the URL)")) {
