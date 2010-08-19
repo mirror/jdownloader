@@ -265,23 +265,34 @@ public class Uploadedto extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         LINK_OBSERVER.register(downloadLink);
         br.setFollowRedirects(true);
         String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
-        try {
-            br.getPage("http://uploaded.to/api/file?id=" + id);
-            String[] lines = Regex.getLines(br + "");
-
-            String fileName = lines[0].trim();
-
-            long fileSize = Long.parseLong(lines[1].trim());
-            downloadLink.setFinalFileName(fileName);
-            downloadLink.setDownloadSize(fileSize);
-            downloadLink.setSha1Hash(lines[2].trim());
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        int retry = 0;
+        while (true) {
+            try {
+                br.getPage("http://uploaded.to/api/file?id=" + id);
+                String[] lines = Regex.getLines(br + "");
+                String fileName = lines[0].trim();
+                long fileSize = Long.parseLong(lines[1].trim());
+                downloadLink.setFinalFileName(fileName);
+                downloadLink.setDownloadSize(fileSize);
+                downloadLink.setSha1Hash(lines[2].trim());
+                break;
+            } catch (Exception e) {
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    if (retry < 5) {
+                        retry++;
+                        Thread.sleep(100 + retry * 20);
+                        continue;
+                    } else {
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());

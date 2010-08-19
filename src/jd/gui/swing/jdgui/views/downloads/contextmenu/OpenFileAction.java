@@ -16,8 +16,12 @@ public class OpenFileAction extends ContextMenuAction {
 
     public OpenFileAction(File file) {
         this.file = file;
-
         init();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return file != null && file.exists();
     }
 
     @Override

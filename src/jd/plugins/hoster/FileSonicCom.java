@@ -106,7 +106,7 @@ public class FileSonicCom extends PluginForHost {
                         ai = new AccountInfo();
                         account.setAccountInfo(ai);
                     }
-                    ai.setStatus("ServerProblems, will try again in few minutes!");
+                    ai.setStatus("ServerProblems(1), will try again in few minutes!");
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
@@ -153,7 +153,9 @@ public class FileSonicCom extends PluginForHost {
             String expiredate = br.getRegex("settingsExpireDate\">(.*?)<").getMatch(0);
             if (expiredate != null) {
                 ai.setStatus("Premium User");
-                ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", null));
+                // it seems expire date is still wrong for many users
+                // ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", null));
+                ai.setValidUntil(-1);
                 account.setValid(true);
                 return ai;
             }
@@ -173,7 +175,14 @@ public class FileSonicCom extends PluginForHost {
         if (url == null) {
             /* no redirect, what the frak */
             logger.warning(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            AccountInfo ai = account.getAccountInfo();
+            if (ai == null) {
+                ai = new AccountInfo();
+                account.setAccountInfo(ai);
+            }
+            ai.setStatus("ServerProblems(2), will try again in few minutes!");
+            account.setProperty("cookies", null);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         br.setFollowRedirects(true);
         br.setDebug(true);

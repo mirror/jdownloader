@@ -50,10 +50,6 @@ public abstract class PluginsC extends Plugin {
         super(wrapper);
     }
 
-    private static final HashMap<String, ArrayList<DownloadLink>> CONTAINER = new HashMap<String, ArrayList<DownloadLink>>();
-
-    private static final HashMap<String, ArrayList<String>> CONTAINERLINKS = new HashMap<String, ArrayList<String>>();
-
     private static final HashMap<String, PluginsC> PLUGINS = new HashMap<String, PluginsC>();
 
     private static final int STATUS_NOTEXTRACTED = 0;
@@ -340,7 +336,7 @@ public abstract class PluginsC extends Plugin {
     }
 
     public synchronized void initContainer(String filename, final byte[] bs) {
-
+        if (filename == null) return;
         final File rel = JDUtilities.getResourceFile(filename);
         final File ab = new File(filename);
         final String md;
@@ -353,20 +349,6 @@ public abstract class PluginsC extends Plugin {
                 JDIO.copyFile(ab, newFile);
             }
             filename = "container/" + md + "." + extension;
-        }
-
-        if (filename == null) { return; }
-        if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
-            logger.info("Cached " + filename);
-            cls = CONTAINER.get(filename);
-            if (cls != null) {
-                Iterator<DownloadLink> it = cls.iterator();
-                while (it.hasNext()) {
-                    it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-                }
-            }
-            dlU = CONTAINERLINKS.get(filename);
-            return;
         }
 
         if (cls == null || cls.size() == 0) {
@@ -395,13 +377,6 @@ public abstract class PluginsC extends Plugin {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
                 }
                 progress.increase(1);
-            }
-            if (cls == null || cls.size() == 0) {
-                CONTAINER.put(filename, null);
-                CONTAINERLINKS.put(filename, null);
-            } else {
-                CONTAINER.put(filename, cls);
-                CONTAINERLINKS.put(filename, dlU);
             }
             if (this.containerStatus == null) {
                 progress.setColor(Color.RED);

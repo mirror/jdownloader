@@ -75,7 +75,14 @@ public class FileServeCom extends PluginForHost {
     public void login(Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&loginFormSubmit=Login");
+        br.setDebug(true);
+        br.getPage("http://fileserve.com/");
+        /* username and pass are limited to 20 chars */
+        String username = account.getUser();
+        String password = account.getPass();
+        if (username != null && username.length() > 20) username = username.substring(0, 20);
+        if (password != null && password.length() > 20) password = password.substring(0, 20);
+        br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(username) + "&loginUserPassword=" + Encoding.urlEncode(password) + "&loginFormSubmit=Login");
         br.getPage("http://fileserve.com/dashboard.php");
         String accType = br.getRegex("<h5>Account type:</h5>[\r\n ]+<h3>(Premium|Free)</h3>").getMatch(0);
         if (accType == null) accType = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium|Free)([ ]+)?</h5>").getMatch(0);
@@ -157,7 +164,7 @@ public class FileServeCom extends PluginForHost {
         // It doesn't work without accessing this page!!
         br2.getPage(captchaJSPage);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        if (!br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">") || !br2.containsHTML("//showCaptcha\\(\\);")) {
+        if (!br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">") && !br2.containsHTML("//showCaptcha\\(\\);")) {
             Boolean failed = true;
             for (int i = 0; i <= 3; i++) {
                 String id = br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);
