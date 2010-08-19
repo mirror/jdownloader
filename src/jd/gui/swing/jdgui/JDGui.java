@@ -159,7 +159,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainFrame.setSize(dim);
         mainFrame.setMinimumSize(new Dimension(400, 100));
         mainFrame.setLocation(GUIUtils.getLastLocation(null, mainFrame));
-        mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
+
+        if (GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL) == JFrame.ICONIFIED) {
+            mainFrame.setExtendedState(JFrame.NORMAL);
+        } else {
+            mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
+        }
 
         if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
@@ -219,8 +224,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     /**
      * Sets the Windows Icons. lot's of lafs have problems resizing the icon. so
-     * we set different sizes. for 1.5 it is only possible to use
-     * {@link JFrame#setIconImage(Image)}
+     * we set different sizes. for 1.5 it is only possible to use {@link JFrame#setIconImage(Image)}
      */
     private void setWindowIcon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
