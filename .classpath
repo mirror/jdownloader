@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="ressourcen"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="jd/ressourcen/libs/dbus"/>
@@ -81,5 +82,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/jackson-mapper.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/trident.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/appworkutilities.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

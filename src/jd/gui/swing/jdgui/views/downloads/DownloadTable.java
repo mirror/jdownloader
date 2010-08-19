@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
+import java.awt.Desktop;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -54,6 +55,7 @@ import jd.gui.swing.jdgui.views.downloads.contextmenu.EnableAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.ForceDownloadAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.NewPackageAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenDirectoryAction;
+import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenFileAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenInBrowserAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageDirectoryAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageNameAction;
@@ -329,6 +331,20 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             } else if (obj instanceof DownloadLink) {
                 popup.add(new OpenDirectoryAction(new File(((DownloadLink) obj).getFileOutput()).getParentFile()));
                 popup.add(new OpenInBrowserAction(alllinks));
+
+                /*
+                 * check if Java version 1.6 or higher is installed, because the
+                 * Desktop-Class (e.g. to open a file with correct application)
+                 * is only supported by v1.6 or higher
+                 */
+                if (JDUtilities.getJavaVersion() >= 1.6) {
+                    // check if open a file is supported by this operating
+                    // system (on linux maybe wrong GNOME version)
+                    if (Desktop.isDesktopSupported()) {
+                        // add the Open File entry
+                        popup.add(new OpenFileAction(new File(((DownloadLink) obj).getFileOutput())));
+                    }
+                }
             }
             popup.addSeparator();
 
