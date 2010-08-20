@@ -164,7 +164,7 @@ public class FileServeCom extends PluginForHost {
         // It doesn't work without accessing this page!!
         br2.getPage(captchaJSPage);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        if (!br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">") && !br2.containsHTML("//showCaptcha\\(\\);")) {
+        if (!br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">") || br2.containsHTML("showCaptcha\\(\\);")) {
             Boolean failed = true;
             for (int i = 0; i <= 3; i++) {
                 String id = br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);

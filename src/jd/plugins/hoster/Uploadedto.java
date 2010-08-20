@@ -100,6 +100,7 @@ public class Uploadedto extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://uploaded.to/ref?id=70683&r");
         setMaxConnections(20);
+        this.setStartIntervall(2000l);
     }
 
     @Override

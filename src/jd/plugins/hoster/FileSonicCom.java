@@ -106,9 +106,14 @@ public class FileSonicCom extends PluginForHost {
                         ai = new AccountInfo();
                         account.setAccountInfo(ai);
                     }
-                    ai.setStatus("ServerProblems(1), will try again in few minutes!");
                     account.setProperty("cookies", null);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    if (br.containsHTML("Provided password does not match")) {
+                        ai.setStatus("Provided password does not match");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        ai.setStatus("ServerProblems(1), will try again in few minutes!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
                 }
                 if (premCookie.equalsIgnoreCase("free")) {
                     account.setProperty("cookies", null);
@@ -154,7 +159,8 @@ public class FileSonicCom extends PluginForHost {
             if (expiredate != null) {
                 ai.setStatus("Premium User");
                 // it seems expire date is still wrong for many users
-                // ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", null));
+                // ai.setValidUntil(Regex.getMilliSeconds(expiredate,
+                // "yyyy-MM-dd HH:mm:ss", null));
                 ai.setValidUntil(-1);
                 account.setValid(true);
                 return ai;

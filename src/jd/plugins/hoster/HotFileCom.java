@@ -80,7 +80,7 @@ public class HotFileCom extends PluginForHost {
         form.setMethod(MethodType.POST);
         form.put("action", action);
         if (account != null) {
-            String pwMD5 = JDHash.getMD5(account.getPass());
+            String pwMD5 = JDHash.getMD5(account.getPass().trim());
             form.put("username", Encoding.urlEncode(account.getUser()));
             form.put("passwordmd5", pwMD5);
         }
@@ -144,6 +144,15 @@ public class HotFileCom extends PluginForHost {
         String finalUrls = info.get("httpresponse").trim();
         if (finalUrls == null || finalUrls.startsWith(".")) {
             logger.severe(finalUrls);
+            if (finalUrls != null && finalUrls.startsWith(".too many failed")) {
+                AccountInfo ai = account.getAccountInfo();
+                if (ai == null) {
+                    ai = new AccountInfo();
+                    account.setAccountInfo(ai);
+                }
+                ai.setStatus("too many failed logins(check logins)! try again in 10 minutes");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dlUrls[] = Regex.getLines(finalUrls);
