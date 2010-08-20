@@ -16,14 +16,11 @@
 
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -51,34 +48,22 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://protected.socadvnet.com/index.php")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        String security = br.getRegex("(style=\"margin-top:200px;\">[\t\n\r ]+\\d+ <img  border=\"0\" style=\"margin-top: 20px;\" src=\".*?\"> (\\d+) =)").getMatch(0);
+        if (!br.containsHTML("capt\\.php")) return null;
         br.postPage("http://protected.socadvnet.com/allinks.php", "LinkName=" + postvar);
         String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:eopp)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) return null;
         int linkCounter = linksCount.length;
-        if (security != null) {
-            Regex numberRegex = new Regex(security, "style=\"margin-top:200px;\">[\t\n\r ]+(\\d+) <img  border=\"0\" style=\"margin-top: 20px;\" src=\"(.*?)\"> (\\d+) =");
-            String num1 = numberRegex.getMatch(0);
-            String num2 = numberRegex.getMatch(2);
-            String aPage = numberRegex.getMatch(1);
-            if (num1 == null || num2 == null || aPage == null) {
-                logger.warning("Error in doing the maths for link: " + parameter);
-                return null;
-            }
-            int equals = 0;
-            File aFile = getLocalCaptchaFile();
-            Browser.download(aFile, br.cloneBrowser().openGetConnection("http://protected.socadvnet.com/" + aPage));
-            String hash = JDHash.getMD5(aFile);
-            if (hash.equals("1022cbc696d52cb9f5d95e069c6e7c28"))
-                equals = Integer.parseInt(num1) - Integer.parseInt(num2);
-            else
-                equals = Integer.parseInt(num1) + Integer.parseInt(num2);
+        for (int i = 0; i <= 3; i++) {
+            String equals = getCaptchaCode("http://protected.socadvnet.com/plugin/capt.php", param);
             br.postPage("http://protected.socadvnet.com/cp_code.php", "res_code=" + equals);
-            if (!br.toString().trim().equals("1")) {
+            if (!br.toString().trim().equals("1") && !br.toString().trim().equals("0")) {
                 logger.warning("Error in doing the maths for link: " + parameter);
                 return null;
             }
+            if (!br.toString().trim().equals("1")) continue;
+            break;
         }
+        if (!br.toString().trim().equals("1")) throw new DecrypterException(DecrypterException.CAPTCHA);
         logger.info("Found " + linkCounter + " links, decrypting now...");
         progress.setRange(linkCounter);
         for (int i = 0; i <= linkCounter - 1; i++) {

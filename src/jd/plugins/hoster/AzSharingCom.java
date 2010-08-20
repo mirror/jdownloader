@@ -162,7 +162,7 @@ public class AzSharingCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Ticket Time (not needed, can be skipped right now)
+        // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt != null) {
             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
@@ -198,8 +198,8 @@ public class AzSharingCom extends PluginForHost {
             logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
         } else if (br.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard captcha\" for this host");
-            String captchaurl = br.getRegex("<b>Enter code below:</b></td></tr>[\t\n\r ]+<tr><td>[\t\n\r ]+<img src=\"(.*?/captchas/.*?\\..*?)\"").getMatch(0);
-            if (captchaurl == null) captchaurl = br.getRegex("\"(http://azsharing\\.com/captchas/[a-z0-9]+\\.azimg)\"").getMatch(0);
+            String captchaurl = br.getRegex("<b>Enter code below:</b></td></tr>[\t\n\r ]+<tr><td>[\t\n\r ]+(<img alt=\".*?\" )?src=\"(.*?/captchas/.*?\\..*?)\"").getMatch(1);
+            if (captchaurl == null) captchaurl = br.getRegex("\"(http://azsharing\\.com/captchas/[a-z0-9]+\\.[a-z0-9]+)\"").getMatch(0);
             if (captchaurl == null) {
                 logger.warning("Standard captcha captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

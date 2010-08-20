@@ -16,10 +16,10 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -40,63 +40,30 @@ public class FileSavrCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-
-        if (br.containsHTML("\\.\\./images/download2\\.png")) {
-            String filename = new Regex(downloadLink.getDownloadURL(), "http://[\\w\\.]*?filesavr\\.com/([A-Za-z0-9]+(_\\d+)?)").getMatch(0);
-
-            if (filename != null) {
-                downloadLink.setName(filename);
-                return AvailableStatus.TRUE;
-            }
-
-        }
-
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Sorry, File not found\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"file-name-text\">(.*?)</div>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        Form captchaForm = null;
-        URLConnectionAdapter con = null;
-        boolean valid = false;
-
-        for (int i = 0; i <= 5; i++) {
-            captchaForm = br.getForm(0);
-            String captchaUrl = br.getRegex("(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
-            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaUrl = "http://www.filesavr.com/" + captchaUrl;
-            String code = getCaptchaCode(captchaUrl, downloadLink);
-            captchaForm.put("code", code);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
-            con = dl.getConnection();
-
-            if (!dl.getConnection().getContentType().contains("html")) {
-                valid = true;
-                break;
-            } else {
-                con.disconnect();
-                br.getPage(downloadLink.getDownloadURL());
-            }
-
-        }
-
-        if (valid == false) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
-        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
-            con.disconnect();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.filesavr.com/download/do_download", "key=" + new Regex(downloadLink.getDownloadURL(), "filesavr\\.com/(.+)").getMatch(0), false, 1);
+        if (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206) {
+            dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
         }
-
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
