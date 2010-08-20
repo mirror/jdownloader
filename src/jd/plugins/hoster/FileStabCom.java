@@ -136,7 +136,7 @@ public class FileStabCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // // Ticket Time --> is akippable at the moment!
+        // // Ticket Time
         // String ttt = new Regex(brbefore,
         // "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         // if (ttt == null) ttt = new Regex(brbefore,
@@ -286,6 +286,9 @@ public class FileStabCom extends PluginForHost {
                 dllink = new Regex(brbefore, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                 if (dllink == null) {
                     dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = new Regex(brbefore, "\"(http://[0-9\\.]+:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                    }
                 }
             }
         }

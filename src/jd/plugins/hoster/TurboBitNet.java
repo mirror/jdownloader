@@ -148,6 +148,10 @@ public class TurboBitNet extends PluginForHost {
         String downloadUrl = br.getRegex("<a href='(.*?)'>").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -195,11 +199,16 @@ public class TurboBitNet extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<h1><a href='(.*?)'>").getMatch(0);
         if (dllink == null) dllink = br.getRegex("('|\")(http://(www\\.)?turbobit\\.net//download/redirect/.*?)('|\")").getMatch(1);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink equals null, plugin seems to be broken!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (!dllink.contains("turbobit.net")) dllink = "http://turbobit.net" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            logger.warning("dllink doesn't seem to be a file...");
+            if (br.containsHTML("<h1>404 Not Found</h1>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

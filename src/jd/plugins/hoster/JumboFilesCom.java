@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -36,6 +37,8 @@ public class JumboFilesCom extends PluginForHost {
         super(wrapper);
     }
 
+    private String brbefore = "";
+
     @Override
     public String getAGBLink() {
         return "http://jumbofiles.com/tos.html";
@@ -46,18 +49,22 @@ public class JumboFilesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.jumbofiles.com", "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No such file") || br.containsHTML("No such user exist") || br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Filename:.*?</TD><TD>(.*?)</TD>").getMatch(0);
-        String filesize = br.getRegex("Filesize:.*?</TD><TD>(.*?)</TD>").getMatch(0);
+        doSomething();
+        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = new Regex(brbefore, "Filename:.*?</TD><TD>(.*?)</TD>").getMatch(0);
+        String filesize = new Regex(brbefore, "Filesize:.*?</TD><TD>(.*?)</TD>").getMatch(0);
         // They got different pages for stream, normal and pw-protected files so
         // we need special handling
         if (filesize == null) {
-            filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("<TD><center>.*?<br>(.*?)<br>").getMatch(0);
+            filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
+            if (filesize == null) filesize = new Regex(brbefore, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
-            if (filename == null) filename = br.getRegex("<TD><center>(.*?)<br>").getMatch(0);
+            filename = new Regex(brbefore, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
+            if (filename == null) filename = new Regex(brbefore, "<TD><center>(.*?)<br>").getMatch(0);
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.replace("&nbsp;", "");
@@ -75,7 +82,7 @@ public class JumboFilesCom extends PluginForHost {
         Form dlForm = br.getFormbyProperty("name", "F1");
         if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String passCode = null;
-        if (br.containsHTML("<b>Password:</b>")) {
+        if (brbefore.contains("<b>Password:</b>")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             } else {
@@ -85,7 +92,8 @@ public class JumboFilesCom extends PluginForHost {
             dlForm.put("password", passCode);
         }
         br.submitForm(dlForm);
-        if (br.containsHTML("Wrong password")) {
+        doSomething();
+        if (brbefore.contains("Wrong password")) {
             logger.warning("Wrong password!");
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -93,11 +101,32 @@ public class JumboFilesCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        String dllink = br.getRegex("SRC=\"http://jumbofiles\\.com/images/dd\\.gif\" WIDTH=\"5\" HEIGHT=\"5\"><BR> <form name=\".*?\" action=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+        String dllink = new Regex(brbefore, "SRC=\"http://jumbofiles\\.com/images/dd\\.gif\" WIDTH=\"5\" HEIGHT=\"5\"><BR> <form name=\".*?\" action=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = new Regex(brbefore, "\"(http://www\\d+\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
+    }
+
+    // Removed fake messages which can kill the plugin
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
+        }
     }
 
     @Override
