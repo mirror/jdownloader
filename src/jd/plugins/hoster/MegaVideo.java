@@ -23,6 +23,7 @@ import java.util.LinkedList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.encoding.Encoding;
@@ -40,6 +41,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/(.*?(v|d)=|v/)[a-zA-Z0-9]+" }, flags = { 2 })
 public class MegaVideo extends PluginForHost {
 
+    private static String agent = RandomUserAgent.generate();
+
     public MegaVideo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.megavideo.com/?c=premium");
@@ -50,13 +53,20 @@ public class MegaVideo extends PluginForHost {
         return "http://www.megavideo.com/?c=terms";
     }
 
+    private void antiJDBlock(Browser br) {
+        if (br == null) return;
+        br.getHeaders().put("User-Agent", agent);
+        br.setAcceptLanguage("en-us,en;q=0.5");
+        br.setCookie("http://www.megavideo.com", "l", "en");
+    }
+
     public String getDownloadID(DownloadLink link) throws MalformedURLException {
         HashMap<String, String> p = Request.parseQuery(link.getDownloadURL());
         String ret = p.get("v");
         if (ret == null) {
             try {
                 Browser br = new Browser();
-                br.setCookie("http://www.megavideo.com", "l", "en");
+                antiJDBlock(br);
                 br.getPage(link.getDownloadURL());
                 ret = br.getRegex("previewplayer/\\?v=(.*?)&width").getMatch(0);
             } catch (Exception e) {
@@ -75,7 +85,7 @@ public class MegaVideo extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.setCookie("http://www.megavideo.com", "l", "en");
+        antiJDBlock(br);
         br.getPage("http://www.megavideo.com/?s=signup");
         br.postPage("http://www.megavideo.com/?s=signup", "action=login&nickname=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.getCookie("http://www.megavideo.com", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -173,7 +183,7 @@ public class MegaVideo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        br.setCookie("http://www.megavideo.com", "l", "en");
+        antiJDBlock(br);
         br.setFollowRedirects(false);
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unavailable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
