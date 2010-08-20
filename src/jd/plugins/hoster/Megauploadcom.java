@@ -31,22 +31,22 @@ import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaupload.com" }, urls = { "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[0-9A-Za-z]+" }, flags = { 2 })
@@ -105,11 +105,18 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
+    private void antiJDBlock(Browser br) {
+        if (br == null) return;
+        br.getHeaders().put("User-Agent", agent);
+        br.setAcceptLanguage("en-us,en;q=0.5");
+        br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
+    }
+
     private void checkWWWWorkaround() {
         synchronized (Lock) {
             if (wwwWorkaround != null) return;
             Browser tbr = new Browser();
-            tbr.getHeaders().put("User-Agent", agent);
+            antiJDBlock(tbr);
             try {
                 tbr.setConnectTimeout(10000);
                 tbr.setReadTimeout(10000);
@@ -121,7 +128,6 @@ public class Megauploadcom extends PluginForHost {
                     wwwWorkaround = "";
                     return;
                 }
-
             } catch (IOException e) {
             } finally {
                 if (wwwWorkaround == null) wwwWorkaround = "";
@@ -133,8 +139,7 @@ public class Megauploadcom extends PluginForHost {
         if (account == null) return false;
         if (account.getBooleanProperty("typeknown", false) == false || refresh) {
             Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("User-Agent", agent);
-            brc.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
+            antiJDBlock(brc);
             brc.getPage("http://" + wwwWorkaround + "megaupload.com/?c=account");
             String type = brc.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (type == null || type.equalsIgnoreCase("regular")) {
@@ -425,7 +430,7 @@ public class Megauploadcom extends PluginForHost {
 
     public void login(Account account, boolean cookielogin) throws IOException, PluginException {
         String user = account.getStringProperty("user", null);
-        br.getHeaders().put("User-Agent", agent);
+        antiJDBlock(br);
         if (cookielogin && user != null) {
             br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
             br.setCookie("http://" + wwwWorkaround + "megaupload.com", "user", user);
@@ -529,7 +534,7 @@ public class Megauploadcom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
             }
-            br.getHeaders().put("User-Agent", agent);
+            antiJDBlock(br);
             br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(l));
             if (br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) br.getPage("http://www.megaupload.com/?c=msg");
             if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
