@@ -194,6 +194,7 @@ public class FileServeCom extends PluginForHost {
         }
         br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
         // Ticket Time
+        if (!br.getHttpConnection().isOK()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String reconTime = br.getRegex("(\\d+)").getMatch(0);
         int tt = 60;
         if (reconTime != null) {

@@ -120,7 +120,9 @@ public class ShareOnlineBiz extends PluginForHost {
         String id = getID(downloadLink);
         br.setDebug(true);
         if (br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php?md5=1", "links=" + id).matches("\\s*")) {
-            br.getPage(downloadLink.getDownloadURL());
+            String startURL = downloadLink.getDownloadURL();
+            // workaround to bypass new layout and use old site
+            br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
             String[] strings = br.getRegex("</font> \\((.*?)\\) \\.</b></div></td>.*?<b>File name:</b>.*?<b>(.*?)</b></div></td>").getRow(0);
             if (strings == null || strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setDownloadSize(Regex.getSize(strings[0].trim()));
@@ -300,7 +302,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
 
         /* Downloadlimit erreicht */
-        if (br.containsHTML("max allowed download sessions") || br.containsHTML("this download is too big")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+        if (br.containsHTML("max allowed download sessions") || br.containsHTML("this download is too big")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1000l); }
 
         /* PassCode war richtig, also Speichern */
         if (passCode != null) downloadLink.setProperty("pass", passCode);
