@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -21,15 +21,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -39,18 +36,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://[\\w\\.]*?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loombo.com" }, urls = { "http://[\\w\\.]*?loombo\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class LooMboCom extends PluginForHost {
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public LooMboCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.9
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
+    // XfileSharingProBasic Version 1.9, speciual filename handling
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -59,7 +53,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String brbefore = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://ForDevsToPlayWith.com";
+    private static final String COOKIE_HOST = "http://loombo.com";
     public boolean nopremium = false;
 
     @Override
@@ -96,7 +90,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
         }
-        if (filename == null || filename.equals("")) {
+        if (filename != null && filename.equals("")) {
             if (brbefore.contains("You have reached the download-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
@@ -104,8 +98,10 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
+        if (filename != null) {
+            filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+            link.setName(filename.trim());
+        }
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(Regex.getSize(filesize));
@@ -116,7 +112,7 @@ public class XFileSharingProBasic extends PluginForHost {
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
         boolean resumable = true;
-        int maxchunks = 0;
+        int maxchunks = -3;
         Form[] allForms = br.getForms();
         if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form freeform = null;
@@ -268,118 +264,6 @@ public class XFileSharingProBasic extends PluginForHost {
         return -1;
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(COOKIE_HOST + "/login.html");
-        Form loginform = br.getForm(0);
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("login", Encoding.urlEncode(account.getUser()));
-        loginform.put("password", Encoding.urlEncode(account.getPass()));
-        br.submitForm(loginform);
-        br.getPage(COOKIE_HOST + "/?op=my_account");
-        doSomething();
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!brbefore.contains("Premium-Account expire") && !brbefore.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!brbefore.contains("Premium-Account expire") && !br.containsHTML(">Renew premium<")) nopremium = true;
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            // Who needs half points ? If we have a dot in the points, just
-            // remove it
-            if (points.contains(".")) {
-                String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
-                points = points.replace(dot, "");
-            }
-            ai.setPremiumPoints(Long.parseLong(points.trim()));
-        }
-        account.setValid(true);
-        String availabletraffic = new Regex(brbefore, "Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("unlimited")) {
-            ai.setTrafficLeft(Regex.getSize(availabletraffic));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        if (!nopremium) {
-            String expire = new Regex(brbefore, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
-            }
-            ai.setStatus("Premium User");
-        } else {
-            ai.setStatus("Registered (free) User");
-        }
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        String passCode = null;
-        requestFileInformation(link);
-        login(account);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (nopremium) {
-            doFree(link);
-        } else {
-            String dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                doSomething();
-                Form DLForm = br.getFormbyProperty("name", "F1");
-                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (brbefore.contains(PASSWORDTEXT0) || brbefore.contains(PASSWORDTEXT1)) {
-                    passCode = handlePassword(passCode, DLForm, link);
-                }
-                br.submitForm(DLForm);
-                doSomething();
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    checkErrors(link, true, passCode);
-                    dllink = getDllink();
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (passCode != null) {
-                link.setProperty("pass", passCode);
-            }
-            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         if (thelink.getStringProperty("pass", null) == null) {
             passCode = Plugin.getUserInput("Password?", thelink);
@@ -401,7 +285,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
+                        String crypted = new Regex(brbefore, "p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
                         if (crypted != null) dllink = decodeDownloadLink(crypted);
                     }
                 }
@@ -482,6 +366,27 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
+    // Removed fake messages which can kill the plugin
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
+        }
+    }
+
     private String decodeDownloadLink(String s) {
         String decoded = null;
 
@@ -508,27 +413,6 @@ public class XFileSharingProBasic extends PluginForHost {
             if (finallink == null) finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
         }
         return finallink;
-    }
-
-    // Removed fake messages which can kill the plugin
-    public void doSomething() throws NumberFormatException, PluginException {
-        brbefore = br.toString();
-        ArrayList<String> someStuff = new ArrayList<String>();
-        ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("<!(--.*?--)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
-        for (String aRegex : regexStuff) {
-            String lolz[] = br.getRegex(aRegex).getColumn(0);
-            if (lolz != null) {
-                for (String dingdang : lolz) {
-                    someStuff.add(dingdang);
-                }
-            }
-        }
-        for (String fun : someStuff) {
-            brbefore = brbefore.replace(fun, "");
-        }
     }
 
     @Override

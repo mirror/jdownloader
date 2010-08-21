@@ -271,7 +271,7 @@ public class FoFlyCom extends PluginForHost {
             requestFileInformation(downloadLink);
             // Packed JS handling needs to be fixed!
             String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-            dllink = decodeDownloadLink(crypted);
+            if (crypted != null) dllink = decodeDownloadLink(crypted);
         }
 
         if (dllink == null) {
@@ -394,6 +394,6 @@ public class FoFlyCom extends PluginForHost {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
             if (finallink == null) finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
         }
-        return decoded;
+        return finallink;
     }
 }
