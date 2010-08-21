@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http://[\\w\\.]*?facebook\\.com/video/video\\.php\\?v=\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
@@ -115,14 +115,36 @@ public class FaceBookComVideos extends PluginForHost {
                     continue;
                 }
                 dllink = br.getRegex(DLLINKREGEXP).getMatch(0);
-                String filename = br.getRegex("class=\"video_header_title\">Videos posted by (.*?)</h2>").getMatch(0);
-                if (filename == null) filename = br.getRegex("<title>Facebook \\| Videos posted by (.*?): Validation</title>").getMatch(0);
+                // extrahiere Videoname aus HTML-Quellcode
+                String filename = br.getRegex("class=\"video_title datawrap\">(.*)</h3>").getMatch(0);
+
+                // wird nichts gefunden, versuche Videoname aus einem anderen
+                // Teil des Quellcodes rauszusuchen
+                if (filename == null) {
+                    filename = br.getRegex("<title>Facebook \\| Videos posted by .*: (.*)</title>").getMatch(0);
+                }
+
+                // falls Videoname immer noch nicht gefunden wurde, dann
+                // versuche Username & Video-ID als Filename zu nehmen
+                if (filename == null) {
+                    filename = br.getRegex("<title>Facebook \\| Videos posted by (.*): .*</title>").getMatch(0).trim();
+
+                    // falls Username gefunden wurde, so setze dies und Video-ID
+                    // zusammen
+                    if (filename != null) {
+                        String videoid = new Regex(dl.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
+                        filename = filename + " - Video_" + videoid;
+                    }
+                }
+
+                // wurde Filename extrahiert, setze entgültiger Dateiname &
+                // Dateiendung
                 if (filename != null) {
-                    String videoid = new Regex(dl.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
                     filename = filename.trim();
-                    dl.setFinalFileName(filename + " - Video_" + videoid + ".mp4");
+                    dl.setFinalFileName(filename + ".mp4");
                     dl.setAvailable(true);
                 } else {
+                    // falls nicht, so setze den Download als nicht verfügbar
                     dl.setAvailable(false);
                 }
             }
