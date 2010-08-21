@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -32,7 +33,6 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -74,22 +74,22 @@ public class HotFileCom extends PluginForHost {
             tbr = new Browser();
         }
         tbr.setDebug(true);
-        tbr.getPage("http://api.hotfile.com");
-        Form form = new Form();
-        form.setAction("/");
-        form.setMethod(MethodType.POST);
-        form.put("action", action);
+        LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
+        post.put("action", action);
         if (account != null) {
+            /* do not remove */
             String pwMD5 = JDHash.getMD5(account.getPass().trim());
-            form.put("username", Encoding.urlEncode(account.getUser()));
-            form.put("passwordmd5", pwMD5);
+            post.put("passwordmd5", pwMD5);
+            post.put("username", Encoding.urlEncode(account.getUser().trim()));
+            // post.put("password",
+            // Encoding.urlEncode(account.getPass().trim()));
         }
         if (addParams != null) {
             for (String param : addParams.keySet()) {
-                form.put(param, addParams.get(param));
+                post.put(param, addParams.get(param));
             }
         }
-        tbr.submitForm(form);
+        tbr.postPage("http://api.hotfile.com", post);
         HashMap<String, String> ret = new HashMap<String, String>();
         ret.put("httpresponse", tbr.toString());
         String vars[][] = tbr.getRegex("(.*?)=(.*?)(&|$)").getMatches();
@@ -97,6 +97,26 @@ public class HotFileCom extends PluginForHost {
             ret.put(var[0] != null ? var[0].trim() : null, var[1]);
         }
         return ret;
+    }
+
+    public AccountInfo fetchAccountInfoWebsite(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        this.setBrowserExclusive();
+        try {
+            loginWebsite(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String validUntil[] = br.getRegex("Premium until.*?>(.*?)<.*?>(\\d+:\\d+:\\d+)").getRow(0);
+        if (validUntil == null || validUntil[0] == null || validUntil[1] == null) {
+            account.setValid(false);
+        } else {
+            String valid = validUntil[0].trim() + " " + validUntil[1].trim() + " CDT";
+            ai.setValidUntil(Regex.getMilliSeconds(valid, "yyyy-MM-dd HH:mm:ss zzz", null));
+            account.setValid(true);
+        }
+        return ai;
     }
 
     @Override
@@ -108,6 +128,12 @@ public class HotFileCom extends PluginForHost {
             return ai;
         }
         HashMap<String, String> info = callAPI(null, "getuserinfo", account, null);
+        String rawAnswer = info.get("httpresponse").trim();
+        if (rawAnswer != null && rawAnswer.startsWith(".too many failed")) {
+            /* fallback to normal website */
+            logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
+            return fetchAccountInfoWebsite(account);
+        }
         if (!info.containsKey("is_premium") || !"1".equalsIgnoreCase(info.get("is_premium"))) {
             account.setValid(false);
             if (info.get("httpresponse").contains("invalid username")) {
@@ -145,13 +171,9 @@ public class HotFileCom extends PluginForHost {
         if (finalUrls == null || finalUrls.startsWith(".")) {
             logger.severe(finalUrls);
             if (finalUrls != null && finalUrls.startsWith(".too many failed")) {
-                AccountInfo ai = account.getAccountInfo();
-                if (ai == null) {
-                    ai = new AccountInfo();
-                    account.setAccountInfo(ai);
-                }
-                ai.setStatus("too many failed logins(check logins)! try again in 10 minutes");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
+                handlePremiumWebsite(downloadLink, account);
+                return;
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -190,18 +212,12 @@ public class HotFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", ua);
         br.setCookie("http://hotfile.com", "lang", "en");
-        if (account.getUser().trim().equalsIgnoreCase("cookie")) {
-            /* cookie login */
-            br.setCookie("http://hotfile.com", "auth", account.getPass());
-            br.getPage("http://hotfile.com/");
-        } else {
-            /* normal login */
-            br.setFollowRedirects(true);
-            br.getPage("http://hotfile.com/");
-            br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-            Form form = br.getForm(0);
-            if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
+        /* normal login */
+        br.setFollowRedirects(true);
+        br.getPage("http://hotfile.com/");
+        br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        Form form = br.getForm(0);
+        if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
         if (isPremium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
