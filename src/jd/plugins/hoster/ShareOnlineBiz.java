@@ -102,7 +102,11 @@ public class ShareOnlineBiz extends PluginForHost {
         if (expire != null && expire.contains("Never")) {
             ai.setValidUntil(-1);
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
+            /*
+             * they only say the day, so we need to make it work the whole last
+             * day
+             */
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null) + (1000l * 60 * 60 * 24));
         }
         account.setValid(true);
         return ai;
