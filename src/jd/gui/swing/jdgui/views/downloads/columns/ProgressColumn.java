@@ -93,10 +93,10 @@ public class ProgressColumn extends JDTableColumn {
             return progress;
         } else {
             dLink = (DownloadLink) value;
-            if (dLink.getPlugin() == null) {
+            if (dLink.getDefaultPlugin() == null) {
                 jlr.setText(strPluginError);
                 return jlr;
-            } else if (!dLink.getPlugin().getWrapper().isEnabled() && !dLink.getLinkStatus().isPluginActive()) {
+            } else if (!dLink.getDefaultPlugin().getWrapper().isEnabled() && !dLink.getLinkStatus().isPluginActive()) {
                 jlr.setText(strPluginDisabled);
                 return jlr;
             } else if (dLink.getPluginProgress() != null) {

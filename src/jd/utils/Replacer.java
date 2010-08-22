@@ -111,8 +111,6 @@ public final class Replacer {
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.DOWNLOAD_PATH")) return dLink.getFileOutput();
 
-        if (key.equalsIgnoreCase("LAST_FINISHED_FILE.INFOSTRING")) return dLink.getFileInfomationString();
-
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.HOST")) return dLink.getHost();
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.NAME")) return dLink.getName();

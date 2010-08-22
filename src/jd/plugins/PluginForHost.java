@@ -62,6 +62,13 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
+        /* defaultPlugin does not need any Browser instance */
+        br = null;
+        dl = null;
+    }
+
+    public void setBrowser(Browser br) {
+        this.br = br;
     }
 
     protected String getCaptchaCode(final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
@@ -171,6 +178,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     protected void setBrowserExclusive() {
+        if (br == null) return;
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
     }
@@ -331,10 +339,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 }
 
                 try {
-                    // Zwecks Multidownload braucht jeder Link seine eigene
-                    // Plugininstanz
-                    final PluginForHost plg = (PluginForHost) wrapper.getNewPluginInstance();
-                    final DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
+                    final DownloadLink link = new DownloadLink((PluginForHost) wrapper.getPlugin(), file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
                     if (fp != null) {
                         link.setFilePackage(fp);
@@ -451,6 +456,12 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
+        /*
+         * handle is only called in download situation, that why we create a new
+         * browser instance here
+         */
+        setBrowser(new Browser());
+        init();
         final TransferStatus transferStatus = downloadLink.getTransferStatus();
         transferStatus.usePremium(false);
         transferStatus.setResumeSupport(false);

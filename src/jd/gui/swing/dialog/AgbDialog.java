@@ -46,10 +46,10 @@ public class AgbDialog extends AbstractDialog {
      *            abzuarbeitender Link
      */
     public static void showDialog(DownloadLink downloadLink) {
-        if (downloadLink.getPlugin() == null) return;
-        AgbDialog dialog = new AgbDialog(downloadLink.getPlugin());
+        if (downloadLink.getDefaultPlugin() == null) return;
+        AgbDialog dialog = new AgbDialog(downloadLink.getDefaultPlugin());
         if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK) && dialog.isAccepted()) {
-            downloadLink.getPlugin().setAGBChecked(true);
+            downloadLink.getDefaultPlugin().setAGBChecked(true);
             downloadLink.getLinkStatus().reset();
         }
     }

@@ -47,8 +47,13 @@ public class SendspaceCom extends PluginForHost {
     public SendspaceCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.sendspace.com/joinpro_pay.html");
-        br.setRequestIntervalLimit(getHost(), 750);
+
         setStartIntervall(5000l);
+    }
+
+    @Override
+    public void init() {
+        br.setRequestIntervalLimit(getHost(), 750);
     }
 
     // TODO: Add handling for password protected files for handle premium,

@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -43,23 +41,17 @@ import jd.utils.locale.JDL;
 public class FileSonicCom extends PluginForHost {
 
     private static final Object LOCK = new Object();
+    private static final HashMap<String, String> freecookies = new HashMap<String, String>();
+    private boolean free = false;
 
     public FileSonicCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filesonic.com/premium");
-        setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.filesonic.com/contact-us";
-    }
-
-    private static String WAIT = "WAIT";
-
-    private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT, JDL.L("plugins.hoster.filesoniccom.reconnectInsteadOfWaiting", "Execute a reconnect if the waittime is bigger than 5 minutes.")).setDefaultValue(false);
-        config.addEntry(cond);
     }
 
     @Override
@@ -173,6 +165,7 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String passCode = null;
+        free = false;
         requestFileInformation(downloadLink);
         login(account, false);
         String dllink = downloadLink.getDownloadURL();
@@ -230,6 +223,13 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        if (free) {
+            synchronized (freecookies) {
+                for (String key : freecookies.keySet()) {
+                    br.setCookie("http://www.filesonic.com/", key, freecookies.get(key));
+                }
+            }
+        }
         br.setCookie("http://www.filesonic.com/", "lang", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -261,6 +261,7 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.forceDebug(true);
+        free = true;
         requestFileInformation(downloadLink);
         String passCode = null;
         String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
@@ -282,23 +283,32 @@ public class FileSonicCom extends PluginForHost {
         }
         String downloadUrl = br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        boolean doReconnect = getPluginConfig().getBooleanProperty(WAIT, false);
         String countDownDelay = br.getRegex("countDownDelay = (\\d+)").getMatch(0);
         if (countDownDelay != null) {
             /*
              * we have to wait a little longer than needed cause its not exactly
              * the same time
              */
-            if (Long.parseLong(countDownDelay) > 300 && doReconnect) {
+            if (Long.parseLong(countDownDelay) > 300) {
                 logger.info(br.toString());
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay + 2) * 1001l);
+
+                Cookies add = br.getCookies("http://www.filesonic.com");
+                synchronized (freecookies) {
+                    for (Cookie c : add.getCookies()) {
+                        freecookies.put(c.getKey(), c.getValue());
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 2 * 1001l);
             }
-            this.sleep((Long.parseLong(countDownDelay) + 2) * 1001, downloadLink);
+            this.sleep((Long.parseLong(countDownDelay)) * 1001, downloadLink);
         }
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)
          */
+        synchronized (freecookies) {
+            freecookies.clear();
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

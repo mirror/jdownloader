@@ -185,7 +185,7 @@ public class DistributeData extends Thread {
                     for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
                         if (pDecrypt.isEnabled() && pDecrypt.canHandle(url)) {
                             try {
-                                final PluginForDecrypt plg = pDecrypt.getNewPluginInstance();
+                                final PluginForDecrypt plg = pDecrypt.getPlugin();
 
                                 final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
                                 url = plg.cutMatches(url);
@@ -265,9 +265,9 @@ public class DistributeData extends Thread {
         /* normal quickcheck */
         ArrayList<DownloadLink> ret = quickHosterCheck(data);
         foundPasswords.addAll(HTMLParser.findPasswords(data));
-        if (ret != null && ret.size() == 1 && ret.get(0).getPlugin() != null) {
+        if (ret != null && ret.size() == 1 && ret.get(0).getDefaultPlugin() != null) {
             /* also check for disabled hosterplugin and filtering here */
-            if (!ret.get(0).getPlugin().getWrapper().isEnabled() || LinkGrabberController.isFiltered(ret.get(0))) {
+            if (!ret.get(0).getDefaultPlugin().getWrapper().isEnabled() || LinkGrabberController.isFiltered(ret.get(0))) {
                 ret.clear();
             } else {
                 ret.get(0).addSourcePluginPasswordList(foundPasswords);
@@ -310,7 +310,7 @@ public class DistributeData extends Thread {
             if (lowercasedata.contains(pw.getHost().toLowerCase())) {
                 final String match = new Regex(data, pattern).getMatch(-1);
                 if (match != null && (match.equals(data) || (match.length() > 10 + pw.getHost().length() && data.startsWith(match) && (match.length() * 2) > data.length()))) {
-                    final DownloadLink dl = new DownloadLink(pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
+                    final DownloadLink dl = new DownloadLink(pw.getPlugin(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
                     final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                     ret.add(dl);
                     return ret;
@@ -437,7 +437,7 @@ public class DistributeData extends Thread {
         for (final DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.isEnabled() && pDecrypt.canHandle(data)) {
                 try {
-                    final PluginForDecrypt plg = pDecrypt.getNewPluginInstance();
+                    final PluginForDecrypt plg = pDecrypt.getPlugin();
                     final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(data);
                     data = plg.cutMatches(data);
                     decryptJobbers.add(new DThread(plg, decryptableLinks));

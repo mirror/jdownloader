@@ -344,8 +344,8 @@ public class LinkStatus implements Serializable {
 
         if (isFailed()) return getLongErrorMessage();
         final DownloadInterface dli = downloadLink.getDownloadInstance();
-        if (downloadLink.getPlugin() != null && DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
-        if (downloadLink.getPlugin() != null && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hostertempunavail", "[download currently not possible]"); }
+        if (downloadLink.getDefaultPlugin() != null && DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
+        if (downloadLink.getDefaultPlugin() != null && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hostertempunavail", "[download currently not possible]"); }
         if (dli == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
         }

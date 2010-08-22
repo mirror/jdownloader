@@ -156,12 +156,12 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.hosterproblem", "Hoster problem?"));
                 linkStatus.setValue(10 * 60 * 1000l);
             } catch (InterruptedException e) {
-                String rev = downloadLink.getPlugin() == null ? "" : downloadLink.getPlugin().getVersion();
+                String rev = downloadLink.getLivePlugin() == null ? "" : downloadLink.getLivePlugin().getVersion();
                 logger.finest("Hoster Plugin Version: " + rev);
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (Exception e) {
-                logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
+                logger.finest("Hoster Plugin Version: " + downloadLink.getLivePlugin().getVersion());
                 JDLogger.exception(e);
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
@@ -237,7 +237,7 @@ public class SingleDownloadController extends Thread {
                 }
             }
         } catch (Exception e) {
-            logger.severe("Error in Plugin Version: " + downloadLink.getPlugin().getVersion());
+            logger.severe("Error in Plugin Version: " + downloadLink.getLivePlugin().getVersion());
             JDLogger.exception(e);
         }
     }
@@ -254,7 +254,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
-        String rev = downloadLink.getPlugin() == null ? "" : downloadLink.getPlugin().getVersion();
+        String rev = downloadLink.getLivePlugin() == null ? "" : downloadLink.getLivePlugin().getVersion();
         logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
         if (downloadLink2.getLinkStatus().getErrorMessage() != null) logger.warning(downloadLink2.getLinkStatus().getErrorMessage());
         // Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb
@@ -596,7 +596,12 @@ public class SingleDownloadController extends Thread {
             linkStatus.setErrorMessage(null);
             linkStatus.resetWaitTime();
             logger.info("Start working on " + downloadLink.getName());
-            currentPlugin = plugin = downloadLink.getPlugin();
+            /*
+             * we are going to download this link, create new liveplugin
+             * instance here
+             */
+            downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getWrapper().getNewPluginInstance());
+            currentPlugin = plugin = downloadLink.getLivePlugin();
             if (currentPlugin != null) {
                 fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
                 if (downloadLink.getDownloadURL() == null) {
@@ -635,6 +640,10 @@ public class SingleDownloadController extends Thread {
             /* cleanup the DownloadInterface/Controller references */
             downloadLink.setDownloadLinkController(null);
             downloadLink.setDownloadInstance(null);
+            if (currentPlugin != null) {
+                currentPlugin.setBrowser(null);
+            }
+            downloadLink.setLivePlugin(null);
         }
     }
 

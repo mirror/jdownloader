@@ -36,6 +36,11 @@ public class FilestoreTo extends PluginForHost {
     public FilestoreTo(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
+
+    }
+
+    @Override
+    public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 

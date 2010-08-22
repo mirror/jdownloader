@@ -36,6 +36,7 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.event.JDBroadcaster;
+import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -125,8 +126,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /* kann sich noch ändern, NICHT final */
     private String name;
 
-    /** Das Plugin, das fuer diesen Download zustaendig ist */
-    private transient PluginForHost plugin;
+    private transient PluginForHost defaultplugin;
+
+    private transient PluginForHost liveplugin;
 
     /**
      * Falls vorhanden, das Plugin fuer den Container, aus der dieser Download
@@ -205,7 +207,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
-        setLoadedPlugin(plugin);
+        this.defaultplugin = plugin;
 
         priority = 0;
         setName(name);
@@ -219,8 +221,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.setUrlDownload(urlDownload);
         if (plugin != null && this.getDownloadURL() != null) {
             try {
-                plugin.correctDownloadLink(this);
-                plugin.setDownloadLink(this);
+                /*
+                 * we have to use new instance here as correctDownloadLink might
+                 * use a browser, create new browser instance too
+                 */
+                PluginForHost plg = defaultplugin.getWrapper().getNewPluginInstance();
+                plg.setBrowser(new Browser());
+                plg.correctDownloadLink(this);
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
@@ -414,22 +421,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt den Darstellbaren Dateinamen zurueck. Dabei handelt es sich nicht
-     * zwangslaeufig um einen Valid-Filename. Dieser String eignet sich zur
-     * darstellung des link und kann zusatzinformationen wie dateigroesse oder
-     * verfuegbarkeit haben Diese Zusatzinformationen liefert das zugehoerige
-     * Plugin ACHTUNG: Weil der Dateiname kein zuverlaessiger Dateiname sein
-     * muss darf diese FUnktion nicht verwendet werden um eine datei zu
-     * benennen.
-     * 
-     * @return Erweiterter "Dateiname"
-     */
-    public String getFileInfomationString() {
-        if (plugin == null) return "";
-        return getPlugin().getFileInformationString(this);
-    }
-
-    /**
      * Liefert die Datei zurueck, in die dieser Download gespeichert werden soll
      * 
      * @return Die Datei zum Abspeichern
@@ -477,7 +468,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public String getHost() {
         if (host == null) return null;
-        return host.toLowerCase();
+        return host;
     }
 
     public LinkStatus getLinkStatus() {
@@ -522,8 +513,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return Das Plugin
      */
-    public PluginForHost getPlugin() {
-        return plugin;
+    public PluginForHost getDefaultPlugin() {
+        return defaultplugin;
+    }
+
+    public PluginForHost getLivePlugin() {
+        return liveplugin;
     }
 
     public PluginsC getPluginForContainer() {
@@ -586,16 +581,29 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public AvailableStatus getAvailableStatus() {
+        return getAvailableStatus(null);
+    }
+
+    public AvailableStatus getAvailableStatus(PluginForHost plgToUse) {
         if (availableStatus != AvailableStatus.UNCHECKED) return availableStatus;
         int wait = 0;
-        if (plugin != null) {
+        if (getDefaultPlugin() != null) {
+            PluginForHost plg = plgToUse;
+            /* we need extra plugin instance and browser instance too here */
+            if (plg == null) {
+                plg = getDefaultPlugin().getWrapper().getNewPluginInstance();
+            }
+            if (plg.getBrowser() == null) {
+                plg.setBrowser(new Browser());
+            }
+            plg.init();
             for (int retry = 0; retry < 5; retry++) {
                 try {
                     long startTime = System.currentTimeMillis();
-                    availableStatus = getPlugin().requestFileInformation(this);
+                    availableStatus = plg.requestFileInformation(this);
                     this.requestTime = System.currentTimeMillis() - startTime;
                     try {
-                        getPlugin().getBrowser().getHttpConnection().disconnect();
+                        plg.getBrowser().getHttpConnection().disconnect();
                     } catch (Exception e) {
                     }
                     break;
@@ -631,7 +639,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 }
             }
         }
-        if (availableStatus == null || plugin == null) availableStatus = AvailableStatus.UNCHECKABLE;
+        if (availableStatus == null || getDefaultPlugin() == null) availableStatus = AvailableStatus.UNCHECKABLE;
         return availableStatus;
     }
 
@@ -691,7 +699,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         finalFileName = null;
         DownloadWatchDog.getInstance().resetIPBlockWaittime(getHost());
         DownloadWatchDog.getInstance().resetTempUnavailWaittime(getHost());
-        if (getPlugin() != null) getPlugin().resetDownloadlink(this);
+        if (liveplugin != null) liveplugin.resetDownloadlink(this);
     }
 
     /**
@@ -853,7 +861,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         if (isEnabled) {
 
-            if (host != null && plugin == null) {
+            if (host != null && defaultplugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");
                 return;
             }
@@ -903,11 +911,18 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param plugin
      *            Das fuer diesen Download zustaendige Plugin
      */
-    public void setLoadedPlugin(PluginForHost plugin) {
-        this.plugin = plugin;
-        if (plugin != null) {
-            getTransferStatus().setPremiumSupport(plugin.isPremiumEnabled());
-            plugin.setDownloadLink(this);
+    public void setDefaultPlugin(PluginForHost plugin) {
+        this.defaultplugin = plugin;
+        if (defaultplugin != null) {
+            getTransferStatus().setPremiumSupport(defaultplugin.isPremiumEnabled());
+        }
+    }
+
+    public void setLivePlugin(PluginForHost plugin) {
+        this.liveplugin = plugin;
+        if (liveplugin != null) {
+            getTransferStatus().setPremiumSupport(liveplugin.isPremiumEnabled());
+            liveplugin.setDownloadLink(this);
         }
     }
 

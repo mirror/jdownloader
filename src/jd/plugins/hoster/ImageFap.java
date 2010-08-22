@@ -36,6 +36,10 @@ public class ImageFap extends PluginForHost {
     public ImageFap(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(500l);
+    }
+
+    @Override
+    public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 200);
     }
 

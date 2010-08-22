@@ -95,7 +95,6 @@ public class SharingMatrixCom extends PluginForHost implements ControlListener {
 
     @Override
     public String getSessionInfo() {
-        if (link == null) return "";
         return "Restart required to convert SharingMatrix to FileSonic";
     }
 

@@ -41,8 +41,12 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         return "http://www.load.to/terms.php";
+    }
+
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
     @Override

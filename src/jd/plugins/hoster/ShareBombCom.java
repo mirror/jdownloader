@@ -45,9 +45,13 @@ public class ShareBombCom extends PluginForHost {
     }
 
     @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;

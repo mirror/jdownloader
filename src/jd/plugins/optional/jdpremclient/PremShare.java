@@ -101,6 +101,12 @@ public class PremShare extends PluginForHost {
     }
 
     @Override
+    public void setBrowser(Browser br) {
+        this.br = br;
+        if (plugin != null) plugin.setBrowser(br);
+    }
+
+    @Override
     public void clean() {
         super.clean();
         if (plugin != null) plugin.clean();
@@ -234,6 +240,15 @@ public class PremShare extends PluginForHost {
     public void reset() {
         if (plugin != null) {
             plugin.reset();
+        }
+    }
+
+    @Override
+    public void init() {
+        if (plugin != null) {
+            plugin.init();
+        } else {
+            super.init();
         }
     }
 

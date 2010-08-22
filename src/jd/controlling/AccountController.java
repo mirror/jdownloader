@@ -30,6 +30,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.JDBroadcaster;
 import jd.gui.swing.components.Balloon;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -120,6 +121,7 @@ public class AccountController extends SubConfiguration implements ActionListene
             logger.severe("Cannot update AccountInfo, no HosterPlugin available!");
             return null;
         }
+        plugin.setBrowser(new Browser());
         AccountInfo ai = account.getAccountInfo();
         if (!forceupdate) {
             if (account.lastUpdateTime() != 0 && ai != null && ai.isExpired()) {

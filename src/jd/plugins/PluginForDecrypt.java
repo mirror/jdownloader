@@ -53,6 +53,10 @@ public abstract class PluginForDecrypt extends Plugin {
         super(wrapper);
     }
 
+    public void setBrowser(Browser br) {
+        this.br = br;
+    }
+
     private CryptedLink curcryptedLink = null;
 
     private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForDecrypt>, Long>();
@@ -275,7 +279,8 @@ public abstract class PluginForDecrypt extends Plugin {
 
             public DThread(CryptedLink decryptableLink, PluginForDecrypt plg) {
                 this.decryptableLink = decryptableLink;
-                this.plg = plg;
+                this.plg = plg.getWrapper().getNewPluginInstance();
+                this.plg.setBrowser(new Browser());
             }
 
             @Override
@@ -296,7 +301,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
 
         for (int b = cryptedLinks.length - 1; b >= 0; b--) {
-            DThread dthread = new DThread(cryptedLinks[b], getWrapper().getNewPluginInstance());
+            DThread dthread = new DThread(cryptedLinks[b], getWrapper().getPlugin());
             decryptJobbers.add(dthread);
         }
         int todo = decryptJobbers.getJobsAdded();
@@ -347,6 +352,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     protected void setBrowserExclusive() {
+        if (br == null) return;
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
     }

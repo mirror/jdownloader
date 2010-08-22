@@ -171,12 +171,12 @@ abstract public class DownloadInterface {
          */
         private URLConnectionAdapter copyConnection(URLConnectionAdapter connection) {
             try {
-                while (downloadLink.getPlugin().waitForNextConnectionAllowed()) {
+                while (downloadLink.getLivePlugin().waitForNextConnectionAllowed()) {
                 }
             } catch (InterruptedException e) {
                 return null;
             }
-            downloadLink.getPlugin().putLastConnectionTime(System.currentTimeMillis());
+            downloadLink.getLivePlugin().putLastConnectionTime(System.currentTimeMillis());
             long start = startByte;
             String end = (endByte > 0 ? endByte + 1 : "") + "";
 
@@ -1219,7 +1219,7 @@ abstract public class DownloadInterface {
         if (block != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            if (block.getPlugin() != null) linkstatus.setStatusText(JDL.LF("system.download.errors.linkisBlocked", "Mirror %s is loading", block.getPlugin().getHost()));
+            if (block.getDefaultPlugin() != null) linkstatus.setStatusText(JDL.LF("system.download.errors.linkisBlocked", "Mirror %s is loading", block.getHost()));
             return true;
         }
         File fileOutput = new File(downloadLink.getFileOutput());

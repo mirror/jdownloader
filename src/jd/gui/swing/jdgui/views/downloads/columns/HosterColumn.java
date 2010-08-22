@@ -29,6 +29,7 @@ import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -93,12 +94,14 @@ public class HosterColumn extends JDTableColumn {
                 statuspanel.setIcon(counter, imgResume, null, strResume);
                 counter++;
             }
-            if (dLink.getPlugin() == null) {
+            if (dLink.getDefaultPlugin() == null) {
                 statuspanel.setText("plugin missing", null);
             } else {
-                String s = dLink.getPlugin().getSessionInfo();
+                PluginForHost plg = dLink.getLivePlugin();
+                if (plg == null) plg = dLink.getDefaultPlugin();
+                String s = plg.getSessionInfo();
                 statuspanel.setText(s, null);
-                statuspanel.setIcon(-1, dLink.getPlugin().getHosterIconScaled(), null, strLoadingFrom + dLink.getPlugin().getHost());
+                statuspanel.setIcon(-1, plg.getHosterIconScaled(), null, strLoadingFrom + dLink.getHost());
             }
             statuspanel.clearIcons(counter);
         }

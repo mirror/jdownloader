@@ -85,7 +85,7 @@ public class SingleHoster {
 
                                 if (pw.canHandle(l)) {
 
-                                    DownloadLink dl = new DownloadLink(pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
+                                    DownloadLink dl = new DownloadLink(pw.getPlugin(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
                                     dl.isAvailable();
                                     if (dl.isAvailable()) {
                                         System.out.println(dl.getDownloadURL());
@@ -194,7 +194,7 @@ public class SingleHoster {
 
         try {
             DownloadLink dlink = getDownloadLink(url);
-            dlink.getPlugin().setAGBChecked(true);
+            dlink.getDefaultPlugin().setAGBChecked(true);
             if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
                 fail(TestUtils.log("Downloadlink " + url + " is marked as NOT AVAILABLE"));
             }
@@ -259,8 +259,8 @@ public class SingleHoster {
             throw new TestException("No plugin found for " + url);
 
         } else {
-            if (!url.toLowerCase().contains(links.get(0).getPlugin().getHost())) {
-                throw new TestException("Wrong plugin found for " + url + " (" + links.get(0).getPlugin().getHost() + ")");
+            if (!url.toLowerCase().contains(links.get(0).getHost())) {
+                throw new TestException("Wrong plugin found for " + url + " (" + links.get(0).getHost() + ")");
             } else {
                 return links.get(0);
             }

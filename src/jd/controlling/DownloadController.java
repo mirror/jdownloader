@@ -265,7 +265,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         // wird ein passendes Plugin gesucht
                         try {
                             pluginForHost = null;
-                            pluginForHost = JDUtilities.getNewPluginForHostInstance(localLink.getHost());
+                            pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
                         } catch (Exception e) {
                             JDLogger.exception(e);
                         }
@@ -282,7 +282,11 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             JDLogger.exception(e);
                         }
                         if (pluginForHost != null) {
-                            localLink.setLoadedPlugin(pluginForHost);
+                            /*
+                             * we set default plugin here, this plugin MUST NOT
+                             * be used for downloading
+                             */
+                            localLink.setDefaultPlugin(pluginForHost);
                         }
                         if (pluginForContainer != null) {
                             localLink.setLoadedPluginForContainer(pluginForContainer);

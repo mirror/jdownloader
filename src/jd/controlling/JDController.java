@@ -646,26 +646,6 @@ public class JDController implements ControlListener {
         UserIO.getInstance().requestMessageDialog("Container encryption failed");
     }
 
-    /**
-     * Gibt alle Downloadlinks die zu dem übergebenem Hosterplugin gehören
-     * zurück.
-     * 
-     * @param pluginForHost
-     */
-    public ArrayList<DownloadLink> getDownloadLinks(PluginForHost pluginForHost) {
-        ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
-        ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
-        synchronized (packages) {
-            for (FilePackage fp : packages) {
-                for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    if (nextDownloadLink.getPlugin() == null) continue;
-                    if (nextDownloadLink.getPlugin().getClass() == pluginForHost.getClass()) al.add(nextDownloadLink);
-                }
-            }
-        }
-        return al;
-    }
-
     public synchronized void autostartDownloadsonStartup() {
         if (alreadyAutostart == true) return;
         alreadyAutostart = true;

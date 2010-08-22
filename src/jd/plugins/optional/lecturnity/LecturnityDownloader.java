@@ -11,6 +11,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -31,6 +32,7 @@ public class LecturnityDownloader extends PluginOptional {
 
     public LecturnityDownloader(PluginWrapper wrapper) {
         super(wrapper);
+        br = new Browser();
     }
 
     @Override
@@ -104,7 +106,7 @@ public class LecturnityDownloader extends PluginOptional {
                  * time! We know the filename and the filesize and so it is
                  * currently available.
                  */
-                dLink = new DownloadLink(hpw.getNewPluginInstance(), link, hpw.getHost(), source + link, true);
+                dLink = new DownloadLink(hpw.getPlugin(), link, hpw.getHost(), source + link, true);
                 dLink.setFinalFileName(link);
                 dLink.setDownloadSize(getSize(new Regex(page, link + "</a>[ ]+.*?[ ].*?[ ]+(\\d+\\.?\\d?[K|M|G]?)").getMatch(0)));
                 dLink.setBrowserUrl(source);

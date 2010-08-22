@@ -115,10 +115,9 @@ public abstract class Plugin implements ActionListener {
 
     protected final PluginWrapper wrapper;
 
-    protected Browser br;
+    protected Browser br = null;
 
     public Plugin(final PluginWrapper wrapper) {
-        this.br = new Browser();
         this.wrapper = wrapper;
 
         if (wrapper instanceof HostPluginWrapper) {
@@ -169,10 +168,9 @@ public abstract class Plugin implements ActionListener {
         JDProxy pr = null;
         if (br != null) {
             pr = br.getProxy();
-
+            br = new Browser();
+            if (pr != null) br.setProxy(pr);
         }
-        br = new Browser();
-        if (pr != null) br.setProxy(pr);
     }
 
     /**

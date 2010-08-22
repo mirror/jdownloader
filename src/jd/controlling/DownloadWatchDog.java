@@ -499,7 +499,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 for (final FilePackage filePackage : dlc.getPackages()) {
                     for (final Iterator<DownloadLink> it2 = filePackage.getDownloadLinkList().iterator(); it2.hasNext();) {
                         nextDownloadLink = it2.next();
-                        if (nextDownloadLink.getPlugin() == null) continue;
+                        if (nextDownloadLink.getDefaultPlugin() == null) continue;
                         if (nextDownloadLink.isEnabled() && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                             if (!tryAcc) {
                                 /* accounts global disabled */
@@ -513,7 +513,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                      * account host does not match download
                                      * host, get new account
                                      */
-                                    acc = AccountController.getInstance().getValidAccount(nextDownloadLink.getPlugin());
+                                    acc = AccountController.getInstance().getValidAccount(nextDownloadLink.getDefaultPlugin());
                                 }
                             }
                             /* check for account or non blocked */
@@ -521,8 +521,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 if (!isDownloadLinkActive(nextDownloadLink)) {
                                     if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
                                         if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                                            int active = activeDownloadsbyHosts(nextDownloadLink.getPlugin());
-                                            if (active < maxPerHost && active < (nextDownloadLink.getPlugin()).getMaxSimultanDownload(acc) && nextDownloadLink.getPlugin().getWrapper().isEnabled()) {
+                                            int active = activeDownloadsbyHosts(nextDownloadLink.getDefaultPlugin());
+                                            if (active < maxPerHost && active < (nextDownloadLink.getDefaultPlugin()).getMaxSimultanDownload(acc) && nextDownloadLink.getDefaultPlugin().getWrapper().isEnabled()) {
                                                 if (ret.link == null || nextDownloadLink.getPriority() > ret.link.getPriority()) {
                                                     /*
                                                      * next download found or
@@ -556,12 +556,12 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             for (final DownloadLink link : linksForce) {
                 /* remove links without a plugin */
-                if (link.getPlugin() != null) links.add(link);
+                if (link.getDefaultPlugin() != null) links.add(link);
             }
             for (final DownloadLink link : links) {
-                if (!link.getPlugin().isAGBChecked()) {
+                if (!link.getDefaultPlugin().isAGBChecked()) {
                     try {
-                        SingleDownloadController.onErrorAGBNotSigned(link, link.getPlugin());
+                        SingleDownloadController.onErrorAGBNotSigned(link, link.getDefaultPlugin());
                     } catch (InterruptedException e) {
                         return;
                     }
@@ -589,15 +589,15 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                              * host does not match download host, get new
                              * account
                              */
-                            acc = AccountController.getInstance().getValidAccount(link.getPlugin());
+                            acc = AccountController.getInstance().getValidAccount(link.getDefaultPlugin());
                         }
                     }
                     if (acc != null || (getRemainingIPBlockWaittime(link.getHost()) <= 0 && getRemainingTempUnavailWaittime(link.getHost()) <= 0)) {
                         if (!isDownloadLinkActive(link)) {
                             if (!link.getLinkStatus().isPluginActive()) {
                                 if (link.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                                    int activePerHost = activeDownloadsbyHosts(link.getPlugin());
-                                    if (activePerHost < (link.getPlugin()).getMaxSimultanDownload(acc) && link.getPlugin().getWrapper().isEnabled()) {
+                                    int activePerHost = activeDownloadsbyHosts(link.getDefaultPlugin());
+                                    if (activePerHost < (link.getDefaultPlugin()).getMaxSimultanDownload(acc) && link.getDefaultPlugin().getWrapper().isEnabled()) {
                                         if (!link.isEnabled()) link.setEnabled(true);
                                         startDownloadThread(link, acc);
                                     }
@@ -703,7 +703,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 links = filePackage.getDownloadLinkList();
                                 for (int i = 0; i < links.size(); i++) {
                                     link = links.get(i);
-                                    if (link.getPlugin() == null) continue;
+                                    if (link.getDefaultPlugin() == null) continue;
                                     linkStatus = link.getLinkStatus();
                                     if (!linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS) && link.isEnabled()) {
                                         /* enabled and not in progress */

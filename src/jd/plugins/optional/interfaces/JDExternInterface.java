@@ -406,16 +406,16 @@ public class JDExternInterface extends PluginOptional {
                                 links.addAll(foundlinks);
                             } else {
                                 /* directlinks here */
-                                PluginForHost plg = JDUtilities.getNewPluginForHostInstance("DirectHTTP");
+                                PluginForHost defaultplg = JDUtilities.getPluginForHost("DirectHTTP");
+                                PluginForHost liveplg = defaultplg.getWrapper().getNewPluginInstance();
                                 String name = Plugin.getFileNameFromURL(new URL(url));
-                                DownloadLink direct = new DownloadLink(plg, name, "DirectHTTP", url, true);
+                                DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
                                 direct.setBrowserUrl(referer);
                                 if (i < desc.length) direct.setSourcePluginComment(desc[i]);
                                 direct.setProperty("cookies", cookies);
                                 direct.setProperty("post", post);
                                 direct.setProperty("referer", referer);
-                                plg.correctDownloadLink(direct);
-                                direct.setLoadedPlugin(plg);
+                                liveplg.correctDownloadLink(direct);
                                 links.add(direct);
                             }
                         }

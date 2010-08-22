@@ -30,6 +30,7 @@ import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.http.Browser;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -48,6 +49,7 @@ public abstract class PluginsC extends Plugin {
 
     public PluginsC(final PluginWrapper wrapper) {
         super(wrapper);
+        br = new Browser();
     }
 
     private static final HashMap<String, PluginsC> PLUGINS = new HashMap<String, PluginsC>();

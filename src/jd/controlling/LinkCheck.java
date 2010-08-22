@@ -26,9 +26,11 @@ import java.util.Iterator;
 import javax.swing.Timer;
 
 import jd.event.JDBroadcaster;
+import jd.http.Browser;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 class LinkCheckBroadcaster extends JDBroadcaster<LinkCheckListener, LinkCheckEvent> {
@@ -139,16 +141,18 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     private void checkHosterList(ArrayList<DownloadLink> hosterList) {
         if (hosterList.size() != 0) {
             DownloadLink link = hosterList.get(0);
-
+            PluginForHost plg = link.getDefaultPlugin().getWrapper().getNewPluginInstance();
+            plg.setBrowser(new Browser());
+            plg.init();
             long timer = System.currentTimeMillis();
-            boolean ret = link.getPlugin() == null ? false : link.getPlugin().getWrapper().getNewPluginInstance().checkLinks(hosterList.toArray(new DownloadLink[] {}));
+            boolean ret = plg.checkLinks(hosterList.toArray(new DownloadLink[] {}));
 
             if (!ret) {
                 for (int i = 0; i < hosterList.size(); i++) {
                     link = hosterList.get(i);
                     if (!checkRunning) return;
                     if (!link.getBooleanProperty("removed", false)) {
-                        link.isAvailable();
+                        link.getAvailableStatus(plg);
                         getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, link));
                     }
                     pc.increase(1);
@@ -183,15 +187,16 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                     /* onlinecheck, multithreaded damit schneller */
                     HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
                     for (DownloadLink dl : currentList) {
-                        if (dl.getPlugin() == null) continue;
+                        /* no defaultPlugin available */
+                        if (dl.getDefaultPlugin() == null) continue;
                         /*
                          * aufteilung in hosterlisten, um schnellere checks zu
                          * ermöglichen
                          */
-                        ArrayList<DownloadLink> localList = map.get(dl.getPlugin().getHost());
+                        ArrayList<DownloadLink> localList = map.get(dl.getHost());
                         if (localList == null) {
                             localList = new ArrayList<DownloadLink>();
-                            map.put(dl.getPlugin().getHost(), localList);
+                            map.put(dl.getHost(), localList);
                         }
                         localList.add(dl);
                     }

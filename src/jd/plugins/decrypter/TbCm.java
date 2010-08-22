@@ -68,6 +68,10 @@ public class TbCm extends PluginForDecrypt {
 
     public TbCm(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 100);
     }
 

@@ -77,7 +77,7 @@ public class TestLink {
 
                             if (pw.canHandle(l)) {
                                 // TestUtils.log(Encoding.urlDecode(l, true));
-                                DownloadLink dl = new DownloadLink(pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
+                                DownloadLink dl = new DownloadLink(pw.getPlugin(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
                                 dl.isAvailable();
                                 if (dl.isAvailable()) {
                                     System.out.println("Hoster: " + dl.getDownloadURL() + " : " + new File(dl.getFileOutput()).getName() + " : " + dl.getDownloadSize() + " Bytes");

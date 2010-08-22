@@ -32,13 +32,17 @@ public class PartageFacileCom extends PluginForHost {
 
     public PartageFacileCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
-        br.setRequestIntervalLimit(getHost(), 500);
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.partage-facile.com/cgu.php";
+    }
+
+    @Override
+    public void init() {
+        br.setFollowRedirects(true);
+        br.setRequestIntervalLimit(getHost(), 500);
     }
 
     @Override

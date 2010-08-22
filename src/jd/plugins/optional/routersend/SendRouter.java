@@ -29,6 +29,7 @@ import jd.controlling.reconnect.ReconnectMethod;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
@@ -52,7 +53,7 @@ public class SendRouter extends PluginOptional {
 
     public SendRouter(PluginWrapper wrapper) {
         super(wrapper);
-
+        br = new Browser();
     }
 
     @Override

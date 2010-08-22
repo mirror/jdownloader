@@ -75,12 +75,17 @@ public class MediafireCom extends PluginForHost {
     public MediafireCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.mediafire.com/register.php");
-        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
+
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.mediafire.com/terms_of_service.php";
+    }
+
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
     }
 
     @Override

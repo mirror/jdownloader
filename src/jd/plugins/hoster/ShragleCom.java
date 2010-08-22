@@ -43,8 +43,12 @@ public class ShragleCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.shragle.com/index.php?p=accounts&ref=386");
         setStartIntervall(5000l);
-        br.setRequestIntervalLimit(this.getHost(), 800);
 
+    }
+
+    @Override
+    public void init() {
+        br.setRequestIntervalLimit(this.getHost(), 800);
     }
 
     @Override
