@@ -6,7 +6,6 @@ import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 
 import jd.gui.swing.jdgui.events.ContextMenu;
-import jd.gui.swing.jdgui.events.QuickHelp;
 
 /**
  * @author Based on <a
@@ -23,13 +22,11 @@ public class WaitCursorEventQueue extends EventQueue implements DelayTimerCallba
 
     private final DelayTimer waitTimer;
     private final CursorManager cursorManager;
-    private final QuickHelp quickHelp;
     private final ContextMenu contextMenu;
 
     private WaitCursorEventQueue() {
         this.waitTimer = new DelayTimer(this, DELAY);
         this.cursorManager = new CursorManager(waitTimer);
-        this.quickHelp = new QuickHelp();
         this.contextMenu = new ContextMenu();
     }
 
@@ -43,8 +40,6 @@ public class WaitCursorEventQueue extends EventQueue implements DelayTimerCallba
         cursorManager.push(event.getSource());
         waitTimer.startTimer();
         try {
-            if (event instanceof MouseEvent) quickHelp.dispatchMouseEvent((MouseEvent) event);
-
             super.dispatchEvent(event);
 
             if (event instanceof MouseEvent) contextMenu.dispatchMouseEvent((MouseEvent) event);

@@ -17,10 +17,7 @@
 package jd.gui.swing;
 
 import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.event.ActionListener;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -31,7 +28,6 @@ import javax.swing.JSeparator;
 
 import jd.config.ConfigGroup;
 import jd.gui.swing.components.JDUnderlinedText;
-import jd.gui.swing.components.linkbutton.JLink;
 import net.miginfocom.swing.MigLayout;
 
 public final class Factory {
@@ -47,14 +43,8 @@ public final class Factory {
     }
 
     public static JPanel createHeader(final String name, final ImageIcon icon) {
-        JLabel label;
-        try {
-            label = new JLink("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-")));
-        } catch (MalformedURLException e) {
-            label = new JLabel(name);
-            label.setIcon(icon);
-            label.setFont(label.getFont().deriveFont(Font.BOLD));
-        }
+        JLabel label = new JLabel("<html><u><b>" + name + "</b></u></html>");
+        label.setIcon(icon);
         label.setIconTextGap(5);
         label.setBorder(null);
 

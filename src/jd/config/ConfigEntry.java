@@ -305,14 +305,6 @@ public class ConfigEntry implements Serializable {
         return guiListener;
     }
 
-    /**
-     * deprecated should think about removing it, there is nearly <b>no</b>
-     * helppage in our wiki
-     */
-    public String getHelptags() {
-        return label;
-    }
-
     public ImageIcon getImageIcon() {
         return imageIcon;
     }

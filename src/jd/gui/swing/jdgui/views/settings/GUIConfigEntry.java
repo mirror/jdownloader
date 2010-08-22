@@ -48,7 +48,6 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -190,18 +189,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         }
 
         if (input != null) enableComponent(input, configEntry.isEnabled());
-
-        if (configEntry.getHelptags() != null) {
-            String tooltip = JDL.LF("gui.tooltips.quickhelp", "Quickhelp available: %s (ctrl+shift+CLICK)", configEntry.getHelptags());
-            if (decoration != null) {
-                decoration.setName(configEntry.getHelptags());
-                decoration.setToolTipText(tooltip);
-            }
-            if (input != null) {
-                input.setName(configEntry.getHelptags());
-                input.setToolTipText(tooltip);
-            }
-        }
     }
 
     public JComponent getInput() {
