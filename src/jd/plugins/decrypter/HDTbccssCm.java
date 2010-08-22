@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7387 $", interfaceVersion = 2, names = { "hdtubeaccess.com" }, urls = { "http://[\\w\\.]*?(hdtubeaccess|vibetube)\\.com/videos/[0-9]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdtubeaccess.com" }, urls = { "http://[\\w\\.]*?(hdtubeaccess|vibetube)\\.com/videos/[0-9]+/" }, flags = { 0 })
 public class HDTbccssCm extends PluginForDecrypt {
 
     public HDTbccssCm(PluginWrapper wrapper) {

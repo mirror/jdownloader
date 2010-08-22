@@ -70,7 +70,6 @@ public final class Replacer {
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.COMMENT", JDL.L("replacer.comment", "Last finished package: Comment") });
         KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", JDL.L("replacer.downloaddirectory", "Last finished package: Download Directory") });
         KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", JDL.L("replacer.filepath", "Last finished File: Filepath") });
-        KEYS.add(new String[] { "LAST_FINISHED_FILE.INFOSTRING", JDL.L("replacer.informationstring", "Last finished File: Plugin given informationstring") });
         KEYS.add(new String[] { "LAST_FINISHED_FILE.HOST", JDL.L("replacer.hoster", "Last finished File: Hoster") });
         KEYS.add(new String[] { "LAST_FINISHED_FILE.NAME", JDL.L("replacer.filename", "Last finished File: Filename") });
         KEYS.add(new String[] { "LAST_FINISHED_FILE.FILESIZE", JDL.L("replacer.filesize", "Last finished File: Filesize") });
@@ -202,4 +201,5 @@ public final class Replacer {
             return sb.toString();
         }
     }
+
 }
