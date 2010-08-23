@@ -26,9 +26,9 @@ import javax.swing.JSeparator;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
@@ -62,7 +62,10 @@ public abstract class ConfigPanel extends SwitchPanel {
             addConfigEntry(cfgEntry);
         }
 
-        this.add(panel);
+        JScrollPane scroll = new JScrollPane(panel);
+        scroll.setBorder(null);
+
+        this.add(scroll);
         this.load();
     }
 
