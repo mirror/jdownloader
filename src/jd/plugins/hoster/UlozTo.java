@@ -36,7 +36,6 @@ public class UlozTo extends PluginForHost {
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
         this.enablePremium("http://uloz.to/kredit/");
     }
 

@@ -64,15 +64,9 @@ public class HosterColumn extends JDTableColumn {
             jlr.setToolTipText(strLoadingFrom + fp.getHoster());
         } else {
             dLink = (DownloadLink) value;
-            if (dLink.getDefaultPlugin() != null) {
-                jlr.setToolTipText(strLoadingFrom + dLink.getHost());
-                jlr.setText(dLink.getDefaultPlugin().getSessionInfo());
-                jlr.setIcon(dLink.getDefaultPlugin().getHosterIconScaled());
-            } else {
-                jlr.setToolTipText("no plugin found");
-                jlr.setText("no plugin found");
-                jlr.setIcon(null);
-            }
+            jlr.setToolTipText(dLink.getDownloadLinkInfo().getLoadingFrom());
+            jlr.setText(dLink.getDefaultPlugin().getSessionInfo());
+            jlr.setIcon(dLink.getDefaultPlugin().getHosterIconScaled());
         }
         return jlr;
     }

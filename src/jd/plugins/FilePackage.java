@@ -105,6 +105,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private long finishedDate = -1l;
 
+    private transient FilePackageInfo filePackageInfo = null;
+
     public void addListener(FilePackageListener l) {
         broadcaster.addListener(l);
     }
@@ -695,9 +697,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         case FilePackageEvent.DOWNLOADLINK_ADDED:
         case FilePackageEvent.DOWNLOADLINK_REMOVED:
             ListHoster = null;
-            getHoster();
             break;
         }
+    }
+
+    public FilePackageInfo getFilePackageInfo() {
+        return FilePackageInfoCache.getInstance().get(this);
     }
 
 }

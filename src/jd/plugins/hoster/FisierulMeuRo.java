@@ -21,18 +21,18 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fisierulmeu.ro" }, urls = { "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html" }, flags = { 0 })
 public class FisierulMeuRo extends PluginForHost {
 
     public FisierulMeuRo(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
+
     }
 
     // @Override
@@ -42,6 +42,7 @@ public class FisierulMeuRo extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
         if (br.containsHTML("Ne pare rau, dar acest fisier are o adresa gresita.") || br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -57,7 +58,8 @@ public class FisierulMeuRo extends PluginForHost {
 
     // @Override
     /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
+     * /* public String getVersion() { return getVersion("$Revision$");
+     * }
      */
 
     // @Override

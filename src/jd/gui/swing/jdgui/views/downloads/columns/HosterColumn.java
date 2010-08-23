@@ -49,8 +49,6 @@ public class HosterColumn extends JDTableColumn {
     private String strResume;
     private String strPremium;
 
-    private String strLoadingFrom;
-
     private JRendererLabel jlr;
 
     public HosterColumn(String name, JDTableModel table) {
@@ -63,7 +61,6 @@ public class HosterColumn extends JDTableColumn {
         imgPremium = JDTheme.II("gui.images.premium", 16, 16);
         strResume = JDL.L(JDL_PREFIX + "resume", "Resumable download");
         strPremium = JDL.L(JDL_PREFIX + "premium", "Loading with Premium");
-        strLoadingFrom = JDL.L(JDL_PREFIX + "loadingFrom", "Loading from") + " ";
     }
 
     @Override
@@ -84,7 +81,6 @@ public class HosterColumn extends JDTableColumn {
             return jlr;
         } else {
             dLink = (DownloadLink) value;
-            statuspanel.setText(dLink.getLinkStatus().getStatusString(), null);
             counter = 0;
             if (dLink.getTransferStatus().usesPremium()) {
                 statuspanel.setIcon(counter, imgPremium, null, strPremium);
@@ -101,7 +97,7 @@ public class HosterColumn extends JDTableColumn {
                 if (plg == null) plg = dLink.getDefaultPlugin();
                 String s = plg.getSessionInfo();
                 statuspanel.setText(s, null);
-                statuspanel.setIcon(-1, plg.getHosterIconScaled(), null, strLoadingFrom + dLink.getHost());
+                statuspanel.setIcon(-1, plg.getHosterIconScaled(), null, dLink.getDownloadLinkInfo().getLoadingFrom());
             }
             statuspanel.clearIcons(counter);
         }

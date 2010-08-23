@@ -24,7 +24,6 @@ import java.util.Comparator;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -62,24 +61,12 @@ public class SizeColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            if (fp.getTotalEstimatedPackageSize() < 0) {
-                jlr.setText("Unknown Filesize");
-                jlr.setToolTipText(null);
-            } else {
-                String size = Formatter.formatReadable(fp.getTotalEstimatedPackageSize());
-                jlr.setText(size);
-                jlr.setToolTipText(size);
-            }
+            jlr.setText(fp.getFilePackageInfo().getFormattedSize());
+            jlr.setToolTipText(fp.getFilePackageInfo().getFormattedSize());
         } else {
             dLink = (DownloadLink) value;
-            if (dLink.getDownloadSize() <= 0) {
-                jlr.setText("Unknown Filesize");
-                jlr.setToolTipText(null);
-            } else {
-                String size = Formatter.formatReadable(dLink.getDownloadSize());
-                jlr.setText(size);
-                jlr.setToolTipText(size);
-            }
+            jlr.setText(dLink.getDownloadLinkInfo().getFormattedSize());
+            jlr.setToolTipText(dLink.getDownloadLinkInfo().getFormattedSize());
         }
         return jlr;
     }

@@ -31,8 +31,6 @@ public class UltraShareNet extends PluginForHost {
 
     public UltraShareNet(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
-        setBrowserExclusive();
     }
 
     @Override
@@ -43,6 +41,7 @@ public class UltraShareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This file doesn't exist or has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Download</span>(.*?)\\(<i").getMatch(0);

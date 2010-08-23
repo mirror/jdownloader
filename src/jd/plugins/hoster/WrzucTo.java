@@ -23,18 +23,17 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuc.to" }, urls = { "http://[\\w\\.]*?wrzuc\\.to/([a-zA-Z0-9]+(\\.wt|\\.html)|(en/)?linki/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class WrzucTo extends PluginForHost {
 
     public WrzucTo(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class HotShareNet extends PluginForHost {
 
     public HotShareNet(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
+
     }
 
     @Override
@@ -49,11 +49,12 @@ public class HotShareNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        br.setFollowRedirects(true);
         this.setBrowserExclusive();
         br.setCookie("http://www.hotshare.net/", "language", "english");
         br.getPage(downloadLink.getDownloadURL().replaceAll("video", "file").replaceAll("audio", "file"));
         String filename = br.getRegex(Pattern.compile("<h1 class=\"top_title_downloading\"><strong>(.*?)</strong> </h1>")).getMatch(0);
-        if(filename == null) {
+        if (filename == null) {
             // if old regular expression won't work anymore, use new one
             filename = br.getRegex(Pattern.compile("</strong> \\((.*?)\\) </h1>")).getMatch(0);
         }

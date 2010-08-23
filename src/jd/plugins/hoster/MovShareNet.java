@@ -30,8 +30,6 @@ public class MovShareNet extends PluginForHost {
 
     public MovShareNet(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
-        setBrowserExclusive();
     }
 
     @Override
@@ -43,6 +41,8 @@ public class MovShareNet extends PluginForHost {
     // gets broken please also check the other one!
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We need you to prove you're human")) {
             Form IAmAHuman = br.getForm(0);

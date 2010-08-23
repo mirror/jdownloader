@@ -35,8 +35,7 @@ public class UploadMachineCom extends PluginForHost {
 
     public UploadMachineCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
-        setBrowserExclusive();
+
     }
 
     @Override
@@ -46,8 +45,9 @@ public class UploadMachineCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        br.setFollowRedirects(true);
+        setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-
         if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("colspan=2>Downloading the file  (.*?)</td>").getMatch(0));
         String filesize = br.getRegex("Size of the file:.*? align=left>(.*?)</td>").getMatch(0);

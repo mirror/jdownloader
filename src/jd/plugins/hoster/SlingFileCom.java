@@ -34,7 +34,6 @@ public class SlingFileCom extends PluginForHost {
 
     public SlingFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
     }
 
     public String getAGBLink() {

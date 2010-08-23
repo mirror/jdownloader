@@ -192,6 +192,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String customIconText = null;
 
+    private transient DownloadLinkInfo downloadLinkInfo;
+
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -1191,6 +1193,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public boolean hasCustomIcon() {
         return this.customIcon != null && this.customIconText != null;
+    }
+
+    public DownloadLinkInfo getDownloadLinkInfo() {
+        return DownloadLinkInfoCache.getInstance().get(this);
     }
 
 }

@@ -35,8 +35,6 @@ public class StorePlaceOrg extends PluginForHost {
 
     public StorePlaceOrg(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
-        setBrowserExclusive();
     }
 
     @Override
@@ -46,6 +44,7 @@ public class StorePlaceOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        br.setFollowRedirects(true);
         for (int i = 0; i < 5; i++) {
             /* hoster blocks several useragents */
             this.setBrowserExclusive();

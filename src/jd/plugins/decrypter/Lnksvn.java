@@ -52,7 +52,6 @@ public class Lnksvn extends PluginForDecrypt {
 
     public Lnksvn(PluginWrapper wrapper) {
         super(wrapper);
-        br.setRequestIntervalLimit(this.getHost(), 1000);
     }
 
     private static boolean isExternInterfaceActive() {
@@ -62,6 +61,7 @@ public class Lnksvn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br.setRequestIntervalLimit(this.getHost(), 1000);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
         String parameter = param.toString();

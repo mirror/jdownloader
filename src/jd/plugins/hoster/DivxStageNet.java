@@ -31,8 +31,6 @@ public class DivxStageNet extends PluginForHost {
 
     public DivxStageNet(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
-        setBrowserExclusive();
     }
 
     public String DLLINK = null;
@@ -46,6 +44,8 @@ public class DivxStageNet extends PluginForHost {
     // gets broken please also check the other one!
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We need you to prove you're human")) {
             Form IAmAHuman = br.getForm(0);

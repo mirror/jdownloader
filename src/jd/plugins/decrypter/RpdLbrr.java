@@ -39,7 +39,7 @@ public class RpdLbrr extends PluginForDecrypt {
 
     public RpdLbrr(PluginWrapper wrapper) {
         super(wrapper);
-        br.setCookiesExclusive(false);
+
     }
 
     @Override
@@ -52,7 +52,7 @@ public class RpdLbrr extends PluginForDecrypt {
          */
         if (RpdLbrr.decryptRunning) progress.setStatusText("Queued");
         waitQueue();
-
+        br.setCookiesExclusive(false);
         br.getPage(parameter.getCryptedUrl());
         String fpName = br.getRegex("<<title>File download:(.*?)from .*?</title>").getMatch(0);
         if (fpName == null) {

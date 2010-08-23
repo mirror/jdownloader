@@ -34,7 +34,7 @@ public class FileFlyerCom extends PluginForHost {
 
     public FileFlyerCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
+
     }
 
     public String getAGBLink() {
@@ -43,6 +43,7 @@ public class FileFlyerCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_size\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_file\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);

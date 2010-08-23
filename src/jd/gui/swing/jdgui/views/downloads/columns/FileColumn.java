@@ -79,7 +79,7 @@ public class FileColumn extends JDTableColumn {
             } else {
                 jlr.setText(fp.getName(), !fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             }
-            jlr.setIcon(0, null, "[" + fp.size() + "]", null);
+            jlr.setIcon(0, null, fp.getFilePackageInfo().getSize(), null);
             jlr.clearIcons(1);
             jlr.setBorder(null);
         } else {

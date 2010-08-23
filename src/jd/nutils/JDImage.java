@@ -47,6 +47,28 @@ public class JDImage {
     private static HashMap<Icon, Icon> DISABLED_ICON_CACHE = new HashMap<Icon, Icon>();
     private static HashMap<String, Image> SCALED_IMAGE_CACHE = new HashMap<String, Image>();
 
+    static {
+        new Thread(new Runnable() {
+
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    System.out.println(BUFFERED_IMAGE_CACHE.size());
+                    System.out.println(IMAGE_ICON_CACHE.size());
+                    System.out.println(DISABLED_ICON_CACHE.size());
+                    System.out.println(SCALED_IMAGE_CACHE.size());
+                }
+
+            }
+
+        }).start();
+    }
+
     public static ImageIcon iconToImage(Icon icon) {
         if (icon == null) return null;
         if (icon instanceof ImageIcon) {
@@ -76,7 +98,7 @@ public class JDImage {
 
             ShellFolder shellFolder = ShellFolder.getShellFolder(file);
             ret = new ImageIcon(shellFolder.getIcon(true));
-            IMAGE_ICON_CACHE.put(id, ret);
+            // IMAGE_ICON_CACHE.put(id, ret);
             return ret;
         } catch (Throwable e) {
             return iconToImage(new JFileChooser().getIcon(file));
@@ -101,7 +123,7 @@ public class JDImage {
 
         ret = new ImageIcon(getScaledImage((BufferedImage) img.getImage(), width, height));
 
-        IMAGE_ICON_CACHE.put(id, ret);
+        // IMAGE_ICON_CACHE.put(id, ret);
         return ret;
     }
 
@@ -113,7 +135,7 @@ public class JDImage {
         if (ret != null) return ret;
 
         ret = getScaledImage((BufferedImage) img.getImage(), width, height);
-        SCALED_IMAGE_CACHE.put(id, ret);
+        // SCALED_IMAGE_CACHE.put(id, ret);
         return ret;
     }
 
@@ -133,7 +155,7 @@ public class JDImage {
             height = (int) (img.getHeight() / faktor);
             ret = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
         }
-        SCALED_IMAGE_CACHE.put(id, ret);
+        // SCALED_IMAGE_CACHE.put(id, ret);
         return ret;
     }
 
@@ -159,7 +181,7 @@ public class JDImage {
             JDLogger.exception(e);
             return null;
         }
-        BUFFERED_IMAGE_CACHE.put(imageName, ret);
+        // BUFFERED_IMAGE_CACHE.put(imageName, ret);
         return ret;
     }
 
@@ -175,7 +197,7 @@ public class JDImage {
             JDLogger.exception(e);
             return null;
         }
-        BUFFERED_IMAGE_CACHE.put(file.getAbsolutePath(), ret);
+        // BUFFERED_IMAGE_CACHE.put(file.getAbsolutePath(), ret);
         return ret;
     }
 
@@ -183,7 +205,7 @@ public class JDImage {
         ImageIcon ret = IMAGE_ICON_CACHE.get(string);
         if (ret != null) return ret;
         ret = new ImageIcon(getImage(string));
-        IMAGE_ICON_CACHE.put(string, ret);
+        // IMAGE_ICON_CACHE.put(string, ret);
         return ret;
     }
 
@@ -192,7 +214,7 @@ public class JDImage {
         Icon ret = DISABLED_ICON_CACHE.get(icon);
         if (ret != null) return ret;
         ret = UIManager.getLookAndFeel().getDisabledIcon(null, icon);
-        DISABLED_ICON_CACHE.put(icon, ret);
+        // DISABLED_ICON_CACHE.put(icon, ret);
         return ret;
     }
 
@@ -200,7 +222,7 @@ public class JDImage {
         ImageIcon ret = IMAGE_ICON_CACHE.get(pat.getAbsolutePath());
         if (ret != null) return ret;
         ret = new ImageIcon(getImage(pat));
-        IMAGE_ICON_CACHE.put(pat.getAbsolutePath(), ret);
+        // IMAGE_ICON_CACHE.put(pat.getAbsolutePath(), ret);
         return ret;
     }
 

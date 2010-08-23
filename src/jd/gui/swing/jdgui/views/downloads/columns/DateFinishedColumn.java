@@ -17,18 +17,15 @@
 package jd.gui.swing.jdgui.views.downloads.columns;
 
 import java.awt.Component;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
@@ -36,21 +33,14 @@ public class DateFinishedColumn extends JDTableColumn {
 
     private static final long serialVersionUID = 2228210790952050305L;
     private DownloadLink dLink;
-    private Date date;
-    private SimpleDateFormat dateFormat;
     private FilePackage fp;
     private JRendererLabel jlr;
 
     public DateFinishedColumn(String name, JDTableModel table) {
         super(name, table);
-        date = new Date();
         jlr = new JRendererLabel();
         jlr.setBorder(null);
-        try {
-            dateFormat = new SimpleDateFormat(JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.TableRenderer.dateformat", "dd.MM.yy HH:mm"));
-        } catch (Exception e) {
-            dateFormat = new SimpleDateFormat("dd.MM.yy HH:mm");
-        }
+
     }
 
     @Override
@@ -72,20 +62,10 @@ public class DateFinishedColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            if (fp.getFinishedDate() <= 0) {
-                jlr.setText("");
-            } else {
-                date.setTime(fp.getFinishedDate());
-                jlr.setText(dateFormat.format(date));
-            }
+            jlr.setText(fp.getFilePackageInfo().getFinishedDate());
         } else {
             dLink = (DownloadLink) value;
-            if (dLink.getFinishedDate() <= 0) {
-                jlr.setText("");
-            } else {
-                date.setTime(dLink.getFinishedDate());
-                jlr.setText(dateFormat.format(date));
-            }
+            jlr.setText(dLink.getDownloadLinkInfo().getFinishedDate());
         }
         return jlr;
     }

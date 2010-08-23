@@ -24,7 +24,6 @@ import java.util.Comparator;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -62,14 +61,12 @@ public class RemainingColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            String size = Formatter.formatReadable(fp.getRemainingKB());
-            jlr.setText(size);
-            jlr.setToolTipText(size);
+            jlr.setText(fp.getFilePackageInfo().getFormattedRemaining());
+            jlr.setToolTipText(fp.getFilePackageInfo().getFormattedRemaining());
         } else {
             dLink = (DownloadLink) value;
-            String size = Formatter.formatReadable(dLink.getRemainingKB());
-            jlr.setText(size);
-            jlr.setToolTipText(size);
+            jlr.setText(dLink.getDownloadLinkInfo().getFormattedRemaining());
+            jlr.setToolTipText(dLink.getDownloadLinkInfo().getFormattedRemaining());
         }
         return jlr;
     }

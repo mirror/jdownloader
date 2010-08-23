@@ -28,7 +28,6 @@ import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.components.JDProgressBarRender;
-import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -46,7 +45,6 @@ public class ProgressColumn extends JDTableColumn {
     private final String strUnknownFilesize;
     private final Color COL_PROGRESS_ERROR = new Color(0xCC3300);
     private final Color COL_PROGRESS_NORMAL;
-    private StringBuilder sb = new StringBuilder();
     private Color COL_PROGRESS = null;
     private FilePackage fp;
     private JRendererLabel jlr;
@@ -86,9 +84,7 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setValue(fp.getTotalKBLoaded());
             }
-            clearSB();
-            sb.append(Formatter.formatReadable(fp.getTotalKBLoaded())).append('/').append(Formatter.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize())));
-            progress.setString(sb.toString());
+            progress.setString(fp.getFilePackageInfo().getProgressString());
             COL_PROGRESS = COL_PROGRESS_NORMAL;
             return progress;
         } else {
@@ -108,26 +104,24 @@ public class ProgressColumn extends JDTableColumn {
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(dLink.getHost()) > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 COL_PROGRESS = COL_PROGRESS_ERROR;
-                progress.setString(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
+                progress.setString(dLink.getDownloadLinkInfo().getFormattedWaittime());
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(dLink.getHost()) > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 COL_PROGRESS = COL_PROGRESS_ERROR;
-                progress.setString(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
+                progress.setString(dLink.getDownloadLinkInfo().getFormattedWaittime());
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 return progress;
             } else if (dLink.getLinkStatus().isFinished()) {
                 progress.setMaximum(100);
-                progress.setString((Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))));
+                progress.setString(dLink.getDownloadLinkInfo().getFormattedSize());
                 progress.setValue(100);
                 COL_PROGRESS = COL_PROGRESS_NORMAL;
                 return progress;
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) {
-                clearSB();
-                sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
                 progress.setMaximum(dLink.getDownloadSize());
-                progress.setString(sb.toString());
+                progress.setString(dLink.getDownloadLinkInfo().getProgressString());
                 progress.setValue(dLink.getDownloadCurrent());
                 COL_PROGRESS = COL_PROGRESS_NORMAL;
                 return progress;
@@ -236,10 +230,6 @@ public class ProgressColumn extends JDTableColumn {
         if (obj instanceof DownloadLink) return ((DownloadLink) obj).isEnabled();
         if (obj instanceof FilePackage) return ((FilePackage) obj).isEnabled();
         return true;
-    }
-
-    private void clearSB() {
-        sb.delete(0, sb.capacity());
     }
 
 }

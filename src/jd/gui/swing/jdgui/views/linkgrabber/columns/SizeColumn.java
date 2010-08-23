@@ -60,7 +60,7 @@ public class SizeColumn extends JDTableColumn {
             jlr.setText(fp.getDownloadSize(false) > 0 ? Formatter.formatReadable(fp.getDownloadSize(false)) : "~");
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            jlr.setText(dLink.getDownloadSize() > 0 ? Formatter.formatReadable(dLink.getDownloadSize()) : "~");
+            jlr.setText(dLink.getDownloadLinkInfo().getFormattedSize());
         }
         return jlr;
     }

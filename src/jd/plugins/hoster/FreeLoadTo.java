@@ -29,8 +29,6 @@ public class FreeLoadTo extends PluginForHost {
 
     public FreeLoadTo(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
-        setBrowserExclusive();
     }
 
     @Override
@@ -46,6 +44,7 @@ public class FreeLoadTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         // String jscookiepage =

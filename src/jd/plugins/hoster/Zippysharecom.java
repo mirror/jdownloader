@@ -35,7 +35,6 @@ public class Zippysharecom extends PluginForHost {
 
     public Zippysharecom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
     }
 
     @Override
@@ -72,6 +71,7 @@ public class Zippysharecom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
         this.setBrowserExclusive();
         prepareBrowser(downloadLink);
         if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -24,7 +24,6 @@ import java.util.Comparator;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -62,24 +61,12 @@ public class LoadedColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            if (fp.getTotalKBLoaded() < 0) {
-                jlr.setText("0 B");
-                jlr.setToolTipText("0 B");
-            } else {
-                String size = Formatter.formatReadable(fp.getTotalKBLoaded());
-                jlr.setText(size);
-                jlr.setToolTipText(size);
-            }
+            jlr.setText(fp.getFilePackageInfo().getFormattedLoaded());
+            jlr.setToolTipText(fp.getFilePackageInfo().getFormattedLoaded());
         } else {
             dLink = (DownloadLink) value;
-            if (dLink.getDownloadCurrent() <= 0) {
-                jlr.setText("0 B");
-                jlr.setToolTipText("0 B");
-            } else {
-                String size = Formatter.formatReadable(dLink.getDownloadCurrent());
-                jlr.setText(size);
-                jlr.setToolTipText(size);
-            }
+            jlr.setText(dLink.getDownloadLinkInfo().getFormattedLoaded());
+            jlr.setToolTipText(dLink.getDownloadLinkInfo().getFormattedLoaded());
         }
         return jlr;
     }

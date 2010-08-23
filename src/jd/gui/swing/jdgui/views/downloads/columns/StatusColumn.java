@@ -24,9 +24,9 @@ import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.components.StatusLabel;
-import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginProgress;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -54,9 +54,6 @@ public class StatusColumn extends JDTableColumn {
     private String strPriority3;
     private String strExtract;
     private FilePackage fp;
-    private StringBuilder sb = new StringBuilder();
-    private String strDownloadLinkActive;
-    private String strETA;
 
     public StatusColumn(String name, JDTableModel table) {
         super(name, table);
@@ -78,8 +75,7 @@ public class StatusColumn extends JDTableColumn {
         strPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
         strPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
         strPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
-        strDownloadLinkActive = JDL.L("gui.treetable.packagestatus.links_active", "Active");
-        strETA = JDL.L("gui.eta", "ETA");
+
     }
 
     @Override
@@ -104,14 +100,7 @@ public class StatusColumn extends JDTableColumn {
                 statuspanel.setIcon(counter, imgStopMark, null, strStopMark);
                 counter++;
             }
-            clearSB();
-            if (fp.getTotalDownloadSpeed() > 0) {
-                sb.append('[').append(fp.getLinksInProgress()).append('/').append(fp.size()).append("] ");
-                sb.append(strETA).append(' ').append(Formatter.formatSeconds(fp.getETA())).append(" @ ").append(Formatter.formatReadable(fp.getTotalDownloadSpeed())).append("/s");
-            } else if (fp.getLinksInProgress() > 0) {
-                sb.append(fp.getLinksInProgress()).append('/').append(fp.size()).append(' ').append(strDownloadLinkActive);
-            }
-            statuspanel.setText(sb.toString(), null);
+            statuspanel.setText(fp.getFilePackageInfo().getStatusString(), null);
             statuspanel.clearIcons(counter);
         } else {
             dLink = (DownloadLink) value;
@@ -130,7 +119,8 @@ public class StatusColumn extends JDTableColumn {
                 statuspanel.setIcon(counter, imgFailed, null, strFailed);
                 counter++;
             }
-            if (counter <= StatusLabel.ICONCOUNT && dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
+            PluginProgress prog = dLink.getPluginProgress();
+            if (counter <= StatusLabel.ICONCOUNT && prog != null && prog.getPercent() > 0.0 && prog.getPercent() < 100.0) {
                 statuspanel.setIcon(counter, imgExtract, null, strExtract);
                 counter++;
             }
@@ -157,11 +147,12 @@ public class StatusColumn extends JDTableColumn {
                     break;
                 }
             }
+            ImageIcon ico = dLink.getCustomIcon();
             if (counter <= StatusLabel.ICONCOUNT && dLink.hasCustomIcon()) {
-                statuspanel.setIcon(counter, dLink.getCustomIcon(), null, dLink.getCustomIconText());
+                statuspanel.setIcon(counter, ico, null, dLink.getCustomIconText());
                 counter++;
             }
-            statuspanel.setText(dLink.getLinkStatus().getStatusString(), null);
+            statuspanel.setText(dLink.getDownloadLinkInfo().getStatusString(), null);
             statuspanel.clearIcons(counter);
         }
         return statuspanel;
@@ -183,10 +174,6 @@ public class StatusColumn extends JDTableColumn {
 
     @Override
     public void sort(Object obj, boolean sortingToggle) {
-    }
-
-    private void clearSB() {
-        sb.delete(0, sb.capacity());
     }
 
     @Override

@@ -54,7 +54,9 @@ import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkInfoCache;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageInfoCache;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
@@ -428,6 +430,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     @Override
     public void onShow() {
+        DownloadLinkInfoCache.setMaxItems(internalTable);
+        FilePackageInfoCache.setMaxItems(internalTable);
         notvisible = false;
         LGINSTANCE.addListener(this);
         fireTableChanged();
