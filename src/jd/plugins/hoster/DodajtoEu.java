@@ -22,12 +22,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dodajto.eu" }, urls = { "http://[\\w\\.]*?dodajto\\.eu/file/[0-9]+/" }, flags = { 0 })
 public class DodajtoEu extends PluginForHost {
@@ -99,8 +98,7 @@ public class DodajtoEu extends PluginForHost {
                 if (br.containsHTML("downloadpw")) {
                     if (br.containsHTML("downloadpw")) {
                         if (link.getStringProperty("pass", null) == null) {
-                            passCode = Plugin.getUserInput("Password?", link);
-
+                            passCode = getUserInput(null, link);
                         } else {
                             /* gespeicherten PassCode holen */
                             passCode = link.getStringProperty("pass", null);

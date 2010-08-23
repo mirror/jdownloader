@@ -21,12 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "host.hackerbox.org" }, urls = { "http://[\\w\\.]*?host\\.hackerbox\\.org/download\\.php\\?file=[a-z0-9]+" }, flags = { 0 })
 public class HostHackerboxOrg extends PluginForHost {
@@ -81,7 +80,7 @@ public class HostHackerboxOrg extends PluginForHost {
     public String handlePassword(String passCode, DownloadLink downloadLink) throws IOException, PluginException {
         for (int i = 0; i <= 3; i++) {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
+                passCode = getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);

@@ -27,7 +27,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -53,7 +52,7 @@ public class Tnypst extends PluginForDecrypt {
                 if (id == null) id = new Regex(link, "tinypaste\\.com/([0-9a-z]+)").getMatch(0);
                 Form pwform = br.getForm(0);
                 if (pwform == null || id == null) return null;
-                String pw = Plugin.getUserInput("Password?", parameter);
+                String pw = getUserInput(null, parameter);
                 pwform.put("password_" + id, pw);
                 br.submitForm(pwform);
                 if (br.containsHTML("(Enter the correct password|has been password protected)")) continue;

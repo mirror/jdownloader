@@ -22,12 +22,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4us.to" }, urls = { "http://[\\w\\.]*?4us\\.to/download\\.php\\?id=[A-Z0-9]+" }, flags = { 0 })
 public class FourUsTo extends PluginForHost {
@@ -96,8 +95,7 @@ public class FourUsTo extends PluginForHost {
                 }
                 if (br.containsHTML("class=textinput name=downloadpw")) {
                     if (link.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", link);
-
+                        passCode = getUserInput(null, link);
                     } else {
                         /* gespeicherten PassCode holen */
                         passCode = link.getStringProperty("pass", null);

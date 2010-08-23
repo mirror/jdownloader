@@ -93,7 +93,7 @@ public class Lnksvn extends PluginForDecrypt {
         for (int retry = 0; retry < 5; retry++) {
             if (form == null) break;
             if (form.containsHTML("besucherpasswort")) {
-                String pw = getUserInput(JDL.L("jd.plugins.decrypter.Lnksvn.pass", "Userpassword"), param);
+                String pw = getUserInput(null, param);
                 form.put("besucherpasswort", pw);
             }
             String url = "captcha/cap.php?hsh=" + form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);

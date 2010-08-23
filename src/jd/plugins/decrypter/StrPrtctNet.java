@@ -27,7 +27,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
@@ -66,7 +65,7 @@ public class StrPrtctNet extends PluginForDecrypt {
                 }
                 if (br.containsHTML("Passwort")) {
                     String passCode = null;
-                    passCode = Plugin.getUserInput("Password?", param);
+                    passCode = getUserInput(null, param);
                     captchaForm.put("txtPassword", passCode);
                 }
                 br.submitForm(captchaForm);

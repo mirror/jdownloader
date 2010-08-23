@@ -22,12 +22,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allshares.ge" }, urls = { "http://[\\w\\.]*?allshares\\.ge/(\\?d|download\\.php\\?id)=[A-Z0-9]+" }, flags = { 0 })
 public class AllSharesGe extends PluginForHost {
@@ -99,7 +98,7 @@ public class AllSharesGe extends PluginForHost {
             if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("downloadpw")) {
                 if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
+                    passCode = getUserInput(null, link);
 
                 } else {
                     /* gespeicherten PassCode holen */

@@ -65,9 +65,7 @@ import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
@@ -227,40 +225,6 @@ public class JDUtilities {
             if (pfc.get(i).getHost().equalsIgnoreCase(encryption)) { return pfc.get(i).getPlugin().encrypt(string); }
         }
         return null;
-    }
-
-    public static String getUserInput(final String message, final DownloadLink link) {
-        return getUserInput(message, null, link);
-    }
-
-    public static String getUserInput(final String message, final String defaultmessage, final DownloadLink link) {
-        try {
-            link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-            link.requestGuiUpdate();
-            final String code = getUserInput(message, defaultmessage);
-
-            link.requestGuiUpdate();
-            return code;
-        } finally {
-            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
-        }
-    }
-
-    public static String getUserInput(final String message, final CryptedLink link) {
-        return getUserInput(message, null, link);
-    }
-
-    public static String getUserInput(final String message, final String defaultmessage, final CryptedLink link) {
-        link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
-        final String password = getUserInput(message, defaultmessage);
-        link.getProgressController().setStatusText(null);
-        return password;
-    }
-
-    public static String getUserInput(final String message, final String defaultmessage) {
-        synchronized (USERIO_LOCK) {
-            return UserIO.getInstance().requestInputDialog(0, message == null ? JDL.L("gui.linkgrabber.password", "Password?") : message, defaultmessage == null ? "" : defaultmessage);
-        }
     }
 
     /**

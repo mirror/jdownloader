@@ -23,12 +23,11 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://[\\w\\.]*?divxden\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class DivxDenCom extends PluginForHost {
@@ -163,7 +162,7 @@ public class DivxDenCom extends PluginForHost {
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         if (thelink.getStringProperty("pass", null) == null) {
-            passCode = Plugin.getUserInput("Password?", thelink);
+            passCode = getUserInput(null, thelink);
         } else {
             /* gespeicherten PassCode holen */
             passCode = thelink.getStringProperty("pass", null);

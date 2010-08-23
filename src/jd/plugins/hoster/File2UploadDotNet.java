@@ -25,12 +25,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://[\\w\\.]*?file2upload\\.(net|com)/download/[0-9]+/" }, flags = { 2 })
 public class File2UploadDotNet extends PluginForHost {
@@ -93,7 +92,7 @@ public class File2UploadDotNet extends PluginForHost {
         }
         if (br.containsHTML("Enter password to download this file")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
+                passCode = getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);
@@ -154,7 +153,7 @@ public class File2UploadDotNet extends PluginForHost {
         }
         if (br.containsHTML("Enter password to download this file")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
+                passCode = getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);

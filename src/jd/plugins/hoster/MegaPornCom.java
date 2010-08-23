@@ -38,12 +38,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaporn.com" }, urls = { "http://[\\w\\.]*?(megaporn|megarotic|sexuploader)\\.com/.*?(\\?|&)d=[\\w]+" }, flags = { 2 })
@@ -295,9 +295,9 @@ public class MegaPornCom extends PluginForHost {
         // User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)
         // Content-Length: 12
         // Content-Type: application/x-www-form-urlencoded
-        //        
+        //
         // this.setBrowserExclusive();
-        //        
+        //
 
         br.getHeaders().clear();
         br.getHeaders().setDominant(true);
@@ -487,7 +487,7 @@ public class MegaPornCom extends PluginForHost {
             try {
                 String passCode;
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(null, downloadLink);
+                    passCode = getUserInput(null, downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);

@@ -28,12 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
@@ -227,7 +226,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (form.containsHTML("name=downloadpw")) {
             String passCode = null;
             if (parameter.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput(null, parameter);
+                passCode = getUserInput(null, parameter);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = parameter.getStringProperty("pass", null);
@@ -285,7 +284,7 @@ public class ShareOnlineBiz extends PluginForHost {
         String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput(null, downloadLink);
+                passCode = getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);

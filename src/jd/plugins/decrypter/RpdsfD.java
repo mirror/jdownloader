@@ -30,7 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidsafe.de" }, urls = { "http://.+rapidsafe\\.de" }, flags = { 0 })
@@ -65,7 +64,7 @@ public class RpdsfD extends PluginForDecrypt {
                     String[] pwDat = pw.getRow(0);
                     String post = pwDat[0] + pwDat[1];
 
-                    if (pass == null) pass = Plugin.getUserInput("Password?", param);
+                    if (pass == null) pass = getUserInput(null, param);
 
                     br.postPage(parameter, post + pass.trim());
 

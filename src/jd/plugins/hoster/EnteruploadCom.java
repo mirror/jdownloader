@@ -30,12 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "enterupload.com" }, urls = { "http://[\\w\\.]*?enterupload\\.com/[a-z0-9]{12}" }, flags = { 2 })
@@ -159,7 +158,7 @@ public class EnteruploadCom extends PluginForHost {
             String c = getCaptchaCode(cf, downloadLink);
             if (password == true) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                    passCode = getUserInput(null, downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
@@ -180,7 +179,7 @@ public class EnteruploadCom extends PluginForHost {
         if (recaptcha == false) {
             if (password == true) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                    passCode = getUserInput(null, downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
@@ -334,7 +333,7 @@ public class EnteruploadCom extends PluginForHost {
                 if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
                     if (link.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", link);
+                        passCode = getUserInput(null, link);
                     } else {
                         /* gespeicherten PassCode holen */
                         passCode = link.getStringProperty("pass", null);

@@ -22,12 +22,11 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://[\\w\\.]*?axifile\\.com/(\\?|mydownload\\.php\\?file=)\\d+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
@@ -73,7 +72,7 @@ public class AxiFileCom extends PluginForHost {
             Form pwform = br.getForm(0);
             if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
+                passCode = getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);

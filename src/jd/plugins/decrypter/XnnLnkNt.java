@@ -24,7 +24,6 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xenonlink.net" }, urls = { "http://[\\w\\.]*?xenonlink\\.net/" }, flags = { 0 })
@@ -34,11 +33,10 @@ public class XnnLnkNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String dataCode = Plugin.getUserInput("Data-Code?", param);
+        String dataCode = getUserInput(null, param);
 
         br.getPage("http://www.xenonlink.net/index.php?p=2&dg=" + dataCode);
 
@@ -48,7 +46,5 @@ public class XnnLnkNt extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

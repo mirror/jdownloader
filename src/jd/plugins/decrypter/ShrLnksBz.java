@@ -45,7 +45,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -145,7 +144,7 @@ public class ShrLnksBz extends PluginForDecrypt {
 
                 // First try the stored password, if that doesn't work, ask the
                 // user to enter it
-                if (latestPassword == null) latestPassword = Plugin.getUserInput("Password " + getHost() + "?", param);
+                if (latestPassword == null) latestPassword = getUserInput(null, param);
                 pwform.put("password", latestPassword);
                 br.submitForm(pwform);
                 //

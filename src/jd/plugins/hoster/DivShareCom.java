@@ -23,13 +23,13 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginUtils;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "http://[\\w\\.]*?divshare\\.com/(download|image|direct)/\\d+-.+" }, flags = { 0 })
 public class DivShareCom extends PluginForHost {
@@ -65,8 +65,7 @@ public class DivShareCom extends PluginForHost {
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String passCode = null;
                 if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
-
+                    passCode = getUserInput(null, link);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = link.getStringProperty("pass", null);

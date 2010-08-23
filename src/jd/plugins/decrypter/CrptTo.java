@@ -31,7 +31,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -64,7 +63,7 @@ public class CrptTo extends PluginForDecrypt {
             Form captchaForm = null;
             String passCode = null;
             if (br.containsHTML("Passwort bitte hier")) {
-                passCode = Plugin.getUserInput("Password?", passCode, param);
+                passCode = getUserInput(null, param);
             }
             for (int i = 0; i < 5; i++) {
                 // Captcha handling

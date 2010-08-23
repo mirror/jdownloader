@@ -56,7 +56,7 @@ public class PrtctTOg extends PluginForDecrypt {
         Form form = br.getForm(0);
         InputField pass = form.getInputField("pass");
         if (pass != null) {
-            pass.setValue(getUserInput("Besucherpasswort", param));
+            pass.setValue(getUserInput(null, param));
 
         }
         form.remove("captcha");

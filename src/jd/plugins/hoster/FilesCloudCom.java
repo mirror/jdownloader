@@ -23,12 +23,11 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filescloud.com" }, urls = { "http://[\\w\\.]*?filescloud\\.com/[a-z0-9]{12}" }, flags = { 0 })
@@ -168,7 +167,7 @@ public class FilesCloudCom extends PluginForHost {
             c = getCaptchaCode(cf, downloadLink);
             if (password == true) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                    passCode = getUserInput(null, downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
@@ -187,7 +186,7 @@ public class FilesCloudCom extends PluginForHost {
         if (recaptcha == false) {
             if (password == true) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                    passCode = getUserInput(null, downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);

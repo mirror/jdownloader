@@ -57,7 +57,7 @@ public class CrptCm extends PluginForDecrypt {
 
             state = 2;
         } else if (br.containsHTML("Passwort:")) {
-            password = getUserInput("Folder PW", parameter);
+            password = getUserInput(null, parameter);
             state = 3;
         }
 

@@ -28,12 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://[\\w\\.]*?data-loading\\.com/.{2}/file/\\d+/\\w+" }, flags = { 2 })
 public class DataLoadingCom extends PluginForHost {
@@ -135,7 +134,7 @@ public class DataLoadingCom extends PluginForHost {
                 Form pwform = br.getFormbyProperty("name", "myform");
                 if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (parameter.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", parameter);
+                    passCode = getUserInput(null, parameter);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = parameter.getStringProperty("pass", null);
@@ -199,8 +198,7 @@ public class DataLoadingCom extends PluginForHost {
                 if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("downloadpw")) {
                     if (downloadLink.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", downloadLink);
-
+                        passCode = getUserInput(null, downloadLink);
                     } else {
                         /* gespeicherten PassCode holen */
                         passCode = downloadLink.getStringProperty("pass", null);
@@ -227,7 +225,7 @@ public class DataLoadingCom extends PluginForHost {
                 Form pwform = br.getFormbyProperty("name", "myform");
                 if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                    passCode = getUserInput(null, downloadLink);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);

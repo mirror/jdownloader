@@ -70,20 +70,36 @@ public abstract class Plugin implements ActionListener {
         }
     }
 
-    public static String getUserInput(String message, CryptedLink link) throws DecrypterException {
-        String password = JDUtilities.getUserInput(message, link);
-        if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
-        return password;
-    }
-
+    /**
+     * 
+     * @param message
+     *            The message to be displayed or <code>null</code> to display a
+     *            Password prompt
+     * @param link
+     *            the {@link DownloadLink}
+     * @return the entered password
+     * @throws PluginException
+     *             if the user aborts the input
+     */
     public static String getUserInput(String message, DownloadLink link) throws PluginException {
-        String password = JDUtilities.getUserInput(message, link);
+        String password = PluginUtils.askPassword(message, link);
         if (password == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         return password;
     }
 
-    public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws DecrypterException {
-        String password = JDUtilities.getUserInput(message, defaultmessage, link);
+    /**
+     * 
+     * @param message
+     *            The message to be displayed or <code>null</code> to display a
+     *            Password prompt
+     * @param link
+     *            the {@link CryptedLink}
+     * @return the entered password
+     * @throws DecrypterException
+     *             if the user aborts the input
+     */
+    public static String getUserInput(String message, CryptedLink link) throws DecrypterException {
+        String password = PluginUtils.askPassword(message, link);
         if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
         return password;
     }
@@ -396,11 +412,6 @@ public abstract class Plugin implements ActionListener {
      * Initialisiert das Plugin vor dem ersten Gebrauch
      */
     public void init() {
-
-    }
-
-    @Deprecated
-    public void setAcceptOnlyURIs(boolean acceptCompleteLinks) {
     }
 
 }

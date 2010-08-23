@@ -26,7 +26,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -49,7 +48,7 @@ public class PdPsteCm extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 Form pwform = br.getForm(0);
                 if (pwform == null) return null;
-                String passCode = Plugin.getUserInput("Password?", param);
+                String passCode = getUserInput(null, param);
                 pwform.put("pass", passCode);
                 br.submitForm(pwform);
                 if (br.containsHTML("name=\"pass\"")) continue;

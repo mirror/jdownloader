@@ -66,7 +66,7 @@ public class Crptngt extends PluginForDecrypt {
         if (form == null) return null;
         if (br.containsHTML("password to access this folder")) {
             for (int i = 1; i <= 5; i++) {
-                String folderPass = getUserInput("Folder Password", param);
+                String folderPass = getUserInput(null, param);
                 form.put("opass", folderPass);
                 br.submitForm(form);
                 if (br.containsHTML("maximum number of password attempts")) throw new DecrypterException("You have entered the maximum number of password attempts");

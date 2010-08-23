@@ -26,7 +26,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -62,7 +61,7 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
                 for (int i = 0; i <= 2; i++) {
                     Form pwform = br.getForm(0);
                     if (pwform == null) return null;
-                    String passCode = Plugin.getUserInput("Password?", param);
+                    String passCode = getUserInput(null, param);
                     if (parameter.contains("urlaxe.net")) {
                         pwform.put("p", passCode);
                     } else if (parameter.contains("skracaj.org") || parameter.contains("l-x.pl")) {

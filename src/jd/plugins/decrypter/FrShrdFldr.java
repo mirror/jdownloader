@@ -132,15 +132,13 @@ public class FrShrdFldr extends PluginForDecrypt {
         if (br.containsHTML("enter a password to access")) {
             Form form = br.getFormbyProperty("name", "theForm");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String text = JDL.L("plugins.hoster.general.enterpassword", "Enter password:");
             for (int retry = 5; retry > 0; retry--) {
-                pass = getUserInput(text, param);
+                pass = getUserInput(null, param);
                 form.put("userPass2", pass);
                 br.submitForm(form);
                 if (!br.containsHTML("enter a password to access"))
                     break;
                 else {
-                    text = "(" + (retry - 1) + ") " + JDL.L("plugins.hoster.general.reenterpassword", "Wrong password. Please re-enter:");
                     if (retry == 1) {
                         logger.severe("Wrong Password!");
                         throw new DecrypterException("Wrong Password!");

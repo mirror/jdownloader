@@ -192,8 +192,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String customIconText = null;
 
-    private transient DownloadLinkInfo downloadLinkInfo;
-
     /**
      * Erzeugt einen neuen DownloadLink
      * 

@@ -67,9 +67,7 @@ public class BadongoCom extends PluginForHost {
                 if (pwForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String pass = downloadLink.getDecrypterPassword();
                 if (pass == null) {
-                    String passDlgMsg = JDL.L("plugins.hoster.general.enterpassword", "Enter password:");
-                    if (i > 0) passDlgMsg = JDL.L("plugins.hoster.general.reenterpassword", "Wrong password. Please re-enter:");
-                    pass = getUserInput(passDlgMsg, downloadLink);
+                    pass = getUserInput(null, downloadLink);
                     if (pass == null) continue;
                 }
                 pwForm.put("pwd", pass);

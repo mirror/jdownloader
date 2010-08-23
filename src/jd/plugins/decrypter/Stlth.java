@@ -33,7 +33,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stealth.to" }, urls = { "http://[\\w\\.]*?stealth\\.to/(\\?id\\=[\\w]+|index\\.php\\?id\\=[\\w]+|\\?go\\=captcha&id=[\\w]+)|http://[\\w\\.]*?stealth\\.to/folder/[\\w]+" }, flags = { 0 })
 public class Stlth extends PluginForDecrypt {
@@ -60,7 +59,7 @@ public class Stlth extends PluginForDecrypt {
         if (br.containsHTML("besucherpass.png")) {
 
             Form form = br.getFormBySubmitvalue("Weiter");
-            form.put("access_pass", getUserInput(JDL.LF("jd.plugins.decrypter.stealth.askpassword", "Downloadpassword required for %s", param.getCryptedUrl()), param));
+            form.put("access_pass", getUserInput(null, param));
             br.submitForm(form);
 
         }

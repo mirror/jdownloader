@@ -29,7 +29,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -70,7 +69,7 @@ public class SprdLnkUs extends PluginForDecrypt {
         for (int i = 0; i < 5; i++) {
             String sendData = "http://spreadlink.us/index.php?request=datei&datei=weiterleitung&link=" + linkid + "&action=1";
             if (!passwordOrNot.equals("1")) {
-                String thePassword = Plugin.getUserInput("Password?", param);
+                String thePassword = getUserInput(null, param);
                 sendData = sendData + "&passwort=" + thePassword;
             }
             if (captchaOrNot.equals("1")) {

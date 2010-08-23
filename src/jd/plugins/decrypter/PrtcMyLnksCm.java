@@ -30,7 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
@@ -71,7 +70,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
             captchaForm.put("captcha", code);
 
             if (br.containsHTML("Password :")) {
-                passCode = Plugin.getUserInput("Password?", param);
+                passCode = getUserInput(null, param);
                 captchaForm.put("passwd", passCode);
             }
             br.submitForm(captchaForm);

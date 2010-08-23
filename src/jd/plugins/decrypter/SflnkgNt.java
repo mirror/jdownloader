@@ -31,7 +31,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -66,7 +65,7 @@ public class SflnkgNt extends PluginForDecrypt {
             capForm.setAction(parameter);
             for (int i = 0; i <= 5; i++) {
                 if (br.containsHTML(PASSWORDPROTECTEDTEXT)) {
-                    capForm.put("link-password", Plugin.getUserInput("Password?", param));
+                    capForm.put("link-password", getUserInput(null, param));
                 }
                 if (br.containsHTML(RECAPTCHATEXT)) {
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");

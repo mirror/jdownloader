@@ -30,7 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -78,7 +77,7 @@ public class UlCrptCm extends PluginForDecrypt {
                 }
                 // Password handling
                 if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) {
-                    passCode = Plugin.getUserInput("Password?", param);
+                    passCode = getUserInput(null, param);
                     captchaForm.put("strPassword", passCode);
                 }
                 br.submitForm(captchaForm);

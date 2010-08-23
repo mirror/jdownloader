@@ -19,10 +19,8 @@ public class FilePackageInfo {
     private String statusString = null;
     private String progressString = null;
     private long lastReset = 0;
-
     private boolean dateAddedReset = false;
-
-    private boolean dateFinishedReset = false;;
+    private boolean dateFinishedReset = false;
 
     private static SimpleDateFormat dateFormat = null;
     private static String strDownloadLinkActive = JDL.L("gui.treetable.packagestatus.links_active", "Active");

@@ -25,7 +25,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
@@ -51,7 +50,7 @@ public class KrM extends PluginForDecrypt {
             for (int i = 0; i < 5; i++) {
                 if (form != null && form.hasInputFieldByName("key")) {
                     logger.info("pw protected link");
-                    String password = Plugin.getUserInput(null, param);
+                    String password = getUserInput(null, param);
                     form.put("key", password);
                     br.submitForm(form);
                     form = br.getForm(0);

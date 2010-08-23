@@ -27,12 +27,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.locale.JDL;
 
 //http://www.4shared.com/file/<FILEID[a-70-9]>/<FILENAME>.html
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
@@ -97,9 +96,8 @@ public class FourSharedCom extends PluginForHost {
                     if (br.containsHTML("enter a password to access")) downloadLink.setDecrypterPassword(null);
                 }
                 if (downloadLink.getDecrypterPassword() == null) {
-                    String text = JDL.L("plugins.hoster.general.enterpassword", "Enter password:");
                     for (int retry = 5; retry > 0; retry--) {
-                        String pass = getUserInput(text, downloadLink);
+                        String pass = getUserInput(null, downloadLink);
                         form.put("userPass2", pass);
                         br.submitForm(form);
                         if (!br.containsHTML("enter a password to access")) {
@@ -107,7 +105,6 @@ public class FourSharedCom extends PluginForHost {
                             downloadLink.setDecrypterPassword(pass);
                             break;
                         } else {
-                            text = "(" + (retry - 1) + ") " + JDL.L("plugins.hoster.general.reenterpassword", "Wrong password. Please re-enter:");
                             if (retry == 1) logger.severe("Wrong Password!");
                         }
                     }
@@ -187,7 +184,7 @@ public class FourSharedCom extends PluginForHost {
                 Form form = br.getFormbyProperty("name", "theForm");
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-                if (pass == null) pass = getUserInput("Password?", downloadLink);
+                if (pass == null) pass = getUserInput(null, downloadLink);
                 form.put("userPass2", pass);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
                 if (br.containsHTML("enter a password to access")) {

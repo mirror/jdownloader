@@ -19,12 +19,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.ws" }, urls = { "http://[\\w\\.]*?4share\\.ws/file/.*?/.{1}" }, flags = { 0 })
 public class FourShareWs extends PluginForHost {
@@ -62,7 +61,7 @@ public class FourShareWs extends PluginForHost {
         if (br.containsHTML("(File Is Protected|Enter password to continue)")) {
             for (int i = 0; i <= 3; i++) {
                 if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
+                    passCode = getUserInput(null, link);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = link.getStringProperty("pass", null);

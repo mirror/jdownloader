@@ -26,7 +26,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
@@ -51,7 +50,7 @@ public class KsRLCm extends PluginForDecrypt {
                 int flag = 0;
                 for (int i = 0; i < 5; i++) {
                     logger.info("pw protected link");
-                    String password = Plugin.getUserInput(null, param);
+                    String password = getUserInput(null, param);
                     String request = br.postPage("includes/ajax.php", "password=" + password + "&action=checkpassword");
                     flag = Integer.parseInt(new Regex(request, "\\['(\\d)','.*?'\\]").getMatch(0));
                     String url = new Regex(request, "\\['\\d','(.*?)'\\]").getMatch(0);

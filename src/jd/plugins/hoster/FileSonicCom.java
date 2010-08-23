@@ -29,12 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
@@ -192,7 +191,7 @@ public class FileSonicCom extends PluginForHost {
             if (br.containsHTML("This file is password protected")) {
                 /* password handling */
                 if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(JDL.L("plugins.hoster.sharingmatrixcom.password", "Password?"), downloadLink);
+                    passCode = getUserInput(null, downloadLink);
                 } else {
                     /* get saved password */
                     passCode = downloadLink.getStringProperty("pass", null);
@@ -271,7 +270,7 @@ public class FileSonicCom extends PluginForHost {
         if (br.containsHTML("This file is password protected")) {
             /* password handling */
             if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput(JDL.L("plugins.hoster.sharingmatrixcom.password", "Password?"), downloadLink);
+                passCode = getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);

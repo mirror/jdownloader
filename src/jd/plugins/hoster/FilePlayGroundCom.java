@@ -27,12 +27,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileplayground.com" }, urls = { "http://[\\w\\.]*?fileplayground\\.com/[a-z0-9]{12}" }, flags = { 0 })
@@ -285,7 +284,7 @@ public class FilePlayGroundCom extends PluginForHost {
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         if (thelink.getStringProperty("pass", null) == null) {
-            passCode = Plugin.getUserInput("Password?", thelink);
+            passCode = getUserInput(null, thelink);
         } else {
             /* gespeicherten PassCode holen */
             passCode = thelink.getStringProperty("pass", null);

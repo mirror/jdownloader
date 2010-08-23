@@ -9,6 +9,7 @@ import jd.utils.locale.JDL;
 public class DownloadLinkInfo {
 
     private DownloadLink link = null;
+
     private String formattedSize = null;
     private String formattedLoaded = null;
     private String formattedRemaining = null;
@@ -21,7 +22,7 @@ public class DownloadLinkInfo {
     private long lastReset = 0;
     private boolean formattedSizeReset = false;
     private boolean dateAddedReset = false;
-    private boolean dateFinishedReset = false;;
+    private boolean dateFinishedReset = false;
 
     private static SimpleDateFormat dateFormat = null;
 
