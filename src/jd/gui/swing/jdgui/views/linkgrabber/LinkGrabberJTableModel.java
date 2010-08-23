@@ -52,7 +52,7 @@ public class LinkGrabberJTableModel extends JDTableModel {
                     list.clear();
                     for (LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
                         list.add(fp);
-                        if (fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false)) {
+                        if (fp.getBooleanProperty(LinkGrabberController.PROPERTY_EXPANDED, false)) {
                             for (DownloadLink dl : fp.getDownloadLinks()) {
                                 list.add(dl);
                             }

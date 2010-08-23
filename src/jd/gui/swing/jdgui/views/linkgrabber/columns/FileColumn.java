@@ -29,7 +29,6 @@ import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.components.StatusLabel;
-import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberTable;
 import jd.nutils.NaturalOrderComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
@@ -75,9 +74,9 @@ public class FileColumn extends JDTableColumn {
         if (value instanceof LinkGrabberFilePackage) {
             fp = (LinkGrabberFilePackage) value;
             if (fp.countFailedLinks(false) > 0) {
-                jlr.setText(fp.getName(), !fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
+                jlr.setText(fp.getName(), !fp.getBooleanProperty(LinkGrabberController.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
             } else {
-                jlr.setText(fp.getName(), !fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
+                jlr.setText(fp.getName(), !fp.getBooleanProperty(LinkGrabberController.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             }
             jlr.setIcon(0, null, "[" + fp.size() + "]", null);
             jlr.clearIcons(1);

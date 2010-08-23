@@ -64,13 +64,15 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public static final String CONFIG = "LINKGRABBER";
     public static final String IGNORE_LIST = "IGNORE_LIST";
     public static final String DONTFORCEPACKAGENAME = "dontforcename";
+    public static final String PARAM_CONTROLPOSITION = "PARAM_CONTROLPOSITION";
+    public static final String PARAM_USE_CNL2 = "PARAM_USE_CNL2";
+    public static final String PARAM_NEWPACKAGES = "PARAM_NEWPACKAGES";
+
+    public static final String PROPERTY_EXPANDED = "lg_expanded";
+    public static final String PROPERTY_USEREXPAND = "lg_userexpand";
 
     private static ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
     private static final HashSet<String> extensionFilter = new HashSet<String>();
-
-    public static final String PARAM_CONTROLPOSITION = "PARAM_CONTROLPOSITION";
-
-    public static final String PARAM_USE_CNL2 = "PARAM_USE_CNL2";
 
     private static LinkGrabberController INSTANCE = null;
 

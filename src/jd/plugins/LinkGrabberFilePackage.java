@@ -25,6 +25,7 @@ import javax.swing.ImageIcon;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
@@ -90,6 +91,15 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
         broadcaster = new LinkGrabberFilePackageBroadcaster();
         broadcaster.addListener(this);
+
+        int state = SubConfiguration.getConfig(LinkGrabberController.CONFIG).getIntegerProperty(LinkGrabberController.PARAM_NEWPACKAGES, 2);
+        if (state == 0) {
+            setProperty(LinkGrabberController.PROPERTY_EXPANDED, true);
+            setProperty(LinkGrabberController.PROPERTY_USEREXPAND, true);
+        } else if (state == 2) {
+            setProperty(LinkGrabberController.PROPERTY_EXPANDED, false);
+            setProperty(LinkGrabberController.PROPERTY_USEREXPAND, true);
+        }
     }
 
     public LinkGrabberFilePackage(String name, LinkGrabberFilePackageListener listener) {

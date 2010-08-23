@@ -224,18 +224,20 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (LGINSTANCE.getPackages()) {
                 if (gatherer_running) {
-                    ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
-                    int count = 0;
-                    for (LinkGrabberFilePackage fp : fps) {
-                        count += 1 + fp.size();
-                    }
-                    if (count > (internalTable.getVisibleRect().getHeight() / 16.0)) {
+                    if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getIntegerProperty(LinkGrabberController.PARAM_NEWPACKAGES, 2) == 1) {
+                        ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
+                        int count = 0;
                         for (LinkGrabberFilePackage fp : fps) {
-                            if (!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTable.PROPERTY_EXPANDED, false);
+                            count += 1 + fp.size();
                         }
-                    } else {
-                        for (LinkGrabberFilePackage fp : fps) {
-                            if (!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTable.PROPERTY_EXPANDED, true);
+                        if (count > (internalTable.getVisibleRect().getHeight() / 16.0)) {
+                            for (LinkGrabberFilePackage fp : fps) {
+                                if (!fp.getBooleanProperty(LinkGrabberController.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberController.PROPERTY_EXPANDED, false);
+                            }
+                        } else {
+                            for (LinkGrabberFilePackage fp : fps) {
+                                if (!fp.getBooleanProperty(LinkGrabberController.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberController.PROPERTY_EXPANDED, true);
+                            }
                         }
                     }
                 }
@@ -480,7 +482,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             link.setProperty("forcecheck", Property.NULL);
         }
         FilePackage fp = FilePackage.getInstance();
-        fp.setProperty(DownloadTable.PROPERTY_EXPANDED, fpv2.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false));
+        fp.setProperty(DownloadTable.PROPERTY_EXPANDED, fpv2.getBooleanProperty(LinkGrabberController.PROPERTY_EXPANDED, false));
         fp.setName(fpv2.getName());
         fp.setComment(fpv2.getComment());
         fp.setPassword(fpv2.getPassword());

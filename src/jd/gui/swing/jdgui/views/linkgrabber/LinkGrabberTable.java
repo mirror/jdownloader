@@ -99,9 +99,6 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
 
     private PropMenuItem propItem;
 
-    public static final String PROPERTY_EXPANDED = "lg_expanded";
-    public static final String PROPERTY_USEREXPAND = "lg_userexpand";
-
     public LinkGrabberPanel getLinkGrabber() {
         return linkgrabber;
     }
@@ -254,19 +251,19 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
     }
 
     public void toggleFilePackageExpand(LinkGrabberFilePackage fp, byte mode) {
-        boolean cur = !fp.getBooleanProperty(PROPERTY_EXPANDED, false);
+        boolean cur = !fp.getBooleanProperty(LinkGrabberController.PROPERTY_EXPANDED, false);
         switch (mode) {
         case EXPCOL_CUR:
-            fp.setProperty(PROPERTY_EXPANDED, cur);
-            fp.setProperty(PROPERTY_USEREXPAND, true);
+            fp.setProperty(LinkGrabberController.PROPERTY_EXPANDED, cur);
+            fp.setProperty(LinkGrabberController.PROPERTY_USEREXPAND, true);
             break;
         case EXPCOL_TOP: {
             ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
             int indexfp = LinkGrabberController.getInstance().indexOf(fp);
             for (int index = 0; index <= indexfp; index++) {
                 LinkGrabberFilePackage fp2 = packages.get(index);
-                fp2.setProperty(PROPERTY_EXPANDED, cur);
-                fp2.setProperty(PROPERTY_USEREXPAND, true);
+                fp2.setProperty(LinkGrabberController.PROPERTY_EXPANDED, cur);
+                fp2.setProperty(LinkGrabberController.PROPERTY_USEREXPAND, true);
             }
         }
             break;
@@ -275,8 +272,8 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
             int indexfp = LinkGrabberController.getInstance().indexOf(fp);
             for (int index = indexfp; index < packages.size(); index++) {
                 LinkGrabberFilePackage fp2 = packages.get(index);
-                fp2.setProperty(PROPERTY_EXPANDED, cur);
-                fp2.setProperty(PROPERTY_USEREXPAND, true);
+                fp2.setProperty(LinkGrabberController.PROPERTY_EXPANDED, cur);
+                fp2.setProperty(LinkGrabberController.PROPERTY_USEREXPAND, true);
             }
         }
             break;
