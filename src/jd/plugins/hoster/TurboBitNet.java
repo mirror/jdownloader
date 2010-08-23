@@ -100,7 +100,9 @@ public class TurboBitNet extends PluginForHost {
             } else if (wait == 0) {
             } else if (wait > 31) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         }
-
+        String wait2 = br.getRegex("id=\\'timeout\\'>(\\d+)</span>").getMatch(0);
+        if (wait2 == null) wait2 = br.getRegex("limit: (\\d+),").getMatch(0);
+        if (wait2 != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait2) * 1001l);
         Form captchaform = br.getForm(2);
         if (captchaform == null) {
             logger.warning("captchaform equals null!");

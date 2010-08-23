@@ -21,12 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/list/\\d+/[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/(list/\\d+/[\\w]+|links/\\d+/[a-z0-9]+/.+)" }, flags = { 0 })
 public class HtflCm extends PluginForDecrypt {
 
     public HtflCm(PluginWrapper wrapper) {
@@ -38,17 +40,33 @@ public class HtflCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("Empty Directory")) return decryptedLinks;
-        FilePackage fp = FilePackage.getInstance();
-        String fpName = br.getRegex("-2px;\" />(.*?)/?</td>").getMatch(0).trim();
-        if (fpName == null || fpName.length() == 0) fpName = "Hotfile.com folder";
-        fp.setName(fpName);
-        String[] links = br.getRegex("(http://hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String link : links) {
-            DownloadLink dlink = createDownloadlink(link);
-            decryptedLinks.add(dlink);
-            fp.add(dlink);
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().equals("http://hotfile.com/")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return null;
+        }
+        if (br.containsHTML("Empty Directory")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (parameter.contains("/list/")) {
+            FilePackage fp = FilePackage.getInstance();
+            String fpName = br.getRegex("-2px;\" />(.*?)/?</td>").getMatch(0).trim();
+            if (fpName == null || fpName.length() == 0) fpName = "Hotfile.com folder";
+            fp.setName(fpName);
+            String[] links = br.getRegex("(http://hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            for (String link : links) {
+                DownloadLink dlink = createDownloadlink(link);
+                decryptedLinks.add(dlink);
+                fp.add(dlink);
+            }
+        } else {
+            String finallink = br.getRegex("name=\"url\" id=\"url\" class=\"textfield\" value=\"(.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("name=\"forum\" id=\"forum\" class=\"textfield\" value=\"\\[URL=(http://hotfile\\.com/.*?)\\]http").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("\"(http://hotfile\\.com/dl/\\d+/[a-z0-9]+/.*?\\.html\"").getMatch(0);
+                }
+            }
+            if (finallink == null) return null;
+            decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
     }

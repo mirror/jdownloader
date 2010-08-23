@@ -47,7 +47,7 @@ public class KeepFileCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.8, added 1 new limit errorhandling
+    // XfileSharingProBasic Version 1.8, added 2 new limit errorhandlings
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -58,6 +58,7 @@ public class KeepFileCom extends PluginForHost {
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static final String COOKIE_HOST = "http://keepfile.com";
     public boolean nopremium = false;
+    private static final String MAINTENANCEMODETEXT = "This server is in maintenance mode";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -98,6 +99,11 @@ public class KeepFileCom extends PluginForHost {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
+            if (brbefore.contains(MAINTENANCEMODETEXT)) {
+                link.getLinkStatus().setStatusText(MAINTENANCEMODETEXT);
+                logger.info(MAINTENANCEMODETEXT + "...");
+                return AvailableStatus.UNCHECKABLE;
+            }
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -111,6 +117,7 @@ public class KeepFileCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        if (brbefore.contains(MAINTENANCEMODETEXT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEMODETEXT);
         String passCode = null;
         boolean resumable = true;
         int maxchunks = 1;
@@ -343,6 +350,7 @@ public class KeepFileCom extends PluginForHost {
         if (nopremium) {
             doFree(link);
         } else {
+            if (brbefore.contains(MAINTENANCEMODETEXT)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEMODETEXT);
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 doSomething();

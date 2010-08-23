@@ -361,3 +361,9 @@ plugins/Customizer.jar
 plugins/schedule.jar
 plugins/JDHTTPLiveHeaderScripter.jar
 plugins/JDFolderWatch.jar
+jd/plugins/hoster/CrazyUploadCom.class
+jd/plugins/hoster/BigAndFreeCom.class
+jd/plugins/hoster/EvilShareCom.class
+jd/plugins/hoster/SuperFastFileCom.class
+jd/plugins/hoster/SpeedShareOrg.class
+jd/plugins/hoster/FileShareRo.class
