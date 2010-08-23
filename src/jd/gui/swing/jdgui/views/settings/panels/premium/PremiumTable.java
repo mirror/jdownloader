@@ -18,15 +18,12 @@ package jd.gui.swing.jdgui.views.settings.panels.premium;
 
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
-import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -38,12 +35,10 @@ import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.nutils.OSDetector;
 import jd.plugins.Account;
-import jd.utils.locale.JDL;
 
 public class PremiumTable extends JDTable implements MouseListener, KeyListener {
 
     private static final long serialVersionUID = 9049514723238421532L;
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.premium.PremiumTable.";
     private Premium panel;
 
     public PremiumTable(Premium panel) {
@@ -151,25 +146,8 @@ public class PremiumTable extends JDTable implements MouseListener, KeyListener 
                 addRowSelectionInterval(row, row);
             }
 
-            final ArrayList<Account> accs = getAllSelectedAccounts();
-
-            JMenuItem tmp = new JMenuItem(JDL.LF(JDL_PREFIX + "refresh", "Refresh Account(s) (%s)", accs.size()));
-            tmp.addActionListener(new ActionListener() {
-
-                public void actionPerformed(ActionEvent e) {
-                    new Thread(new Runnable() {
-                        public void run() {
-                            for (Account acc : accs) {
-                                AccountController.getInstance().updateAccountInfo(acc.getHoster(), acc, true);
-                            }
-                        }
-                    }).start();
-                }
-
-            });
-
             JPopupMenu popup = new JPopupMenu();
-            popup.add(tmp);
+            popup.add(ActionController.getToolBarAction("action.premiumview.refreshacc"));
             popup.show(this, point.x, point.y);
         }
     }

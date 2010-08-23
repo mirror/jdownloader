@@ -25,8 +25,8 @@ import javax.swing.Timer;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
 import jd.config.ConfigEntry.PropertyType;
+import jd.config.ConfigGroup;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -77,7 +77,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new ViewToolbar("action.premiumview.addacc", "action.premiumview.removeacc", "action.premium.buy"), ""));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new ViewToolbar("action.premiumview.addacc", "action.premiumview.refreshacc", "action.premiumview.removeacc", "action.premium.buy"), ""));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, scrollPane, "growy, pushy"));
 
         container.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "settings", "Advanced Settings"), getIconKey()));
@@ -91,6 +91,25 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     private void initActions() {
+        new ThreadedAction("action.premiumview.refreshacc", "gui.images.reconnect") {
+
+            private static final long serialVersionUID = -8727499044544169514L;
+
+            @Override
+            public void initDefaults() {
+            }
+
+            @Override
+            public void threadedActionPerformed(ActionEvent e) {
+                ArrayList<Account> accs = internalTable.getAllSelectedAccounts();
+                internalTable.editingStopped(null);
+                if (accs.size() == 0) return;
+                for (Account acc : accs) {
+                    AccountController.getInstance().updateAccountInfo(acc.getHoster(), acc, true);
+                }
+            }
+
+        };
         new ThreadedAction("action.premiumview.removeacc", "gui.images.delete") {
 
             private static final long serialVersionUID = -4407938288408350792L;
