@@ -265,7 +265,7 @@
 		<buildAddon number="136" package="proxyrot" include= "proxyrot/**"/>
 		<buildAddon number="137" package="scriptlauncher" include= "scriptlauncher/**"/>
 		<buildAddon number="102" package="infobar" include= "infobar/**"/>
-		<!-- <buildAddon number="103" package="lecturnity" include= "lecturnity/**"/> -->
+		<buildAddon number="103" package="lecturnity" include= "lecturnity/**"/>
 		<buildAddon number="107" package="improveddock" include= "improveddock/**"/>
 		<delete file="${dist}/Manifest.MF" failonerror="false"/>
 	</target>
