@@ -17,6 +17,7 @@
 package jd.plugins.optional.jdpremclient;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.HostPluginWrapper;
 import jd.Main;
@@ -39,7 +40,7 @@ class PremShareHost extends HostPluginWrapper {
     private HostPluginWrapper replacedone = null;
 
     public PremShareHost(String host, String className, String patternSupported, int flags) {
-        super(host, "jd.plugins.optional.jdpremclient.", "PremShare", patternSupported, flags, "$Revision$");
+        super(host, "jd.plugins.optional.jdpremclient.", className, patternSupported, flags, "$Revision$");
         for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
             if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
         }
@@ -57,7 +58,7 @@ class PremShareHost extends HostPluginWrapper {
     public synchronized PluginForHost getPlugin() {
         PluginForHost tmp = super.getPlugin();
         if (replacedone != null) {
-            ((PremShare) tmp).setReplacedPlugin(replacedone.getPlugin());
+            ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getPlugin());
         }
         return tmp;
     }
@@ -66,7 +67,7 @@ class PremShareHost extends HostPluginWrapper {
     public PluginForHost getNewPluginInstance() {
         PluginForHost tmp = super.getNewPluginInstance();
         if (replacedone != null) {
-            ((PremShare) tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
+            ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
         }
         return tmp;
     }
@@ -137,22 +138,23 @@ class PremShareHost extends HostPluginWrapper {
 @OptionalPlugin(rev = "$Revision$", id = "jdpremium", interfaceversion = 5)
 public class JDPremium extends PluginOptional {
 
-    private static PremShareHost jdpremium = null;
     private static final Object LOCK = new Object();
     private static boolean replaced = false;
     private static boolean enabled = false;
 
+    private static final HashMap<String, String> premShareHosts = new HashMap<String, String>();
+
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "Server"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer:(restart required)"));
     }
 
-    private void replaceHosterPlugin(String host) {
+    private void replaceHosterPlugin(String host, String with) {
         PluginForHost old = JDUtilities.getPluginForHost(host);
         if (old != null) {
-            logger.info("Replacing " + host + " Plugin with JDPremium Plugin");
-            new PremShareHost(old.getHost(), "PremShare", old.getWrapper().getPattern().toString(), old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
+            logger.info("Replacing " + host + " Plugin with JDPremium: " + with);
+            new PremShareHost(old.getHost(), with, old.getWrapper().getPattern().toString(), old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
         }
     }
 
@@ -160,40 +162,46 @@ public class JDPremium extends PluginOptional {
     public boolean initAddon() {
         synchronized (LOCK) {
             if (Main.isInitComplete() && replaced == false) {
-                logger.info("JDPremium cannot be initiated during runtime. JDPremium must be enabled at startup!");
+                logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
                 return false;
             }
             if (!replaced) {
+                String premShareServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER", null);
+                if (premShareServer != null && premShareServer.length() > 5) premShareHosts.put("jdownloader.org", "PremShare");
+                premShareHosts.put("ochload.org", "Ochloadorg");
+
+                /* get all current PremiumPlugins */
                 ArrayList<HostPluginWrapper> all = JDUtilities.getPremiumPluginsForHost();
-                for (HostPluginWrapper plugin : all) {
-                    if (plugin.getHost().contains("youtube")) continue;
-                    replaceHosterPlugin(plugin.getHost());
+
+                /* replace current PremiumPlugins */
+                for (String key : premShareHosts.keySet()) {
+                    for (HostPluginWrapper plugin : all) {
+                        if (plugin.getHost().contains("youtube")) continue;
+                        if (plugin.getHost().contains("DIRECTHTTP")) continue;
+                        replaceHosterPlugin(plugin.getHost(), premShareHosts.get(key));
+                    }
                 }
-                jdpremium = new PremShareHost("jdownloader.org", "PremShare", "NEVERUSETHISREGEX:\\)", 2);
+                int replaceIndex = 0;
+                for (String key : premShareHosts.keySet()) {
+                    /* init replacePlugin */
+                    new PremShareHost(key, premShareHosts.get(key), "NEVERUSETHISREGEX" + replaceIndex++ + ":\\)", 2);
+                }
             }
-            logger.info("JDPremium init ok!");
+            logger.info("JDPremium: init ok!");
             replaced = true;
             enabled = true;
             new Thread(new Runnable() {
                 public void run() {
-                    for (Account acc : AccountController.getInstance().getAllAccounts("jdownloader.org")) {
-                        AccountController.getInstance().updateAccountInfo("jdownloader.org", acc, true);
+                    for (String key : premShareHosts.keySet()) {
+                        for (Account acc : AccountController.getInstance().getAllAccounts(key)) {
+                            AccountController.getInstance().updateAccountInfo(key, acc, true);
+                        }
                     }
                 }
             }).start();
         }
 
         return true;
-    }
-
-    public static Account getAccount() {
-        synchronized (jdpremium) {
-            return AccountController.getInstance().getValidAccount(JDPremium.getJDPremium());
-        }
-    }
-
-    public static PluginForHost getJDPremium() {
-        return jdpremium.getPlugin();
     }
 
     @Override
