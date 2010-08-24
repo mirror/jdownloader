@@ -230,9 +230,9 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
         Table t = HelpPage.createTable(new Table(this.getHost()));
 
         t.setCommand("/addon/scriptlauncher/getlist");
-        t.setInfo("Get list of all available scripts");
+        t.setInfo("Get list of all available scripts.");
 
         t.setCommand("/addon/scriptlauncher/launch/%X%");
-        t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon");
+        t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon.");
     }
 }

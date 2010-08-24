@@ -788,7 +788,7 @@ gui.table.draganddrop.insertinpackagestart = Insert at the beginning of Package 
 gui.table.draganddrop.movepackagebefore = Insert before '%s'
 gui.table.draganddrop.movepackageend = Insert after '%s'
 gui.taskpanes.download.linkgrabber.config.addattop = Add at top
-gui.taskpanes.download.linkgrabber.config.autostart = Add and Start automatically!
+gui.taskpanes.download.linkgrabber.config.autostart = Add and start automatically!
 gui.taskpanes.download.linkgrabber.config.startofter = Start after adding
 gui.textcomponent.context.copy = Copy
 gui.textcomponent.context.copy.acc = Ctrl+C
@@ -803,7 +803,7 @@ gui.textcomponent.context.selectall.acc = Ctrl+A
 gui.tooltip.statusbar.max_chunks = Maximum connections per file [1...20]
 gui.tooltip.statusbar.simultan_downloads = Maximum simultaneous downloads [1...20]
 gui.tooltip.statusbar.speedlimiter = Speed limit (KiB/s) [0 = Infinite]
-gui.tooltips.linkgrabber.autostart = If selected, Downloads will start automatically after adding links
+gui.tooltips.linkgrabber.autostart = If selected, downloads will be added and start automatically
 gui.tooltips.linkgrabber.startlinksafteradd = If selected, download starts after adding new links
 gui.tooltips.linkgrabber.toporbottom = If selected, new links will be added at the top of your Downloads list
 gui.treetable.added = Added date

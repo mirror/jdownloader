@@ -38,8 +38,8 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDHash;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.plugins.optional.folderwatch.history.FolderWatchHistory;
-import jd.plugins.optional.folderwatch.history.FolderWatchHistoryEntry;
+import jd.plugins.optional.folderwatch.data.HistoryData;
+import jd.plugins.optional.folderwatch.data.HistoryDataEntry;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
 import jd.plugins.optional.remotecontrol.helppage.Table;
 import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
@@ -63,13 +63,15 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
     private static final String JDL_PREFIX = "plugins.optional.folderwatch.JDFolderWatch.";
 
     private final SubConfiguration subConfig;
-    private FolderWatchHistory history = new FolderWatchHistory();
+
+    public static HistoryData history;
 
     // option/mode flags
     private boolean isEnabled = false;
     private boolean isRecursive = false;
     private boolean isAutodelete = false;
     private boolean isHistoryOnly = false;
+    private boolean isDeleteCascade = false;
 
     private MenuAction toggleAction;
     private MenuAction showGuiAction;
@@ -148,7 +150,7 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
 
                             String md5Hash = importContainer(absPath);
 
-                            history.add(new FolderWatchHistoryEntry(filename, absPath, md5Hash));
+                            history.add(new HistoryDataEntry(filename, absPath, md5Hash));
                             subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, history);
                             subConfig.save();
                         }
@@ -177,7 +179,7 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
         super(wrapper);
 
         subConfig = getPluginConfig();
-        history = subConfig.getGenericProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, new FolderWatchHistory());
+        history = subConfig.getGenericProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, new HistoryData());
 
         initConfig();
     }
@@ -190,7 +192,7 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
     @Override
     public boolean initAddon() {
         isEnabled = subConfig.getBooleanProperty(FolderWatchConstants.CONFIG_KEY_ENABLED, true);
-        folder = subConfig.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER, "/tmp");
+        folder = subConfig.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER, "");
 
         startWatching(isEnabled);
 
@@ -274,7 +276,10 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_AUTODELETE, JDL.L(JDL_PREFIX + "autodelete", "Delete container after importing?")).setDefaultValue(false));
         ce.setEnabled(false);
 
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_HISTORYONLY, JDL.L(JDL_PREFIX + "history-only", "Adds containers to history but doesn't import them.")).setDefaultValue(false));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_HISTORYONLY, JDL.L(JDL_PREFIX + "historyonly", "Adds containers to history but doesn't import them.")).setDefaultValue(false));
+        ce.setEnabled(false);
+
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_DELETECASCADE, JDL.L(JDL_PREFIX + "deletecascade", "Deletes also related history entry when container gets deleted.")).setDefaultValue(false));
         ce.setEnabled(false);
     }
 
@@ -288,8 +293,9 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
                     if (event.getID() == SwitchPanelEvent.ON_REMOVE) showGuiAction.setSelected(false);
                 }
             });
-            // FolderWatchGui gui = new FolderWatchGui(getPluginConfig());
-            // view.setContent(gui);
+
+            FolderWatchGui gui = new FolderWatchGui(getPluginConfig());
+            view.setContent(gui);
             // view.setInfoPanel(gui.getInfoPanel());
         }
         showGuiAction.setSelected(true);

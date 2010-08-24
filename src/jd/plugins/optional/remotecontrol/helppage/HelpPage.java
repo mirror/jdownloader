@@ -135,7 +135,7 @@ public class HelpPage {
         t.setInfo("Set whether downloads should start or not start after they were added to the download queue");
 
         t.setCommand("/set/grabber/autoadding/(true|false)");
-        t.setInfo("Set whether the packages should be added to the downloadlist automatically after linkcheck.");
+        t.setInfo("Set whether the packages should be added to the downloadlist and started automatically after linkcheck.");
 
         // Table: Control downloads
         t = createTable(new Table("Control downloads"));

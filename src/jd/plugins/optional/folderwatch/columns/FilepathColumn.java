@@ -14,16 +14,32 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.folderwatch;
+package jd.plugins.optional.folderwatch.columns;
 
-public class FolderWatchConstants {
-    public static final String CONFIG_KEY_ENABLED = "ENABLED";
-    public static final String CONFIG_KEY_FOLDER = "FOLDER";
-    public static final String CONFIG_KEY_OPENFOLDER = "OPENFOLDER";
-    public static final String CONFIG_KEY_RECURSIVE = "RECURSIVE";
-    public static final String CONFIG_KEY_AUTODELETE = "AUTODELETE";
-    public static final String CONFIG_KEY_DELETECASCADE = "DELETECASCADE";
-    public static final String CONFIG_KEY_HISTORYONLY = "HISTORYONLY";
+import jd.gui.swing.components.table.JDTableModel;
+import jd.gui.swing.components.table.JDTextTableColumn;
+import jd.plugins.optional.folderwatch.data.HistoryDataEntry;
 
-    public static final String CONFIG_KEY_HISTORY = "HISTORY";
+public class FilepathColumn extends JDTextTableColumn {
+
+    private static final long serialVersionUID = -187718771670620651L;
+
+    public FilepathColumn(String name, JDTableModel table) {
+        super(name, table);
+    }
+
+    @Override
+    protected String getStringValue(Object value) {
+        return ((HistoryDataEntry) value).getAbsolutePath();
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        return true;
+    }
+
+    @Override
+    public boolean isSortable(Object obj) {
+        return false;
+    }
 }

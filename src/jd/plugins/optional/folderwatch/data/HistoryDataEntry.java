@@ -14,13 +14,13 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.folderwatch.history;
+package jd.plugins.optional.folderwatch.data;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class FolderWatchHistoryEntry implements Serializable {
+public class HistoryDataEntry implements Serializable {
 
     private static final long serialVersionUID = -8824175672927232845L;
 
@@ -36,11 +36,11 @@ public class FolderWatchHistoryEntry implements Serializable {
 
     private boolean isPhysical;
 
-    public FolderWatchHistoryEntry(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
+    public HistoryDataEntry(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
         set(filename, absolutePath, md5Hash, isPhysical);
     }
 
-    public FolderWatchHistoryEntry(String filename, String absolutePath, String md5Hash) {
+    public HistoryDataEntry(String filename, String absolutePath, String md5Hash) {
         set(filename, absolutePath, md5Hash, true);
     }
 

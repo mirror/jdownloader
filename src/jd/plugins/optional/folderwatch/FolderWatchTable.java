@@ -16,14 +16,20 @@
 
 package jd.plugins.optional.folderwatch;
 
-public class FolderWatchConstants {
-    public static final String CONFIG_KEY_ENABLED = "ENABLED";
-    public static final String CONFIG_KEY_FOLDER = "FOLDER";
-    public static final String CONFIG_KEY_OPENFOLDER = "OPENFOLDER";
-    public static final String CONFIG_KEY_RECURSIVE = "RECURSIVE";
-    public static final String CONFIG_KEY_AUTODELETE = "AUTODELETE";
-    public static final String CONFIG_KEY_DELETECASCADE = "DELETECASCADE";
-    public static final String CONFIG_KEY_HISTORYONLY = "HISTORYONLY";
+import jd.gui.swing.components.table.JDTable;
 
-    public static final String CONFIG_KEY_HISTORY = "HISTORY";
+public class FolderWatchTable extends JDTable {
+
+    private static final long serialVersionUID = 675244442903646117L;
+
+    public FolderWatchTable() {
+        super(new FolderWatchTableModel("folderwatch.historyview"));
+        // setRowHeight(22);
+    }
+
+    @Override
+    public FolderWatchTableModel getModel() {
+        return (FolderWatchTableModel) super.getModel();
+    }
+
 }
