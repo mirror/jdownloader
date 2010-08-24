@@ -23,9 +23,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Paylesssofts.net" }, urls = { "http://[\\w\\.]*?paylesssofts\\.net/((rs/\\?id\\=)|(\\?))[\\w]+" }, flags = { 0 })
 public class PlsssftsNt extends PluginForDecrypt {
@@ -55,17 +57,14 @@ public class PlsssftsNt extends PluginForDecrypt {
         // If Uploader posted not existent URL, Decrypter reports a warning
         // which we catch here to get the link
         String failedUrl = br.getRegex("<b>Warning<\\/b>\\:  file\\((.*?)\\)\\:").getMatch(0);
-        if (failedUrl != null) {
-            decryptedLinks.add(createDownloadlink(failedUrl));
-            return decryptedLinks;
-        }
+        if (failedUrl != null) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
 
         br.getPage("http://www.paylesssofts.net/" + rsOrMega + "/fdngetfile.php");
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://www.paylesssofts.net")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String finalurl = br.getRegex("<INPUT type=hidden value=(.*?) name=link>").getMatch(0);
+        if (finalurl == null) return null;
         decryptedLinks.add(createDownloadlink(finalurl));
         return decryptedLinks;
     }
-
-    // @Override
 
 }

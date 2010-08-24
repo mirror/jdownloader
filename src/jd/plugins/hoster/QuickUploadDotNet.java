@@ -69,7 +69,7 @@ public class QuickUploadDotNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(DownloadLink downloadLink, boolean doWait) throws Exception, PluginException {
         boolean resumable = true;
         int maxchunks = 0;
         // If the filesize regex above doesn't match you can copy this part into
@@ -95,15 +95,16 @@ public class QuickUploadDotNet extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Ticket Time
-        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        // no wait - looks work without
-        /*
-         * if (ttt != null) { logger.info("Waittime detected, waiting " +
-         * ttt.trim() + " seconds from now on..."); int tt =
-         * Integer.parseInt(ttt); sleep(tt * 1001, downloadLink); }
-         */
+        if (doWait) {
+            // Ticket Time (only needed when downloading through an account
+            String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+            if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+            if (ttt != null) {
+                logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
+                int tt = Integer.parseInt(ttt);
+                sleep(tt * 1001, downloadLink);
+            }
+        }
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
@@ -277,7 +278,7 @@ public class QuickUploadDotNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, false);
     }
 
     private void login(Account account) throws Exception {
@@ -350,7 +351,7 @@ public class QuickUploadDotNet extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (nopremium) {
-            doFree(link);
+            doFree(link, true);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {

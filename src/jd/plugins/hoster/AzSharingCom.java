@@ -47,6 +47,8 @@ public class AzSharingCom extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://azsharing.com";
+    private static final String CPREGEX0 = "<b>Enter code below:</b></td></tr>[\t\n\r ]+<tr><td>[\t\n\r ]+(<img alt=\".*?\" )?src=\"(.*?/.*?/.*?\\..*?)\"";
+    private static final String CPREGEX1 = "\"(http://azsharing\\.com/(captcha(s)?|cap.*?)/[a-z0-9]+\\.[a-z0-9]+)\"";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -195,10 +197,10 @@ public class AzSharingCom extends PluginForHost {
             }
             DLForm.put("code", code.toString());
             logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-        } else if (br.containsHTML("/captchas/")) {
+        } else if (br.getRegex(CPREGEX0).getMatch(1) != null || br.getRegex(CPREGEX1).getMatch(0) != null) {
             logger.info("Detected captcha method \"Standard captcha\" for this host");
-            String captchaurl = br.getRegex("<b>Enter code below:</b></td></tr>[\t\n\r ]+<tr><td>[\t\n\r ]+(<img alt=\".*?\" )?src=\"(.*?/captchas/.*?\\..*?)\"").getMatch(1);
-            if (captchaurl == null) captchaurl = br.getRegex("\"(http://azsharing\\.com/captchas/[a-z0-9]+\\.[a-z0-9]+)\"").getMatch(0);
+            String captchaurl = br.getRegex(CPREGEX0).getMatch(1);
+            if (captchaurl == null) captchaurl = br.getRegex(CPREGEX1).getMatch(0);
             if (captchaurl == null) {
                 logger.warning("Standard captcha captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -263,7 +265,6 @@ public class AzSharingCom extends PluginForHost {
         }
         if (br.getRedirectLocation() != null || error == true) {
             br.followConnection();
-            System.out.print(br.toString());
             logger.info("followed connection...");
             String dllink = br.getRedirectLocation();
             if (dllink == null) {

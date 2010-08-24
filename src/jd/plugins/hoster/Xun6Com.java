@@ -91,6 +91,7 @@ public class Xun6Com extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             captchaform.put("captchacode", code);
             br.submitForm(captchaform);
+            if (br.containsHTML("無法繼續下載！達到免費用戶下載瀏覽限制！請過一個小時後重新進行下載！<br>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             if (br.containsHTML("captcha\\.php\\?")) {
                 logger.warning("Wrong captcha or wrong password");
                 downloadLink.setProperty("pass", null);
@@ -123,6 +124,7 @@ public class Xun6Com extends PluginForHost {
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Download got Max Thread! Please Purchase Premium for Continue Downloads")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -134,7 +136,7 @@ public class Xun6Com extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override
