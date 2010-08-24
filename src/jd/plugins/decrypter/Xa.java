@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -29,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luxport.eu" }, urls = { "http://[\\w\\.]*?(ex\\.ua|luxport\\.eu)/((view|get|load)/[0-9]+(.+)?|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luxport.eu" }, urls = { "http://[\\w\\.]*?(ex|luxport)\\.(ua|eu|ru)/((view|get|load)/[0-9]+(.+)?|(view/[0-9]+\\?r=[0-9]+|view/[0-9]+\\?r=[0-9,]+))" }, flags = { 0 })
 public class Xa extends PluginForDecrypt {
 
     public Xa(PluginWrapper wrapper) {
@@ -39,11 +40,14 @@ public class Xa extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        if (parameter.matches(".*?fs\\d+.*?(ex\\.ua|luxport\\.eu)/get/\\d+.*?")) {
+        if (parameter.matches(".*?fs\\d+.*?(ex|luxport)\\.(ua|eu|ru)/get/\\d+.*?")) {
             String filename = new Regex(parameter, "/get/\\d+/(.+)").getMatch(0);
             String finallink = new Regex(parameter, "(.*?/get/\\d+)").getMatch(0);
             DownloadLink finalDlLink = createDownloadlink("directhttp://" + finallink);
-            if (filename != null) finalDlLink.setFinalFileName(filename.trim());
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename);
+                finalDlLink.setFinalFileName(filename.trim());
+            }
             /*
              * hosts only allow 1 chunk (max 2 but not with 0.95xx
              * downloadsystem
@@ -52,7 +56,12 @@ public class Xa extends PluginForDecrypt {
             finalDlLink.setProperty("forcenochunk", true);
             decryptedLinks.add(finalDlLink);
         } else {
-            parameter = parameter.replace("/load/", "/view/").replace("ex.ua", "luxport.eu");
+            parameter = parameter.replace("ex.ru", "luxport.eu");
+            parameter = parameter.replace("ex.ua", "luxport.eu");
+            parameter = parameter.replace("ex.eu", "luxport.eu");
+            parameter = parameter.replace("luxport.ru", "luxport.eu");
+            parameter = parameter.replace("luxport.ua", "luxport.eu");
+            parameter = parameter.replace("/load/", "/view/");
             br.setFollowRedirects(false);
             br.getPage(parameter);
             // To get and check more than 1 redirect after another

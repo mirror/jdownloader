@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
@@ -41,7 +41,9 @@ public class FileSonicCom extends PluginForHost {
 
     private static final Object LOCK = new Object();
     private static final HashMap<String, String> freecookies = new HashMap<String, String>();
-    private boolean free = false;
+    private static String thisUrl = null;
+    private static String nextUrl = null;
+    private static String nextPass = null;
 
     public FileSonicCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -164,7 +166,6 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String passCode = null;
-        free = false;
         requestFileInformation(downloadLink);
         login(account, false);
         String dllink = downloadLink.getDownloadURL();
@@ -222,13 +223,6 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        if (free) {
-            synchronized (freecookies) {
-                for (String key : freecookies.keySet()) {
-                    br.setCookie("http://www.filesonic.com/", key, freecookies.get(key));
-                }
-            }
-        }
         br.setCookie("http://www.filesonic.com/", "lang", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -259,55 +253,74 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.forceDebug(true);
-        free = true;
-        requestFileInformation(downloadLink);
+        String downloadUrl = null;
         String passCode = null;
-        String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
-        br.setFollowRedirects(true);
-        br.getPage("http://www.filesonic.com/download-free/" + id);
-        errorHandling(downloadLink);
-        if (br.containsHTML("This file is password protected")) {
-            /* password handling */
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            Form form = br.getForm(0);
-            form.put("password", Encoding.urlEncode(passCode));
-            br.submitForm(form);
-
-        }
-        String downloadUrl = br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
-        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String countDownDelay = br.getRegex("countDownDelay = (\\d+)").getMatch(0);
-        if (countDownDelay != null) {
-            /*
-             * we have to wait a little longer than needed cause its not exactly
-             * the same time
-             */
-            if (Long.parseLong(countDownDelay) > 300) {
-                logger.info(br.toString());
-
-                Cookies add = br.getCookies("http://www.filesonic.com");
-                synchronized (freecookies) {
-                    for (Cookie c : add.getCookies()) {
-                        freecookies.put(c.getKey(), c.getValue());
-                    }
+        synchronized (freecookies) {
+            if (freecookies.size() > 0 && nextUrl != null) {
+                this.setBrowserExclusive();
+                for (String key : freecookies.keySet()) {
+                    br.setCookie("http://www.filesonic.com/", key, freecookies.get(key));
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Long.parseLong(countDownDelay) + 120) * 1001l);
+                downloadUrl = nextUrl;
+                nextUrl = null;
+                freecookies.clear();
+                passCode = nextPass;
+                nextPass = null;
             }
-            this.sleep((Long.parseLong(countDownDelay)) * 1001, downloadLink);
+            if (!downloadLink.getDownloadURL().equalsIgnoreCase(thisUrl)) {
+                downloadUrl = null;
+            }
+            thisUrl = null;
+        }
+        br.forceDebug(true);
+        if (downloadUrl == null) {
+            requestFileInformation(downloadLink);
+            passCode = null;
+            String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
+            br.setFollowRedirects(true);
+            br.getPage("http://www.filesonic.com/download-free/" + id);
+            errorHandling(downloadLink);
+            if (br.containsHTML("This file is password protected")) {
+                /* password handling */
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = getUserInput(null, downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                Form form = br.getForm(0);
+                form.put("password", Encoding.urlEncode(passCode));
+                br.submitForm(form);
+
+            }
+
+            downloadUrl = br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
+            if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String countDownDelay = br.getRegex("countDownDelay = (\\d+)").getMatch(0);
+            if (countDownDelay != null && freecookies.size() == 0) {
+                /*
+                 * we have to wait a little longer than needed cause its not
+                 * exactly the same time
+                 */
+                if (Long.parseLong(countDownDelay) > 300) {
+                    Cookies add = br.getCookies("http://www.filesonic.com");
+                    synchronized (freecookies) {
+                        for (Cookie c : add.getCookies()) {
+                            freecookies.put(c.getKey(), c.getValue());
+                        }
+                        nextUrl = downloadUrl;
+                        nextPass = passCode;
+                        thisUrl = downloadLink.getDownloadURL();
+                    }
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Long.parseLong(countDownDelay) + 120) * 1001l);
+                }
+                this.sleep((Long.parseLong(countDownDelay)) * 1001, downloadLink);
+            }
         }
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)
          */
-        synchronized (freecookies) {
-            freecookies.clear();
-        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

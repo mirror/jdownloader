@@ -72,31 +72,14 @@ public class Youtube extends PluginForHost {
             if (plugin == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink");
             if (downloadLink.getStringProperty("fmtNew", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
             if (downloadLink.getStringProperty("videolink", null) == null) throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
-            HashMap<Integer, String> html5LinksFound = ((TbCm) plugin).getLinksHTML5(downloadLink.getStringProperty("videolink", null), prem, this.br);
-            HashMap<Integer, String> linksFound = ((TbCm) plugin).getLinksNew(downloadLink.getStringProperty("videolink", null), prem, this.br);
-            if (linksFound != null && linksFound.size() == 0) {
-                linksFound = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), prem, this.br);
-                if (linksFound != null && linksFound.size() > 0) {
-                    for (Integer format : linksFound.keySet()) {
-                        if (format != 0) {
-                            linksFound.put(format, linksFound.get(format) + "&fmt=" + format);
-                        }
-                    }
-                }
-            }
-            if (linksFound == null || linksFound.size() == 0) {
-                linksFound = html5LinksFound;
-            } else {
-                if (html5LinksFound != null) {
-                    linksFound.putAll(html5LinksFound);
-                }
-            }
 
-            if (linksFound == null || linksFound.size() == 0) {
-                if (br.containsHTML("verify_age")) throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!");
+            HashMap<Integer, String[]> LinksFound = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), prem, this.br);
+
+            if (LinksFound.isEmpty()) {
+                if (br.containsHTML("<div\\s+id=\"verify-age-actions\">")) throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setUrlDownload(linksFound.get(downloadLink.getIntegerProperty("fmtNew", 0)));
+            downloadLink.setUrlDownload(LinksFound.get(downloadLink.getIntegerProperty("fmtNew", 0))[0]);
             return AvailableStatus.TRUE;
         }
 

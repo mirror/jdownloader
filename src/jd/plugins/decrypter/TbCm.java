@@ -56,14 +56,8 @@ import net.miginfocom.swing.MigLayout;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
-    static private String host = "youtube.com";
-    static private final Pattern patternswfArgs = Pattern.compile("(.*?swf_Args.*)", Pattern.CASE_INSENSITIVE);
-    private static final String PLAYER = "get_video";
-    private static final String T = "\"t\"";
-    private static final String VIDEO_ID = "video_id";
     private Pattern StreamingShareLink = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
-
-    static public final Pattern YT_FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    static public final Pattern YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
     HashMap<ConversionMode, ArrayList<Info>> possibleconverts = null;
 
     public TbCm(PluginWrapper wrapper) {
@@ -73,14 +67,6 @@ public class TbCm extends PluginForDecrypt {
     @Override
     public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 100);
-    }
-
-    private String clean(String s) {
-        s = s.replaceAll("\"", "");
-        s = s.replaceAll("YouTube -", "");
-        s = s.replaceAll("YouTube", "");
-        s = s.trim();
-        return s;
     }
 
     private boolean login(Account account) throws Exception {
@@ -156,177 +142,148 @@ public class TbCm extends PluginForDecrypt {
                     decryptedLinks.add(thislink);
                     return decryptedLinks;
                 }
-                HashMap<Integer, String> html5LinksFound = getLinksHTML5(parameter, prem, this.br);
-                HashMap<Integer, String> linksFound = getLinksNew(parameter, prem, this.br);
-                if (linksFound != null && linksFound.size() == 0) {
-                    linksFound = getLinks(parameter, prem, this.br);
-                    if (linksFound != null && linksFound.size() > 0) {
-                        for (Integer format : linksFound.keySet()) {
-                            if (format != 0) {
-                                linksFound.put(format, linksFound.get(format) + "&fmt=" + format);
-                            }
-                        }
-                    }
+
+                HashMap<Integer, String[]> LinksFound = getLinks(parameter, prem, this.br);
+                if (LinksFound == null || LinksFound.isEmpty()) {
+                    if ((br.getURL().toLowerCase().indexOf("youtube.com/verify_age?next_url=") != -1) || ((br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1) && !prem)) throw new DecrypterException(DecrypterException.ACCOUNT);
+                    throw new DecrypterException("Video no longer available");
                 }
-                if (linksFound == null || linksFound.size() == 0) {
-                    linksFound = html5LinksFound;
-                } else {
-                    if (html5LinksFound != null) {
-                        linksFound.putAll(html5LinksFound);
-                    }
+
+                /* First get the filename */
+                String YT_FILENAME = "";
+                if (LinksFound.containsKey(-1)) {
+                    YT_FILENAME = LinksFound.get(-1)[0];
+                    LinksFound.remove(-1);
                 }
-                if ((linksFound == null || linksFound.size() == 0) && br.containsHTML("verify_age")) throw new DecrypterException(DecrypterException.ACCOUNT);
-                if (linksFound == null || linksFound.size() == 0) throw new DecrypterException("Video no longer available");
-                String name = Encoding.htmlDecode(br.getRegex(YT_FILENAME).getMatch(0).trim());
+
+                /* http://en.wikipedia.org/wiki/YouTube */
+                final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = -3028718522449785181L;
+
+                    {
+                        // **** FLV *****
+                        put(0, new Object[] { ConversionMode.VIDEOFLV, "H.263", "MP3", "Mono" });
+                        put(5, new Object[] { ConversionMode.VIDEOFLV, "H.263", "MP3", "Stereo" });
+                        put(6, new Object[] { ConversionMode.VIDEOFLV, "H.263", "MP3", "Mono" });
+                        put(34, new Object[] { ConversionMode.VIDEOFLV, "H.264", "AAC", "Stereo" });
+                        put(35, new Object[] { ConversionMode.VIDEOFLV, "H.264", "AAC", "Stereo" });
+
+                        // **** 3GP *****
+                        put(13, new Object[] { ConversionMode.VIDEO3GP, "H.263", "AMR", "Mono" });
+                        put(17, new Object[] { ConversionMode.VIDEO3GP, "H.264", "AAC", "Stereo" });
+
+                        // **** MP4 *****
+                        put(18, new Object[] { ConversionMode.VIDEOMP4, "H.264", "AAC", "Stereo" });
+                        put(22, new Object[] { ConversionMode.VIDEOMP4, "H.264", "AAC", "Stereo" });
+                        put(37, new Object[] { ConversionMode.VIDEOMP4, "H.264", "AAC", "Stereo" });
+                        put(38, new Object[] { ConversionMode.VIDEOMP4, "H.264", "AAC", "Stereo" });
+
+                        // **** WebM *****
+                        put(43, new Object[] { ConversionMode.VIDEOWEBM, "VP8", "Vorbis", "Stereo" });
+                        put(45, new Object[] { ConversionMode.VIDEOWEBM, "VP8", "Vorbis", "Stereo" });
+                    }
+                };
+
                 /* check for wished formats first */
-                HashMap<Integer, String> links = new HashMap<Integer, String>();
-                if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOFLV) && (linksFound.keySet().contains(0) || linksFound.keySet().contains(5) || linksFound.keySet().contains(6) || linksFound.keySet().contains(34) || linksFound.keySet().contains(35))) {
-                    Integer flv[] = new Integer[] { 0, 5, 6, 34, 35 };
-                    for (Integer f : flv) {
-                        if (linksFound.containsKey(f)) {
-                            links.put(f, linksFound.get(f));
-                        }
+                String dlLink = "";
+                String vQuality = "";
+                ConversionMode cMode = null;
+                boolean wishedFound = false;
+                for (Integer format : LinksFound.keySet()) {
+                    if (ytVideo.containsKey(format)) {
+                        cMode = (ConversionMode) ytVideo.get(format)[0];
+                        vQuality = "(" + LinksFound.get(format)[1] + "_" + ytVideo.get(format)[1] + "-" + ytVideo.get(format)[2] + ")";
+                    } else {
+                        cMode = ConversionMode.UNKNOWN;
+                        vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                     }
-                } else if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEO3GP) && (linksFound.keySet().contains(13) || linksFound.keySet().contains(17))) {
-                    Integer tgp[] = new Integer[] { 13, 17 };
-                    for (Integer f : tgp) {
-                        if (linksFound.containsKey(f)) {
-                            links.put(f, linksFound.get(f));
-                        }
-                    }
-                } else if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4) && (linksFound.keySet().contains(18) || linksFound.keySet().contains(22) || linksFound.keySet().contains(37) || linksFound.keySet().contains(38))) {
-                    Integer mp4[] = new Integer[] { 18, 22, 37, 38 };
-                    for (Integer f : mp4) {
-                        if (linksFound.containsKey(f)) {
-                            links.put(f, linksFound.get(f));
-                        }
-                    }
-                } else if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOWEBM) && (linksFound.keySet().contains(43) || linksFound.keySet().contains(45))) {
-                    Integer webm[] = new Integer[] { 43, 45 };
-                    for (Integer f : webm) {
-                        if (linksFound.containsKey(f)) {
-                            links.put(f, linksFound.get(f));
-                        }
-                    }
-                } else {
-                    links = linksFound;
-                }
-
-                /*
-                 * Source: http://en.wikipedia.org/wiki/YouTube
-                 * 
-                 * **** FLV ***** 0 = Standard 5 = 240p 6 = High 34 = 360p 35 =
-                 * 480p**************
-                 * 
-                 * **** 3GP ***** 13 = Mobile 17 = Mobile**************
-                 * 
-                 * **** MP4 ***** 18 = Medium 22 = 720p 37 = 1080p 38 = 4K
-                 * **************
-                 * 
-                 * **** WebM ***** 43 = 480p 45 = 720p***************
-                 */
-
-                /* Konvertierungsmöglichkeiten adden */
-                for (Integer format : links.keySet()) {
-                    String dlLink = links.get(format);
-                    try {
-                        switch (format) {
-                        case 0:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(Standard)", format);
-                                addtopos(ConversionMode.AUDIOMP3, dlLink, br.getHttpConnection().getLongContentLength(), "(MP3 64Kbit)", format);
-                            }
-                            break;
-                        case 5:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(240p)", format);
-                                addtopos(ConversionMode.AUDIOMP3, dlLink, br.getHttpConnection().getLongContentLength(), "(MP3 64Kbit)", format);
-                            }
-                            break;
-                        case 6:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(High)", format);
-                            }
-                            break;
-                        case 34:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(360p)", format);
-                            }
-                            break;
-                        case 35:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(480p)", format);
-                            }
-                            break;
-                        case 13:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEO3GP, dlLink, br.getHttpConnection().getLongContentLength(), "(Mobile)", format);
-                            }
-                            break;
-                        case 17:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEO3GP, dlLink, br.getHttpConnection().getLongContentLength(), "(Mobile)", format);
-                            }
-                            break;
-                        case 18:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(Medium)", format);
-                            }
-                            break;
-                        case 22:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(720p)", format);
-                            }
-                            break;
-                        case 37:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(1080p)", format);
-                            }
-                            break;
-                        case 38:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOMP4, dlLink, br.getHttpConnection().getLongContentLength(), "(4k)", format);
-                            }
-                            break;
-                        case 43:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOWEBM, dlLink, br.getHttpConnection().getLongContentLength(), "(480p)", format);
-                            }
-                            break;
-                        case 45:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOWEBM, dlLink, br.getHttpConnection().getLongContentLength(), "(720p)", format);
-                            }
-                            break;
-                        default:
-                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                addtopos(ConversionMode.VIDEOFLV, dlLink, br.getHttpConnection().getLongContentLength(), "(Unknown)", format);
-                            }
-                        }
-                    } finally {
+                    cMode = (ConversionMode) (ytVideo.containsKey(format) ? ytVideo.get(format)[0] : ConversionMode.UNKNOWN);
+                    dlLink = LinksFound.get(format)[0];
+                    if (ConvertDialog.getKeeped().contains(cMode)) {
                         try {
-                            br.getHttpConnection().disconnect();
-                        } catch (Throwable e) {
+                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                addtopos(cMode, dlLink, br.getHttpConnection().getLongContentLength(), vQuality, format);
+                                LinksFound.remove(format);
+                                wishedFound = true;
+                            }
+                        } finally {
+                            try {
+                                br.getHttpConnection().disconnect();
+                            } catch (Throwable e) {
+                            }
+                        }
+                    }
+                    if (ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3) && (format == 0 || format == 5 || format == 6)) {
+                        try {
+                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                addtopos(ConversionMode.AUDIOMP3, dlLink, br.getHttpConnection().getLongContentLength(), "", format);
+                                LinksFound.remove(format);
+                                wishedFound = true;
+                            }
+                        } finally {
+                            try {
+                                br.getHttpConnection().disconnect();
+                            } catch (Throwable e) {
+                            }
                         }
                     }
                 }
 
-                ConversionMode convertTo = showDisplayDialog(new ArrayList<ConversionMode>(possibleconverts.keySet()), name, param);
+                if (!wishedFound) {
+                    for (Integer format : LinksFound.keySet()) {
+                        if (ytVideo.containsKey(format)) {
+                            cMode = (ConversionMode) ytVideo.get(format)[0];
+                            vQuality = "(" + LinksFound.get(format)[1] + "_" + ytVideo.get(format)[1] + "-" + ytVideo.get(format)[2] + ")";
+                        } else {
+                            cMode = ConversionMode.UNKNOWN;
+                            vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
+                        }
+                        dlLink = LinksFound.get(format)[0];
+                        System.out.println(dlLink);
+                        try {
+                            if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                addtopos(cMode, dlLink, br.getHttpConnection().getLongContentLength(), vQuality, format);
+                            }
+                        } finally {
+                            try {
+                                br.getHttpConnection().disconnect();
+                            } catch (Throwable e) {
+                            }
+                        }
+                        if (format == 0 || format == 5 || format == 6) {
+                            try {
+                                if (br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                    addtopos(ConversionMode.AUDIOMP3, dlLink, br.getHttpConnection().getLongContentLength(), "", format);
+                                }
+                            } finally {
+                                try {
+                                    br.getHttpConnection().disconnect();
+                                } catch (Throwable e) {
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ConversionMode convertTo = showDisplayDialog(new ArrayList<ConversionMode>(possibleconverts.keySet()), YT_FILENAME, param);
 
                 for (Info info : possibleconverts.get(convertTo)) {
                     DownloadLink thislink = createDownloadlink(info.link.replaceFirst("http", "httpJDYoutube"));
                     thislink.setBrowserUrl(parameter);
-                    thislink.setFinalFileName(name + info.desc + convertTo.getExtFirst());
+                    thislink.setFinalFileName(YT_FILENAME + info.desc + convertTo.getExtFirst());
                     thislink.setSourcePluginComment("Convert to " + convertTo.getText());
                     thislink.setProperty("size", Long.valueOf(info.size));
                     if (convertTo != ConversionMode.AUDIOMP3) {
-                        thislink.setProperty("name", name + info.desc + convertTo.getExtFirst());
+                        thislink.setProperty("name", YT_FILENAME + info.desc + convertTo.getExtFirst());
                     } else {
                         /*
                          * because demuxer will fail when mp3 file already
                          * exists
                          */
-                        thislink.setProperty("name", name + info.desc + ".tmp");
+                        thislink.setProperty("name", YT_FILENAME + info.desc + ".tmp");
                     }
                     thislink.setProperty("convertto", convertTo.name());
                     thislink.setProperty("videolink", parameter);
@@ -353,127 +310,114 @@ public class TbCm extends PluginForDecrypt {
         }
     }
 
-    /* html5 layout */
-    public HashMap<Integer, String> getLinksHTML5(String video, boolean prem, Browser br) throws Exception {
+    public HashMap<Integer, String[]> getLinks(String video, boolean prem, Browser br) throws Exception {
         if (br == null) br = this.br;
         br.setFollowRedirects(true);
-        /* this cookie makes webm available */
+        /* the cookie and the user-agent makes html5 available */
         br.setCookie("youtube.com", "PREF", "f2=40000000");
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
-        /* age verify with activated premium? */
-        if (br.containsHTML("verify_age") && prem) {
-            String session_token = br.getRegex("onLoadFunc.*?gXSRF_token = '(.*?)'").getMatch(0);
-            String url = br.getURL();
-            LinkedHashMap<String, String> p = Request.parseQuery(url);
-            String next = p.get("next_url");
-            Form form = new Form();
-            form.setAction(url);
-            form.setMethod(MethodType.POST);
-            form.put("next_url", "%2F" + next.substring(1));
-            form.put("action_confirm", "Confirm+Birth+Date");
-            form.put("session_token", Encoding.urlEncode(session_token));
-            br.submitForm(form);
-            if (br.getCookie("http://www.youtube.com", "is_adult") == null) return null;
-        } else if (br.containsHTML("verify_age")) {
-            /* no account used, cannot decrypt link */
-            return null;
-        }
-        HashMap<Integer, String> links = new HashMap<Integer, String>();
-
-        String linksData[][] = br.getRegex("videoPlayer\\.setAvailableFormat\\(\\s*\"(.+?)\"\\s*,\\s*\".+?\"\\s*,\\s*\".+?\"\\s*,\\s*\"(\\d+)\"\\s*\\)\\s*;").getMatches();
-        for (String linkData[] : linksData) {
-            if (!links.containsKey(linkData[0])) links.put(Integer.parseInt(linkData[1]), Encoding.htmlDecode(Encoding.urlDecode(linkData[0], true)));
-        }
-        return links;
-    }
-
-    /* current youtube layout */
-    public HashMap<Integer, String> getLinksNew(String video, boolean prem, Browser br) throws Exception {
-        if (br == null) br = this.br;
-        /* reset this cookie to see old video formats */
-        br.setCookie("youtube.com", "PREF", "f1=10000000");
-        br.setFollowRedirects(true);
-        br.getPage(video);
-        /* age verify with activated premium? */
-        if (br.containsHTML("verify_age") && prem) {
-            String session_token = br.getRegex("onLoadFunc.*?gXSRF_token = '(.*?)'").getMatch(0);
-            String url = br.getURL();
-            LinkedHashMap<String, String> p = Request.parseQuery(url);
-            String next = p.get("next_url");
-            Form form = new Form();
-            form.setAction(url);
-            form.setMethod(MethodType.POST);
-            form.put("next_url", "%2F" + next.substring(1));
-            form.put("action_confirm", "Confirm+Birth+Date");
-            form.put("session_token", Encoding.urlEncode(session_token));
-            br.submitForm(form);
-            if (br.getCookie("http://www.youtube.com", "is_adult") == null) return null;
-        } else if (br.containsHTML("verify_age")) {
-            /* no account used, cannot decrypt link */
-            return null;
-        }
-        HashMap<Integer, String> links = new HashMap<Integer, String>();
-
-        /* new site layout */
-        String data = br.getRegex("swfHTML.*?\" : \"(.*?)\";").getMatch(0);
-        // data = Encoding.urlDecode(data, true);
-        String linksData[][] = new Regex(data, "(\\d+)%7C(http.*?)(&|%2C|%7C%7C)").getMatches();
-        for (String linkData[] : linksData) {
-            if (!links.containsKey(linkData[0])) links.put(Integer.parseInt(linkData[0]), Encoding.htmlDecode(Encoding.urlDecode(linkData[1], true)));
-        }
-        return links;
-    }
-
-    /* very old youtube layout */
-    public HashMap<Integer, String> getLinks(String video, boolean prem, Browser br) throws Exception {
-        if (br == null) br = this.br;
-        br.setFollowRedirects(true);
-        /* reset this cookie to see old video formats */
-        br.setCookie("youtube.com", "PREF", "f1=10000000");
-        br.getPage(video);
-        /* age verify with activated premium? */
-        if (br.containsHTML("verify_age") && prem) {
-            String session_token = br.getRegex("onLoadFunc.*?gXSRF_token = '(.*?)'").getMatch(0);
-            String url = br.getURL();
-            LinkedHashMap<String, String> p = Request.parseQuery(url);
-            String next = p.get("next_url");
-            Form form = new Form();
-            form.setAction(url);
-            form.setMethod(MethodType.POST);
-            form.put("next_url", "%2F" + next.substring(1));
-            form.put("action_confirm", "Confirm+Birth+Date");
-            form.put("session_token", Encoding.urlEncode(session_token));
-            br.submitForm(form);
-            if (br.getCookie("http://www.youtube.com", "is_adult") == null) return null;
-        } else if (br.containsHTML("verify_age")) {
-            /* no account used, cannot decrypt link */
-            return null;
-        }
-        String video_id = "";
-        String t = "";
-        String match = br.getRegex(patternswfArgs).getMatch(0);
-        if (match == null) return null;
-
-        /* DownloadUrl holen */
-        String[] lineSub = match.split(",|:");
-        for (int i = 0; i < lineSub.length; i++) {
-            String s = lineSub[i];
-            if (s.indexOf(VIDEO_ID) > -1) {
-                video_id = clean(lineSub[i + 1]);
-            }
-            if (s.indexOf(T) > -1) {
-                t = clean(lineSub[i + 1]);
+        String VIDEOID = new Regex(video, "watch\\?v=([\\w_-]+)").getMatch(0);
+        String YT_FILENAME = null;
+        String url = br.getURL();
+        boolean ythack = false;
+        if (url != null && !url.equals(video)) {
+            /* age verify with activated premium? */
+            if ((url.toLowerCase().indexOf("youtube.com/verify_age?next_url=") != -1) && prem) {
+                String session_token = br.getRegex("onLoadFunc.*?gXSRF_token = '(.*?)'").getMatch(0);
+                LinkedHashMap<String, String> p = Request.parseQuery(url);
+                String next = p.get("next_url");
+                Form form = new Form();
+                form.setAction(url);
+                form.setMethod(MethodType.POST);
+                form.put("next_url", "%2F" + next.substring(1));
+                form.put("action_confirm", "Confirm+Birth+Date");
+                form.put("session_token", Encoding.urlEncode(session_token));
+                br.submitForm(form);
+                if (br.getCookie("http://www.youtube.com", "is_adult") == null) return null;
+            } else if ((url.toLowerCase().indexOf("youtube.com/index?ytsession=") != -1) || ((url.toLowerCase().indexOf("youtube.com/verify_age?next_url=") != -1) && !prem)) {
+                ythack = true;
+                br.getPage("http://www.youtube.com/get_video_info?video_id=" + VIDEOID);
+                YT_FILENAME = br.containsHTML("&title=") ? Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim()) : VIDEOID;
+            } else if ((url.toLowerCase().indexOf("google.com/accounts/servicelogin?") != -1)) {
+                // private videos
+                return null;
             }
         }
-        HashMap<Integer, String> links = new HashMap<Integer, String>();
-        String url = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
-        links.put(0, url);
-        links.put(22, url);
-        links.put(34, url);
-        links.put(35, url);
-        links.put(37, url);
-        links.put(13, url);
+
+        HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
+
+        /* html5 links */
+        if (!ythack) {
+            final HashMap<String, String> VideoQ_map = new HashMap<String, String>() {
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = -2038768002287207875L;
+
+                {
+                    put("highres", "Original");
+                    put("hd1080", "1080p");
+                    put("hd720", "720p");
+                    put("large", "480p");
+                    put("medium", "360p");
+                    put("small", "240p");
+                    put("light", "240p Light");
+                }
+            };
+            YT_FILENAME = (br.getRegex(YT_FILENAME_PATTERN).count() != 0) ? Encoding.htmlDecode(br.getRegex(YT_FILENAME_PATTERN).getMatch(0).trim()) : VIDEOID;
+            String linksDataHTML5[][] = br.getRegex("videoPlayer\\.setAvailableFormat\\(\\s*\"(.+?)\"\\s*,\\s*\".+?\"\\s*,\\s*\"(.+?)\"\\s*,\\s*\"(\\d+)\"\\s*\\)\\s*;").getMatches();
+            String VideoQ = "";
+            for (String linkData[] : linksDataHTML5) {
+                VideoQ = (VideoQ_map.containsKey(linkData[1])) ? VideoQ_map.get(linkData[1]) : linkData[1];
+                links.put(Integer.parseInt(linkData[2]), new String[] { Encoding.htmlDecode(Encoding.urlDecode(linkData[0], true)), VideoQ });
+            }
+        }
+
+        /* normal links */
+        HashMap<String, String> fmt_list = new HashMap<String, String>();
+        String fmt_list_str = "";
+        if (ythack) {
+            fmt_list_str = (br.getMatch("&fmt_list=(.+?)&") + ",").replaceAll("%2F", "/").replaceAll("%2C", ",");
+        } else {
+            fmt_list_str = (br.getMatch("\"fmt_list\":\\s+\"(.+?)\",") + ",").replaceAll("\\\\/", "/");
+        }
+        String fmt_list_map[][] = new Regex(fmt_list_str, "(\\d+)/(\\d+x\\d+)/\\d+/\\d+/\\d+,").getMatches();
+        for (String[] fmt : fmt_list_map) {
+            fmt_list.put(fmt[0], fmt[1]);
+        }
+        String fmt_stream_map_str = "";
+        if (ythack) {
+            fmt_stream_map_str = (br.getMatch("&fmt_stream_map=(.+?)&") + "|").replaceAll("%7C", "|");
+        } else {
+            fmt_stream_map_str = (br.getMatch("\"fmt_stream_map\":\\s+\"(.+?)\",") + "|").replaceAll("\\\\/", "/");
+        }
+        String fmt_stream_map[][] = new Regex(fmt_stream_map_str, "(\\d+)\\|(http.*?)\\|").getMatches();
+        String Videoq = "";
+        for (String fmt_str[] : fmt_stream_map) {
+            if (fmt_list.containsKey(fmt_str[0])) {
+                Integer q = Integer.parseInt(fmt_list.get(fmt_str[0]).split("x")[1]);
+                if (fmt_str[0].equals("40")) {
+                    Videoq = "240p Light";
+                } else if (q > 1080) {
+                    Videoq = "Original";
+                } else if (q > 720) {
+                    Videoq = "1080p";
+                } else if (q > 576) {
+                    Videoq = "720p";
+                } else if (q > 360) {
+                    Videoq = "480p";
+                } else if (q > 240) {
+                    Videoq = "360p";
+                } else {
+                    Videoq = "240p";
+                }
+            } else {
+                Videoq = "unk";
+            }
+            links.put(Integer.parseInt(fmt_str[0]), new String[] { Encoding.htmlDecode(Encoding.urlDecode(fmt_str[1], true)), Videoq });
+        }
+        if (YT_FILENAME != null) links.put(-1, new String[] { YT_FILENAME });
         return links;
     }
 
@@ -531,7 +475,7 @@ public class TbCm extends PluginForDecrypt {
         private static final long serialVersionUID = -9146764850581039090L;
 
         public static enum ConversionMode {
-            AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)", new String[] { ".mp3", ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEOWEBM("Video (Webm)", new String[] { ".webm" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" }), VIDEOPODCAST("Video (MP4-Podcast)", new String[] { ".mp4" }), VIDEOIPHONE("Video (iPhone)", new String[] { ".mp4" });
+            AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEOWEBM("Video (Webm)", new String[] { ".webm" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" }), UNKNOWN("Unknown (unk)", new String[] { ".unk" });
 
             private String text;
             private String[] ext;
