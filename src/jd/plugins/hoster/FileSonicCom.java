@@ -297,7 +297,7 @@ public class FileSonicCom extends PluginForHost {
                         freecookies.put(c.getKey(), c.getValue());
                     }
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 2 * 1001l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Long.parseLong(countDownDelay) + 120) * 1001l);
             }
             this.sleep((Long.parseLong(countDownDelay)) * 1001, downloadLink);
         }

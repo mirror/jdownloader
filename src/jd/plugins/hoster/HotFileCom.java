@@ -56,9 +56,12 @@ public class HotFileCom extends PluginForHost {
     }
 
     private static final String UNLIMITEDMAXCON = "UNLIMITEDMAXCON";
+    private static final String USE_SSL_LOGIN = "USE_SSL_LOGIN";
 
     private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), UNLIMITEDMAXCON, JDL.L("plugins.hoster.HotFileCom.SetUnlimitedConnectionsForPremium", "Allow more than 5 connections per file for premium (default maximum = 5). Enabling this can cause errors!!")).setDefaultValue(false);
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL_LOGIN, JDL.L("plugins.hoster.HotFileCom.useSSLLogin", "Try SSL-Login to bypass ISP/Proxy-Block?")).setDefaultValue(false);
+        config.addEntry(cond);
+        cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), UNLIMITEDMAXCON, JDL.L("plugins.hoster.HotFileCom.SetUnlimitedConnectionsForPremium", "Allow more than 5 connections per file for premium (default maximum = 5). Enabling this can cause errors!!")).setDefaultValue(false);
         config.addEntry(cond);
     }
 
@@ -67,7 +70,7 @@ public class HotFileCom extends PluginForHost {
         return "http://hotfile.com/terms-of-service.html";
     }
 
-    private HashMap<String, String> callAPI(Browser br, String action, Account account, HashMap<String, String> addParams) throws Exception {
+    private HashMap<String, String> callAPI(Browser br, String action, Account account, HashMap<String, String> addParams, boolean useSSL) throws Exception {
         if (action == null || action.length() == 0) return null;
         Browser tbr = br;
         if (tbr == null) {
@@ -89,7 +92,11 @@ public class HotFileCom extends PluginForHost {
                 post.put(param, addParams.get(param));
             }
         }
-        tbr.postPage("http://api.hotfile.com", post);
+        if (useSSL) {
+            tbr.postPage("https://api.hotfile.com", post);
+        } else {
+            tbr.postPage("http://api.hotfile.com", post);
+        }
         HashMap<String, String> ret = new HashMap<String, String>();
         ret.put("httpresponse", tbr.toString());
         String vars[][] = tbr.getRegex("(.*?)=(.*?)(&|$)").getMatches();
@@ -127,7 +134,7 @@ public class HotFileCom extends PluginForHost {
             ai.setStatus("Cookie login no longer possible! API does not support it!");
             return ai;
         }
-        HashMap<String, String> info = callAPI(null, "getuserinfo", account, null);
+        HashMap<String, String> info = callAPI(null, "getuserinfo", account, null, getPluginConfig().getBooleanProperty(USE_SSL_LOGIN, false));
         String rawAnswer = info.get("httpresponse").trim();
         if (rawAnswer != null && rawAnswer.startsWith(".too many failed")) {
             /* fallback to normal website */
@@ -164,7 +171,7 @@ public class HotFileCom extends PluginForHost {
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("link", Encoding.urlEncode(downloadLink.getDownloadURL() + "\n\r"));
         params.put("alllinks", "1");
-        HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params);
+        HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params, getPluginConfig().getBooleanProperty(USE_SSL_LOGIN, false));
         if (info.get("httpresponse").contains("file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (info.get("httpresponse").contains("premium required")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         String finalUrls = info.get("httpresponse").trim();
@@ -195,7 +202,6 @@ public class HotFileCom extends PluginForHost {
                 break;
             }
         }
-        logger.info("APIDebug:" + errorSb.toString());
         if (contentHeader) {
             /* filename workaround , MAYBE no longer needed because of api */
             String urlFileName = Plugin.getFileNameFromURL(new URL(br.getURL()));
@@ -203,6 +209,7 @@ public class HotFileCom extends PluginForHost {
             downloadLink.setFinalFileName(urlFileName);
             dl.startDownload();
         } else {
+            logger.info("APIDebug:" + errorSb.toString());
             /* try website workaround */
             handlePremiumWebsite(downloadLink, account);
         }
@@ -215,7 +222,12 @@ public class HotFileCom extends PluginForHost {
         /* normal login */
         br.setFollowRedirects(true);
         br.getPage("http://hotfile.com/");
-        br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        boolean ssl = getPluginConfig().getBooleanProperty(USE_SSL_LOGIN, false);
+        if (ssl) {
+            br.postPage("https://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        } else {
+            br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        }
         Form form = br.getForm(0);
         if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -393,7 +405,7 @@ public class HotFileCom extends PluginForHost {
                 params.put("fields", "id,status,name,size,md5,sha1");
                 params.put("ids", sbIDS.toString());
                 params.put("keys", sbKEYS.toString());
-                HashMap<String, String> info = callAPI(null, "checklinks", null, params);
+                HashMap<String, String> info = callAPI(null, "checklinks", null, params, false);
                 String response = info.get("httpresponse");
                 for (DownloadLink dl : links) {
                     String id = new Regex(dl.getDownloadURL(), "/dl/(\\d+)").getMatch(0);

@@ -322,7 +322,9 @@ public class MediafireCom extends PluginForHost {
                 // check if the link is visible in browser
                 System.out.println(l.getOuterHTML());
                 if (RendererUtilities.isVisible(l)) {
-                    if (l.getInnerHTML().toLowerCase().contains("start download")) { return l.getAbsoluteHref(); }
+                    if (l.getInnerHTML().toLowerCase().contains("start download")) {
+                        if (l.getAbsoluteHref().contains("mediafire.com")) return l.getAbsoluteHref();
+                    }
                 }
             }
         } catch (Exception e) {
@@ -377,8 +379,8 @@ public class MediafireCom extends PluginForHost {
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
+        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-
         if (!dl.getConnection().isContentDisposition()) {
             logger.info("Error (3)");
             br.followConnection();
