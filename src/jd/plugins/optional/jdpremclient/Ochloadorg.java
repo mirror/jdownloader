@@ -51,7 +51,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getVersion() {
-        if (plugin == null) return getVersion("$Revision: 12350 $");
+        if (plugin == null) return getVersion("$Revision$");
         return plugin.getVersion();
     }
 
@@ -78,7 +78,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getBuyPremiumUrl() {
-        if (plugin == null) return "http://www.jdownloader.org";
+        if (plugin == null) return "http://www.ochload.org";
         return plugin.getBuyPremiumUrl();
     }
 
