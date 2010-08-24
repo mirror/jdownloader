@@ -416,6 +416,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             }
         }
         if (max <= 0) return Integer.MAX_VALUE;
+        if (max == Integer.MIN_VALUE) return 0;
         return max;
     }
 

@@ -24,6 +24,8 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     private PluginForHost plugin = null;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object LOCK = new Object();
+    private static final int MAXDOWNLOADS = 3;
+    private static int currentMaxDownloads = 3;
 
     public Ochloadorg(PluginWrapper wrapper) {
         super(wrapper);
@@ -106,47 +108,55 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     }
 
     private boolean handleOchLoad(DownloadLink link) throws Exception {
-        Account acc = null;
         synchronized (LOCK) {
-            /* jdpremium enabled */
-            if (!JDPremium.isEnabled()) return false;
-            /* premium available for this host */
-            if (!premiumHosts.contains(link.getHost())) return false;
-            acc = AccountController.getInstance().getValidAccount("ochload.org");
-            /* enabled account found? */
-            if (acc == null || !acc.isEnabled()) return false;
+            if (currentMaxDownloads == 0) return false;
+            currentMaxDownloads = Math.max(0, --currentMaxDownloads);
         }
-        proxyused = true;
-        requestFileInformation(link);
-        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String login = Encoding.Base64Encode(acc.getUser());
-        String pw = Encoding.Base64Encode(acc.getPass());
-        br = new Browser();
-        br.setConnectTimeout(30000);
-        br.setDebug(true);
-        dl = null;
-        String url = Encoding.Base64Encode(link.getDownloadURL());
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, false, 1);
-        } catch (Throwable e) {
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable e2) {
-            }
-            return false;
-        }
-        if (!dl.getConnection().isContentDisposition()) {
-            /* unknown error */
-            br.followConnection();
-            logger.severe("OchLoad: error!");
-            logger.severe(br.toString());
+            Account acc = null;
             synchronized (LOCK) {
-                premiumHosts.remove(link.getHost());
+                /* jdpremium enabled */
+                if (!JDPremium.isEnabled()) return false;
+                /* premium available for this host */
+                if (!premiumHosts.contains(link.getHost())) return false;
+                acc = AccountController.getInstance().getValidAccount("ochload.org");
+                /* enabled account found? */
+                if (acc == null || !acc.isEnabled()) return false;
             }
-            return false;
+            proxyused = true;
+            requestFileInformation(link);
+            if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String login = Encoding.Base64Encode(acc.getUser());
+            String pw = Encoding.Base64Encode(acc.getPass());
+            br = new Browser();
+            br.setConnectTimeout(30000);
+            br.setDebug(true);
+            dl = null;
+            String url = Encoding.Base64Encode(link.getDownloadURL());
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, false, 1);
+            } catch (Throwable e) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable e2) {
+                }
+                return false;
+            }
+            if (!dl.getConnection().isContentDisposition()) {
+                /* unknown error */
+                br.followConnection();
+                logger.severe("OchLoad: error!");
+                logger.severe(br.toString());
+                synchronized (LOCK) {
+                    premiumHosts.remove(link.getHost());
+                }
+                return false;
+            }
+            dl.startDownload();
+            return true;
+        } finally {
+            currentMaxDownloads = Math.min(MAXDOWNLOADS, ++currentMaxDownloads);
         }
-        dl.startDownload();
-        return true;
     }
 
     @Override
@@ -209,7 +219,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 resetAvailablePremium();
             } else {
                 String infos[] = new Regex(page, "(.*?):(.*?):(.+)").getRow(0);
-                ac.setValidUntil(Long.parseLong(infos[2]));
+                ac.setValidUntil(Long.parseLong(infos[2]) * 1000);
                 boolean megaupload = "1".equalsIgnoreCase(infos[1]);
                 synchronized (LOCK) {
                     premiumHosts.clear();
@@ -267,7 +277,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         if (plugin != null) {
             if (JDPremium.isEnabled()) {
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+                    if (premiumHosts.contains(plugin.getHost())) return currentMaxDownloads;
                 }
             }
             return plugin.getMaxSimultanFreeDownloadNum();
@@ -280,7 +290,10 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         if (plugin != null) {
             if (JDPremium.isEnabled()) {
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+                    if (premiumHosts.contains(plugin.getHost())) {
+                        if (currentMaxDownloads == 0) { return Integer.MIN_VALUE; }
+                        return currentMaxDownloads;
+                    }
                 }
             }
             return plugin.getMaxSimultanPremiumDownloadNum();
@@ -292,7 +305,10 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
             synchronized (LOCK) {
-                if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+                if (premiumHosts.contains(plugin.getHost())) {
+                    if (currentMaxDownloads == 0) { return Integer.MIN_VALUE; }
+                    return currentMaxDownloads;
+                }
             }
             return plugin.getMaxSimultanDownload(account);
         }
