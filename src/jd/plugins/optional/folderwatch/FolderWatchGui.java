@@ -33,8 +33,6 @@ public class FolderWatchGui extends SwitchPanel {
 
     @Override
     protected void onHide() {
-        config.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, JDFolderWatch.history);
-        config.save();
     }
 
     @Override

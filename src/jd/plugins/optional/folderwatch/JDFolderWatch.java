@@ -83,8 +83,6 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
 
         private WatchService watchService;
 
-        private volatile boolean isDone = false;
-
         public WatchServiceThread() {
             this.watchService = FileSystems.getDefault().newWatchService();
         }
@@ -101,20 +99,24 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
             try {
                 key = watchedPath.register(watchService, StandardWatchEventKind.ENTRY_CREATE, StandardWatchEventKind.ENTRY_DELETE);
             } catch (UnsupportedOperationException uox) {
-                System.err.println("file watching not supported!");
+                logger.warning(uox.toString());
+                logger.warning("JDFolderWatch -> file watching not supported!");
                 // handle this error here
             } catch (IOException iox) {
-                System.err.println("I/O errors");
+                logger.warning(iox.toString());
                 // handle this error here
             }
         }
 
         public void done() {
-            isDone = true;
+            try {
+                this.watchService.close();
+            } catch (IOException e) {
+            }
         }
 
         public void run() {
-            while (!isDone) {
+            while (true) {
                 // take() will block until a file has been created/deleted
                 WatchKey signalledKey;
                 try {
@@ -124,7 +126,7 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
                     continue;
                 } catch (ClosedWatchServiceException cwse) {
                     // other thread closed watch service
-                    System.out.println("watch service closed, terminating.");
+                    logger.info("JDFolderWatch -> watch service closed, terminating");
                     break;
                 }
 
@@ -143,17 +145,17 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
                     if (e.kind() == StandardWatchEventKind.ENTRY_CREATE) {
                         Path context = (Path) e.context();
                         String filename = context.toString();
-                        message = filename + " created";
 
                         if (isContainer(filename)) {
                             String absPath = folder + "/" + filename;
-
                             String md5Hash = importContainer(absPath);
 
                             history.add(new HistoryDataEntry(filename, absPath, md5Hash));
                             subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, history);
                             subConfig.save();
                         }
+
+                        message = filename + " created";
                     } else if (e.kind() == StandardWatchEventKind.ENTRY_DELETE) {
                         Path context = (Path) e.context();
 
@@ -166,8 +168,7 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
                         message = "OVERFLOW: more changes happened than we could retreive";
                     }
 
-                    // debugging only
-                    System.out.println(message);
+                    logger.info("JDFolderWatch ->" + message);
                 }
             }
         }
@@ -196,7 +197,7 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
 
         startWatching(isEnabled);
 
-        logger.info("FolderWatch: OK");
+        logger.info("jdFolderWatch: OK");
         return true;
     }
 
@@ -205,8 +206,10 @@ public class JDFolderWatch extends PluginOptional implements ConfigurationListen
             if (folder != null && !folder.equals("")) {
                 watchingServiceThread = new WatchServiceThread(folder);
                 watchingServiceThread.start();
+
+                logger.info("JDFolderWatch -> watchingService has been started");
+                return true;
             }
-            return true;
         } else {
             if (watchingServiceThread.isAlive()) {
                 watchingServiceThread.done();

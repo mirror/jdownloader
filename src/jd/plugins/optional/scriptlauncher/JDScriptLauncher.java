@@ -65,7 +65,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             logger.warning(e.toString());
         }
 
-        logger.info("Script Launcher OK");
+        logger.info("JDScriptLauncher OK");
 
         return true;
     }
@@ -85,8 +85,11 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
         ArrayList<File> scripts = JDScriptLauncher.getScripts();
 
         try {
-            Process p = Runtime.getRuntime().exec(scripts.get(index).getPath());
+            String exepath = scripts.get(index).getPath();
+            Process p = Runtime.getRuntime().exec(exepath);
             JDScriptLauncher.processlist.put(index, p);
+
+            logger.info("JDScriptLauncher -> \"" + exepath + "\" has been executed");
         } catch (IOException eio) {
             logger.warning(eio.toString());
         }
@@ -187,7 +190,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             for (int i = 0; i < filelist.length; i++) {
                 File file = filelist[i];
                 if (file.isFile() && file.canExecute()) {
-                    logger.info("JDScriptLauncher: Loaded script \"" + file.getName() + "\"");
+                    logger.info("JDScriptLauncher -> script \"" + file.getName() + "\" has been found");
                     scripts.add(file);
                 }
             }
@@ -218,7 +221,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             String scriptname = new Regex(cmd, "(?is).*/addon/scriptlauncher/launch/(.+)").getMatch(0);
 
             if (launch(scriptname)) {
-                return "Script " + scriptname + " has been launched.";
+                return "Script " + scriptname + " has been executed.";
             } else {
                 return "Script " + scriptname + " doesn't exist.";
             }

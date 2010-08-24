@@ -16,6 +16,8 @@
 
 package jd.plugins.optional.folderwatch;
 
+import java.awt.Color;
+
 import jd.gui.swing.components.table.JDTable;
 
 public class FolderWatchTable extends JDTable {
@@ -24,7 +26,10 @@ public class FolderWatchTable extends JDTable {
 
     public FolderWatchTable() {
         super(new FolderWatchTableModel("folderwatch.historyview"));
-        // setRowHeight(22);
+        setRowHeight(22);
+        setBackground(new Color(255, 255, 255));
+        setGridColor(new Color(200, 200, 200));
+        // setShowHorizontalLines(true);
     }
 
     @Override

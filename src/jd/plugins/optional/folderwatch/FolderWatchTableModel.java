@@ -16,11 +16,14 @@
 
 package jd.plugins.optional.folderwatch;
 
+import java.util.ArrayList;
+
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.folderwatch.columns.FilenameColumn;
 import jd.plugins.optional.folderwatch.columns.FilepathColumn;
 import jd.plugins.optional.folderwatch.columns.FiletypeColumn;
 import jd.plugins.optional.folderwatch.columns.ImportdateColumn;
+import jd.plugins.optional.folderwatch.data.HistoryDataEntry;
 import jd.utils.locale.JDL;
 
 public class FolderWatchTableModel extends JDTableModel {
@@ -44,7 +47,7 @@ public class FolderWatchTableModel extends JDTableModel {
     public void refreshModel() {
         synchronized (list) {
             list.clear();
-            list.addAll(JDFolderWatch.history);
+            list.addAll((ArrayList<HistoryDataEntry>) JDFolderWatch.history);
         }
     }
 }

@@ -31,7 +31,7 @@ public class FiletypeColumn extends JDTextTableColumn {
     @Override
     protected String getStringValue(Object value) {
         String filename = ((HistoryDataEntry) value).getFilename();
-        String ext = filename.split(".+\\.")[0];
+        String ext = filename.split(".+\\.")[1];
 
         return ext.toUpperCase();
     }
