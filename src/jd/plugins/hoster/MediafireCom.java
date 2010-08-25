@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
@@ -25,7 +26,6 @@ import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.ext.BasicBrowserEnviroment;
 import jd.http.ext.ExtBrowser;
-import jd.http.ext.RendererUtilities;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -43,7 +43,9 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.locale.Loc;
+import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
+import org.lobobrowser.html.style.AbstractCSS2Properties;
 import org.w3c.dom.html2.HTMLCollection;
 
 //import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
@@ -321,10 +323,16 @@ public class MediafireCom extends PluginForHost {
             for (int i = 0; i < links.getLength(); i++) {
                 HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
                 // check if the link is visible in browser
+                l = l;
                 System.out.println(l.getOuterHTML());
-                if (RendererUtilities.isVisible(l)) {
-                    if (l.getInnerHTML().toLowerCase().contains("start download")) {
-                        if (l.getAbsoluteHref().contains("mediafire.com")) return l.getAbsoluteHref();
+                if (l.getInnerHTML().toLowerCase().contains("start download")) {
+                    System.out.println("Download start");
+                    if (isVisible(l)) {
+                        System.out.println("visible");
+                        if (l.getAbsoluteHref().contains("mediafire.com")) {
+                            System.out.println("contains mf");
+                            return l.getAbsoluteHref();
+                        }
                     }
                 }
             }
@@ -333,6 +341,58 @@ public class MediafireCom extends PluginForHost {
             e.printStackTrace();
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private static ArrayList<HTMLElementImpl> getPath(HTMLElementImpl impl) {
+        ArrayList<HTMLElementImpl> styles = new ArrayList<HTMLElementImpl>();
+
+        HTMLElementImpl p = impl;
+        while (p != null) {
+            styles.add(0, p);
+            p = p.getParent("*");
+        }
+        return styles;
+    }
+
+    public static boolean isVisible(HTMLElementImpl impl) {
+
+        ArrayList<HTMLElementImpl> styles = getPath(impl);
+        int x = 0;
+        int y = 0;
+        for (HTMLElementImpl p : styles) {
+            AbstractCSS2Properties style = p.getComputedStyle(null);
+            System.out.println(style + " : " + style.toStringForm());
+
+            if ("none".equalsIgnoreCase(style.getDisplay())) {
+                //
+                System.out.println("NO DISPLAY");
+                return false;
+            }
+            if ("absolute".equalsIgnoreCase(style.getPosition())) {
+                x = y = 0;
+            }
+            if (style.getTop() != null) {
+                y += covertToPixel(style.getTop());
+            }
+            if (style.getLeft() != null) {
+                x += covertToPixel(style.getLeft());
+
+            }
+
+        }
+        if (y < 0) {
+            System.out.println("y<0" + " " + x + " - " + y);
+            return false;
+        }
+        return true;
+    }
+
+    private static int covertToPixel(String top) {
+        if (top == null) return 0;
+        if (top.toLowerCase().trim().endsWith("px")) { return Integer.parseInt(top.substring(0, top.length() - 2)); }
+        String value = new Regex(top, "([\\-\\+]?\\s*\\d+)").getMatch(0);
+        if (value == null) return 0;
+        return Integer.parseInt(value);
     }
 
     @Override
