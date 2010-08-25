@@ -147,41 +147,24 @@ public class JDPremium extends PluginOptional {
 
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
-        try {
-            config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        } catch (Throwable e) {
-            /* not available in current stable */
-        }
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer:(restart required)"));
     }
 
     private void replaceHosterPlugin(String host, String with) {
-        try {
-            PluginForHost old = JDUtilities.getPluginForHost(host);
-            if (old != null) {
-                logger.info("Replacing " + host + " Plugin with JDPremium: " + with);
-                new PremShareHost(old.getHost(), with, old.getWrapper().getPattern().toString(), old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
-            }
-        } catch (Throwable e) {
-            for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
-                if (wrapper.getHost().equalsIgnoreCase(host)) {
-                    logger.info("Replacing(fallback) " + host + " Plugin with JDPremium: " + with);
-                    new PremShareHost(host, with, wrapper.getPattern().toString(), wrapper.getFlags());
-                }
-            }
+        PluginForHost old = JDUtilities.getPluginForHost(host);
+        if (old != null) {
+            logger.info("Replacing " + host + " Plugin with JDPremium: " + with);
+            new PremShareHost(old.getHost(), with, old.getWrapper().getPattern().toString(), old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
         }
     }
 
     @Override
     public boolean initAddon() {
         synchronized (LOCK) {
-            try {
-                if (Main.isInitComplete() && replaced == false) {
-                    logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
-                    return false;
-                }
-            } catch (Throwable e) {
-                /* not available in current stable */
+            if (Main.isInitComplete() && replaced == false) {
+                logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
+                return false;
             }
             if (!init) {
                 /* init our new plugins */
