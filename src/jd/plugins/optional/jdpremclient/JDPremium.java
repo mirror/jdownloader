@@ -156,10 +156,19 @@ public class JDPremium extends PluginOptional {
     }
 
     private void replaceHosterPlugin(String host, String with) {
-        PluginForHost old = JDUtilities.getPluginForHost(host);
-        if (old != null) {
-            logger.info("Replacing " + host + " Plugin with JDPremium: " + with);
-            new PremShareHost(old.getHost(), with, old.getWrapper().getPattern().toString(), old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
+        try {
+            PluginForHost old = JDUtilities.getPluginForHost(host);
+            if (old != null) {
+                logger.info("Replacing " + host + " Plugin with JDPremium: " + with);
+                new PremShareHost(old.getHost(), with, old.getWrapper().getPattern().toString(), old.getWrapper().getFlags() + PluginWrapper.ALLOW_DUPLICATE);
+            }
+        } catch (Throwable e) {
+            for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
+                if (wrapper.getHost().equalsIgnoreCase(host)) {
+                    logger.info("Replacing(fallback) " + host + " Plugin with JDPremium: " + with);
+                    new PremShareHost(host, with, wrapper.getPattern().toString(), wrapper.getFlags());
+                }
+            }
         }
     }
 
@@ -199,10 +208,10 @@ public class JDPremium extends PluginOptional {
                             /* do not replace our new plugins ;) */
                             if (premShareHosts.containsKey(plugin.getHost())) continue;
                             replaceHosterPlugin(plugin.getHost(), premShareHosts.get(key));
-                            PluginForHost ret = JDUtilities.getPluginForHost(key);
-                            if (ret != null && ret instanceof JDPremInterface) {
-                                ((JDPremInterface) ret).enablePlugin();
-                            }
+                        }
+                        PluginForHost ret = JDUtilities.getPluginForHost(key);
+                        if (ret != null && ret instanceof JDPremInterface) {
+                            ((JDPremInterface) ret).enablePlugin();
                         }
                     }
                 }
