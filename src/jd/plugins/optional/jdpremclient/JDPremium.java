@@ -147,7 +147,11 @@ public class JDPremium extends PluginOptional {
 
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
-        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
+        try {
+            config.setGroup(new ConfigGroup(getHost(), getIconKey()));
+        } catch (Throwable e) {
+            /* not available in current stable */
+        }
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer:(restart required)"));
     }
 
