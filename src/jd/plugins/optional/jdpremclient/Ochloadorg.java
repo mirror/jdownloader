@@ -25,7 +25,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object LOCK = new Object();
     private static final int MAXDOWNLOADS = 3;
-    private static int currentMaxDownloads = 3;
+    private volatile static int currentMaxDownloads = 3;
 
     public Ochloadorg(PluginWrapper wrapper) {
         super(wrapper);
@@ -155,7 +155,9 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             dl.startDownload();
             return true;
         } finally {
-            currentMaxDownloads = Math.min(MAXDOWNLOADS, ++currentMaxDownloads);
+            synchronized (LOCK) {
+                currentMaxDownloads = Math.max(MAXDOWNLOADS, ++currentMaxDownloads);
+            }
         }
     }
 
@@ -277,7 +279,10 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         if (plugin != null) {
             if (JDPremium.isEnabled()) {
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost())) return currentMaxDownloads;
+                    if (premiumHosts.contains(plugin.getHost())) {
+                        if (currentMaxDownloads == 0) { return Integer.MIN_VALUE; }
+                        return currentMaxDownloads;
+                    }
                 }
             }
             return plugin.getMaxSimultanFreeDownloadNum();

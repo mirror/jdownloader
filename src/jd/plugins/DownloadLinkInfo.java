@@ -112,7 +112,7 @@ public class DownloadLinkInfo {
             date.setTime(link.getFinishedDate());
             dateFinished = dateFormat.format(date);
         }
-        return dateAdded;
+        return dateFinished;
     }
 
     public String getLoadingFrom() {

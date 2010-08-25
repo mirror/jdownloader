@@ -103,7 +103,7 @@ public class FilePackageInfo {
             date.setTime(fp.getFinishedDate());
             dateFinished = dateFormat.format(date);
         }
-        return dateAdded;
+        return dateFinished;
     }
 
     public String getSize() {

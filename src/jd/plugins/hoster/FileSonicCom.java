@@ -100,6 +100,10 @@ public class FileSonicCom extends PluginForHost {
                         account.setAccountInfo(ai);
                     }
                     account.setProperty("cookies", null);
+                    if (br.containsHTML("User Does Not Exist With")) {
+                        ai.setStatus("User Does Not Exist With This Email Address");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     if (br.containsHTML("Provided password does not match")) {
                         ai.setStatus("Provided password does not match");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
