@@ -31,6 +31,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
@@ -602,6 +603,11 @@ public class SingleDownloadController extends Thread {
              */
             downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getWrapper().getNewPluginInstance());
             currentPlugin = plugin = downloadLink.getLivePlugin();
+            /*
+             * handle is only called in download situation, that why we create a
+             * new browser instance here
+             */
+            currentPlugin.setBrowser(new Browser());
             if (currentPlugin != null) {
                 fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
                 if (downloadLink.getDownloadURL() == null) {

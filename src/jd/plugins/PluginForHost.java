@@ -457,12 +457,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
-        /*
-         * handle is only called in download situation, that why we create a new
-         * browser instance here
-         */
-        setBrowser(new Browser());
-        init();
         final TransferStatus transferStatus = downloadLink.getTransferStatus();
         transferStatus.usePremium(false);
         transferStatus.setResumeSupport(false);
