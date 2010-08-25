@@ -4,4 +4,6 @@ import jd.plugins.PluginForHost;
 
 public interface JDPremInterface {
     public abstract void setReplacedPlugin(PluginForHost plugin);
+
+    public abstract void enablePlugin();
 }

@@ -28,6 +28,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     private PluginForHost plugin = null;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object LOCK = new Object();
+    private static boolean enabled = false;
 
     public void setReplacedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
@@ -118,7 +119,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         String jdpremServer = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!JDPremium.isEnabled()) return false;
+            if (!JDPremium.isEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             acc = AccountController.getInstance().getValidAccount("jdownloader.org");
@@ -262,6 +263,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
+            String restartReq = enabled == false ? "(Restart required)" : "";
             AccountInfo ac = new AccountInfo();
             String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
             if (jdpremServer == null || jdpremServer.length() == 0) {
@@ -281,7 +283,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 synchronized (LOCK) {
                     premiumHosts.clear();
                 }
-                ac.setStatus("JDPrem Server Error, temp disabled");
+                ac.setStatus("JDPrem Server Error, temp disabled" + restartReq);
                 return ac;
             }
             /* user info */
@@ -307,9 +309,9 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                     account.setValid(true);
                     account.setTempDisabled(false);
                     if (premiumHosts.size() == 0) {
-                        ac.setStatus("Account valid: 0 Hosts via PremShare available");
+                        ac.setStatus("Account valid: 0 Hosts via PremShare available" + restartReq);
                     } else {
-                        ac.setStatus("Account valid: " + premiumHosts.size() + " Hosts via PremShare available");
+                        ac.setStatus("Account valid: " + premiumHosts.size() + " Hosts via PremShare available" + restartReq);
                     }
                 }
             } else {
@@ -337,7 +339,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     public void resetDownloadlink(DownloadLink link) {
         if (plugin != null) plugin.resetDownloadlink(link);
         synchronized (LOCK) {
-            if (JDPremium.isEnabled() && premiumHosts.contains(link.getHost())) {
+            if (JDPremium.isEnabled() && enabled && premiumHosts.contains(link.getHost())) {
                 String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
                 try {
                     if (jdpremServer == null || jdpremServer.length() == 0) return;
@@ -371,8 +373,10 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         if (plugin != null) {
-            synchronized (LOCK) {
-                if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+            if (JDPremium.isEnabled() && enabled) {
+                synchronized (LOCK) {
+                    if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+                }
             }
             return plugin.getMaxSimultanFreeDownloadNum();
         }
@@ -382,7 +386,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         if (plugin != null) {
-            if (JDPremium.isEnabled()) {
+            if (JDPremium.isEnabled() && enabled) {
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
                 }
@@ -395,7 +399,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
-            if (JDPremium.isEnabled()) {
+            if (JDPremium.isEnabled() && enabled) {
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
                 }
@@ -427,6 +431,10 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     public ArrayList<Account> getPremiumAccounts() {
         if (plugin != null) return plugin.getPremiumAccounts();
         return super.getPremiumAccounts();
+    }
+
+    public void enablePlugin() {
+        enabled = true;
     }
 
 }

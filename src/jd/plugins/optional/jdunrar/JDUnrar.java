@@ -70,9 +70,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
 
     public JDUnrar(PluginWrapper wrapper) {
         super(wrapper);
-
         this.queue = new Jobber(1);
-
         checkUnrarCommand();
         initConfig();
     }

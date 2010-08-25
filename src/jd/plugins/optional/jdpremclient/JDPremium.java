@@ -135,11 +135,12 @@ class PremShareHost extends HostPluginWrapper {
 
 }
 
-@OptionalPlugin(rev = "$Revision$", id = "jdpremium", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 5)
 public class JDPremium extends PluginOptional {
 
     private static final Object LOCK = new Object();
     private static boolean replaced = false;
+    private static boolean init = false;
     private static boolean enabled = false;
 
     private static final HashMap<String, String> premShareHosts = new HashMap<String, String>();
@@ -165,40 +166,62 @@ public class JDPremium extends PluginOptional {
                 logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
                 return false;
             }
-            if (!replaced) {
-                String premShareServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER", null);
-                if (premShareServer != null && premShareServer.length() > 5) premShareHosts.put("jdownloader.org", "PremShare");
+            if (!init) {
+                /* init our new plugins */
+                premShareHosts.put("jdownloader.org", "PremShare");
                 premShareHosts.put("ochload.org", "Ochloadorg");
-
-                /* get all current PremiumPlugins */
-                ArrayList<HostPluginWrapper> all = JDUtilities.getPremiumPluginsForHost();
-
-                /* replace current PremiumPlugins */
-                for (String key : premShareHosts.keySet()) {
-                    for (HostPluginWrapper plugin : all) {
-                        if (plugin.getHost().contains("youtube")) continue;
-                        if (plugin.getHost().contains("DIRECTHTTP")) continue;
-                        replaceHosterPlugin(plugin.getHost(), premShareHosts.get(key));
-                    }
-                }
                 int replaceIndex = 0;
                 for (String key : premShareHosts.keySet()) {
                     /* init replacePlugin */
-                    new PremShareHost(key, premShareHosts.get(key), "NEVERUSETHISREGEX" + replaceIndex++ + ":\\)", 2);
+                    try {
+                        new PremShareHost(key, premShareHosts.get(key), "NEVERUSETHISREGEX" + replaceIndex++ + ":\\)", 2);
+                    } catch (Throwable e) {
+                    }
                 }
+                init = true;
             }
-            logger.info("JDPremium: init ok!");
-            replaced = true;
-            enabled = true;
-            new Thread(new Runnable() {
-                public void run() {
-                    for (String key : premShareHosts.keySet()) {
-                        for (Account acc : AccountController.getInstance().getAllAccounts(key)) {
-                            AccountController.getInstance().updateAccountInfo(key, acc, true);
+            if (!replaced) {
+                /* get all current PremiumPlugins */
+                ArrayList<HostPluginWrapper> all = JDUtilities.getPremiumPluginsForHost();
+                for (String key : premShareHosts.keySet()) {
+                    if (AccountController.getInstance().hasAccounts(key)) {
+                        for (HostPluginWrapper plugin : all) {
+                            if (plugin.getHost().contains("youtube")) continue;
+                            if (plugin.getHost().contains("DIRECTHTTP")) continue;
+                            /* do not replace our new plugins ;) */
+                            if (premShareHosts.containsKey(plugin.getHost())) continue;
+                            replaceHosterPlugin(plugin.getHost(), premShareHosts.get(key));
+                            PluginForHost ret = JDUtilities.getPluginForHost(key);
+                            if (ret != null && ret instanceof JDPremInterface) {
+                                ((JDPremInterface) ret).enablePlugin();
+                            }
                         }
                     }
                 }
-            }).start();
+                replaced = true;
+            }
+            if (replaced) {
+                logger.info("JDPremium: init ok! plugins replaced!");
+            } else {
+                logger.info("JDPremium: init ok! no valid accounts found, no plugins replaced! restart after adding new account is needed!");
+            }
+            if (replaced) {
+                new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            for (String key : premShareHosts.keySet()) {
+                                for (Account acc : AccountController.getInstance().getAllAccounts(key)) {
+                                    AccountController.getInstance().updateAccountInfo(key, acc, true);
+                                }
+                            }
+                        } finally {
+                            enabled = true;
+                        }
+                    }
+                }).start();
+            } else {
+                enabled = true;
+            }
         }
 
         return true;

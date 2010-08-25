@@ -22,6 +22,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     private boolean proxyused = false;
     private String infostring = null;
     private PluginForHost plugin = null;
+    private static boolean enabled = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object LOCK = new Object();
     private static final int MAXDOWNLOADS = 3;
@@ -30,7 +31,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     public Ochloadorg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.ochload.org/Profil");
-        infostring = "OchLoad.Org @ " + wrapper.getHost();
+        infostring = "OCHload.Org @ " + wrapper.getHost();
     }
 
     @Override
@@ -116,7 +117,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             Account acc = null;
             synchronized (LOCK) {
                 /* jdpremium enabled */
-                if (!JDPremium.isEnabled()) return false;
+                if (!JDPremium.isEnabled() || !enabled) return false;
                 /* premium available for this host */
                 if (!premiumHosts.contains(link.getHost())) return false;
                 acc = AccountController.getInstance().getValidAccount("ochload.org");
@@ -192,6 +193,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
+            String restartReq = enabled == false ? "(Restart required)" : "";
             AccountInfo ac = new AccountInfo();
             br = new Browser();
             br.setConnectTimeout(30000);
@@ -210,7 +212,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 synchronized (LOCK) {
                     premiumHosts.clear();
                 }
-                ac.setStatus("OchLoad Server Error, temp disabled");
+                ac.setStatus("OchLoad Server Error, temp disabled" + restartReq);
                 return ac;
             }
             boolean isPremium = page.startsWith("1");
@@ -238,9 +240,9 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 }
                 account.setValid(true);
                 if (premiumHosts.size() == 0) {
-                    ac.setStatus("Account valid: 0 Hosts via OchLoad available");
+                    ac.setStatus("Account valid: 0 Hosts via OCHLoad.org available" + restartReq);
                 } else {
-                    ac.setStatus("Account valid: " + premiumHosts.size() + " Hosts via OchLoad available");
+                    ac.setStatus("Account valid: " + premiumHosts.size() + " Hosts via OCHLoad.org available" + restartReq);
                 }
             }
             return ac;
@@ -277,10 +279,11 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         if (plugin != null) {
-            if (JDPremium.isEnabled()) {
+            if (JDPremium.isEnabled() && enabled) {
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost())) {
-                        if (currentMaxDownloads == 0) { return Integer.MIN_VALUE; }
+                    if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) {
+                        // if (currentMaxDownloads == 0) { return
+                        // Integer.MIN_VALUE; }
                         return currentMaxDownloads;
                     }
                 }
@@ -293,10 +296,11 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         if (plugin != null) {
-            if (JDPremium.isEnabled()) {
+            if (JDPremium.isEnabled() && enabled) {
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost())) {
-                        if (currentMaxDownloads == 0) { return Integer.MIN_VALUE; }
+                    if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) {
+                        // if (currentMaxDownloads == 0) { return
+                        // Integer.MIN_VALUE; }
                         return currentMaxDownloads;
                     }
                 }
@@ -309,10 +313,14 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
-            synchronized (LOCK) {
-                if (premiumHosts.contains(plugin.getHost())) {
-                    if (currentMaxDownloads == 0) { return Integer.MIN_VALUE; }
-                    return currentMaxDownloads;
+            if (JDPremium.isEnabled() && enabled) {
+                synchronized (LOCK) {
+                    if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) {
+                        // if (currentMaxDownloads == 0) { return
+                        // Integer.MIN_VALUE;
+                        // }
+                        return currentMaxDownloads;
+                    }
                 }
             }
             return plugin.getMaxSimultanDownload(account);
@@ -346,6 +354,10 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
     public void setReplacedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
+    }
+
+    public void enablePlugin() {
+        enabled = true;
     }
 
 }
