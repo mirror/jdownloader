@@ -157,7 +157,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             return true;
         } finally {
             synchronized (LOCK) {
-                currentMaxDownloads = Math.max(MAXDOWNLOADS, ++currentMaxDownloads);
+                currentMaxDownloads = Math.min(MAXDOWNLOADS, ++currentMaxDownloads);
             }
         }
     }
