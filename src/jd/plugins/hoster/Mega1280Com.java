@@ -23,6 +23,8 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -31,17 +33,20 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/file/[0-9|A-Z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/file/[0-9|A-Z]+" }, flags = { 2 })
 public class Mega1280Com extends PluginForHost {
 
     public Mega1280Com(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://psp.1280.com/register.php");
     }
 
     @Override
     public String getAGBLink() {
         return "http://mega.1280.com/terms.php";
     }
+
+    private static final String SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -91,10 +96,57 @@ public class Mega1280Com extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Tài nguyên bạn yêu cầu không tìm thấy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.Mega1280Com.Servererror", "Servererror!"), 60 * 60 * 1000l);
+            if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.Mega1280Com.Servererror", "Servererror!"), 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        String mailPart1 = new Regex(account.getUser(), "(.+)@").getMatch(0);
+        String mailPart2 = new Regex(account.getUser(), "(@.+)").getMatch(0);
+        if (mailPart1 == null || mailPart2 == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String postData = "user_email=" + Encoding.urlEncode(mailPart1) + " &lstdomain_mail=" + Encoding.urlEncode(mailPart2) + "&user_password=" + Encoding.urlEncode(account.getPass()) + "&auto_login=1&btnLogin=+&user_previous=index.php";
+        br.postPage("http://psp.1280.com/login.php", postData);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://psp.1280.com/errors.php?error=active")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://psp.1280.com/", "1280_userpass") == null || br.getCookie("http://psp.1280.com/", "1280_userid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        Form dlForm = br.getFormbyProperty("name", "frm_download");
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.Mega1280Com.Servererror", "Servererror!"), 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

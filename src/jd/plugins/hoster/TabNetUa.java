@@ -53,7 +53,6 @@ public class TabNetUa extends PluginForHost {
     // /* use fallback icon */
     // return new ImageIcon(createDefaultFavIcon());
     // }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         String fid = new Regex(link.getDownloadURL(), "tab\\.net\\.ua/sites/files/site_name\\..*?/id\\.(\\d+)/").getMatch(0);
@@ -111,7 +110,7 @@ public class TabNetUa extends PluginForHost {
         String dllink = br.getRegex("; background-repeat:no-repeat;\">.*?<a href=\"(http://.*?)\" class=\"file_download\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.tab\\.net\\.ua:\\d+/\\d+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
@@ -179,7 +178,7 @@ public class TabNetUa extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override
@@ -188,7 +187,7 @@ public class TabNetUa extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override

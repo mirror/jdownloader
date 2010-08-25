@@ -34,12 +34,10 @@ public class UploadStube extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.uploadstube.de/regeln.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -51,34 +49,24 @@ public class UploadStube extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link);
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

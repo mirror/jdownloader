@@ -320,7 +320,7 @@ public class QuickUploadDotNet extends PluginForHost {
         }
         account.setValid(true);
         String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (availabletraffic != null) {
+        if (availabletraffic != null && !availabletraffic.equals(" Mb")) {
             ai.setTrafficLeft(Regex.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
