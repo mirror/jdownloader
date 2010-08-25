@@ -33,12 +33,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -308,10 +308,11 @@ public class MediafireCom extends PluginForHost {
             // internal css is enough.
             eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*pmsrvr.com.*", ".*yahoo.com.*", ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null) {
 
+                @Override
                 public boolean isInternalCSSEnabled() {
-                    // TODO Auto-generated method stub
                     return true;
                 }
+
             });
             // Start Evaluation of br
             eb.eval(br);
@@ -323,7 +324,6 @@ public class MediafireCom extends PluginForHost {
             for (int i = 0; i < links.getLength(); i++) {
                 HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
                 // check if the link is visible in browser
-                l = l;
                 System.out.println(l.getOuterHTML());
                 if (l.getInnerHTML().toLowerCase().contains("start download")) {
                     System.out.println("Download start");

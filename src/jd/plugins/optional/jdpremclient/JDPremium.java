@@ -24,6 +24,7 @@ import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -148,7 +149,7 @@ public class JDPremium extends PluginOptional {
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer:(restart required)"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer: (Restart required)").setPropertyType(PropertyType.NEEDS_RESTART));
     }
 
     private void replaceHosterPlugin(String host, String with) {

@@ -91,6 +91,7 @@ public class ProgressCircle extends JPanel {
 
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
         if (icon == null || iconGrey == null) {
             // No Custom Icon: Simply fill a Circle with Green

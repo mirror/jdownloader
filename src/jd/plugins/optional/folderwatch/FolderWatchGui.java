@@ -14,11 +14,12 @@ public class FolderWatchGui extends SwitchPanel {
     private static final String JDL_PREFIX = "jd.plugins.optional.folderwatch.FolderWatchGui.";
 
     private final FolderWatchTable table;
-    private SubConfiguration config;
+    private final SubConfiguration config;
 
     public FolderWatchGui(SubConfiguration config) {
-        table = new FolderWatchTable();
+        this.table = new FolderWatchTable();
         this.config = config;
+
         initActions();
         initGUI();
     }

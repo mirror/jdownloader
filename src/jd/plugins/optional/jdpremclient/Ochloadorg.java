@@ -6,16 +6,17 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
@@ -341,7 +342,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     }
 
     @Override
-    public ArrayList<jd.gui.swing.jdgui.menu.MenuAction> createMenuitems() {
+    public ArrayList<MenuAction> createMenuitems() {
         if (plugin == null) return super.createMenuitems();
         return plugin.createMenuitems();
     }

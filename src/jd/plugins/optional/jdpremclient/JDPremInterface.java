@@ -3,7 +3,9 @@ package jd.plugins.optional.jdpremclient;
 import jd.plugins.PluginForHost;
 
 public interface JDPremInterface {
-    public abstract void setReplacedPlugin(PluginForHost plugin);
 
-    public abstract void enablePlugin();
+    public void setReplacedPlugin(PluginForHost plugin);
+
+    public void enablePlugin();
+
 }

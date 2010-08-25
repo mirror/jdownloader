@@ -7,7 +7,6 @@ public class ExtBrowserEventSender extends Eventsender<ExtBrowserListener, ExtBr
     @Override
     protected void fireEvent(ExtBrowserListener listener, ExtBrowserEvent event) {
         listener.onFrameEvent(event);
-
     }
 
 }
