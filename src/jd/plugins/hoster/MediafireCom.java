@@ -295,15 +295,16 @@ public class MediafireCom extends PluginForHost {
         // if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) <
         // 10000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT,
         // "Use Nightly"); }
+        ExtBrowser eb = new ExtBrowser();
         try {
-            ExtBrowser eb = new ExtBrowser();
+
             //
             // Set the browserenviroment. We blacklist a few urls here, because
             // we do not need css, and several other sites
             // we enable css evaluation, because we need this to find invisible
             // links
             // internal css is enough.
-            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*yahoo.com.*", ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null) {
+            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*pmsrvr.com.*", ".*yahoo.com.*", ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null) {
 
                 public boolean isInternalCSSEnabled() {
                     // TODO Auto-generated method stub
@@ -328,6 +329,7 @@ public class MediafireCom extends PluginForHost {
                 }
             }
         } catch (Exception e) {
+            logger.info(eb.getHtmlText());
             e.printStackTrace();
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
