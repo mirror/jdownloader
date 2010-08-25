@@ -166,9 +166,13 @@ public class JDPremium extends PluginOptional {
     @Override
     public boolean initAddon() {
         synchronized (LOCK) {
-            if (Main.isInitComplete() && replaced == false) {
-                logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
-                return false;
+            try {
+                if (Main.isInitComplete() && replaced == false) {
+                    logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
+                    return false;
+                }
+            } catch (Throwable e) {
+                /* not available in current stable */
             }
             if (!init) {
                 /* init our new plugins */
