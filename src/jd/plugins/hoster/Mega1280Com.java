@@ -123,6 +123,14 @@ public class Mega1280Com extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://mega.1280.com/statistic.php");
+        String days = br.getRegex("<b>Thời hạn dùng:</b></td>[\t\n\r ]+<td height=\"25\" align=\"left\" valign=\"top\">(\\d+)\\&nbsp;").getMatch(0);
+        if (days != null) {
+            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 60 * 60 * 1000));
+        } else {
+            ai.setExpired(true);
+            return ai;
+        }
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
