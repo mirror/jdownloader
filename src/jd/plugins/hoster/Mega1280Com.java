@@ -56,10 +56,11 @@ public class Mega1280Com extends PluginForHost {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("upload.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("clr05\"><b>(.*?)</b>").getMatch(0));
-        String filesize = br.getRegex("<br />.*?<strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Liên kết bạn chọn không tồn tại trên hệ thống Mega1280<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("<title>-- Mega 1280 -- (.*?) - </title>").getMatch(0));
+        if (filename == null) filename = Encoding.htmlDecode(br.getRegex("Tên file: <span class=\"color_red\">(.*?)</span>").getMatch(0));
+        String filesize = br.getRegex("<b>Dung lượng: </b><span>(.*?)</span>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -80,19 +81,12 @@ public class Mega1280Com extends PluginForHost {
         captchaForm.put("code_security", code);
         br.submitForm(captchaForm);
         if (br.containsHTML("frm_download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
-        // setzt den downloadlink zusammen (damit wird die Wartezeit umgangen)
-        String dllink0 = br.getRegex("<div id=\"hddomainname\" style=\"display:none\">(.*?)</div>").getMatch(0);
-        String dllink1 = br.getRegex("<div id=\"hdfolder\" style=\"display:none\">(.*?)</div>").getMatch(0);
-        String dllink2 = br.getRegex("<div id=\"hdcode\" style=\"display:none\">(.*?)</div>").getMatch(0);
-        String dllink3 = br.getRegex("<div id=\"hdfilename\" style=\"display:none\">(.*?)</div>").getMatch(0);
-        if (dllink0 == null || dllink1 == null || dllink2 == null || dllink3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String downloadURL = dllink0 + dllink1 + dllink2 + "/" + dllink3;
+        String downloadURL = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/downloads/file/[a-z0-9]+/.*?)\\'").getMatch(0);
+        if (downloadURL == null) downloadURL = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
         // Waittime
-        String wait = br.getRegex("hdcountdown\" style=\"display:none\">(\\d+)</div>").getMatch(0);
-        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        long tt = Long.parseLong(wait.trim());
-        sleep(tt * 1001l, downloadLink);
+        String wait = br.getRegex("var count = (\\d+);").getMatch(0);
+        if (wait == null || downloadURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        sleep(Long.parseLong(wait) * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

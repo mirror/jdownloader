@@ -135,15 +135,14 @@ public class ToucanSharingCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // // Ticket Time
-        // String ttt = new Regex(brbefore, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        // if (ttt == null) ttt = new Regex(brbefore,
-        // "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        // if (ttt != null) {
-        // logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
-        // int tt = Integer.parseInt(ttt);
-        // sleep(tt * 1001, downloadLink);
-        // }
+        // Ticket Time
+        String ttt = new Regex(brbefore, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = new Regex(brbefore, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
+            int tt = Integer.parseInt(ttt);
+            sleep(tt * 1001, downloadLink);
+        }
         boolean password = false;
         boolean recaptcha = false;
         if (brbefore.contains(PASSWORDTEXT0) || brbefore.contains(PASSWORDTEXT1)) {
