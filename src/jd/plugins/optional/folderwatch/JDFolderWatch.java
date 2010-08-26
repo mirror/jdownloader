@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
+import jd.config.ConfigurationListener;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -58,11 +59,11 @@ import org.appwork.utils.Regex;
 
 @SuppressWarnings("unused")
 @OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 5)
-public class JDFolderWatch extends PluginOptional implements RemoteSupport {
+public class JDFolderWatch extends PluginOptional implements RemoteSupport, ConfigurationListener {
 
     private static final String JDL_PREFIX = "plugins.optional.folderwatch.JDFolderWatch.";
 
-    private SubConfiguration subConfig;
+    private final SubConfiguration subConfig;
 
     // option/mode flags
     private boolean isEnabled = false;
@@ -180,6 +181,7 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport {
 
         historyCleanup();
 
+        subConfig.addConfigurationListener(this);
         initConfig();
     }
 
@@ -382,6 +384,14 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport {
     }
 
     private void openInFilebrowser(String path) {
+    }
+
+    public void onPostSave(SubConfiguration subConfiguration) {
+        startWatching(true);
+    }
+
+    public void onPreSave(SubConfiguration subConfiguration) {
+        startWatching(false);
     }
 
     public Object handleRemoteCmd(String cmd) {
