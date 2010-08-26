@@ -28,11 +28,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestab.com" }, urls = { "http://[\\w\\.]*?filestab\\.com/[a-z0-9]{12}" }, flags = { 0 })
@@ -54,6 +54,7 @@ public class FileStabCom extends PluginForHost {
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static final String COOKIE_HOST = "http://filestab.com";
     public boolean nopremium = false;
+    private static final String RECAPTCHATEXT2 = "google.com/recaptcha/api/challenge";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -193,7 +194,7 @@ public class FileStabCom extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (brbefore.contains("api.recaptcha.net")) {
+        } else if (brbefore.contains("api.recaptcha.net") || brbefore.contains(RECAPTCHATEXT2)) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
