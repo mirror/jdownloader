@@ -192,7 +192,8 @@ public class TbCm extends PluginForDecrypt {
                 String vQuality = "";
                 ConversionMode cMode = null;
                 boolean wishedFound = false;
-                for (Integer format : LinksFound.keySet()) {
+                ArrayList<Integer> formats = new ArrayList<Integer>(LinksFound.keySet());
+                for (Integer format : formats) {
                     if (ytVideo.containsKey(format)) {
                         cMode = (ConversionMode) ytVideo.get(format)[0];
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + ytVideo.get(format)[1] + "-" + ytVideo.get(format)[2] + ")";

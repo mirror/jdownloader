@@ -234,11 +234,9 @@ public class FileSonicCom extends PluginForHost {
         String filename = br.getRegex("Filename: </span> <strong>(.*?)<").getMatch(0);
         String filesize = br.getRegex("<span class=\"size\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (filename.contains("...")) {
-            String otherName = new Regex(parameter.getDownloadURL(), "file/\\d+/(.+)").getMatch(0);
-            if (otherName != null && otherName.length() > filename.length()) {
-                filename = otherName;
-            }
+        String otherName = br.getRegex("<title>Download (.*?) for").getMatch(0);
+        if (otherName != null && otherName.length() > filename.length()) {
+            filename = otherName;
         }
         filesize = filesize.replace("&nbsp;", "");
         parameter.setName(filename.trim());
@@ -325,7 +323,7 @@ public class FileSonicCom extends PluginForHost {
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)
          */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             errorHandling(downloadLink);
