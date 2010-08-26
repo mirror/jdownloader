@@ -18,7 +18,7 @@ package jd.plugins.optional.folderwatch.columns;
 
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
-import jd.plugins.optional.folderwatch.data.HistoryDataEntry;
+import jd.plugins.optional.folderwatch.data.HistoryEntry;
 
 public class ImportdateColumn extends JDTextTableColumn {
 
@@ -30,7 +30,7 @@ public class ImportdateColumn extends JDTextTableColumn {
 
     @Override
     protected String getStringValue(Object value) {
-        return ((HistoryDataEntry) value).getImportDate();
+        return ((HistoryEntry) value).getImportDate();
     }
 
     @Override

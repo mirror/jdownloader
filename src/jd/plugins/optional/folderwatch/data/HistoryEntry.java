@@ -20,7 +20,7 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class HistoryDataEntry implements Serializable {
+public class HistoryEntry implements Serializable {
 
     private static final long serialVersionUID = -8824175672927232845L;
 
@@ -36,11 +36,11 @@ public class HistoryDataEntry implements Serializable {
 
     private boolean isPhysical;
 
-    public HistoryDataEntry(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
+    public HistoryEntry(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
         set(filename, absolutePath, md5Hash, isPhysical);
     }
 
-    public HistoryDataEntry(String filename, String absolutePath, String md5Hash) {
+    public HistoryEntry(String filename, String absolutePath, String md5Hash) {
         set(filename, absolutePath, md5Hash, true);
     }
 

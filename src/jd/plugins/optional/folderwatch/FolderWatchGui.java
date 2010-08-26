@@ -38,6 +38,10 @@ public class FolderWatchGui extends SwitchPanel {
 
     @Override
     protected void onShow() {
+        refresh();
+    }
+
+    public void refresh() {
         table.getModel().refreshModel();
         table.getModel().fireTableDataChanged();
     }

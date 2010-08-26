@@ -65,7 +65,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             logger.warning(e.toString());
         }
 
-        logger.info("JDScriptLauncher OK");
+        logger.info("ScriptLauncher OK");
 
         return true;
     }
@@ -89,7 +89,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             Process p = Runtime.getRuntime().exec(exepath);
             JDScriptLauncher.processlist.put(index, p);
 
-            logger.info("JDScriptLauncher -> \"" + exepath + "\" has been executed");
+            logger.info("\"" + exepath + "\" has been executed");
         } catch (IOException eio) {
             logger.warning(eio.toString());
         }
@@ -190,7 +190,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             for (int i = 0; i < filelist.length; i++) {
                 File file = filelist[i];
                 if (file.isFile() && file.canExecute()) {
-                    logger.info("JDScriptLauncher -> script \"" + file.getName() + "\" has been found");
+                    logger.info("\"" + file.getName() + "\" has been found");
                     scripts.add(file);
                 }
             }

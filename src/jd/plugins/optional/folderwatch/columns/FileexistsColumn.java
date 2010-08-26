@@ -16,21 +16,16 @@
 
 package jd.plugins.optional.folderwatch.columns;
 
+import jd.gui.swing.components.table.JDCheckBoxTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.components.table.JDTextTableColumn;
 import jd.plugins.optional.folderwatch.data.HistoryEntry;
 
-public class FilepathColumn extends JDTextTableColumn {
+public class FileexistsColumn extends JDCheckBoxTableColumn {
 
-    private static final long serialVersionUID = -187718771670620651L;
+    private static final long serialVersionUID = -4159473483632154389L;
 
-    public FilepathColumn(String name, JDTableModel table) {
+    public FileexistsColumn(String name, JDTableModel table) {
         super(name, table);
-    }
-
-    @Override
-    protected String getStringValue(Object value) {
-        return ((HistoryEntry) value).getAbsolutePath();
     }
 
     @Override
@@ -42,4 +37,20 @@ public class FilepathColumn extends JDTextTableColumn {
     public boolean isSortable(Object obj) {
         return false;
     }
+
+    @Override
+    protected boolean getBooleanValue(Object value) {
+        return ((HistoryEntry) value).isPhysical();
+    }
+
+    @Override
+    protected void setBooleanValue(boolean value, Object object) {
+    }
+
+    @Override
+    public boolean isEditable(Object obj) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

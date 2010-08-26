@@ -18,7 +18,7 @@ package jd.plugins.optional.folderwatch.columns;
 
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
-import jd.plugins.optional.folderwatch.data.HistoryDataEntry;
+import jd.plugins.optional.folderwatch.data.HistoryEntry;
 
 public class FiletypeColumn extends JDTextTableColumn {
 
@@ -30,7 +30,7 @@ public class FiletypeColumn extends JDTextTableColumn {
 
     @Override
     protected String getStringValue(Object value) {
-        String filename = ((HistoryDataEntry) value).getFilename();
+        String filename = ((HistoryEntry) value).getFilename();
         String ext = filename.split(".+\\.")[1];
 
         return ext.toUpperCase();

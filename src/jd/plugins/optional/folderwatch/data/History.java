@@ -20,24 +20,27 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-public class HistoryData extends ArrayList<HistoryDataEntry> implements Serializable {
+public class History implements Serializable {
 
-    private static final long serialVersionUID = -4826024531349749042L;
+    private static final long serialVersionUID = 2752413666878389709L;
 
-    public HistoryData() {
+    private static ArrayList<HistoryEntry> entries = new ArrayList<HistoryEntry>();
+
+    public static void setEntries(ArrayList<HistoryEntry> e) {
+        entries = e;
     }
 
-    public HistoryData(ArrayList<HistoryDataEntry> entries) {
-        super(entries);
-
-        updateEntries();
+    public static ArrayList<HistoryEntry> getEntries() {
+        return entries;
     }
 
-    public void updateEntries() {
-        ArrayList<HistoryDataEntry> entries = this;
+    public static void add(HistoryEntry entry) {
+        entries.add(entry);
+    }
 
+    public static void updateEntries() {
         boolean value;
-        for (HistoryDataEntry entry : entries) {
+        for (HistoryEntry entry : entries) {
             if (entry.isPhysical()) {
                 value = isFileExisting(entry.getAbsolutePath());
                 entry.setPhysical(value);
@@ -45,7 +48,7 @@ public class HistoryData extends ArrayList<HistoryDataEntry> implements Serializ
         }
     }
 
-    private boolean isFileExisting(String path) {
+    private static boolean isFileExisting(String path) {
         File file = new File(path);
 
         return file.exists();
