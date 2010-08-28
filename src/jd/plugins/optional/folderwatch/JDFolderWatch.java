@@ -18,9 +18,7 @@ package jd.plugins.optional.folderwatch;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -46,20 +44,12 @@ import jd.plugins.optional.remotecontrol.helppage.Table;
 import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
-import name.pachler.nio.file.ClosedWatchServiceException;
-import name.pachler.nio.file.FileSystems;
-import name.pachler.nio.file.Path;
-import name.pachler.nio.file.Paths;
-import name.pachler.nio.file.StandardWatchEventKind;
-import name.pachler.nio.file.WatchEvent;
-import name.pachler.nio.file.WatchKey;
-import name.pachler.nio.file.WatchService;
 
 import org.appwork.utils.Regex;
 
 @SuppressWarnings("unused")
 @OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 5)
-public class JDFolderWatch extends PluginOptional implements RemoteSupport, ConfigurationListener {
+public class JDFolderWatch extends PluginOptional implements FileMonitoringListener, ConfigurationListener, RemoteSupport {
 
     private static final String JDL_PREFIX = "plugins.optional.folderwatch.JDFolderWatch.";
 
@@ -80,108 +70,24 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport, Conf
 
     // TODO: Folder list instead
     private String folder;
+    private String folderOld;
 
     // TODO: only import when file creation is done
-    private class WatchServiceThread extends Thread {
-
-        private WatchService watchService;
-
-        public WatchServiceThread() {
-            this.watchService = FileSystems.getDefault().newWatchService();
-        }
-
-        public WatchServiceThread(String path) {
-            this();
-            register(path);
-        }
-
-        public void register(String path) {
-            Path watchedPath = Paths.get(path);
-            WatchKey key = null;
-
-            try {
-                key = watchedPath.register(watchService, StandardWatchEventKind.ENTRY_CREATE, StandardWatchEventKind.ENTRY_DELETE);
-            } catch (UnsupportedOperationException uox) {
-                logger.warning(uox.toString());
-                logger.warning("file watching not supported!");
-                // handle this error here
-            } catch (IOException iox) {
-                logger.warning(iox.toString());
-                // handle this error here
-            }
-        }
-
-        public void done() {
-            try {
-                this.watchService.close();
-            } catch (IOException e) {
-            }
-        }
-
-        public void run() {
-
-            while (true) {
-                // take() will block until a file has been created/deleted
-                WatchKey signalledKey;
-                try {
-                    signalledKey = watchService.take();
-                } catch (InterruptedException ix) {
-                    // we'll ignore being interrupted
-                    continue;
-                } catch (ClosedWatchServiceException cwse) {
-                    // other thread closed watch service
-                    logger.info("watch service closed, terminating");
-                    break;
-                }
-
-                // get list of events from key
-                List<WatchEvent<?>> list = signalledKey.pollEvents();
-
-                // VERY IMPORTANT! call reset() AFTER pollEvents() to allow the
-                // key to be reported again by the watch service
-                signalledKey.reset();
-
-                // we'll simply print what has happened; real applications
-                // will do something more sensible here
-                for (WatchEvent<?> e : list) {
-                    String message = "";
-
-                    if (e.kind() == StandardWatchEventKind.ENTRY_CREATE) {
-                        Path context = (Path) e.context();
-                        String filename = context.toString();
-
-                        logger.info(filename + " created");
-
-                        if (isContainer(filename)) {
-                            String absPath = folder + "/" + filename;
-                            String md5Hash = importContainer(absPath);
-                            historyAdd(new HistoryEntry(filename, absPath, md5Hash));
-                            // TODO: filter doubles
-                        }
-                    } else if (e.kind() == StandardWatchEventKind.ENTRY_DELETE) {
-                        Path context = (Path) e.context();
-
-                        historyCleanup();
-
-                        logger.info(context.toString() + " deleted");
-                    } else if (e.kind() == StandardWatchEventKind.OVERFLOW) {
-                        logger.info("Overflow: more changes happened than we could retreive");
-                    }
-                }
-            }
-        }
-    }
-
-    private WatchServiceThread watchingServiceThread;
+    private FileMonitoring monitoringThread;
 
     public JDFolderWatch(PluginWrapper wrapper) {
         super(wrapper);
         subConfig = getPluginConfig();
-        History.setEntries(getHistoryEntriesFromConfig());
 
+        isEnabled = subConfig.getBooleanProperty(FolderWatchConstants.CONFIG_KEY_ENABLED, true);
+        folder = subConfig.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER, "");
+
+        // Debugging Purpose:
+        // clearHistory();
+
+        History.setEntries(getHistoryEntriesFromConfig());
         historyCleanup();
 
-        subConfig.addConfigurationListener(this);
         initConfig();
     }
 
@@ -192,53 +98,11 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport, Conf
 
     @Override
     public boolean initAddon() {
-        isEnabled = subConfig.getBooleanProperty(FolderWatchConstants.CONFIG_KEY_ENABLED, true);
-        folder = subConfig.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER, "");
-
+        subConfig.addConfigurationListener(this);
         startWatching(isEnabled);
 
         logger.info("FolderWatch: OK");
         return true;
-    }
-
-    private boolean startWatching(boolean param) {
-        if (param == true) {
-            folder = subConfig.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER, "");
-
-            watchingServiceThread = new WatchServiceThread(folder);
-            watchingServiceThread.start();
-
-            logger.info("watchingService has been started");
-            return true;
-        } else {
-            if (watchingServiceThread.isAlive()) {
-                watchingServiceThread.done();
-            }
-            watchingServiceThread = null;
-        }
-        return false;
-    }
-
-    private ArrayList<HistoryEntry> getHistoryEntriesFromConfig() {
-        return subConfig.getGenericProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, new ArrayList<HistoryEntry>());
-    }
-
-    private void historyAdd(HistoryEntry entry) {
-        History.add(entry);
-
-        subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, History.getEntries());
-        subConfig.save();
-
-        if (historyGui != null) historyGui.refresh();
-    }
-
-    private void historyCleanup() {
-        History.updateEntries();
-
-        subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, History.getEntries());
-        subConfig.save();
-
-        if (historyGui != null) historyGui.refresh();
     }
 
     @Override
@@ -282,51 +146,30 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport, Conf
         ConfigEntry ce = null;
 
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, FolderWatchConstants.CONFIG_KEY_FOLDER, JDL.L("plugins.optional.FolderWatch.folder", "Folder to watch:")));
-        ce.setEnabled(true);
-
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L(JDL_PREFIX + "openfolder", "open folder"), JDL.L(JDL_PREFIX + "openfolder.long", "Open folder in local file manager:"), JDTheme.II("gui.images.package", 16, 16)));
-        ce.setEnabled(true);
-
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L(JDL_PREFIX + "emptyfolder", "empty folder"), JDL.L(JDL_PREFIX + "emptyfolder.long", "Delete all container files:"), JDTheme.II("gui.images.clear ", 16, 16)));
-        ce.setEnabled(true);
-
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_RECURSIVE, JDL.L(JDL_PREFIX + "recursive", "Watch recursively? (Windows only)")).setDefaultValue(true));
-        if (!OSDetector.isWindows()) {
-            ce.setDefaultValue(false);
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_RECURSIVE, JDL.L(JDL_PREFIX + "recursive", "Watch recursively? (Windows only)")).setDefaultValue(false));
+        if (!OSDetector.isWindows())
             ce.setEnabled(false);
-        }
-
+        else
+            ce.setDefaultValue(true);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_AUTODELETE, JDL.L(JDL_PREFIX + "autodelete", "Delete container after importing?")).setDefaultValue(false));
-        ce.setEnabled(true);
-
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_HISTORYONLY, JDL.L(JDL_PREFIX + "historyonly", "Adds containers to history but doesn't import them.")).setDefaultValue(false));
-        ce.setEnabled(true);
-
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.CONFIG_KEY_DELETECASCADE, JDL.L(JDL_PREFIX + "deletecascade", "Deletes also related history entry when container gets deleted.")).setDefaultValue(false));
-        ce.setEnabled(true);
-    }
-
-    private void clearHistory() {
-        subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, new ArrayList<HistoryEntry>());
     }
 
     private void showGui() {
         if (view == null) {
             view = new FolderWatchView();
             view.getBroadcaster().addListener(new SwitchPanelListener() {
-
                 @Override
                 public void onPanelEvent(SwitchPanelEvent event) {
                     if (event.getID() == SwitchPanelEvent.ON_REMOVE) showGuiAction.setSelected(false);
                 }
             });
-
             historyCleanup();
             historyGui = new FolderWatchGui(getPluginConfig());
             view.setContent(historyGui);
@@ -336,8 +179,67 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport, Conf
         JDGui.getInstance().setContent(view);
     }
 
-    @Override
-    public void onExit() {
+    private boolean startWatching(boolean param) {
+        if (param == true) {
+            folder = subConfig.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER, "");
+
+            monitoringThread = new FileMonitoring(folder);
+            monitoringThread.addListener(this);
+            monitoringThread.start();
+
+            logger.info("Watch service started");
+            return true;
+        } else {
+            if (monitoringThread != null) {
+                if (monitoringThread.isAlive()) {
+                    monitoringThread.done();
+                    monitoringThread = null;
+                }
+            }
+
+            logger.info("Watch service closed");
+        }
+        return false;
+    }
+
+    public void OnMonitoringFileCreate(String filename) {
+        if (isContainer(filename)) {
+            String absPath = folder + "/" + filename;
+            String md5Hash = importContainer(absPath);
+            historyAdd(new HistoryEntry(filename, absPath, md5Hash));
+            // TODO: filter doubles
+        }
+    }
+
+    public void OnMonitoringFileDelete(String filename) {
+    }
+
+    private ArrayList<HistoryEntry> getHistoryEntriesFromConfig() {
+        return subConfig.getGenericProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, new ArrayList<HistoryEntry>());
+    }
+
+    private void historyAdd(HistoryEntry entry) {
+        History.add(entry);
+        History.updateEntries();
+
+        subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, History.getEntries());
+        subConfig.save();
+
+        if (historyGui != null) historyGui.refresh();
+    }
+
+    private void historyCleanup() {
+        History.updateEntries();
+
+        subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, History.getEntries());
+        subConfig.save();
+
+        if (historyGui != null) historyGui.refresh();
+    }
+
+    private void clearHistory() {
+        subConfig.setProperty(FolderWatchConstants.CONFIG_KEY_HISTORY, null);
+        subConfig.save();
     }
 
     private String importContainer(String path) {
@@ -357,6 +259,9 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport, Conf
 
     private void deleteContainer(File container) {
         if (isContainer(container)) container.delete();
+    }
+
+    private void openInFilebrowser(String path) {
     }
 
     private boolean emptyFolder(String path) {
@@ -383,15 +288,22 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport, Conf
         return isContainer(file.getName());
     }
 
-    private void openInFilebrowser(String path) {
+    public void onPreSave(SubConfiguration subConfiguration) {
+        folderOld = subConfiguration.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER);
     }
 
     public void onPostSave(SubConfiguration subConfiguration) {
-        startWatching(true);
+        folder = subConfiguration.getStringProperty(FolderWatchConstants.CONFIG_KEY_FOLDER);
+
+        // reset watch service
+        if (!folder.equals(folderOld)) {
+            startWatching(false);
+            startWatching(true);
+        }
     }
 
-    public void onPreSave(SubConfiguration subConfiguration) {
-        startWatching(false);
+    @Override
+    public void onExit() {
     }
 
     public Object handleRemoteCmd(String cmd) {
@@ -411,7 +323,7 @@ public class JDFolderWatch extends PluginOptional implements RemoteSupport, Conf
             return "JD FolderWatch has been stopped.";
         } else if (cmd.matches("(?is).*/addon/folderwatch/register/.+")) {
             String folder = new Regex(cmd, "(?is).*/addon/folderwatch/register/(.+)").getMatch(0);
-            watchingServiceThread.register(folder);
+            monitoringThread.register(folder);
 
             return folder + " has been registered to be watched.";
         }
