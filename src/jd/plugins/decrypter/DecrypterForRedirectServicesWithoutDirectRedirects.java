@@ -165,7 +165,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             finallink = br.getRegex(NEWSREGEX2).getMatch(0);
         } else if (parameter.contains("official.fm/")) {
             br.getPage(parameter + ".xspf");
-            System.out.print(br.toString());
             finallink = br.getRegex("\"(http://cdn\\.official\\.fm/mp3s/\\d+/\\d+\\.mp3)\"").getMatch(0);
             if (finallink != null) finallink = "directhttp://" + finallink;
         } else if (parameter.contains("hypem.com/")) {
