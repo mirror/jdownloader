@@ -20,13 +20,13 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesurf.ru" }, urls = { "http://[\\w\\.]*?(filesurf|4ppl|files\\.youmama|upload\\.xradio)\\.ru/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesurf.ru" }, urls = { "http://[\\w\\.]*?(filesurf|4ppl|files\\.youmama)\\.ru/[0-9]+" }, flags = { 0 })
 public class FileSurfRu extends PluginForHost {
 
     public FileSurfRu(PluginWrapper wrapper) {

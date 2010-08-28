@@ -47,7 +47,8 @@ public class FurkNet extends PluginForHost {
         if (br.containsHTML("This torrent is not ready for")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This is NO VALID LINK!"); }
         String filename = br.getRegex("<title>(.*?) :: Furk.net</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("document\\.location\\.href='/registration\\?pfile=(.*?)'\"").getMatch(0);
-        String filesize = br.getRegex("\\(<strong>(.*?)</strong>\\)").getMatch(0);
+        String filesize = br.getRegex("align=\"center\">File size: <b>(.*?)</b><br").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));

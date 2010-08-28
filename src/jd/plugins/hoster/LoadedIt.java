@@ -17,7 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.html.Form;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -50,22 +50,21 @@ public class LoadedIt extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.requestFileInformation(link);
         br.setDebug(true);
-        Form DLForm = br.getFormbyProperty("name", "wait");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String postCode = br.getRegex("name=\"code\" value=\"(.*?)\"").getMatch(0);
+        if (postCode == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
         String ttt = "10";
         ttt = br.getRegex("var time_wait = (.*?);").getMatch(0);
         int tt = Integer.parseInt(ttt);
         sleep(tt * 1001, link);
-        br.submitForm(DLForm);
+        br.postPage(link.getDownloadURL(), "code=" + Encoding.urlEncode(postCode));
         String server = br.getRegex("hostname\" value=\"(.*?)\"").getMatch(0);
         String hash = br.getRegex("hash\" value=\"(.*?)\"").getMatch(0);
         String filename = br.getRegex("filename\" value=\"(.*?)\"").getMatch(0);
         if (server == null || hash == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = "http://" + server + "/get/" + hash + "/" + filename;
         dl = BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        String contenttypecheck = dl.getConnection().getContentType().toString();
-        if ((contenttypecheck.contains("html"))) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
