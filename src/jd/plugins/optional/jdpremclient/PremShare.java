@@ -19,7 +19,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDUtilities;
 
 public class PremShare extends PluginForHost implements JDPremInterface {
 
@@ -125,7 +124,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
             acc = AccountController.getInstance().getValidAccount("jdownloader.org");
             /* enabled account found? */
             if (acc == null || !acc.isEnabled()) return false;
-            jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
+            jdpremServer = JDPremium.getJDPremServer();
             if (jdpremServer == null || jdpremServer.length() == 0) return false;
         }
         proxyused = true;
@@ -265,7 +264,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         if (plugin == null) {
             String restartReq = enabled == false ? "(Restart required)" : "";
             AccountInfo ac = new AccountInfo();
-            String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
+            String jdpremServer = JDPremium.getJDPremServer();
             if (jdpremServer == null || jdpremServer.length() == 0) {
                 ac.setStatus("No JDPremServ set!");
                 account.setValid(false);
@@ -329,8 +328,10 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        if (handleJDPremServ(downloadLink)) return;
-        proxyused = false;
+        if (!JDPremium.preferLocalAccounts()) {
+            if (handleJDPremServ(downloadLink)) return;
+            proxyused = false;
+        }
         plugin.clean();
         plugin.handlePremium(downloadLink, account);
     }
@@ -340,7 +341,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         if (plugin != null) plugin.resetDownloadlink(link);
         synchronized (LOCK) {
             if (JDPremium.isEnabled() && enabled && premiumHosts.contains(link.getHost())) {
-                String jdpremServer = JDUtilities.getOptionalPlugin("jdpremium").getPluginConfig().getStringProperty("SERVER");
+                String jdpremServer = JDPremium.getJDPremServer();
                 try {
                     if (jdpremServer == null || jdpremServer.length() == 0) return;
                     br = new Browser();
@@ -372,39 +373,30 @@ public class PremShare extends PluginForHost implements JDPremInterface {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        if (plugin != null) {
-            if (JDPremium.isEnabled() && enabled) {
-                synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
-                }
-            }
-            return plugin.getMaxSimultanFreeDownloadNum();
-        }
+        if (plugin != null) return plugin.getMaxSimultanFreeDownloadNum();
         return super.getMaxSimultanFreeDownloadNum();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        if (plugin != null) {
-            if (JDPremium.isEnabled() && enabled) {
-                synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
-                }
-            }
-            return plugin.getMaxSimultanPremiumDownloadNum();
-        }
+        if (plugin != null) return plugin.getMaxSimultanPremiumDownloadNum();
         return super.getMaxSimultanPremiumDownloadNum();
     }
 
     @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
-            if (JDPremium.isEnabled() && enabled) {
+            if (JDPremium.preferLocalAccounts() && account != null) {
+                /* user prefers usage of local account */
+                return plugin.getMaxSimultanDownload(account);
+            } else if (JDPremium.isEnabled() && enabled) {
+                /* PremShare */
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
                 }
+            } else {
+                return plugin.getMaxSimultanDownload(account);
             }
-            return plugin.getMaxSimultanDownload(account);
         }
         return 0;
     }

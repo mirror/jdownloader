@@ -255,8 +255,10 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        if (handleOchLoad(downloadLink)) return;
-        proxyused = false;
+        if (!JDPremium.preferLocalAccounts()) {
+            if (handleOchLoad(downloadLink)) return;
+            proxyused = false;
+        }
         plugin.clean();
         plugin.handlePremium(downloadLink, account);
     }
@@ -279,52 +281,30 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        if (plugin != null) {
-            if (JDPremium.isEnabled() && enabled) {
-                synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) {
-                        // if (currentMaxDownloads == 0) { return
-                        // Integer.MIN_VALUE; }
-                        return currentMaxDownloads;
-                    }
-                }
-            }
-            return plugin.getMaxSimultanFreeDownloadNum();
-        }
+        if (plugin != null) return plugin.getMaxSimultanFreeDownloadNum();
         return super.getMaxSimultanFreeDownloadNum();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        if (plugin != null) {
-            if (JDPremium.isEnabled() && enabled) {
-                synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) {
-                        // if (currentMaxDownloads == 0) { return
-                        // Integer.MIN_VALUE; }
-                        return currentMaxDownloads;
-                    }
-                }
-            }
-            return plugin.getMaxSimultanPremiumDownloadNum();
-        }
+        if (plugin != null) return plugin.getMaxSimultanPremiumDownloadNum();
         return super.getMaxSimultanPremiumDownloadNum();
     }
 
     @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
-            if (JDPremium.isEnabled() && enabled) {
+            if (JDPremium.preferLocalAccounts() && account != null) {
+                /* user prefers usage of local account */
+                return plugin.getMaxSimultanDownload(account);
+            } else if (JDPremium.isEnabled() && enabled) {
+                /* OchLoad */
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) {
-                        // if (currentMaxDownloads == 0) { return
-                        // Integer.MIN_VALUE;
-                        // }
-                        return currentMaxDownloads;
-                    }
+                    if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) return currentMaxDownloads;
                 }
+            } else {
+                return plugin.getMaxSimultanDownload(account);
             }
-            return plugin.getMaxSimultanDownload(account);
         }
         return 0;
     }

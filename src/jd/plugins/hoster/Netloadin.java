@@ -74,6 +74,17 @@ public class Netloadin extends PluginForHost {
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 
+    /* TODO: remove me after 0.9xx public */
+    private void workAroundTimeOut(Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(30000);
+            }
+        } catch (Throwable e) {
+        }
+    }
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://netload.in/datei" + Netloadin.getID(link.getDownloadURL()) + ".htm");
@@ -247,6 +258,7 @@ public class Netloadin extends PluginForHost {
 
     private void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
+        workAroundTimeOut(br);
         br.getPage("http://netload.in/index.php?lang=de");
         br.getPage("http://netload.in/index.php");
         br.postPage("http://netload.in/index.php", "txtuser=" + Encoding.urlEncode(account.getUser()) + "&txtpass=" + Encoding.urlEncode(account.getPass()) + "&txtcheck=login&txtlogin=");
@@ -295,6 +307,7 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        workAroundTimeOut(br);
         requestFileInformation(downloadLink);
         login(account);
         isExpired(account);
@@ -316,6 +329,13 @@ public class Netloadin extends PluginForHost {
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
 
             con = br.createRequest(url);
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                con.setConnectTimeout(30000);
+                con.setReadTimeout(60000);
+            } catch (Throwable e) {
+            }
             /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             dl = RAFDownload.download(downloadLink, con, resume, chunks);
             // dl.headFake(null);
@@ -324,6 +344,13 @@ public class Netloadin extends PluginForHost {
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
                     con = br.createRequest(url);
+                    try {
+                        /* remove next major update */
+                        /* workaround for broken timeout in 0.9xx public */
+                        con.setConnectTimeout(30000);
+                        con.setReadTimeout(60000);
+                    } catch (Throwable e) {
+                    }
                     dl = RAFDownload.download(downloadLink, con, resume, chunks);
                     connection = dl.connect(br);
                 } catch (Exception e) {
@@ -335,6 +362,13 @@ public class Netloadin extends PluginForHost {
             }
         } else {
             con = br.createGetRequest(null);
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                con.setConnectTimeout(30000);
+                con.setReadTimeout(60000);
+            } catch (Throwable e) {
+            }
             dl = RAFDownload.download(downloadLink, con, resume, chunks);
             // dl.headFake(null);
             dl.setFirstChunkRangeless(true);
@@ -369,7 +403,7 @@ public class Netloadin extends PluginForHost {
     public AvailableStatus websiteFileCheck(DownloadLink downloadLink) {
         this.setBrowserExclusive();
         logger.info("FileCheckAPI error, try website check!");
-        br.setConnectTimeout(15000);
+        workAroundTimeOut(br);
         IOException ex = null;
         String id = Netloadin.getID(downloadLink.getDownloadURL());
         for (int i = 0; i < 5; i++) {
@@ -400,6 +434,7 @@ public class Netloadin extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
         try {
             Browser br = new Browser();
+            workAroundTimeOut(br);
             br.setCookiesExclusive(true);
             StringBuilder sb = new StringBuilder();
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();

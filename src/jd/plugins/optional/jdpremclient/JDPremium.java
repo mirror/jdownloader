@@ -24,9 +24,9 @@ import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
@@ -48,7 +48,6 @@ class PremShareHost extends HostPluginWrapper {
         if (replacedone != null) {
             HostPluginWrapper.getHostWrapper().remove(replacedone);
         }
-
     }
 
     public HostPluginWrapper getReplacedPlugin() {
@@ -143,6 +142,8 @@ public class JDPremium extends PluginOptional {
     private static boolean replaced = false;
     private static boolean init = false;
     private static boolean enabled = false;
+    private static String jdpremServer = null;
+    private static boolean preferLocalAccounts = false;
 
     private static final HashMap<String, String> premShareHosts = new HashMap<String, String>();
 
@@ -150,6 +151,7 @@ public class JDPremium extends PluginOptional {
         super(wrapper);
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer: (Restart required)").setPropertyType(PropertyType.NEEDS_RESTART));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), "PREFERLOCALACCOUNTS", "Prefer local Premium Accounts(restart required)?").setDefaultValue(false).setPropertyType(PropertyType.NEEDS_RESTART));
     }
 
     private void replaceHosterPlugin(String host, String with) {
@@ -162,6 +164,8 @@ public class JDPremium extends PluginOptional {
 
     @Override
     public boolean initAddon() {
+        jdpremServer = getPluginConfig().getStringProperty("SERVER", null);
+        preferLocalAccounts = getPluginConfig().getBooleanProperty("PREFERLOCALACCOUNTS", false);
         synchronized (LOCK) {
             if (Main.isInitComplete() && replaced == false) {
                 logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
@@ -257,6 +261,14 @@ public class JDPremium extends PluginOptional {
     @Override
     public ArrayList<MenuAction> createMenuitems() {
         return null;
+    }
+
+    public static String getJDPremServer() {
+        return jdpremServer;
+    }
+
+    public static boolean preferLocalAccounts() {
+        return preferLocalAccounts;
     }
 
 }
