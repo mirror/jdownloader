@@ -1060,6 +1060,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
+     * returns real downloadMAx Value. use #getDownloadSize if you are not sure
+     * 
+     * @return
+     */
+    public long getDownloadMax() {
+        return downloadMax;
+    }
+
+    /**
      * Gibt das Password zurueck, welches vom Decrypter-Plugin genutzt werden
      * kann (zb. FolderPassword)
      */

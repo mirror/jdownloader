@@ -22,9 +22,11 @@ public class RendererUtilities {
         int y = 0;
         for (HTMLElementImpl p : styles) {
             AbstractCSS2Properties style = p.getComputedStyle(null);
+            System.out.println(style);
 
             if ("none".equalsIgnoreCase(style.getDisplay())) {
                 //
+                System.out.println("NO DISPLAY");
                 return false;
             }
             if ("absolute".equalsIgnoreCase(style.getPosition())) {
@@ -35,10 +37,14 @@ public class RendererUtilities {
             }
             if (style.getLeft() != null) {
                 x += covertToPixel(style.getLeft());
+
             }
 
         }
-        if (y < 0) return false;
+        if (y < 0) {
+            System.out.println("y<0" + " " + x + " - " + y);
+            return false;
+        }
         return true;
     }
 

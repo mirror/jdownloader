@@ -55,7 +55,7 @@ public class DownloadLinkInfo {
 
     public String getFormattedSize() {
         if (formattedSize != null) return formattedSize;
-        if (link.getDownloadSize() <= 0) {
+        if (link.getDownloadMax() <= 0) {
             formattedSize = "Unknown Filesize";
             formattedSizeReset = true;
         } else {
