@@ -115,7 +115,7 @@ public class FileMonitoring extends Thread {
                     logger.info(LOGGER_PREFIX + filename + " created");
 
                     for (FileMonitoringListener listener : listeners) {
-                        listener.OnMonitoringFileCreate(filename);
+                        listener.onMonitoringFileCreate(filename);
                     }
                 } else if (e.kind() == StandardWatchEventKind.ENTRY_DELETE) {
                     Path context = (Path) e.context();
@@ -124,7 +124,7 @@ public class FileMonitoring extends Thread {
                     logger.info(LOGGER_PREFIX + filename + " deleted");
 
                     for (FileMonitoringListener listener : listeners) {
-                        listener.OnMonitoringFileDelete(filename);
+                        listener.onMonitoringFileDelete(filename);
                     }
                 } else if (e.kind() == StandardWatchEventKind.OVERFLOW) {
                     logger.info(LOGGER_PREFIX + "Overflow - More changes happened than we could retreive");

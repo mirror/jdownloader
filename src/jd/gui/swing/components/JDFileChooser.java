@@ -20,6 +20,7 @@ import java.io.File;
 
 import javax.swing.JFileChooser;
 
+import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 /**
@@ -48,7 +49,7 @@ public class JDFileChooser extends JFileChooser {
 
         this.id = id;
 
-        setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(id));
+        setCurrentDirectory(getCurrentWorkingDirectory(id));
     }
 
     @Override
@@ -57,9 +58,9 @@ public class JDFileChooser extends JFileChooser {
 
         if (ret == null) return null;
         if (ret.isDirectory()) {
-            JDUtilities.setCurrentWorkingDirectory(ret, id);
+            setCurrentWorkingDirectory(ret, id);
         } else {
-            JDUtilities.setCurrentWorkingDirectory(ret.getParentFile(), id);
+            setCurrentWorkingDirectory(ret.getParentFile(), id);
         }
         return ret;
     }
@@ -70,11 +71,26 @@ public class JDFileChooser extends JFileChooser {
 
         if (ret == null || ret.length == 0) return ret;
         if (ret[0].isDirectory()) {
-            JDUtilities.setCurrentWorkingDirectory(ret[0], id);
+            setCurrentWorkingDirectory(ret[0], id);
         } else {
-            JDUtilities.setCurrentWorkingDirectory(ret[0].getParentFile(), id);
+            setCurrentWorkingDirectory(ret[0].getParentFile(), id);
         }
         return ret;
+    }
+
+    private static File getCurrentWorkingDirectory(final String id) {
+        final String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + (id == null ? "" : id), null);
+        if (lastDir != null) return new File(lastDir);
+
+        final String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+        if (dlDir != null) return new File(dlDir);
+
+        return new File("");
+    }
+
+    private static void setCurrentWorkingDirectory(final File f, final String id) {
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + (id == null ? "" : id), f.getAbsolutePath());
+        JDUtilities.getConfiguration().save();
     }
 
 }

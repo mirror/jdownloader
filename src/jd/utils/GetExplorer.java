@@ -16,13 +16,18 @@
 
 package jd.utils;
 
+import java.awt.Desktop;
 import java.io.File;
 
-import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 
 public class GetExplorer {
+
+    private static final String PARAM_FILE_BROWSER = "PARAM_FILE_BROWSER";
+
+    private static Object[] explorer = JDUtilities.getConfiguration().getGenericProperty(PARAM_FILE_BROWSER, (Object[]) null);
+
     /**
      * Versucht den Programmpfad zum Explorer zu finden
      * 
@@ -40,7 +45,7 @@ public class GetExplorer {
                 for (String element : charset) {
                     for (Object[] element2 : programms) {
                         final File fi = new File(element, (String) element2[0]);
-                        if (fi.isFile()) { return new Object[] { (String) element2[0], fi.getAbsolutePath(), element2[1] }; }
+                        if (fi.isFile()) return new Object[] { (String) element2[0], fi.getAbsolutePath(), element2[1] };
                     }
                 }
             } catch (Throwable e) {
@@ -49,53 +54,59 @@ public class GetExplorer {
         return null;
     }
 
-    private static Object[] explorer = JDUtilities.getConfiguration().getGenericProperty(Configuration.PARAM_FILE_BROWSER, (Object[]) null);
-
     /**
      * Object[0] = Browsername Object[1] = Befehl zum Browser Object[2] =
      * String[] Parameter
      * 
      * @return
      */
-    public static Object[] getExplorerCommand() {
-        if (explorer != null) {
-            if (!new File((String) explorer[1]).exists()) {
-                explorer = null;
-            }
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FILE_BROWSER, null);
+    private static Object[] getExplorerCommand() {
+        if (explorer != null && !new File((String) explorer[1]).exists()) {
+            explorer = null;
+            JDUtilities.getConfiguration().setProperty(PARAM_FILE_BROWSER, null);
         }
         if (explorer == null) {
             explorer = GetExplorer.autoGetExplorerCommand();
             if (explorer == null) {
                 JDLogger.getLogger().severe("Can't find explorer command");
             } else {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FILE_BROWSER, explorer);
+                JDUtilities.getConfiguration().setProperty(PARAM_FILE_BROWSER, explorer);
             }
         }
         return explorer;
     }
 
     public static boolean openExplorer(File path) {
-        if (path != null) {
-            getExplorerCommand();
-            while (path != null && !path.isDirectory()) {
-                path = path.getParentFile();
-            }
+        if (path == null) return false;
 
-            if (path != null && explorer != null) {
-                final String spath = path.getAbsolutePath();
-                final String[] paramsArray = (String[]) explorer[2];
-                final int length = paramsArray.length;
-                final String[] finalParams = new String[length];
-
-                for (int i = 0; i < length; i++) {
-                    finalParams[i] = paramsArray[i].replace("%%path%%", spath);
-                }
-
-                JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            try {
+                Desktop.getDesktop().open(path);
                 return true;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
+
+        getExplorerCommand();
+        while (path != null && !path.isDirectory()) {
+            path = path.getParentFile();
+        }
+
+        if (path != null && explorer != null) {
+            final String spath = path.getAbsolutePath();
+            final String[] paramsArray = (String[]) explorer[2];
+            final int length = paramsArray.length;
+            final String[] finalParams = new String[length];
+
+            for (int i = 0; i < length; i++) {
+                finalParams[i] = paramsArray[i].replace("%%path%%", spath);
+            }
+
+            JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
+            return true;
+        }
+
         return false;
     }
 

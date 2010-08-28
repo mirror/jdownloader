@@ -43,6 +43,7 @@ import jd.plugins.optional.remotecontrol.helppage.HelpPage;
 import jd.plugins.optional.remotecontrol.helppage.Table;
 import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
@@ -202,7 +203,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         return false;
     }
 
-    public void OnMonitoringFileCreate(String filename) {
+    public void onMonitoringFileCreate(String filename) {
         if (isContainer(filename)) {
             String absPath = folder + "/" + filename;
             String md5Hash = importContainer(absPath);
@@ -211,7 +212,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         }
     }
 
-    public void OnMonitoringFileDelete(String filename) {
+    public void onMonitoringFileDelete(String filename) {
     }
 
     private ArrayList<HistoryEntry> getHistoryEntriesFromConfig() {
@@ -262,6 +263,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
     }
 
     private void openInFilebrowser(String path) {
+        JDUtilities.openExplorer(new File(path));
     }
 
     private boolean emptyFolder(String path) {

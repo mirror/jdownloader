@@ -31,8 +31,7 @@ import net.miginfocom.swing.MigLayout;
 
 /**
  * Diese Klasse zeigt dem Nutzer Auswahldialoge beim Konvertieren von FLVs an <br>
- * TODO: Use {@link jd.gui.swing.dialog.ConvertDialog} instead. Just remaining
- * for backward compatibility. FIXME: Remove with next Major Update!
+ * TODO: Move to jd.gui.swing.dialog package after next major update!
  */
 public class ConvertDialog extends AbstractDialog {
 
@@ -73,14 +72,7 @@ public class ConvertDialog extends AbstractDialog {
     private static final long serialVersionUID = -9146764850581039090L;
 
     public static enum ConversionMode {
-        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),
-        VIDEOFLV("Video (FLV)", new String[] { ".flv" }),
-        AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)", new String[] { ".mp3", ".flv" }),
-        VIDEOMP4("Video (MP4)", new String[] { ".mp4" }),
-        VIDEOWEBM("Video (Webm)", new String[] { ".webm" }),
-        VIDEO3GP("Video (3GP)", new String[] { ".3gp" }),
-        VIDEOPODCAST("Video (MP4-Podcast)", new String[] { ".mp4" }),
-        VIDEOIPHONE("Video (iPhone)", new String[] { ".mp4" });
+        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)", new String[] { ".mp3", ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEOWEBM("Video (Webm)", new String[] { ".webm" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" }), VIDEOPODCAST("Video (MP4-Podcast)", new String[] { ".mp4" }), VIDEOIPHONE("Video (iPhone)", new String[] { ".mp4" });
 
         private String text;
         private String[] ext;

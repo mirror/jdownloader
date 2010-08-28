@@ -59,8 +59,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT_V3";
 
-    public static final String PARAM_FILE_BROWSER = "PARAM_FILE_BROWSER";
-
     public static final String PARAM_FILE_EXISTS = "FILE_EXISTS";
 
     public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";

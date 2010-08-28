@@ -245,22 +245,6 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt das aktuelle Working Directory zurueck. Beim FileBrowser etc wird
-     * das gebraucht.
-     * 
-     * @return
-     */
-    public static File getCurrentWorkingDirectory(final String id) {
-        final String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
-        final String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + (id == null ? "" : id), null);
-        if (lastDir == null) {
-            return (dlDir == null) ? new File("") : new File(dlDir);
-        } else {
-            return new File(lastDir);
-        }
-    }
-
-    /**
      * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurueck
      * 
      * @author JD-Team
@@ -652,17 +636,6 @@ public class JDUtilities {
 
     public static DownloadController getDownloadController() {
         return DownloadController.getInstance();
-    }
-
-    /**
-     * Setzt das aktuelle woringdirectory fuer den filebrowser
-     * 
-     * @param f
-     * @param id
-     */
-    public static void setCurrentWorkingDirectory(final File f, final String id) {
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + (id == null ? "" : id), f.getAbsolutePath());
-        JDUtilities.getConfiguration().save();
     }
 
     public static String removeEndingPoints(final String name) {
