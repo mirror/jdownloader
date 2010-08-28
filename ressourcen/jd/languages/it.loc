@@ -1049,6 +1049,7 @@ jd.plugins.optional.customizer.customizerview.tooltip = Personalizza il tuo pacc
 jd.plugins.optional.customizer.jdpackagecustomizer = Personaliazzatore pacchetto JD
 jd.plugins.optional.customizer.jdpackagecustomizer.customized = Personalizzato con Regex %s
 jd.plugins.optional.customizer.jdpackagecustomizer.description = Personalizzaione pacchetto JD
+jd.plugins.optional.folderwatch.gui.folderwatchtablemodel.fileexists = Il file esiste nel disco fisso?
 jd.plugins.optional.folderwatch.gui.folderwatchtablemodel.filename = Nome file
 jd.plugins.optional.folderwatch.gui.folderwatchtablemodel.filepath = Percorso
 jd.plugins.optional.folderwatch.gui.folderwatchtablemodel.filetype = Tipo contenitore
