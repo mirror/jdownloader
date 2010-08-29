@@ -133,6 +133,7 @@ gui.images.enabled                   = default/enabled
 gui.images.disabled                  = default/disabled
 gui.images.filter                    = default/filter
 gui.images.addselected               = default/edit-find
+gui.images.folderwatch               = default/folder-watch
 
 # Cursor. ATTENTION. CURSOR are GIFS!!
 gui.cursor.help                      = default/cursor/help
