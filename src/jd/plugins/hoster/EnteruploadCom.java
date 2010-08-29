@@ -190,15 +190,7 @@ public class EnteruploadCom extends PluginForHost {
             jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
-        boolean error = false;
-        try {
-            if (dl.getConnection().getContentType().contains("html")) {
-                error = true;
-            }
-        } catch (Exception e) {
-            error = true;
-        }
-        if (br.getRedirectLocation() != null || error == true) {
+        if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             logger.info("followed connection...");
             String dllink = br.getRedirectLocation();
@@ -368,19 +360,11 @@ public class EnteruploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
-            boolean error = false;
-            try {
-                if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-                    error = true;
-                }
-            } catch (Exception e) {
-                error = true;
-            }
-            if (error == true) {
+            if (!(dl.getConnection().isContentDisposition())) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 if (br.containsHTML("File Not Found")) {

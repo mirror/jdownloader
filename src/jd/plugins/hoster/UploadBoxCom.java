@@ -86,7 +86,7 @@ public class UploadBoxCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("class=\"not_found\">") || br.containsHTML("File deleted from service")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(class=\"not_found\">|File deleted from service)") || !br.containsHTML("<h3>Downloading</h3>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("id=\"error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">File name:</td>.*?<b>(.*?)</b>").getMatch(0);
         if (filename == null) {
