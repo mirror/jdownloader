@@ -86,6 +86,7 @@ abstract public class DownloadInterface {
         private int MAX_BUFFERSIZE = 4 * 1024 * 1024;
 
         private long startByte;
+        private long bytes2Do = -1;;
 
         private DownloadInterface dl;
 
@@ -256,7 +257,8 @@ abstract public class DownloadInterface {
                 error(LinkStatus.ERROR_FATAL, JDL.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
                 return;
             }
-
+            /* +1 because of startByte also gets loaded (startbyte till endbyte) */
+            if (endByte > 0) bytes2Do = (endByte - startByte) + 1;
             try {
                 chunkinprogress = true;
                 connection.setReadTimeout(getReadTimeout());
@@ -269,10 +271,13 @@ abstract public class DownloadInterface {
                 DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(inputStream);
 
                 int miniblock = 0;
-
                 while (!isExternalyAborted()) {
                     try {
-                        miniblock = inputStream.read(buffer.getBuffer());
+                        if (endByte > 0) {
+                            miniblock = inputStream.read(buffer.getBuffer(), 0, (int) Math.min(bytes2Do, buffer.getBuffer().length));
+                        } else {
+                            miniblock = inputStream.read(buffer.getBuffer());
+                        }
                     } catch (SocketException e2) {
                         if (!isExternalyAborted()) throw e2;
                         miniblock = -1;
@@ -298,27 +303,22 @@ abstract public class DownloadInterface {
                     }
                     addToTotalLinkBytesLoaded(miniblock);
                     addChunkBytesLoaded(miniblock);
-
+                    bytes2Do -= miniblock;
                     buffer.setMark(miniblock);
                     writeBytes(this);
-
+                    /* enough bytes loaded */
+                    if (bytes2Do == 0 && endByte > 0) break;
                     if (getCurrentBytesPosition() > endByte && endByte > 0) {
                         if (speedDebug) {
                             logger.severe(getID() + " OVERLOAD!!! " + (getCurrentBytesPosition() - endByte - 1));
                         }
                         break;
                     }
-
                 }
                 if (getCurrentBytesPosition() < endByte && endByte > 0 || getCurrentBytesPosition() <= 0) {
-
-                    inputStream.close();
-
                     logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endByte);
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.incomplete", "Download incomplete"));
                 }
-                inputStream.close();
-
             } catch (FileNotFoundException e) {
                 logger.severe("file not found. " + e.getLocalizedMessage());
                 error(LinkStatus.ERROR_FILE_NOT_FOUND, null);
@@ -355,16 +355,11 @@ abstract public class DownloadInterface {
                 /* TODO */
                 // if (buffer != null) buffer.setUnused();
                 chunkinprogress = false;
-            }
-
-            try {
-                if (inputStream != null) {
+                try {
                     inputStream.close();
+                } catch (Throwable e) {
                 }
-            } catch (IOException e) {
-                JDLogger.exception(e);
             }
-
         }
 
         @Override
@@ -1112,12 +1107,13 @@ abstract public class DownloadInterface {
                  * most cases the file is okay! WONTFIX because new
                  * downloadsystem is on its way
                  */
-                logger.severe("Loaded more than requested. Filesize: " + fileSize + " Loaded: " + totaleLinkBytesLoaded + ". This might be a logic chunk setup error!");
+                logger.severe("Filesize: " + fileSize + " Loaded: " + totaleLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
                     linkStatus.setStatus(LinkStatus.FINISHED);
                 }
                 return true;
             }
+            logger.severe("Filesize: " + fileSize + " Loaded: " + totaleLinkBytesLoaded);
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDL.L("download.error.message.incomplete", "Download incomplete"));
             return false;

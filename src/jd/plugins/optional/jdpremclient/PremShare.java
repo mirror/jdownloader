@@ -394,9 +394,8 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
                 }
-            } else {
-                return plugin.getMaxSimultanDownload(account);
             }
+            return plugin.getMaxSimultanDownload(account);
         }
         return 0;
     }

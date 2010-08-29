@@ -20,7 +20,6 @@ public class DownloadLinkInfo {
     private String formattedWaittime = null;
     private String progressString = null;
     private long lastReset = 0;
-    private boolean formattedSizeReset = false;
     private boolean dateAddedReset = false;
     private boolean dateFinishedReset = false;
 
@@ -40,7 +39,7 @@ public class DownloadLinkInfo {
 
     public void reset(Long last) {
         if (lastReset < last) {
-            if (formattedSizeReset) formattedSize = null;
+            formattedSize = null;
             formattedLoaded = null;
             formattedRemaining = null;
             if (dateAddedReset) dateAdded = null;
@@ -57,9 +56,7 @@ public class DownloadLinkInfo {
         if (formattedSize != null) return formattedSize;
         if (link.getDownloadMax() <= 0) {
             formattedSize = "Unknown Filesize";
-            formattedSizeReset = true;
         } else {
-            formattedSizeReset = false;
             formattedSize = Formatter.formatReadable(link.getDownloadSize());
         }
         return formattedSize;
@@ -77,7 +74,11 @@ public class DownloadLinkInfo {
 
     public String getFormattedRemaining() {
         if (formattedRemaining != null) return formattedRemaining;
-        formattedRemaining = Formatter.formatReadable(link.getRemainingKB());
+        if (link.getDownloadMax() < 0) {
+            formattedSize = "Unknown Filesize";
+        } else {
+            formattedRemaining = Formatter.formatReadable(link.getRemainingKB());
+        }
         return formattedRemaining;
     }
 

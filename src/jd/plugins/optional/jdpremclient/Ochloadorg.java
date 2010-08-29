@@ -13,10 +13,10 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
@@ -302,9 +302,8 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) return currentMaxDownloads;
                 }
-            } else {
-                return plugin.getMaxSimultanDownload(account);
             }
+            return plugin.getMaxSimultanDownload(account);
         }
         return 0;
     }

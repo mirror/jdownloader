@@ -21,6 +21,8 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,23 +44,52 @@ import jd.utils.locale.JDL;
 public class MegasharesCom extends PluginForHost {
 
     private final String UserAgent = "JD_" + this.getVersion();
+    private static final Object LOCK = new Object();
 
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.megashares.com/lc_order.php?tid=sasky");
     }
 
+    @SuppressWarnings("unchecked")
     private void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UserAgent);
-        br.setFollowRedirects(true);
-        String pw = account.getPass();
-        if (pw.length() > 32) {
-            pw = pw.substring(0, 32);
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            br.getHeaders().put("User-Agent", UserAgent);
+            br.setFollowRedirects(true);
+            Object ret = account.getProperty("cookies", null);
+            if (ret != null && ret instanceof HashMap<?, ?>) {
+                logger.info("Use cookie login");
+                /* use saved cookies */
+                HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                for (String key : cookies.keySet()) {
+                    br.setCookie("http://megashares.com/", key, cookies.get(key));
+                }
+            } else {
+                logger.info("Use website login");
+                /* get new cookies */
+                String pw = account.getPass();
+                if (pw.length() > 32) {
+                    pw = pw.substring(0, 32);
+                }
+                br.getPage("http://d01.megashares.com/");
+                br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login");
+            }
+            if (br.getCookie("http://megashares.com", "myms") == null) {
+                /* invalid account */
+                account.setProperty("cookies", null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                /* valid account */
+                HashMap<String, String> cookies = new HashMap<String, String>();
+                Cookies add = br.getCookies("http://megashares.com/");
+                for (Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("cookies", cookies);
+            }
         }
-        br.getPage("http://d01.megashares.com/");
-        br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login");
-        if (br.getCookie("http://megashares.com", "myms") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
     }
 
     @Override
@@ -68,18 +99,25 @@ public class MegasharesCom extends PluginForHost {
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
-            ai.setStatus("Please use *My Megashares* Account!Create one and link with your linkcard");
+            if (br.containsHTML("PIN is incorrect")) {
+                ai.setStatus("Error during login - PIN is incorrect");
+            } else if (br.containsHTML("Invalid Username")) {
+                ai.setStatus("Check username or if you using linkcard for login then the card may expired or has no more links");
+            } else {
+                ai.setStatus("Please use *My Megashares* Account!Create one and link with your linkcard");
+            }
             return ai;
         }
-        account.setValid(true);
+        if (br.getURL() == null || !br.getURL().endsWith("myms.php")) br.getPage("http://d01.megashares.com/myms.php");
         String validUntil = br.getRegex("premium_info_box\">Period Ends:(.*?)<").getMatch(0);
         if (validUntil == null) {
             account.setValid(false);
         } else {
             account.setValid(true);
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
+            ai.setStatus("Account ok");
+            /* the whole day valid? */
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null) + (1000l * 60 * 60 * 24));
         }
-
         /* TODO: there can be many different kind of linkcards */
         return ai;
     }
@@ -114,11 +152,19 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account);
-        // Password protection
-        loadpage(downloadLink.getDownloadURL());
-        if (!checkPassword(downloadLink)) { return; }
-        if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        synchronized (LOCK) {
+            login(account);
+            // Password protection
+            loadpage(downloadLink.getDownloadURL());
+            if (!checkPassword(downloadLink)) { return; }
+            if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            if (br.containsHTML("Your Download Passport is") || br.containsHTML("Your Passport needs to be reactivated.") || br.containsHTML("You have reached.*?maximum download limit") || br.containsHTML("You already have the maximum")) {
+                /* invalid account? try again */
+                logger.info("No Premium? try again");
+                account.setProperty("cookies", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
         String url = findDownloadUrl();
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);

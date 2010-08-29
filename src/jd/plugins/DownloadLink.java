@@ -699,7 +699,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         finalFileName = null;
         DownloadWatchDog.getInstance().resetIPBlockWaittime(getHost());
         DownloadWatchDog.getInstance().resetTempUnavailWaittime(getHost());
-        if (liveplugin != null) liveplugin.resetDownloadlink(this);
+        PluginForHost plg = liveplugin;
+        if (plg == null) {
+            plg = defaultplugin.getWrapper().getNewPluginInstance();
+        }
+        if (plg.getBrowser() == null) {
+            plg.setBrowser(new Browser());
+        }
+        plg.init();
+        plg.resetDownloadlink(this);
     }
 
     /**

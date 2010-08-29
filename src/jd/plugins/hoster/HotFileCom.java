@@ -215,6 +215,14 @@ public class HotFileCom extends PluginForHost {
         }
     }
 
+    private void prepareBrowser(Browser br) {
+        if (br == null) return;
+        br.setCookie("http://hotfile.com", "lang", "en");
+        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+    }
+
     public void loginWebsite(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", ua);
@@ -275,11 +283,14 @@ public class HotFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setDebug(true);
         /* workaround as server does not send correct encoding information */
         br.setCustomCharset("UTF-8");
-        br.setCookie("http://hotfile.com", "lang", "en");
-        br.getHeaders().put("User-Agent", ua);
+        prepareBrowser(br);
         br.getPage(parameter.getDownloadURL());
+        Browser cl = br.cloneBrowser();
+        cl.getPage("http://hotfile.com/styles/structure.css");
+        Browser.download(this.getLocalCaptchaFile(), cl.openGetConnection("http://hotfile.com/i/blank.gif"));
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String filename = br.getRegex("Downloading <b>(.+?)</b>").getMatch(0);
         if (filename == null) {
@@ -304,7 +315,6 @@ public class HotFileCom extends PluginForHost {
          * website anyway
          */
         requestFileInformation(link);
-        br.setDebug(true);
         if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("starthtimer\\(\\)")) {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
@@ -325,7 +335,9 @@ public class HotFileCom extends PluginForHost {
         // Reconnect if the waittime is too big!
         if (sleeptime > 100 * 1000l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime);
         this.sleep(sleeptime, link);
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br.submitForm(form);
+        br.getHeaders().put("Content-Type", null);
         // captcha
         if (!br.containsHTML("Click here to download")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
