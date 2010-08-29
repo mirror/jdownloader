@@ -28,6 +28,8 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -48,6 +50,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
     private String ua = RandomUserAgent.generate();
+    private static final Object LOCK = new Object();
 
     public HotFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,10 +59,10 @@ public class HotFileCom extends PluginForHost {
     }
 
     private static final String UNLIMITEDMAXCON = "UNLIMITEDMAXCON";
-    private static final String USE_SSL_LOGIN = "USE_SSL_LOGIN";
+    private static final String TRY_IWL_BYPASS = "TRY_IWL_BYPASS";
 
     private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL_LOGIN, JDL.L("plugins.hoster.HotFileCom.useSSLLogin", "Try SSL-Login to bypass ISP/Proxy-Block?")).setDefaultValue(false);
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), TRY_IWL_BYPASS, JDL.L("plugins.hoster.HotFileCom.TRYIWLBYPASS", "Try IWL-Filter list bypass?")).setDefaultValue(false);
         config.addEntry(cond);
         cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), UNLIMITEDMAXCON, JDL.L("plugins.hoster.HotFileCom.SetUnlimitedConnectionsForPremium", "Allow more than 5 connections per file for premium (default maximum = 5). Enabling this can cause errors!!")).setDefaultValue(false);
         config.addEntry(cond);
@@ -70,7 +73,7 @@ public class HotFileCom extends PluginForHost {
         return "http://hotfile.com/terms-of-service.html";
     }
 
-    private HashMap<String, String> callAPI(Browser br, String action, Account account, HashMap<String, String> addParams, boolean useSSL) throws Exception {
+    private HashMap<String, String> callAPI(Browser br, String action, Account account, HashMap<String, String> addParams) throws Exception {
         if (action == null || action.length() == 0) return null;
         Browser tbr = br;
         if (tbr == null) {
@@ -92,11 +95,8 @@ public class HotFileCom extends PluginForHost {
                 post.put(param, addParams.get(param));
             }
         }
-        if (useSSL) {
-            tbr.postPage("https://api.hotfile.com", post);
-        } else {
-            tbr.postPage("http://api.hotfile.com", post);
-        }
+        tbr.postPage("http://api.hotfile.com", post);
+
         HashMap<String, String> ret = new HashMap<String, String>();
         ret.put("httpresponse", tbr.toString());
         String vars[][] = tbr.getRegex("(.*?)=(.*?)(&|$)").getMatches();
@@ -108,20 +108,24 @@ public class HotFileCom extends PluginForHost {
 
     public AccountInfo fetchAccountInfoWebsite(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        this.setBrowserExclusive();
-        try {
-            loginWebsite(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String validUntil[] = br.getRegex("Premium until.*?>(.*?)<.*?>(\\d+:\\d+:\\d+)").getRow(0);
-        if (validUntil == null || validUntil[0] == null || validUntil[1] == null) {
-            account.setValid(false);
-        } else {
-            String valid = validUntil[0].trim() + " " + validUntil[1].trim() + " CDT";
-            ai.setValidUntil(Regex.getMilliSeconds(valid, "yyyy-MM-dd HH:mm:ss zzz", null));
-            account.setValid(true);
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            try {
+                loginWebsite(account);
+            } catch (PluginException e) {
+                account.setProperty("cookies", null);
+                account.setValid(false);
+                return ai;
+            }
+            String validUntil[] = br.getRegex("Premium until.*?>(.*?)<.*?>(\\d+:\\d+:\\d+)").getRow(0);
+            if (validUntil == null || validUntil[0] == null || validUntil[1] == null) {
+                account.setProperty("cookies", null);
+                account.setValid(false);
+            } else {
+                String valid = validUntil[0].trim() + " " + validUntil[1].trim() + " CDT";
+                ai.setValidUntil(Regex.getMilliSeconds(valid, "yyyy-MM-dd HH:mm:ss zzz", null));
+                account.setValid(true);
+            }
         }
         return ai;
     }
@@ -134,7 +138,8 @@ public class HotFileCom extends PluginForHost {
             ai.setStatus("Cookie login no longer possible! API does not support it!");
             return ai;
         }
-        HashMap<String, String> info = callAPI(null, "getuserinfo", account, null, getPluginConfig().getBooleanProperty(USE_SSL_LOGIN, false));
+        if (getPluginConfig().getBooleanProperty(TRY_IWL_BYPASS, false)) return fetchAccountInfoWebsite(account);
+        HashMap<String, String> info = callAPI(null, "getuserinfo", account, null);
         String rawAnswer = info.get("httpresponse").trim();
         if (rawAnswer != null && rawAnswer.startsWith(".too many failed")) {
             /* fallback to normal website */
@@ -168,10 +173,15 @@ public class HotFileCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         checkLinks(new DownloadLink[] { downloadLink });
         if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (getPluginConfig().getBooleanProperty(TRY_IWL_BYPASS, false)) {
+            logger.severe("trying iwl-bypass");
+            handlePremiumWebsite(downloadLink, account);
+            return;
+        }
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("link", Encoding.urlEncode(downloadLink.getDownloadURL() + "\n\r"));
         params.put("alllinks", "1");
-        HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params, getPluginConfig().getBooleanProperty(USE_SSL_LOGIN, false));
+        HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params);
         if (info.get("httpresponse").contains("file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (info.get("httpresponse").contains("premium required")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         String finalUrls = info.get("httpresponse").trim();
@@ -223,25 +233,56 @@ public class HotFileCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
     }
 
+    @SuppressWarnings("unchecked")
     public void loginWebsite(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", ua);
-        br.setCookie("http://hotfile.com", "lang", "en");
-        /* normal login */
-        br.setFollowRedirects(true);
-        br.getPage("http://hotfile.com/");
-        boolean ssl = getPluginConfig().getBooleanProperty(USE_SSL_LOGIN, false);
-        if (ssl) {
-            br.postPage("https://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-        } else {
-            br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        synchronized (LOCK) {
+            br.getHeaders().put("User-Agent", ua);
+            br.setCookie("http://hotfile.com", "lang", "en");
+            Object ret = account.getProperty("cookies", null);
+            if (ret != null && ret instanceof HashMap<?, ?> && getPluginConfig().getBooleanProperty(TRY_IWL_BYPASS, false)) {
+                logger.info("Use cookie login");
+                /* use saved cookies */
+                HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                for (String key : cookies.keySet()) {
+                    br.setCookie("http://hotfile.com/", key, cookies.get(key));
+                }
+                br.setFollowRedirects(true);
+                br.getPage("http://hotfile.com/");
+                br.setFollowRedirects(false);
+                String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
+                if (isPremium == null) {
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } else {
+                /* normal login */
+                br.setFollowRedirects(true);
+                br.getPage("http://hotfile.com/");
+                br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                Form form = br.getForm(0);
+                if (form != null && form.containsHTML("<td>Username:")) {
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.getCookie("http://hotfile.com/", "auth") == null) {
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
+                if (isPremium == null) {
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                HashMap<String, String> cookies = new HashMap<String, String>();
+                Cookies add = br.getCookies("http://hotfile.com/");
+                for (Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("cookies", cookies);
+                br.setFollowRedirects(false);
+            }
         }
-        Form form = br.getForm(0);
-        if (form != null && form.containsHTML("<td>Username:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://hotfile.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
-        if (isPremium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.setFollowRedirects(false);
     }
 
     public void handlePremiumWebsite(DownloadLink downloadLink, Account account) throws Exception {
@@ -417,7 +458,7 @@ public class HotFileCom extends PluginForHost {
                 params.put("fields", "id,status,name,size,md5,sha1");
                 params.put("ids", sbIDS.toString());
                 params.put("keys", sbKEYS.toString());
-                HashMap<String, String> info = callAPI(null, "checklinks", null, params, false);
+                HashMap<String, String> info = callAPI(null, "checklinks", null, params);
                 String response = info.get("httpresponse");
                 for (DownloadLink dl : links) {
                     String id = new Regex(dl.getDownloadURL(), "/dl/(\\d+)").getMatch(0);

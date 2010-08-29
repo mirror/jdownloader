@@ -95,31 +95,35 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            if (br.containsHTML("PIN is incorrect")) {
-                ai.setStatus("Error during login - PIN is incorrect");
-            } else if (br.containsHTML("Invalid Username")) {
-                ai.setStatus("Check username or if you using linkcard for login then the card may expired or has no more links");
-            } else {
-                ai.setStatus("Please use *My Megashares* Account!Create one and link with your linkcard");
+        synchronized (LOCK) {
+            try {
+                login(account);
+            } catch (PluginException e) {
+                account.setProperty("cookies", null);
+                account.setValid(false);
+                if (br.containsHTML("PIN is incorrect")) {
+                    ai.setStatus("Error during login - PIN is incorrect");
+                } else if (br.containsHTML("Invalid Username")) {
+                    ai.setStatus("Check username or if you using linkcard for login then the card may expired or has no more links");
+                } else {
+                    ai.setStatus("Please use *My Megashares* Account!Create one and link with your linkcard");
+                }
+                return ai;
             }
+            if (br.getURL() == null || !br.getURL().endsWith("myms.php")) br.getPage("http://d01.megashares.com/myms.php");
+            String validUntil = br.getRegex("premium_info_box\">Period Ends:(.*?)<").getMatch(0);
+            if (validUntil == null) {
+                account.setProperty("cookies", null);
+                account.setValid(false);
+            } else {
+                account.setValid(true);
+                ai.setStatus("Account ok");
+                /* the whole day valid? */
+                ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null) + (1000l * 60 * 60 * 24));
+            }
+            /* TODO: there can be many different kind of linkcards */
             return ai;
         }
-        if (br.getURL() == null || !br.getURL().endsWith("myms.php")) br.getPage("http://d01.megashares.com/myms.php");
-        String validUntil = br.getRegex("premium_info_box\">Period Ends:(.*?)<").getMatch(0);
-        if (validUntil == null) {
-            account.setValid(false);
-        } else {
-            account.setValid(true);
-            ai.setStatus("Account ok");
-            /* the whole day valid? */
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null) + (1000l * 60 * 60 * 24));
-        }
-        /* TODO: there can be many different kind of linkcards */
-        return ai;
     }
 
     public void loadpage(String url) throws IOException {
