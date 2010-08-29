@@ -680,6 +680,7 @@ gui.menu.toolbar.separator.accel = -
 gui.menu.toolbar.separator.mnem = -
 gui.menu.toolbar.separator.name = -
 gui.menu.toolbar.separator.tooltip = -
+gui.premiumstatus.unlimited_traffic.tooltip = %s - كمية نقل غير محدودة! تستطيع التحميل قدر استطاعتك
 gui.reconnect.confirm = هل ترغب بإعادة تفعيل إتصالك ؟
 gui.reconnect.progress.status = إعادة الإتصال تعمل: %s m:s
 gui.reconnect.progress.status.failed = فشلت إعادة الإتصال
