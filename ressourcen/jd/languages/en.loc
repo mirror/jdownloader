@@ -312,7 +312,7 @@ gui.dialogs.dontshowthisagain = Don't show this again
 gui.dialogs.message.title = Message
 gui.dialogs.progress.title = In progress... please wait
 gui.download.create_connection = Connecting...
-gui.download.filesize_unknown = (Unknown file size)
+gui.download.filesize_unknown = Unknown file size
 gui.download.onlinecheckfailed = [unavailable]
 gui.download.waittime_status2 = Wait %s
 gui.downloadlink.aborted = [aborted]
@@ -1396,7 +1396,7 @@ plugins.hoster.hellsharecom.error.404 = Not available for your country
 plugins.hoster.hellsharecom.error.currentloadis100percent = The current serverload is 100%
 plugins.hoster.hellsharecom.error.serveruntermaximumload = No free slots available, retry later
 plugins.hoster.hotfilecom.setunlimitedconnectionsforpremium = Allow more than 5 connections per file for Premium (default maximum = 5). Enabling this can cause errors!
-plugins.hoster.hotfilecom.usessllogin = Try SSL-Login to bypass ISP/Proxy-Block
+plugins.hoster.hotfilecom.tryiwlbypass = Try IWL-Filter list bypass
 plugins.hoster.httplinks.errors.basicauthneeded = Authorization needed
 plugins.hoster.ifolderru.errors.ticketwait = Waiting for ticket
 plugins.hoster.jamendo = Prefer High Quality Download
