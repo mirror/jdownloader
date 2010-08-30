@@ -59,7 +59,7 @@ public class EnteruploadCom extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         boolean resumable = true;
-        int maxchunks = 0;
+        int maxchunks = 1;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form freeform = null;
@@ -360,7 +360,11 @@ public class EnteruploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);// chunk
+            // limit
+            // before
+            // was
+            // -10
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
@@ -379,12 +383,12 @@ public class EnteruploadCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
