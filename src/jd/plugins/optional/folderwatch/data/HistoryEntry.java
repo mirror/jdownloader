@@ -36,20 +36,20 @@ public class HistoryEntry implements Serializable {
 
     private boolean isExisting;
 
-    public HistoryEntry(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
-        set(filename, absolutePath, md5Hash, isPhysical);
+    public HistoryEntry(String filename, String absolutePath, String md5Hash, boolean isExisting) {
+        set(filename, absolutePath, md5Hash, isExisting);
     }
 
     public HistoryEntry(String filename, String absolutePath, String md5Hash) {
         set(filename, absolutePath, md5Hash, true);
     }
 
-    public void set(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
+    public void set(String filename, String absolutePath, String md5Hash, boolean isExisting) {
         this.setFilename(filename);
         this.setAbsolutePath(absolutePath);
         this.setMd5Hash(md5Hash);
         this.setImportDate();
-        this.setExisting(isPhysical);
+        this.setExisting(isExisting);
     }
 
     public void setFilename(String filename) {

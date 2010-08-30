@@ -282,13 +282,14 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
     }
 
     public void onPreSave(SubConfiguration subConfiguration) {
-        folderOld = subConfiguration.getStringProperty(FolderWatchConstants.PROPERTY_FOLDER);
+        folderOld = folder;
     }
 
     public void onPostSave(SubConfiguration subConfiguration) {
         folder = subConfiguration.getStringProperty(FolderWatchConstants.PROPERTY_FOLDER);
 
         // reset watch service
+        // TODO: also check if other options have changed
         if (!folder.equals(folderOld)) {
             startWatching(false);
             startWatching(true);

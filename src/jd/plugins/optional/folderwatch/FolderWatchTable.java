@@ -30,7 +30,7 @@ public class FolderWatchTable extends JDTable implements MouseListener {
         super(new FolderWatchTableModel("folderwatch.historyview"));
         addMouseListener(this);
         setRowHeight(22);
-        setBackground(new Color(255, 255, 255));
+        // setBackground(new Color(255, 255, 255));
         setGridColor(new Color(200, 200, 200));
     }
 
