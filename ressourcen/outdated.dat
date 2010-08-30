@@ -353,6 +353,8 @@ jd/plugins/hoster/XFileSharingCom.class
 jd/plugins/hoster/FourFreeLoadDotNet.class
 jd/plugins/hoster/EgoshareCom.class
 jd/captcha/methods/xtrmprtctcm
+jd/captcha/methods/flecruzcm
+jd/captcha/methods/eshr
 jd/plugins/hoster/OneTwoThreeUploadPl.class
 plugins/RouterDBEditor.jar
 plugins/AntiShutdown.jar

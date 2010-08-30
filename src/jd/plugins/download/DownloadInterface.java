@@ -25,8 +25,8 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
@@ -86,7 +86,7 @@ abstract public class DownloadInterface {
         private int MAX_BUFFERSIZE = 4 * 1024 * 1024;
 
         private long startByte;
-        private long bytes2Do = -1;;
+        private long bytes2Do = -1;
 
         private DownloadInterface dl;
 
