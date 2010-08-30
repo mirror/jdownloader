@@ -79,6 +79,7 @@ public class FileMonitoring extends Thread {
             this.watchService.close();
         } catch (IOException e) {
         }
+        instanceNr--;
     }
 
     public void run() {

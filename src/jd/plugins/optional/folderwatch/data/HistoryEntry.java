@@ -34,7 +34,7 @@ public class HistoryEntry implements Serializable {
 
     private String importDate;
 
-    private boolean isPhysical;
+    private boolean isExisting;
 
     public HistoryEntry(String filename, String absolutePath, String md5Hash, boolean isPhysical) {
         set(filename, absolutePath, md5Hash, isPhysical);
@@ -49,7 +49,7 @@ public class HistoryEntry implements Serializable {
         this.setAbsolutePath(absolutePath);
         this.setMd5Hash(md5Hash);
         this.setImportDate();
-        this.setPhysical(isPhysical);
+        this.setExisting(isPhysical);
     }
 
     public void setFilename(String filename) {
@@ -77,20 +77,18 @@ public class HistoryEntry implements Serializable {
     }
 
     private void setImportDate() {
-        Date date = new Date();
-
-        this.importDate = DATE_FORMAT.format(date);
+        importDate = DATE_FORMAT.format(new Date());
     }
 
     public String getImportDate() {
         return importDate;
     }
 
-    public void setPhysical(boolean isPhysical) {
-        this.isPhysical = isPhysical;
+    public void setExisting(boolean value) {
+        isExisting = value;
     }
 
-    public boolean isPhysical() {
-        return isPhysical;
+    public boolean isExisting() {
+        return isExisting;
     }
 }

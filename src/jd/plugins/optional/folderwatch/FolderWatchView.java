@@ -26,7 +26,7 @@ public class FolderWatchView extends ClosableView {
 
     private static final long serialVersionUID = 5113064941511136310L;
 
-    private static final String JDL_PREFIX = "plugins.optional.FolderWatch.";
+    private static final String JDL_PREFIX = "plugins.optional.folderwatch.view.";
 
     public FolderWatchView() {
         super();
@@ -36,7 +36,7 @@ public class FolderWatchView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16);
+        return JDTheme.II("gui.images.folderwatch", 16, 16);
     }
 
     @Override

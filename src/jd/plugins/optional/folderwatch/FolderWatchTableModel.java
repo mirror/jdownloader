@@ -19,7 +19,6 @@ package jd.plugins.optional.folderwatch;
 import java.util.ArrayList;
 
 import jd.gui.swing.components.table.JDTableModel;
-import jd.plugins.optional.folderwatch.columns.FileexistsColumn;
 import jd.plugins.optional.folderwatch.columns.FilenameColumn;
 import jd.plugins.optional.folderwatch.columns.FilepathColumn;
 import jd.plugins.optional.folderwatch.columns.FiletypeColumn;
@@ -42,7 +41,6 @@ public class FolderWatchTableModel extends JDTableModel {
         this.addColumn(new FilenameColumn(JDL.L(JDL_PREFIX + "filename", "Filename"), this));
         this.addColumn(new FiletypeColumn(JDL.L(JDL_PREFIX + "filetype", "Container type"), this));
         this.addColumn(new FilepathColumn(JDL.L(JDL_PREFIX + "filepath", "Path"), this));
-        this.addColumn(new FileexistsColumn(JDL.L(JDL_PREFIX + "fileexists", "File exists on HDD?"), this));
         this.addColumn(new ImportdateColumn(JDL.L(JDL_PREFIX + "importdate", "Import date"), this));
     }
 

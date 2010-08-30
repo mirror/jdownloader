@@ -17,24 +17,42 @@
 package jd.plugins.optional.folderwatch;
 
 import java.awt.Color;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import jd.gui.swing.components.table.JDTable;
 
-public class FolderWatchTable extends JDTable {
+public class FolderWatchTable extends JDTable implements MouseListener {
 
     private static final long serialVersionUID = 675244442903646117L;
 
     public FolderWatchTable() {
         super(new FolderWatchTableModel("folderwatch.historyview"));
+        addMouseListener(this);
         setRowHeight(22);
         setBackground(new Color(255, 255, 255));
         setGridColor(new Color(200, 200, 200));
-        // setShowHorizontalLines(true);
     }
 
     @Override
     public FolderWatchTableModel getModel() {
         return (FolderWatchTableModel) super.getModel();
+    }
+
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        FolderWatchPanel.getInstance().getInfoPanel().update();
     }
 
 }

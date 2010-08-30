@@ -26,8 +26,8 @@ public class History implements Serializable {
 
     private static ArrayList<HistoryEntry> entries = new ArrayList<HistoryEntry>();
 
-    public static void setEntries(ArrayList<HistoryEntry> e) {
-        entries = e;
+    public static void setEntries(ArrayList<HistoryEntry> entries) {
+        History.entries = entries;
     }
 
     public static ArrayList<HistoryEntry> getEntries() {
@@ -41,16 +41,17 @@ public class History implements Serializable {
     public static void updateEntries() {
         boolean value;
         for (HistoryEntry entry : entries) {
-            if (entry.isPhysical()) {
-                value = isFileExisting(entry.getAbsolutePath());
-                entry.setPhysical(value);
-            }
+            value = isFileExisting(entry.getAbsolutePath());
+            entry.setExisting(value);
         }
+    }
+
+    public static void clear() {
+        entries.clear();
     }
 
     private static boolean isFileExisting(String path) {
         File file = new File(path);
-
         return file.exists();
     }
 

@@ -17,13 +17,13 @@
 package jd.plugins.optional.folderwatch;
 
 public class FolderWatchConstants {
-    public static final String CONFIG_KEY_ENABLED = "ENABLED";
-    public static final String CONFIG_KEY_FOLDER = "FOLDER";
-    public static final String CONFIG_KEY_OPENFOLDER = "OPENFOLDER";
-    public static final String CONFIG_KEY_RECURSIVE = "RECURSIVE";
-    public static final String CONFIG_KEY_AUTODELETE = "AUTODELETE";
-    public static final String CONFIG_KEY_DELETECASCADE = "DELETECASCADE";
-    public static final String CONFIG_KEY_HISTORYONLY = "HISTORYONLY";
+    public static final String PROPERTY_ENABLED = "ENABLED";
+    public static final String PROPERTY_FOLDER = "FOLDER";
+    public static final String PROPERTY_OPENFOLDER = "OPENFOLDER";
+    public static final String PROPERTY_RECURSIVE = "RECURSIVE";
+    public static final String PROPERTY_AUTODELETE = "AUTODELETE";
+    public static final String PROPERTY_DELETECASCADE = "DELETECASCADE";
+    public static final String PROPERTY_HISTORYONLY = "HISTORYONLY";
 
-    public static final String CONFIG_KEY_HISTORY = "HISTORY";
+    public static final String PROPERTY_HISTORY = "HISTORY";
 }
