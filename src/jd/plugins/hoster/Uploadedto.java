@@ -31,11 +31,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?)" }, flags = { 2 })
@@ -105,7 +105,7 @@ public class Uploadedto extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         String url = link.getDownloadURL();
-        url = url.replace("ul.to/", "uploaded.to/file/");
+        url = url.replace("uploaded.to/", "ul.to/");
         url = url.replace("/?id=", "/file/");
         url = url.replace("?id=", "file/");
         url = url.replaceFirst("/\\?.*?&id=", "/file/");
@@ -114,26 +114,25 @@ public class Uploadedto extends PluginForHost {
         for (int t = 0; t < Math.min(parts.length, 5); t++) {
             newLink += parts[t] + "/";
         }
-
         link.setUrlDownload(newLink);
     }
 
     @Override
     public int getTimegapBetweenConnections() {
-        return 800;
+        return 2000;
     }
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
-        br.getPage("http://uploaded.to/login");
+        br.getPage("http://ul.to/login");
 
         Form login = br.getForm(0);
         login.put("email", Encoding.urlEncode(account.getUser()));
         login.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(login);
-        if (br.getCookie("http://uploaded.to", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://ul.to", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.containsHTML("Login failed!")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -195,7 +194,7 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink);
-        String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
+        String error = new Regex(br.getRedirectLocation(), "http://ul.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
             error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
         }
@@ -224,7 +223,8 @@ public class Uploadedto extends PluginForHost {
         }
 
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+        /* set to 1 at the moment, cause more cause server errors */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
 
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
@@ -253,7 +253,7 @@ public class Uploadedto extends PluginForHost {
         try {
             Browser br = new Browser();
             br.setDebug(true);
-            br.getPage("http://uploaded.to/rarerrors?auth=" + Encoding.urlEncode(id) + "&server=" + Encoding.urlEncode(server) + "&flag=" + (b ? 1 : 0));
+            br.getPage("http://ul.to/rarerrors?auth=" + Encoding.urlEncode(id) + "&server=" + Encoding.urlEncode(server) + "&flag=" + (b ? 1 : 0));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -261,19 +261,20 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://uploaded.to/agb";
+        return "http://ul.to/agb";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+        this.correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         LINK_OBSERVER.register(downloadLink);
         br.setFollowRedirects(true);
-        String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "ul.to/file/(.*?)/").getMatch(0);
         int retry = 0;
         while (true) {
             try {
-                br.getPage("http://uploaded.to/api/file?id=" + id);
+                br.getPage("http://ul.to/api/file?id=" + id);
                 String[] lines = Regex.getLines(br + "");
                 String fileName = lines[0].trim();
                 long fileSize = Long.parseLong(lines[1].trim());
@@ -329,7 +330,7 @@ public class Uploadedto extends PluginForHost {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
-        br.setCookie("http://uploaded.to/", "lang", "de");
+        br.setCookie("http://ul.to/", "lang", "de");
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -346,7 +347,7 @@ public class Uploadedto extends PluginForHost {
             if (wait <= 0) wait = 65 * 60 * 1000l;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
         }
-        String error = new Regex(br.getURL(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
+        String error = new Regex(br.getURL(), "http://ul.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
             error = new Regex(br.getURL(), "\\?view=(.*?)&").getMatch(0);
         }
@@ -395,7 +396,7 @@ public class Uploadedto extends PluginForHost {
 
         dl.startDownload();
         String server = new Regex(dl.getConnection().getURL(), "http://(.*?)\\.").getMatch(0);
-        String id = new Regex(downloadLink.getDownloadURL(), "http://uploaded.to/file/(.*?)/").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "http://ul.to/file/(.*?)/").getMatch(0);
         downloadLink.setProperty("server", server);
         downloadLink.setProperty("id", id);
 

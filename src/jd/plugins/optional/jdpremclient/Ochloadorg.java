@@ -26,8 +26,8 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     private static boolean enabled = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object LOCK = new Object();
-    private static final int MAXDOWNLOADS = 3;
-    private volatile static int currentMaxDownloads = 3;
+    private static final int MAXDOWNLOADS = 5;
+    private volatile static int currentMaxDownloads = MAXDOWNLOADS;
 
     public Ochloadorg(PluginWrapper wrapper) {
         super(wrapper);
@@ -158,7 +158,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             return true;
         } finally {
             synchronized (LOCK) {
-                currentMaxDownloads = Math.min(MAXDOWNLOADS, ++currentMaxDownloads);
+                currentMaxDownloads = Math.min(MAXDOWNLOADS + 1, ++currentMaxDownloads);
             }
         }
     }
@@ -297,7 +297,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             if (JDPremium.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
-            } else if (JDPremium.isEnabled() && enabled) {
+            } else if (JDPremium.isEnabled() && enabled && AccountController.getInstance().getValidAccount("ochload.org") != null) {
                 /* OchLoad */
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) return currentMaxDownloads;
@@ -338,6 +338,12 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
     public void enablePlugin() {
         enabled = true;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        if (plugin != null) return plugin.getTimegapBetweenConnections();
+        return super.getTimegapBetweenConnections();
     }
 
 }
