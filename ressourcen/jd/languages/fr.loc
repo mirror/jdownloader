@@ -1404,4 +1404,3 @@ userio.input.title = Veuillez entrer !
 wrapper.webupdate.updatenewupdater = Téléchargement du nouveau jdupdate.jar
 wrapper.webupdate.updateupdater.error_rename = Impossible de renommer jdupdate.jar.tmp en jdupdate.jar
 wrapper.webupdate.updateupdater.error_reqeust2 = Impossible de télécharger le nouveau jdupdate.jar
-

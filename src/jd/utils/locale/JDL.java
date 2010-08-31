@@ -354,6 +354,7 @@ public final class JDL {
             String key;
             String value;
             while ((line = reader.readLine()) != null) {
+                if (line.length() == 0) continue;
                 // if (line.startsWith("#")) continue;
                 if (line.charAt(0) == '#') continue;
 

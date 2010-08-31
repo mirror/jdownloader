@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
     private static int simultanpremium = 1;
     private static final Object PREMLOCK = new Object();
@@ -232,15 +232,16 @@ public class UploadingCom extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
+                br.setDebug(true);
                 br.postPage("http://uploading.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
                 String correctedHTML = br.toString().replace("\\", "");
                 for (DownloadLink dl : links) {
-                    String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(.+)").getMatch(0);
+                    String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(get/)?(.+)").getMatch(1);
                     if (fileid == null) {
                         logger.warning("Uploading.com availablecheck is broken!");
                         return false;
                     }
-                    String regexForThisLink = "(\">http://uploading\\.com/files/" + fileid + "/.*?/</a></td>ntttt<td>(Aktiv|active|Gelöscht|Deleted)</td>ntttt<td>.*?</td>)";
+                    String regexForThisLink = "(\">http://uploading\\.com/files/" + fileid + ".*?/</a></td>ntttt<td>(Aktiv|active|Gelöscht|Deleted)</td>ntttt<td>.*?</td>)";
                     String theData = new Regex(correctedHTML, regexForThisLink).getMatch(0);
                     if (theData == null) {
                         if (br.containsHTML("\"js\": \\{ \"checker_result\": \"\" \\}, \"text\": \"\" \\}")) {
@@ -263,7 +264,7 @@ public class UploadingCom extends PluginForHost {
                     } else {
                         dl.setAvailable(true);
                     }
-                    filename = Encoding.htmlDecode(filename);
+                    filename = Encoding.htmlDecode(filename.trim());
                     filename = Encoding.urlDecode(filename, false);
                     dl.setName(filename);
                     dl.setDownloadSize(Regex.getSize(filesize));

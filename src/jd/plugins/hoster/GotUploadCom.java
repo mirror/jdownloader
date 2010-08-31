@@ -28,11 +28,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotupload.com" }, urls = { "http://[\\w\\.]*?gotupload\\.com/[a-z|0-9]+" }, flags = { 0 })
@@ -56,7 +56,7 @@ public class GotUploadCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains("You have reached the download-limit")) {
+        if (brbefore.contains("You have reached the download-limit") && !brbefore.contains("Not valid -> You have reached")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -323,7 +323,7 @@ public class GotUploadCom extends PluginForHost {
             logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
-        if (brbefore.contains("You have reached the download-limit")) {
+        if (brbefore.contains("You have reached the download-limit") && !brbefore.contains("Not valid -> You have reached")) {
             String tmphrs = new Regex(brbefore, "\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(brbefore, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             String tmpsec = new Regex(brbefore, "\\s+(\\d+)\\s+seconds?").getMatch(0);
