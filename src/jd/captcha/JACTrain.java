@@ -19,7 +19,7 @@ package jd.captcha;
 import java.util.logging.Logger;
 
 import jd.captcha.utils.Utilities;
-import jd.gui.swing.jdgui.events.waitcursor.WaitCursorEventQueue;
+import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
 
@@ -42,7 +42,7 @@ public class JACTrain {
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
         LookAndFeelController.setUIManager();
-        WaitCursorEventQueue.initEventQueue();
+        EDTEventQueue.initEventQueue();
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
 
         // jac.saveMTHFile();
