@@ -298,7 +298,11 @@ public class Rapidshare extends PluginForHost {
                     }
                     u.setDownloadSize(Long.parseLong(matches[i][2]));
                     u.setFinalFileName(matches[i][1]);
-                    if (!"MD5NOTFOUND".equalsIgnoreCase(matches[i][6])) u.setMD5Hash(matches[i][6]);
+                    if (!"MD5NOTFOUND".equalsIgnoreCase(matches[i][6])) {
+                        u.setMD5Hash(matches[i][6]);
+                    } else {
+                        u.setMD5Hash(null);
+                    }
                     // 0=File not found 1=File OK 2=File OK (direct download)
                     // 3=Server down 4=File abused 5
                     switch (Integer.parseInt(matches[i][4])) {
@@ -413,6 +417,7 @@ public class Rapidshare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         accName = "FreeUser";
+        if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) downloadLink.setMD5Hash(null);
         workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         /* we need file size to calculate left traffic */
         if (downloadLink.getDownloadSize() <= 0) {
@@ -713,6 +718,7 @@ public class Rapidshare extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
+        if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) downloadLink.setMD5Hash(null);
         /* we need file size to calculate left traffic */
         if (downloadLink.getDownloadSize() <= 0) {
             requestFileInformation(downloadLink);
