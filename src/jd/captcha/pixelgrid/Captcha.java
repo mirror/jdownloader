@@ -23,9 +23,7 @@ import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.PixelGrabber;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,7 +43,6 @@ import com.jhlabs.image.BoxBlurFilter;
 import com.jhlabs.image.ContrastFilter;
 import com.jhlabs.image.PosterizeFilter;
 import com.jhlabs.image.QuantizeFilter;
-import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
@@ -84,21 +81,15 @@ public class Captcha extends PixelGrid {
      * @return neuer Captcha
      */
     public static Captcha getCaptcha(final Image image, final JAntiCaptcha owner) {
-
         final int width = image.getWidth(null);
         final int height = image.getHeight(null);
-        if (width <= 0 || height <= 0) { return null; }
-        if (width <= 0 || height <= 0) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("ERROR: Image nicht korrekt. Kein Inhalt. Pfad URl angaben Korrigieren");
-            }
-        }
+        if (width <= 0 || height <= 0) return null;
+
         final PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
 
         try {
             pg.grabPixels();
         } catch (Exception e) {
-
             return null;
         }
 
@@ -121,11 +112,8 @@ public class Captcha extends PixelGrid {
             ret.setPixel((byte[]) pg.getPixels());
         }
 
-        // BasicWindow.showImage(ret.getImage());
-
         ret.setOrgGrid(PixelGrid.getGridCopy(ret.getGrid()));
         return ret;
-
     }
 
     /**
@@ -677,7 +665,7 @@ public class Captcha extends PixelGrid {
          * 
          * iter.remove(); } } }
          */
-        //        
+        //
         // for(PixelObject oo:objects){
         // int hh = objects.elementAt(i++).getArea();
         // hh=hh;
@@ -695,10 +683,10 @@ public class Captcha extends PixelGrid {
                 // Teil die größten Objekte bis man die richtige anzahl an
                 // lettern
                 // hat
-                //            
+                //
                 // for(Iterator<PixelObject> it =
                 // objects.iterator();it.hasNext();){
-                //                
+                //
                 // BasicWindow.showImage(it.next().toLetter().getImage(2));
                 // }
             }
@@ -1625,22 +1613,6 @@ public class Captcha extends PixelGrid {
         }
     }
 
-    public boolean rapidshareSpecial(PixelObject pixelObject, JAntiCaptcha jac) {
-
-        // Letter letter = pixelObject.toLetter();
-        // Captcha remImage =
-        // owner.createCaptcha(Utilities.loadImage(owner.getResourceFile(
-        // removeObjectsContainingImage)));
-        // letter.removeObjectFromGrid(owner.getLetter(letter).getB().
-        // toPixelObject(1));
-
-        if (jac.getLetter(pixelObject.toLetter()).getDecodedValue().equals("k")) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     public int[][] getOrgGridCopy() {
         return PixelGrid.getGridCopy(tmpGrid);
     }
@@ -1654,7 +1626,7 @@ public class Captcha extends PixelGrid {
     public boolean reset() {
         seperatedLetters = null;
         setPrepared(false);
-        if (tmpGrid == null) { return false; }
+        if (tmpGrid == null) return false;
         grid = PixelGrid.getGridCopy(tmpGrid);
 
         return true;
@@ -1667,34 +1639,22 @@ public class Captcha extends PixelGrid {
      *            . ZielPfad
      */
     public void saveImageasJpgWithGaps(File file) {
-        BufferedImage bimg = null;
-
-        bimg = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+        BufferedImage bimg = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         bimg.setRGB(0, 0, getWidth(), getHeight(), getPixelWithGaps(), 0, getWidth());
 
-        // Encode as a JPEG
-        FileOutputStream fos;
         try {
-            fos = new FileOutputStream(file);
+            FileOutputStream fos = new FileOutputStream(file);
 
             JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
             jpeg.encode(bimg);
             fos.close();
-        } catch (FileNotFoundException e) {
-
-            JDLogger.exception(e);
-        } catch (ImageFormatException e) {
-
-            JDLogger.exception(e);
-        } catch (IOException e) {
-
+        } catch (Exception e) {
             JDLogger.exception(e);
         }
     }
 
     public void setCaptchaFile(File captchafile) {
         this.captchafile = captchafile;
-
     }
 
     /**
@@ -1704,12 +1664,10 @@ public class Captcha extends PixelGrid {
      */
     public void setColorModel(ColorModel colorModel) {
         this.colorModel = colorModel;
-
     }
 
     public void setCorrectcaptchaCode(String trim) {
         correctCaptchaCode = trim;
-
     }
 
     /**
@@ -1719,7 +1677,6 @@ public class Captcha extends PixelGrid {
      */
     public void setLetterComperators(LetterComperator[] newLetters) {
         letterComperators = newLetters;
-
     }
 
     public void setPerfectObjectDetection(boolean perfectObjectDetection) {

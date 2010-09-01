@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -68,8 +66,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
         return FP;
     }
-
-    private boolean sortasc = false;
 
     private int linksFailed;
 
@@ -557,42 +553,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             ListHoster = hosterList.toString();
         }
         return ListHoster;
-    }
-
-    public void sort(final int col) {
-        sortasc = !sortasc;
-        synchronized (downloadLinkList) {
-
-            Collections.sort(downloadLinkList, new Comparator<DownloadLink>() {
-
-                public int compare(DownloadLink a, DownloadLink b) {
-                    if (a.getName().endsWith(".sfv")) { return -1; }
-                    if (b.getName().endsWith(".sfv")) { return 1; }
-                    DownloadLink aa = b;
-                    DownloadLink bb = a;
-                    if (sortasc) {
-                        aa = a;
-                        bb = b;
-                    }
-                    switch (col) {
-                    case 0:
-                        return aa.getName().compareToIgnoreCase(bb.getName());
-                    case 1:
-                        return aa.getHost().compareToIgnoreCase(bb.getHost());
-                    case 2:
-                        if (aa.isAvailabilityStatusChecked() && bb.isAvailabilityStatusChecked()) {
-                            return (aa.isAvailable() && !bb.isAvailable()) ? 1 : -1;
-                        } else
-                            return -1;
-                    case 3:
-                        return aa.getPercent() < bb.getPercent() ? 1 : -1;
-                    default:
-                        return -1;
-                    }
-                }
-            });
-        }
-        broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
     }
 
     @Override

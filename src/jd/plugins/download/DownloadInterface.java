@@ -748,14 +748,6 @@ abstract public class DownloadInterface {
         return chunksStarted;
     }
 
-    public boolean fixFilename() {
-        return this.fixWrongContentDispositionHeader;
-    }
-
-    public boolean FilenameFromURLAllowed() {
-        return this.allowFilenameFromURL;
-    }
-
     public void setAllowFilenameFromURL(boolean b) {
         this.allowFilenameFromURL = b;
     }
@@ -775,32 +767,6 @@ abstract public class DownloadInterface {
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
-    }
-
-    /**
-     * Es wird ein headrequest gemacht um die genaue dateigroesse zu ermitteln
-     * 
-     * @return
-     * @throws IOException
-     * @throws PluginException
-     */
-    public long head() throws IOException, PluginException {
-        Request head = request.toHeadRequest();
-
-        head.load();
-
-        if (this.plugin.getBrowser().isDebug()) logger.finest(head.printHeaders());
-        if (head.getContentLength() > 1024) {
-
-            logger.finer("Got filesze from Headrequest: " + head.getContentLength() + " bytes");
-            downloadLink.setDownloadSize(fileSize = head.getContentLength());
-
-            String name = Plugin.getFileNameFromDispositionHeader(head.getHttpConnection().getHeaderField("content-disposition"));
-            if (name != null) this.downloadLink.setName(name);
-
-            this.setFileSizeVerified(true);
-        }
-        return fileSize;
     }
 
     /**

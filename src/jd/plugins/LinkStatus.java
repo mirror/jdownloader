@@ -156,8 +156,6 @@ public class LinkStatus implements Serializable {
 
     public static final int ERROR_POST_PROCESS = 1 << 24;
 
-    public static final int VALUE_FAILED_CHUNK = 1 << 26;
-
     public static final int VALUE_FAILED_HASH = 1 << 27;
 
     public static final int PLUGIN_ACTIVE = 1 << 29;

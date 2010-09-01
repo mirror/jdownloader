@@ -20,9 +20,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,7 +37,6 @@ import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.nutils.Colors;
 
-import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
@@ -71,14 +68,14 @@ public class PixelGrid extends Property {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 if (isElement(getPixelValue(x, y), avg)) {
-                    int yy = y*y;
-                    int xx = x*x;
+                    int yy = y * y;
+                    int xx = x * x;
                     int xd = getWidth() - x;
-                    int xxd = xd*xd;
-                    int yd= getHeight() - y;
-                    int yyd = yd*yd;
+                    int xxd = xd * xd;
+                    int yd = getHeight() - y;
+                    int yyd = yd * yd;
                     double diff = Math.sqrt(xx + yy);
-                    
+
                     if (diff < bestOL) {
                         xOL = x;
                         yOL = y;
@@ -97,7 +94,7 @@ public class PixelGrid extends Property {
                         yUL = y;
                         bestUL = diff;
                     }
-                    diff = Math.sqrt(xxd +yyd);
+                    diff = Math.sqrt(xxd + yyd);
                     if (diff < bestUR) {
                         xUR = x;
                         yUR = y;
@@ -163,14 +160,14 @@ public class PixelGrid extends Property {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 if (isElement(getPixelValue(x, y), avg)) {
-                    int yy = y*y;
-                    int xx = x*x;
+                    int yy = y * y;
+                    int xx = x * x;
                     int xd = getWidth() - x;
-                    int xxd = xd*xd;
-                    int yd= getHeight() - y;
-                    int yyd = yd*yd;
+                    int xxd = xd * xd;
+                    int yd = getHeight() - y;
+                    int yyd = yd * yd;
                     double diff = Math.sqrt(xx + yy);
-                    
+
                     if (diff < bestOL) {
                         xOL = x;
                         yOL = y;
@@ -189,7 +186,7 @@ public class PixelGrid extends Property {
                         yUL = y;
                         bestUL = diff;
                     }
-                    diff = Math.sqrt(xxd +yyd);
+                    diff = Math.sqrt(xxd + yyd);
                     if (diff < bestUR) {
                         xUR = x;
                         yUR = y;
@@ -303,226 +300,8 @@ public class PixelGrid extends Property {
 
     }
 
-    double getM(int x0, int x1, int y0, int y1) {
+    private double getM(int x0, int x1, int y0, int y1) {
         return ((double) (y0 - y1)) / (x0 - x1);
-    }
-
-    public void drawLine(int x0, int x1, int y0, int y1, int color) {
-        int dy = y1 - y0;
-        int dx = x1 - x0;
-        int stepx, stepy;
-
-        if (dy < 0) {
-            dy = -dy;
-            stepy = -1;
-        } else {
-            stepy = 1;
-        }
-        if (dx < 0) {
-            dx = -dx;
-            stepx = -1;
-        } else {
-            stepx = 1;
-        }
-
-        setPixelValue(x0, y0, color);
-        setPixelValue(x1, y1, color);
-        if (dx > dy) {
-            int length = (dx - 1) >> 2;
-            int extras = (dx - 1) & 3;
-            int incr2 = (dy << 2) - (dx << 1);
-            if (incr2 < 0) {
-                int c = dy << 1;
-                int incr1 = c << 1;
-                int d = incr1 - dx;
-                for (int i = 0; i < length; i++) {
-                    x0 += stepx;
-                    x1 -= stepx;
-                    if (d < 0) { // Pattern:
-                        setPixelValue(x1, y1, color);
-
-                        setPixelValue(x0, y0, color); //
-                        setPixelValue(x0 += stepx, y0, color); // x o o
-                        setPixelValue(x1, y1, color); //
-                        setPixelValue(x1 -= stepx, y1, color);
-                        d += incr1;
-                    } else {
-                        if (d < c) { // Pattern:
-                            setPixelValue(x0, y0, color); // o
-                            setPixelValue(x0 += stepx, y0 += stepy, color); // x
-                            // o
-                            setPixelValue(x1, y1, color); //
-                            setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                        } else {
-                            setPixelValue(x0, y0 += stepy, color); // Pattern:
-                            setPixelValue(x0 += stepx, y0, color); // o o
-                            setPixelValue(x1, y1 -= stepy, color); // x
-                            setPixelValue(x1 -= stepx, y1, color); //
-                        }
-                        d += incr2;
-                    }
-                }
-                if (extras > 0) {
-                    if (d < 0) {
-                        setPixelValue(x0 += stepx, y0, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0, color);
-                        if (extras > 2) setPixelValue(x1 -= stepx, y1, color);
-                    } else if (d < c) {
-                        setPixelValue(x0 += stepx, y0, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue(x1 -= stepx, y1, color);
-                    } else {
-                        setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0, color);
-                        if (extras > 2) setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                    }
-                }
-            } else {
-                int c = (dy - dx) << 1;
-                int incr1 = c << 1;
-                int d = incr1 + dx;
-                for (int i = 0; i < length; i++) {
-                    x0 += stepx;
-                    x1 -= stepx;
-                    if (d > 0) {
-                        setPixelValue(x0, y0 += stepy, color); // Pattern:
-                        setPixelValue(x0 += stepx, y0 += stepy, color); // o
-                        setPixelValue(x1, y1 -= stepy, color); // o
-                        setPixelValue(x1 -= stepx, y1 -= stepy, color); // x
-                        d += incr1;
-                    } else {
-                        if (d < c) {
-                            setPixelValue(x0, y0, color); // Pattern:
-                            setPixelValue(x0 += stepx, y0 += stepy, color); // o
-                            setPixelValue(x1, y1, color); // x o
-                            setPixelValue(x1 -= stepx, y1 -= stepy, color); //
-                        } else {
-                            setPixelValue(x0, y0 += stepy, color); // Pattern:
-                            setPixelValue(x0 += stepx, y0, color); // o o
-                            setPixelValue(x1, y1 -= stepy, color); // x
-                            setPixelValue(x1 -= stepx, y1, color); //
-                        }
-                        d += incr2;
-                    }
-                }
-                if (extras > 0) {
-                    if (d > 0) {
-                        setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                    } else if (d < c) {
-                        setPixelValue(x0 += stepx, y0, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue(x1 -= stepx, y1, color);
-                    } else {
-                        setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0, color);
-                        if (extras > 2) {
-                            if (d > c)
-                                setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                            else
-                                setPixelValue(x1 -= stepx, y1, color);
-                        }
-                    }
-                }
-            }
-        } else {
-            int length = (dy - 1) >> 2;
-            int extras = (dy - 1) & 3;
-            int incr2 = (dx << 2) - (dy << 1);
-            if (incr2 < 0) {
-                int c = dx << 1;
-                int incr1 = c << 1;
-                int d = incr1 - dy;
-                for (int i = 0; i < length; i++) {
-                    y0 += stepy;
-                    y1 -= stepy;
-                    if (d < 0) {
-                        setPixelValue(x0, y0, color);
-                        setPixelValue(x0, y0 += stepy, color);
-                        setPixelValue(x1, y1, color);
-                        setPixelValue(x1, y1 -= stepy, color);
-                        d += incr1;
-                    } else {
-                        if (d < c) {
-                            setPixelValue(x0, y0, color);
-                            setPixelValue(x0 += stepx, y0 += stepy, color);
-                            setPixelValue(x1, y1, color);
-                            setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                        } else {
-                            setPixelValue(x0 += stepx, y0, color);
-                            setPixelValue(x0, y0 += stepy, color);
-                            setPixelValue(x1 -= stepx, y1, color);
-                            setPixelValue(x1, y1 -= stepy, color);
-                        }
-                        d += incr2;
-                    }
-                }
-                if (extras > 0) {
-                    if (d < 0) {
-                        setPixelValue(x0, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0, y0 += stepy, color);
-                        if (extras > 2) setPixelValue(x1, y1 -= stepy, color);
-                    } else if (d < c) {
-                        setPixelValue(stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue(x1, y1 -= stepy, color);
-                    } else {
-                        setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0, y0 += stepy, color);
-                        if (extras > 2) setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                    }
-                }
-            } else {
-                int c = (dx - dy) << 1;
-                int incr1 = c << 1;
-                int d = incr1 + dy;
-                for (int i = 0; i < length; i++) {
-                    y0 += stepy;
-                    y1 -= stepy;
-                    if (d > 0) {
-                        setPixelValue(x0 += stepx, y0, color);
-                        setPixelValue(x0 += stepx, y0 += stepy, color);
-                        setPixelValue(x1 -= stepy, y1, color);
-                        setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                        d += incr1;
-                    } else {
-                        if (d < c) {
-                            setPixelValue(x0, y0, color);
-                            setPixelValue(x0 += stepx, y0 += stepy, color);
-                            setPixelValue(x1, y1, color);
-                            setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                        } else {
-                            setPixelValue(x0 += stepx, y0, color);
-                            setPixelValue(x0, y0 += stepy, color);
-                            setPixelValue(x1 -= stepx, y1, color);
-                            setPixelValue(x1, y1 -= stepy, color);
-                        }
-                        d += incr2;
-                    }
-                }
-                if (extras > 0) {
-                    if (d > 0) {
-                        setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                    } else if (d < c) {
-                        setPixelValue(x0, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 2) setPixelValue(x1, y1 -= stepy, color);
-                    } else {
-                        setPixelValue(x0 += stepx, y0 += stepy, color);
-                        if (extras > 1) setPixelValue(x0, y0 += stepy, color);
-                        if (extras > 2) {
-                            if (d > c)
-                                setPixelValue(x1 -= stepx, y1 -= stepy, color);
-                            else
-                                setPixelValue(x1, y1 -= stepy, color);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public static void fillLetter(Letter l) {
@@ -628,7 +407,7 @@ public class PixelGrid extends Property {
     }
 
     public static int getGridHeight(int[][] grid) {
-        if (grid.length == 0) { return 0; }
+        if (grid.length == 0) return 0;
         return grid[0].length;
     }
 
@@ -652,22 +431,9 @@ public class PixelGrid extends Property {
      * @return Pixelwert bei x,y
      */
     public static int getPixelValue(int x, int y, int[][] grid) {
-        if (x < 0 || x >= grid.length) { return -1; }
-        if (y < 0 || grid.length == 0 || y >= grid[0].length) { return -1; }
+        if (x < 0 || x >= grid.length) return -1;
+        if (y < 0 || grid.length == 0 || y >= grid[0].length) return -1;
         return grid[x][y];
-
-    }
-
-    /**
-     * Gibt eine Prozentzahl aus. 0 = super 100= ganz schlimm
-     * 
-     * @param value
-     * @param owner
-     * @return Prozent der Erkennungssicherheit
-     */
-    public static int getValityPercent(int value, JAntiCaptcha owner) {
-        if (value < 0) { return 100; }
-        return (int) (100.0 * value / PixelGrid.getMaxPixelValue(owner));
     }
 
     private static void recFill(PixelObject p, Letter l, int x, int y, int[][] tmp, int i) {
@@ -701,73 +467,12 @@ public class PixelGrid extends Property {
      *            Grid inn der richtigen größe für x,y
      * @param value
      *            Pixelwert
-     * @param owner
-     *            JAntiCaptcha Instanz als Parameterdump
      */
-    // public static void setPixelValue(int x, int y, int[][] localGrid,
-    // int value, JAntiCaptcha owner) {
-    // try {
-    // float[] hsb=new float[3];
-    // hsb[0]=0;
-    // hsb[1]=0;
-    // hsb[2]=0;
-    // hsb[owner.getHSBType()]=(float) ((double) value /
-    // owner.getColorValueFaktor());
-    //			
-    // localGrid[x][y] = Color.HSBtoRGB(hsb[0],hsb[1],hsb[2]);
-    // } catch (ArrayIndexOutOfBoundsException e) {
-    // Utilities.trace("ERROR: Nicht im grid; [" + x + "][" + y
-    // + "] grid " + localGrid.length);
-    // JDLogger.exception(e);
-    //
-    // }
-    // }
     public static void setPixelValue(int x, int y, int[][] localGrid, int value) {
         try {
             localGrid[x][y] = value;
         } catch (Exception e) {
-            // TODO: handle exception
         }
-
-        // try {
-        //
-        // //
-        // value*=(float)((float)owner.getColorFaktor()/(float)owner.
-        // getColorFaktor());
-        // // String
-        // // str=Utilities.fillInteger(Integer.toHexString(value),6,"0");
-        // int[] v = Utilities.hexToRgb(value);
-        // Utilities.trace(value+" - "+v[0]+"/"+v[1]+"/"+v[2]);
-        // if (owner.getColorFormat() == 0) {
-        // float[] hsb = { 0.0f, 0.0f, 0.0f };
-        // if (owner.getColorComponent(0) <= 2)
-        // hsb[owner.getColorComponent(0)] = (float) ((double) v[0] / 255.0);
-        // if (owner.getColorComponent(1) <= 2)
-        // hsb[owner.getColorComponent(1)] = (float) ((double) v[1] / 255.0);
-        // if (owner.getColorComponent(2) <= 2)
-        // hsb[owner.getColorComponent(2)] = (float) ((double) v[2] / 255.0);
-        // Utilities.trace(value+" - "+hsb[0]+"/"+hsb[1]+"/"+hsb[2]);
-        // localGrid[x][y] = Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
-        // while( localGrid[x][y]<0) localGrid[x][y]+=16777216;
-        // Utilities.trace(localGrid[x][y]);
-        // } else if (owner.getColorFormat() == 1) {
-        // int[] rgb = { 0, 0, 0 };
-        // if (owner.getColorComponent(0) <= 2)
-        // rgb[owner.getColorComponent(0)] = v[0];
-        // if (owner.getColorComponent(1) <= 2)
-        // rgb[owner.getColorComponent(1)] = v[1];
-        // if (owner.getColorComponent(2) <= 2)
-        // rgb[owner.getColorComponent(2)] = v[2];
-        //             
-        // localGrid[x][y] = rgb[0] * 65536 + rgb[1] * 256 + rgb[2];
-        // }
-        //
-        // } catch (ArrayIndexOutOfBoundsException e) {
-        // Utilities.trace("ERROR: Nicht im grid; [" + x + "][" + y + "] grid "
-        // + localGrid.length);
-        // JDLogger.exception(e);
-        //
-        // }
     }
 
     /**
@@ -972,24 +677,14 @@ public class PixelGrid extends Property {
      * @param avg
      */
     public void cleanBackgroundByColor(int avg) {
-
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 int dif = Math.abs(avg - getPixelValue(x, y));
-                // if(Utilities.isLoggerActive())logger.info(getPixelValue(x,
-                // y)+"_");
                 if (dif < (int) (getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
-
                     this.setPixelValue(x, y, getMaxPixelValue());
-
-                } else {
-
                 }
-
             }
         }
-        // grid = newgrid;
-
     }
 
     /**
@@ -1001,11 +696,9 @@ public class PixelGrid extends Property {
      * @param width
      * @param height
      */
-
     public void cleanBackgroundBySample(int px, int py, int width, int height) {
         int avg = getAverage(px + width / 2, py + height / 2, width, height);
         cleanBackgroundByColor(avg);
-
     }
 
     /**
@@ -1019,7 +712,6 @@ public class PixelGrid extends Property {
         for (int i = 0; i < object.getSize(); i++) {
             setPixelValue(object.elementAt(i)[0], object.elementAt(i)[1], color);
         }
-
     }
 
     /**
@@ -1029,7 +721,6 @@ public class PixelGrid extends Property {
      */
     public Letter createLetter() {
         Letter ret = new Letter();
-
         ret.setOwner(owner);
         return ret;
     }
@@ -1467,7 +1158,7 @@ public class PixelGrid extends Property {
      * @return Höhe
      */
     public int getHeight() {
-        if (grid.length == 0) { return 0; }
+        if (grid.length == 0) return 0;
         return grid[0].length;
     }
 
@@ -1623,7 +1314,7 @@ public class PixelGrid extends Property {
             w.setImage(0, 0, this.getImage());
         }
         int line = 1;
-        
+
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
 
@@ -1639,10 +1330,10 @@ public class PixelGrid extends Property {
                     if (lastObject != null) {
                         int xd = x - lastObject.getXMin() + lastObject.getWidth() / 2;
                         int yd = y - lastObject.getYMin() + lastObject.getHeight() / 2;
-                        dist = xd*xd + yd*yd;
+                        dist = xd * xd + yd * yd;
                     }
                     int d;
-                    if (lastObject != null && lastObject.getArea() < owner.getJas().getInteger("minimumObjectArea") && dist < (d=owner.getJas().getInteger("minimumLetterWidth") / 2 + 1)*d) {
+                    if (lastObject != null && lastObject.getArea() < owner.getJas().getInteger("minimumObjectArea") && dist < (d = owner.getJas().getInteger("minimumLetterWidth") / 2 + 1) * d) {
 
                         object = lastObject;
                         for (int i = 0; i < ret.size(); i++) {
@@ -2179,22 +1870,13 @@ public class PixelGrid extends Property {
         bimg = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         bimg.setRGB(0, 0, getWidth(), getHeight(), getPixel(), 0, getWidth());
 
-        // Encode as a JPEG
-        FileOutputStream fos;
         try {
-            fos = new FileOutputStream(file);
+            FileOutputStream fos = new FileOutputStream(file);
 
             JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
             jpeg.encode(bimg);
             fos.close();
-        } catch (FileNotFoundException e) {
-
-            JDLogger.exception(e);
-        } catch (ImageFormatException e) {
-
-            JDLogger.exception(e);
-        } catch (IOException e) {
-
+        } catch (Exception e) {
             JDLogger.exception(e);
         }
     }
@@ -2223,7 +1905,6 @@ public class PixelGrid extends Property {
         }
 
         this.grid = newGrid;
-
     }
 
     public void setLocation(int[] loc) {
@@ -2232,7 +1913,6 @@ public class PixelGrid extends Property {
 
     public void setOrgGrid(int[][] grid) {
         tmpGrid = grid;
-
     }
 
     /**
@@ -2257,7 +1937,6 @@ public class PixelGrid extends Property {
                 grid[x][y] = pixel[i++];
             }
         }
-
     }
 
     /**
@@ -2268,7 +1947,6 @@ public class PixelGrid extends Property {
      * @param y
      * @param value
      */
-
     public void setPixelValue(int x, int y, int value) {
         PixelGrid.setPixelValue(x, y, grid, value);
     }
@@ -2279,14 +1957,12 @@ public class PixelGrid extends Property {
      * 
      */
     public void testColor() {
-
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 // Einmal um die Farbe und wieder zurück
                 setPixelValue(x, y, getPixelValue(x, y));
             }
         }
-
     }
 
     /**
@@ -2304,12 +1980,9 @@ public class PixelGrid extends Property {
      *            Schwellwert für die Kontrasterkennung
      */
     public void toBlackAndWhite(double contrast) {
-
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-
                 setPixelValue(x, y, isElement(getPixelValue(x, y), (int) (getMaxPixelValue() * contrast)) ? 0 : getMaxPixelValue());
-
             }
         }
     }
@@ -2331,4 +2004,5 @@ public class PixelGrid extends Property {
         }
         return ret.toString();
     }
+
 }

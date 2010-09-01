@@ -167,16 +167,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         super.clean();
     }
 
-    protected int waitForFreeConnection(final DownloadLink downloadLink) throws InterruptedException {
-        int free = getMaxConnections() - getCurrentConnections();
-        while (free <= 0) {
-            Thread.sleep(1000);
-            downloadLink.getLinkStatus().setStatusText(JDL.LF("download.system.waitForconnection", "Cur. %s/%s connections...waiting", getCurrentConnections() + "", getMaxConnections() + ""));
-            downloadLink.requestGuiUpdate();
-        }
-        return free;
-    }
-
     protected void setBrowserExclusive() {
         if (br == null) return;
         br.setCookiesExclusive(true);
@@ -418,10 +408,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         if (max <= 0) return Integer.MAX_VALUE;
         if (max == Integer.MIN_VALUE) return 0;
         return max;
-    }
-
-    public boolean hasAccountSupport() {
-        return enablePremium;
     }
 
     /* TODO: remove with next major update */

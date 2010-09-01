@@ -20,12 +20,8 @@ import java.io.Serializable;
 
 public class TransferStatus implements Serializable {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -5529970643122096722L;
     private boolean supportsresume = false;
-    private boolean supportspremium = false;
     private boolean usespremium = false;
 
     public boolean supportsResume() {
@@ -36,16 +32,8 @@ public class TransferStatus implements Serializable {
         return usespremium;
     }
 
-    public boolean supportsPremium() {
-        return supportspremium;
-    }
-
     public void setResumeSupport(final boolean b) {
         supportsresume = b;
-    }
-
-    public void setPremiumSupport(final boolean b) {
-        supportspremium = b;
     }
 
     public void usePremium(final boolean b) {

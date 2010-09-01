@@ -866,9 +866,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.isEnabled = isEnabled;
         if (!isEnabled) {
             setAborted(true);
-        }
-        if (isEnabled) {
-
+        } else {
             if (host != null && defaultplugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");
                 return;
@@ -921,15 +919,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setDefaultPlugin(PluginForHost plugin) {
         this.defaultplugin = plugin;
-        if (defaultplugin != null) {
-            getTransferStatus().setPremiumSupport(defaultplugin.isPremiumEnabled());
-        }
     }
 
     public void setLivePlugin(PluginForHost plugin) {
         this.liveplugin = plugin;
         if (liveplugin != null) {
-            getTransferStatus().setPremiumSupport(liveplugin.isPremiumEnabled());
             liveplugin.setDownloadLink(this);
         }
     }

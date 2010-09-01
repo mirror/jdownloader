@@ -105,7 +105,6 @@ public class DivxDenCom extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (brbefore.contains(INMAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode, try again later.");
-        String passCode = null;
         boolean resumable = true;
         int maxchunks = -5;
         // If the filesize regex above doesn't match you can copy this part into
@@ -124,7 +123,7 @@ public class DivxDenCom extends PluginForHost {
             br.submitForm(freeform);
             doSomething();
         }
-        checkErrors(downloadLink, false, passCode);
+        checkErrors(downloadLink, false);
         String md5hash = new Regex(brbefore, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -133,7 +132,7 @@ public class DivxDenCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         doSomething();
-        checkErrors(downloadLink, true, passCode);
+        checkErrors(downloadLink, true);
         String dllink = getDllink();
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
@@ -142,9 +141,6 @@ public class DivxDenCom extends PluginForHost {
             br.followConnection();
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }
@@ -198,13 +194,8 @@ public class DivxDenCom extends PluginForHost {
         }
     }
 
-    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
+    public void checkErrors(DownloadLink theLink, boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (brbefore.contains("<br><b>Password:</b> <input") || brbefore.contains("<br><b>Passwort:</b> <input") || brbefore.contains("Wrong password")) {
-                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                theLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
             if (brbefore.contains("Wrong captcha")) {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);

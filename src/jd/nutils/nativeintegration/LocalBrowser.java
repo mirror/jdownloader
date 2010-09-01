@@ -214,11 +214,6 @@ public abstract class LocalBrowser implements Serializable {
 
     }
 
-    public void openURL(String url) throws Exception {
-        if (url == null) return;
-        openURL(new URL(url));
-    }
-
     abstract public void openURL(URL url) throws Exception;
 
     public static void openURL(String browser, URL url) throws Exception {

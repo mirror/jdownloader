@@ -20,13 +20,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.beans.XMLDecoder;
-import java.beans.XMLEncoder;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
@@ -34,11 +28,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -87,7 +78,7 @@ public class JDUtilities {
     /**
      * Die Konfiguration
      */
-    public static Configuration CONFIGURATION = null;
+    private static Configuration CONFIGURATION = null;
 
     private static DatabaseConnector DB_CONNECT = null;
 
@@ -112,30 +103,6 @@ public class JDUtilities {
     private static String[] JD_ARGUMENTS = new String[1];
 
     private static int REVISIONINT = -1;
-
-    public static <K extends Comparable<K>, V> TreeMap<K, V> revSortByKey(final Map<K, V> map) {
-        final TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
-
-            public int compare(final K o1, final K o2) {
-                return o2.compareTo(o1);
-            }
-
-        });
-        a.putAll(map);
-        return a;
-    }
-
-    public static <K extends Comparable<K>, V> TreeMap<K, V> sortByKey(final Map<K, V> map) {
-        final TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
-
-            public int compare(final K o1, final K o2) {
-                return o1.compareTo(o2);
-            }
-
-        });
-        a.putAll(map);
-        return a;
-    }
 
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
@@ -442,10 +409,6 @@ public class JDUtilities {
         JD_ARGUMENTS = args;
     }
 
-    public static String[] getJDargs() {
-        return JD_ARGUMENTS;
-    }
-
     public static void restartJDandWait() {
         restartJD(false);
         while (true) {
@@ -537,7 +500,7 @@ public class JDUtilities {
         }).start();
     }
 
-    public static URL getResourceURL(final String resource) {
+    private static URL getResourceURL(final String resource) {
         final JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
             System.err.println("Classloader == null");
@@ -599,30 +562,6 @@ public class JDUtilities {
         exec.start();
         exec.waitTimeout();
         return exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-    }
-
-    public static void saveConfig() {
-        JDUtilities.getConfiguration().save();
-    }
-
-    public static String objectToXml(final Object obj) throws IOException {
-        final ByteArrayOutputStream ba = new ByteArrayOutputStream();
-        final DataOutputStream out = new DataOutputStream(ba);
-        final XMLEncoder xmlEncoder = new XMLEncoder(out);
-        xmlEncoder.writeObject(obj);
-        xmlEncoder.close();
-        out.close();
-        return new String(ba.toByteArray());
-    }
-
-    public static Object xmlStringToObjekt(final String in) throws IOException {
-        Object objectLoaded = null;
-        final ByteArrayInputStream ba = new ByteArrayInputStream(in.getBytes());
-        final XMLDecoder xmlDecoder = new XMLDecoder(ba);
-        objectLoaded = xmlDecoder.readObject();
-        xmlDecoder.close();
-        ba.close();
-        return objectLoaded;
     }
 
     /**
