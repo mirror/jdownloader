@@ -54,7 +54,6 @@ download.error.message.outofmemory = Il sistema di download non ha memoria suffi
 download.error.message.rangeheaderparseerror = Formato non previsto intervallo header:
 download.error.message.rangeheaders = Il server non supporta la gestione dei segmenti
 download.error.message.unavailable = Servizio temporaneamente non disponibile
-download.system.waitforconnection = Attuali %s/%s connessioni... in attesa
 downloadlink.status.error = Spazio su disco fisso insufficiente
 downloadlink.status.error.agb_not_signed = TOC non accettati
 downloadlink.status.error.captcha_wrong = Errore captcha
