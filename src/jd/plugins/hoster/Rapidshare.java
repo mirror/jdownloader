@@ -298,7 +298,7 @@ public class Rapidshare extends PluginForHost {
                     }
                     u.setDownloadSize(Long.parseLong(matches[i][2]));
                     u.setFinalFileName(matches[i][1]);
-                    u.setMD5Hash(matches[i][6]);
+                    if (!"MD5NOTFOUND".equalsIgnoreCase(matches[i][6])) u.setMD5Hash(matches[i][6]);
                     // 0=File not found 1=File OK 2=File OK (direct download)
                     // 3=Server down 4=File abused 5
                     switch (Integer.parseInt(matches[i][4])) {
