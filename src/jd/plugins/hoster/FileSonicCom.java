@@ -208,7 +208,7 @@ public class FileSonicCom extends PluginForHost {
             } else
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("unknown"))) {
             br.followConnection();
             errorHandling(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -251,6 +251,7 @@ public class FileSonicCom extends PluginForHost {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         }
+        if (br.containsHTML("An Error Occurred")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 20 * 60 * 1000l); }
     }
 
     @Override
@@ -324,7 +325,7 @@ public class FileSonicCom extends PluginForHost {
          * error that more are possible and resume should also not work ;)
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
-        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection() != null && dl.getConnection().getContentType() != null && (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("unknown"))) {
             br.followConnection();
             errorHandling(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

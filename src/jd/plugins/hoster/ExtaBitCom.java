@@ -165,17 +165,16 @@ public class ExtaBitCom extends PluginForHost {
         br.getPage("http://extabit.com/");
         String expire = br.getRegex("Premium is active till <span class=\"green\"><strong>(.*?)</strong>").getMatch(0);
         String downloadsLeft = br.getRegex("You have <span class=\"green\"><strong>(\\d+) downloads</strong>").getMatch(0);
-        if (downloadsLeft != null)
-            downloadsLeft = " " + downloadsLeft + " downloads left";
-        else
-            downloadsLeft = "";
+        if (downloadsLeft != null) downloadsLeft = " " + downloadsLeft + " downloads left";
         if (expire == null && downloadsLeft == null || downloadsLeft.equals("0")) {
+            ai.setStatus("Account invalid");
             ai.setExpired(true);
             account.setValid(false);
             return ai;
         } else if (expire != null) {
             ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", null));
         }
+        ai.setStatus("Account ok");
         ai.setUnlimitedTraffic();
         ai.setStatus("Premium User" + downloadsLeft);
         return ai;

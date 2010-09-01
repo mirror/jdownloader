@@ -89,7 +89,8 @@ public class LinkGrabberPackager {
         int lastPoint = name.lastIndexOf(".");
         if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
         if (lastPoint > 0) {
-            if ((name.length() - lastPoint + 1) <= 3) {
+            int extLength = (name.length() - (lastPoint + 1));
+            if (extLength <= 3) {
                 name = name.substring(0, lastPoint);
             }
         }

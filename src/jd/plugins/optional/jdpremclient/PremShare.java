@@ -389,10 +389,10 @@ public class PremShare extends PluginForHost implements JDPremInterface {
             if (JDPremium.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
-            } else if (JDPremium.isEnabled() && enabled && AccountController.getInstance().getValidAccount("jdownloader.org") != null) {
+            } else if (JDPremium.isEnabled() && enabled) {
                 /* PremShare */
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost())) return Integer.MAX_VALUE;
+                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("jdownloader.org") != null) return Integer.MAX_VALUE;
                 }
             }
             return plugin.getMaxSimultanDownload(account);

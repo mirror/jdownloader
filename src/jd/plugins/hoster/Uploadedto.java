@@ -109,6 +109,9 @@ public class Uploadedto extends PluginForHost {
         url = url.replace("/?id=", "/file/");
         url = url.replace("?id=", "file/");
         url = url.replaceFirst("/\\?.*?&id=", "/file/");
+        if (!url.contains("/file/")) {
+            url = url.replaceFirst("ul.to/", "ul.to/file/");
+        }
         String[] parts = url.split("\\/");
         String newLink = "";
         for (int t = 0; t < Math.min(parts.length, 5); t++) {

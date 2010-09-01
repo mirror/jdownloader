@@ -114,6 +114,7 @@ public class MegasharesCom extends PluginForHost {
             String validUntil = br.getRegex("premium_info_box\">Period Ends:(.*?)<").getMatch(0);
             if (validUntil == null) {
                 account.setProperty("cookies", null);
+                ai.setStatus("Account invalid");
                 account.setValid(false);
             } else {
                 account.setValid(true);

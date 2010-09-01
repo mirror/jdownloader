@@ -83,6 +83,7 @@ public class FileServeCom extends PluginForHost {
         if (username != null && username.length() > 20) username = username.substring(0, 20);
         if (password != null && password.length() > 20) password = password.substring(0, 20);
         br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(username) + "&loginUserPassword=" + Encoding.urlEncode(password) + "&loginFormSubmit=Login");
+        if (br.containsHTML("Username doesn't exist")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://fileserve.com/dashboard.php");
         String accType = br.getRegex("<h5>Account type:</h5>[\r\n ]+<h3>(Premium|Free)</h3>").getMatch(0);
         if (accType == null) accType = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium|Free)([ ]+)?</h5>").getMatch(0);
@@ -106,6 +107,11 @@ public class FileServeCom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
+            if (br.containsHTML("Username doesn't exist")) {
+                ai.setStatus("Username doesn't exist");
+            } else {
+                ai.setStatus("Account Invalid");
+            }
             account.setValid(false);
             return ai;
         }

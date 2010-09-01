@@ -122,7 +122,7 @@ public class ShareOnlineBiz extends PluginForHost {
         br.setAcceptLanguage("en, en-gb;q=0.8");
         String id = getID(downloadLink);
         br.setDebug(true);
-        if (br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php?md5=1", "links=" + id).matches("\\s*")) {
+        if (br.postPage("http://api.share-online.biz/linkcheck.php?md5=1", "links=" + id).matches("\\s*")) {
             String startURL = downloadLink.getDownloadURL();
             // workaround to bypass new layout and use old site
             br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
@@ -164,7 +164,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     sb.append(getID(dl));
                     c++;
                 }
-                br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php?md5=1", sb.toString());
+                br.postPage("http://api.share-online.biz/linkcheck.php?md5=1", sb.toString());
                 String infos[][] = br.getRegex(Pattern.compile("(.*?);(.*?);(.*?);(.*?);([0-9a-fA-F]+)")).getMatches();
                 for (DownloadLink dl : links) {
                     String id = getID(dl);
@@ -191,7 +191,7 @@ public class ShareOnlineBiz extends PluginForHost {
                 }
                 if (index == urls.length) break;
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
         return true;

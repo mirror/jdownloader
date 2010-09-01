@@ -112,7 +112,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     private boolean handleOchLoad(DownloadLink link) throws Exception {
         synchronized (LOCK) {
             if (currentMaxDownloads == 0) return false;
-            currentMaxDownloads = Math.max(0, --currentMaxDownloads);
+            currentMaxDownloads--;
         }
         try {
             Account acc = null;
@@ -158,7 +158,8 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             return true;
         } finally {
             synchronized (LOCK) {
-                currentMaxDownloads = Math.min(MAXDOWNLOADS + 1, ++currentMaxDownloads);
+                currentMaxDownloads++;
+                if (currentMaxDownloads > MAXDOWNLOADS) currentMaxDownloads = MAXDOWNLOADS;
             }
         }
     }
@@ -297,10 +298,10 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             if (JDPremium.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
-            } else if (JDPremium.isEnabled() && enabled && AccountController.getInstance().getValidAccount("ochload.org") != null) {
+            } else if (JDPremium.isEnabled() && enabled) {
                 /* OchLoad */
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && currentMaxDownloads > 0) return currentMaxDownloads;
+                    if (currentMaxDownloads > 0 && premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("ochload.org") != null) return MAXDOWNLOADS;
                 }
             }
             return plugin.getMaxSimultanDownload(account);
