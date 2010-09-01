@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -40,6 +41,8 @@ public class ShareFlareNet extends PluginForHost {
         enablePremium("http://shareflare.net/page/premium.php");
     }
 
+    private static final String NEXTPAGE = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
+
     @Override
     public String getAGBLink() {
         return "http://shareflare.net/page/terms.php";
@@ -48,8 +51,10 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://shareflare.net", "lang", "en");
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (br.containsHTML("(File not found|deleted for abuse or something like this)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("id=\"file-info\">(.*?)<small").getMatch(0);
         if (filename == null) {
@@ -99,14 +104,15 @@ public class ShareFlareNet extends PluginForHost {
         }
         if (linkframe == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(linkframe);
-        String nextframe = br.getRegex("window\\.location\\.href=\"(.*?)\"").getMatch(0);
-        if (nextframe == null) nextframe = br.getRegex("\"(http://s[0-9]+\\.shareflare\\.net/tmpl/tmpl_frame_top\\.php)\"").getMatch(0);
-        if (nextframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(NEXTPAGE);
         String wait = br.getRegex("y =.*?(\\d+);").getMatch(0);
         int tt = 60;
-        if (wait != null) tt = Integer.parseInt(wait);
+        if (wait != null) {
+            logger.info("Regexed waittime is found...");
+            tt = Integer.parseInt(wait);
+        }
         sleep(tt * 1001, downloadLink);
-        br.getPage(nextframe);
+        br.getPage(NEXTPAGE);
         String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/download[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

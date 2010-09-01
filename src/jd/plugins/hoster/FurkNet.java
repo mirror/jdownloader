@@ -46,7 +46,15 @@ public class FurkNet extends PluginForHost {
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("This torrent is not ready for")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This is NO VALID LINK!"); }
         String filename = br.getRegex("<title>(.*?) :: Furk.net</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("document\\.location\\.href='/registration\\?pfile=(.*?)'\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("document\\.location\\.href='/registration\\?pfile=(.*?)'\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) :: Furk\\.net</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+                }
+            }
+        }
         String filesize = br.getRegex("align=\"center\">File size: <b>(.*?)</b><br").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -60,6 +68,7 @@ public class FurkNet extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(link);
         if (br.containsHTML("Slots limit for free downloads")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML("servers for direct downloading:<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible for registered users");
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove(null);

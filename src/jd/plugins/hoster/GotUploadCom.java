@@ -143,7 +143,7 @@ public class GotUploadCom extends PluginForHost {
         }
 
         /* Captcha START */
-        if (brbefore.contains("background:#ccc;text-align")) {
+        if (brbefore.contains(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
             String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();

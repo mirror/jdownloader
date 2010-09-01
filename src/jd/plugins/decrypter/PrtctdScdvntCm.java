@@ -55,7 +55,8 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         int linkCounter = linksCount.length;
         for (int i = 0; i <= 3; i++) {
             String equals = getCaptchaCode("http://protected.socadvnet.com/plugin/cppp.php", param);
-            br.postPage("http://protected.socadvnet.com/cp_code.php", "res_code=" + equals);
+            br.postPage("http://protected.socadvnet.com/cpcode.php", "res_code=" + equals);
+            System.out.print(br.toString());
             if (!br.toString().trim().equals("1") && !br.toString().trim().equals("0")) {
                 logger.warning("Error in doing the maths for link: " + parameter);
                 return null;
