@@ -226,6 +226,7 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        if (parameter.getDownloadURL().contains(".net")) correctDownloadLink(parameter);
         this.setBrowserExclusive();
         br.setCookie("http://www.filesonic.com/", "lang", "en");
         br.getPage(parameter.getDownloadURL());
