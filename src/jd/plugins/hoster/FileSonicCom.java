@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.com/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.(com|net)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
     private static final Object LOCK = new Object();
@@ -258,6 +258,7 @@ public class FileSonicCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String downloadUrl = null;
         String passCode = null;
+        boolean triedSavedURL = false;
         synchronized (freecookies) {
             if (freecookies.size() > 0 && nextUrl != null) {
                 this.setBrowserExclusive();
@@ -319,6 +320,8 @@ public class FileSonicCom extends PluginForHost {
                 }
                 this.sleep((Long.parseLong(countDownDelay)) * 1001, downloadLink);
             }
+        } else {
+            triedSavedURL = true;
         }
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
@@ -327,6 +330,7 @@ public class FileSonicCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection() != null && dl.getConnection().getContentType() != null && (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("unknown"))) {
             br.followConnection();
+            if (triedSavedURL) throw new PluginException(LinkStatus.ERROR_RETRY);
             errorHandling(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
