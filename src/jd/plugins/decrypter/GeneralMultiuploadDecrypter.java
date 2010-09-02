@@ -44,6 +44,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         // Only uploadmirrors.com has those "/download/" links so we need to
         // correct them
         parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/");
+        // Tohse links need a "/" at the end to be valid
+        if (!param.getCryptedUrl().endsWith("/")) param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
         String host = new Regex(parameter, "(.+)/(files|dl)").getMatch(0);
         // At the moment kewlfile.com is the only host in this plugin which has
         // this "kewlfile.com/rd/" links
@@ -86,7 +88,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(dllink));
             progress.increase(1);
         }
-
         return decryptedLinks;
     }
 

@@ -370,3 +370,6 @@ jd/plugins/hoster/SuperFastFileCom.class
 jd/plugins/hoster/SpeedShareOrg.class
 jd/plugins/hoster/FileShareRo.class
 jd/plugins/hoster/ShareSystemsDe.class
+jd/plugins/hoster/MangoShareCom.class
+jd/plugins/hoster/MekaShareCom.class
+jd/plugins/hoster/MilleDriveCom.class
