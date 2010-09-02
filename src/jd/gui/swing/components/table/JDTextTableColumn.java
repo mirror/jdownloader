@@ -18,8 +18,8 @@ public abstract class JDTextTableColumn extends JDTableColumn {
     }
 
     /**
-     * Should be overwritten to prepare the componente for the TableCellRenderer
-     * (e.g. setting tooltips)
+     * Should be overwritten to prepare the componente for the TableCellRenderer (e.g. setting
+     * tooltips)
      */
     protected void prepareTableCellRendererComponent(JRendererLabel jlr) {
     }
@@ -45,7 +45,11 @@ public abstract class JDTextTableColumn extends JDTableColumn {
     public final Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         String text = getStringValue(value);
         jlr.setText(text);
-        jlr.setToolTipText(text);
+        if (text != null && text.length() > 0) {
+            jlr.setToolTipText(text);
+        } else {
+            jlr.setToolTipText(null);
+        }
         return jlr;
     }
 
