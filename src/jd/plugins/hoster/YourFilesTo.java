@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
@@ -70,16 +69,13 @@ public class YourFilesTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        JavaScript js = new JavaScript(br);
-        try {
-            js.runPage();
-        } catch (Exception e) {
-        }
-        String fakelink = js.getVar("dumdi1");
-        if (br.getRegex("'<a href=\"' \\+ (.*?) \\+").getMatch(0) != null) fakelink = js.getVar(br.getRegex("'<a href=\"' \\+ (.*?) \\+").getMatch(0).trim());
-        if (fakelink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        String link = br.getRegex("var bla = 'http://http:/(.*?)';").getMatch(0);
+        link = Encoding.urlDecode(link.replace("dumdidum", ""), true);
+        link = Encoding.urlDecode(link.replace("dumdidu", ""), true);
+
         Browser brc = br.cloneBrowser();
-        dl = BrowserAdapter.openDownload(brc, downloadLink, fakelink);
+        dl = BrowserAdapter.openDownload(brc, downloadLink, link);
         /* Workaround für fehlerhaften Filename Header */
         String name = Plugin.getFileNameFromHeader(dl.getConnection());
         if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
