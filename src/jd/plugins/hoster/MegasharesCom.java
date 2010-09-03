@@ -321,6 +321,10 @@ public class MegasharesCom extends PluginForHost {
             if (dsize == null) dsize = br.getRegex("Filesize:</span></strong>(.*?)<br />").getMatch(0);
             if (fln == null) fln = br.getRegex("download page link title.*?<h1 class=.*?>(.*?)<").getMatch(0);
             if (dsize == null || fln == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String betterfln = br.getRegex("download page link title.*?class=.*?style=.*?title=\"(.*?)\"").getMatch(0);
+            if ((fln.endsWith("...") && betterfln != null) || (betterfln != null && betterfln.length() >= fln.length())) {
+                fln = betterfln;
+            }
             return AvailableStatus.TRUE;
         } finally {
             if (dsize != null) downloadLink.setDownloadSize(Regex.getSize(dsize));

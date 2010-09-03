@@ -481,7 +481,7 @@ public class DistributeData extends Thread {
          * check if there are any links (we need at least a domain and
          * protocoll)
          */
-        if (data == null || data.length() == 0 || !new Regex(data, "//.*?\\.").matches()) return;
+        if (data == null || data.length() == 0 || (!new Regex(data, "//.*?\\.").matches() && !new Regex(data, "jdlist://").matches())) return;
         ArrayList<DownloadLink> links = findLinks();
 
         if (links.isEmpty() && !disableDeepEmergencyScan) {
