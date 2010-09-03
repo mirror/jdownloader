@@ -12,7 +12,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.event.EventListenerList;
 
-import jd.plugins.optional.awesomebar.awesome.proposal.*;
+import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeAlertListener;
+import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeClipboardListener;
+import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeReconnectListener;
+import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeShoutListener;
+import jd.plugins.optional.awesomebar.awesome.proposal.AwesomeStartStopListener;
 
 public class Awesome extends Observable {
     private Map<String, EventListenerList> keywords = new HashMap<String, EventListenerList>();
@@ -180,7 +184,7 @@ public class Awesome extends Observable {
          * returnedProposal: still "command-alias-1 param") (working well
          * anyway, just displaying wrong keyword)
          */
-        if (this.getParams().isEmpty()) {
+        if (this.getParams().length() == 0) {
             try {
                 commandLock.readLock().lock();
                 if (this.getCommand().isEmpty()) {

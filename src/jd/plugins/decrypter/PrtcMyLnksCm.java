@@ -136,7 +136,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
             String tab[] = matcher.group().split("\\D");
 
             for (String str : tab) {
-                if (!str.isEmpty()) {
+                if (str.length() != 0) {
                     intList.add(new Integer(str));
                 }
             }
