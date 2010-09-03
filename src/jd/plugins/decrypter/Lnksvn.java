@@ -30,9 +30,11 @@ import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
+import jd.http.ext.BasicBrowserEnviroment;
+import jd.http.ext.ExtBrowser;
+import jd.http.ext.ExtBrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
-import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -42,8 +44,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.xml.sax.SAXException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
@@ -165,6 +165,7 @@ public class Lnksvn extends PluginForDecrypt {
                 }
             }
             if (decryptedLinks.size() == foundlinks) {
+                // if containersearch did not work
                 String[] links = br.getRegex("<a href=\"(http://linksave[^\"]*)\" onclick=\"javascript:document.getElementById").getColumn(0);
                 final class LsDirektLinkTH extends Thread {
                     Browser browser;
@@ -221,26 +222,46 @@ public class Lnksvn extends PluginForDecrypt {
         else {
             br.getRequest().setHtmlCode(br.toString().replaceFirst("<script type=\"text/javascript\" src=\"[^\"]*.js\">", ""));
 
-            JavaScript js = new JavaScript(br);
+            // Start Evaluation of br
             try {
-                js.runPage();
-                br.getRequest().setHtmlCode(js.getDocment().getContent().replaceFirst("<script type=\"text/javascript\" src=\"[^\"]*.js\">", ""));
-                link2 = br.getRegex("location.replace\\('([^\']*)").getMatch(0);
-                if (link2 == null) link2 = br.getRegex("src=\"([^\"]*)\"").getMatch(0);
-                if (link2 == null) link2 = br.getRegex("URL=([^\"]*)\"").getMatch(0);
-                br.getPage(link2);
-                link2 = Encoding.htmlDecode(br.getRegex("iframe src=\"([^\"]*)\"").getMatch(0));
-                if (link2 == null && br.getRedirectLocation() != null) link2 = br.getRedirectLocation();
-                if (link2 == null) {
-                    js = new JavaScript(br);
-                    js.runPage();
-                    br.getRequest().setHtmlCode(js.getDocment().getContent());
-                    link2 = br.getForm(0).getAction();
-                }
-                if (link2 != null) return link2.trim();
-            } catch (SAXException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+                // this is a workaround to use ExtBrowser Insteadof old
+                // JavaScript class.
+                ExtBrowser eb = new ExtBrowser();
+
+                // settings: blacklist allows nothing. this means that only
+                // whitelisted links will be loaded
+                eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*" }, new String[] { ".*linksave.in.*" }) {
+                    public boolean isAutoProcessSubFrames() {
+                        // TODO Auto-generated method stub
+                        return false;
+                    }
+                });
+                eb.eval(br);
+                String txt = eb.getHtmlText();
+                link2 = eb.getRegex("location.replace\\('([^\']*)").getMatch(0);
+                if (link2 == null) link2 = eb.getRegex("src=\"([^\"]*)\"").getMatch(0);
+                if (link2 == null) link2 = eb.getRegex("URL=([^\"]*)\"").getMatch(0);
+                eb.getPage(link2);
+                txt = eb.getHtmlText();
+                link2 = Encoding.htmlDecode(eb.getRegex("iframe .*?src=\"([^\"]*)\"").getMatch(0));
+                if (link2 == null && br.getRedirectLocation() != null) link2 = eb.getCommContext().getRedirectLocation();
+                return link2.trim();
+                // TODO: old code is below... did not find an example about that
+
+                // if (link2 == null) {
+                // js = new JavaScript(br);
+                // js.runPage();
+                // br.getRequest().setHtmlCode(js.getDocment().getContent());
+                // link2 = br.getForm(0).getAction();
+                // }
+                // if (link2 != null) return link2.trim();
+                // } catch (SAXException e) {
+                // e.printStackTrace();
+                // } catch (IOException e) {
+                // e.printStackTrace();
+                // }
+            } catch (ExtBrowserException e) {
+                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
