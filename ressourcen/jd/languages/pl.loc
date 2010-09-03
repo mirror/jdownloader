@@ -54,7 +54,6 @@ download.error.message.outofmemory = Brakuje pamięci
 download.error.message.rangeheaderparseerror = Nie obsługiwany format nagłówka:
 download.error.message.rangeheaders = Serwer nie obsługuje dzielenia na części
 download.error.message.unavailable = Usługa tymczasowo niedostępna
-download.system.waitforconnection = 
 downloadlink.status.error = Niewystarczająca ilość miejsca na dysku
 downloadlink.status.error.agb_not_signed = Regulamin nie zaakceptowany
 downloadlink.status.error.captcha_wrong = Niepoprawny kod Captcha
