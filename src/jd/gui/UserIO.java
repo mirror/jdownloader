@@ -187,8 +187,8 @@ public class UserIO {
      * @param flag
      * @return
      */
-    private int convertFlagToAWDialog(int flag) {
-        final int ret = 0;
+    private int convertFlagToAWDialog(final int flag) {
+        int ret = 0;
 
         if (BinaryLogic.containsAll(flag, UserIO.NO_USER_INTERACTION)) {
             // flag|=
@@ -196,36 +196,36 @@ public class UserIO {
         }
 
         if (BinaryLogic.containsNone(flag, UserIO.NO_COUNTDOWN)) {
-            flag |= Dialog.LOGIC_COUNTDOWN;
+            ret |= Dialog.LOGIC_COUNTDOWN;
         }
         if (BinaryLogic.containsAll(flag, UserIO.NO_OK_OPTION)) {
-            flag |= Dialog.BUTTONS_HIDE_OK;
+            ret |= Dialog.BUTTONS_HIDE_OK;
         }
         if (BinaryLogic.containsAll(flag, UserIO.NO_CANCEL_OPTION)) {
-            flag |= Dialog.BUTTONS_HIDE_CANCEL;
+            ret |= Dialog.BUTTONS_HIDE_CANCEL;
         }
         if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN)) {
-            flag |= Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN;
+            ret |= Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN;
         }
         if (BinaryLogic.containsAll(flag, UserIO.STYLE_LARGE)) {
-            flag |= Dialog.STYLE_LARGE;
+            ret |= Dialog.STYLE_LARGE;
         }
         if (BinaryLogic.containsAll(flag, UserIO.STYLE_HTML)) {
-            flag |= Dialog.STYLE_HTML;
+            ret |= Dialog.STYLE_HTML;
         }
+
         if (BinaryLogic.containsAll(flag, UserIO.NO_ICON)) {
-            // flag|=,
-            // TODO
+            ret |= Dialog.STYLE_HIDE_ICON;
         }
         if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)) {
-            flag |= Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL;
+            ret |= Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL;
         }
         if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)) {
-            flag |= Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK;
+            ret |= Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK;
         }
         if (BinaryLogic.containsAll(flag, UserIO.STYLE_PASSWORD)) {
-            // flag|=
-            // TODO
+            ret |= Dialog.STYLE_PASSWORD;
+
         }
         return ret;
     }
