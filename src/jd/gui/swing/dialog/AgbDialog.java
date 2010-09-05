@@ -31,13 +31,18 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+
 /**
  * Dieser Dialog wird angezeigt, wenn ein Download mit einem Plugin getätigt
  * wird, dessen Agbs noch nicht akzeptiert wurden
  * 
  * @author JD-Team
  */
-public class AgbDialog extends AbstractDialog {
+public class AgbDialog extends AbstractDialog<Integer> {
+
+    private static final long serialVersionUID = -1466993330568207945L;
 
     /**
      * Zeigt einen Dialog, in dem man die Hoster AGB akzeptieren kann
@@ -45,10 +50,11 @@ public class AgbDialog extends AbstractDialog {
      * @param downloadLink
      *            abzuarbeitender Link
      */
-    public static void showDialog(DownloadLink downloadLink) {
-        if (downloadLink.getDefaultPlugin() == null) return;
-        AgbDialog dialog = new AgbDialog(downloadLink.getDefaultPlugin());
-        if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK) && dialog.isAccepted()) {
+    public static void showDialog(final DownloadLink downloadLink) {
+        if (downloadLink.getDefaultPlugin() == null) { return; }
+        final AgbDialog dialog = new AgbDialog(downloadLink.getDefaultPlugin());
+
+        if (JDFlags.hasAllFlags(Dialog.getInstance().showDialog(dialog), UserIO.RETURN_OK) && dialog.isAccepted()) {
             downloadLink.getDefaultPlugin().setAGBChecked(true);
             downloadLink.getLinkStatus().reset();
         }
@@ -60,59 +66,64 @@ public class AgbDialog extends AbstractDialog {
      * @param plugin
      *            Hoster-Plugin
      */
-    public static void showDialog(PluginForHost plugin) {
-        AgbDialog dialog = new AgbDialog(plugin);
-        if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK) && dialog.isAccepted()) {
+    public static void showDialog(final PluginForHost plugin) {
+        final AgbDialog dialog = new AgbDialog(plugin);
+        if (JDFlags.hasAllFlags(Dialog.getInstance().showDialog(dialog), UserIO.RETURN_OK) && dialog.isAccepted()) {
+
             plugin.setAGBChecked(true);
         }
     }
 
-    private static final long serialVersionUID = -1466993330568207945L;
+    private JLink               linkAgb;
 
-    private JLink linkAgb;
+    private JCheckBox           checkAgbAccepted;
 
-    private JCheckBox checkAgbAccepted;
+    private final PluginForHost plugin;
 
-    private PluginForHost plugin;
-
-    private AgbDialog(PluginForHost plugin) {
+    private AgbDialog(final PluginForHost plugin) {
         super(0, JDL.L("gui.dialogs.agb_tos.title", "Terms of Service are not accepted"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
         this.plugin = plugin;
-        init();
+
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == linkAgb || e.getSource() == checkAgbAccepted) {
-            interrupt();
+    public void actionPerformed(final ActionEvent e) {
+        if (e.getSource() == this.linkAgb || e.getSource() == this.checkAgbAccepted) {
+            this.cancel();
         } else {
             super.actionPerformed(e);
         }
     }
 
     @Override
-    public JComponent contentInit() {
-        JPanel panel = new JPanel(new MigLayout("wrap 1", "[center]"));
-
-        JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "The TOSs of %s have not been read and accepted.", plugin.getHost()));
-
-        linkAgb = new JLink(JDL.LF("gui.dialogs.agb_tos.readagb", "Read %s's TOSs", plugin.getHost()), plugin.getAGBLink());
-        linkAgb.getBroadcaster().addListener(this);
-        linkAgb.setFocusable(false);
-
-        checkAgbAccepted = new JCheckBox(JDL.L("gui.dialogs.agb_tos.agbaccepted", "I accept the terms of service"));
-        checkAgbAccepted.addActionListener(this);
-        checkAgbAccepted.setFocusable(false);
-
-        panel.add(labelInfo);
-        panel.add(linkAgb);
-        panel.add(checkAgbAccepted, "left");
-
-        return panel;
+    protected Integer createReturnValue() {
+        // TODO Auto-generated method stub
+        return this.getReturnmask();
     }
 
     private boolean isAccepted() {
-        return checkAgbAccepted.isSelected();
+        return this.checkAgbAccepted.isSelected();
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+        final JPanel panel = new JPanel(new MigLayout("wrap 1", "[center]"));
+
+        final JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "The TOSs of %s have not been read and accepted.", this.plugin.getHost()));
+
+        this.linkAgb = new JLink(JDL.LF("gui.dialogs.agb_tos.readagb", "Read %s's TOSs", this.plugin.getHost()), this.plugin.getAGBLink());
+        this.linkAgb.getBroadcaster().addListener(this);
+        this.linkAgb.setFocusable(false);
+
+        this.checkAgbAccepted = new JCheckBox(JDL.L("gui.dialogs.agb_tos.agbaccepted", "I accept the terms of service"));
+        this.checkAgbAccepted.addActionListener(this);
+        this.checkAgbAccepted.setFocusable(false);
+
+        panel.add(labelInfo);
+        panel.add(this.linkAgb);
+        panel.add(this.checkAgbAccepted, "left");
+
+        return panel;
     }
 
 }

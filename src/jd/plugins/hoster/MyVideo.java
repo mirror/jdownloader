@@ -17,53 +17,25 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.JDMediaConvert;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv" }, flags = { 0 })
 public class MyVideo extends PluginForHost {
     static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
 
-    public MyVideo(PluginWrapper wrapper) {
+    public MyVideo(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     // @Override
     public String getAGBLink() {
-        return AGB;
-    }
-
-    // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        /*
-         * warum sollte ein video das der decrypter sagte es sei online, offline
-         * sein ;)
-         */
-        return AvailableStatus.TRUE;
-    }
-
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL());
-        if (dl.startDownload()) {
-            if (downloadLink.getProperty("convertto") != null) {
-                ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
-                ConversionMode InType = ConversionMode.VIDEOFLV;
-
-                if (!JDMediaConvert.ConvertFile(downloadLink, InType, convertto)) {
-                    logger.severe("Video-Convert failed!");
-                }
-            }
-        }
+        return MyVideo.AGB;
     }
 
     // @Override
@@ -73,15 +45,44 @@ public class MyVideo extends PluginForHost {
     }
 
     // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
+
+    // @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL());
+        if (this.dl.startDownload()) {
+            if (downloadLink.getProperty("convertto") != null) {
+                final DestinationFormat convertto = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
+                final DestinationFormat InType = DestinationFormat.VIDEOFLV;
+
+                if (!JDMediaConvert.ConvertFile(downloadLink, InType, convertto)) {
+                    Plugin.logger.severe("Video-Convert failed!");
+                }
+            }
+        }
+    }
+
+    // @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /*
+         * warum sollte ein video das der decrypter sagte es sei online, offline
+         * sein ;)
+         */
+        return AvailableStatus.TRUE;
+    }
+
+    // @Override
     public void reset() {
     }
 
     // @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     // @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

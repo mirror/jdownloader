@@ -16,28 +16,26 @@
 
 package jd;
 
-import java.awt.Dimension;
 import java.awt.Font;
-import java.io.File;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.dialog.AbstractDialog;
 import jd.gui.swing.dialog.ContainerDialog;
 import jd.gui.swing.dialog.InstallerDialog;
-import jd.nutils.Executer;
 import jd.nutils.JDImage;
-import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.swing.dialog.Dialog;
 
 /**
  * Der Installer erscheint nur beim ersten mal Starten der Webstartversion und
@@ -50,44 +48,9 @@ public class Installer {
 
     private static final long serialVersionUID = 8764525546298642601L;
 
-    private boolean aborted = false;
-
-    public Installer() {
-        AbstractDialog.setDefaultDimension(new Dimension(550, 400));
-
-        if (!InstallerDialog.showDialog(null)) {
-            JDLogger.getLogger().severe("downloaddir not set");
-            this.aborted = true;
-            return;
-        }
-
-        askInstallFlashgot();
-        AbstractDialog.setDefaultDimension(null);
-
-        if (OSDetector.isWindows()) {
-            final String lng = JDL.getCountryCodeByIP();
-
-            if (JDL.isEurope(lng) || JDL.isNorthAmerica(lng) || JDL.isSouthAmerica(lng)) {
-                File file = JDUtilities.getResourceFile("tools\\Windows\\kikin\\kikin_installer.exe");
-                final Executer exec = new Executer(file.getAbsolutePath());
-                exec.addParameters(null);
-                exec.setWaitTimeout(300000);
-                exec.start();
-                exec.waitTimeout();
-                int ev = exec.getExitValue();
-                if (ev == -1) {
-                    UserIO.getInstance().requestHelpDialog(0, "Kikin", "JDownloader is bundled with Kikin(optional). Click 'more' to get information about how using Kikin helps JDownloader!", "more...", "http://jdownloader.org/kikin");
-                    JDUtilities.runCommand("cmd", new String[] { "/c", "start  " + file.getName() + "" }, file.getParent(), 10 * 60000);
-                }
-
-            }
-        }
-
-    }
-
     public static void askInstallFlashgot() {
         final SubConfiguration config = SubConfiguration.getConfig("FLASHGOT");
-        if (config.getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) return;
+        if (config.getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) { return; }
 
         final int answer = new GuiRunnable<Integer>() {
 
@@ -99,42 +62,48 @@ public class Installer {
 
                 content.add(lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version.")), "pushx");
                 lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
-                lbl.setHorizontalAlignment(JLabel.CENTER);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
 
                 content.add(lbl = new JLabel(JDL.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")));
-                lbl.setHorizontalAlignment(JLabel.CENTER);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
 
                 content.add(lbl = new JLabel(JDImage.getImageIcon("flashgot_logo")));
-                lbl.setHorizontalAlignment(JLabel.CENTER);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
 
                 content.add(lbl = new JLabel(JDL.L("installer.firefox.message.flashgot", "This installs the famous FlashGot Extension (flashgot.net).")));
-                lbl.setHorizontalAlignment(JLabel.CENTER);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
 
                 content.add(new JSeparator(), "pushx");
 
-                return new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), content, null, null, null) {
-                    private static final long serialVersionUID = -7983868276841947499L;
-
-                    @Override
-                    protected void setReturnValue(final boolean b) {
-                        super.setReturnValue(b);
-
-                        config.setProperty("ASKED_TO_INSTALL_FLASHGOT", true);
-                        config.save();
-                    }
-                }.getReturnValue();
+                final ContainerDialog dialog = new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), content, null, null, null);
+                return Dialog.getInstance().showDialog(dialog);
             }
-
         }.getReturnValue();
-        if (UserIO.isOK(answer)) installFirefoxAddon();
+        if (UserIO.isOK(answer)) {
+            Installer.installFirefoxAddon();
+        }
     }
 
     public static void installFirefoxAddon() {
         LocalBrowser.openinFirefox(JDUtilities.getResourceFile("tools/flashgot.xpi").getAbsolutePath());
     }
 
+    private boolean aborted = false;
+
+    public Installer() {
+
+        if (!InstallerDialog.showDialog(null)) {
+            JDLogger.getLogger().severe("downloaddir not set");
+            this.aborted = true;
+            return;
+        }
+
+        Installer.askInstallFlashgot();
+
+    }
+
     public boolean isAborted() {
-        return aborted;
+        return this.aborted;
     }
 
 }

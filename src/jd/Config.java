@@ -48,8 +48,6 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.dialog.AbstractDialog;
-import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
@@ -58,28 +56,78 @@ import net.miginfocom.swing.MigLayout;
 
 public class Config {
 
-    private final Configuration mainConfig;
-    private final ArrayList<SubConfiguration> configs;
-    private JComboBox configSelection;
-    private SubConfiguration currentConfig;
-    private JTable table;
-    private ConfigTableModel tableModel;
+    private class ConfigTableModel extends AbstractTableModel {
 
-    private ArrayList<Object> values;
-    private ArrayList<String> keys;
-    private JButton add;
-    private JButton edit;
-    private JButton remove;
-    private JFrame frame;
+        private static final long serialVersionUID = -5434313385327397539L;
+
+        private final String[]    columnNames      = { "Key", "Value" };
+
+        @Override
+        public Class<?> getColumnClass(final int c) {
+            return String.class;
+        }
+
+        public int getColumnCount() {
+            return this.columnNames.length;
+        }
+
+        @Override
+        public String getColumnName(final int col) {
+            return this.columnNames[col];
+        }
+
+        public int getRowCount() {
+            return Config.this.values.size();
+        }
+
+        public Object getValueAt(final int row, final int col) {
+            try {
+                switch (col) {
+                case 0:
+                    return Config.this.keys.get(row);
+                case 1:
+                    try {
+                        new ObjectConverter().toString(Config.this.values.get(row));
+                        return Config.this.values.get(row);
+                    } catch (final Exception e) {
+                        return Config.this.values.get(row);
+                    }
+                }
+            } catch (final Exception e) {
+            }
+            return "";
+        }
+
+        @Override
+        public boolean isCellEditable(final int row, final int col) {
+            return false;
+        }
+
+    }
+
+    private final Configuration               mainConfig;
+    private final ArrayList<SubConfiguration> configs;
+    private JComboBox                         configSelection;
+    private SubConfiguration                  currentConfig;
+    private JTable                            table;
+
+    private ConfigTableModel                  tableModel;
+    private ArrayList<Object>                 values;
+    private ArrayList<String>                 keys;
+    private JButton                           add;
+    private JButton                           edit;
+    private JButton                           remove;
+
+    private JFrame                            frame;
 
     public Config() {
 
-        (new JDInit()).init();
+        new JDInit().init();
         final JDController controller = JDController.getInstance();
         JDUpdateUtils.backupDataBase();
 
         System.out.println("Backuped Database");
-        mainConfig = JDUtilities.getConfiguration();
+        this.mainConfig = JDUtilities.getConfiguration();
         LookAndFeelController.setUIManager();
         final SubConfiguration laf = SubConfiguration.getConfig(LookAndFeelController.DEFAULT_PREFIX + "." + LookAndFeelController.getPlaf().getClassName());
         final SubConfiguration tmplaf = SubConfiguration.getConfig("CURRENT_LOOK_AND_FEEL");
@@ -117,132 +165,110 @@ public class Config {
                         UIManager.put(strParam, value);
                     }
                     laf.save();
-                    SwingUtilities.updateComponentTreeUI(frame);
+                    SwingUtilities.updateComponentTreeUI(Config.this.frame);
 
-                    frame.pack();
+                    Config.this.frame.pack();
                 }
             }
 
         });
-        configs = JDUtilities.getDatabaseConnector().getSubConfigurationKeys();
-        configs.add(0, mainConfig);
+        this.configs = JDUtilities.getDatabaseConnector().getSubConfigurationKeys();
+        this.configs.add(0, this.mainConfig);
 
-        sort();
-        setCurrentConfig(configs.get(0));
-        initGUI();
-    }
-
-    private void sort() {
-        Collections.sort(configs, new Comparator<SubConfiguration>() {
-
-            public int compare(final SubConfiguration o1, final SubConfiguration o2) {
-                return o1.toString().compareToIgnoreCase(o2.toString());
-            }
-
-        });
-    }
-
-    private int[] getSelectedRows() {
-        final int[] rows = table.getSelectedRows();
-        final int length = rows.length;
-        final int[] ret = new int[length];
-
-        for (int i = 0; i < length; ++i) {
-            ret[i] = table.convertRowIndexToModel(rows[i]);
-        }
-        Arrays.sort(ret);
-        return ret;
-    }
-
-    private void setCurrentConfig(final SubConfiguration cfg) {
-        currentConfig = cfg;
-
-        keys = new ArrayList<String>();
-        values = new ArrayList<Object>();
-
-        createMap(cfg.getProperties(), keys, values, "");
-        if (tableModel != null) {
-            this.tableModel.fireTableDataChanged();
-        }
+        this.sort();
+        this.setCurrentConfig(this.configs.get(0));
+        this.initGUI();
     }
 
     private void createMap(final HashMap<?, ?> hashMap, final ArrayList<String> keys, final ArrayList<Object> values, String pre) {
-        pre = (pre.length() > 0) ? pre + "/" : "";
+        pre = pre.length() > 0 ? pre + "/" : "";
         for (final Entry<?, ?> next : hashMap.entrySet()) {
             final String key = pre + next.getKey();
             final Object value = next.getValue();
             keys.add(key);
             values.add(value);
             if (value instanceof HashMap<?, ?>) {
-                createMap((HashMap<?, ?>) value, keys, values, key);
+                this.createMap((HashMap<?, ?>) value, keys, values, key);
             }
         }
     }
 
-    private void initGUI() {
-        frame = new JFrame("JDownloader Config - leave any warranty behind you!");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
-        frame.setMinimumSize(new Dimension(800, 600));
+    private int[] getSelectedRows() {
+        final int[] rows = this.table.getSelectedRows();
+        final int length = rows.length;
+        final int[] ret = new int[length];
 
-        configSelection = new JComboBox(configs.toArray(new SubConfiguration[] {}));
-        configSelection.setEditable(true);
-        configSelection.addActionListener(new ActionListener() {
+        for (int i = 0; i < length; ++i) {
+            ret[i] = this.table.convertRowIndexToModel(rows[i]);
+        }
+        Arrays.sort(ret);
+        return ret;
+    }
+
+    private void initGUI() {
+        this.frame = new JFrame("JDownloader Config - leave any warranty behind you!");
+        this.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.frame.setLayout(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
+        this.frame.setMinimumSize(new Dimension(800, 600));
+
+        this.configSelection = new JComboBox(this.configs.toArray(new SubConfiguration[] {}));
+        this.configSelection.setEditable(true);
+        this.configSelection.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
-                if (configSelection.getSelectedItem() instanceof String) {
-                    final SubConfiguration conf = SubConfiguration.getConfig(configSelection.getSelectedItem().toString());
-                    configs.add(conf);
-                    sort();
-                    configSelection.setModel(new DefaultComboBoxModel(configs.toArray(new SubConfiguration[] {})));
-                    configSelection.setSelectedItem(conf);
-                    setCurrentConfig(conf);
-                    tableModel.fireTableDataChanged();
+                if (Config.this.configSelection.getSelectedItem() instanceof String) {
+                    final SubConfiguration conf = SubConfiguration.getConfig(Config.this.configSelection.getSelectedItem().toString());
+                    Config.this.configs.add(conf);
+                    Config.this.sort();
+                    Config.this.configSelection.setModel(new DefaultComboBoxModel(Config.this.configs.toArray(new SubConfiguration[] {})));
+                    Config.this.configSelection.setSelectedItem(conf);
+                    Config.this.setCurrentConfig(conf);
+                    Config.this.tableModel.fireTableDataChanged();
                 } else {
-                    setCurrentConfig((SubConfiguration) configSelection.getSelectedItem());
-                    tableModel.fireTableDataChanged();
+                    Config.this.setCurrentConfig((SubConfiguration) Config.this.configSelection.getSelectedItem());
+                    Config.this.tableModel.fireTableDataChanged();
                 }
             }
 
         });
-        table = new JTable(tableModel = new ConfigTableModel());
+        this.table = new JTable(this.tableModel = new ConfigTableModel());
 
-        table.getTableHeader().setReorderingAllowed(false);
+        this.table.getTableHeader().setReorderingAllowed(false);
 
-        table.getColumnModel().getColumn(0).setPreferredWidth(100);
+        this.table.getColumnModel().getColumn(0).setPreferredWidth(100);
 
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        this.table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        this.table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
-            public void valueChanged(ListSelectionEvent e) {
-                final int[] rows = getSelectedRows();
-                if (rows.length == 0) return;
-                final Object value = tableModel.getValueAt(rows[0], 1);
+            public void valueChanged(final ListSelectionEvent e) {
+                final int[] rows = Config.this.getSelectedRows();
+                if (rows.length == 0) { return; }
+                final Object value = Config.this.tableModel.getValueAt(rows[0], 1);
                 try {
                     new ObjectConverter().toString(value);
-                    edit.setEnabled(true);
-                    remove.setEnabled(true);
-                } catch (Exception e1) {
+                    Config.this.edit.setEnabled(true);
+                    Config.this.remove.setEnabled(true);
+                } catch (final Exception e1) {
                     e1.printStackTrace();
-                    edit.setEnabled(false);
-                    remove.setEnabled(true);
+                    Config.this.edit.setEnabled(false);
+                    Config.this.remove.setEnabled(true);
                 }
             }
 
         });
-        add = new JButton(JDTheme.II("gui.images.add", 24, 24));
-        add.addActionListener(new ActionListener() {
+        this.add = new JButton(JDTheme.II("gui.images.add", 24, 24));
+        this.add.addActionListener(new ActionListener() {
 
             @SuppressWarnings("unchecked")
             public void actionPerformed(final ActionEvent e) {
-                final String key = UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
+                final String key = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
                 if (key == null) { return; }
-                if (keys.contains(key)) {
-                    UserIOGui.getInstance().requestMessageDialog("Key " + key + " is already available. Try Edit feature");
+                if (Config.this.keys.contains(key)) {
+                    UserIO.getInstance().requestMessageDialog("Key " + key + " is already available. Try Edit feature");
                     return;
                 }
-                final String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", "<classtype>VALUE</classtype>\r\n e.g.: <boolean>true</boolean>", null, "Save", "Cancel");
+                final String result = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", "<classtype>VALUE</classtype>\r\n e.g.: <boolean>true</boolean>", null, "Save", "Cancel");
                 if (result == null) { return; }
                 try {
                     if (result != null) {
@@ -251,7 +277,7 @@ public class Config {
                         final Object object = oc.toObject(result);
                         final String[] configKeys = key.toString().split("/");
 
-                        HashMap<String, Object> props = currentConfig.getProperties();
+                        HashMap<String, Object> props = Config.this.currentConfig.getProperties();
 
                         System.out.println("Save Object " + key);
 
@@ -270,40 +296,40 @@ public class Config {
                                 }
                             }
                         }
-                        currentConfig.setProperty(configKeys[length - 1], object);
-                        currentConfig.save();
-                        setCurrentConfig(currentConfig);
+                        Config.this.currentConfig.setProperty(configKeys[length - 1], object);
+                        Config.this.currentConfig.save();
+                        Config.this.setCurrentConfig(Config.this.currentConfig);
                     }
-                } catch (Exception e1) {
-                    UserIOGui.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
+                } catch (final Exception e1) {
+                    UserIO.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
                 }
             }
 
         });
-        edit = new JButton(JDTheme.II("gui.images.findandreplace", 24, 24));
-        edit.setEnabled(false);
-        edit.addActionListener(new ActionListener() {
+        this.edit = new JButton(JDTheme.II("gui.images.findandreplace", 24, 24));
+        this.edit.setEnabled(false);
+        this.edit.addActionListener(new ActionListener() {
 
             @SuppressWarnings("unchecked")
-            public void actionPerformed(ActionEvent e) {
-                final int[] rows = getSelectedRows();
+            public void actionPerformed(final ActionEvent e) {
+                final int[] rows = Config.this.getSelectedRows();
                 if (rows.length == 0) { return; }
                 final int row = rows[0];
-                final Object key = tableModel.getValueAt(row, 0);
-                final Object value = tableModel.getValueAt(row, 1);
+                final Object key = Config.this.tableModel.getValueAt(row, 0);
+                final Object value = Config.this.tableModel.getValueAt(row, 1);
 
                 try {
-                    AbstractDialog.setDefaultDimension(new Dimension(550, 400));
+
                     final ObjectConverter oc = new ObjectConverter();
                     final String valuess = oc.toString(value);
 
-                    final String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", valuess, null, "Save", "Cancel");
+                    final String result = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", valuess, null, "Save", "Cancel");
                     try {
                         if (result != null) {
                             final Object object = oc.toObject(result);
                             final String[] configKeys = key.toString().split("/");
 
-                            HashMap<String, Object> props = currentConfig.getProperties();
+                            HashMap<String, Object> props = Config.this.currentConfig.getProperties();
                             String myKey = null;
                             System.out.println("Save Object " + key);
 
@@ -318,40 +344,40 @@ public class Config {
                                     break;
                                 }
                             }
-                            currentConfig.setProperty(myKey, object);
-                            currentConfig.save();
-                            setCurrentConfig(currentConfig);
+                            Config.this.currentConfig.setProperty(myKey, object);
+                            Config.this.currentConfig.save();
+                            Config.this.setCurrentConfig(Config.this.currentConfig);
                         }
                     } catch (final Exception e1) {
                         e1.printStackTrace();
-                        UserIOGui.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
+                        UserIO.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
                     }
-                } catch (Exception e1) {
+                } catch (final Exception e1) {
                     e1.printStackTrace();
                 }
             }
         });
-        remove = new JButton(JDTheme.II("gui.images.delete", 24, 24));
-        remove.setEnabled(false);
-        remove.addActionListener(new ActionListener() {
+        this.remove = new JButton(JDTheme.II("gui.images.delete", 24, 24));
+        this.remove.setEnabled(false);
+        this.remove.addActionListener(new ActionListener() {
 
             @SuppressWarnings("unchecked")
-            public void actionPerformed(ActionEvent e) {
-                final int[] rows = getSelectedRows();
+            public void actionPerformed(final ActionEvent e) {
+                final int[] rows = Config.this.getSelectedRows();
                 if (rows.length == 0) { return; }
 
-                final Object key = tableModel.getValueAt(rows[0], 0);
+                final Object key = Config.this.tableModel.getValueAt(rows[0], 0);
                 final String[] keys = key.toString().split("/");
                 final int keysLength = keys.length;
                 if (keys[keysLength - 1].equals("null")) {
                     keys[keysLength - 1] = null;
                 }
                 if (keysLength == 1) {
-                    currentConfig.setProperty(keys[0], Property.NULL);
-                    currentConfig.save();
-                    setCurrentConfig(currentConfig);
+                    Config.this.currentConfig.setProperty(keys[0], Property.NULL);
+                    Config.this.currentConfig.save();
+                    Config.this.setCurrentConfig(Config.this.currentConfig);
                 } else {
-                    HashMap<String, Object> props = currentConfig.getProperties();
+                    HashMap<String, Object> props = Config.this.currentConfig.getProperties();
                     for (final String k : keys) {
                         final Object next = props.get(k);
                         if (next instanceof HashMap<?, ?>) {
@@ -362,76 +388,49 @@ public class Config {
                             return;
                         }
                     }
-                    currentConfig.setProperty(keys[keysLength - 1], Property.NULL);
-                    currentConfig.save();
-                    setCurrentConfig(currentConfig);
+                    Config.this.currentConfig.setProperty(keys[keysLength - 1], Property.NULL);
+                    Config.this.currentConfig.save();
+                    Config.this.setCurrentConfig(Config.this.currentConfig);
                 }
             }
         });
-        add.setOpaque(false);
-        add.setBorderPainted(false);
-        add.setContentAreaFilled(false);
-        edit.setOpaque(false);
-        edit.setBorderPainted(false);
-        edit.setContentAreaFilled(false);
-        remove.setOpaque(false);
-        remove.setBorderPainted(false);
-        remove.setContentAreaFilled(false);
-        frame.add(configSelection, "split 4,pushx,growx");
-        frame.add(add, "alignx right");
-        frame.add(remove, "alignx right");
-        frame.add(edit, "alignx right");
-        frame.add(new JScrollPane(table));
-        frame.setVisible(true);
-        frame.pack();
+        this.add.setOpaque(false);
+        this.add.setBorderPainted(false);
+        this.add.setContentAreaFilled(false);
+        this.edit.setOpaque(false);
+        this.edit.setBorderPainted(false);
+        this.edit.setContentAreaFilled(false);
+        this.remove.setOpaque(false);
+        this.remove.setBorderPainted(false);
+        this.remove.setContentAreaFilled(false);
+        this.frame.add(this.configSelection, "split 4,pushx,growx");
+        this.frame.add(this.add, "alignx right");
+        this.frame.add(this.remove, "alignx right");
+        this.frame.add(this.edit, "alignx right");
+        this.frame.add(new JScrollPane(this.table));
+        this.frame.setVisible(true);
+        this.frame.pack();
     }
 
-    private class ConfigTableModel extends AbstractTableModel {
+    private void setCurrentConfig(final SubConfiguration cfg) {
+        this.currentConfig = cfg;
 
-        private static final long serialVersionUID = -5434313385327397539L;
+        this.keys = new ArrayList<String>();
+        this.values = new ArrayList<Object>();
 
-        private final String[] columnNames = { "Key", "Value" };
-
-        public int getColumnCount() {
-            return columnNames.length;
+        this.createMap(cfg.getProperties(), this.keys, this.values, "");
+        if (this.tableModel != null) {
+            this.tableModel.fireTableDataChanged();
         }
+    }
 
-        public int getRowCount() {
-            return values.size();
-        }
+    private void sort() {
+        Collections.sort(this.configs, new Comparator<SubConfiguration>() {
 
-        @Override
-        public String getColumnName(final int col) {
-            return columnNames[col];
-        }
-
-        public Object getValueAt(final int row, final int col) {
-            try {
-                switch (col) {
-                case 0:
-                    return keys.get(row);
-                case 1:
-                    try {
-                        new ObjectConverter().toString(values.get(row));
-                        return values.get(row);
-                    } catch (Exception e) {
-                        return values.get(row);
-                    }
-                }
-            } catch (Exception e) {
+            public int compare(final SubConfiguration o1, final SubConfiguration o2) {
+                return o1.toString().compareToIgnoreCase(o2.toString());
             }
-            return "";
-        }
 
-        @Override
-        public Class<?> getColumnClass(final int c) {
-            return String.class;
-        }
-
-        @Override
-        public boolean isCellEditable(final int row, final int col) {
-            return false;
-        }
-
+        });
     }
 }

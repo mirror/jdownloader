@@ -24,68 +24,45 @@ import java.util.ArrayList;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.dialog.DnDWebBrowser;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
+
+import org.appwork.utils.swing.dialog.Dialog;
+
 import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public abstract class LocalBrowser implements Serializable {
 
-    private static final long serialVersionUID = 7153058016440180347L;
-    private static LocalBrowser[] BROWSERLIST = null;
-    private String name;
-
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null) return false;
-        return toString().equals(o.toString());
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    private LocalBrowser(String name) {
-        this.name = name;
-    }
+    private static final long     serialVersionUID = 7153058016440180347L;
+    private static LocalBrowser[] BROWSERLIST      = null;
 
     public synchronized static LocalBrowser[] getBrowserList() {
-        if (BROWSERLIST != null) return BROWSERLIST;
-        ArrayList<LocalBrowser> ret = new ArrayList<LocalBrowser>();
+        if (LocalBrowser.BROWSERLIST != null) { return LocalBrowser.BROWSERLIST; }
+        final ArrayList<LocalBrowser> ret = new ArrayList<LocalBrowser>();
         BrowserLauncher launcher;
         try {
             launcher = new BrowserLauncher();
 
-            for (Object o : launcher.getBrowserList()) {
+            for (final Object o : launcher.getBrowserList()) {
                 ret.add(new LocalBrowser(o.toString()) {
                     private static final long serialVersionUID = 7078868188658406674L;
 
                     @Override
-                    public void openURL(URL url) throws Exception {
-                        if (url == null) return;
-                        BrowserLauncher launcher = new BrowserLauncher();
+                    public void openURL(final URL url) throws Exception {
+                        if (url == null) { return; }
+                        final BrowserLauncher launcher = new BrowserLauncher();
                         launcher.openURLinBrowser(this.getName(), url.toString());
                     }
 
                 });
             }
-        } catch (BrowserLaunchingInitializingException e) {
+        } catch (final BrowserLaunchingInitializingException e) {
             e.printStackTrace();
-        } catch (UnsupportedOperatingSystemException e) {
+        } catch (final UnsupportedOperatingSystemException e) {
             e.printStackTrace();
         }
 
@@ -94,8 +71,8 @@ public abstract class LocalBrowser implements Serializable {
                 private static final long serialVersionUID = 914161109428877932L;
 
                 @Override
-                public void openURL(URL url) throws IOException {
-                    if (url == null) return;
+                public void openURL(final URL url) throws IOException {
+                    if (url == null) { return; }
                     com.apple.eio.FileManager.openURL(url.toString());
                 }
 
@@ -106,15 +83,15 @@ public abstract class LocalBrowser implements Serializable {
                     private static final long serialVersionUID = 2089733398098794579L;
 
                     @Override
-                    public void openURL(URL url) throws Exception {
-                        if (url == null) return;
-                        Executer exec = new Executer("open");
+                    public void openURL(final URL url) throws Exception {
+                        if (url == null) { return; }
+                        final Executer exec = new Executer("open");
                         exec.setLogger(JDLogger.getLogger());
                         exec.addParameters(new String[] { "/Applications/Firefox.app", "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
                         exec.start();
                         exec.waitTimeout();
-                        if (exec.getException() != null) throw exec.getException();
+                        if (exec.getException() != null) { throw exec.getException(); }
                     }
 
                 });
@@ -125,15 +102,15 @@ public abstract class LocalBrowser implements Serializable {
                     private static final long serialVersionUID = -558662621604100570L;
 
                     @Override
-                    public void openURL(URL url) throws Exception {
-                        if (url == null) return;
-                        Executer exec = new Executer("open");
+                    public void openURL(final URL url) throws Exception {
+                        if (url == null) { return; }
+                        final Executer exec = new Executer("open");
                         exec.setLogger(JDLogger.getLogger());
                         exec.addParameters(new String[] { "/Applications/Safari.app", "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
                         exec.start();
                         exec.waitTimeout();
-                        if (exec.getException() != null) throw exec.getException();
+                        if (exec.getException() != null) { throw exec.getException(); }
                     }
 
                 });
@@ -141,7 +118,7 @@ public abstract class LocalBrowser implements Serializable {
 
         }
         if (OSDetector.isLinux() && ret.size() == 0) {
-            Executer exec = new Executer("firefox");
+            final Executer exec = new Executer("firefox");
             exec.addParameter("-v");
             exec.setWaitTimeout(10);
             exec.start();
@@ -151,15 +128,15 @@ public abstract class LocalBrowser implements Serializable {
                     private static final long serialVersionUID = 6186304252605346654L;
 
                     @Override
-                    public void openURL(URL url) throws Exception {
-                        if (url == null) return;
-                        Executer exec = new Executer("firefox");
+                    public void openURL(final URL url) throws Exception {
+                        if (url == null) { return; }
+                        final Executer exec = new Executer("firefox");
                         exec.setLogger(JDLogger.getLogger());
                         exec.addParameters(new String[] { "-new-tab", url.toString() });
                         exec.setWaitTimeout(10);
                         exec.start();
                         exec.waitTimeout();
-                        if (exec.getException() != null) throw exec.getException();
+                        if (exec.getException() != null) { throw exec.getException(); }
                     }
 
                 });
@@ -173,14 +150,14 @@ public abstract class LocalBrowser implements Serializable {
                 private static final long serialVersionUID = 6862234646985946728L;
 
                 @Override
-                public void openURL(URL url) throws Exception {
-                    Executer exec = new Executer("cmd");
+                public void openURL(final URL url) throws Exception {
+                    final Executer exec = new Executer("cmd");
                     exec.setLogger(JDLogger.getLogger());
                     exec.addParameters(new String[] { "/c", "start " + url });
                     exec.setWaitTimeout(10);
                     exec.start();
                     exec.waitTimeout();
-                    if (exec.getException() != null) throw exec.getException();
+                    if (exec.getException() != null) { throw exec.getException(); }
                 }
 
             });
@@ -195,59 +172,35 @@ public abstract class LocalBrowser implements Serializable {
 
                 @Override
                 public void openURL(final URL url) throws Exception {
-                    new GuiRunnable<Object>() {
 
-                        @Override
-                        public Object runSave() {
-                            new DnDWebBrowser(url);
-                            return null;
-                        }
+                    Dialog.getInstance().showInputDialog(0, "Open URL!", url + "");
 
-                    }.start();
                 }
 
             });
 
         }
-        BROWSERLIST = ret.toArray(new LocalBrowser[] {});
-        return BROWSERLIST;
+        LocalBrowser.BROWSERLIST = ret.toArray(new LocalBrowser[] {});
+        return LocalBrowser.BROWSERLIST;
 
     }
 
-    abstract public void openURL(URL url) throws Exception;
-
-    public static void openURL(String browser, URL url) throws Exception {
-
-        if (url == null) return;
-        LocalBrowser[] browsers = getBrowserList();
-        if (browsers == null || browsers.length == 0) return;
-        if (browser != null) {
-            for (LocalBrowser b : browsers) {
-                if (browser.equalsIgnoreCase(b.toString())) {
-                    b.openURL(url);
-                    return;
-                }
-            }
-        }
-        browsers[0].openURL(url);
-    }
-
-    public static void openDefaultURL(URL url) throws Exception {
-        LocalBrowser[] browsers = getBrowserList();
-        if (browsers == null || browsers.length == 0) return;
+    public static void openDefaultURL(final URL url) throws Exception {
+        final LocalBrowser[] browsers = LocalBrowser.getBrowserList();
+        if (browsers == null || browsers.length == 0) { return; }
         browsers[0].openURL(url);
     }
 
     /**
      * can be used to e.g. install a firefox addon
      **/
-    public static void openinFirefox(String url) {
+    public static void openinFirefox(final String url) {
         /* first try custom browser if it seems to be firefox */
-        SubConfiguration cfg = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
+        final SubConfiguration cfg = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
         if (cfg.getBooleanProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, false) && cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER).contains("firefox")) {
-            Executer exec = new Executer(cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER));
+            final Executer exec = new Executer(cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER));
             exec.setLogger(JDLogger.getLogger());
-            String params = cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
+            final String params = cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
             exec.addParameters(Regex.getLines(params));
             exec.start();
             exec.setWaitTimeout(5);
@@ -266,21 +219,64 @@ public abstract class LocalBrowser implements Serializable {
                 path = "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe";
             }
             if (path != null) {
-                Executer exec = new Executer(path);
+                final Executer exec = new Executer(path);
                 exec.addParameters(new String[] { url });
                 exec.start();
             }
         } else if (OSDetector.isMac()) {
             if (new File("/Applications/Firefox.app").exists()) {
                 path = "/Applications/Firefox.app";
-                Executer exec = new Executer("open");
+                final Executer exec = new Executer("open");
                 exec.addParameters(new String[] { path, url });
                 exec.start();
             }
         } else if (OSDetector.isLinux()) {
-            Executer exec = new Executer("firefox");
+            final Executer exec = new Executer("firefox");
             exec.addParameters(new String[] { url });
             exec.start();
         }
+    }
+
+    public static void openURL(final String browser, final URL url) throws Exception {
+
+        if (url == null) { return; }
+        final LocalBrowser[] browsers = LocalBrowser.getBrowserList();
+        if (browsers == null || browsers.length == 0) { return; }
+        if (browser != null) {
+            for (final LocalBrowser b : browsers) {
+                if (browser.equalsIgnoreCase(b.toString())) {
+                    b.openURL(url);
+                    return;
+                }
+            }
+        }
+        browsers[0].openURL(url);
+    }
+
+    private String name;
+
+    private LocalBrowser(final String name) {
+        this.name = name;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null) { return false; }
+        return this.toString().equals(o.toString());
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    abstract public void openURL(URL url) throws Exception;
+
+    public void setName(final String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return this.name;
     }
 }

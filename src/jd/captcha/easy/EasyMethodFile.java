@@ -32,7 +32,6 @@ import jd.captcha.utils.Utilities;
 import jd.config.container.JDLabelContainer;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
@@ -41,118 +40,56 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class EasyMethodFile implements JDLabelContainer, Serializable {
-    public File file = null;
+    /**
+     * erstellt eine Liste aller vorhandener Methoden
+     */
+    public static EasyMethodFile[] getMethodeList() {
+        final File[] files = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory()).listFiles();
+        final ArrayList<EasyMethodFile> ret = new ArrayList<EasyMethodFile>();
+        for (int i = 0; i < files.length; i++) {
+            final EasyMethodFile ef = new EasyMethodFile(files[i]);
+            if (ef.getScriptJas().exists()) {
+                ret.add(ef);
+            }
 
-    public EasyMethodFile(String methodename) {
-        this.file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), methodename);
+        }
+        return ret.toArray(new EasyMethodFile[] {});
     }
 
-    public EasyMethodFile(File file) {
+    public File               file             = null;
+
+    private static final long serialVersionUID = 1L;
+
+    public EasyMethodFile() {
+    }
+
+    public EasyMethodFile(final File file) {
         this.file = file;
     }
 
-    public boolean copyExampleImage() {
-        File exf = getExampleImage();
-        if (exf == null || !exf.exists()) {
-            File[] listF = getCaptchaFolder().listFiles(new FilenameFilter() {
+    public EasyMethodFile(final String methodename) {
+        this.file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), methodename);
+    }
 
-                public boolean accept(File dir, String name) {
+    public boolean copyExampleImage() {
+        final File exf = this.getExampleImage();
+        if (exf == null || !exf.exists()) {
+            final File[] listF = this.getCaptchaFolder().listFiles(new FilenameFilter() {
+
+                public boolean accept(final File dir, final String name) {
                     return name.matches("(?is).*\\.(jpg|png|gif)");
                 }
             });
             if (listF != null && listF.length > 1) {
-                JDIO.copyFile(listF[0], new File(file, "example." + getCaptchaType(false)));
+                JDIO.copyFile(listF[0], new File(this.file, "example." + this.getCaptchaType(false)));
                 return true;
             }
         }
         return false;
     }
 
-    public EasyMethodFile() {
-    }
-
-    public boolean isReadyToTrain() {
-        if (!isEasyCaptchaMethode()) return true;
-        Vector<CPoint> list = ColorTrainer.load(new File(file, "CPoints.xml"));
-        boolean hasForderGround = false;
-        boolean hasBackGround = false;
-
-        for (CPoint point : list) {
-            if (point.isForeground())
-                hasForderGround = true;
-            else
-                hasBackGround = true;
-        }
-        return hasForderGround && hasBackGround;
-    }
-
-    public boolean isEasyCaptchaMethode() {
-        File js = getScriptJas();
-        return js.exists() && JDIO.readFileToString(js).contains("param.useSpecialGetLetters=EasyCaptcha");
-    }
-
-    public File getFile() {
-        return file;
-    }
-
-    public void setFile(File file) {
-        this.file = file;
-    }
-
-    private static final long serialVersionUID = 1L;
-
-    public File getScriptJas() {
-        return new File(file, "script.jas");
-
-    }
-
-    public File getJacinfoXml() {
-        return new File(file, "jacinfo.xml");
-    }
-
-    /**
-     * 
-     * @return JAntiCaptcha Instanz für die Methode
-     */
-    public JAntiCaptcha getJac() {
-        return new JAntiCaptcha(getName());
-    }
-
-    /**
-     * erstellt eine Liste aller vorhandener Methoden
-     */
-    public static EasyMethodFile[] getMethodeList() {
-        File[] files = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory()).listFiles();
-        ArrayList<EasyMethodFile> ret = new ArrayList<EasyMethodFile>();
-        for (int i = 0; i < files.length; i++) {
-            EasyMethodFile ef = new EasyMethodFile(files[i]);
-            if (ef.getScriptJas().exists()) ret.add(ef);
-
-        }
-        return ret.toArray(new EasyMethodFile[] {});
-    }
-
     public File getCaptchaFolder() {
-        return new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + file.getName());
-    }
-
-    /**
-     * gibt falls vorhanden das File zum example.jpg/png/gif im Methodenordner
-     * aus
-     * 
-     * @return
-     */
-    public File getExampleImage() {
-        File[] files = file.listFiles(new FileFilter() {
-
-            public boolean accept(File pathname) {
-                String ln = pathname.getName().toLowerCase();
-                if (ln.contains("example") && ln.matches(".*\\.(jpg|jpeg|gif|png|bmp)")) return true;
-                return false;
-            }
-        });
-        if (files != null && files.length > 0) return files[0];
-        return null;
+        return new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + this.file.getName());
     }
 
     /**
@@ -162,27 +99,29 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
      * @param showLoadDialog
      * @return captchatyp jpg | png | gif
      */
-    public String getCaptchaType(boolean showLoadDialog) {
-        final File folder2 = getCaptchaFolder();
+    public String getCaptchaType(final boolean showLoadDialog) {
+        final File folder2 = this.getCaptchaFolder();
         if (showLoadDialog) {
             if (!folder2.exists() || folder2.list().length < 1) {
-                int res = UserIOGui.getInstance().requestConfirmDialog(0, JDL.L("easycaptcha.loadcaptchas.title", "Load Captchas"), JDL.L("easycaptcha.needCaptchas", "You need Captchas first!"), null, JDL.L("easycaptcha.openCaptchaFolder", "Open Captcha Folder"), JDL.L("easycaptcha.loadcaptchas", "Load Captchas"));
+                final int res = UserIO.getInstance().requestConfirmDialog(0, JDL.L("easycaptcha.loadcaptchas.title", "Load Captchas"), JDL.L("easycaptcha.needCaptchas", "You need Captchas first!"), null, JDL.L("easycaptcha.openCaptchaFolder", "Open Captcha Folder"), JDL.L("easycaptcha.loadcaptchas", "Load Captchas"));
                 if (JDFlags.hasSomeFlags(res, UserIO.RETURN_OK)) {
                     folder2.mkdir();
-                    openCaptchaFolder();
+                    this.openCaptchaFolder();
                     return "jpg";
                 } else {
                     return new GuiRunnable<String>() {
                         public String runSave() {
-                            if (!new LoadCaptchas(EasyCaptchaTool.ownerFrame, file.getName()).start()) {
-                                openCaptchaFolder();
+                            if (!new LoadCaptchas(EasyCaptchaTool.ownerFrame, EasyMethodFile.this.file.getName()).start()) {
+                                EasyMethodFile.this.openCaptchaFolder();
                                 return "jpg";
                             }
                             String filetype = "jpg";
-                            File[] fl = folder2.listFiles();
-                            if (fl[fl.length - 1].getName().toLowerCase().contains("png"))
+                            final File[] fl = folder2.listFiles();
+                            if (fl[fl.length - 1].getName().toLowerCase().contains("png")) {
                                 filetype = "png";
-                            else if (fl[fl.length - 1].getName().toLowerCase().contains("gif")) filetype = "gif";
+                            } else if (fl[fl.length - 1].getName().toLowerCase().contains("gif")) {
+                                filetype = "gif";
+                            }
                             return filetype;
                         }
                     }.getReturnValue();
@@ -190,20 +129,38 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
             }
         }
         String filetype = "jpg";
-        File[] fl = folder2.listFiles();
+        final File[] fl = folder2.listFiles();
         if (fl != null && fl.length > 0) {
-            if (fl[fl.length - 1].getName().toLowerCase().contains("png"))
+            if (fl[fl.length - 1].getName().toLowerCase().contains("png")) {
                 filetype = "png";
-            else if (fl[fl.length - 1].getName().toLowerCase().contains("gif")) filetype = "gif";
+            } else if (fl[fl.length - 1].getName().toLowerCase().contains("gif")) {
+                filetype = "gif";
+            }
         }
         return filetype;
     }
 
     /**
-     * öffnet den Captchaordner
+     * gibt falls vorhanden das File zum example.jpg/png/gif im Methodenordner
+     * aus
+     * 
+     * @return
      */
-    public void openCaptchaFolder() {
-        JDUtilities.openExplorer(getCaptchaFolder());
+    public File getExampleImage() {
+        final File[] files = this.file.listFiles(new FileFilter() {
+
+            public boolean accept(final File pathname) {
+                final String ln = pathname.getName().toLowerCase();
+                if (ln.contains("example") && ln.matches(".*\\.(jpg|jpeg|gif|png|bmp)")) { return true; }
+                return false;
+            }
+        });
+        if (files != null && files.length > 0) { return files[0]; }
+        return null;
+    }
+
+    public File getFile() {
+        return this.file;
     }
 
     /**
@@ -212,29 +169,35 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
      */
     public ImageIcon getIcon() {
         try {
-            File image = getExampleImage();
+            final File image = this.getExampleImage();
             if (image != null) {
-                ImageIcon img = JDImage.getScaledImageIcon(JDImage.getImageIcon(image), 44, 24);
+                final ImageIcon img = JDImage.getScaledImageIcon(JDImage.getImageIcon(image), 44, 24);
                 return img;
 
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
         }
         return null;
     }
 
-    public File getRandomCaptchaFile() {
-        File[] list = getCaptchaFolder().listFiles(new FileFilter() {
+    /**
+     * 
+     * @return JAntiCaptcha Instanz für die Methode
+     */
+    public JAntiCaptcha getJac() {
+        return new JAntiCaptcha(this.getName());
+    }
 
-            public boolean accept(File pathname) {
-                String ln = pathname.getName().toLowerCase();
-                if (pathname.isFile() && ln.matches(".*\\.(jpg|jpeg|gif|png|bmp)") && pathname.length() > 1) return true;
-                return false;
-            }
-        });
-        if (list.length == 0) return null;
-        int id = (int) (Math.random() * (list.length - 1));
-        return list[id];
+    public File getJacinfoXml() {
+        return new File(this.file, "jacinfo.xml");
+    }
+
+    public String getLabel() {
+        return this.toString();
+    }
+
+    public String getName() {
+        return this.toString();
     }
 
     /**
@@ -243,31 +206,78 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
      * @return
      */
     public Captcha getRandomCaptcha() {
-        Captcha captchaImage = getJac().createCaptcha(Utilities.loadImage(getRandomCaptchaFile()));
-        if (captchaImage != null && captchaImage.getWidth() > 0 && captchaImage.getWidth() > 0) return captchaImage;
-        captchaImage = getJac().createCaptcha(Utilities.loadImage(getRandomCaptchaFile()));
-        if (captchaImage != null && captchaImage.getWidth() > 0 && captchaImage.getWidth() > 0) return captchaImage;
+        Captcha captchaImage = this.getJac().createCaptcha(Utilities.loadImage(this.getRandomCaptchaFile()));
+        if (captchaImage != null && captchaImage.getWidth() > 0 && captchaImage.getWidth() > 0) { return captchaImage; }
+        captchaImage = this.getJac().createCaptcha(Utilities.loadImage(this.getRandomCaptchaFile()));
+        if (captchaImage != null && captchaImage.getWidth() > 0 && captchaImage.getWidth() > 0) { return captchaImage; }
         return null;
+    }
+
+    public File getRandomCaptchaFile() {
+        final File[] list = this.getCaptchaFolder().listFiles(new FileFilter() {
+
+            public boolean accept(final File pathname) {
+                final String ln = pathname.getName().toLowerCase();
+                if (pathname.isFile() && ln.matches(".*\\.(jpg|jpeg|gif|png|bmp)") && pathname.length() > 1) { return true; }
+                return false;
+            }
+        });
+        if (list.length == 0) { return null; }
+        final int id = (int) (Math.random() * (list.length - 1));
+        return list[id];
+    }
+
+    public File getScriptJas() {
+        return new File(this.file, "script.jas");
+
+    }
+
+    public boolean isEasyCaptchaMethode() {
+        final File js = this.getScriptJas();
+        return js.exists() && JDIO.readFileToString(js).contains("param.useSpecialGetLetters=EasyCaptcha");
+    }
+
+    public boolean isReadyToTrain() {
+        if (!this.isEasyCaptchaMethode()) { return true; }
+        final Vector<CPoint> list = ColorTrainer.load(new File(this.file, "CPoints.xml"));
+        boolean hasForderGround = false;
+        boolean hasBackGround = false;
+
+        for (final CPoint point : list) {
+            if (point.isForeground()) {
+                hasForderGround = true;
+            } else {
+                hasBackGround = true;
+            }
+        }
+        return hasForderGround && hasBackGround;
+    }
+
+    /**
+     * öffnet den Captchaordner
+     */
+    public void openCaptchaFolder() {
+        JDUtilities.openExplorer(this.getCaptchaFolder());
+    }
+
+    public void setFile(final File file) {
+        this.file = file;
     }
 
     @Override
     public String toString() {
-        File infoxml = getJacinfoXml();
+        final File infoxml = this.getJacinfoXml();
         String ret = null;
         try {
-            if (infoxml.exists()) ret = new Regex(JDIO.readFileToString(infoxml), "name=\"([^\"]*)").getMatch(0);
-        } catch (Exception e) {
+            if (infoxml.exists()) {
+                ret = new Regex(JDIO.readFileToString(infoxml), "name=\"([^\"]*)").getMatch(0);
+            }
+        } catch (final Exception e) {
             // e.printStackTrace();
         }
-        if (ret == null) ret = file.getName();
+        if (ret == null) {
+            ret = this.file.getName();
+        }
         return ret;
-    }
-
-    public String getLabel() {
-        return toString();
-    }
-
-    public String getName() {
-        return toString();
     }
 }

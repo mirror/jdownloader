@@ -33,7 +33,6 @@ import javax.swing.JTextField;
 import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.nutils.JDFlags;
@@ -44,93 +43,94 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class AccountDialog extends AbstractDialog {
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+
+public class AccountDialog extends AbstractDialog<Integer> {
+
+    private static final long   serialVersionUID = -2099080199110932990L;
+
+    private static final String JDL_PREFIX       = "jd.gui.swing.components.AccountDialog.";
 
     public static void showDialog(final PluginForHost pluginForHost) {
-        new GuiRunnable<Object>() {
+        final AccountDialog dialog = new AccountDialog(pluginForHost);
 
-            @Override
-            public Object runSave() {
-                AccountDialog dialog = new AccountDialog(pluginForHost);
-                if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK)) {
-                    Account ac = new Account(dialog.getUsername(), dialog.getPassword());
-                    AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
-                }
-                return null;
-            }
-
-        }.start();
+        if (JDFlags.hasAllFlags(Dialog.getInstance().showDialog(dialog), Dialog.RETURN_OK)) {
+            final Account ac = new Account(dialog.getUsername(), dialog.getPassword());
+            AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
+        }
     }
 
-    private static final long serialVersionUID = -2099080199110932990L;
+    private JComboBox           hoster;
 
-    private static final String JDL_PREFIX = "jd.gui.swing.components.AccountDialog.";
+    private JTextField          name;
 
-    private JComboBox hoster;
-
-    private JTextField name;
-
-    private JPasswordField pass;
+    private JPasswordField      pass;
 
     private final PluginForHost plugin;
 
-    public AccountDialog(PluginForHost plugin) {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L(JDL_PREFIX + "title", "Add new Account"), null, null, null);
+    public AccountDialog(final PluginForHost plugin) {
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L(AccountDialog.JDL_PREFIX + "title", "Add new Account"), null, null, null);
 
         this.plugin = plugin;
 
-        init();
     }
 
     @Override
-    public JComponent contentInit() {
-        ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
-        Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
-            public int compare(HostPluginWrapper a, HostPluginWrapper b) {
-                return a.getHost().compareToIgnoreCase(b.getHost());
-            }
-        });
-        HostPluginWrapper[] array = plugins.toArray(new HostPluginWrapper[plugins.size()]);
-        hoster = new JComboBox(array);
-        if (plugin != null) {
-            try {
-                hoster.setSelectedItem(plugin.getWrapper());
-            } catch (Exception e) {
-            }
-        }
-        hoster.setRenderer(new JDLabelListRenderer());
-
-        JButton link = new JButton(JDTheme.II("gui.images.buy", 16, 16));
-        link.setToolTipText(JDL.L("gui.menu.action.premium.buy.name", "action.premium.buy"));
-        link.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                ActionController.getToolBarAction("action.premium.buy").actionPerformed(new ActionEvent(getHoster(), 0, "buyaccount"));
-            }
-        });
-
-        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow,fill]"));
-        panel.add(new JLabel(JDL.L(JDL_PREFIX + "hoster", "Hoster:")));
-        panel.add(hoster, "split 2");
-        panel.add(link);
-
-        panel.add(new JLabel(JDL.L(JDL_PREFIX + "name", "Name:")));
-        panel.add(name = new JTextField());
-
-        panel.add(new JLabel(JDL.L(JDL_PREFIX + "pass", "Pass:")));
-        panel.add(pass = new JPasswordField());
-        return panel;
+    protected Integer createReturnValue() {
+        // TODO Auto-generated method stub
+        return this.getReturnmask();
     }
 
     public HostPluginWrapper getHoster() {
-        return (HostPluginWrapper) hoster.getSelectedItem();
-    }
-
-    public String getUsername() {
-        return name.getText();
+        return (HostPluginWrapper) this.hoster.getSelectedItem();
     }
 
     public String getPassword() {
-        return new String(pass.getPassword());
+        return new String(this.pass.getPassword());
+    }
+
+    public String getUsername() {
+        return this.name.getText();
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+        final ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
+        Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
+            public int compare(final HostPluginWrapper a, final HostPluginWrapper b) {
+                return a.getHost().compareToIgnoreCase(b.getHost());
+            }
+        });
+        final HostPluginWrapper[] array = plugins.toArray(new HostPluginWrapper[plugins.size()]);
+        this.hoster = new JComboBox(array);
+        if (this.plugin != null) {
+            try {
+                this.hoster.setSelectedItem(this.plugin.getWrapper());
+            } catch (final Exception e) {
+            }
+        }
+        this.hoster.setRenderer(new JDLabelListRenderer());
+
+        final JButton link = new JButton(JDTheme.II("gui.images.buy", 16, 16));
+        link.setToolTipText(JDL.L("gui.menu.action.premium.buy.name", "action.premium.buy"));
+        link.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                ActionController.getToolBarAction("action.premium.buy").actionPerformed(new ActionEvent(AccountDialog.this.getHoster(), 0, "buyaccount"));
+            }
+        });
+
+        final JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow,fill]"));
+        panel.add(new JLabel(JDL.L(AccountDialog.JDL_PREFIX + "hoster", "Hoster:")));
+        panel.add(this.hoster, "split 2");
+        panel.add(link);
+
+        panel.add(new JLabel(JDL.L(AccountDialog.JDL_PREFIX + "name", "Name:")));
+        panel.add(this.name = new JTextField());
+
+        panel.add(new JLabel(JDL.L(AccountDialog.JDL_PREFIX + "pass", "Pass:")));
+        panel.add(this.pass = new JPasswordField());
+        return panel;
     }
 
 }

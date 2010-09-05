@@ -20,38 +20,68 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.JDMediaConvert;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)" }, flags = { 0 })
 public class SpiegelDe extends PluginForHost {
 
-    private static final String AGB_LINK = "http://www.spiegel.de/agb";
+    private static final String  AGB_LINK                      = "http://www.spiegel.de/agb";
     private static final Pattern PATTERN_SUPPORTED_FOTOSTRECKE = Pattern.compile("http://www.spiegel.de/img/.+?(\\.\\w+)");
-    private static final Pattern PATTERN_SUPPORTED_VIDEO = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
+    private static final Pattern PATTERN_SUPPORTED_VIDEO       = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
 
-    public SpiegelDe(PluginWrapper wrapper) {
+    public SpiegelDe(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public String getAGBLink() {
-        return AGB_LINK;
+        return SpiegelDe.AGB_LINK;
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        this.requestFileInformation(downloadLink);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), false, 1);
+
+        if (new Regex(downloadLink.getDownloadURL(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
+            this.dl.startDownload();
+        } else if (new Regex(downloadLink.getDownloadURL(), SpiegelDe.PATTERN_SUPPORTED_VIDEO).matches()) {
+            if (this.dl.startDownload()) {
+                if (downloadLink.getProperty("convertto") != null) {
+                    final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
+                    DestinationFormat inType;
+                    if (convertTo == DestinationFormat.VIDEOIPHONE || convertTo == DestinationFormat.VIDEOMP4 || convertTo == DestinationFormat.VIDEO3GP) {
+                        inType = convertTo;
+                    } else {
+                        inType = DestinationFormat.VIDEOFLV;
+                    }
+                    if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
+                        Plugin.logger.severe("Video-Convert failed!");
+                    }
+
+                }
+            }
+        }
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
         URLConnectionAdapter urlConnection;
         try {
-            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-        } catch (IOException e) {
-            logger.severe(e.getMessage());
+            urlConnection = this.br.openGetConnection(downloadLink.getDownloadURL());
+        } catch (final IOException e) {
+            Plugin.logger.severe(e.getMessage());
             downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -67,36 +97,7 @@ public class SpiegelDe extends PluginForHost {
     public void reset() {
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        this.requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
-
-        if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
-            dl.startDownload();
-        } else if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_VIDEO).matches()) {
-            if (dl.startDownload()) {
-                if (downloadLink.getProperty("convertto") != null) {
-                    ConversionMode convertTo = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
-                    ConversionMode inType;
-                    if (convertTo == ConversionMode.VIDEOIPHONE || convertTo == ConversionMode.VIDEOPODCAST || convertTo == ConversionMode.VIDEOMP4 || convertTo == ConversionMode.VIDEO3GP) {
-                        inType = convertTo;
-                    } else {
-                        inType = ConversionMode.VIDEOFLV;
-                    }
-                    if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
-                        logger.severe("Video-Convert failed!");
-                    }
-
-                }
-            }
-        }
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }

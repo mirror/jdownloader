@@ -22,48 +22,58 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.decrypter.TbCm.DestinationFormat;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/" }, flags = { 0 })
 public class MvdD extends PluginForDecrypt {
 
-    public MvdD(PluginWrapper wrapper) {
+    public MvdD(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        String videoid = br.getRegex(Pattern.compile("p\\.addVariable\\('_videoid','(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String serverpath = br.getRegex(Pattern.compile("<link rel='image_src'.*?href='(.*?)thumbs/.*?'.*?/><link", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (serverpath == null) serverpath = br.getRegex("\"(http://is[0-9]+\\.myvideo\\.de/de/movie[0-9]+/.*?/)thumbs\"").getMatch(0);
-        if (videoid == null || serverpath == null) return null;
-        String link = serverpath + videoid + ".flv";
-        String name = br.getRegex(Pattern.compile("<h1 class='globalHd'>(.*?)</h1>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (name == null) name = Encoding.htmlDecode(br.getRegex(Pattern.compile("name='title' content='(.*?)Video - MyVideo'", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (name == null) name = "Video" + new Random().nextInt(10);
-        name = name.trim();
-        possibleconverts.add(ConversionMode.AUDIOMP3);
-        possibleconverts.add(ConversionMode.VIDEOFLV);
-        possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-
-        ConversionMode convertTo = Plugin.showDisplayDialog(possibleconverts, name, param);
-        DownloadLink thislink = createDownloadlink(link);
+    private void addLink(final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String link, final String name, final DestinationFormat convertTo) {
+        final DownloadLink thislink = this.createDownloadlink(link);
+        final FilePackage filePackage = FilePackage.getInstance();
+        filePackage.setName("MyVideo " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
+        thislink.setFilePackage(filePackage);
         thislink.setBrowserUrl(parameter);
         thislink.setFinalFileName(name + ".tmp");
         thislink.setSourcePluginComment("Convert to " + convertTo.getText());
         thislink.setProperty("convertto", convertTo.name());
         decryptedLinks.add(thislink);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+
+        this.br.setFollowRedirects(true);
+        this.br.getPage(parameter);
+        final String videoid = this.br.getRegex(Pattern.compile("p\\.addVariable\\('_videoid','(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String serverpath = this.br.getRegex(Pattern.compile("<link rel='image_src'.*?href='(.*?)thumbs/.*?'.*?/><link", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (serverpath == null) {
+            serverpath = this.br.getRegex("\"(http://is[0-9]+\\.myvideo\\.de/de/movie[0-9]+/.*?/)thumbs\"").getMatch(0);
+        }
+        if (videoid == null || serverpath == null) { return null; }
+        final String link = serverpath + videoid + ".flv";
+        String name = this.br.getRegex(Pattern.compile("<h1 class='globalHd'>(.*?)</h1>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (name == null) {
+            name = Encoding.htmlDecode(this.br.getRegex(Pattern.compile("name='title' content='(.*?)Video - MyVideo'", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        }
+        if (name == null) {
+            name = "Video" + new Random().nextInt(10);
+        }
+        name = name.trim();
+
+        this.addLink(decryptedLinks, parameter, link, name, DestinationFormat.AUDIOMP3);
+        this.addLink(decryptedLinks, parameter, link, name, DestinationFormat.VIDEOFLV);
 
         return decryptedLinks;
     }

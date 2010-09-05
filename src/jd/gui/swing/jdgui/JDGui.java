@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui;
 
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Image;
 import java.awt.KeyEventPostProcessor;
 import java.awt.KeyboardFocusManager;
@@ -31,7 +32,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.ToolTipManager;
+import javax.swing.WindowConstants;
 
 import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
@@ -61,7 +64,6 @@ import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.views.downloads.DownloadView;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
-import jd.gui.swing.jdgui.views.log.LogView;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
@@ -76,61 +78,84 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.dialog.Dialog;
+
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private static final long serialVersionUID = 1048792964102830601L;
-    private static JDGui INSTANCE;
-    private JDMenuBar menuBar;
-    private JDStatusBar statusBar;
+    private static JDGui      INSTANCE;
 
-    private MainTabbedPane mainTabbedPane;
-    private DownloadView downloadView;
+    /**
+     * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits
+     * existierende zurück
+     * 
+     * @return
+     */
+    public static JDGui getInstance() {
+        if (JDGui.INSTANCE == null) {
+            JDGui.INSTANCE = new GuiRunnable<JDGui>() {
+                @Override
+                public JDGui runSave() {
+                    return new JDGui();
+                }
+
+            }.getReturnValue();
+        }
+        return JDGui.INSTANCE;
+    }
+
+    private JDMenuBar       menuBar;
+
+    private JDStatusBar     statusBar;
+    private MainTabbedPane  mainTabbedPane;
+    private DownloadView    downloadView;
+
     private LinkgrabberView linkgrabberView;
+    private MainToolBar     toolBar;
+    private JPanel          waitingPane;
 
-    private MainToolBar toolBar;
-    private JPanel waitingPane;
-    private boolean exitRequested = false;
+    private boolean         exitRequested = false;
 
     private JDGui() {
         super("");
         // disable Clipboard while gui is loading
         ClipboardHandler.getClipboard().setTempDisabled(true);
         // Important for unittests
-        mainFrame.setName("MAINFRAME");
+        this.mainFrame.setName("MAINFRAME");
 
-        initDefaults();
-        initComponents();
+        this.initDefaults();
+        this.initComponents();
 
-        setWindowIcon();
-        setWindowTitle(JDUtilities.getJDTitle());
-        layoutComponents();
+        this.setWindowIcon();
+        this.setWindowTitle(JDUtilities.getJDTitle());
+        this.layoutComponents();
 
-        mainFrame.pack();
-
-        initLocationAndDimension();
-        mainFrame.setVisible(true);
-        if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
-            ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
+        this.mainFrame.pack();
+        Dialog.getInstance().setParentOwner(this.mainFrame);
+        this.initLocationAndDimension();
+        this.mainFrame.setVisible(true);
+        if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
+            ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
         }
         ClipboardHandler.getClipboard().setTempDisabled(false);
         LinkGrabberController.getInstance().setDistributer(this);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
 
-            public boolean postProcessKeyEvent(KeyEvent e) {
+            public boolean postProcessKeyEvent(final KeyEvent e) {
                 if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
                     try {
                         /*
                          * dirty little helper for mac os problem, unable to
                          * reach window header
                          */
-                        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-                        mainFrame.setExtendedState(JFrame.NORMAL);
-                        mainFrame.setSize(new Dimension(800, 600));
-                        Rectangle abounds = mainFrame.getBounds();
-                        mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
+                        final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+                        JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
+                        JDGui.this.mainFrame.setSize(new Dimension(800, 600));
+                        final Rectangle abounds = JDGui.this.mainFrame.getBounds();
+                        JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
                         JDLogger.getLogger().info("Center MainFrame");
                         return true;
-                    } catch (Exception ee) {
+                    } catch (final Exception ee) {
                         JDLogger.exception(ee);
                     }
                 }
@@ -140,163 +165,60 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     }
 
-    /**
-     * TODO: mal durch ein einheitliches notification system ersetzen, welches
-     * an das eventsystem gekoppelt ist
-     */
-    @Override
-    public void displayMiniWarning(String shortWarn, String longWarn) {
-        Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), longWarn);
-    }
-
-    /**
-     * restores the dimension and location to the window
-     */
-    private void initLocationAndDimension() {
-        Dimension dim = GUIUtils.getLastDimension(mainFrame);
-        if (dim == null) dim = new Dimension(800, 600);
-        mainFrame.setPreferredSize(dim);
-        mainFrame.setSize(dim);
-        mainFrame.setMinimumSize(new Dimension(400, 100));
-        mainFrame.setLocation(GUIUtils.getLastLocation(null, mainFrame));
-
-        if (GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL) == JFrame.ICONIFIED) {
-            mainFrame.setExtendedState(JFrame.NORMAL);
-        } else {
-            mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
-        }
-
-        if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
-            ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
-        }
-
-    }
-
-    private void initComponents() {
-        menuBar = createMenuBar();
-        statusBar = new JDStatusBar();
-        waitingPane = new JPanel();
-        waitingPane.setOpaque(false);
-        mainTabbedPane = MainTabbedPane.getInstance();
-        toolBar = MainToolBar.getInstance();
-        toolBar.registerAccelerators(this);
-        downloadView = DownloadView.getInstance();
-        linkgrabberView = LinkgrabberView.getInstance();
-
-        mainTabbedPane.addTab(downloadView);
-        mainTabbedPane.addTab(linkgrabberView);
-
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_CONFIG_SHOWN, true)) mainTabbedPane.addTab(ConfigurationView.getInstance());
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false)) mainTabbedPane.addTab(LogView.getInstance());
-        mainTabbedPane.setSelectedComponent(downloadView);
-        toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
-    }
-
-    private void layoutComponents() {
-        JPanel contentPane = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[shrink]"));
-        contentPane.add(mainTabbedPane);
-        contentPane.add(statusBar, "dock SOUTH");
-
-        mainFrame.setContentPane(contentPane);
-        mainFrame.setJMenuBar(menuBar);
-        mainFrame.add(toolBar, "dock NORTH");
-    }
-
-    private void initDefaults() {
-        mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        mainFrame.addWindowListener(this);
-
-        // Directly reshow another tooltip
-        ToolTipManager.sharedInstance().setReshowDelay(0);
-        // Increase time a tooltip is displayed (default is 4000)
-        ToolTipManager.sharedInstance().setDismissDelay(6000);
-    }
-
-    public void setWindowTitle(final String msg) {
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-                mainFrame.setTitle(msg);
-                return null;
-            }
-        }.start();
-    }
-
-    /**
-     * Sets the Windows Icons. lot's of lafs have problems resizing the icon. so
-     * we set different sizes. for 1.5 it is only possible to use {@link JFrame#setIconImage(Image)}
-     */
-    private void setWindowIcon() {
-        if (JDUtilities.getJavaVersion() >= 1.6) {
-            ArrayList<Image> list = new ArrayList<Image>();
-            list.add(JDImage.getImage("logo/logo_14_14"));
-            list.add(JDImage.getImage("logo/logo_15_15"));
-            list.add(JDImage.getImage("logo/logo_16_16"));
-            list.add(JDImage.getImage("logo/logo_17_17"));
-            list.add(JDImage.getImage("logo/logo_18_18"));
-            list.add(JDImage.getImage("logo/logo_19_19"));
-            list.add(JDImage.getImage("logo/logo_20_20"));
-            list.add(JDImage.getImage("logo/jd_logo_64_64"));
-            mainFrame.setIconImages(list);
-        } else {
-            mainFrame.setIconImage(JDImage.getImage("logo/logo_17_17"));
-        }
-    }
-
-    private JDMenuBar createMenuBar() {
-        return new JDMenuBar();
-    }
-
-    /**
-     * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits
-     * existierende zurück
-     * 
-     * @return
-     */
-    public static JDGui getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new GuiRunnable<JDGui>() {
+    public void addLinks(final ArrayList<DownloadLink> links, final boolean hidegrabber, final boolean autostart) {
+        if (links.size() == 0) { return; }
+        if (hidegrabber || autostart) {
+            new Thread() {
                 @Override
-                public JDGui runSave() {
-                    return new JDGui();
+                public void run() {
+                    /* TODO: hier autopackaging ? */
+                    final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName("Added " + System.currentTimeMillis());
+                    for (final DownloadLink link : links) {
+                        if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                            fp.add(link);
+                            if (!fps.contains(fp)) {
+                                fps.add(fp);
+                            }
+                        } else {
+                            if (!fps.contains(link.getFilePackage())) {
+                                fps.add(link.getFilePackage());
+                            }
+                        }
+                    }
+                    LinkCheck.getLinkChecker().checkLinksandWait(links);
+                    if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+                        DownloadController.getInstance().addAllAt(fps, 0);
+                    } else {
+                        DownloadController.getInstance().addAll(fps);
+                    }
+                    if (autostart) {
+                        DownloadWatchDog.getInstance().startDownloads();
+                    }
                 }
-
-            }.getReturnValue();
+            }.start();
+        } else {
+            LinkGrabberPanel.getLinkGrabber().addLinks(links);
+            this.requestPanel(UserIF.Panels.LINKGRABBER, null);
         }
-        return INSTANCE;
     }
 
     @Override
-    public void setFrameStatus(int id) {
-        switch (id) {
-        case UIConstants.WINDOW_STATUS_MAXIMIZED:
-            mainFrame.setState(JFrame.MAXIMIZED_BOTH);
-            break;
-        case UIConstants.WINDOW_STATUS_MINIMIZED:
-            mainFrame.setState(JFrame.ICONIFIED);
-            break;
-        case UIConstants.WINDOW_STATUS_NORMAL:
-            mainFrame.setState(JFrame.NORMAL);
-            mainFrame.setVisible(true);
-            break;
-        case UIConstants.WINDOW_STATUS_FOREGROUND:
-            mainFrame.setState(JFrame.NORMAL);
-            mainFrame.setFocusableWindowState(false);
-            mainFrame.setVisible(true);
-            mainFrame.toFront();
-            mainFrame.setFocusableWindowState(true);
-            break;
+    public void closeWindow() {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("sys.ask.rlyclose", "Are you sure that you want to exit JDownloader?")), UserIO.RETURN_OK)) {
+            JDUtilities.getController().exit();
         }
     }
 
-    public void controlEvent(ControlEvent event) {
+    public void controlEvent(final ControlEvent event) {
         switch (event.getID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
             JDLogger.getLogger().info("Init complete");
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
-                    mainFrame.setEnabled(true);
+                    JDGui.this.mainFrame.setEnabled(true);
                     return null;
                 }
             }.start();
@@ -311,13 +233,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
-                    mainTabbedPane.onClose();
-                    GUIUtils.saveLastLocation(getMainFrame());
-                    GUIUtils.saveLastDimension(getMainFrame());
+                    JDGui.this.mainTabbedPane.onClose();
+                    GUIUtils.saveLastLocation(JDGui.this.getMainFrame());
+                    GUIUtils.saveLastDimension(JDGui.this.getMainFrame());
                     GUIUtils.getConfig().save();
                     JDController.releaseDelayExit(id);
-                    getMainFrame().setVisible(false);
-                    getMainFrame().dispose();
+                    JDGui.this.getMainFrame().setVisible(false);
+                    JDGui.this.getMainFrame().dispose();
                     return null;
                 }
             }.start();
@@ -334,78 +256,122 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
     }
 
+    private JDMenuBar createMenuBar() {
+        return new JDMenuBar();
+    }
+
     /**
-     * returns true, if the user requested the app to close
-     * 
-     * @return
+     * TODO: mal durch ein einheitliches notification system ersetzen, welches
+     * an das eventsystem gekoppelt ist
      */
-    public boolean isExitRequested() {
-        return exitRequested;
+    @Override
+    public void displayMiniWarning(final String shortWarn, final String longWarn) {
+        Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), longWarn);
     }
 
     @Override
-    public void windowClosing(WindowEvent e) {
-        if (e.getComponent() == getMainFrame()) {
-            /* dont close/exit if trayicon minimizing is enabled */
-            OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("trayicon");
-            if (addon != null && addon.isEnabled() && addon.getPlugin().isRunning()) {
-                if ((Boolean) addon.getPlugin().interact("closetotray", null) == true) {
-                    UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.noclose", "JDownloader will be minimized to tray!"));
-                    return;
-                }
-            }
-            /*
-             * without trayicon also dont close/exit for macos
-             */
-            if (OSDetector.isMac()) {
-                new GuiRunnable<Object>() {
-                    @Override
-                    public Object runSave() {
-                        /* set visible state */
-                        getMainFrame().setVisible(false);
-                        return null;
-                    }
-                }.start();
-                return;
-            }
-            closeWindow();
+    public void disposeView(View view) {
+        view = this.mainTabbedPane.getComponentEquals(view);
+        this.mainTabbedPane.remove(view);
+    }
+
+    public MainTabbedPane getMainTabbedPane() {
+        return this.mainTabbedPane;
+    }
+
+    private void initComponents() {
+        this.menuBar = this.createMenuBar();
+        this.statusBar = new JDStatusBar();
+        this.waitingPane = new JPanel();
+        this.waitingPane.setOpaque(false);
+        this.mainTabbedPane = MainTabbedPane.getInstance();
+        this.toolBar = MainToolBar.getInstance();
+        this.toolBar.registerAccelerators(this);
+        this.downloadView = DownloadView.getInstance();
+        this.linkgrabberView = LinkgrabberView.getInstance();
+
+        this.mainTabbedPane.addTab(this.downloadView);
+        this.mainTabbedPane.addTab(this.linkgrabberView);
+
+        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_CONFIG_SHOWN, true)) {
+            this.mainTabbedPane.addTab(ConfigurationView.getInstance());
         }
+        this.mainTabbedPane.setSelectedComponent(this.downloadView);
+        this.toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
     }
 
-    @Override
-    public void closeWindow() {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("sys.ask.rlyclose", "Are you sure that you want to exit JDownloader?")), UserIO.RETURN_OK)) {
-            JDUtilities.getController().exit();
+    private void initDefaults() {
+        this.mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        this.mainFrame.addWindowListener(this);
+
+        // Directly reshow another tooltip
+        ToolTipManager.sharedInstance().setReshowDelay(0);
+        // Increase time a tooltip is displayed (default is 4000)
+        ToolTipManager.sharedInstance().setDismissDelay(6000);
+    }
+
+    /**
+     * restores the dimension and location to the window
+     */
+    private void initLocationAndDimension() {
+        Dimension dim = GUIUtils.getLastDimension(this.mainFrame);
+        if (dim == null) {
+            dim = new Dimension(800, 600);
         }
-    }
+        this.mainFrame.setPreferredSize(dim);
+        this.mainFrame.setSize(dim);
+        this.mainFrame.setMinimumSize(new Dimension(400, 100));
+        this.mainFrame.setLocation(GUIUtils.getLastLocation(null, this.mainFrame));
 
-    @Override
-    public void setWaiting(final boolean b) {
-        internalSetWaiting(b);
+        if (GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.mainFrame.getName(), Frame.NORMAL) == Frame.ICONIFIED) {
+            this.mainFrame.setExtendedState(Frame.NORMAL);
+        } else {
+            this.mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.mainFrame.getName(), Frame.NORMAL));
+        }
+
+        if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
+            ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
+        }
+
     }
 
     protected void internalSetWaiting(final boolean b) {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                getMainFrame().setGlassPane(waitingPane);
-                waitingPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                getMainFrame().getGlassPane().setVisible(b);
+                JDGui.this.getMainFrame().setGlassPane(JDGui.this.waitingPane);
+                JDGui.this.waitingPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                JDGui.this.getMainFrame().getGlassPane().setVisible(b);
                 return null;
             }
         }.waitForEDT();
     }
 
-    @Override
-    public void setContent(View view) {
-        if (!mainTabbedPane.contains(view)) {
-            mainTabbedPane.addTab(view);
-        }
-        mainTabbedPane.setSelectedComponent(view);
+    /**
+     * returns true, if the user requested the app to close
+     * 
+     * @return
+     */
+    public boolean isExitRequested() {
+        return this.exitRequested;
     }
 
-    public MainTabbedPane getMainTabbedPane() {
-        return this.mainTabbedPane;
+    private void layoutComponents() {
+        final JPanel contentPane = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[shrink]"));
+        contentPane.add(this.mainTabbedPane);
+        contentPane.add(this.statusBar, "dock SOUTH");
+
+        this.mainFrame.setContentPane(contentPane);
+        this.mainFrame.setJMenuBar(this.menuBar);
+        this.mainFrame.add(this.toolBar, "dock NORTH");
+    }
+
+    private void openSettings() {
+        final ConfigurationView config = ConfigurationView.getInstance();
+        if (!this.mainTabbedPane.contains(config)) {
+            this.mainTabbedPane.addTab(config);
+        }
+        this.mainTabbedPane.setSelectedComponent(config);
     }
 
     @Override
@@ -415,40 +381,102 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             public Object runSave() {
                 switch (panel) {
                 case DOWNLOADLIST:
-                    mainTabbedPane.setSelectedComponent(downloadView);
+                    JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.downloadView);
                     break;
                 case LINKGRABBER:
-                    mainTabbedPane.setSelectedComponent(linkgrabberView);
+                    JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.linkgrabberView);
                     break;
                 case PREMIUMCONFIG:
                     ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry(Premium.class);
-                    openSettings();
+                    JDGui.this.openSettings();
                     if (param != null && param instanceof Account) {
-                        Premium p = (Premium) ConfigurationView.getInstance().getContent();
+                        final Premium p = (Premium) ConfigurationView.getInstance().getContent();
                         p.setSelectedAccount((Account) param);
                     }
                     break;
                 case CONFIGPANEL:
                     if (param instanceof ConfigContainer) {
-                        if (((ConfigContainer) param).getEntries().isEmpty()) return null;
-                        showConfigPanel((ConfigContainer) param);
+                        if (((ConfigContainer) param).getEntries().isEmpty()) { return null; }
+                        JDGui.this.showConfigPanel((ConfigContainer) param);
                     } else if (param instanceof Class<?>) {
                         ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry((Class<?>) param);
-                        openSettings();
+                        JDGui.this.openSettings();
                     }
                     break;
                 default:
-                    mainTabbedPane.setSelectedComponent(downloadView);
+                    JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.downloadView);
                 }
                 return null;
             }
         }.start();
     }
 
-    private void openSettings() {
-        ConfigurationView config = ConfigurationView.getInstance();
-        if (!mainTabbedPane.contains(config)) mainTabbedPane.addTab(config);
-        mainTabbedPane.setSelectedComponent(config);
+    @Override
+    public void setContent(final View view) {
+        if (!this.mainTabbedPane.contains(view)) {
+            this.mainTabbedPane.addTab(view);
+        }
+        this.mainTabbedPane.setSelectedComponent(view);
+    }
+
+    @Override
+    public void setFrameStatus(final int id) {
+        switch (id) {
+        case UIConstants.WINDOW_STATUS_MAXIMIZED:
+            this.mainFrame.setState(Frame.MAXIMIZED_BOTH);
+            break;
+        case UIConstants.WINDOW_STATUS_MINIMIZED:
+            this.mainFrame.setState(Frame.ICONIFIED);
+            break;
+        case UIConstants.WINDOW_STATUS_NORMAL:
+            this.mainFrame.setState(Frame.NORMAL);
+            this.mainFrame.setVisible(true);
+            break;
+        case UIConstants.WINDOW_STATUS_FOREGROUND:
+            this.mainFrame.setState(Frame.NORMAL);
+            this.mainFrame.setFocusableWindowState(false);
+            this.mainFrame.setVisible(true);
+            this.mainFrame.toFront();
+            this.mainFrame.setFocusableWindowState(true);
+            break;
+        }
+    }
+
+    @Override
+    public void setWaiting(final boolean b) {
+        this.internalSetWaiting(b);
+    }
+
+    /**
+     * Sets the Windows Icons. lot's of lafs have problems resizing the icon. so
+     * we set different sizes. for 1.5 it is only possible to use
+     * {@link JFrame#setIconImage(Image)}
+     */
+    private void setWindowIcon() {
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            final ArrayList<Image> list = new ArrayList<Image>();
+            list.add(JDImage.getImage("logo/logo_14_14"));
+            list.add(JDImage.getImage("logo/logo_15_15"));
+            list.add(JDImage.getImage("logo/logo_16_16"));
+            list.add(JDImage.getImage("logo/logo_17_17"));
+            list.add(JDImage.getImage("logo/logo_18_18"));
+            list.add(JDImage.getImage("logo/logo_19_19"));
+            list.add(JDImage.getImage("logo/logo_20_20"));
+            list.add(JDImage.getImage("logo/jd_logo_64_64"));
+            this.mainFrame.setIconImages(list);
+        } else {
+            this.mainFrame.setIconImage(JDImage.getImage("logo/logo_17_17"));
+        }
+    }
+
+    public void setWindowTitle(final String msg) {
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                JDGui.this.mainFrame.setTitle(msg);
+                return null;
+            }
+        }.start();
     }
 
     /**
@@ -472,11 +500,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             icon = container.getGroup().getIcon();
         }
 
-        final SwitchPanel oldPanel = mainTabbedPane.getSelectedView().getInfoPanel();
+        final SwitchPanel oldPanel = this.mainTabbedPane.getSelectedView().getInfoPanel();
 
         final AddonConfig addonConfig = AddonConfig.getInstance(container, "_2", false);
 
-        JDCollapser col = new JDCollapser() {
+        final JDCollapser col = new JDCollapser() {
 
             private static final long serialVersionUID = 1L;
 
@@ -487,9 +515,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                  * (e.g. used for config panels)
                  */
                 if (oldPanel != null && oldPanel instanceof JDCollapser) {
-                    mainTabbedPane.getSelectedView().setInfoPanel(null);
+                    JDGui.this.mainTabbedPane.getSelectedView().setInfoPanel(null);
                 } else {
-                    mainTabbedPane.getSelectedView().setInfoPanel(oldPanel);
+                    JDGui.this.mainTabbedPane.getSelectedView().setInfoPanel(oldPanel);
                 }
                 addonConfig.onHide();
             }
@@ -504,52 +532,42 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         };
 
-        JScrollPane scrollPane = new JScrollPane(addonConfig.getPanel());
+        final JScrollPane scrollPane = new JScrollPane(addonConfig.getPanel());
         scrollPane.setBorder(null);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
         col.getContent().add(scrollPane, "h min(300, pref)!");
         col.setInfos(name, icon);
 
-        mainTabbedPane.getSelectedView().setInfoPanel(col);
+        this.mainTabbedPane.getSelectedView().setInfoPanel(col);
     }
 
     @Override
-    public void disposeView(View view) {
-        view = mainTabbedPane.getComponentEquals(view);
-        mainTabbedPane.remove(view);
-    }
-
-    public void addLinks(final ArrayList<DownloadLink> links, boolean hidegrabber, final boolean autostart) {
-        if (links.size() == 0) return;
-        if (hidegrabber || autostart) {
-            new Thread() {
-                @Override
-                public void run() {
-                    /* TODO: hier autopackaging ? */
-                    ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName("Added " + System.currentTimeMillis());
-                    for (DownloadLink link : links) {
-                        if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
-                            fp.add(link);
-                            if (!fps.contains(fp)) fps.add(fp);
-                        } else {
-                            if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
-                        }
-                    }
-                    LinkCheck.getLinkChecker().checkLinksandWait(links);
-                    if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-                        DownloadController.getInstance().addAllAt(fps, 0);
-                    } else {
-                        DownloadController.getInstance().addAll(fps);
-                    }
-                    if (autostart) DownloadWatchDog.getInstance().startDownloads();
+    public void windowClosing(final WindowEvent e) {
+        if (e.getComponent() == this.getMainFrame()) {
+            /* dont close/exit if trayicon minimizing is enabled */
+            final OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("trayicon");
+            if (addon != null && addon.isEnabled() && addon.getPlugin().isRunning()) {
+                if ((Boolean) addon.getPlugin().interact("closetotray", null) == true) {
+                    UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.noclose", "JDownloader will be minimized to tray!"));
+                    return;
                 }
-            }.start();
-        } else {
-            LinkGrabberPanel.getLinkGrabber().addLinks(links);
-            requestPanel(UserIF.Panels.LINKGRABBER, null);
+            }
+            /*
+             * without trayicon also dont close/exit for macos
+             */
+            if (OSDetector.isMac()) {
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        /* set visible state */
+                        JDGui.this.getMainFrame().setVisible(false);
+                        return null;
+                    }
+                }.start();
+                return;
+            }
+            this.closeWindow();
         }
     }
 

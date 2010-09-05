@@ -16,7 +16,9 @@
 
 package jd;
 
+import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
@@ -24,6 +26,8 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.swing.AbstractAction;
 
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
@@ -36,7 +40,6 @@ import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGuiConstants;
@@ -47,7 +50,6 @@ import jd.http.Browser;
 import jd.http.JDProxy;
 import jd.nutils.ClassFinder;
 import jd.nutils.Formatter;
-import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
@@ -59,6 +61,10 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.lobobrowser.util.OS;
+
 /**
  * @author JD-Team
  */
@@ -69,13 +75,158 @@ public class JDInit {
      * TODO: Change this String to test the changes from plugins with public
      * static methods instead of annotation, e.g. CMS or Wordpress
      */
-    private static final String PLUGIN_DUMP = "";
+    private static final String  PLUGIN_DUMP    = "";
 
     private static final boolean TEST_INSTALLER = false;
 
-    private static final Logger LOG = JDLogger.getLogger();
+    private static final Logger  LOG            = JDLogger.getLogger();
 
-    private static ClassLoader CL;
+    private static ClassLoader   CL;
+
+    /**
+     * Returns a classloader to load plugins (class files); Depending on runtype
+     * (dev or local jared) a different classoader is used to load plugins
+     * either from installdirectory or from rundirectory
+     * 
+     * @return
+     */
+    public static ClassLoader getPluginClassLoader() {
+        if (JDInit.CL == null) {
+            try {
+                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+                    try {
+                        System.out.println(JDUtilities.getResourceFile("java").toURI().toURL());
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
+                    JDInit.CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+                } else {
+                    JDInit.CL = Thread.currentThread().getContextClassLoader();
+                }
+            } catch (final MalformedURLException e) {
+                JDLogger.exception(e);
+            }
+        }
+        return JDInit.CL;
+    }
+
+    public static void loadPluginForDecrypt() {
+        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
+
+        try {
+            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", JDInit.getPluginClassLoader())) {
+                try {
+                    final DecrypterPlugin help = c.getAnnotation(DecrypterPlugin.class);
+                    if (help == null) {
+                        continue;
+                    }
+
+                    if (help.interfaceVersion() != DecrypterPlugin.INTERFACE_VERSION) {
+                        JDInit.LOG.warning("Outdated Plugin found: " + help);
+                        continue;
+                    }
+
+                    final String simpleName = c.getSimpleName();
+                    String[] names = help.names();
+                    String[] patterns = help.urls();
+                    int[] flags = help.flags();
+                    final String revision = help.revision();
+                    JDInit.LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
+
+                    // See if there are cached annotations
+                    if (names.length == 0) {
+                        names = cfg.getGenericProperty(c.getName() + "_names_" + JDInit.PLUGIN_DUMP + revision, names);
+                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + JDInit.PLUGIN_DUMP + revision, patterns);
+                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + JDInit.PLUGIN_DUMP + revision, flags);
+
+                        // if not, try to load them from static functions
+                        if (names.length == 0) {
+                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
+                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
+                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
+
+                            cfg.setProperty(c.getName() + "_names_" + revision, names);
+                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
+                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
+                            cfg.save();
+                        }
+                    }
+
+                    for (int i = 0; i < names.length; i++) {
+                        try {
+                            new DecryptPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
+                        } catch (final Throwable e) {
+                            JDInit.LOG.severe("Could not load " + c);
+                            JDLogger.exception(e);
+                        }
+                    }
+                } catch (final Throwable e) {
+                    JDLogger.exception(e);
+                }
+            }
+        } catch (final Throwable e) {
+            JDLogger.exception(e);
+        }
+    }
+
+    public static void loadPluginForHost() {
+        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
+
+        try {
+            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", JDInit.getPluginClassLoader())) {
+                try {
+                    final HostPlugin help = c.getAnnotation(HostPlugin.class);
+                    if (help == null) {
+                        continue;
+                    }
+
+                    if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
+                        JDInit.LOG.warning("Outdated Plugin found: " + help);
+                        continue;
+                    }
+
+                    final String simpleName = c.getSimpleName();
+                    String[] names = help.names();
+                    String[] patterns = help.urls();
+                    int[] flags = help.flags();
+                    final String revision = help.revision();
+                    JDInit.LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
+
+                    // See if there are cached annotations
+                    if (names.length == 0) {
+                        names = cfg.getGenericProperty(c.getName() + "_names_" + JDInit.PLUGIN_DUMP + revision, names);
+                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + JDInit.PLUGIN_DUMP + revision, patterns);
+                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + JDInit.PLUGIN_DUMP + revision, flags);
+
+                        // if not, try to load them from static functions
+                        if (names.length == 0) {
+                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
+                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
+                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
+
+                            cfg.setProperty(c.getName() + "_names_" + revision, names);
+                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
+                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
+                            cfg.save();
+                        }
+                    }
+
+                    for (int i = 0; i < names.length; i++) {
+                        try {
+                            new HostPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
+                        } catch (final Throwable e) {
+                            JDInit.LOG.severe("Could not load " + c);
+                            JDLogger.exception(e);
+                        }
+                    }
+                } catch (final Throwable e) {
+                    JDLogger.exception(e);
+                }
+            }
+        } catch (final Throwable e) {
+            JDLogger.exception(e);
+        }
+    }
 
     private boolean installerVisible = false;
 
@@ -89,57 +240,37 @@ public class JDInit {
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
         }
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-            String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
+            final String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
             if (!old.equals(JDUtilities.getRevision())) {
-                LOG.info("Detected that JD just got updated");
+                JDInit.LOG.info("Detected that JD just got updated");
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
-                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
-                if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
-                    try {
-                        JLink.openURL("http://jdownloader.org/changes/index");
-                    } catch (Exception e) {
-                        JDLogger.exception(e);
-                    }
-                }
-            }
-        }
-        submitVersion();
-    }
+                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), null, null, null);
+                dialog.setLeftActions(new AbstractAction(JDL.L("system.update.showchangelogv2", "What's new?")) {
 
-    private void submitVersion() {
-        new Thread(new Runnable() {
-            public void run() {
-                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-                    String os = "unk";
-                    if (OSDetector.isLinux()) {
-                        os = "lin";
-                    } else if (OSDetector.isMac()) {
-                        os = "mac";
-                    } else if (OSDetector.isWindows()) {
-                        os = "win";
-                    }
-                    String tz = System.getProperty("user.timezone");
-                    if (tz == null) {
-                        tz = "unknown";
-                    }
-                    final Browser br = new Browser();
-                    br.setConnectTimeout(15000);
-                    if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "").equals(JDUtilities.getRevision())) {
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = 1L;
+
+                    public void actionPerformed(final ActionEvent e) {
                         try {
-                            final String prev = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
-                            br.postPage("http://service.jdownloader.org/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev + "&os=" + os + "&tz=" + Encoding.urlEncode(tz));
-                            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION, JDUtilities.getRevision());
-                            JDUtilities.getConfiguration().save();
-                        } catch (Exception e) {
+                            OS.launchBrowser("http://jdownloader.org/changes/index");
+                        } catch (final IOException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
                         }
                     }
-                }
+
+                });
+                final Integer ret = Dialog.getInstance().showDialog(dialog);
+
             }
-        }).start();
+        }
+        this.submitVersion();
     }
 
     public void init() {
-        initBrowser();
+        this.initBrowser();
 
     }
 
@@ -156,7 +287,7 @@ public class JDInit {
             final String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
             final String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
             if ("".equals(host.trim())) {
-                LOG.warning("Proxy disabled. No host");
+                JDInit.LOG.warning("Proxy disabled. No host");
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_PROXY, false);
                 return;
             }
@@ -176,7 +307,7 @@ public class JDInit {
             final String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
             final int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
             if ("".equals(host.trim())) {
-                LOG.warning("Socks Proxy disabled. No host");
+                JDInit.LOG.warning("Socks Proxy disabled. No host");
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_SOCKS, false);
                 return;
             }
@@ -210,7 +341,7 @@ public class JDInit {
                         System.out.println("ShutDownHook: unexpected shutdown event, could finish saving database!");
                         return;
                     }
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                 }
             }
         });
@@ -227,36 +358,158 @@ public class JDInit {
 
     public void initPlugins() {
         try {
-            movePluginUpdates(JDUtilities.getResourceFile("update"));
-        } catch (Throwable e) {
+            this.movePluginUpdates(JDUtilities.getResourceFile("update"));
+        } catch (final Throwable e) {
             JDLogger.exception(e);
         }
         try {
-            loadCPlugins();
-            loadPluginOptional();
+            this.loadCPlugins();
+            this.loadPluginOptional();
             for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
                 if (plg.isLoaded()) {
                     try {
                         if (plg.isEnabled() && !plg.getPlugin().startAddon()) {
-                            LOG.severe("Error loading Optional Plugin:" + plg.getClassName());
+                            JDInit.LOG.severe("Error loading Optional Plugin:" + plg.getClassName());
                         }
-                    } catch (Throwable e) {
-                        LOG.severe("Error loading Optional Plugin: " + e.getMessage());
+                    } catch (final Throwable e) {
+                        JDInit.LOG.severe("Error loading Optional Plugin: " + e.getMessage());
                         JDLogger.exception(e);
                     }
                 }
             }
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
+            JDLogger.exception(e);
+        }
+    }
+
+    public boolean installerWasVisible() {
+        return this.installerVisible;
+    }
+
+    public Configuration loadConfiguration() {
+        final Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
+
+        if (obj == null) {
+            JDInit.LOG.finest("Fresh install?");
+        }
+
+        if (!JDInit.TEST_INSTALLER && obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
+            final Configuration configuration = (Configuration) obj;
+            JDUtilities.setConfiguration(configuration);
+            JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+            JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
+        } else {
+            final File cfg = JDUtilities.getResourceFile("config");
+            if (!cfg.exists()) {
+                if (!cfg.mkdirs()) {
+                    System.err.println("Could not create configdir");
+                    return null;
+                }
+                if (!cfg.canWrite()) {
+                    System.err.println("Cannot write to configdir");
+                    return null;
+                }
+            }
+            final Configuration configuration = new Configuration();
+            JDUtilities.setConfiguration(configuration);
+            JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+            JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
+
+            JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
+            this.installerVisible = true;
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
+
+            LookAndFeelController.setUIManager();
+            final Installer inst = new Installer();
+
+            if (!inst.isAborted()) {
+                final File home = JDUtilities.getResourceFile(".");
+                if (!home.canWrite()) {
+                    JDInit.LOG.severe("INSTALL abgebrochen");
+                    UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
+                    JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                    System.exit(1);
+                }
+            } else {
+                JDInit.LOG.severe("INSTALL abgebrochen2");
+                UserIO.getInstance().requestMessageDialog(JDL.L("installer.abortInstallation", "Error. User aborted installation."));
+                JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                System.exit(0);
+            }
+        }
+        return JDUtilities.getConfiguration();
+    }
+
+    public void loadCPlugins() {
+        try {
+            new CPluginWrapper("ccf", "C", ".+\\.ccf");
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            new CPluginWrapper("rsdf", "R", ".+\\.rsdf");
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            new CPluginWrapper("dlc", "D", ".+\\.dlc");
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            new CPluginWrapper("jdc", "J", ".+\\.jdc");
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            new CPluginWrapper("metalink", "MetaLink", ".+\\.metalink");
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            new CPluginWrapper("Amazon MP3", "AMZ", ".+\\.amz");
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadPluginOptional() {
+        final ArrayList<String> list = new ArrayList<String>();
+        try {
+            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
+                try {
+                    final String cName = c.getName();
+                    if (list.contains(cName)) {
+                        System.out.println("Already loaded: " + c);
+                        continue;
+                    }
+
+                    final OptionalPlugin help = c.getAnnotation(OptionalPlugin.class);
+                    if (help == null) {
+                        continue;
+                    }
+
+                    if (help.windows() && OSDetector.isWindows() || help.linux() && OSDetector.isLinux() || help.mac() && OSDetector.isMac()) {
+                        if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
+                            new OptionalPluginWrapper(c, help);
+                            list.add(cName);
+                        }
+                    }
+                } catch (final Throwable e) {
+                    JDLogger.exception(e);
+                }
+            }
+        } catch (final Throwable e) {
             JDLogger.exception(e);
         }
     }
 
     private void movePluginUpdates(final File dir) {
-        if (!JDUtilities.getResourceFile("update").exists() || !dir.isDirectory()) return;
+        if (!JDUtilities.getResourceFile("update").exists() || !dir.isDirectory()) { return; }
 
         for (final File f : dir.listFiles()) {
             if (f.isDirectory()) {
-                movePluginUpdates(f);
+                this.movePluginUpdates(f);
             } else {
                 // Create relativ path
                 final File update = JDUtilities.getResourceFile("update");
@@ -264,15 +517,15 @@ public class JDInit {
                 String n = JDUtilities.getResourceFile("update").getAbsolutePath();
                 n = f.getAbsolutePath().replace(n, "").substring(1);
                 final File newFile = new File(root, n).getAbsoluteFile();
-                LOG.info("./update -> real  " + n + " -> " + newFile.getAbsolutePath());
-                LOG.info("Exists: " + newFile.exists());
+                JDInit.LOG.info("./update -> real  " + n + " -> " + newFile.getAbsolutePath());
+                JDInit.LOG.info("Exists: " + newFile.exists());
 
                 if (!newFile.getParentFile().exists()) {
-                    LOG.info("Parent Exists: false");
+                    JDInit.LOG.info("Parent Exists: false");
                     if (newFile.getParentFile().mkdirs()) {
-                        LOG.info("^^CREATED");
+                        JDInit.LOG.info("^^CREATED");
                     } else {
-                        LOG.info("^^CREATION FAILED");
+                        JDInit.LOG.info("^^CREATION FAILED");
                     }
                 }
 
@@ -292,263 +545,36 @@ public class JDInit {
         }
     }
 
-    public boolean installerWasVisible() {
-        return installerVisible;
-    }
-
-    public Configuration loadConfiguration() {
-        Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
-
-        if (obj == null) LOG.finest("Fresh install?");
-
-        if (!TEST_INSTALLER && obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
-            final Configuration configuration = (Configuration) obj;
-            JDUtilities.setConfiguration(configuration);
-            LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
-        } else {
-            final File cfg = JDUtilities.getResourceFile("config");
-            if (!cfg.exists()) {
-                if (!cfg.mkdirs()) {
-                    System.err.println("Could not create configdir");
-                    return null;
-                }
-                if (!cfg.canWrite()) {
-                    System.err.println("Cannot write to configdir");
-                    return null;
-                }
-            }
-            final Configuration configuration = new Configuration();
-            JDUtilities.setConfiguration(configuration);
-            LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
-
-            JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
-            installerVisible = true;
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
-
-            LookAndFeelController.setUIManager();
-            final Installer inst = new Installer();
-
-            if (!inst.isAborted()) {
-                final File home = JDUtilities.getResourceFile(".");
-                if (!home.canWrite()) {
-                    LOG.severe("INSTALL abgebrochen");
-                    UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
-                    JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
-                    System.exit(1);
-                }
-            } else {
-                LOG.severe("INSTALL abgebrochen2");
-                UserIO.getInstance().requestMessageDialog(JDL.L("installer.abortInstallation", "Error. User aborted installation."));
-                JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
-                System.exit(0);
-            }
-        }
-        return JDUtilities.getConfiguration();
-    }
-
-    public void loadCPlugins() {
-        try {
-            new CPluginWrapper("ccf", "C", ".+\\.ccf");
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("rsdf", "R", ".+\\.rsdf");
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("dlc", "D", ".+\\.dlc");
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("jdc", "J", ".+\\.jdc");
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("metalink", "MetaLink", ".+\\.metalink");
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            new CPluginWrapper("Amazon MP3", "AMZ", ".+\\.amz");
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void loadPluginForDecrypt() {
-        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
-
-        try {
-            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", getPluginClassLoader())) {
-                try {
-                    final DecrypterPlugin help = c.getAnnotation(DecrypterPlugin.class);
-                    if (help == null) continue;
-
-                    if (help.interfaceVersion() != DecrypterPlugin.INTERFACE_VERSION) {
-                        LOG.warning("Outdated Plugin found: " + help);
-                        continue;
-                    }
-
-                    String simpleName = c.getSimpleName();
-                    String[] names = help.names();
-                    String[] patterns = help.urls();
-                    int[] flags = help.flags();
-                    final String revision = help.revision();
-                    LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-
-                    // See if there are cached annotations
-                    if (names.length == 0) {
-                        names = cfg.getGenericProperty(c.getName() + "_names_" + PLUGIN_DUMP + revision, names);
-                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + PLUGIN_DUMP + revision, patterns);
-                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + PLUGIN_DUMP + revision, flags);
-
-                        // if not, try to load them from static functions
-                        if (names.length == 0) {
-                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
-                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
-                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
-
-                            cfg.setProperty(c.getName() + "_names_" + revision, names);
-                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
-                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
-                            cfg.save();
-                        }
-                    }
-
-                    for (int i = 0; i < names.length; i++) {
-                        try {
-                            new DecryptPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
-                        } catch (Throwable e) {
-                            LOG.severe("Could not load " + c);
-                            JDLogger.exception(e);
-                        }
-                    }
-                } catch (Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
-        } catch (Throwable e) {
-            JDLogger.exception(e);
-        }
-    }
-
-    /**
-     * Returns a classloader to load plugins (class files); Depending on runtype
-     * (dev or local jared) a different classoader is used to load plugins
-     * either from installdirectory or from rundirectory
-     * 
-     * @return
-     */
-    public static ClassLoader getPluginClassLoader() {
-        if (CL == null) {
-            try {
+    private void submitVersion() {
+        new Thread(new Runnable() {
+            public void run() {
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-                    try {
-                        System.out.println(JDUtilities.getResourceFile("java").toURI().toURL());
-                    } catch (Throwable e) {
-                        e.printStackTrace();
+                    String os = "unk";
+                    if (OSDetector.isLinux()) {
+                        os = "lin";
+                    } else if (OSDetector.isMac()) {
+                        os = "mac";
+                    } else if (OSDetector.isWindows()) {
+                        os = "win";
                     }
-                    CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-                } else {
-                    CL = Thread.currentThread().getContextClassLoader();
-                }
-            } catch (MalformedURLException e) {
-                JDLogger.exception(e);
-            }
-        }
-        return CL;
-    }
-
-    public static void loadPluginForHost() {
-        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
-
-        try {
-            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", getPluginClassLoader())) {
-                try {
-                    final HostPlugin help = c.getAnnotation(HostPlugin.class);
-                    if (help == null) continue;
-
-                    if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
-                        LOG.warning("Outdated Plugin found: " + help);
-                        continue;
+                    String tz = System.getProperty("user.timezone");
+                    if (tz == null) {
+                        tz = "unknown";
                     }
-
-                    String simpleName = c.getSimpleName();
-                    String[] names = help.names();
-                    String[] patterns = help.urls();
-                    int[] flags = help.flags();
-                    final String revision = help.revision();
-                    LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-
-                    // See if there are cached annotations
-                    if (names.length == 0) {
-                        names = cfg.getGenericProperty(c.getName() + "_names_" + PLUGIN_DUMP + revision, names);
-                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + PLUGIN_DUMP + revision, patterns);
-                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + PLUGIN_DUMP + revision, flags);
-
-                        // if not, try to load them from static functions
-                        if (names.length == 0) {
-                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
-                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
-                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
-
-                            cfg.setProperty(c.getName() + "_names_" + revision, names);
-                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
-                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
-                            cfg.save();
-                        }
-                    }
-
-                    for (int i = 0; i < names.length; i++) {
+                    final Browser br = new Browser();
+                    br.setConnectTimeout(15000);
+                    if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "").equals(JDUtilities.getRevision())) {
                         try {
-                            new HostPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
-                        } catch (Throwable e) {
-                            LOG.severe("Could not load " + c);
-                            JDLogger.exception(e);
+                            final String prev = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
+                            br.postPage("http://service.jdownloader.org/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev + "&os=" + os + "&tz=" + Encoding.urlEncode(tz));
+                            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION, JDUtilities.getRevision());
+                            JDUtilities.getConfiguration().save();
+                        } catch (final Exception e) {
                         }
                     }
-                } catch (Throwable e) {
-                    JDLogger.exception(e);
                 }
             }
-        } catch (Throwable e) {
-            JDLogger.exception(e);
-        }
-    }
-
-    public void loadPluginOptional() {
-        final ArrayList<String> list = new ArrayList<String>();
-        try {
-            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
-                try {
-                    final String cName = c.getName();
-                    if (list.contains(cName)) {
-                        System.out.println("Already loaded: " + c);
-                        continue;
-                    }
-
-                    final OptionalPlugin help = c.getAnnotation(OptionalPlugin.class);
-                    if (help == null) continue;
-
-                    if ((help.windows() && OSDetector.isWindows()) || (help.linux() && OSDetector.isLinux()) || (help.mac() && OSDetector.isMac())) {
-                        if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
-                            new OptionalPluginWrapper(c, help);
-                            list.add(cName);
-                        }
-                    }
-                } catch (Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
-        } catch (Throwable e) {
-            JDLogger.exception(e);
-        }
+        }).start();
     }
 
 }

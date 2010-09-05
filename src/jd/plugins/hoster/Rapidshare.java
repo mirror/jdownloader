@@ -717,7 +717,9 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
+        workAroundTimeOut(br);
+
+        /* TODO: remove me after 0.9xx public */
         if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) downloadLink.setMD5Hash(null);
         /* we need file size to calculate left traffic */
         if (downloadLink.getDownloadSize() <= 0) {
@@ -1280,7 +1282,8 @@ public class Rapidshare extends PluginForHost {
                 /* next billing in */
                 nextBill = Long.parseLong(billedUntilTime) - Long.parseLong(serverTimeString);
                 if (nextBill <= 0) {
-                    ai.setStatus("Account might be expired");
+                    ai.setStatus("No RapidPro");
+
                 } else {
                     String left = Formatter.formatSeconds(nextBill, false);
                     ai.setStatus("Valid for " + left);

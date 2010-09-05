@@ -152,7 +152,7 @@ public final class Utils {
                 hlh.append("        Host: %%%routerip%%%" + "\r\n");
                 if (headers.containsKey("authorization")) {
                     String auth = new Regex(headers.get("authorization"), "Basic (.+)").getMatch(0);
-                    if (auth != null) ReconnectRecorder.auth = Encoding.Base64Decode(auth.trim());
+                    if (auth != null) ReconnectRecorder.AUTH = Encoding.Base64Decode(auth.trim());
                     hlh.append("        Authorization: Basic %%%basicauth%%%" + "\r\n");
                 }
             }

@@ -21,24 +21,24 @@ import java.util.logging.Logger;
 
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
+import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
 public class JDMediaConvert {
 
-    private static final Logger LOG = JDLogger.getLogger();
+    private static final Logger LOG      = JDLogger.getLogger();
 
     private static final String TEMP_EXT = ".tmp$";
 
-    public static boolean ConvertFile(final DownloadLink downloadlink, final ConversionMode InType, final ConversionMode OutType) {
-        LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
+    public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
+        JDMediaConvert.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
         if (InType.equals(OutType)) {
-            LOG.info("No Conversion needed, renaming...");
+            JDMediaConvert.LOG.info("No Conversion needed, renaming...");
             final File oldone = new File(downloadlink.getFileOutput());
-            final File newone = new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, OutType.getExtFirst()));
-            downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TEMP_EXT, OutType.getExtFirst()));
+            final File newone = new File(downloadlink.getFileOutput().replaceAll(JDMediaConvert.TEMP_EXT, OutType.getExtFirst()));
+            downloadlink.setFinalFileName(downloadlink.getName().replaceAll(JDMediaConvert.TEMP_EXT, OutType.getExtFirst()));
             oldone.renameTo(newone);
             return true;
         }
@@ -51,7 +51,7 @@ public class JDMediaConvert {
             // Inputformat FLV
             switch (OutType) {
             case AUDIOMP3:
-                LOG.info("Convert FLV to mp3...");
+                JDMediaConvert.LOG.info("Convert FLV to mp3...");
                 new FLV(downloadlink.getFileOutput(), true, true);
                 progress.increase(1);
                 // FLV löschen
@@ -59,31 +59,19 @@ public class JDMediaConvert {
                     new File(downloadlink.getFileOutput()).deleteOnExit();
                 }
                 // AVI löschen
-                if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
-                    new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
+                if (!new File(downloadlink.getFileOutput().replaceAll(JDMediaConvert.TEMP_EXT, ".avi")).delete()) {
+                    new File(downloadlink.getFileOutput().replaceAll(JDMediaConvert.TEMP_EXT, ".avi")).deleteOnExit();
                 }
-                progress.doFinalize();
-                return true;
-            case AUDIOMP3_AND_VIDEOFLV:
-                LOG.info("Convert FLV to mp3 (keep FLV)...");
-                new FLV(downloadlink.getFileOutput(), true, true);
-                progress.increase(1);
-                // AVI löschen
-                if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
-                    new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
-                }
-                // Rename tmp to flv
-                new File(downloadlink.getFileOutput()).renameTo(new File(downloadlink.getFileOutput().replaceAll(".tmp", ConversionMode.VIDEOFLV.getExtFirst())));
                 progress.doFinalize();
                 return true;
             default:
-                LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+                JDMediaConvert.LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
                 downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
                 progress.doFinalize();
                 return false;
             }
         default:
-            LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+            JDMediaConvert.LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
             downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
             progress.doFinalize();
             return false;

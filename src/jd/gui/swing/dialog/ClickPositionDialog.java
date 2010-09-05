@@ -17,7 +17,6 @@
 package jd.gui.swing.dialog;
 
 import java.awt.Cursor;
-import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -27,137 +26,107 @@ import java.awt.event.MouseListener;
 import java.io.File;
 
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTextPane;
-import javax.swing.WindowConstants;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.gui.swing.SwingGui;
-import jd.nutils.Screen;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class ClickPositionDialog extends JCountdownDialog implements ActionListener, MouseListener {
+import org.appwork.utils.swing.dialog.Dialog;
+
+public class ClickPositionDialog extends org.appwork.utils.swing.dialog.AbstractDialog<Point> implements ActionListener, MouseListener {
 
     private static final long serialVersionUID = 5540481255364141955L;
 
-    private JButton btnBAD;
+    private Point             result           = null;
 
-    private Point result = null;
+    private final File        imagefile;
 
-    private File imagefile;
+    private final String      explain;
 
-    private String title;
-
-    private String explain;
-
-    public ClickPositionDialog(File imagefile, String title, String explain) {
-        super(SwingGui.getInstance().getMainFrame());
+    public ClickPositionDialog(final int flag, final File imagefile, final String title, final String explain) {
+        super(flag | Dialog.STYLE_HIDE_ICON, title, null, null, null);
         this.imagefile = imagefile;
-        this.title = title;
         this.explain = explain;
-        this.init();
     }
 
-    public void init() {
+    public void actionPerformed(final ActionEvent e) {
+        this.mouseEntered(null);
+        this.dispose();
+    }
 
-        this.setModal(true);
-        this.setTitle(title);
-        this.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]"));
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.appwork.utils.swing.dialog.AbstractDialog#getRetValue()
+     */
+    @Override
+    protected Point createReturnValue() {
+        return this.result;
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+        final JPanel panel = new JPanel(new MigLayout("ins 5,wrap 1", "[fill,grow]"));
 
         ImageIcon imageIcon = null;
 
-        if (imagefile != null && imagefile.exists()) {
+        if (this.imagefile != null && this.imagefile.exists()) {
             imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
         } else {
             imageIcon = JDTheme.II("gui.images.config.ocr");
         }
 
-        int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
+        final int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
         if (size != 100) {
-            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance((int) (imageIcon.getIconWidth() * (size / 100.0f)), (int) (imageIcon.getIconHeight() * (size / 100.0f)), Image.SCALE_SMOOTH));
+            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance((int) (imageIcon.getIconWidth() * size / 100.0f), (int) (imageIcon.getIconHeight() * size / 100.0f), Image.SCALE_SMOOTH));
         }
 
-        btnBAD = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
-        btnBAD.addActionListener(this);
-
-        JLabel captcha = new JLabel(imageIcon);
+        final JLabel captcha = new JLabel(imageIcon);
         captcha.addMouseListener(this);
         captcha.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-        captcha.setToolTipText(explain);
+        captcha.setToolTipText(this.explain);
 
-        this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        if (explain != null) {
-            JTextPane tf = new JTextPane();
+        if (this.explain != null) {
+            final JTextPane tf = new JTextPane();
             tf.setBorder(null);
             tf.setBackground(null);
             tf.setContentType("text/html");
             tf.setOpaque(false);
             tf.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-            tf.setText(explain);
+            tf.setText(this.explain);
             tf.setEditable(false);
-            add(tf, "");
+            panel.add(tf, "");
         }
-        add(captcha, "w pref!, h pref!, alignx center");
-        add(this.countDownLabel, "split 2,growx");
-        add(btnBAD, "alignx right");
-        this.setMinimumSize(new Dimension(300, -1));
-        this.pack();
-        this.setResizable(false);
-        if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().getMainFrame().isVisible()) {
-            this.setLocation(Screen.getDockBottomRight(this));
-        } else {
-            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), this));
-        }
-        this.toFront();
-        this.setAlwaysOnTop(true);
-        this.requestFocus();
+        panel.add(captcha, "w pref!, h pref!, alignx center");
 
-        this.countdown(Math.max(2, SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20)));
-
-        this.setVisible(true);
-        this.toFront();
-
+        return panel;
     }
 
-    public void actionPerformed(ActionEvent e) {
-        mouseEntered(null);
-        dispose();
+    public void mouseClicked(final MouseEvent e) {
     }
 
-    public Point getPoint() {
-        return result;
+    public void mouseEntered(final MouseEvent e) {
+        this.cancel();
     }
 
-    @Override
-    protected void onCountdown() {
-        this.dispose();
+    public void mouseExited(final MouseEvent e) {
     }
 
-    public void mouseClicked(MouseEvent e) {
+    public void mousePressed(final MouseEvent e) {
     }
 
-    public void mouseEntered(MouseEvent e) {
-        this.interrupt();
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
+    public void mouseReleased(final MouseEvent e) {
         this.result = e.getPoint();
-        int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
+        final int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
         if (size != 100) {
             this.result.setLocation(this.result.getX() / (size / 100.0f), this.result.getY() / (size / 100.0f));
         }
-        dispose();
+        this.dispose();
     }
 
 }

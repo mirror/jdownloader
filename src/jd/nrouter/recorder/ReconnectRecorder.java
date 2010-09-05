@@ -31,11 +31,11 @@ public class ReconnectRecorder {
     static ServerSocket Server_Socket_HTTP;
     static ServerSocket Server_Socket_HTTPS;
     static final String PROPERTY_PORT = "PARAM_PORT";
-    static String auth;
+    static String AUTH;
 
     static public void startServer(String serverip, final boolean rawmode) {
         steps = new Vector<String>();
-        auth = null;
+        AUTH = null;
         running = true;
         steps.add("[[[HSRC]]]");
         int port = 80;

@@ -16,194 +16,125 @@
 
 package jd.gui.swing.dialog;
 
-import java.awt.Dimension;
 import java.awt.Image;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.WindowEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowListener;
 import java.io.File;
 
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.gui.swing.SwingGui;
-import jd.gui.userio.DummyFrame;
-import jd.nutils.Screen;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+
 /**
- * Mit dieser Klasse wird ein Captcha Bild angezeigt
+ * This Dialog is used to display a Inputdialog for the captchas
  */
-public class CaptchaDialog extends JCountdownDialog implements ActionListener, KeyListener, WindowListener {
+public class CaptchaDialog extends AbstractDialog<String> implements ActionListener, KeyListener, WindowListener, MouseListener {
 
-    private static final long serialVersionUID = -2046990134131595481L;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
-    private JButton btnBAD;
+    private JTextField        textField;
 
-    private JButton btnOK;
+    private final File        imagefile;
 
-    private String captchaText = null;
+    private final String      defaultValue;
 
-    private boolean abort = false;
+    private final String      explain;
 
-    private JTextField textField;
+    public CaptchaDialog(final int flag, final String host, final File imagefile, final String defaultValue, final String explain) {
+        super(flag | Dialog.STYLE_HIDE_ICON, (host != null ? host + ": " : "") + JDL.L("gui.captchaWindow.askForInput", "Please enter..."), null, null, null);
 
-    private File imagefile;
-
-    private String defaultValue;
-
-    private String explain;
-
-    private String host;
-
-    private ImageIcon icon;
-
-    public CaptchaDialog(String host, ImageIcon icon, File imagefile, String defaultValue, String explain) {
-        super(DummyFrame.getDialogParent());
-
-        this.host = host;
-        this.icon = icon;
         this.imagefile = imagefile;
         this.defaultValue = defaultValue;
         this.explain = explain;
 
-        this.init();
     }
 
-    public void init() {
-        this.setModal(true);
-        this.setTitle((host != null ? (host + ": ") : "") + JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
-        if (icon != null) this.setIconImage(icon.getImage());
-        this.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]"));
+    @Override
+    protected String createReturnValue() {
+        return this.textField.getText();
+    }
+
+    public void keyPressed(final KeyEvent e) {
+        this.cancel();
+    }
+
+    public void keyReleased(final KeyEvent e) {
+    }
+
+    public void keyTyped(final KeyEvent e) {
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+        final JPanel panel = new JPanel(new MigLayout("ins 5,wrap 1", "[fill,grow]"));
 
         ImageIcon imageIcon = null;
 
-        if (imagefile != null && imagefile.exists()) {
+        if (this.imagefile != null && this.imagefile.exists()) {
             imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
         } else {
             imageIcon = JDTheme.II("gui.images.config.ocr");
         }
 
-        int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
+        final int size = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.PARAM_CAPTCHA_SIZE, 100);
         if (size != 100) {
-            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance((int) (imageIcon.getIconWidth() * (size / 100.0f)), (int) (imageIcon.getIconHeight() * (size / 100.0f)), Image.SCALE_SMOOTH));
+            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance((int) (imageIcon.getIconWidth() * size / 100.0f), (int) (imageIcon.getIconHeight() * size / 100.0f), Image.SCALE_SMOOTH));
         }
 
-        textField = new JTextField(10);
-        textField.addKeyListener(this);
-        textField.setText(this.defaultValue);
+        this.textField = new JTextField(10);
+        this.textField.addKeyListener(this);
+        this.textField.setText(this.defaultValue);
 
-        btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
-        btnOK.addActionListener(this);
-
-        btnBAD = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
-        btnBAD.addActionListener(this);
-
-        this.getRootPane().setDefaultButton(btnOK);
-        this.setDefaultCloseOperation(JCountdownDialog.DO_NOTHING_ON_CLOSE);
-        this.addWindowListener(this);
-        if (explain != null) {
+        if (this.explain != null) {
             JTextField tf;
-            add(tf = new JTextField(), "");
+            panel.add(tf = new JTextField(), "");
             tf.setBorder(null);
             tf.setBackground(null);
             tf.setOpaque(false);
-            tf.setText(explain);
+            tf.setText(this.explain);
             tf.setEditable(false);
         }
-        add(new JLabel(imageIcon), "alignx center");
-        add(textField);
-        add(this.countDownLabel, "split 3,growx");
-        add(btnOK, "alignx right");
-        add(btnBAD, "alignx right");
-        this.setMinimumSize(new Dimension(300, -1));
-        this.pack();
-        this.setResizable(false);
-        if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().getMainFrame().isVisible() || !SwingGui.getInstance().getMainFrame().isActive()) {
-            this.setLocation(Screen.getDockBottomRight(this));
-        } else {
-            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), this));
-        }
-        this.toFront();
-        this.setAlwaysOnTop(true);
-        this.requestFocus();
-        textField.requestFocusInWindow();
-        textField.selectAll();
-        this.countdown(Math.max(2, SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20)));
-        this.setVisible(true);
-        this.toFront();
+        panel.add(new JLabel(imageIcon), "alignx center");
+        panel.add(this.textField);
+        this.textField.requestFocusInWindow();
+        this.textField.selectAll();
+        return panel;
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnOK) {
-            captchaText = textField.getText();
-        } else if (e.getSource() == btnBAD) {
-            abort = true;
-            captchaText = null;
-        }
-        keyPressed(null);
-        dispose();
+    public void mouseClicked(final MouseEvent e) {
+        this.cancel();
     }
 
-    /**
-     * Liefert den eingetippten Text zurück
-     * 
-     * @return Der Text, den der Benutzer eingetippt hat
-     */
-    public String getCaptchaText() {
-        if (abort == true) return null;
-        return captchaText;
+    public void mouseEntered(final MouseEvent e) {
     }
 
-    public void keyPressed(KeyEvent e) {
-        this.interrupt();
+    public void mouseExited(final MouseEvent e) {
     }
 
-    public void keyReleased(KeyEvent e) {
+    public void mousePressed(final MouseEvent e) {
+        this.cancel();
     }
 
-    public void keyTyped(KeyEvent e) {
-    }
-
-    @Override
-    protected void onCountdown() {
-        this.captchaText = textField.getText();
-        this.dispose();
-    }
-
-    public void windowActivated(WindowEvent e) {
-    }
-
-    public void windowClosed(WindowEvent e) {
-    }
-
-    public void windowClosing(WindowEvent e) {
-        abort = true;
-        captchaText = null;
-        keyPressed(null);
-        dispose();
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-    }
-
-    public void windowIconified(WindowEvent e) {
-    }
-
-    public void windowOpened(WindowEvent e) {
+    public void mouseReleased(final MouseEvent e) {
+        this.cancel();
     }
 
 }

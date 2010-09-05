@@ -19,6 +19,7 @@ package jd.plugins.optional.langfileeditor;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -57,6 +58,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
+import jd.gui.swing.dialog.TwoTextFieldDialog;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -68,174 +70,434 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdesktop.swingx.search.SearchFactory;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNInfo;
 
 public class LFEGui extends SwitchPanel implements ActionListener, MouseListener {
 
-    private static final long serialVersionUID = -143452893912428555L;
+    private static final long             serialVersionUID         = -143452893912428555L;
 
-    public static final String SOURCE_SVN = "svn://svn.jdownloader.org/jdownloader/trunk/src";
+    public static final String            SOURCE_SVN               = "svn://svn.jdownloader.org/jdownloader/trunk/src";
 
-    public static final String LANGUAGE_SVN = "svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/languages";
+    public static final String            LANGUAGE_SVN             = "svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/languages";
 
-    private static final String LOCALE_PREFIX = "plugins.optional.langfileeditor.";
+    private static final String           LOCALE_PREFIX            = "plugins.optional.langfileeditor.";
 
-    private final SubConfiguration subConfig;
+    private final SubConfiguration        subConfig;
 
-    public final static String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
-    public final static String PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
+    public final static String            PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
+    public final static String            PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
 
-    private static final String MISSING_KEY = "~MISSING KEY/REMOVED~";
+    private static final String           MISSING_KEY              = "~MISSING KEY/REMOVED~";
 
-    private LFEInfoPanel infoPanel;
-    private LFETableModel tableModel;
-    private JDTable table;
-    private File languageFile;
+    private final LFEInfoPanel            infoPanel;
+    private LFETableModel                 tableModel;
+    private JDTable                       table;
+    private File                          languageFile;
 
-    private JMenuBar menubar;
-    private JMenu mnuFile, mnuLoad, mnuKey, mnuTest;
-    private JMenuItem mnuSave, mnuSaveLocal, mnuReload, mnuCompleteReload;
-    private JMenuItem mnuAdd, mnuAdopt, mnuClear, mnuDelete, mnuDeleteOld, mnuOpenSearchDialog;
-    private JMenuItem mnuCurrent, mnuKeymode;
-    private JPopupMenu mnuContextPopup;
-    private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete;
+    private JMenuBar                      menubar;
+    private JMenu                         mnuFile, mnuLoad, mnuKey, mnuTest;
+    private JMenuItem                     mnuSave, mnuSaveLocal, mnuReload, mnuCompleteReload;
+    private JMenuItem                     mnuAdd, mnuAdopt, mnuClear, mnuDelete, mnuDeleteOld, mnuOpenSearchDialog;
+    private JMenuItem                     mnuCurrent, mnuKeymode;
+    private JPopupMenu                    mnuContextPopup;
+    private JMenuItem                     mnuContextAdopt, mnuContextClear, mnuContextDelete;
 
-    private HashMap<String, String> languageKeysFormFile = new HashMap<String, String>();
-    private HashMap<String, String> languageENKeysFormFile = new HashMap<String, String>();
-    private ArrayList<KeyInfo> data = new ArrayList<KeyInfo>();
-    private String lngKey = null;
-    private boolean changed = false;
-    private int numOld = 0;
-    private final File dirLanguages, dirWorkingCopy;
+    private final HashMap<String, String> languageKeysFormFile     = new HashMap<String, String>();
+    private final HashMap<String, String> languageENKeysFormFile   = new HashMap<String, String>();
+    private final ArrayList<KeyInfo>      data                     = new ArrayList<KeyInfo>();
+    private String                        lngKey                   = null;
+    private boolean                       changed                  = false;
+    private int                           numOld                   = 0;
+    private final File                    dirLanguages, dirWorkingCopy;
 
-    public static final Color COLOR_DONE = new Color(204, 255, 170);
-    public static final Color COLOR_MISSING = new Color(221, 34, 34);
-    public static final Color COLOR_OLD = Color.ORANGE;
+    public static final Color             COLOR_DONE               = new Color(204, 255, 170);
+    public static final Color             COLOR_MISSING            = new Color(221, 34, 34);
+    public static final Color             COLOR_OLD                = Color.ORANGE;
 
-    private SrcParser sourceParser;
+    private SrcParser                     sourceParser;
 
-    private Thread updater;
+    private Thread                        updater;
 
-    private JButton warning;
+    private JButton                       warning;
 
-    private LangFileEditor plugin;
+    private final LangFileEditor          plugin;
 
-    public LFEGui(LangFileEditor plugin) {
+    public LFEGui(final LangFileEditor plugin) {
         this.plugin = plugin;
         this.subConfig = plugin.getPluginConfig();
         this.infoPanel = LFEInfoPanel.getInstance();
-        this.setName(JDL.L(LOCALE_PREFIX + "title", "Language Editor"));
-        dirLanguages = JDUtilities.getResourceFile("tmp/lfe/lng/");
-        dirWorkingCopy = JDUtilities.getResourceFile("tmp/lfe/src/");
-        dirLanguages.mkdirs();
-        dirWorkingCopy.mkdirs();
-        initGui();
+        this.setName(JDL.L(LFEGui.LOCALE_PREFIX + "title", "Language Editor"));
+        this.dirLanguages = JDUtilities.getResourceFile("tmp/lfe/lng/");
+        this.dirWorkingCopy = JDUtilities.getResourceFile("tmp/lfe/src/");
+        this.dirLanguages.mkdirs();
+        this.dirWorkingCopy.mkdirs();
+        this.initGui();
+    }
+
+    public void actionPerformed(final ActionEvent e) {
+        if (e.getSource() == this.mnuCompleteReload || e.getSource() == this.mnuReload) {
+            this.saveChanges(false);
+
+            new Thread(new Runnable() {
+                public void run() {
+                    SwingUtilities.invokeLater(new Runnable() {
+
+                        public void run() {
+                            LFEGui.this.mnuKey.setEnabled(false);
+                            LFEGui.this.mnuCurrent.setEnabled(false);
+                            LFEGui.this.mnuSave.setEnabled(false);
+                            LFEGui.this.mnuSaveLocal.setEnabled(false);
+                        }
+
+                    });
+                    if (e.getSource() == LFEGui.this.mnuCompleteReload) {
+                        SrcParser.deleteCache();
+                    }
+                    LFEGui.this.getSourceEntries();
+                    LFEGui.this.updateSVN(true);
+                    LFEGui.this.populateLngMenu();
+                    LFEGui.this.initLocaleData();
+                }
+            }).start();
+        } else if (e.getSource() == this.mnuSaveLocal) {
+            this.saveLanguageFile(this.languageFile, false);
+        } else if (e.getSource() == this.mnuSave) {
+            this.saveLanguageFile(this.languageFile, true);
+        } else if (e.getSource() == this.mnuCurrent) {
+            this.saveLanguageFile(this.languageFile, false);
+            this.startNewInstance(new String[] { "-n", "-lng", this.languageFile.getAbsolutePath() });
+            UserIO.getInstance().requestMessageDialog("Started JDownloader using " + this.languageFile);
+        } else if (e.getSource() == this.mnuKeymode) {
+
+            this.startNewInstance(new String[] { "-n", "-trdebug" });
+            UserIO.getInstance().requestMessageDialog("Started JDownloader in KEY DEBUG Mode");
+        } else if (e.getSource() == this.mnuAdd) {
+
+            final String[] result = Dialog.getInstance().showDialog(new TwoTextFieldDialog(JDL.L(LFEGui.LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LFEGui.LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), "", JDL.L(LFEGui.LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), ""));
+            if (result == null || result[0].equals("")) { return; }
+            result[0] = result[0].toLowerCase();
+            for (final KeyInfo ki : this.data) {
+                if (ki.getKey().equals(result[0])) {
+                    UserIO.getInstance().requestMessageDialog(JDL.LF(LFEGui.LOCALE_PREFIX + "addKey.error.message", "The key '%s' is already in use!", result[0]));
+                    return;
+                }
+            }
+            this.data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], this.languageENKeysFormFile.get(result[0].toLowerCase())));
+            this.tableModel.refreshModel();
+            this.tableModel.fireTableDataChanged();
+            this.updateKeyChart();
+
+        } else if (e.getSource() == this.mnuDelete || e.getSource() == this.mnuContextDelete) {
+
+            this.deleteSelectedKeys();
+
+        } else if (e.getSource() == this.mnuAdopt || e.getSource() == this.mnuContextAdopt) {
+
+            for (final int row : this.getSelectedRows()) {
+                this.data.get(row).setLanguage(this.data.get(row).getSource());
+            }
+            this.dataChanged();
+
+        } else if (e.getSource() == this.mnuClear || e.getSource() == this.mnuContextClear) {
+
+            for (final int row : this.getSelectedRows()) {
+                this.data.get(row).setLanguage("");
+            }
+            this.dataChanged();
+
+        } else if (e.getSource() == this.mnuOpenSearchDialog) {
+
+            SearchFactory.getInstance().showFindInput(this.table, this.table.getSearchable());
+
+        } else if (e.getSource() == this.mnuDeleteOld) {
+
+            if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L(LFEGui.LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LFEGui.LOCALE_PREFIX + "deleteOld.message", "Delete all %s old Key(s)?", this.numOld)), UserIO.RETURN_OK)) {
+                this.deleteOldKeys();
+            }
+
+        }
+
+    }
+
+    private void buildContextMenu() {
+        // Context Menü
+        this.mnuContextPopup = new JPopupMenu();
+
+        this.mnuContextPopup.add(this.mnuContextDelete = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
+        this.mnuContextPopup.add(this.mnuContextClear = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
+        this.mnuContextPopup.addSeparator();
+        this.mnuContextPopup.add(this.mnuContextAdopt = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
+
+        this.mnuContextDelete.addActionListener(this);
+        this.mnuContextClear.addActionListener(this);
+        this.mnuContextAdopt.addActionListener(this);
+    }
+
+    private boolean commit(final File file, final String string, Subversion svn) {
+        try {
+
+            if (svn == null) {
+                svn = new Subversion(LFEGui.LANGUAGE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
+            }
+            svn.update(file, null);
+            try {
+                svn.resolveConflicts(file, new ResolveHandler() {
+
+                    public String resolveConflict(final SVNInfo info, final File file, final String contents, final int startMine, final int endMine, final int startTheirs, final int endTheirs) {
+                        final String[] mine = Regex.getLines(contents.substring(startMine, endMine).trim());
+                        final String[] theirs = Regex.getLines(contents.substring(startTheirs, endTheirs).trim());
+                        final StringBuilder sb = new StringBuilder();
+                        final ArrayList<String> keys = new ArrayList<String>();
+                        for (final String m : mine) {
+                            final int index = m.indexOf("=");
+                            final String key = m.substring(0, index).trim();
+                            final String value = m.substring(index + 1).trim();
+                            boolean found = false;
+
+                            for (final String t : theirs) {
+
+                                if (t.startsWith(key)) {
+                                    final int tindex = t.indexOf("=");
+                                    final String tkey = t.substring(0, tindex).trim();
+                                    final String tvalue = t.substring(tindex + 1).trim();
+                                    if (key.equalsIgnoreCase(tkey)) {
+                                        found = true;
+                                        if (value.equals(tvalue)) {
+                                            sb.append(key).append(" = ").append(value).append("\r\n");
+                                            keys.add(key);
+                                            break;
+                                        } else {
+
+                                            final String newValue = this.selectVersion(key, value, tvalue);
+                                            sb.append(key).append(" = ").append(newValue).append("\r\n");
+                                            keys.add(key);
+                                            break;
+                                        }
+
+                                    }
+                                }
+
+                            }
+
+                            if (!found) {
+                                final String newValue = this.selectVersion(key, value, LFEGui.MISSING_KEY);
+                                if (newValue == LFEGui.MISSING_KEY) {
+                                    continue;
+                                }
+                                sb.append(key).append(" = ").append(value).append("\r\n");
+                                keys.add(key);
+                                continue;
+                            }
+
+                        }
+
+                        for (final String t : theirs) {
+                            final int tindex = t.indexOf("=");
+                            if (tindex < 0) {
+                                continue;
+                            }
+                            final String tkey = t.substring(0, tindex).trim();
+                            final String tvalue = t.substring(tindex + 1).trim();
+                            if (!keys.contains(tkey)) {
+                                final String newValue = this.selectVersion(tkey, LFEGui.MISSING_KEY, tvalue);
+                                if (newValue == LFEGui.MISSING_KEY) {
+                                    continue;
+                                }
+
+                                sb.append(tkey + " = " + tvalue + "\r\n");
+                                keys.add(tkey);
+                            }
+
+                        }
+
+                        return sb.toString().trim();
+                    }
+
+                    private String selectVersion(final String key, final String value, final String tvalue) {
+                        final String html = "<h1>Key: " + key + "</h1><h2>Translation A</h2>" + value + "<h2>Translation B</h2>" + tvalue + "<br><br>Select the better translation. A or B:";
+                        final int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML | UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Conflicts occured!", html, null, "A", "B");
+                        if (JDFlags.hasAllFlags(ret, UserIO.RETURN_CANCEL)) { return tvalue; }
+                        return value;
+
+                    }
+
+                });
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+            svn.commit(file, string);
+
+            svn.dispose();
+            return true;
+        } catch (final SVNException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void dataChanged() {
+        this.tableModel.refreshModel();
+        this.tableModel.fireTableDataChanged();
+        this.updateKeyChart();
+        this.changed = true;
+    }
+
+    private void deleteOldKeys() {
+        for (int i = this.data.size() - 1; i >= 0; --i) {
+            if (this.data.get(i).isOld()) {
+                this.data.remove(i);
+            }
+        }
+        this.dataChanged();
+    }
+
+    private void deleteSelectedKeys() {
+        final int[] rows = this.getSelectedRows();
+        Arrays.sort(rows);
+
+        final int len = rows.length - 1;
+        for (int i = len; i >= 0; --i) {
+            final String temp = this.data.remove(rows[i]).getKey();
+            this.data.remove(temp);
+        }
+        final int newRow = Math.min(rows[len] - len, this.tableModel.getRowCount() - 1);
+        this.table.getSelectionModel().setSelectionInterval(newRow, newRow);
+
+        this.dataChanged();
     }
 
     public ArrayList<KeyInfo> getData() {
-        return data;
+        return this.data;
+    }
+
+    private int[] getSelectedRows() {
+        final int[] rows = this.table.getSelectedRows();
+        final int[] ret = new int[rows.length];
+
+        for (int i = 0; i < rows.length; ++i) {
+            ret[i] = this.table.convertRowIndexToModel(rows[i]);
+        }
+        Arrays.sort(ret);
+        return ret;
+    }
+
+    private void getSourceEntries() {
+        final ProgressController progress = new ProgressController(JDL.L(LFEGui.LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"), "gui.splash.languages");
+        progress.setIndeterminate(true);
+
+        this.sourceParser = new SrcParser(this.dirWorkingCopy);
+        this.sourceParser.getBroadcaster().addListener(progress);
+        this.sourceParser.parse();
+
+        JDLogger.getLogger().warning("Patternmatches are not recommened: \r\n" + this.sourceParser.getPattern());
+
+        progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
+        progress.doFinalize(2 * 1000l);
     }
 
     private void initGui() {
-        tableModel = new LFETableModel(this);
-        table = new JDTable(tableModel);
-        table.setEnabled(false);
-        table.addMouseListener(this);
-        table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        table.setAutoStartEditOnKeyStroke(false);
-        table.addJDRowHighlighter(new JDRowHighlighter(COLOR_MISSING) {
+        this.tableModel = new LFETableModel(this);
+        this.table = new JDTable(this.tableModel);
+        this.table.setEnabled(false);
+        this.table.addMouseListener(this);
+        this.table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        this.table.setAutoStartEditOnKeyStroke(false);
+        this.table.addJDRowHighlighter(new JDRowHighlighter(LFEGui.COLOR_MISSING) {
 
             @Override
-            public boolean doHighlight(Object obj) {
+            public boolean doHighlight(final Object obj) {
                 return ((KeyInfo) obj).isMissing();
             }
 
         });
 
-        table.addJDRowHighlighter(new JDRowHighlighter(COLOR_OLD) {
+        this.table.addJDRowHighlighter(new JDRowHighlighter(LFEGui.COLOR_OLD) {
 
             @Override
-            public boolean doHighlight(Object obj) {
+            public boolean doHighlight(final Object obj) {
                 return ((KeyInfo) obj).isOld();
             }
 
         });
 
         this.setLayout(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[][grow, fill]"));
-        warning = new JButton(JDL.L(LOCALE_PREFIX + "account.warning", "SVN Account missing. Click here to read more."));
-        warning.setVisible(false);
-        warning.addActionListener(new ActionListener() {
+        this.warning = new JButton(JDL.L(LFEGui.LOCALE_PREFIX + "account.warning", "SVN Account missing. Click here to read more."));
+        this.warning.setVisible(false);
+        this.warning.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 try {
                     LocalBrowser.openURL(null, new URL("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader"));
-                } catch (Exception e1) {
+                } catch (final Exception e1) {
                     e1.printStackTrace();
                     UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), "http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
                 }
             }
 
         });
-        this.add(warning, "grow, hidemode 2");
-        this.add(new JScrollPane(table), "grow");
+        this.add(this.warning, "grow, hidemode 2");
+        this.add(new JScrollPane(this.table), "grow");
 
-        updater = new Thread(new Runnable() {
+        this.updater = new Thread(new Runnable() {
 
             public void run() {
                 boolean cfgRequested = false;
                 while (true) {
-                    while (subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER) == null || subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER).trim().length() == 0) {
-                        if (!cfgRequested) UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, plugin.getConfig());
+                    while (LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER) == null || LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER).trim().length() == 0) {
+                        if (!cfgRequested) {
+                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, LFEGui.this.plugin.getConfig());
+                        }
                         cfgRequested = true;
                         try {
                             new GuiRunnable<Object>() {
 
                                 @Override
                                 public Object runSave() {
-                                    warning.setVisible(true);
-                                    mnuFile.setEnabled(false);
+                                    LFEGui.this.warning.setVisible(true);
+                                    LFEGui.this.mnuFile.setEnabled(false);
                                     return null;
                                 }
 
                             }.start();
                             Thread.sleep(500);
-                        } catch (InterruptedException e) {
+                        } catch (final InterruptedException e) {
                             return;
                         }
                     }
 
-                    if (Subversion.checkLogin(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS))) {
+                    if (Subversion.checkLogin(LFEGui.SOURCE_SVN, LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS))) {
                         break;
                     } else {
                         UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.langfileeditor.badlogins", "Logins incorrect.\r\nPlease enter correct logins."));
-                        subConfig.setProperty(PROPERTY_SVN_ACCESS_USER, null);
-                        subConfig.setProperty(PROPERTY_SVN_ACCESS_PASS, null);
-                        subConfig.save();
+                        LFEGui.this.subConfig.setProperty(LFEGui.PROPERTY_SVN_ACCESS_USER, null);
+                        LFEGui.this.subConfig.setProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS, null);
+                        LFEGui.this.subConfig.save();
                     }
                 }
                 new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {
-                        warning.setVisible(false);
+                        LFEGui.this.warning.setVisible(false);
                         return null;
                     }
 
                 }.start();
                 LFEGui.this.setEnabled(false);
 
-                updateSVN(false);
+                LFEGui.this.updateSVN(false);
 
-                getSourceEntries();
-                populateLngMenu();
+                LFEGui.this.getSourceEntries();
+                LFEGui.this.populateLngMenu();
                 LFEGui.this.setEnabled(true);
-                if (menubar != null) {
+                if (LFEGui.this.menubar != null) {
                     new GuiRunnable<Object>() {
                         @Override
                         public Object runSave() {
-                            menubar.setEnabled(true);
+                            LFEGui.this.menubar.setEnabled(true);
                             return null;
                         }
                     }.start();
@@ -243,28 +505,205 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 new GuiRunnable<Object>() {
                     @Override
                     public Object runSave() {
-                        mnuFile.setEnabled(true);
+                        LFEGui.this.mnuFile.setEnabled(true);
                         return null;
                     }
                 }.start();
             }
         });
-        updater.start();
+        this.updater.start();
     }
 
-    private void updateKeyChart() {
-        int numMissing = 0;
-        numOld = 0;
+    private void initLocaleData() {
 
-        for (KeyInfo entry : data) {
-            if (entry.isOld()) {
-                numOld++;
-            } else if (entry.isMissing()) {
-                numMissing++;
-            }
+        this.parseLanguageFile(this.languageFile, this.languageKeysFormFile);
+        this.parseLanguageFile(new File(this.dirLanguages, "en.loc"), this.languageENKeysFormFile);
+        this.data.clear();
+        if (this.languageFile != null) {
+            this.lngKey = this.languageFile.getName().substring(0, this.languageFile.getName().length() - 4);
+            this.lngKey = JDGeoCode.parseLanguageCode(this.lngKey)[0];
+        }
+        String value, key;
+        KeyInfo keyInfo;
+        for (final LngEntry entry : this.sourceParser.getEntries()) {
+            key = entry.getKey();
+            keyInfo = new KeyInfo(key, entry.getValue(), this.languageKeysFormFile.remove(key), this.languageENKeysFormFile.get(key));
+            this.data.add(keyInfo);
         }
 
-        infoPanel.updateInfo(data.size() - numMissing - numOld, numMissing, numOld);
+        for (final Entry<String, String> entry : this.languageKeysFormFile.entrySet()) {
+            key = entry.getKey();
+            value = null;
+
+            for (final String patt : this.sourceParser.getPattern()) {
+                if (key.matches(patt)) {
+                    value = "<pattern> " + patt;
+                }
+            }
+
+            this.data.add(new KeyInfo(key, value, entry.getValue(), this.languageENKeysFormFile.get(key)));
+        }
+
+        Collections.sort(this.data);
+
+        this.tableModel.refreshModel();
+        this.tableModel.fireTableDataChanged();
+        this.changed = false;
+
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                LFEGui.this.updateKeyChart();
+                LFEGui.this.mnuKey.setEnabled(true);
+                LFEGui.this.mnuCurrent.setEnabled(true);
+                LFEGui.this.mnuSave.setEnabled(true);
+                LFEGui.this.mnuSaveLocal.setEnabled(true);
+            }
+
+        });
+
+    }
+
+    public void initMenu(final JMenuBar menubar) {
+        this.menubar = menubar;
+        // Load Menü
+        this.mnuLoad = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "load", "Load Language"));
+
+        this.populateLngMenu();
+
+        // File Menü
+        this.mnuFile = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "file", "File"));
+
+        this.mnuFile.add(this.mnuLoad);
+        this.mnuFile.addSeparator();
+        this.mnuFile.add(this.mnuSaveLocal = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "savelocale", "Save Offline")));
+        this.mnuFile.setEnabled(false);
+        this.mnuFile.add(this.mnuSave = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "saveandupload", "Save & Upload")));
+        this.mnuFile.addSeparator();
+        this.mnuFile.add(this.mnuReload = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "reload", "Revert/Reload")));
+        this.mnuFile.add(this.mnuCompleteReload = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "completeReload", "Complete Reload (Deletes Cache)")));
+
+        this.mnuSaveLocal.addActionListener(this);
+        this.mnuSave.addActionListener(this);
+        this.mnuReload.addActionListener(this);
+        this.mnuCompleteReload.addActionListener(this);
+
+        this.mnuSaveLocal.setEnabled(false);
+        this.mnuSave.setEnabled(false);
+
+        this.mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+
+        // Key Menü
+        this.mnuKey = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "key", "Key"));
+        this.mnuKey.setEnabled(false);
+
+        this.mnuKey.add(this.mnuAdd = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "addKey", "Add Key")));
+        this.mnuKey.add(this.mnuDelete = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
+        this.mnuKey.add(this.mnuClear = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
+        this.mnuKey.addSeparator();
+        this.mnuKey.add(this.mnuAdopt = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
+        this.mnuKey.addSeparator();
+        this.mnuKey.add(this.mnuDeleteOld = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "deleteOldKeys", "Delete Old Key(s)")));
+        this.mnuKey.addSeparator();
+        this.mnuKey.add(this.mnuOpenSearchDialog = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
+
+        this.mnuAdd.addActionListener(this);
+        this.mnuDelete.addActionListener(this);
+        this.mnuClear.addActionListener(this);
+        this.mnuAdopt.addActionListener(this);
+        this.mnuDeleteOld.addActionListener(this);
+        this.mnuOpenSearchDialog.addActionListener(this);
+
+        this.mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
+        this.mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK));
+
+        // Test
+        this.mnuTest = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "test", "Test"));
+
+        this.mnuTest.add(this.mnuCurrent = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "startcurrent", "Test JD with current translation")));
+        this.mnuCurrent.addActionListener(this);
+        this.mnuTest.add(this.mnuKeymode = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "startkey", "Test JD in Key mode")));
+        this.mnuKeymode.addActionListener(this);
+        this.mnuCurrent.setEnabled(false);
+
+        // Menü-Bar zusammensetzen
+        menubar.add(this.mnuFile);
+        menubar.add(this.mnuKey);
+        menubar.add(this.mnuTest);
+        menubar.setEnabled(false);
+
+    }
+
+    public void mouseClicked(final MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON3) {
+            final int row = this.table.rowAtPoint(e.getPoint());
+            if (!this.table.isRowSelected(row)) {
+                this.table.getSelectionModel().setSelectionInterval(row, row);
+            }
+            if (this.mnuContextPopup == null) {
+                this.buildContextMenu();
+            }
+            this.mnuContextPopup.show(this.table, e.getX(), e.getY());
+        }
+    }
+
+    public void mouseEntered(final MouseEvent e) {
+    }
+
+    public void mouseExited(final MouseEvent e) {
+    }
+
+    public void mousePressed(final MouseEvent e) {
+    }
+
+    public void mouseReleased(final MouseEvent e) {
+    }
+
+    @Override
+    public void onHide() {
+        try {
+            this.updater.interrupt();
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onShow() {
+    }
+
+    private void parseLanguageFile(final File file, final HashMap<String, String> data) {
+        data.clear();
+
+        if (file == null || !file.exists()) {
+            System.out.println("JDLocale: " + file + " not found");
+            return;
+        }
+
+        try {
+            final BufferedReader f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+
+            String line;
+            String key;
+            String value;
+            while ((line = f.readLine()) != null) {
+                if (line.startsWith("#")) {
+                    continue;
+                }
+                final int split = line.indexOf("=");
+                if (split <= 0) {
+                    continue;
+                }
+
+                key = line.substring(0, split).trim().toLowerCase();
+                value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
+
+                data.put(key, value);
+            }
+            f.close();
+        } catch (final IOException e) {
+            JDLogger.exception(e);
+        }
     }
 
     private void populateLngMenu() {
@@ -272,28 +711,28 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
             @Override
             public Object runSave() {
-                mnuLoad.removeAll();
-                for (File f : dirLanguages.listFiles()) {
+                LFEGui.this.mnuLoad.removeAll();
+                for (final File f : LFEGui.this.dirLanguages.listFiles()) {
                     if (f.getName().endsWith(".loc")) {
                         try {
-                            String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
+                            final String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
                             if (language != null) {
-                                JMenuItem mi = new JMenuItem(language);
+                                final JMenuItem mi = new JMenuItem(language);
                                 mi.addActionListener(new ActionListener() {
 
-                                    public void actionPerformed(ActionEvent e) {
-                                        if (languageFile != null) {
-                                            saveChanges(true);
+                                    public void actionPerformed(final ActionEvent e) {
+                                        if (LFEGui.this.languageFile != null) {
+                                            LFEGui.this.saveChanges(true);
                                         }
-                                        languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
-                                        initLocaleData();
-                                        table.setEnabled(true);
+                                        LFEGui.this.languageFile = new File(LFEGui.this.dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
+                                        LFEGui.this.initLocaleData();
+                                        LFEGui.this.table.setEnabled(true);
                                     }
 
                                 });
-                                mnuLoad.add(mi);
+                                LFEGui.this.mnuLoad.add(mi);
                             }
-                        } catch (Exception e) {
+                        } catch (final Exception e) {
                             System.out.println(f);
                             e.printStackTrace();
                         }
@@ -306,119 +745,78 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     }
 
-    private void buildContextMenu() {
-        // Context Menü
-        mnuContextPopup = new JPopupMenu();
-
-        mnuContextPopup.add(mnuContextDelete = new JMenuItem(JDL.L(LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
-        mnuContextPopup.add(mnuContextClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
-        mnuContextPopup.addSeparator();
-        mnuContextPopup.add(mnuContextAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
-
-        mnuContextDelete.addActionListener(this);
-        mnuContextClear.addActionListener(this);
-        mnuContextAdopt.addActionListener(this);
+    public void saveChanges(final boolean upload) {
+        if (!this.changed) { return; }
+        String message;
+        if (upload) {
+            message = JDL.LF(LFEGui.LOCALE_PREFIX + "saveChanges.message.upload", "Save and upload your changes to %s?", this.languageFile);
+        } else {
+            message = JDL.LF(LFEGui.LOCALE_PREFIX + "saveChanges.message", "Save your changes to %s?", this.languageFile);
+        }
+        final int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(LFEGui.LOCALE_PREFIX + "saveChanges", "Save changes?"), message, null, JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+        if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
+            this.saveLanguageFile(this.languageFile, upload);
+        }
     }
 
-    public void actionPerformed(final ActionEvent e) {
-        if (e.getSource() == mnuCompleteReload || e.getSource() == mnuReload) {
-            saveChanges(false);
+    private void saveLanguageFile(final File file, final boolean upload) {
+        final StringBuilder sb = new StringBuilder();
 
-            new Thread(new Runnable() {
-                public void run() {
-                    SwingUtilities.invokeLater(new Runnable() {
+        Collections.sort(this.data);
 
-                        public void run() {
-                            mnuKey.setEnabled(false);
-                            mnuCurrent.setEnabled(false);
-                            mnuSave.setEnabled(false);
-                            mnuSaveLocal.setEnabled(false);
-                        }
+        if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, JDL.L(LFEGui.LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LFEGui.LOCALE_PREFIX + "deleteOld.message2", "There are still %s old keys in the LanguageFile. Delete them before saving?", this.numOld)), UserIO.RETURN_OK)) {
+            this.deleteOldKeys();
+        }
 
-                    });
-                    if (e.getSource() == mnuCompleteReload) SrcParser.deleteCache();
-                    getSourceEntries();
-                    updateSVN(true);
-                    populateLngMenu();
-                    initLocaleData();
+        for (final KeyInfo entry : this.data) {
+            if (!entry.isMissing()) {
+                sb.append(entry.toString()).append('\n');
+            }
+        }
+
+        try {
+            final Subversion svn = new Subversion(LFEGui.LANGUAGE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
+
+            final ArrayList<SVNInfo> info = svn.getInfo(file);
+            if (info.get(0).getConflictWrkFile() != null) {
+                svn.revert(file);
+            }
+
+            svn.dispose();
+            final BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            out.write(sb.toString());
+            out.close();
+            if (upload) {
+                String message = UserIO.getInstance().requestInputDialog(0, "Enter change description", "Please enter a short description for your changes (in english).", "", null, null, null);
+                if (message == null) {
+                    message = "Updated language file (" + this.lngKey + ")";
                 }
-            }).start();
-        } else if (e.getSource() == mnuSaveLocal) {
-            saveLanguageFile(languageFile, false);
-        } else if (e.getSource() == mnuSave) {
-            saveLanguageFile(languageFile, true);
-        } else if (e.getSource() == mnuCurrent) {
-            saveLanguageFile(languageFile, false);
-            startNewInstance(new String[] { "-n", "-lng", languageFile.getAbsolutePath() });
-            UserIO.getInstance().requestMessageDialog("Started JDownloader using " + languageFile);
-        } else if (e.getSource() == mnuKeymode) {
-
-            startNewInstance(new String[] { "-n", "-trdebug" });
-            UserIO.getInstance().requestMessageDialog("Started JDownloader in KEY DEBUG Mode");
-        } else if (e.getSource() == mnuAdd) {
-
-            String[] result = UserIO.getInstance().requestTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), "", JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "");
-            if (result == null || result[0].equals("")) return;
-            result[0] = result[0].toLowerCase();
-            for (KeyInfo ki : data) {
-                if (ki.getKey().equals(result[0])) {
-                    UserIO.getInstance().requestMessageDialog(JDL.LF(LOCALE_PREFIX + "addKey.error.message", "The key '%s' is already in use!", result[0]));
+                if (!this.commit(file, message, null)) {
+                    UserIO.getInstance().requestMessageDialog("Could not upload changes. Please send the file " + file.getAbsolutePath() + " to support@jdownloader.org");
                     return;
                 }
             }
-            data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], languageENKeysFormFile.get(result[0].toLowerCase())));
-            tableModel.refreshModel();
-            tableModel.fireTableDataChanged();
-            updateKeyChart();
-
-        } else if (e.getSource() == mnuDelete || e.getSource() == mnuContextDelete) {
-
-            deleteSelectedKeys();
-
-        } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
-
-            for (int row : getSelectedRows()) {
-                data.get(row).setLanguage(data.get(row).getSource());
-            }
-            this.dataChanged();
-
-        } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
-
-            for (int row : getSelectedRows()) {
-                data.get(row).setLanguage("");
-            }
-            this.dataChanged();
-
-        } else if (e.getSource() == mnuOpenSearchDialog) {
-
-            SearchFactory.getInstance().showFindInput(table, table.getSearchable());
-
-        } else if (e.getSource() == mnuDeleteOld) {
-
-            if (numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L(LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LOCALE_PREFIX + "deleteOld.message", "Delete all %s old Key(s)?", numOld)), UserIO.RETURN_OK)) {
-                deleteOldKeys();
-            }
-
+        } catch (final Exception e) {
+            UserIO.getInstance().requestMessageDialog(JDL.LF(LFEGui.LOCALE_PREFIX + "save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()));
+            return;
         }
 
-    }
-
-    private void deleteOldKeys() {
-        for (int i = data.size() - 1; i >= 0; --i) {
-            if (data.get(i).isOld()) data.remove(i);
+        this.changed = false;
+        if (upload) {
+            UserIO.getInstance().requestMessageDialog(JDL.L(LFEGui.LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
         }
-        this.dataChanged();
+        this.initLocaleData();
     }
 
-    private void startNewInstance(String[] strings) {
+    private void startNewInstance(final String[] strings) {
 
-        ArrayList<String> jargs = new ArrayList<String>();
+        final ArrayList<String> jargs = new ArrayList<String>();
 
         jargs.add("-Xmx512m");
 
         jargs.add("-jar");
         jargs.add("JDownloader.jar");
-        for (String a : strings) {
+        for (final String a : strings) {
             jargs.add(a);
         }
 
@@ -426,453 +824,82 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     }
 
-    public void saveChanges(boolean upload) {
-        if (!changed) return;
-        String message;
-        if (upload) {
-            message = JDL.LF(LOCALE_PREFIX + "saveChanges.message.upload", "Save and upload your changes to %s?", this.languageFile);
-        } else {
-            message = JDL.LF(LOCALE_PREFIX + "saveChanges.message", "Save your changes to %s?", this.languageFile);
+    private void updateKeyChart() {
+        int numMissing = 0;
+        this.numOld = 0;
+
+        for (final KeyInfo entry : this.data) {
+            if (entry.isOld()) {
+                this.numOld++;
+            } else if (entry.isMissing()) {
+                numMissing++;
+            }
         }
-        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(LOCALE_PREFIX + "saveChanges", "Save changes?"), message, null, JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
-        if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
-            saveLanguageFile(languageFile, upload);
-        }
+
+        this.infoPanel.updateInfo(this.data.size() - numMissing - this.numOld, numMissing, this.numOld);
     }
 
-    private void updateSVN(boolean revert) {
+    private void updateSVN(final boolean revert) {
 
-        if (!dirLanguages.exists()) dirLanguages.mkdirs();
-        if (!dirWorkingCopy.exists()) dirWorkingCopy.mkdirs();
+        if (!this.dirLanguages.exists()) {
+            this.dirLanguages.mkdirs();
+        }
+        if (!this.dirWorkingCopy.exists()) {
+            this.dirWorkingCopy.mkdirs();
+        }
 
-        final ProgressController progress = new ProgressController(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait"), "gui.splash.languages");
+        final ProgressController progress = new ProgressController(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait"), "gui.splash.languages");
         progress.setIndeterminate(true);
         try {
             Subversion svn = null;
             Subversion svnLanguageDir;
 
-            svn = new Subversion(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-            svnLanguageDir = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+            svn = new Subversion(LFEGui.SOURCE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
+            svnLanguageDir = new Subversion(LFEGui.LANGUAGE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
 
             // HEAD = svn.latestRevision();
             svn.getBroadcaster().addListener(new MessageListener() {
 
-                public void onMessage(MessageEvent event) {
-                    progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
+                public void onMessage(final MessageEvent event) {
+                    progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(LFEGui.this.dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
                 }
 
             });
             try {
-                svnLanguageDir.revert(dirWorkingCopy);
-            } catch (Exception e) {
+                svnLanguageDir.revert(this.dirWorkingCopy);
+            } catch (final Exception e) {
                 JDLogger.exception(e);
             }
             try {
                 svn.update(this.dirWorkingCopy, null);
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(JDL.L(LFEGui.LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LFEGui.LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
             }
             if (revert) {
                 try {
-                    svnLanguageDir.revert(dirLanguages);
-                } catch (Exception e) {
+                    svnLanguageDir.revert(this.dirLanguages);
+                } catch (final Exception e) {
                     JDLogger.exception(e);
                 }
             }
             try {
-                svnLanguageDir.update(dirLanguages, null);
-            } catch (Exception e) {
+                svnLanguageDir.update(this.dirLanguages, null);
+            } catch (final Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(JDL.L(LFEGui.LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LFEGui.LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
             }
             svnLanguageDir.dispose();
             svn.dispose();
-            progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
+            progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
             progress.doFinalize(2 * 1000l);
-        } catch (SVNException e) {
+        } catch (final SVNException e) {
             JDLogger.exception(e);
             progress.setColor(Color.RED);
-            progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.error", "Updating SVN: Error!"));
+            progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating.error", "Updating SVN: Error!"));
             progress.doFinalize(5 * 1000l);
         }
 
-    }
-
-    private void deleteSelectedKeys() {
-        int[] rows = getSelectedRows();
-        Arrays.sort(rows);
-
-        int len = rows.length - 1;
-        for (int i = len; i >= 0; --i) {
-            String temp = data.remove(rows[i]).getKey();
-            data.remove(temp);
-        }
-        int newRow = Math.min(rows[len] - len, tableModel.getRowCount() - 1);
-        table.getSelectionModel().setSelectionInterval(newRow, newRow);
-
-        dataChanged();
-    }
-
-    private int[] getSelectedRows() {
-        int[] rows = table.getSelectedRows();
-        int[] ret = new int[rows.length];
-
-        for (int i = 0; i < rows.length; ++i) {
-            ret[i] = table.convertRowIndexToModel(rows[i]);
-        }
-        Arrays.sort(ret);
-        return ret;
-    }
-
-    private void saveLanguageFile(File file, boolean upload) {
-        StringBuilder sb = new StringBuilder();
-
-        Collections.sort(data);
-
-        if (numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, JDL.L(LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LOCALE_PREFIX + "deleteOld.message2", "There are still %s old keys in the LanguageFile. Delete them before saving?", numOld)), UserIO.RETURN_OK)) {
-            deleteOldKeys();
-        }
-
-        for (KeyInfo entry : data) {
-            if (!entry.isMissing()) sb.append(entry.toString()).append('\n');
-        }
-
-        try {
-            Subversion svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-
-            ArrayList<SVNInfo> info = svn.getInfo(file);
-            if (info.get(0).getConflictWrkFile() != null) {
-                svn.revert(file);
-            }
-
-            svn.dispose();
-            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
-            out.write(sb.toString());
-            out.close();
-            if (upload) {
-                String message = UserIO.getInstance().requestInputDialog(0, "Enter change description", "Please enter a short description for your changes (in english).", "", null, null, null);
-                if (message == null) message = "Updated language file (" + lngKey + ")";
-                if (!commit(file, message, null)) {
-                    UserIO.getInstance().requestMessageDialog("Could not upload changes. Please send the file " + file.getAbsolutePath() + " to support@jdownloader.org");
-                    return;
-                }
-            }
-        } catch (Exception e) {
-            UserIO.getInstance().requestMessageDialog(JDL.LF(LOCALE_PREFIX + "save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()));
-            return;
-        }
-
-        changed = false;
-        if (upload) {
-            UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
-        }
-        initLocaleData();
-    }
-
-    private void initLocaleData() {
-
-        parseLanguageFile(languageFile, languageKeysFormFile);
-        parseLanguageFile(new File(dirLanguages, "en.loc"), languageENKeysFormFile);
-        data.clear();
-        if (languageFile != null) {
-            lngKey = languageFile.getName().substring(0, languageFile.getName().length() - 4);
-            lngKey = JDGeoCode.parseLanguageCode(lngKey)[0];
-        }
-        String value, key;
-        KeyInfo keyInfo;
-        for (LngEntry entry : sourceParser.getEntries()) {
-            key = entry.getKey();
-            keyInfo = new KeyInfo(key, entry.getValue(), languageKeysFormFile.remove(key), languageENKeysFormFile.get(key));
-            data.add(keyInfo);
-        }
-
-        for (Entry<String, String> entry : languageKeysFormFile.entrySet()) {
-            key = entry.getKey();
-            value = null;
-
-            for (String patt : sourceParser.getPattern()) {
-                if (key.matches(patt)) {
-                    value = "<pattern> " + patt;
-                }
-            }
-
-            data.add(new KeyInfo(key, value, entry.getValue(), languageENKeysFormFile.get(key)));
-        }
-
-        Collections.sort(data);
-
-        tableModel.refreshModel();
-        tableModel.fireTableDataChanged();
-        changed = false;
-
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                updateKeyChart();
-                mnuKey.setEnabled(true);
-                mnuCurrent.setEnabled(true);
-                mnuSave.setEnabled(true);
-                mnuSaveLocal.setEnabled(true);
-            }
-
-        });
-
-    }
-
-    private void getSourceEntries() {
-        ProgressController progress = new ProgressController(JDL.L(LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"), "gui.splash.languages");
-        progress.setIndeterminate(true);
-
-        sourceParser = new SrcParser(this.dirWorkingCopy);
-        sourceParser.getBroadcaster().addListener(progress);
-        sourceParser.parse();
-
-        JDLogger.getLogger().warning("Patternmatches are not recommened: \r\n" + sourceParser.getPattern());
-
-        progress.setStatusText(JDL.L(LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
-        progress.doFinalize(2 * 1000l);
-    }
-
-    private boolean commit(File file, String string, Subversion svn) {
-        try {
-
-            if (svn == null) {
-                svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-            }
-            svn.update(file, null);
-            try {
-                svn.resolveConflicts(file, new ResolveHandler() {
-
-                    public String resolveConflict(SVNInfo info, File file, String contents, int startMine, int endMine, int startTheirs, int endTheirs) {
-                        String[] mine = Regex.getLines(contents.substring(startMine, endMine).trim());
-                        String[] theirs = Regex.getLines(contents.substring(startTheirs, endTheirs).trim());
-                        StringBuilder sb = new StringBuilder();
-                        ArrayList<String> keys = new ArrayList<String>();
-                        for (String m : mine) {
-                            int index = m.indexOf("=");
-                            String key = m.substring(0, index).trim();
-                            String value = m.substring(index + 1).trim();
-                            boolean found = false;
-
-                            for (String t : theirs) {
-
-                                if (t.startsWith(key)) {
-                                    int tindex = t.indexOf("=");
-                                    String tkey = t.substring(0, tindex).trim();
-                                    String tvalue = t.substring(tindex + 1).trim();
-                                    if (key.equalsIgnoreCase(tkey)) {
-                                        found = true;
-                                        if (value.equals(tvalue)) {
-                                            sb.append(key).append(" = ").append(value).append("\r\n");
-                                            keys.add(key);
-                                            break;
-                                        } else {
-
-                                            String newValue = selectVersion(key, value, tvalue);
-                                            sb.append(key).append(" = ").append(newValue).append("\r\n");
-                                            keys.add(key);
-                                            break;
-                                        }
-
-                                    }
-                                }
-
-                            }
-
-                            if (!found) {
-                                String newValue = selectVersion(key, value, MISSING_KEY);
-                                if (newValue == MISSING_KEY) continue;
-                                sb.append(key).append(" = ").append(value).append("\r\n");
-                                keys.add(key);
-                                continue;
-                            }
-
-                        }
-
-                        for (String t : theirs) {
-                            int tindex = t.indexOf("=");
-                            if (tindex < 0) {
-                                continue;
-                            }
-                            String tkey = t.substring(0, tindex).trim();
-                            String tvalue = t.substring(tindex + 1).trim();
-                            if (!keys.contains(tkey)) {
-                                String newValue = selectVersion(tkey, MISSING_KEY, tvalue);
-                                if (newValue == MISSING_KEY) continue;
-
-                                sb.append(tkey + " = " + tvalue + "\r\n");
-                                keys.add(tkey);
-                            }
-
-                        }
-
-                        return sb.toString().trim();
-                    }
-
-                    private String selectVersion(String key, String value, String tvalue) {
-                        String html = "<h1>Key: " + key + "</h1><h2>Translation A</h2>" + value + "<h2>Translation B</h2>" + tvalue + "<br><br>Select the better translation. A or B:";
-                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML | UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Conflicts occured!", html, null, "A", "B");
-                        if (JDFlags.hasAllFlags(ret, UserIO.RETURN_CANCEL)) return tvalue;
-                        return value;
-
-                    }
-
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            svn.commit(file, string);
-
-            svn.dispose();
-            return true;
-        } catch (SVNException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private void parseLanguageFile(File file, HashMap<String, String> data) {
-        data.clear();
-
-        if (file == null || !file.exists()) {
-            System.out.println("JDLocale: " + file + " not found");
-            return;
-        }
-
-        try {
-            BufferedReader f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
-
-            String line;
-            String key;
-            String value;
-            while ((line = f.readLine()) != null) {
-                if (line.startsWith("#")) continue;
-                int split = line.indexOf("=");
-                if (split <= 0) continue;
-
-                key = line.substring(0, split).trim().toLowerCase();
-                value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
-
-                data.put(key, value);
-            }
-            f.close();
-        } catch (IOException e) {
-            JDLogger.exception(e);
-        }
-    }
-
-    public void mouseClicked(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON3) {
-            int row = table.rowAtPoint(e.getPoint());
-            if (!table.isRowSelected(row)) {
-                table.getSelectionModel().setSelectionInterval(row, row);
-            }
-            if (mnuContextPopup == null) buildContextMenu();
-            mnuContextPopup.show(table, e.getX(), e.getY());
-        }
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void onShow() {
-    }
-
-    @Override
-    public void onHide() {
-        try {
-            updater.interrupt();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void initMenu(JMenuBar menubar) {
-        this.menubar = menubar;
-        // Load Menü
-        mnuLoad = new JMenu(JDL.L(LOCALE_PREFIX + "load", "Load Language"));
-
-        populateLngMenu();
-
-        // File Menü
-        mnuFile = new JMenu(JDL.L(LOCALE_PREFIX + "file", "File"));
-
-        mnuFile.add(mnuLoad);
-        mnuFile.addSeparator();
-        mnuFile.add(mnuSaveLocal = new JMenuItem(JDL.L(LOCALE_PREFIX + "savelocale", "Save Offline")));
-        mnuFile.setEnabled(false);
-        mnuFile.add(mnuSave = new JMenuItem(JDL.L(LOCALE_PREFIX + "saveandupload", "Save & Upload")));
-        mnuFile.addSeparator();
-        mnuFile.add(mnuReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "reload", "Revert/Reload")));
-        mnuFile.add(mnuCompleteReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "completeReload", "Complete Reload (Deletes Cache)")));
-
-        mnuSaveLocal.addActionListener(this);
-        mnuSave.addActionListener(this);
-        mnuReload.addActionListener(this);
-        mnuCompleteReload.addActionListener(this);
-
-        mnuSaveLocal.setEnabled(false);
-        mnuSave.setEnabled(false);
-
-        mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
-
-        // Key Menü
-        mnuKey = new JMenu(JDL.L(LOCALE_PREFIX + "key", "Key"));
-        mnuKey.setEnabled(false);
-
-        mnuKey.add(mnuAdd = new JMenuItem(JDL.L(LOCALE_PREFIX + "addKey", "Add Key")));
-        mnuKey.add(mnuDelete = new JMenuItem(JDL.L(LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
-        mnuKey.add(mnuClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
-        mnuKey.addSeparator();
-        mnuKey.add(mnuAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
-        mnuKey.addSeparator();
-        mnuKey.add(mnuDeleteOld = new JMenuItem(JDL.L(LOCALE_PREFIX + "deleteOldKeys", "Delete Old Key(s)")));
-        mnuKey.addSeparator();
-        mnuKey.add(mnuOpenSearchDialog = new JMenuItem(JDL.L(LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
-
-        mnuAdd.addActionListener(this);
-        mnuDelete.addActionListener(this);
-        mnuClear.addActionListener(this);
-        mnuAdopt.addActionListener(this);
-        mnuDeleteOld.addActionListener(this);
-        mnuOpenSearchDialog.addActionListener(this);
-
-        mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
-        mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
-
-        // Test
-        mnuTest = new JMenu(JDL.L(LOCALE_PREFIX + "test", "Test"));
-
-        mnuTest.add(mnuCurrent = new JMenuItem(JDL.L(LOCALE_PREFIX + "startcurrent", "Test JD with current translation")));
-        mnuCurrent.addActionListener(this);
-        mnuTest.add(mnuKeymode = new JMenuItem(JDL.L(LOCALE_PREFIX + "startkey", "Test JD in Key mode")));
-        mnuKeymode.addActionListener(this);
-        mnuCurrent.setEnabled(false);
-
-        // Menü-Bar zusammensetzen
-        menubar.add(mnuFile);
-        menubar.add(mnuKey);
-        menubar.add(mnuTest);
-        menubar.setEnabled(false);
-
-    }
-
-    public void dataChanged() {
-        tableModel.refreshModel();
-        tableModel.fireTableDataChanged();
-        updateKeyChart();
-        changed = true;
     }
 
 }

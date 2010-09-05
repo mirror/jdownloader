@@ -20,48 +20,51 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.gui.UserIO;
 import jd.gui.swing.components.JDTextField;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-public class TwoTextFieldDialog extends AbstractDialog {
+import org.appwork.utils.swing.dialog.AbstractDialog;
+
+public class TwoTextFieldDialog extends AbstractDialog<String[]> {
 
     private static final long serialVersionUID = -7426399217833694784L;
 
-    private String messageOne;
+    private final String      messageOne;
 
-    private String defOne;
+    private final String      defOne;
 
-    private String messageTwo;
+    private final String      messageTwo;
 
-    private String defTwo;
+    private final String      defTwo;
 
-    private JDTextField txtFieldOne;
+    private JDTextField       txtFieldOne;
 
-    private JDTextField txtFieldTwo;
+    private JDTextField       txtFieldTwo;
 
-    public TwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo) {
-        super(UserIO.NO_COUNTDOWN, title, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
+    public TwoTextFieldDialog(final String title, final String messageOne, final String defOne, final String messageTwo, final String defTwo) {
+        super(0, title, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
         this.messageOne = messageOne;
         this.defOne = defOne;
         this.messageTwo = messageTwo;
         this.defTwo = defTwo;
-        init();
+
     }
 
     @Override
-    public JComponent contentInit() {
-        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]5[]10[]5[]"));
-        panel.add(new JLabel(messageOne));
-        panel.add(txtFieldOne = new JDTextField(defOne));
-        panel.add(new JLabel(messageTwo));
-        panel.add(txtFieldTwo = new JDTextField(defTwo));
-        return panel;
+    protected String[] createReturnValue() {
+
+        return new String[] { this.txtFieldOne.getText(), this.txtFieldTwo.getText() };
     }
 
-    public String[] getResult() {
-        return new String[] { txtFieldOne.getText(), txtFieldTwo.getText() };
+    @Override
+    public JComponent layoutDialogContent() {
+        final JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]5[]10[]5[]"));
+        panel.add(new JLabel(this.messageOne));
+        panel.add(this.txtFieldOne = new JDTextField(this.defOne));
+        panel.add(new JLabel(this.messageTwo));
+        panel.add(this.txtFieldTwo = new JDTextField(this.defTwo));
+        return panel;
     }
 
 }

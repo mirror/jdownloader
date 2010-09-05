@@ -25,33 +25,37 @@ import jd.gui.swing.components.JDTextArea;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-public class TextAreaDialog extends AbstractDialog {
+import org.appwork.utils.swing.dialog.AbstractDialog;
+
+public class TextAreaDialog extends AbstractDialog<String> {
 
     private static final long serialVersionUID = 5129590048597691591L;
 
-    private String message;
+    private final String      message;
 
-    private String def;
+    private final String      def;
 
-    private JDTextArea txtArea;
+    private JDTextArea        txtArea;
 
-    public TextAreaDialog(String title, String message, String def) {
+    public TextAreaDialog(final String title, final String message, final String def) {
         super(UserIO.NO_COUNTDOWN, title, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
         this.message = message;
         this.def = def;
-        init();
+
     }
 
     @Override
-    public JComponent contentInit() {
-        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]5[]"));
-        panel.add(new JLabel(message));
-        panel.add(txtArea = new JDTextArea(def), "h 100!");
-        return panel;
+    protected String createReturnValue() {
+        // TODO Auto-generated method stub
+        return this.txtArea.getText();
     }
 
-    public String getResult() {
-        return txtArea.getText();
+    @Override
+    public JComponent layoutDialogContent() {
+        final JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]5[]"));
+        panel.add(new JLabel(this.message));
+        panel.add(this.txtArea = new JDTextArea(this.def), "h 100!");
+        return panel;
     }
 
 }

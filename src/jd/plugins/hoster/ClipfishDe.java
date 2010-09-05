@@ -17,31 +17,62 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.JDMediaConvert;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
-    public ClipfishDe(PluginWrapper wrapper) {
+    private static final String AGB_LINK = "http://www.clipfish.de/agb/";
+
+    public ClipfishDe(final PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
     }
 
-    private static final String AGB_LINK = "http://www.clipfish.de/agb/";
-
     @Override
     public String getAGBLink() {
-        return AGB_LINK;
+        return ClipfishDe.AGB_LINK;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        final LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        URLConnectionAdapter urlConnection;
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL());
+        urlConnection = this.dl.connect();
+        if (urlConnection.getLongContentLength() == 0) {
+            this.br.followConnection();
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return;
+        }
+
+        if (this.dl.startDownload()) {
+            if (downloadLink.getProperty("convertto") != null) {
+                final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
+                final DestinationFormat inType = DestinationFormat.VIDEOFLV;
+
+                if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
+                    Plugin.logger.severe("Video-Convert failed!");
+                }
+            }
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) {
         /*
          * warum sollte ein video das der decrypter sagte es sei online, offline
          * sein ;)
@@ -57,41 +88,11 @@ public class ClipfishDe extends PluginForHost {
     }
 
     @Override
+    public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        URLConnectionAdapter urlConnection;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
-        urlConnection = dl.connect();
-        if (urlConnection.getLongContentLength() == 0) {
-            br.followConnection();
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-            return;
-        }
-
-        if (dl.startDownload()) {
-            if (downloadLink.getProperty("convertto") != null) {
-                ConversionMode convertTo = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
-                ConversionMode inType = ConversionMode.VIDEOFLV;
-
-                if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
-                    logger.severe("Video-Convert failed!");
-                }
-            }
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
     }
 
 }

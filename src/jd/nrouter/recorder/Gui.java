@@ -26,7 +26,9 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -34,7 +36,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.dialog.AbstractDialog;
 import jd.nrouter.IPCheck;
 import jd.nutils.JDFlags;
 import jd.parser.Regex;
@@ -43,68 +44,219 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class Gui extends AbstractDialog implements ActionListener {
+import org.appwork.utils.swing.dialog.AbstractDialog;
 
-    private static final long serialVersionUID = 1L;
-    private static final String JDL_PREFIX = "jd.nrouter.recorder.Gui.";
+public class Gui extends AbstractDialog<Object> {
 
-    private JTextField routerip;
-    private JCheckBox rawmode;
-    public boolean saved = false;
-    private String ip_before;
-    private String ip_after;
-    public String ip = null;
-    public String methode = null;
-    public String user = null;
-    public String pass = null;
-    private static long check_intervall = 5000;
-    private static long reconnect_duration = 0;
+    public class JDRRInfoPopup extends AbstractDialog<Object> {
+
+        public class RRStatus extends JLabel {
+
+            private static final long serialVersionUID = -3280613281656283625L;
+
+            private final ImageIcon   imageProgress;
+
+            private final ImageIcon   imageBad;
+
+            private final ImageIcon   imageGood;
+
+            private final String      strProgress;
+
+            private final String      strBad;
+
+            private final String      strGood;
+
+            public RRStatus() {
+                this.imageProgress = JDTheme.II("gui.images.reconnect", 32, 32);
+                this.imageBad = JDTheme.II("gui.images.unselected", 32, 32);
+                this.imageGood = JDTheme.II("gui.images.selected", 32, 32);
+                this.strProgress = JDL.L("jd.router.reconnectrecorder.Gui.icon.progress", "Recording Reconnect ...");
+                this.strBad = JDL.L("jd.router.reconnectrecorder.Gui.icon.bad", "Error while recording the Reconnect!");
+                this.strGood = JDL.L("jd.router.reconnectrecorder.Gui.icon.good", "Reconnect successfully recorded!");
+                this.setStatus(0);
+            }
+
+            public void setStatus(final int state) {
+                if (state == 0) {
+                    this.setIcon(this.imageProgress);
+                    this.setText(this.strProgress);
+                } else if (state == 1) {
+                    this.setIcon(this.imageGood);
+                    this.setText(this.strGood);
+                } else {
+                    this.setIcon(this.imageBad);
+                    this.setText(this.strBad);
+                }
+            }
+        }
+
+        private static final long serialVersionUID = 1L;
+        private long              reconnect_timer  = 0;
+
+        private RRStatus          statusicon;
+
+        public JDRRInfoPopup() {
+            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON | UserIO.NO_OK_OPTION, JDL.L("gui.config.jdrr.status.title", "Recording Status"), null, null, JDL.L("gui.btn_abort", "Abort"));
+
+        }
+
+        public void closePopup() {
+            ReconnectRecorder.stopServer();
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    JDRRInfoPopup.this.cancelButton.setEnabled(false);
+
+                    Gui.this.ip_after = IPCheck.getIPAddress();
+                    if (!Gui.this.ip_after.contains("offline") && !Gui.this.ip_after.equalsIgnoreCase(Gui.this.ip_before)) {
+                        if (JDRRInfoPopup.this.reconnect_timer == 0) {
+                            /*
+                             * Reconnect fand innerhalb des Check-Intervalls
+                             * statt
+                             */
+                            Gui.RECONNECT_DURATION = Gui.CHECK_INTERVAL;
+                        } else {
+                            Gui.RECONNECT_DURATION = System.currentTimeMillis() - JDRRInfoPopup.this.reconnect_timer;
+                        }
+                        JDLogger.getLogger().info("dauer: " + Gui.RECONNECT_DURATION);
+                        JDRRInfoPopup.this.statusicon.setStatus(1);
+                    } else {
+                        JDRRInfoPopup.this.statusicon.setStatus(-1);
+                    }
+                    if (!Gui.this.ip_after.contains("offline") && !Gui.this.ip_after.equalsIgnoreCase(Gui.this.ip_before)) {
+                        Gui.this.save();
+                    } else {
+                        UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
+                    }
+
+                    JDRRInfoPopup.this.dispose();
+                }
+            });
+        }
+
+        @Override
+        protected Object createReturnValue() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public JComponent layoutDialogContent() {
+            return this.statusicon = new RRStatus();
+        }
+
+        @Override
+        public void packed() {
+            this.setMinimumSize(null);
+            this.setResizable(false);
+            this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+
+            this.startCheck();
+        }
+
+        protected void setReturnmask(final boolean b) {
+
+            super.setReturnmask(b);
+            if (!b) {
+                this.closePopup();
+            }
+        }
+
+        public void startCheck() {
+            new Thread() {
+                public void run() {
+                    JDRRInfoPopup.this.statusicon.setStatus(0);
+                    this.setName(JDL.L("gui.config.jdrr.popup.title", "JDRRPopup"));
+                    JDRRInfoPopup.this.reconnect_timer = 0;
+                    while (ReconnectRecorder.running) {
+                        try {
+                            Thread.sleep(Gui.CHECK_INTERVAL);
+                        } catch (final Exception e) {
+                        }
+                        Gui.this.ip_after = IPCheck.getIPAddress();
+                        if (Gui.this.ip_after.contains("na") && JDRRInfoPopup.this.reconnect_timer == 0) {
+                            JDRRInfoPopup.this.reconnect_timer = System.currentTimeMillis();
+                        }
+                        if (!Gui.this.ip_after.contains("na") && !Gui.this.ip_after.equalsIgnoreCase(Gui.this.ip_before)) {
+                            JDRRInfoPopup.this.statusicon.setStatus(1);
+                            if (ReconnectRecorder.running == true) {
+                                JDRRInfoPopup.this.closePopup();
+                            }
+                            return;
+                        }
+                    }
+                }
+            }.start();
+        }
+    }
+
+    private static final long   serialVersionUID   = 1L;
+    private static final String JDL_PREFIX         = "jd.nrouter.recorder.Gui.";
+    private JTextField          routerip;
+    private JCheckBox           rawmode;
+    public boolean              saved              = false;
+    private String              ip_before;
+    private String              ip_after;
+    public String               ip                 = null;
+    public String               methode            = null;
+    public String               user               = null;
+    public String               pass               = null;
+
+    private static long         CHECK_INTERVAL     = 5000;
+
+    private static long         RECONNECT_DURATION = 0;
 
     public Gui(final String ip) {
         super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("gui.config.jdrr.title", "Reconnect Recorder"), null, JDL.L("gui.btn_start", "Start"), JDL.L("gui.btn_cancel", "Cancel"));
         this.ip = ip;
-        init();
-    }
 
-    public JComponent contentInit() {
-        routerip = new JTextField(ip);
-
-        rawmode = new JCheckBox(JDL.L("gui.config.jdrr.rawmode", "RawMode?"));
-        rawmode.setSelected(false);
-        rawmode.setHorizontalTextPosition(JCheckBox.LEADING);
-
-        final StringBuilder sb = new StringBuilder();
-        sb.append("<html>");
-        sb.append(JDL.L(JDL_PREFIX + "info1", "Check the IP address of the router and press the Start button"));
-        sb.append("<br>");
-        sb.append(JDL.L(JDL_PREFIX + "info2", "Web browser window with the home page of the router opens"));
-        sb.append("<br>");
-        sb.append(JDL.L(JDL_PREFIX + "info3", "After the Reconnection hit the Stop button and save"));
-        sb.append("</html>");
-
-        final JPanel panel = new JPanel(new MigLayout("wrap 3, ins 5", "[][grow]10[]"));
-        panel.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"));
-        panel.add(routerip, "growx");
-        panel.add(rawmode);
-        panel.add(new JLabel(sb.toString()), "spanx,growx");
-        return panel;
     }
 
     @Override
-    protected void addButtons(JPanel buttonBar) {
-        JButton help = new JButton(JDL.L("gui.btn_help", "Help"));
+    protected void addButtons(final JPanel buttonBar) {
+        final JButton help = new JButton(JDL.L("gui.btn_help", "Help"));
         help.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 try {
                     JLink.openURL("http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder");
-                } catch (Exception e1) {
+                } catch (final Exception e1) {
                     e1.printStackTrace();
                 }
             }
 
         });
         buttonBar.add(help, "tag help, sizegroup confirms");
+    }
+
+    @Override
+    protected Object createReturnValue() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+        this.routerip = new JTextField(this.ip);
+
+        this.rawmode = new JCheckBox(JDL.L("gui.config.jdrr.rawmode", "RawMode?"));
+        this.rawmode.setSelected(false);
+        this.rawmode.setHorizontalTextPosition(SwingConstants.LEADING);
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<html>");
+        sb.append(JDL.L(Gui.JDL_PREFIX + "info1", "Check the IP address of the router and press the Start button"));
+        sb.append("<br>");
+        sb.append(JDL.L(Gui.JDL_PREFIX + "info2", "Web browser window with the home page of the router opens"));
+        sb.append("<br>");
+        sb.append(JDL.L(Gui.JDL_PREFIX + "info3", "After the Reconnection hit the Stop button and save"));
+        sb.append("</html>");
+
+        final JPanel panel = new JPanel(new MigLayout("wrap 3, ins 5", "[][grow]10[]"));
+        panel.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"));
+        panel.add(this.routerip, "growx");
+        panel.add(this.rawmode);
+        panel.add(new JLabel(sb.toString()), "spanx,growx");
+        return panel;
     }
 
     private void save() {
@@ -118,197 +270,69 @@ public class Gui extends AbstractDialog implements ActionListener {
             for (final String element : ReconnectRecorder.steps) {
                 b.append(element).append(br);
             }
-            methode = b.toString().trim();
+            this.methode = b.toString().trim();
 
-            if (ReconnectRecorder.auth != null) {
-                user = new Regex(ReconnectRecorder.auth, "(.+?):").getMatch(0);
-                pass = new Regex(ReconnectRecorder.auth, ".+?:(.+)").getMatch(0);
-                configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, user);
-                configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, pass);
+            if (ReconnectRecorder.AUTH != null) {
+                this.user = new Regex(ReconnectRecorder.AUTH, "(.+?):").getMatch(0);
+                this.pass = new Regex(ReconnectRecorder.AUTH, ".+?:(.+)").getMatch(0);
+                configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, this.user);
+                configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, this.pass);
             }
-            btnCancel.setText(JDL.L("gui.btn_close", "Close"));
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
+            // TODO
+            // btnCancel.setText(JDL.L("gui.btn_close", "Close"));
+            configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, this.routerip.getText().trim());
+            configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, this.methode);
             configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Method");
             configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
-            if (reconnect_duration <= 2000) {
-                reconnect_duration = 2000;
+            if (Gui.RECONNECT_DURATION <= 2000) {
+                Gui.RECONNECT_DURATION = 2000;
                 /* minimum von 2 seks */
             }
-            int aa = (int) ((reconnect_duration / 1000) * 2);
+            int aa = (int) (Gui.RECONNECT_DURATION / 1000 * 2);
             if (aa < 30) {
                 aa = 30;
             }
-            int ab = (int) ((reconnect_duration / 1000) / 2);
+            int ab = (int) (Gui.RECONNECT_DURATION / 1000 / 2);
             if (ab < 30) {
                 ab = 5;
             }
             configuration.setProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, aa);
             configuration.setProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, ab);
             configuration.save();
-            saved = true;
-            dispose();
+            this.saved = true;
+            this.dispose();
         }
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnOK && ReconnectRecorder.running == false) {
-            if (routerip.getText() != null && !routerip.getText().matches("\\s*")) {
-                String host = routerip.getText().trim();
+    protected void setReturnmask(final boolean b) {
+
+        super.setReturnmask(b);
+        if (b && !ReconnectRecorder.running) {
+            if (this.routerip.getText() != null && !this.routerip.getText().matches("\\s*")) {
+                String host = this.routerip.getText().trim();
                 boolean startwithhttps = false;
-                if (host.contains("https")) startwithhttps = true;
+                if (host.contains("https")) {
+                    startwithhttps = true;
+                }
                 host = host.replaceAll("http://", "").replaceAll("https://", "");
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, host);
 
-                ip_before = IPCheck.getIPAddress();
-                ReconnectRecorder.startServer(host, rawmode.isSelected());
+                this.ip_before = IPCheck.getIPAddress();
+                ReconnectRecorder.startServer(host, this.rawmode.isSelected());
 
                 try {
                     if (startwithhttps) {
                         JLink.openURL("http://localhost:" + (SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + 1));
                     } else {
-                        JLink.openURL("http://localhost:" + (SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972)));
+                        JLink.openURL("http://localhost:" + SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972));
                     }
-                } catch (Exception e1) {
+                } catch (final Exception e1) {
                     JDLogger.exception(e1);
                 }
                 new JDRRInfoPopup();
                 return;
             }
         }
-        dispose();
+
     }
-
-    public class JDRRInfoPopup extends AbstractDialog implements ActionListener {
-
-        private static final long serialVersionUID = 1L;
-        private long reconnect_timer = 0;
-        private RRStatus statusicon;
-
-        public JDRRInfoPopup() {
-            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON | UserIO.NO_OK_OPTION, JDL.L("gui.config.jdrr.status.title", "Recording Status"), null, null, JDL.L("gui.btn_abort", "Abort"));
-
-            init();
-        }
-
-        public JComponent contentInit() {
-            return statusicon = new RRStatus();
-        }
-
-        @Override
-        public void packed() {
-            setMinimumSize(null);
-            setResizable(false);
-            setDefaultCloseOperation(AbstractDialog.DO_NOTHING_ON_CLOSE);
-
-            startCheck();
-        }
-
-        public void startCheck() {
-            new Thread() {
-                public void run() {
-                    statusicon.setStatus(0);
-                    this.setName(JDL.L("gui.config.jdrr.popup.title", "JDRRPopup"));
-                    reconnect_timer = 0;
-                    while (ReconnectRecorder.running) {
-                        try {
-                            Thread.sleep(check_intervall);
-                        } catch (Exception e) {
-                        }
-                        ip_after = IPCheck.getIPAddress();
-                        if (ip_after.contains("na") && reconnect_timer == 0) {
-                            reconnect_timer = System.currentTimeMillis();
-                        }
-                        if (!ip_after.contains("na") && !ip_after.equalsIgnoreCase(ip_before)) {
-                            statusicon.setStatus(1);
-                            if (ReconnectRecorder.running == true) closePopup();
-                            return;
-                        }
-                    }
-                }
-            }.start();
-        }
-
-        public class RRStatus extends JLabel {
-
-            private static final long serialVersionUID = -3280613281656283625L;
-
-            private ImageIcon imageProgress;
-
-            private ImageIcon imageBad;
-
-            private ImageIcon imageGood;
-
-            private String strProgress;
-
-            private String strBad;
-
-            private String strGood;
-
-            public RRStatus() {
-                imageProgress = JDTheme.II("gui.images.reconnect", 32, 32);
-                imageBad = JDTheme.II("gui.images.unselected", 32, 32);
-                imageGood = JDTheme.II("gui.images.selected", 32, 32);
-                strProgress = JDL.L("jd.router.reconnectrecorder.Gui.icon.progress", "Recording Reconnect ...");
-                strBad = JDL.L("jd.router.reconnectrecorder.Gui.icon.bad", "Error while recording the Reconnect!");
-                strGood = JDL.L("jd.router.reconnectrecorder.Gui.icon.good", "Reconnect successfully recorded!");
-                setStatus(0);
-            }
-
-            public void setStatus(int state) {
-                if (state == 0) {
-                    this.setIcon(imageProgress);
-                    this.setText(strProgress);
-                } else if (state == 1) {
-                    this.setIcon(imageGood);
-                    this.setText(strGood);
-                } else {
-                    this.setIcon(imageBad);
-                    this.setText(strBad);
-                }
-            }
-        }
-
-        public void closePopup() {
-            ReconnectRecorder.stopServer();
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    btnCancel.setEnabled(false);
-
-                    ip_after = IPCheck.getIPAddress();
-                    if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                        if (reconnect_timer == 0) {
-                            /*
-                             * Reconnect fand innerhalb des Check-Intervalls
-                             * statt
-                             */
-                            reconnect_duration = check_intervall;
-                        } else {
-                            reconnect_duration = System.currentTimeMillis() - reconnect_timer;
-                        }
-                        JDLogger.getLogger().info("dauer: " + reconnect_duration);
-                        statusicon.setStatus(1);
-                    } else {
-                        statusicon.setStatus(-1);
-                    }
-                    if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                        save();
-                    } else {
-                        UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
-                    }
-
-                    dispose();
-                }
-            });
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent arg0) {
-            if (arg0.getSource() == btnCancel) {
-                closePopup();
-            }
-        }
-    }
-
 }

@@ -13,125 +13,80 @@ import jd.utils.JDUtilities;
 
 public class JDPremServController {
 
-    private static final String PackageName = "JDPremServ";
-    private static final JDPremServController INSTANCE = new JDPremServController();
-    private FilePackage premServFilePackage = null;
-    private boolean running = false;
-    private Thread cleanupThread = null;
+    private static final String               PackageName = "JDPremServ";
+    private static final JDPremServController INSTANCE    = new JDPremServController();
 
-    private HashMap<String, DownloadLink> requestedLinks = null;
-    private HashMap<DownloadLink, Integer> requestedDownloads = null;
-    private HashMap<DownloadLink, Long> lastAccessLinks = null;
+    public static JDPremServController getInstance() {
+        return JDPremServController.INSTANCE;
+    }
+
+    private FilePackage                    premServFilePackage = null;
+    private boolean                        running             = false;
+
+    private Thread                         cleanupThread       = null;
+    private HashMap<String, DownloadLink>  requestedLinks      = null;
+    private HashMap<DownloadLink, Integer> requestedDownloads  = null;
+
+    private HashMap<DownloadLink, Long>    lastAccessLinks     = null;
 
     private JDPremServController() {
-        requestedLinks = new HashMap<String, DownloadLink>();
-        requestedDownloads = new HashMap<DownloadLink, Integer>();
-        lastAccessLinks = new HashMap<DownloadLink, Long>();
-        premServFilePackage = getPremServFilePackage();
+        this.requestedLinks = new HashMap<String, DownloadLink>();
+        this.requestedDownloads = new HashMap<DownloadLink, Integer>();
+        this.lastAccessLinks = new HashMap<DownloadLink, Long>();
+        this.premServFilePackage = this.getPremServFilePackage();
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3);
     }
 
-    public synchronized void start() {
-        if (running) return;
-        running = true;
-        cleanupThread = new Thread(new Runnable() {
-
-            public void run() {
-                while (running) {
-                    try {
-                        Thread.sleep(1000 * 60 * 10);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    cleanUp();
-                }
-            }
-
-        });
-        cleanupThread.start();
-    }
-
-    public synchronized void stop() {
-        running = false;
-        if (cleanupThread != null) {
-            cleanupThread.interrupt();
-            cleanupThread = null;
+    public synchronized int addRequestedDownload(final DownloadLink link) {
+        if (link == null) { return -1; }
+        Integer ret = this.requestedDownloads.get(link);
+        if (ret == null) {
+            ret = new Integer(1);
+        } else {
+            ret++;
         }
+        link.getLinkStatus().setStatusText(ret + " progressing this link");
+        link.requestGuiUpdate();
+        this.requestedDownloads.put(link, ret);
+        return ret;
     }
 
     public synchronized void cleanUp() {
-        ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
-        for (DownloadLink link : premServFilePackage.getDownloadLinkList()) {
-            Long last = lastAccessLinks.get(link);
-            if (last == null) last = 0l;
-            Integer reqs = requestedDownloads.get(link);
-            if (reqs == null) reqs = 0;
-            if (reqs == 0 && (last + (1000 * 60 * 10)) < System.currentTimeMillis()) {
+        final ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
+        for (final DownloadLink link : this.premServFilePackage.getDownloadLinkList()) {
+            Long last = this.lastAccessLinks.get(link);
+            if (last == null) {
+                last = 0l;
+            }
+            Integer reqs = this.requestedDownloads.get(link);
+            if (reqs == null) {
+                reqs = 0;
+            }
+            if (reqs == 0 && last + 1000 * 60 * 10 < System.currentTimeMillis()) {
                 remove.add(link);
                 link.deleteFile(true, true);
-                requestedDownloads.remove(link);
-                lastAccessLinks.remove(link);
-                requestedLinks.values().remove(link);
+                this.requestedDownloads.remove(link);
+                this.lastAccessLinks.remove(link);
+                this.requestedLinks.values().remove(link);
             }
         }
-        premServFilePackage.remove(remove);
+        this.premServFilePackage.remove(remove);
     }
 
-    public static JDPremServController getInstance() {
-        return INSTANCE;
-    }
-
-    /* get the filepackage to use for jdpremserv */
-    private FilePackage getPremServFilePackage() {
-        FilePackage found = null;
-        for (FilePackage current : DownloadController.getInstance().getPackages()) {
-            if (current.getName().equalsIgnoreCase(PackageName)) {
-                found = current;
-                break;
-            }
-        }
-        if (found == null) {
-            found = FilePackage.getInstance();
-            found.setName(PackageName);
-        }
-        /* we dont want postprocessing for this filepackage */
-        found.setPostProcessing(false);
-        if (found.getDownloadLinkList() != null) {
-            for (DownloadLink link : found.getDownloadLinkList()) {
-                lastAccessLinks.put(link, System.currentTimeMillis());
-            }
-        }
-        return found;
-    }
-
-    public synchronized boolean resetDownloadLink(String url) {
-        DownloadLink retLink = requestedLinks.get(url);
-        if (retLink != null) {
-            Integer ret = requestedDownloads.get(retLink);
-            if (ret == null || ret == 0) {
-                if (!retLink.getLinkStatus().isPluginActive()) {
-                    retLink.reset();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public synchronized DownloadLink getDownloadLink(String url) {
-        if (url == null || url.length() == 0) return null;
+    public synchronized DownloadLink getDownloadLink(final String url) {
+        if (url == null || url.length() == 0) { return null; }
         DownloadLink retLink = null;
-        retLink = requestedLinks.get(url);
+        retLink = this.requestedLinks.get(url);
         if (retLink == null) {
             /* search url for valid hostlinks */
-            DistributeData search = new DistributeData(url);
-            ArrayList<DownloadLink> found = search.findLinks();
+            final DistributeData search = new DistributeData(url);
+            final ArrayList<DownloadLink> found = search.findLinks();
             /* only one hostlink may exist */
-            if (found == null || found.size() != 1) return null;
-            String hostUrl = found.get(0).getDownloadURL();
+            if (found == null || found.size() != 1) { return null; }
+            final String hostUrl = found.get(0).getDownloadURL();
             retLink = null;
             /* search premservfilepackage for downloadlink with this url */
-            for (DownloadLink current : premServFilePackage.getDownloadLinkList()) {
+            for (final DownloadLink current : this.premServFilePackage.getDownloadLinkList()) {
                 if (current.getDownloadURL().equalsIgnoreCase(hostUrl)) {
                     retLink = current;
                     break;
@@ -142,40 +97,51 @@ public class JDPremServController {
                 retLink = found.get(0);
                 /* first disabled, maybe user has not enough rights */
                 retLink.setEnabled(false);
-                premServFilePackage.add(retLink);
+                this.premServFilePackage.add(retLink);
             }
             if (retLink.getLinkStatus().isFinished() && !retLink.getLinkStatus().isPluginActive()) {
-                File file = new File(retLink.getFileOutput());
-                if (!file.exists()) retLink.reset();
+                final File file = new File(retLink.getFileOutput());
+                if (!file.exists()) {
+                    retLink.reset();
+                }
             }
-            requestedLinks.put(url, retLink);
+            this.requestedLinks.put(url, retLink);
         }
 
         retLink.getDefaultPlugin().setAGBChecked(true);
         /* add jdpremserv package to downloadlist */
-        DownloadController.getInstance().addPackage(premServFilePackage);
+        DownloadController.getInstance().addPackage(this.premServFilePackage);
         /* update last access */
-        lastAccessLinks.put(retLink, System.currentTimeMillis());
+        this.lastAccessLinks.put(retLink, System.currentTimeMillis());
         return retLink;
     }
 
-    public synchronized int addRequestedDownload(DownloadLink link) {
-        if (link == null) return -1;
-        Integer ret = requestedDownloads.get(link);
-        if (ret == null) {
-            ret = new Integer(1);
-        } else {
-            ret++;
+    /* get the filepackage to use for jdpremserv */
+    private FilePackage getPremServFilePackage() {
+        FilePackage found = null;
+        for (final FilePackage current : DownloadController.getInstance().getPackages()) {
+            if (current.getName().equalsIgnoreCase(JDPremServController.PackageName)) {
+                found = current;
+                break;
+            }
         }
-        link.getLinkStatus().setStatusText(ret + " progressing this link");
-        link.requestGuiUpdate();
-        requestedDownloads.put(link, ret);
-        return ret;
+        if (found == null) {
+            found = FilePackage.getInstance();
+            found.setName(JDPremServController.PackageName);
+        }
+        /* we dont want postprocessing for this filepackage */
+        found.setPostProcessing(false);
+        if (found.getDownloadLinkList() != null) {
+            for (final DownloadLink link : found.getDownloadLinkList()) {
+                this.lastAccessLinks.put(link, System.currentTimeMillis());
+            }
+        }
+        return found;
     }
 
-    public synchronized int removeRequestedDownload(DownloadLink link) {
-        if (link == null) return -1;
-        Integer ret = requestedDownloads.get(link);
+    public synchronized int removeRequestedDownload(final DownloadLink link) {
+        if (link == null) { return -1; }
+        Integer ret = this.requestedDownloads.get(link);
         if (ret == null) {
             return -1;
         } else {
@@ -187,8 +153,50 @@ public class JDPremServController {
             link.getLinkStatus().setStatusText(null);
         }
         link.requestGuiUpdate();
-        requestedDownloads.put(link, ret);
+        this.requestedDownloads.put(link, ret);
         return ret;
+    }
+
+    public synchronized boolean resetDownloadLink(final String url) {
+        final DownloadLink retLink = this.requestedLinks.get(url);
+        if (retLink != null) {
+            final Integer ret = this.requestedDownloads.get(retLink);
+            if (ret == null || ret == 0) {
+                if (!retLink.getLinkStatus().isPluginActive()) {
+                    retLink.reset();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public synchronized void start() {
+        if (this.running) { return; }
+        this.running = true;
+        this.cleanupThread = new Thread(new Runnable() {
+
+            public void run() {
+                while (JDPremServController.this.running) {
+                    try {
+                        Thread.sleep(1000 * 60 * 10);
+                    } catch (final InterruptedException e) {
+
+                    }
+                    JDPremServController.this.cleanUp();
+                }
+            }
+
+        });
+        this.cleanupThread.start();
+    }
+
+    public synchronized void stop() {
+        this.running = false;
+        if (this.cleanupThread != null) {
+            this.cleanupThread.interrupt();
+            this.cleanupThread = null;
+        }
     }
 
 }

@@ -44,108 +44,118 @@ import javax.swing.event.ListSelectionListener;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
-import jd.gui.swing.dialog.AbstractDialog;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class ImportRouterDialog extends AbstractDialog {
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 
-    public static String[] showDialog() {
-        ImportRouterDialog dialog = new ImportRouterDialog();
-        if (UserIO.isOK(dialog.getReturnValue())) return dialog.getResult();
-        return null;
-    }
+public class ImportRouterDialog extends AbstractDialog<Object> {
 
     private static final long serialVersionUID = 2043825047691368115L;
 
-    private ArrayList<String[]> scripts;
+    public static String[] showDialog() {
+        final ImportRouterDialog dialog = new ImportRouterDialog();
 
-    private JList list;
+        if (Dialog.isOK(Dialog.getInstance().showDialog(dialog))) { return dialog.getResult(); }
+        return null;
+    }
+
+    private final ArrayList<String[]> scripts;
+
+    private JList                     list;
 
     private ImportRouterDialog() {
         super(UserIO.NO_COUNTDOWN, JDL.L("gui.config.liveheader.dialog.importrouter", "Import Router"), JDTheme.II("gui.images.search", 32, 32), null, null);
 
-        scripts = HTTPLiveHeader.getLHScripts();
-        Collections.sort(scripts, new Comparator<String[]>() {
-            public int compare(String[] a, String[] b) {
+        this.scripts = HTTPLiveHeader.getLHScripts();
+        Collections.sort(this.scripts, new Comparator<String[]>() {
+            public int compare(final String[] a, final String[] b) {
                 return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
             }
         });
 
-        init();
-    }
-
-    public String[] getResult() {
-        String selected = list.getSelectedValue().toString();
-        int id = Integer.parseInt(selected.split("\\.")[0]);
-        return scripts.get(id);
     }
 
     @Override
-    public JComponent contentInit() {
-        HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
-        for (int i = scripts.size() - 1; i >= 0; i--) {
-            if (ch.containsKey(scripts.get(i)[0] + scripts.get(i)[1] + scripts.get(i)[2])) {
-                scripts.remove(i);
+    protected Object createReturnValue() {
+        // TODO Auto-generated method stub
+        return this.getReturnmask();
+    }
+
+    public String[] getResult() {
+        final String selected = this.list.getSelectedValue().toString();
+        final int id = Integer.parseInt(selected.split("\\.")[0]);
+        return this.scripts.get(id);
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+        final HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
+        for (int i = this.scripts.size() - 1; i >= 0; i--) {
+            if (ch.containsKey(this.scripts.get(i)[0] + this.scripts.get(i)[1] + this.scripts.get(i)[2])) {
+                this.scripts.remove(i);
             } else {
-                ch.put(scripts.get(i)[0] + scripts.get(i)[1] + scripts.get(i)[2], true);
+                ch.put(this.scripts.get(i)[0] + this.scripts.get(i)[1] + this.scripts.get(i)[2], true);
             }
         }
 
-        final String[] d = new String[scripts.size()];
+        final String[] d = new String[this.scripts.size()];
         for (int i = 0; i < d.length; i++) {
-            d[i] = i + ". " + Encoding.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
+            d[i] = i + ". " + Encoding.htmlDecode(this.scripts.get(i)[0] + " : " + this.scripts.get(i)[1]);
         }
 
-        JPanel panel = new JPanel(new MigLayout("ins 10,wrap 3", "[grow 30,fill]5[grow 0,fill]10[grow,fill,300!]", "[fill]5[]5[fill,grow]"));
+        final JPanel panel = new JPanel(new MigLayout("ins 10,wrap 3", "[grow 30,fill]5[grow 0,fill]10[grow,fill,300!]", "[fill]5[]5[fill,grow]"));
         final DefaultListModel defaultListModel = new DefaultListModel();
         final String text = JDL.L("gui.config.reconnect.selectrouter", "Search Router Model");
         final JTextField searchField = new JTextField();
 
-        list = new JList(defaultListModel);
+        this.list = new JList(defaultListModel);
         searchField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) {
+            public void changedUpdate(final DocumentEvent e) {
             }
 
-            public void insertUpdate(DocumentEvent e) {
-                refreshList();
+            public void insertUpdate(final DocumentEvent e) {
+                this.refreshList();
             }
 
             private void refreshList() {
-                String search = searchField.getText().toLowerCase();
-                String[] hits = search.split(" ");
+                final String search = searchField.getText().toLowerCase();
+                final String[] hits = search.split(" ");
                 defaultListModel.removeAllElements();
                 for (int i = 0; i < d.length; i++) {
                     for (int j = 0; j < hits.length; j++) {
-                        if (!d[i].toLowerCase().contains(hits[j])) break;
+                        if (!d[i].toLowerCase().contains(hits[j])) {
+                            break;
+                        }
                         if (j == hits.length - 1) {
                             defaultListModel.addElement(d[i]);
                         }
                     }
                 }
-                list.setModel(defaultListModel);
+                ImportRouterDialog.this.list.setModel(defaultListModel);
             }
 
-            public void removeUpdate(DocumentEvent e) {
-                refreshList();
+            public void removeUpdate(final DocumentEvent e) {
+                this.refreshList();
             }
         });
         searchField.addFocusListener(new FocusAdapter() {
 
             @Override
-            public void focusGained(FocusEvent e) {
+            public void focusGained(final FocusEvent e) {
                 if (searchField.getText().equals(text)) {
                     searchField.setText("");
                 }
             }
 
             @Override
-            public void focusLost(FocusEvent e) {
+            public void focusLost(final FocusEvent e) {
                 if (searchField.getText().equals("")) {
                     searchField.setText(text);
-                    for (String element : d) {
+                    for (final String element : d) {
                         defaultListModel.addElement(element);
                     }
                 }
@@ -154,12 +164,12 @@ public class ImportRouterDialog extends AbstractDialog {
         final JTextArea preview = new JTextArea();
         preview.setFocusable(true);
 
-        JButton reset = Factory.createButton(null, JDTheme.II("gui.images.undo", 16, 16), new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        final JButton reset = Factory.createButton(null, JDTheme.II("gui.images.undo", 16, 16), new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
                 searchField.setForeground(Color.lightGray);
                 searchField.setText(text);
                 preview.setText("");
-                for (String element : d) {
+                for (final String element : d) {
                     defaultListModel.addElement(element);
                 }
             }
@@ -167,22 +177,22 @@ public class ImportRouterDialog extends AbstractDialog {
         reset.setBorder(null);
         searchField.setText(text);
 
-        list.addListSelectionListener(new ListSelectionListener() {
+        this.list.addListSelectionListener(new ListSelectionListener() {
 
-            public void valueChanged(ListSelectionEvent e) {
-                String selected = (String) list.getSelectedValue();
+            public void valueChanged(final ListSelectionEvent e) {
+                final String selected = (String) ImportRouterDialog.this.list.getSelectedValue();
                 if (selected != null) {
-                    int id = Integer.parseInt(selected.split("\\.")[0]);
-                    String[] data = scripts.get(id);
+                    final int id = Integer.parseInt(selected.split("\\.")[0]);
+                    final String[] data = ImportRouterDialog.this.scripts.get(id);
 
                     preview.setText(data[2]);
                 }
             }
 
         });
-        JLabel example = new JLabel(JDL.L("gui.config.reconnect.selectrouter.example", "Example: 3Com ADSL"));
+        final JLabel example = new JLabel(JDL.L("gui.config.reconnect.selectrouter.example", "Example: 3Com ADSL"));
 
-        for (String element : d) {
+        for (final String element : d) {
             defaultListModel.addElement(element);
         }
 
@@ -191,14 +201,14 @@ public class ImportRouterDialog extends AbstractDialog {
         panel.add(new JScrollPane(preview), "spany");
 
         panel.add(example, "spanx 2");
-        panel.add(new JScrollPane(list), "spanx 2");
+        panel.add(new JScrollPane(this.list), "spanx 2");
 
         return panel;
     }
 
     @Override
     protected void packed() {
-        setMinimumSize(new Dimension(700, 500));
+        this.setMinimumSize(new Dimension(700, 500));
     }
 
 }

@@ -22,33 +22,45 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.decrypter.TbCm.DestinationFormat;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://[\\w\\.]*?clipfish\\.de/(.*?channel/\\d+/video/\\d+|video/\\d+(/.+)?|special/.*?/video/\\d+)" }, flags = { 0 })
 public class ClpfshD extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_CAHNNEL_VIDEO = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/.*?channel/\\d+/video/(\\d+)");
+    private static final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/.*?channel/\\d+/video/(\\d+)");
     private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/video/(\\d+)(/.+)?");
-    private static final Pattern PATTERN_SPECIAL_VIDEO = Pattern.compile("clipfish\\.de/special/.*?/video/(\\d+)");
-    private static final Pattern PATTERN_FLV_FILE = Pattern.compile("&url=(http://.+?\\.flv)&", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_TITEL = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
-    private static final String XML_PATH = "http://www.clipfish.de/video_n.php?vid=";
+    private static final Pattern PATTERN_SPECIAL_VIDEO  = Pattern.compile("clipfish\\.de/special/.*?/video/(\\d+)");
+    private static final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\.flv)&", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_TITEL          = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
+    private static final String  XML_PATH               = "http://www.clipfish.de/video_n.php?vid=";
 
-    public ClpfshD(PluginWrapper wrapper) {
+    public ClpfshD(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.clearCookies(getHost());
-        Regex regexInfo = new Regex(br.getPage(cryptedLink.getCryptedUrl()), PATTERN_TITEL);
-        StringTokenizer tokenizer = new StringTokenizer(regexInfo.getMatch(0), "-");
+    private void addLink(final CryptedLink cryptedLink, final ArrayList<DownloadLink> decryptedLinks, final String name, final DownloadLink downloadLink, final DestinationFormat convertTo) {
+        final FilePackage filePackage = FilePackage.getInstance();
+        filePackage.setName("ClipFish " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
+        downloadLink.setFilePackage(filePackage);
+        downloadLink.setFinalFileName(name + ".tmp");
+        downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
+        downloadLink.setSourcePluginComment("Convert to " + convertTo.getText());
+        downloadLink.setProperty("convertto", convertTo.name());
+        decryptedLinks.add(downloadLink);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        this.br.clearCookies(this.getHost());
+        final Regex regexInfo = new Regex(this.br.getPage(cryptedLink.getCryptedUrl()), ClpfshD.PATTERN_TITEL);
+        final StringTokenizer tokenizer = new StringTokenizer(regexInfo.getMatch(0), "-");
         String name = "";
         int i = 0;
         while (tokenizer.hasMoreTokens() && i < 2) {
@@ -56,32 +68,24 @@ public class ClpfshD extends PluginForDecrypt {
             name += tokenizer.nextToken("-");
         }
 
-        ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
         int vidId = -1;
-        if (new Regex(cryptedLink.getCryptedUrl(), PATTERN_STANDARD_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), PATTERN_STANDARD_VIDEO).getMatch(0));
-        } else if (new Regex(cryptedLink.getCryptedUrl(), PATTERN_CAHNNEL_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), PATTERN_CAHNNEL_VIDEO).getMatch(0));
-        } else if (new Regex(cryptedLink.getCryptedUrl(), PATTERN_SPECIAL_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), PATTERN_SPECIAL_VIDEO).getMatch(0));
+        if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_STANDARD_VIDEO).matches()) {
+            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_STANDARD_VIDEO).getMatch(0));
+        } else if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_CAHNNEL_VIDEO).matches()) {
+            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_CAHNNEL_VIDEO).getMatch(0));
+        } else if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_SPECIAL_VIDEO).matches()) {
+            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_SPECIAL_VIDEO).getMatch(0));
         } else {
-            logger.severe("No VidID found");
+            Plugin.logger.severe("No VidID found");
             return decryptedLinks;
         }
-        String page = br.getPage(XML_PATH + vidId);
-        String pathToflv = new Regex(page, PATTERN_FLV_FILE).getMatch(0);
-        if (pathToflv == null) return null;
-        DownloadLink downloadLink = createDownloadlink(pathToflv);
-        possibleconverts.add(ConversionMode.VIDEOFLV);
-        possibleconverts.add(ConversionMode.AUDIOMP3);
-        possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-
-        ConversionMode convertTo = Plugin.showDisplayDialog(possibleconverts, name, cryptedLink);
-        downloadLink.setFinalFileName(name + ".tmp");
-        downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-        downloadLink.setSourcePluginComment("Convert to " + convertTo.getText());
-        downloadLink.setProperty("convertto", convertTo.name());
-        decryptedLinks.add(downloadLink);
+        final String page = this.br.getPage(ClpfshD.XML_PATH + vidId);
+        final String pathToflv = new Regex(page, ClpfshD.PATTERN_FLV_FILE).getMatch(0);
+        if (pathToflv == null) { return null; }
+        final DownloadLink downloadLink = this.createDownloadlink(pathToflv);
+        // create a package, for each quality.
+        this.addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.VIDEOFLV);
+        this.addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.AUDIOMP3);
 
         return decryptedLinks;
     }

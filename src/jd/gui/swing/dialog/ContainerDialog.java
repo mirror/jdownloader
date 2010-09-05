@@ -21,21 +21,35 @@ import java.awt.Image;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-public class ContainerDialog extends AbstractDialog {
+import org.appwork.utils.swing.dialog.AbstractDialog;
+
+/**
+ * A Basic dialog, that accepts a JPanel.
+ * 
+ * @author thomas
+ * 
+ */
+public class ContainerDialog extends AbstractDialog<Integer> {
 
     private static final long serialVersionUID = -348017625663435924L;
-    private JPanel panel;
+    private final JPanel      panel;
 
-    public ContainerDialog(int flags, String title, JPanel panel, Image icon, String ok, String cancel) {
+    public ContainerDialog(final int flags, final String title, final JPanel panel, final Image icon, final String ok, final String cancel) {
         super(flags, title, null, ok, cancel);
         this.panel = panel;
         this.setIconImage(icon);
-        init();
     }
 
     @Override
-    public JComponent contentInit() {
-        return panel;
+    protected Integer createReturnValue() {
+        // TODO Auto-generated method stub
+        return this.getReturnmask();
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+        // TODO Auto-generated method stub
+        return this.panel;
     }
 
 }

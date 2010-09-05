@@ -36,8 +36,6 @@ import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
-import jd.gui.swing.components.ConvertDialog;
-import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.JDProxy;
@@ -58,33 +56,142 @@ public abstract class Plugin implements ActionListener {
 
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
-    protected static Logger logger = JDLogger.getLogger();
+    protected static Logger    logger          = JDLogger.getLogger();
 
-    public static ConversionMode showDisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws DecrypterException {
-        link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
-        synchronized (JDUtilities.USERIO_LOCK) {
-            ConversionMode temp = ConvertDialog.displayDialog(displaymodes, name);
-            link.getProgressController().setStatusText(null);
-            if (temp == null) throw new DecrypterException(JDL.L("jd.plugins.Plugin.aborted", "Decryption aborted!"));
-            return temp;
+    /**
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
+     * dateinamen zuzugreifen sollte bis auf Ausnamen immer
+     * DownloadLink.getName() verwendet werden
+     * 
+     * @return Datename des Downloads.
+     */
+    public static String extractFileNameFromURL(String filename) {
+        int index = filename.indexOf("?");
+        /*
+         * erst die Get-Parameter abschneiden
+         */
+        if (index > 0) {
+            filename = filename.substring(0, index);
         }
+        index = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
+        /*
+         * danach den Filename filtern
+         */
+        filename = filename.substring(index + 1);
+        return Encoding.htmlDecode(filename);
+    }
+
+    public static String getFileNameFromDispositionHeader(String header) {
+        // http://greenbytes.de/tech/tc2231/
+        if (header == null) { return null; }
+        final String orgheader = header;
+        String contentdisposition = header;
+        String filename = null;
+        for (int i = 0; i < 2; i++) {
+            if (contentdisposition.contains("filename*")) {
+                /* Codierung default */
+                /*
+                 * Content-Disposition: attachment;filename==?UTF-8?B?
+                 * RGF2aWQgR3VldHRhIC0gSnVzdCBBIExpdHRsZSBNb3JlIExvdmUgW2FMYnlsb3ZlciBYLUNsdXNpdiBSZW1peF0uTVAz
+                 * ?=
+                 */
+                contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
+                final String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
+                if (format == null) {
+                    Plugin.logger.severe("Content-Disposition: invalid format: " + header);
+                    filename = null;
+                    return filename;
+                }
+                contentdisposition = contentdisposition.replaceAll(format + "''", "");
+                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
+                }
+                if (filename == null) {
+                    header = header.replaceAll("=", "=\"") + "\"";
+                    header = header.replaceAll(";\"", "\"");
+                    contentdisposition = header;
+                } else {
+                    try {
+                        filename = URLDecoder.decode(filename, format);
+                    } catch (final Exception e) {
+                        Plugin.logger.severe("Content-Disposition: could not decode filename: " + header);
+                        filename = null;
+                        return filename;
+                    }
+                }
+            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?.*?\\?=").matches()) {
+                /*
+                 * Codierung Encoded Words, TODO: Q-Encoding und mehrfach
+                 * tokens, aber noch nicht in freier Wildbahn gesehen
+                 */
+                final String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?(.*?)\\?=").getMatches();
+                if (tokens.length == 1 && tokens[0].length == 3 && tokens[0][1].trim().equalsIgnoreCase("B")) {
+                    /* Base64 Encoded */
+                    try {
+                        filename = URLDecoder.decode(Encoding.Base64Decode(tokens[0][2].trim()), tokens[0][0].trim());
+                    } catch (final Exception e) {
+                        Plugin.logger.severe("Content-Disposition: could not decode filename: " + header);
+                        filename = null;
+                        return filename;
+                    }
+                }
+            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?=").matches()) {
+                /* Unicode Format wie es 4Shared nutzt */
+                final String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?=").getMatches();
+                if (tokens.length == 1 && tokens[0].length == 2) {
+                    try {
+                        contentdisposition = new String(tokens[0][1].trim().getBytes("ISO-8859-1"), tokens[0][0].trim());
+                        continue;
+                    } catch (final Exception e) {
+                        Plugin.logger.severe("Content-Disposition: could not decode filename: " + header);
+                        filename = null;
+                        return filename;
+                    }
+                }
+            } else {
+                /* ohne Codierung */
+                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
+                }
+                if (filename == null) {
+                    header = header.replaceAll("=", "=\"") + "\"";
+                    header = header.replaceAll(";\"", "\"");
+                    contentdisposition = header;
+                }
+            }
+            if (filename != null) {
+                break;
+            }
+        }
+        if (filename != null) {
+            filename = filename.trim();
+            if (filename.startsWith("\"")) {
+                Plugin.logger.info("Using Workaround for broken filename header!");
+                filename = filename.substring(1);
+            }
+        }
+        if (filename == null) {
+            Plugin.logger.severe("Content-Disposition: could not parse header: " + orgheader);
+        }
+        return filename;
     }
 
     /**
+     * Holt den Dateinamen aus einem Content-Disposition header. wird dieser
+     * nicht gefunden, wird der dateiname aus der url ermittelt
      * 
-     * @param message
-     *            The message to be displayed or <code>null</code> to display a
-     *            Password prompt
-     * @param link
-     *            the {@link DownloadLink}
-     * @return the entered password
-     * @throws PluginException
-     *             if the user aborts the input
+     * @param urlConnection
+     * @return Filename aus dem header (content disposition) extrahiert
      */
-    public static String getUserInput(String message, DownloadLink link) throws PluginException {
-        String password = PluginUtils.askPassword(message, link);
-        if (password == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
-        return password;
+    public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
+        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename") < 0) { return Plugin.getFileNameFromURL(urlConnection.getURL()); }
+        return Plugin.getFileNameFromDispositionHeader(urlConnection.getHeaderField("content-disposition"));
+    }
+
+    public static String getFileNameFromURL(final URL url) {
+        return Plugin.extractFileNameFromURL(url.toExternalForm());
     }
 
     /**
@@ -98,46 +205,40 @@ public abstract class Plugin implements ActionListener {
      * @throws DecrypterException
      *             if the user aborts the input
      */
-    public static String getUserInput(String message, CryptedLink link) throws DecrypterException {
-        String password = PluginUtils.askPassword(message, link);
-        if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
+    public static String getUserInput(final String message, final CryptedLink link) throws DecrypterException {
+        final String password = PluginUtils.askPassword(message, link);
+        if (password == null) { throw new DecrypterException(DecrypterException.PASSWORD); }
         return password;
     }
 
-    protected File getLocalCaptchaFile() {
-        return getLocalCaptchaFile(".jpg");
-    }
-
     /**
-     * Gibt die Datei zurück in die der aktuelle captcha geladen werden soll.
      * 
-     * @param plugin
-     * @return Gibt einen Pfad zurück der für die nächste Captchadatei
-     *         reserviert ist
+     * @param message
+     *            The message to be displayed or <code>null</code> to display a
+     *            Password prompt
+     * @param link
+     *            the {@link DownloadLink}
+     * @return the entered password
+     * @throws PluginException
+     *             if the user aborts the input
      */
-    protected File getLocalCaptchaFile(String extension) {
-        if (extension == null) {
-            extension = ".jpg";
-        }
-        Calendar calendar = Calendar.getInstance();
-        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
-
-        File dest = JDUtilities.getResourceFile("captchas/" + this.getHost() + "_" + date + extension, true);
-        dest.deleteOnExit();
-        return dest;
+    public static String getUserInput(final String message, final DownloadLink link) throws PluginException {
+        final String password = PluginUtils.askPassword(message, link);
+        if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong")); }
+        return password;
     }
 
     protected final ConfigContainer config;
 
-    protected final PluginWrapper wrapper;
+    protected final PluginWrapper   wrapper;
 
-    protected Browser br = null;
+    protected Browser               br = null;
 
     public Plugin(final PluginWrapper wrapper) {
         this.wrapper = wrapper;
 
         if (wrapper instanceof HostPluginWrapper) {
-            config = new ConfigContainer(getHost()) {
+            this.config = new ConfigContainer(this.getHost()) {
                 private static final long serialVersionUID = -30947319320765343L;
 
                 /**
@@ -149,15 +250,11 @@ public abstract class Plugin implements ActionListener {
                 }
             };
         } else {
-            config = new ConfigContainer(getHost());
+            this.config = new ConfigContainer(this.getHost());
         }
     }
 
-    public PluginWrapper getWrapper() {
-        return wrapper;
-    }
-
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(final ActionEvent e) {
         return;
     }
 
@@ -170,11 +267,11 @@ public abstract class Plugin implements ActionListener {
      *            der zu prüfende Text
      * @return wahr, falls ein Treffer gefunden wurde.
      */
-    public synchronized boolean canHandle(String data) {
-        if (data == null) return false;
-        Pattern pattern = getSupportedLinks();
+    public synchronized boolean canHandle(final String data) {
+        if (data == null) { return false; }
+        final Pattern pattern = this.getSupportedLinks();
         if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
+            final Matcher matcher = pattern.matcher(data);
             if (matcher.find()) { return true; }
         }
         return false;
@@ -182,10 +279,12 @@ public abstract class Plugin implements ActionListener {
 
     public void clean() {
         JDProxy pr = null;
-        if (br != null) {
-            pr = br.getProxy();
-            br = new Browser();
-            if (pr != null) br.setProxy(pr);
+        if (this.br != null) {
+            pr = this.br.getProxy();
+            this.br = new Browser();
+            if (pr != null) {
+                this.br.setProxy(pr);
+            }
         }
     }
 
@@ -205,9 +304,9 @@ public abstract class Plugin implements ActionListener {
      *            Text, aus dem das Pattern ausgeschnitter werden soll
      * @return Der resultierende String
      */
-    public String cutMatches(String data) {
+    public String cutMatches(final String data) {
         /* case insensitive pattern */
-        return data.replaceAll("(?i)" + getSupportedLinks().pattern(), "--CUT--");
+        return data.replaceAll("(?i)" + this.getSupportedLinks().pattern(), "--CUT--");
     }
 
     /**
@@ -216,7 +315,7 @@ public abstract class Plugin implements ActionListener {
      * @param controlID
      * @param param
      */
-    public void fireControlEvent(int controlID, Object param) {
+    public void fireControlEvent(final int controlID, final Object param) {
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
 
@@ -227,135 +326,7 @@ public abstract class Plugin implements ActionListener {
      * @return gibt die aktuelle Configuration Instanz zurück
      */
     public ConfigContainer getConfig() {
-        return config;
-    }
-
-    /**
-     * Holt den Dateinamen aus einem Content-Disposition header. wird dieser
-     * nicht gefunden, wird der dateiname aus der url ermittelt
-     * 
-     * @param urlConnection
-     * @return Filename aus dem header (content disposition) extrahiert
-     */
-    public static String getFileNameFromHeader(URLConnectionAdapter urlConnection) {
-        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename") < 0) { return Plugin.getFileNameFromURL(urlConnection.getURL()); }
-        return getFileNameFromDispositionHeader(urlConnection.getHeaderField("content-disposition"));
-    }
-
-    public static String getFileNameFromDispositionHeader(String header) {
-        // http://greenbytes.de/tech/tc2231/
-        if (header == null) return null;
-        String orgheader = header;
-        String contentdisposition = header;
-        String filename = null;
-        for (int i = 0; i < 2; i++) {
-            if (contentdisposition.contains("filename*")) {
-                /* Codierung default */
-                /*
-                 * Content-Disposition: attachment;filename==?UTF-8?B?
-                 * RGF2aWQgR3VldHRhIC0gSnVzdCBBIExpdHRsZSBNb3JlIExvdmUgW2FMYnlsb3ZlciBYLUNsdXNpdiBSZW1peF0uTVAz
-                 * ?=
-                 */
-                contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
-                String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
-                if (format == null) {
-                    logger.severe("Content-Disposition: invalid format: " + header);
-                    filename = null;
-                    return filename;
-                }
-                contentdisposition = contentdisposition.replaceAll(format + "''", "");
-                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
-                if (filename == null) filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
-                if (filename == null) {
-                    header = header.replaceAll("=", "=\"") + "\"";
-                    header = header.replaceAll(";\"", "\"");
-                    contentdisposition = header;
-                } else {
-                    try {
-                        filename = URLDecoder.decode(filename, format);
-                    } catch (Exception e) {
-                        logger.severe("Content-Disposition: could not decode filename: " + header);
-                        filename = null;
-                        return filename;
-                    }
-                }
-            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?.*?\\?=").matches()) {
-                /*
-                 * Codierung Encoded Words, TODO: Q-Encoding und mehrfach
-                 * tokens, aber noch nicht in freier Wildbahn gesehen
-                 */
-                String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?(.*?)\\?=").getMatches();
-                if (tokens.length == 1 && tokens[0].length == 3 && tokens[0][1].trim().equalsIgnoreCase("B")) {
-                    /* Base64 Encoded */
-                    try {
-                        filename = URLDecoder.decode(Encoding.Base64Decode(tokens[0][2].trim()), tokens[0][0].trim());
-                    } catch (Exception e) {
-                        logger.severe("Content-Disposition: could not decode filename: " + header);
-                        filename = null;
-                        return filename;
-                    }
-                }
-            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?=").matches()) {
-                /* Unicode Format wie es 4Shared nutzt */
-                String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?=").getMatches();
-                if (tokens.length == 1 && tokens[0].length == 2) {
-                    try {
-                        contentdisposition = new String(tokens[0][1].trim().getBytes("ISO-8859-1"), tokens[0][0].trim());
-                        continue;
-                    } catch (Exception e) {
-                        logger.severe("Content-Disposition: could not decode filename: " + header);
-                        filename = null;
-                        return filename;
-                    }
-                }
-            } else {
-                /* ohne Codierung */
-                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
-                if (filename == null) filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
-                if (filename == null) {
-                    header = header.replaceAll("=", "=\"") + "\"";
-                    header = header.replaceAll(";\"", "\"");
-                    contentdisposition = header;
-                }
-            }
-            if (filename != null) {
-                break;
-            }
-        }
-        if (filename != null) {
-            filename = filename.trim();
-            if (filename.startsWith("\"")) {
-                logger.info("Using Workaround for broken filename header!");
-                filename = filename.substring(1);
-            }
-        }
-        if (filename == null) logger.severe("Content-Disposition: could not parse header: " + orgheader);
-        return filename;
-    }
-
-    public static String getFileNameFromURL(URL url) {
-        return extractFileNameFromURL(url.toExternalForm());
-    }
-
-    /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
-     * dateinamen zuzugreifen sollte bis auf Ausnamen immer
-     * DownloadLink.getName() verwendet werden
-     * 
-     * @return Datename des Downloads.
-     */
-    public static String extractFileNameFromURL(String filename) {
-        int index = filename.indexOf("?");
-        /*
-         * erst die Get-Parameter abschneiden
-         */
-        if (index > 0) filename = filename.substring(0, index);
-        index = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
-        /*
-         * danach den Filename filtern
-         */
-        filename = filename.substring(index + 1);
-        return Encoding.htmlDecode(filename);
+        return this.config;
     }
 
     /**
@@ -364,16 +335,30 @@ public abstract class Plugin implements ActionListener {
      * @return Der unterstützte Anbieter
      */
     public String getHost() {
-        return wrapper.getHost();
+        return this.wrapper.getHost();
+    }
+
+    protected File getLocalCaptchaFile() {
+        return this.getLocalCaptchaFile(".jpg");
     }
 
     /**
-     * Liefert eine einmalige ID des Plugins zurück
+     * Gibt die Datei zurück in die der aktuelle captcha geladen werden soll.
      * 
-     * @return Plugin ID
+     * @param plugin
+     * @return Gibt einen Pfad zurück der für die nächste Captchadatei
+     *         reserviert ist
      */
-    public String getPluginID() {
-        return getHost() + "-" + getVersion();
+    protected File getLocalCaptchaFile(String extension) {
+        if (extension == null) {
+            extension = ".jpg";
+        }
+        final Calendar calendar = Calendar.getInstance();
+        final String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
+
+        final File dest = JDUtilities.getResourceFile("captchas/" + this.getHost() + "_" + date + extension, true);
+        dest.deleteOnExit();
+        return dest;
     }
 
     /**
@@ -383,7 +368,16 @@ public abstract class Plugin implements ActionListener {
      * @return internes property objekt
      */
     public SubConfiguration getPluginConfig() {
-        return SubConfiguration.getConfig(wrapper.getConfigName());
+        return SubConfiguration.getConfig(this.wrapper.getConfigName());
+    }
+
+    /**
+     * Liefert eine einmalige ID des Plugins zurück
+     * 
+     * @return Plugin ID
+     */
+    public String getPluginID() {
+        return this.getHost() + "-" + this.getVersion();
     }
 
     /**
@@ -404,8 +398,12 @@ public abstract class Plugin implements ActionListener {
      */
     public abstract String getVersion();
 
-    protected String getVersion(String revision) {
+    protected String getVersion(final String revision) {
         return Formatter.getRevision(revision);
+    }
+
+    public PluginWrapper getWrapper() {
+        return this.wrapper;
     }
 
     /**

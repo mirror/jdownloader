@@ -18,169 +18,311 @@ package jd.gui;
 
 import java.awt.Point;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
+import jd.gui.swing.dialog.CaptchaDialog;
+import jd.gui.swing.dialog.ClickPositionDialog;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
-import jd.gui.userio.NoUserIO;
 import jd.nutils.JDFlags;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public abstract class UserIO {
+import org.appwork.utils.BinaryLogic;
+import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.TextAreaDialog;
 
-    public static final int FILES_ONLY = JFileChooser.FILES_ONLY;
-    public static final int DIRECTORIES_ONLY = JFileChooser.DIRECTORIES_ONLY;
-    public static final int FILES_AND_DIRECTORIES = JFileChooser.FILES_AND_DIRECTORIES;
-    public static final int OPEN_DIALOG = JFileChooser.OPEN_DIALOG;
-    public static final int SAVE_DIALOG = JFileChooser.SAVE_DIALOG;
+import com.sun.istack.internal.Nullable;
+
+public class UserIO {
+
+    public static final int       FILES_ONLY                     = JFileChooser.FILES_ONLY;
+    public static final int       DIRECTORIES_ONLY               = JFileChooser.DIRECTORIES_ONLY;
+    public static final int       FILES_AND_DIRECTORIES          = JFileChooser.FILES_AND_DIRECTORIES;
+    public static final int       OPEN_DIALOG                    = JFileChooser.OPEN_DIALOG;
+    public static final int       SAVE_DIALOG                    = JFileChooser.SAVE_DIALOG;
 
     /**
      * TO not query user. Try to fill automaticly, or return null
      */
-    public static final int NO_USER_INTERACTION = 1 << 1;
+    public static final int       NO_USER_INTERACTION            = 1 << 1;
     /**
      * do not display a countdown
      */
-    public static final int NO_COUNTDOWN = 1 << 2;
+    public static final int       NO_COUNTDOWN                   = 1 << 2;
     /**
      * do not display ok option
      */
-    public static final int NO_OK_OPTION = 1 << 3;
+    public static final int       NO_OK_OPTION                   = 1 << 3;
     /**
      * do not display cancel option
      */
-    public static final int NO_CANCEL_OPTION = 1 << 4;
+    public static final int       NO_CANCEL_OPTION               = 1 << 4;
     /**
      * displays a do not show this question again checkbox
      */
-    public static final int DONT_SHOW_AGAIN = 1 << 5;
+    public static final int       DONT_SHOW_AGAIN                = 1 << 5;
     /**
      * IF available a large evrsion of the dialog is used
      */
-    public static final int STYLE_LARGE = 1 << 6;
+    public static final int       STYLE_LARGE                    = 1 << 6;
     /**
      * Render html
      */
-    public static final int STYLE_HTML = 1 << 7;
+    public static final int       STYLE_HTML                     = 1 << 7;
     /**
      * Does not display an icon
      */
-    public static final int NO_ICON = 1 << 8;
+    public static final int       NO_ICON                        = 1 << 8;
     /**
      * Cancel option ignores Don't show again checkbox
      */
-    public static final int DONT_SHOW_AGAIN_IGNORES_CANCEL = 1 << 9;
+    public static final int       DONT_SHOW_AGAIN_IGNORES_CANCEL = 1 << 9;
     /**
      * If user selects OK Option, the don't show again option is ignored
      */
-    public static final int DONT_SHOW_AGAIN_IGNORES_OK = 1 << 10;
+    public static final int       DONT_SHOW_AGAIN_IGNORES_OK     = 1 << 10;
     /**
      * the textfield will be renderer as a passwordfield
      */
-    public static final int STYLE_PASSWORD = 1 << 11;
+    public static final int       STYLE_PASSWORD                 = 1 << 11;
 
     /**
      * pressed ok
      */
-    public static final int RETURN_OK = 1 << 1;
+    public static final int       RETURN_OK                      = 1 << 1;
     /**
      * pressed cancel
      */
-    public static final int RETURN_CANCEL = 1 << 2;
+    public static final int       RETURN_CANCEL                  = 1 << 2;
     /**
      * don'tz sho again flag ahs been set. the dialog may has been visible. if
      * RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
      */
-    public static final int RETURN_DONT_SHOW_AGAIN = 1 << 3;
+    public static final int       RETURN_DONT_SHOW_AGAIN         = 1 << 3;
     /**
      * don't show again flag has been set the dialog has not been visible
      */
-    public static final int RETURN_SKIPPED_BY_DONT_SHOW = 1 << 4;
+    public static final int       RETURN_SKIPPED_BY_DONT_SHOW    = 1 << 4;
     /**
      * Timeout has run out. Returns current settings or default values
      */
-    public static final int RETURN_COUNTDOWN_TIMEOUT = 1 << 5;
-    public static final int ICON_INFO = 0;
-    public static final int ICON_WARNING = 1;
-    public static final int ICON_ERROR = 2;
-    public static final int ICON_QUESTION = 3;
+    public static final int       RETURN_COUNTDOWN_TIMEOUT       = 1 << 5;
+    public static final int       ICON_INFO                      = 0;
+    public static final int       ICON_WARNING                   = 1;
+    public static final int       ICON_ERROR                     = 2;
+    public static final int       ICON_QUESTION                  = 3;
 
-    protected static UserIO INSTANCE = null;
-    private static int COUNTDOWN_TIME = -1;
+    protected static final UserIO INSTANCE                       = new UserIO();
+    private static int            COUNTDOWN_TIME                 = -1;
 
-    public static UserIO getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new NoUserIO();
-        }
-        return INSTANCE;
+    public static int getCountdownTime() {
+        return UserIO.COUNTDOWN_TIME > 0 ? UserIO.COUNTDOWN_TIME : Math.max(2, GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
     }
 
-    public static void setInstance(final UserIO instance) {
-        INSTANCE = instance;
+    public static UserIO getInstance() {
+
+        return UserIO.INSTANCE;
+    }
+
+    /**
+     * Checks wether this answerfalg contains the ok option
+     * 
+     * @param answer
+     * @return
+     */
+    public static boolean isOK(final int answer) {
+        return JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK);
+    }
+
+    /**
+     * Sets the countdowntime for this session. does not save!
+     * 
+     * @param time
+     */
+    public static void setCountdownTime(final int time) {
+        UserIO.COUNTDOWN_TIME = time > 0 ? time : -1;
+    }
+
+    /**
+     * COnverts the flag mask of AW Dialogs to UserIO
+     * 
+     * @param ret
+     * @return
+     */
+    private int convertAWAnswer(final int ret) {
+        int response = 0;
+        if (BinaryLogic.containsAll(ret, Dialog.RETURN_CANCEL)) {
+            response |= UserIO.RETURN_CANCEL;
+        }
+        if (BinaryLogic.containsAll(ret, Dialog.RETURN_OK)) {
+            response |= UserIO.RETURN_OK;
+        }
+        if (BinaryLogic.containsAll(ret, Dialog.RETURN_CLOSED)) {
+            response |= UserIO.RETURN_CANCEL;
+        }
+        if (BinaryLogic.containsAll(ret, Dialog.RETURN_DONT_SHOW_AGAIN)) {
+            response |= UserIO.RETURN_DONT_SHOW_AGAIN;
+        }
+        if (BinaryLogic.containsAll(ret, Dialog.RETURN_SKIPPED_BY_DONT_SHOW)) {
+            response |= UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
+        }
+        if (BinaryLogic.containsAll(ret, Dialog.RETURN_TIMEOUT)) {
+            response |= UserIO.RETURN_COUNTDOWN_TIMEOUT;
+        }
+        return response;
+    }
+
+    /**
+     * The flags in org.appwork.utils.swing.dialog.Dialog are different, so we
+     * need a converter
+     * 
+     * @param flag
+     * @return
+     */
+    private int convertFlagToAWDialog(int flag) {
+        final int ret = 0;
+
+        if (BinaryLogic.containsAll(flag, UserIO.NO_USER_INTERACTION)) {
+            // flag|=
+            // TODO
+        }
+
+        if (BinaryLogic.containsNone(flag, UserIO.NO_COUNTDOWN)) {
+            flag |= Dialog.LOGIC_COUNTDOWN;
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.NO_OK_OPTION)) {
+            flag |= Dialog.BUTTONS_HIDE_OK;
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.NO_CANCEL_OPTION)) {
+            flag |= Dialog.BUTTONS_HIDE_CANCEL;
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN)) {
+            flag |= Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN;
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.STYLE_LARGE)) {
+            flag |= Dialog.STYLE_LARGE;
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.STYLE_HTML)) {
+            flag |= Dialog.STYLE_HTML;
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.NO_ICON)) {
+            // flag|=,
+            // TODO
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)) {
+            flag |= Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL;
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)) {
+            flag |= Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK;
+        }
+        if (BinaryLogic.containsAll(flag, UserIO.STYLE_PASSWORD)) {
+            // flag|=
+            // TODO
+        }
+        return ret;
+    }
+
+    private ImageIcon getDefaultIcon(final String text) {
+        if (text.contains("?")) {
+            return this.getIcon(UserIO.ICON_QUESTION);
+        } else if (text.matches(JDL.L("userio.errorregex", ".*(error|failed).*"))) {
+            return this.getIcon(UserIO.ICON_ERROR);
+        } else if (text.contains("!")) {
+            return this.getIcon(UserIO.ICON_WARNING);
+        } else {
+            return this.getIcon(UserIO.ICON_INFO);
+        }
+    }
+
+    public ImageIcon getIcon(final int iconInfo) {
+        switch (iconInfo) {
+        case UserIO.ICON_ERROR:
+            return JDTheme.II("gui.images.stop", 32, 32);
+        case UserIO.ICON_WARNING:
+            return JDTheme.II("gui.images.warning", 32, 32);
+        case UserIO.ICON_QUESTION:
+            return JDTheme.II("gui.images.help", 32, 32);
+        default:
+            return JDTheme.II("gui.images.config.tip", 32, 32);
+        }
     }
 
     public String requestCaptchaDialog(final int flag, final String host, final ImageIcon icon, final File captchafile, final String suggestion, final String explain) {
-        synchronized (INSTANCE) {
-            return showCaptchaDialog(flag, host, icon, captchafile, suggestion, explain);
-        }
-    }
+        return new EDTHelper<String>() {
 
-    abstract protected String showCaptchaDialog(int flag, String host, ImageIcon icon, File captchafile, String suggestion, String explain);
+            @Override
+            public String edtRun() {
+                AbstractDialog<String> dialog;
+
+                dialog = new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain);
+                return Dialog.getInstance().showDialog(dialog);
+
+            }
+
+        }.getReturnValue();
+
+    }
 
     public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {
-        synchronized (INSTANCE) {
-            return showClickPositionDialog(imagefile, title, explain);
-        }
+
+        return new EDTHelper<Point>() {
+
+            @Override
+            public Point edtRun() {
+                AbstractDialog<Point> dialog;
+
+                dialog = new ClickPositionDialog(0, imagefile, title, explain);
+                return Dialog.getInstance().showDialog(dialog);
+
+            }
+
+        }.getReturnValue();
+
     }
 
-    abstract protected Point showClickPositionDialog(File imagefile, String title, String explain);
-
-    public int requestHelpDialog(final int flag, final String title, final String message, final String helpMessage, final String url) {
-        synchronized (INSTANCE) {
-            return showHelpDialog(flag, title, message, helpMessage, url);
-        }
+    /**
+     * Shows a combobox dialog. returns the options id if the user confirmed, or
+     * -1 if the user canceled
+     * 
+     * @param flag
+     * @param title
+     * @param question
+     * @param options
+     * @param defaultSelection
+     * @param icon
+     * @param okText
+     * @param cancelText
+     * @param renderer
+     *            TODO
+     * @return
+     */
+    public int requestComboDialog(final int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
+        return this.convertAWAnswer(Dialog.getInstance().showComboDialog(this.convertFlagToAWDialog(flag), title, question, options, defaultSelection, icon, okText, cancelText, renderer));
     }
 
-    abstract protected int showHelpDialog(int flag, String title, String message, String helpMessage, String url);
+    public int requestConfirmDialog(final int flag, final String question) {
+        return this.requestConfirmDialog(flag, JDL.L("jd.gui.userio.defaulttitle.confirm", "Please confirm!"), question, this.getDefaultIcon(question), null, null);
+    }
+
+    public int requestConfirmDialog(final int flag, final String title, final String question) {
+        return this.requestConfirmDialog(flag, title, question, this.getDefaultIcon(title + question), null, null);
+    }
 
     public int requestConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
-        synchronized (INSTANCE) {
-            return showConfirmDialog(flag, title, message, icon == null ? getDefaultIcon(title + message) : icon, okOption, cancelOption);
-        }
+
+        return this.convertAWAnswer(Dialog.getInstance().showConfirmDialog(this.convertFlagToAWDialog(flag), title, message, icon, okOption, cancelOption));
     }
-
-    abstract protected int showConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption);
-
-    public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
-        synchronized (INSTANCE) {
-            return showInputDialog(flag, title, message, defaultMessage, icon, okOption, cancelOption);
-        }
-    }
-
-    abstract protected String showInputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption);
-
-    public String requestTextAreaDialog(final String title, final String message, final String def) {
-        synchronized (INSTANCE) {
-            return showTextAreaDialog(title, message, def);
-        }
-    }
-
-    abstract protected String showTextAreaDialog(String title, String message, String def);
-
-    public String[] requestTwoTextFieldDialog(final String title, final String messageOne, final String defOne, final String messageTwo, final String defTwo) {
-        synchronized (INSTANCE) {
-            return showTwoTextFieldDialog(title, messageOne, defOne, messageTwo, defTwo);
-        }
-    }
-
-    abstract protected String[] showTwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo);
 
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection) {
-        return requestFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection, null, null);
+        return this.requestFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection, null, null);
     }
 
     /**
@@ -205,68 +347,8 @@ public abstract class UserIO {
      * @return an array of files or null if the user cancel the dialog
      */
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
-        synchronized (INSTANCE) {
-            return showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection, startDirectory, dialogType);
-        }
-    }
 
-    abstract protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection, File startDirectory, Integer dialogType);
-
-    public void requestMessageDialog(final String message) {
-        requestMessageDialog(0, JDL.L("gui.dialogs.message.title", "Message"), message);
-    }
-
-    public void requestMessageDialog(final int flag, final String message) {
-        requestMessageDialog(flag, JDL.L("gui.dialogs.message.title", "Message"), message);
-    }
-
-    public void requestMessageDialog(final String title, final String message) {
-        requestMessageDialog(0, title, message);
-    }
-
-    public void requestMessageDialog(final int flag, final String title, final String message) {
-        synchronized (INSTANCE) {
-            showConfirmDialog(UserIO.NO_CANCEL_OPTION | flag, title, message, getIcon(UserIO.ICON_INFO), null, null);
-        }
-    }
-
-    private ImageIcon getDefaultIcon(final String text) {
-        if (text.contains("?")) {
-            return this.getIcon(ICON_QUESTION);
-        } else if (text.matches(JDL.L("userio.errorregex", ".*(error|failed).*"))) {
-            return this.getIcon(ICON_ERROR);
-        } else if (text.contains("!")) {
-            return this.getIcon(ICON_WARNING);
-        } else {
-            return this.getIcon(ICON_INFO);
-        }
-    }
-
-    public abstract ImageIcon getIcon(int iconInfo);
-
-    public static int getCountdownTime() {
-        return (COUNTDOWN_TIME > 0) ? COUNTDOWN_TIME : Math.max(2, GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
-    }
-
-    /**
-     * Sets the countdowntime for this session. does not save!
-     * 
-     * @param time
-     */
-    public static void setCountdownTime(final int time) {
-        COUNTDOWN_TIME = (time > 0) ? time : -1;
-    }
-
-    public String requestInputDialog(final String message) {
-        return requestInputDialog(0, message, null);
-    }
-
-    public int requestConfirmDialog(final int flag, final String question) {
-        return requestConfirmDialog(flag, JDL.L("jd.gui.userio.defaulttitle.confirm", "Please confirm!"), question, this.getDefaultIcon(question), null, null);
-    }
-
-    public int requestConfirmDialog(final int flag, final String title, final String question) {
-        return requestConfirmDialog(flag, title, question, this.getDefaultIcon(title + question), null, null);
+        return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection, dialogType, null);
     }
 
     /**
@@ -280,35 +362,77 @@ public abstract class UserIO {
      * @return
      */
     public String requestInputDialog(final int flag, final String question, final String defaultvalue) {
-        return requestInputDialog(flag, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
+        return this.requestInputDialog(flag, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
+    }
+
+    public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
+
+        return Dialog.getInstance().showInputDialog(this.convertFlagToAWDialog(flag), title, message, defaultMessage, icon, okOption, cancelOption);
+    }
+
+    public String requestInputDialog(final String message) {
+        return this.requestInputDialog(0, message, null);
+    }
+
+    public void requestMessageDialog(final int flag, final String message) {
+        this.requestMessageDialog(flag, JDL.L("gui.dialogs.message.title", "Message"), message);
+    }
+
+    public void requestMessageDialog(final int flag, final String title, final String message) {
+
+        this.requestConfirmDialog(UserIO.NO_CANCEL_OPTION | flag, title, message, this.getIcon(UserIO.ICON_INFO), null, null);
+
+    }
+
+    public void requestMessageDialog(final String message) {
+        this.requestMessageDialog(0, JDL.L("gui.dialogs.message.title", "Message"), message);
+    }
+
+    public void requestMessageDialog(final String title, final String message) {
+        this.requestMessageDialog(0, title, message);
     }
 
     /**
-     * Shows a combobox dialog. returns the options id if the user confirmed, or
-     * -1 if the user canceled
+     * Displays a Dialog with a title, a message, and an editable Textpane. USe
+     * it to give the user a dialog to enter Multilined text
      * 
-     * @param flag
      * @param title
-     * @param question
-     * @param options
-     * @param defaultSelection
-     * @param icon
-     * @param okText
-     * @param cancelText
-     * @param renderer
-     *            TODO
+     * @param message
+     * @param def
      * @return
      */
-    public abstract int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, ListCellRenderer renderer);
+    @Nullable
+    public String requestTextAreaDialog(final String title, final String message, final String def) {
+        return new EDTHelper<String>() {
 
-    /**
-     * Checks wether this answerfalg contains the ok option
-     * 
-     * @param answer
-     * @return
-     */
-    public static boolean isOK(final int answer) {
-        return JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK);
+            @Override
+            public String edtRun() {
+                TextAreaDialog dialog;
+                try {
+                    dialog = new TextAreaDialog(title, message, def);
+
+                    // or is it enough to use edt when it comes up to display
+                    // the
+                    // dialog
+                    return Dialog.getInstance().showDialog(dialog);
+                } catch (final IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+        }.getReturnValue();
+
     }
+    //
+    // public String[] requestTwoTextFieldDialog(final String title, final
+    // String messageOne, final String defOne, final String messageTwo, final
+    // String defTwo) {
+    // synchronized (UserIO.INSTANCE) {
+    // return this.showTwoTextFieldDialog(title, messageOne, defOne, messageTwo,
+    // defTwo);
+    // }
+    // }
 
 }
