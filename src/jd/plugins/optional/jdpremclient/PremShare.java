@@ -19,6 +19,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
 
 public class PremShare extends PluginForHost implements JDPremInterface {
 
@@ -131,7 +132,8 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br = new Browser();
-        br.setConnectTimeout(10000);
+        br.setConnectTimeout(60 * 1000);
+        br.setReadTimeout(60 * 1000);
         br.setDebug(true);
         try {
             br.getPage(jdpremServer);
@@ -272,7 +274,8 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 return ac;
             }
             br = new Browser();
-            br.setConnectTimeout(10000);
+            br.setConnectTimeout(60 * 1000);
+            br.setReadTimeout(60 * 1000);
             try {
                 br.getPage(jdpremServer);
             } catch (Exception e) {
@@ -345,6 +348,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 try {
                     if (jdpremServer == null || jdpremServer.length() == 0) return;
                     br = new Browser();
+                    /* lower timeout is okay here */
                     br.setConnectTimeout(5000);
                     br.getPage(jdpremServer);
                     Form form = new Form();
@@ -432,6 +436,18 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     public int getTimegapBetweenConnections() {
         if (plugin != null) return plugin.getTimegapBetweenConnections();
         return super.getTimegapBetweenConnections();
+    }
+
+    @Override
+    public void setDownloadInterface(DownloadInterface dl2) {
+        this.dl = dl2;
+        if (plugin != null) plugin.setDownloadInterface(dl2);
+    }
+
+    @Override
+    public boolean rewriteHost(DownloadLink link) {
+        if (plugin != null) return plugin.rewriteHost(link);
+        return false;
     }
 
 }

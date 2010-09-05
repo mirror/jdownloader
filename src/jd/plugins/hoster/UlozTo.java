@@ -48,6 +48,15 @@ public class UlozTo extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to"));
     }
 
+    public boolean rewriteHost(DownloadLink link) {
+        if (link.getHost().contains("ulozto.sk") || link.getHost().contains("ulozto.cz") || link.getHost().contains("ulozto.net")) {
+            correctDownloadLink(link);
+            link.setHost("uloz.to");
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();

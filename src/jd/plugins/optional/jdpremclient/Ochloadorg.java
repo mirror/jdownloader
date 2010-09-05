@@ -17,6 +17,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
@@ -131,12 +132,13 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             String login = Encoding.Base64Encode(acc.getUser());
             String pw = Encoding.Base64Encode(acc.getPass());
             br = new Browser();
-            br.setConnectTimeout(30000);
+            br.setConnectTimeout(90 * 1000);
+            br.setReadTimeout(90 * 1000);
             br.setDebug(true);
             dl = null;
             String url = Encoding.Base64Encode(link.getDownloadURL());
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, false, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, true, 1);
             } catch (Throwable e) {
                 try {
                     dl.getConnection().disconnect();
@@ -198,7 +200,8 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             String restartReq = enabled == false ? "(Restart required)" : "";
             AccountInfo ac = new AccountInfo();
             br = new Browser();
-            br.setConnectTimeout(30000);
+            br.setConnectTimeout(60 * 1000);
+            br.setReadTimeout(60 * 1000);
             br.setDebug(true);
             String username = Encoding.Base64Encode(account.getUser());
             String pass = Encoding.Base64Encode(account.getPass());
@@ -345,6 +348,18 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     public int getTimegapBetweenConnections() {
         if (plugin != null) return plugin.getTimegapBetweenConnections();
         return super.getTimegapBetweenConnections();
+    }
+
+    @Override
+    public void setDownloadInterface(DownloadInterface dl2) {
+        this.dl = dl2;
+        if (plugin != null) plugin.setDownloadInterface(dl2);
+    }
+
+    @Override
+    public boolean rewriteHost(DownloadLink link) {
+        if (plugin != null) return plugin.rewriteHost(link);
+        return false;
     }
 
 }

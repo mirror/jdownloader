@@ -351,6 +351,18 @@ public class JDUtilities {
         return null;
     }
 
+    public static PluginForHost replacePluginForHost(final DownloadLink link) {
+        try {
+            HostPluginWrapper.readLock.lock();
+            for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
+                if (pHost.getPlugin().rewriteHost(link)) return pHost.getPlugin();
+            }
+        } finally {
+            HostPluginWrapper.readLock.unlock();
+        }
+        return null;
+    }
+
     public static PluginForHost getNewPluginForHostInstance(final String host) {
         PluginForHost plugin = getPluginForHost(host);
         if (plugin != null) return plugin.getWrapper().getNewPluginInstance();

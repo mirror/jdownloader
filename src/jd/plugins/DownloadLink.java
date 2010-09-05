@@ -471,6 +471,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return host;
     }
 
+    public void setHost(String newHost) {
+        this.host = newHost;
+    }
+
     public LinkStatus getLinkStatus() {
         if (linkStatus == null) {
             linkStatus = new LinkStatus(this);

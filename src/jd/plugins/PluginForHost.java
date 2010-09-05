@@ -712,4 +712,11 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         ((HostPluginWrapper) wrapper).setAGBChecked(b);
     }
 
+    /* override this if you want to change a link to use another plugin */
+    /* must return true if changing was successfull */
+    /* if this function needs a browser, it must create an instance on its own */
+    public boolean rewriteHost(DownloadLink link) {
+        return false;
+    }
+
 }

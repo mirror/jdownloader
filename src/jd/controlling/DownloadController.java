@@ -281,6 +281,19 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         } catch (NullPointerException e) {
                             JDLogger.exception(e);
                         }
+                        if (pluginForHost == null) {
+                            logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
+                            try {
+                                pluginForHost = JDUtilities.replacePluginForHost(localLink);
+                            } catch (Throwable e) {
+                                JDLogger.exception(e);
+                            }
+                            if (pluginForHost != null) {
+                                logger.info("plugin " + pluginForHost.getHost() + " now handles :" + localLink.getName());
+                            } else {
+                                logger.severe("no other plugin can handle: " + localLink.getName());
+                            }
+                        }
                         if (pluginForHost != null) {
                             /*
                              * we set default plugin here, this plugin MUST NOT
@@ -291,9 +304,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         if (pluginForContainer != null) {
                             localLink.setLoadedPluginForContainer(pluginForContainer);
                         }
-                        if (pluginForHost == null) {
-                            logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
-                        }
+
                     }
                 }
                 fp.resetUpdateTimer();
