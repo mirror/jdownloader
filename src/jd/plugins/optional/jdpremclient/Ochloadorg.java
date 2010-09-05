@@ -138,7 +138,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             dl = null;
             String url = Encoding.Base64Encode(link.getDownloadURL());
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, true, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, false, 1);
             } catch (Throwable e) {
                 try {
                     dl.getConnection().disconnect();

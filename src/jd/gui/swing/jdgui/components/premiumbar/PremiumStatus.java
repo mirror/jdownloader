@@ -49,18 +49,18 @@ import net.miginfocom.swing.MigLayout;
 
 public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener, MouseListener, ControlListener {
 
-    private static final long serialVersionUID = 7290466989514173719L;
-    private static final int BARCOUNT = 15;
-    private static final long ACCOUNT_UPDATE_DELAY = 30 * 60 * 1000;
+    private static final long       serialVersionUID     = 7290466989514173719L;
+    private static final int        BARCOUNT             = 15;
+    private static final long       ACCOUNT_UPDATE_DELAY = 30 * 60 * 1000;
     private final TinyProgressBar[] bars;
 
-    private boolean redrawinprogress = false;
-    private boolean updating = false;
-    private Timer updateIntervalTimer;
-    private boolean updateinprogress = false;
-    private boolean guiInitComplete = false;
+    private boolean                 redrawinprogress     = false;
+    private boolean                 updating             = false;
+    private Timer                   updateIntervalTimer;
+    private boolean                 updateinprogress     = false;
+    private boolean                 guiInitComplete      = false;
 
-    private static PremiumStatus INSTANCE = null;
+    private static PremiumStatus    INSTANCE             = null;
 
     public static PremiumStatus getInstance() {
         if (INSTANCE == null) INSTANCE = new PremiumStatus();
@@ -249,9 +249,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             public void run() {
                 this.setName("PremiumStatus: update");
                 updateinprogress = true;
-                if (!updating && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) updatePremium();
-                redraw();
-                updateinprogress = false;
+                try {
+                    if (!updating && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) updatePremium();
+                    redraw();
+                } finally {
+                    updateinprogress = false;
+                }
             }
         }.start();
     }
