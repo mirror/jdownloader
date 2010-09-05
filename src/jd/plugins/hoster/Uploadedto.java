@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
     private static final UploadedtoLinkObserver LINK_OBSERVER = new UploadedtoLinkObserver();
 
@@ -105,10 +105,8 @@ public class Uploadedto extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         String url = link.getDownloadURL();
-        url = url.replace("ul.to/", "uploaded.to/");
-        url = url.replace("/?id=", "/file/");
-        url = url.replace("?id=", "file/");
-        url = url.replaceFirst("/\\?.*?&id=", "/file/");
+        url = url.replaceFirst("http://.*?/", "http://uploaded.to/");
+        url = url.replaceFirst("\\.to/.*?id=", ".to/file/");
         if (!url.contains("/file/")) {
             url = url.replaceFirst("uploaded.to/", "uploaded.to/file/");
         }

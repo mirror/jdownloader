@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -61,9 +60,8 @@ public class UniBytesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (!br.containsHTML("captcha.jpg")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(false);
-        br.postPage(downloadLink.getDownloadURL(), "ptl-ajax=true&ptl-action=startSlow&ptl-pagestate=&referer=" + Encoding.urlEncode("http://www.google.de/"));
+        br.postPage(downloadLink.getDownloadURL(), "step=timer&referer=&ad=");
         int iwait = 60;
         String regexedTime = br.getRegex("evaluate>startSlow\\('.*?', (\\d+)\\)</evaluate>").getMatch(0);
         if (br.containsHTML("showNotUniqueIP\\(\\);")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads");

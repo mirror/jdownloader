@@ -219,8 +219,6 @@ public class FileServeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            String wait = br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
-            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
             handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -302,6 +300,9 @@ public class FileServeCom extends PluginForHost {
     }
 
     private void handleErrors() throws PluginException {
+        String wait = br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
+        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
+        if (br.containsHTML("landing-406.php")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
         if (br.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry...</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time|URL=http://www\\.fileserve\\.com/landing-403\\.php\")")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
     }
 

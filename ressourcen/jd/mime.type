@@ -48,3 +48,4 @@ FLV:::464c56.*:::Flv Video:::.+\.flv
 CSO:::4349534f.*:::Compressed ISO Image:::.+\.cso
 RMF:::2E524D46.*:::RealMediaFile:::.+\.rmvb
 FLAC:::664c6143.*:::FLAC:::.+\.flac
+ISZ:::49735A.*:::ISZ:::+\.isz

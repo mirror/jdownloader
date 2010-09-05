@@ -93,7 +93,15 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
-            requestFileInformation(downloadLink);
+            try {
+                requestFileInformation(downloadLink);
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    websiteFileCheck(downloadLink);
+                } else {
+                    throw e;
+                }
+            }
             br.setDebug(true);
             LinkStatus linkStatus = downloadLink.getLinkStatus();
             this.setBrowserExclusive();
@@ -153,7 +161,7 @@ public class Netloadin extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL);
             dl.startDownload();
         } catch (IOException e) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
         }
     }
 
@@ -308,7 +316,15 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         workAroundTimeOut(br);
-        requestFileInformation(downloadLink);
+        try {
+            requestFileInformation(downloadLink);
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                websiteFileCheck(downloadLink);
+            } else {
+                throw e;
+            }
+        }
         login(account);
         isExpired(account);
         boolean resume = true;
@@ -400,7 +416,7 @@ public class Netloadin extends PluginForHost {
         return AGB_LINK;
     }
 
-    public AvailableStatus websiteFileCheck(DownloadLink downloadLink) {
+    public AvailableStatus websiteFileCheck(DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
         logger.info("FileCheckAPI error, try website check!");
         workAroundTimeOut(br);
@@ -423,7 +439,7 @@ public class Netloadin extends PluginForHost {
         if (ex != null) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("<div class=\"dl_first_filename\">(.*?)<").getMatch(0);
         String filesize = br.getRegex("<div class=\"dl_first_filename\">.*?style=.*?>.*?(\\d+.*?)<").getMatch(0);
-        if (filename == null || filesize == null) return AvailableStatus.FALSE;
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;

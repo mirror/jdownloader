@@ -49,6 +49,10 @@ public class LinkGrabberPackager {
 
     public static final Pattern pat17 = Pattern.compile("(.+)\\.\\d+\\.xtm$");
 
+    public static final Pattern pat18 = Pattern.compile("(.*)\\.isz$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern pat19 = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] iszPats = new Pattern[] { pat18, pat19 };
+
     public static String cleanFileName(String name) {
         /** remove rar extensions */
         String before = name;
@@ -64,6 +68,15 @@ public class LinkGrabberPackager {
             name = getNameMatch(name, Pat);
             if (!before.equalsIgnoreCase(name)) break;
         }
+        /**
+         * remove isz extensions
+         */
+        before = name;
+        for (Pattern Pat : iszPats) {
+            name = getNameMatch(name, Pat);
+            if (!before.equalsIgnoreCase(name)) break;
+        }
+
         /* xtremsplit */
         name = getNameMatch(name, pat17);
 
