@@ -58,6 +58,10 @@ public class Tube8Com extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String verifyAge = br.getRegex("(<div class=\"enter-btn\">)").getMatch(0);
+        if (verifyAge != null) {
+            br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");
+        }
         String filename = br.getRegex("<div class=\"title-wrapper relative\">.*?<h1 class=\"main-title main-sprite-img\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) - ").getMatch(0);

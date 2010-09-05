@@ -251,7 +251,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("the database is currently")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 20 * 60 * 1000l);
+            if (br.containsHTML("the database is currently") || br.containsHTML("Database not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 20 * 60 * 1000l);
             if (br.containsHTML("any usable file behind the URL you")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("Your desired download could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -329,7 +329,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("the database is currently")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 20 * 60 * 1000l);
+            if (br.containsHTML("the database is currently") || br.containsHTML("Database not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 20 * 60 * 1000l);
             if (br.containsHTML("any usable file behind the URL you")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("Your desired download could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             /* server issue, file not online, redirects to mainpage */

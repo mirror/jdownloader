@@ -48,10 +48,11 @@ public class SpeedyShareCom extends PluginForHost {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String downloadSize = (br.getRegex(Pattern.compile("class=result>File size(.*?),", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (br.containsHTML("(This file has been deleted for the following reason|File not found)") || downloadName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(downloadName);
+        downloadLink.setName(downloadName.replaceAll(" ", "."));
         if (downloadSize != null)
             downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
         else

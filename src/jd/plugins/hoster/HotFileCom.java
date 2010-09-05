@@ -192,6 +192,11 @@ public class HotFileCom extends PluginForHost {
                 handlePremiumWebsite(downloadLink, account);
                 return;
             }
+            if (finalUrls != null && finalUrls.startsWith(".ip blocked")) {
+                logger.severe("api reports: ip blocked! using website fallback!");
+                handlePremiumWebsite(downloadLink, account);
+                return;
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dlUrls[] = Regex.getLines(finalUrls);

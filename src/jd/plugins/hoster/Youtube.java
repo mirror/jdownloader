@@ -93,7 +93,7 @@ public class Youtube extends PluginForHost {
         downloadLink.setProperty("valid", false);
         requestFileInformation(downloadLink);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("video")) {
             downloadLink.setProperty("valid", false);
             dl.getConnection().disconnect();
@@ -112,7 +112,7 @@ public class Youtube extends PluginForHost {
             /* we now have to get fresh links */
             requestFileInformation(downloadLink);
             br.setDebug(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         }
         if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("video")) {
             downloadLink.setProperty("valid", false);

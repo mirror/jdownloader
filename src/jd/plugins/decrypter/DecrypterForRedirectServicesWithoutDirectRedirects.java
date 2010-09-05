@@ -104,13 +104,13 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.contains("nbanews.us/")) {
             br.setFollowRedirects(true);
             String id = new Regex(parameter, "nbanews\\.us/(\\d+)").getMatch(0);
-            br.getPage("http://www.nbanews.us/index.php?id=" + id + "&d=1");
-            finallink = br.getRegex(NEWSREGEX).getMatch(1);
+            br.getPage("http://www.nbanews.us/m1.php?id=" + id);
+            finallink = br.getRegex("NewWindow\\('(.*?)'").getMatch(0);
         } else if (parameter.contains("wwenews.us/")) {
             br.setFollowRedirects(true);
             String id = new Regex(parameter, "wwenews\\.us/(\\d+)").getMatch(0);
-            br.getPage("http://www.wwenews.us/index.php?id=" + id + "&d=1");
-            finallink = br.getRegex(NEWSREGEX).getMatch(1);
+            br.getPage("http://www.wwenews.us/m1.php?id=" + id);
+            finallink = br.getRegex("NewWindow\\('(.*?)'").getMatch(0);
         } else if (parameter.contains("top2tech.com/")) {
             String id = new Regex(parameter, "top2tech\\.com/(\\d+)").getMatch(0);
             br.getPage("http://top2tech.com/2-" + id);
