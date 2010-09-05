@@ -252,7 +252,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         this.tabbed.addTab(JDL.L("modules.reconnect.types.batch", "Batch"), MethodSelection.getPanelFor(new BatchReconnect()));
         this.tabbed.addTab(JDL.L("modules.reconnect.types.clr", "CLR Script"), new SubPanelCLRReconnect(this.configuration));
 
-        this.tabbed.addTab(JDL.L("modules.reconnect.types.custom", "Plugin"), ReconnectPluginController.getInstance().getGUI());
+        this.tabbed.addTab(JDL.L("modules.reconnect.types.custom", "Special"), ReconnectPluginController.getInstance().getGUI());
         final JPanel p = new JPanel(new MigLayout("ins 0, wrap 7", "[]5[fill]5[right]20[right]20[right]20[right]20[right]", "[][]"));
 
         p.add(this.btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP")), "spany, aligny top");

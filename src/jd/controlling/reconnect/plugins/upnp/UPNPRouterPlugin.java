@@ -58,33 +58,30 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
-    private static final String           LOCATION     = "location";
-    private static final String           URLBASE      = "urlbase";
-    private static final String           FRIENDLYNAME = "friendlyname";
-    private static final String           HOST         = "host";
-    private static final String           CONTROLURL   = "controlurl";
-    private static final String           WANSERVICE   = "wanservice";
-    private static final String           SERVICETYPE  = "servicetype";
-    private static final UPNPRouterPlugin INSTANCE     = new UPNPRouterPlugin();
-    private static final String           EXTERNALIP   = "externalip";
-    private static final String           CANCHECKIP   = "cancheckip";
+    private static final String LOCATION     = "location";
+    private static final String URLBASE      = "urlbase";
+    private static final String FRIENDLYNAME = "friendlyname";
+    private static final String HOST         = "host";
+    private static final String CONTROLURL   = "controlurl";
+    private static final String WANSERVICE   = "wanservice";
+    private static final String SERVICETYPE  = "servicetype";
 
-    public static RouterPlugin getInstance() {
-        // TODO Auto-generated method stub
-        return UPNPRouterPlugin.INSTANCE;
-    }
+    private static final String EXTERNALIP   = "externalip";
+    private static final String CANCHECKIP   = "cancheckip";
 
-    private final Storage storage;
-    private JButton       button;
-    private JTextField    serviceTypeTxt;
-    private JTextField    controlURLTxt;
-    private JLabel        wanType;
+    private final Storage       storage;
+    private JButton             button;
+    private JTextField          serviceTypeTxt;
+    private JTextField          controlURLTxt;
+    private JLabel              wanType;
 
-    private UPNPRouterPlugin() {
+    public UPNPRouterPlugin() {
         this.storage = JSonStorage.getPlainStorage(this.getID());
     }
 
     public void actionPerformed(final ActionEvent e) {
+        // TODO: Do not use Appwork controller here
+        // mixing two different Dialog controllers is not a good idea
 
         final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
 

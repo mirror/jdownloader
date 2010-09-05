@@ -8,10 +8,10 @@
               └─► pack_windows ───┘              ├─► copy_compiled ─────────────────────┘            │
                                                  └─► copy_res ───────────────────────────────────────┘
     
-    cryptContainer ─► build_all
+    
     sign ─► build_all
     
-    dlcEnabledBuild = cryptContainer & sign & pack_all
+    dlcEnabledBuild = sign & pack_all
     signedBuild = sign & pack_all
     -->
 
@@ -64,7 +64,7 @@
 	</target>
 
 	<!-- build_all -->
-	<target name="build_all" depends="copy_res, jarMain, jarWebupdater, jarRestarter, copy_compiled, copy_jarOptionals">
+	<target name="build_all" depends="copy_res, jarMain, jarWebupdater,jarReconnectOptionals, jarRestarter, copy_compiled, copy_jarOptionals">
 		<echo message="Finished." />
 	</target>
 
@@ -134,6 +134,7 @@
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 				<exclude name="jd/captcha/**" />
+				<exclude name="jd/controlling/reconnect/plugins/*/**" />
 				<exclude name="jd/dynamics/**" />
 				<exclude name="jd/gui/**" />
 				<exclude name="jd/http/**" />
@@ -271,6 +272,30 @@
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
+	<!-- Use this to build an reconnect plugin -->
+	<macrodef name="buildRecPlugin" description="Function for creating an optional router addon">
+		<attribute name="name" />
+
+		<sequential>
+			<echo message="Creating @{name}" />
+			<mkdir dir="${jd}/reconnect/" />
+			<jar jarfile="${jd}/reconnect/@{name}.rec" manifest="${dist}/Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/controlling/reconnect/plugins/@{name}/**" />
+				</fileset>
+			</jar>
+		</sequential>
+	</macrodef>
+
+	<!-- Build optional reconnect plugins -->
+	<target name="jarReconnectOptionals" depends="compile" description="Creates the Optional Reconnect Addons">
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="JD-Team" />
+		</manifest>
+		<buildRecPlugin name="upnp" />
+
+		<delete file="${dist}/Manifest.MF" failonerror="false" />
+	</target>
 	<!-- Copy optional addon plugins -->
 	<target name="copy_jarOptionals" depends="jarOptionals">
 		<mkdir dir="${jd}/plugins" />
@@ -361,31 +386,10 @@
 		</signjar>
 	</target>
 
-	<!-- obfuscates some the JDownloader.jar -->
-	<target name="cryptContainer" depends="build_all">
-		<taskdef name="yguard" classname="com.yworks.yguard.YGuardTask">
-			<classpath location="yguard-2.2.0/lib/yguard.jar" />
-		</taskdef>
-		<yguard>
-			<inoutpair in="${jd}/JDownloader.jar" out="${jd}/JDownloader_obfuscated.jar" />
-			<rename logfile="${dist}/yguardlog.xml">
-				<keep>
-					<field name="serialVersionUID" />
-					<method name="void readObject(java.io.ObjectInputStream)" />
-					<method name="void writeObject(java.io.ObjectOutputStream)" />
-					<class implements="java.io.Serializable" classes="private" methods="private" fields="private" />
-					<class extends="jd.plugins.Plugin" />
-					<class classes="protected" methods="protected" fields="protected" />
-					<class classes="public" methods="public" fields="public" />
-				</keep>
-			</rename>
-		</yguard>
-		<delete file="${jd}/JDownloader.jar" failonerror="no" />
-		<move file="${jd}/JDownloader_obfuscated.jar" tofile="${jd}/JDownloader.jar" />
-	</target>
+
 
 	<!-- dlcEnabledBuild -->
-	<target name="dlcEnabledBuild" depends="cryptContainer, sign, pack_all" />
+	<target name="dlcEnabledBuild" depends="sign, pack_all" />
 
 	<!-- signedBuild -->
 	<target name="signedBuild" depends="sign, pack_all" />

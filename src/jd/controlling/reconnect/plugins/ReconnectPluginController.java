@@ -1,32 +1,101 @@
 package jd.controlling.reconnect.plugins;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.jar.JarFile;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 
 import javax.swing.JComponent;
 
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ReconnectMethod;
-import jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
+import org.appwork.utils.logging.Log;
 
 import com.sun.istack.internal.Nullable;
 
 public class ReconnectPluginController extends ReconnectMethod {
     private static final ReconnectPluginController INSTANCE = new ReconnectPluginController();
 
+    private static List<Class<?>> findPlugins(final URL directory, final String packageName, final ClassLoader classLoader) throws ClassNotFoundException {
+        final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+        File[] files = null;
+
+        try {
+            files = new File(directory.toURI().getPath()).listFiles();
+        } catch (final Exception e) {
+        }
+
+        if (files == null) {
+            try {
+                // it's a jar
+                final String path = directory.toString().substring(4);
+                // split path | intern path
+                final String[] splitted = path.split("!");
+
+                splitted[1] = splitted[1].substring(1);
+
+                final JarInputStream jarFile = new JarInputStream(new FileInputStream(new File(new URL(splitted[0]).toURI())));
+                JarEntry e;
+
+                String jarName;
+                while ((e = jarFile.getNextJarEntry()) != null) {
+                    jarName = e.getName();
+                    if (jarName.startsWith(splitted[1]) && jarName.endsWith(".class")) {
+                        final Class<?> c = classLoader.loadClass(jarName.substring(0, jarName.length() - 6).replace("/", "."));
+                        final boolean a = RouterPlugin.class.isAssignableFrom(c);
+
+                        if (c != null && a) {
+                            classes.add(c);
+                        }
+                    }
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        } else {
+            String fileName = null;
+            for (final File file : files) {
+                try {
+                    fileName = file.getName();
+                    if (file.isDirectory()) {
+                        try {
+                            classes.addAll(ReconnectPluginController.findPlugins(file.toURI().toURL(), packageName + "." + fileName, classLoader));
+                        } catch (final MalformedURLException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (fileName.endsWith(".class")) {
+                        final Class<?> c = classLoader.loadClass(packageName + '.' + fileName.substring(0, fileName.length() - 6));
+                        if (c != null && RouterPlugin.class.isAssignableFrom(c) && !packageName.endsWith(".plugins")) {
+                            classes.add(c);
+                        }
+                    }
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return classes;
+    }
+
     public static ReconnectPluginController getInstance() {
         return ReconnectPluginController.INSTANCE;
     }
 
     private ArrayList<RouterPlugin> plugins;
+
     private final Storage           storage;
 
     private ReconnectPluginController() {
@@ -111,18 +180,49 @@ public class ReconnectPluginController extends ReconnectMethod {
             for (int i = 0; i < length; i++) {
                 try {
                     urls.add(files[i].toURI().toURL());
-
-                    final JarFile jar = new JarFile(files[i]);
                 } catch (final IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
 
             }
-            // TODO make sure that we do not load two plugins with the same id
+
+            final URLClassLoader classLoader = new URLClassLoader(urls.toArray(new URL[] {}));
+            try {
+                final Enumeration<URL> resources = classLoader.getResources("jd/controlling/reconnect/plugins/");
+
+                final HashMap<String, Class<?>> classes = new HashMap<String, Class<?>>();
+                while (resources.hasMoreElements()) {
+
+                    classloop: for (final Class<?> c : ReconnectPluginController.findPlugins(resources.nextElement(), "jd.controlling.reconnect.plugins", classLoader)) {
+
+                        if (classes.containsKey(c.getName())) {
+                            continue;
+                        }
+                        // in Eclipse, we often load class files from classptha
+                        // AND the jars. classfiles are loaded before jars. we
+                        // always use the FIRST class found.
+
+                        classes.put(c.getName(), c);
+                        final RouterPlugin plg = (RouterPlugin) c.newInstance();
+                        // do not add two different plugins with the same ID
+                        for (final RouterPlugin p : this.plugins) {
+                            if (p.getID().equals(plg)) {
+                                Log.L.severe("Tried to add two plugins with ID: " + p.getID());
+                                continue classloop;
+                            }
+                        }
+                        this.plugins.add(plg);
+                    }
+
+                }
+
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
 
         }
-        this.plugins.add(UPNPRouterPlugin.getInstance());
+
     }
 
     public void setActivePlugin(final RouterPlugin selectedItem) {
