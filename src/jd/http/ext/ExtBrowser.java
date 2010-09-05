@@ -48,6 +48,7 @@ public class ExtBrowser {
 
             for (int i = 0; i < links.getLength(); i++) {
                 org.lobobrowser.html.domimpl.HTMLLinkElementImpl l = (org.lobobrowser.html.domimpl.HTMLLinkElementImpl) links.item(i);
+                System.out.println(l.getOuterHTML());
                 if (RendererUtilities.isVisible(l)) {
                     String inner = l.getInnerHTML();
                     if (inner.toLowerCase().contains("start download")) {

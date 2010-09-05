@@ -27,6 +27,7 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.ProgressController;
+import jd.controlling.reconnect.plugins.ReconnectPluginController;
 import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
@@ -40,13 +41,7 @@ import jd.utils.locale.JDL;
 
 public final class Reconnecter {
 
-    /**
-     * Don't let anyone instantiate this class.
-     */
-    private Reconnecter() {
-    }
-
-    private static final String NA = "na";
+    private static final String NA                    = "na";
 
     /**
      * Addons may set this ley in a messagebox property. the reconnector then
@@ -54,55 +49,46 @@ public final class Reconnecter {
      * {@link ControlEvent#CONTROL_BEFORE_RECONNECT} this can be used for
      * reconnect addons
      */
-    public static final String VERIFY_IP_AGAIN = "VERIFY_IP_AGAIN";
+    public static final String  VERIFY_IP_AGAIN       = "VERIFY_IP_AGAIN";
 
-    private static String CURRENT_IP = "";
+    private static String       CURRENT_IP            = "";
+
     /**
      * Set to true only if there is a reconnect running currently
      */
-    private static boolean RECONNECT_IN_PROGRESS = false;
+    private static boolean      RECONNECT_IN_PROGRESS = false;
     /**
      * Timestampo of the latest IP CHange
      */
-    private static long LAST_UP_UPDATE_TIME = 0;
-    private static final Logger LOG = JDLogger.getLogger();
+    private static long         LAST_UP_UPDATE_TIME   = 0;
+    private static final Logger LOG                   = JDLogger.getLogger();
     /**
      * Only true if a reconect has been requestst.
      */
-    private static boolean RECONNECT_REQUESTED = false;
-
-    public static boolean isReconnectAllowed() {
-        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-    }
-
-    public static void toggleReconnect() {
-        final Configuration configuration = JDUtilities.getConfiguration();
-        final boolean newState = !configuration.getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-        configuration.setProperty(Configuration.PARAM_ALLOW_RECONNECT, newState);
-        configuration.save();
-        if (!newState) {
-            UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnection is disabled!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "To allow JDownloader to perform automated reconnections, you should enable this feature!"));
-        }
-    }
-
-    public static void setCurrentIP(final String ip) {
-        CURRENT_IP = (ip == null) ? NA : ip;
-        LAST_UP_UPDATE_TIME = System.currentTimeMillis();
-    }
+    private static boolean      RECONNECT_REQUESTED   = false;
 
     private static boolean checkExternalIPChange() {
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return false;
-        LAST_UP_UPDATE_TIME = System.currentTimeMillis();
-        String tmp = CURRENT_IP;
-        CURRENT_IP = IPCheck.getIPAddress();
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) { return false; }
+        Reconnecter.LAST_UP_UPDATE_TIME = System.currentTimeMillis();
+        String tmp = Reconnecter.CURRENT_IP;
+        Reconnecter.CURRENT_IP = IPCheck.getIPAddress();
         if (tmp == null) {
-            tmp = CURRENT_IP;
+            tmp = Reconnecter.CURRENT_IP;
         }
-        if (!CURRENT_IP.equals(NA) && tmp.length() > 0 && !tmp.equals(CURRENT_IP)) {
-            LOG.info("Detected external IP Change.");
+        if (!Reconnecter.CURRENT_IP.equals(Reconnecter.NA) && tmp.length() > 0 && !tmp.equals(Reconnecter.CURRENT_IP)) {
+            Reconnecter.LOG.info("Detected external IP Change.");
             return true;
         }
         return false;
+    }
+
+    public static boolean doManualReconnect() {
+        final boolean restartDownloads = DownloadWatchDog.getInstance().stopDownloads();
+        final boolean success = Reconnecter.waitForNewIP(1, true);
+        if (restartDownloads) {
+            DownloadWatchDog.getInstance().startDownloads();
+        }
+        return success;
     }
 
     /**
@@ -113,8 +99,8 @@ public final class Reconnecter {
      */
     public static boolean doReconnect() {
         boolean ipChangeSuccess = false;
-        if (System.currentTimeMillis() - LAST_UP_UPDATE_TIME > (1000 * 60) * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2", 10)) {
-            if (Reconnecter.checkExternalIPChange()) return true;
+        if (System.currentTimeMillis() - Reconnecter.LAST_UP_UPDATE_TIME > 1000 * 60 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2", 10)) {
+            if (Reconnecter.checkExternalIPChange()) { return true; }
         }
         // use a messagebox to get messages of eventl reconnect addons
         final Property messageBox = new Property();
@@ -122,42 +108,49 @@ public final class Reconnecter {
         JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_BEFORE_RECONNECT, messageBox));
 
         final int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
-        LOG.info("Try to reconnect...");
+        Reconnecter.LOG.info("Try to reconnect...");
         /* laufende downloads stoppen */
         final ArrayList<DownloadLink> disabled = DownloadWatchDog.getInstance().getRunningDownloads();
         if (!disabled.isEmpty()) {
-            LOG.info("Stopping all running downloads!");
+            Reconnecter.LOG.info("Stopping all running downloads!");
 
             for (final DownloadLink link : disabled) {
                 link.setEnabled(false);
             }
             /* warte bis alle gestoppt sind */
             for (int wait = 0; wait < 10; wait++) {
-                if (DownloadWatchDog.getInstance().getActiveDownloads() == 0) break;
+                if (DownloadWatchDog.getInstance().getActiveDownloads() == 0) {
+                    break;
+                }
                 try {
                     Thread.sleep(1000);
-                    LOG.info("Still waiting for all downloads to stop!");
-                } catch (InterruptedException e) {
+                    Reconnecter.LOG.info("Still waiting for all downloads to stop!");
+                } catch (final InterruptedException e) {
                     break;
                 }
             }
             if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
-                LOG.severe("Could not stop all running downloads!");
+                Reconnecter.LOG.severe("Could not stop all running downloads!");
             }
         }
         JDUtilities.getController().fireControlEventDirect(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_RECONNECT_REQUEST, messageBox));
 
-        if (messageBox.getBooleanProperty(VERIFY_IP_AGAIN, false)) {
-            LOG.severe("Using special reconnect addon");
+        if (messageBox.getBooleanProperty(Reconnecter.VERIFY_IP_AGAIN, false)) {
+            Reconnecter.LOG.severe("Using special reconnect addon");
             try {
-                ipChangeSuccess = checkExternalIPChange();
-            } catch (Exception e) {
-                LOG.severe("No connection!");
+                ipChangeSuccess = Reconnecter.checkExternalIPChange();
+            } catch (final Exception e) {
+
+                Reconnecter.LOG.severe("No connection!");
                 ipChangeSuccess = false;
             }
         } else {
             try {
                 switch (type) {
+                case ReconnectMethod.PLUGIN:
+                    ipChangeSuccess = ReconnectPluginController.getInstance().doReconnect();
+
+                    break;
                 case ReconnectMethod.EXTERN:
                     ipChangeSuccess = new ExternReconnect().doReconnect();
                     break;
@@ -167,8 +160,8 @@ public final class Reconnecter {
                 default:
                     ipChangeSuccess = new HTTPLiveHeader().doReconnect();
                 }
-            } catch (Exception e) {
-                LOG.severe("ReconnectMethod failed!");
+            } catch (final Exception e) {
+                Reconnecter.LOG.severe("ReconnectMethod failed!");
             }
         }
         /* gestoppte downloads wieder aufnehmen */
@@ -178,37 +171,23 @@ public final class Reconnecter {
         return ipChangeSuccess;
     }
 
-    public static boolean isReconnecting() {
-        return RECONNECT_IN_PROGRESS;
-    }
-
-    /**
-     * Returns true, if there is a requested reconnect qaiting, and the user
-     * selected not to start new downloads of reconnects are waiting
-     * 
-     * @return
-     */
-    public static boolean isReconnectPrefered() {
-        return (isReconnectRequested() && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true));
-    }
-
-    public static boolean doReconnectIfRequested(boolean doit) {
-        if (RECONNECT_IN_PROGRESS) return false;
+    public static boolean doReconnectIfRequested(final boolean doit) {
+        if (Reconnecter.RECONNECT_IN_PROGRESS) { return false; }
         /* running linkgrabber will not allow a reconnect */
-        if (LinkCheck.getLinkChecker().isRunning()) return false;
+        if (LinkCheck.getLinkChecker().isRunning()) { return false; }
         /* not allowed to do a reconnect */
-        if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) return false;
-        RECONNECT_IN_PROGRESS = true;
+        if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) { return false; }
+        Reconnecter.RECONNECT_IN_PROGRESS = true;
         boolean ret = false;
         try {
-            ret = doReconnectIfRequestedInternal(doit);
+            ret = Reconnecter.doReconnectIfRequestedInternal(doit);
             if (ret) {
                 Reconnecter.resetAllLinks();
                 JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_AFTER_RECONNECT, null));
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
         }
-        RECONNECT_IN_PROGRESS = false;
+        Reconnecter.RECONNECT_IN_PROGRESS = false;
         return ret;
     }
 
@@ -216,13 +195,13 @@ public final class Reconnecter {
         boolean ret = false;
         final Configuration configuration = JDUtilities.getConfiguration();
         /* überhaupt ein reconnect angefragt? */
-        if (isReconnectRequested()) {
+        if (Reconnecter.isReconnectRequested()) {
             if (!doit && !configuration.getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
                 /*
                  * auto reconnect ist AUS, dann nur noch schaun ob sich ip
                  * geändert hat
                  */
-                if (System.currentTimeMillis() - LAST_UP_UPDATE_TIME > (1000 * 60) * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2", 10)) return Reconnecter.checkExternalIPChange();
+                if (System.currentTimeMillis() - Reconnecter.LAST_UP_UPDATE_TIME > 1000 * 60 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2", 10)) { return Reconnecter.checkExternalIPChange(); }
                 return false;
 
             } else {
@@ -230,12 +209,12 @@ public final class Reconnecter {
                 try {
                     ret = Reconnecter.doReconnect();
                     if (ret) {
-                        LOG.info("Reconnect successful!");
+                        Reconnecter.LOG.info("Reconnect successful!");
                     } else {
-                        LOG.info("Reconnect failed!");
+                        Reconnecter.LOG.info("Reconnect failed!");
                     }
-                } catch (Exception e) {
-                    LOG.finest("Reconnect failed.");
+                } catch (final Exception e) {
+                    Reconnecter.LOG.finest("Reconnect failed.");
                 }
                 if (ret == false) {
                     /* reconnect failed, increase fail counter */
@@ -266,6 +245,31 @@ public final class Reconnecter {
         return ret;
     }
 
+    public static boolean isReconnectAllowed() {
+        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+    }
+
+    public static boolean isReconnecting() {
+        return Reconnecter.RECONNECT_IN_PROGRESS;
+    }
+
+    /**
+     * Returns true, if there is a requested reconnect qaiting, and the user
+     * selected not to start new downloads of reconnects are waiting
+     * 
+     * @return
+     */
+    public static boolean isReconnectPrefered() {
+        return Reconnecter.isReconnectRequested() && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true);
+    }
+
+    /**
+     * @return the RECONNECT_REQUESTED
+     */
+    public static boolean isReconnectRequested() {
+        return Reconnecter.RECONNECT_REQUESTED;
+    }
+
     /** reset ipblocked links */
     private static void resetAllLinks() {
         final ArrayList<FilePackage> packages = JDUtilities.getController().getPackages();
@@ -283,12 +287,35 @@ public final class Reconnecter {
         }
     }
 
+    public static void setCurrentIP(final String ip) {
+        Reconnecter.CURRENT_IP = ip == null ? Reconnecter.NA : ip;
+        Reconnecter.LAST_UP_UPDATE_TIME = System.currentTimeMillis();
+    }
+
+    /**
+     * @param reconnectRequested
+     *            the RECONNECT_REQUESTED to set
+     */
+    public static void setReconnectRequested(final boolean reconnectRequested) {
+        Reconnecter.RECONNECT_REQUESTED = reconnectRequested;
+    }
+
+    public static void toggleReconnect() {
+        final Configuration configuration = JDUtilities.getConfiguration();
+        final boolean newState = !configuration.getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
+        configuration.setProperty(Configuration.PARAM_ALLOW_RECONNECT, newState);
+        configuration.save();
+        if (!newState) {
+            UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnection is disabled!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "To allow JDownloader to perform automated reconnections, you should enable this feature!"));
+        }
+    }
+
     /**
      * do it will start reconnectrequest even if user disabled autoreconnect
      */
     public static boolean waitForNewIP(long i, final boolean doit) {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) == false && doit == false) return false;
-        setReconnectRequested(true);
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) == false && doit == false) { return false; }
+        Reconnecter.setReconnectRequested(true);
         final ProgressController progress = new ProgressController(JDL.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", "0:00s"), 2, "gui.images.reconnect");
         if (i > 0) {
             i += System.currentTimeMillis();
@@ -303,7 +330,7 @@ public final class Reconnecter {
                     progress.setStatusText(JDL.LF("gui.reconnect.progress.status2", "Reconnect running: %s", Formatter.formatSeconds((System.currentTimeMillis() - startTime) / 1000)));
                     try {
                         Thread.sleep(1000);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                         return;
                     }
                 }
@@ -314,7 +341,7 @@ public final class Reconnecter {
         while (!(ret = Reconnecter.doReconnectIfRequested(true)) && (System.currentTimeMillis() < i || i <= 0)) {
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 ret = false;
                 break;
             }
@@ -327,33 +354,15 @@ public final class Reconnecter {
         } else {
             progress.setStatusText(JDL.L("gui.reconnect.progress.status.success", "Reconnect successfull"));
         }
-        setReconnectRequested(false);
+        Reconnecter.setReconnectRequested(false);
         progress.doFinalize(4000);
         return ret;
     }
 
-    public static boolean doManualReconnect() {
-        final boolean restartDownloads = DownloadWatchDog.getInstance().stopDownloads();
-        final boolean success = Reconnecter.waitForNewIP(1, true);
-        if (restartDownloads) {
-            DownloadWatchDog.getInstance().startDownloads();
-        }
-        return success;
-    }
-
     /**
-     * @param reconnectRequested
-     *            the RECONNECT_REQUESTED to set
+     * Don't let anyone instantiate this class.
      */
-    public static void setReconnectRequested(final boolean reconnectRequested) {
-        Reconnecter.RECONNECT_REQUESTED = reconnectRequested;
-    }
-
-    /**
-     * @return the RECONNECT_REQUESTED
-     */
-    public static boolean isReconnectRequested() {
-        return RECONNECT_REQUESTED;
+    private Reconnecter() {
     }
 
 }

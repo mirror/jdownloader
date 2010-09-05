@@ -22,7 +22,6 @@ public class RendererUtilities {
         int y = 0;
         for (HTMLElementImpl p : styles) {
             AbstractCSS2Properties style = p.getComputedStyle(null);
-            System.out.println(style);
 
             if ("none".equalsIgnoreCase(style.getDisplay())) {
                 //

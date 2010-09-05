@@ -521,6 +521,7 @@ public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement
 
             }
         }
+        // TODO normal frames
         return null;
     }
 
@@ -655,17 +656,21 @@ public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement
             System.out.println("NOT LOADED FRAME " + url + " not loaded yet. QUEUED");
             return;
         }
-        System.out.println(this.frame.getImpl() + ".src=" + url);
-        // AbstractCSS2Properties style = this.frame.getImpl().getStyle();
-        // String st = this.frame.getImpl().getAttribute("style");
-        // String vis = style.getVisibility();
-        // vis = vis;
-        new Thread("URLLOADER") {
-            public void run() {
+        // TODO blacklist/(whitelist from browser env
+        if (extBrowser.getBrowserEnviroment().isAutoProcessSubFrames()) {
+            System.out.println(this.frame.getImpl() + ".src=" + url);
+            // AbstractCSS2Properties style = this.frame.getImpl().getStyle();
+            // String st = this.frame.getImpl().getAttribute("style");
+            // String vis = style.getVisibility();
+            // vis = vis;
 
-                submitForm("GET", url, null, null, null);
-            }
-        }.start();
+            new Thread("URLLOADER") {
+                public void run() {
+
+                    submitForm("GET", url, null, null, null);
+                }
+            }.start();
+        }
 
     }
 

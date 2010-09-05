@@ -24,6 +24,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import jd.config.ConfigContainer;
@@ -38,6 +39,7 @@ import jd.controlling.reconnect.BatchReconnect;
 import jd.controlling.reconnect.ExternReconnect;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.plugins.ReconnectPluginController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
@@ -50,59 +52,74 @@ import net.miginfocom.swing.MigLayout;
 
 public class MethodSelection extends ConfigPanel implements ActionListener {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.";
-    private static final long serialVersionUID = 3383448498625377495L;
-
-    private JButton btn;
-
-    private Configuration configuration;
-
-    private JTabbedPane tabbed;
-
-    private JLabel currentip;
-
-    private JLabel success;
-
-    private JLabel beforeIPLabel;
-
-    private JLabel beforeIP;
-
-    private JLabel message;
-
-    private JLabel timeLabel;
-
-    private JLabel time;
-
-    public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "reconnect.title", "Reconnection");
-    }
+    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.";
+    private static final long   serialVersionUID = 3383448498625377495L;
 
     public static String getIconKey() {
         return "gui.images.config.reconnect";
     }
+
+    private static final ConfigPanel getPanelFor(final ReconnectMethod method) {
+        final ConfigPanel cp = new ConfigPanel() {
+
+            private static final long serialVersionUID = 8568369972083771808L;
+
+            @Override
+            protected ConfigContainer setupContainer() {
+                return method.getConfig();
+            }
+        };
+        cp.setBorder(null);
+        cp.init();
+        return cp;
+    }
+
+    public static String getTitle() {
+        return JDL.L(MethodSelection.JDL_PREFIX + "reconnect.title", "Reconnection");
+    }
+
+    private JButton             btn;
+
+    private final Configuration configuration;
+
+    private JTabbedPane         tabbed;
+
+    private JLabel              currentip;
+
+    private JLabel              success;
+
+    private JLabel              beforeIPLabel;
+
+    private JLabel              beforeIP;
+
+    private JLabel              message;
+
+    private JLabel              timeLabel;
+
+    private JLabel              time;
 
     public MethodSelection() {
         super();
 
         this.configuration = JDUtilities.getConfiguration();
 
-        init();
+        this.init();
     }
 
-    public void actionPerformed(ActionEvent e) {
-        save();
+    public void actionPerformed(final ActionEvent e) {
+        this.save();
 
         JDLogger.addHeader("Reconnect Testing");
 
         final ProgressController progress = new ProgressController(JDL.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"), 100, "gui.images.reconnect");
 
-        logger.info("Start Reconnect");
-        message.setText(JDL.L("gui.warning.reconnect.running", "running..."));
-        message.setEnabled(true);
-        beforeIP.setText(currentip.getText());
-        beforeIP.setEnabled(true);
-        beforeIPLabel.setEnabled(true);
-        currentip.setText("?");
+        this.logger.info("Start Reconnect");
+        this.message.setText(JDL.L("gui.warning.reconnect.running", "running..."));
+        this.message.setEnabled(true);
+        this.beforeIP.setText(this.currentip.getText());
+        this.beforeIP.setEnabled(true);
+        this.beforeIPLabel.setEnabled(true);
+        this.currentip.setText("?");
         final long timel = System.currentTimeMillis();
 
         final Thread timer = new Thread() {
@@ -113,19 +130,21 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
                         @Override
                         public Object runSave() {
-                            time.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
-                            time.setEnabled(true);
-                            timeLabel.setEnabled(true);
+                            MethodSelection.this.time.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
+                            MethodSelection.this.time.setEnabled(true);
+                            MethodSelection.this.timeLabel.setEnabled(true);
                             return null;
                         }
 
                     }.start();
                     try {
                         Thread.sleep(1000);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                         return;
                     }
-                    if (progress.isFinalizing()) break;
+                    if (progress.isFinalizing()) {
+                        break;
+                    }
                 }
             }
         };
@@ -147,16 +166,16 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                         @Override
                         public Object runSave() {
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                message.setText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
+                                MethodSelection.this.message.setText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
                             } else {
-                                message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                                MethodSelection.this.message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
                             }
-                            success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
-                            success.setEnabled(true);
+                            MethodSelection.this.success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
+                            MethodSelection.this.success.setEnabled(true);
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                currentip.setText("?");
+                                MethodSelection.this.currentip.setText("?");
                             } else {
-                                currentip.setText(IPCheck.getIPAddress());
+                                MethodSelection.this.currentip.setText(IPCheck.getIPAddress());
                             }
                             return null;
                         }
@@ -168,13 +187,13 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
                         @Override
                         public Object runSave() {
-                            message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
-                            success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
-                            success.setEnabled(true);
+                            MethodSelection.this.message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
+                            MethodSelection.this.success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
+                            MethodSelection.this.success.setEnabled(true);
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                currentip.setText("?");
+                                MethodSelection.this.currentip.setText("?");
                             } else {
-                                currentip.setText(IPCheck.getIPAddress());
+                                MethodSelection.this.currentip.setText(IPCheck.getIPAddress());
                             }
                             return null;
                         }
@@ -189,43 +208,78 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
     }
 
     @Override
+    public PropertyType hasChanges() {
+        final PropertyType ret = this.tabbed.getSelectedIndex() != this.configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) ? PropertyType.NORMAL : PropertyType.NONE;
+        if (this.tabbed.getSelectedComponent() instanceof ConfigPanel) {
+            return PropertyType.getMax(ret, super.hasChanges(), ((ConfigPanel) this.tabbed.getSelectedComponent()).hasChanges());
+
+        } else {
+            return PropertyType.getMax(ret, super.hasChanges());
+
+        }
+    }
+
+    @Override
+    public void loadSpecial() {
+        final int id = this.configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0);
+        this.tabbed.setSelectedIndex(id);
+    }
+
+    @Override
+    public void saveSpecial() {
+        final int id = this.tabbed.getSelectedIndex();
+        this.configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, id);
+        this.configuration.save();
+        if (this.tabbed.getSelectedComponent() instanceof ConfigPanel) {
+            ((ConfigPanel) this.tabbed.getSelectedComponent()).save();
+        }
+    }
+
+    @Override
+    public void setHidden() {
+        this.save();
+        this.getBroadcaster().fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_HIDE));
+    }
+
+    @Override
     protected ConfigContainer setupContainer() {
-        /* 0=LiveHeader, 1=Extern, 2=Batch, 3=CLR */
 
-        tabbed = new JTabbedPane();
-        tabbed.setTabPlacement(JTabbedPane.TOP);
-        tabbed.addTab(JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), new SubPanelLiveHeaderReconnect(configuration));
-        tabbed.addTab(JDL.L("modules.reconnect.types.extern", "Extern"), getPanelFor(new ExternReconnect()));
-        tabbed.addTab(JDL.L("modules.reconnect.types.batch", "Batch"), getPanelFor(new BatchReconnect()));
-        tabbed.addTab(JDL.L("modules.reconnect.types.clr", "CLR Script"), new SubPanelCLRReconnect(configuration));
+        this.tabbed = new JTabbedPane();
+        this.tabbed.setTabPlacement(SwingConstants.TOP);
 
-        JPanel p = new JPanel(new MigLayout("ins 0, wrap 7", "[]5[fill]5[right]20[right]20[right]20[right]20[right]", "[][]"));
+        this.tabbed.addTab(JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), new SubPanelLiveHeaderReconnect(this.configuration));
+        this.tabbed.addTab(JDL.L("modules.reconnect.types.extern", "Extern"), MethodSelection.getPanelFor(new ExternReconnect()));
+        this.tabbed.addTab(JDL.L("modules.reconnect.types.batch", "Batch"), MethodSelection.getPanelFor(new BatchReconnect()));
+        this.tabbed.addTab(JDL.L("modules.reconnect.types.clr", "CLR Script"), new SubPanelCLRReconnect(this.configuration));
 
-        p.add(btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP")), "spany, aligny top");
-        btn.setIcon(JDTheme.II("gui.images.config.reconnect", 16, 16));
-        btn.addActionListener(this);
+        this.tabbed.addTab(JDL.L("modules.reconnect.types.custom", "Plugin"), ReconnectPluginController.getInstance().getGUI());
+        final JPanel p = new JPanel(new MigLayout("ins 0, wrap 7", "[]5[fill]5[right]20[right]20[right]20[right]20[right]", "[][]"));
+
+        p.add(this.btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP")), "spany, aligny top");
+        this.btn.setIcon(JDTheme.II("gui.images.config.reconnect", 16, 16));
+        this.btn.addActionListener(this);
 
         p.add(new JPanel(), "h 32!, spany, alignx left, pushx");
-        p.add(timeLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.time", "Reconnect duration")));
-        timeLabel.setEnabled(false);
+        p.add(this.timeLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.time", "Reconnect duration")));
+        this.timeLabel.setEnabled(false);
 
-        p.add(time = new JLabel("---"));
-        time.setEnabled(false);
+        p.add(this.time = new JLabel("---"));
+        this.time.setEnabled(false);
 
         p.add(new JLabel(JDL.L("gui.config.reconnect.showcase.currentip", "Your current IP")));
-        p.add(currentip = new JLabel("---"));
+        p.add(this.currentip = new JLabel("---"));
 
-        p.add(success = new JLabel(JDTheme.II("gui.images.selected", 32, 32)), "spany,alignx right");
-        success.setEnabled(false);
+        p.add(this.success = new JLabel(JDTheme.II("gui.images.selected", 32, 32)), "spany,alignx right");
+        this.success.setEnabled(false);
 
-        p.add(message = new JLabel(JDL.L("gui.config.reconnect.showcase.message.none", "Not tested yet")), "spanx 2");
-        message.setEnabled(false);
+        p.add(this.message = new JLabel(JDL.L("gui.config.reconnect.showcase.message.none", "Not tested yet")), "spanx 2");
+        this.message.setEnabled(false);
 
-        p.add(beforeIPLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.lastip", "Ip before reconnect")));
-        beforeIPLabel.setEnabled(false);
+        p.add(this.beforeIPLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.lastip", "Ip before reconnect")));
+        this.beforeIPLabel.setEnabled(false);
 
-        p.add(beforeIP = new JLabel("---"));
-        beforeIP.setEnabled(false);
+        p.add(this.beforeIP = new JLabel("---"));
+        this.beforeIP.setEnabled(false);
 
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false) == false) {
             new Thread() {
@@ -234,60 +288,22 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                     final String ip = IPCheck.getIPAddress();
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            currentip.setText(ip);
+                            MethodSelection.this.currentip.setText(ip);
                         }
                     });
                 }
             }.start();
         }
 
-        ConfigContainer container = new ConfigContainer();
+        final ConfigContainer container = new ConfigContainer();
 
-        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, tabbed, "growy, pushy"));
+        container.setGroup(new ConfigGroup(MethodSelection.getTitle(), MethodSelection.getIconKey()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, this.tabbed, "growy, pushy"));
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), "gui.images.reconnect_selection"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, p, ""));
 
         return container;
 
-    }
-
-    @Override
-    public void loadSpecial() {
-        tabbed.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0));
-    }
-
-    @Override
-    public PropertyType hasChanges() {
-        PropertyType ret = tabbed.getSelectedIndex() != configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) ? PropertyType.NORMAL : PropertyType.NONE;
-        return PropertyType.getMax(ret, super.hasChanges(), ((ConfigPanel) tabbed.getSelectedComponent()).hasChanges());
-    }
-
-    @Override
-    public void setHidden() {
-        save();
-        getBroadcaster().fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_HIDE));
-    }
-
-    @Override
-    public void saveSpecial() {
-        configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, tabbed.getSelectedIndex());
-        ((ConfigPanel) tabbed.getSelectedComponent()).save();
-    }
-
-    private static final ConfigPanel getPanelFor(final ReconnectMethod method) {
-        ConfigPanel cp = new ConfigPanel() {
-
-            private static final long serialVersionUID = 8568369972083771808L;
-
-            @Override
-            protected ConfigContainer setupContainer() {
-                return method.getConfig();
-            }
-        };
-        cp.setBorder(null);
-        cp.init();
-        return cp;
     }
 }

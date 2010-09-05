@@ -19,19 +19,22 @@ package jd.nrouter;
 public interface IPCheckProvider {
 
     /**
-     * this method should return current IP as String Object or
-     * IPCheck.CheckStatus.FAILED if there has been an error or
-     * IPCheck.CheckStatus.SEQFAILED if this method should be paused
-     * 
-     * @return
-     * @see IPCheck.CheckStatus
-     */
-    public Object getIP();
-
-    /**
      * returns a String with Info about this Provider (eg Website url)
      * 
      * @return
      */
     public String getInfo();
+
+    /**
+     * this method should return current IP as String Object or
+     * IPCheck.CheckStatus.FAILED if there has been an error or
+     * IPCheck.CheckStatus.SEQFAILED if this method should be paused
+     * 
+     * @Deprecated Returning Object is Bad. Better: return IP, or throw
+     *             exceptions
+     * @return
+     * @see IPCheck.CheckStatus
+     */
+    @Deprecated
+    public Object getIP();
 }
