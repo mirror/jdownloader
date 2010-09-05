@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -43,9 +44,12 @@ public class Indowebster extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Original name :</b><!--INFOLINKS_ON-->(.*?)<").getMatch(0);
-        if (filename == null) filename = br.getRegex("<b>Original name:</b>(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex("<b>Size:</b>(.*?)</div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            filename = br.getRegex("<b>Original name:</b>(.*?)</div>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<b>Original name: </b><\\!--INFOLINKS_ON-->(.*?)<\\!--INFOLINKS_OFF-->").getMatch(0);
+        }
+        String filesize = br.getRegex("<b>Size:([ ]+)?</b>(.*?)</div>").getMatch(1);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -56,10 +60,14 @@ public class Indowebster extends PluginForHost {
         requestFileInformation(link);
         String dl_url = br.getRegex("\\&file=(http.*?)\\&logo").getMatch(0);
         if (dl_url == null) {
-            String adUrl = br.getRegex("location\\.href='(http://.*?)'").getMatch(0);
+            String adUrl = br.getRegex("style=\"float:right;\"><a href=\"(.*?)\"").getMatch(0);
             if (adUrl != null) {
-                br.getPage(adUrl);
-                dl_url = br.getRegex("</style>.*?<a href=\"(http.*?)\"").getMatch(0);
+                br.getPage("http://www.indowebster.com/" + adUrl);
+                Form dlForm = br.getFormbyProperty("name", "form1");
+                if (dlForm != null) {
+                    logger.info("Sending dlform now...");
+                    br.submitForm(dlForm);
+                }
             }
         }
         if (dl_url == null) {
@@ -76,6 +84,10 @@ public class Indowebster extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
