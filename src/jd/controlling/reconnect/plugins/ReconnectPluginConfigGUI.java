@@ -12,7 +12,12 @@ import javax.swing.JViewport;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class ReconnectPluginConfigGUI extends JPanel implements ActionListener {
+import org.appwork.storage.StorageEvent;
+import org.appwork.storage.StorageValueChangeEvent;
+import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.swing.EDTRunner;
+
+public class ReconnectPluginConfigGUI extends JPanel implements ActionListener, DefaultEventListener<StorageEvent> {
 
     /**
      * 
@@ -30,6 +35,7 @@ public class ReconnectPluginConfigGUI extends JPanel implements ActionListener {
     private ReconnectPluginConfigGUI() {
         super(new MigLayout("ins 5,wrap 1", "[grow,fill]", "[][][grow,fill]"));
         this.initGUI();
+        ReconnectPluginController.getInstance().getStorage().getEventSender().addListener(this);
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -51,6 +57,28 @@ public class ReconnectPluginConfigGUI extends JPanel implements ActionListener {
         this.viewPort.setView(((RouterPlugin) this.combobox.getSelectedItem()).getGUI());
 
         this.combobox.addActionListener(this);
+
+    }
+
+    /**
+     * UPdate GUI
+     */
+    public void onEvent(final StorageEvent event) {
+        if (event instanceof StorageValueChangeEvent<?>) {
+            final StorageValueChangeEvent<?> changeEvent = (StorageValueChangeEvent<?>) event;
+            if (changeEvent.getKey().equals(ReconnectPluginController.PRO_ACTIVEPLUGIN)) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        // ReconnectPluginConfigGUI.this.viewPort.setView(ReconnectPluginController.getInstance().getActivePlugin().getGUI());
+                        ReconnectPluginConfigGUI.this.combobox.setSelectedItem(ReconnectPluginController.getInstance().getActivePlugin());
+                    }
+
+                };
+
+            }
+        }
 
     }
 }

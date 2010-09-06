@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -46,7 +47,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.nrouter.IPCheck;
-import jd.nutils.JDImage;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -279,8 +280,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                             UPNPRouterPlugin.this.storage.put(UPNPRouterPlugin.TRIED_AUTOFIND, true);
                             if (UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.CONTROLURL, null) != null) {
 
-                                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.title", "Successfull"), JDL.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.message", "JD set up the reconnection settings successfully!\r\n\r\nYour Router is \r\n'%s'", UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.FRIENDLYNAME, null)), JDImage.getScaledImageIcon(JDImage.getImage("gui.images.ok"), 32, 32), null, null);
-                                ReconnectPluginController.activatePluginReconnect();
+                                final ImageIcon icon = JDTheme.II("gui.images.ok", 32, 32);
+
+                                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.title", "Successfull"), JDL.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.message", "JD set up the reconnection settings successfully!\r\n\r\nYour Router is \r\n'%s'", UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
+                                ReconnectPluginController.getInstance().activatePluginReconnect(UPNPRouterPlugin.this);
                             }
                         }
                     }
@@ -686,9 +689,12 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
             @Override
             protected void runInEDT() {
 
-                UPNPRouterPlugin.this.wanType.setText(UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.FRIENDLYNAME, "") + " (" + UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.WANSERVICE, "") + ")");
-                UPNPRouterPlugin.this.serviceTypeTxt.setText(UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.SERVICETYPE, ""));
-                UPNPRouterPlugin.this.controlURLTxt.setText(UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.CONTROLURL, ""));
+                if (UPNPRouterPlugin.this.wanType != null) {
+                    UPNPRouterPlugin.this.wanType.setText(UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.FRIENDLYNAME, "") + " (" + UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.WANSERVICE, "") + ")");
+
+                    UPNPRouterPlugin.this.serviceTypeTxt.setText(UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.SERVICETYPE, ""));
+                    UPNPRouterPlugin.this.controlURLTxt.setText(UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.CONTROLURL, ""));
+                }
             }
 
         };

@@ -27,13 +27,9 @@ import org.appwork.utils.logging.Log;
 import com.sun.istack.internal.Nullable;
 
 public class ReconnectPluginController extends ReconnectMethod {
+    public static final String PRO_ACTIVEPLUGIN = "ACTIVEPLUGIN";
+
     private static final ReconnectPluginController INSTANCE = new ReconnectPluginController();
-
-    public static void activatePluginReconnect() {
-        JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.PLUGIN);
-        JDUtilities.getConfiguration();
-
-    }
 
     private static List<Class<?>> findPlugins(final URL directory, final String packageName, final ClassLoader classLoader) throws ClassNotFoundException {
         final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
@@ -111,13 +107,24 @@ public class ReconnectPluginController extends ReconnectMethod {
     }
 
     /**
+     * Activates Special reconnect for the givven reconnect plugin
+     * 
+     * @param upnpRouterPlugin
+     */
+    public void activatePluginReconnect(final RouterPlugin plg) {
+        this.setActivePlugin(plg);
+        JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.PLUGIN);
+        JDUtilities.getConfiguration();
+    }
+
+    /**
      * returns the currently active routerplugin. Only one plugin may be active
      * 
      * @return
      */
     public RouterPlugin getActivePlugin() {
 
-        RouterPlugin active = ReconnectPluginController.getInstance().getPluginByID(this.storage.get("ACTIVEPLUGIN", DummyRouterPlugin.getInstance().getID()));
+        RouterPlugin active = ReconnectPluginController.getInstance().getPluginByID(this.storage.get(PRO_ACTIVEPLUGIN, DummyRouterPlugin.getInstance().getID()));
         if (active == null) {
             active = DummyRouterPlugin.getInstance();
         }
@@ -154,6 +161,15 @@ public class ReconnectPluginController extends ReconnectMethod {
     public ArrayList<RouterPlugin> getPlugins() {
 
         return this.plugins;
+    }
+
+    /**
+     * returns the Storagemodel
+     * 
+     * @return
+     */
+    public Storage getStorage() {
+        return this.storage;
     }
 
     @Override
@@ -226,7 +242,7 @@ public class ReconnectPluginController extends ReconnectMethod {
     }
 
     public void setActivePlugin(final RouterPlugin selectedItem) {
-        this.storage.put("ACTIVEPLUGIN", selectedItem.getID());
+        this.storage.put(PRO_ACTIVEPLUGIN, selectedItem.getID());
 
     }
 }
