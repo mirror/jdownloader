@@ -40,7 +40,9 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
+import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.views.downloads.RatedMenuItem;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyURLAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CreateDLCAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.DisableAction;
@@ -332,7 +334,13 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
 
             if (obj instanceof LinkGrabberFilePackage) {
                 popup.add(new SplitHosterAction(sfp));
-                addSortItem(popup, col, sfp, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
+               
+                final JDTableColumn column = this.getJDTableModel().getJDTableColumn(col);
+                if (column.isSortable(obj)) {
+                    this.getDefaultSortMenuItem().set(column, obj, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
+                  popup.add(this.getDefaultSortMenuItem());
+                }
+                
                 popup.add(new PackageDirectoryAction(sfp));
             } else if (obj instanceof DownloadLink) {
                 popup.add(new CopyURLAction(alllinks));

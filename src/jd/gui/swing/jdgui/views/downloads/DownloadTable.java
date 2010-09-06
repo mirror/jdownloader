@@ -43,6 +43,7 @@ import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
+import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CheckStatusAction;
@@ -75,94 +76,56 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-class PropMenuItem extends JMenuItem implements ActionListener {
-
-    private static final long serialVersionUID = 6328630034846759725L;
-    private Object obj;
-    private DownloadLinksPanel panel;
-
-    public PropMenuItem(DownloadLinksPanel panel) {
-        super(JDL.L("gui.table.contextmenu.prop", "Properties"));
-        this.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
-        this.panel = panel;
-        this.addActionListener(this);
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (obj == null) return;
-        if (obj instanceof DownloadLink) {
-            panel.showDownloadLinkInfo((DownloadLink) obj);
-        } else if (obj instanceof FilePackage) {
-            panel.showFilePackageInfo((FilePackage) obj);
-        }
-    }
-
-    public void setObject(Object obj) {
-        this.obj = obj;
-    }
-}
-
 public class DownloadTable extends JDTable implements MouseListener, KeyListener {
 
-    public static final String PROPERTY_EXPANDED = "expanded";
-    public final static byte EXPCOL_TOP = 0;
-    public final static byte EXPCOL_CUR = 1;
-    public final static byte EXPCOL_BOT = 2;
+    public static final String       PROPERTY_EXPANDED = "expanded";
+    public final static byte         EXPCOL_TOP        = 0;
+    public final static byte         EXPCOL_CUR        = 1;
+    public final static byte         EXPCOL_BOT        = 2;
 
-    private static final long serialVersionUID = 1L;
+    private static final long        serialVersionUID  = 1L;
 
-    private DownloadLinksPanel panel;
+    private final DownloadLinksPanel panel;
 
-    public static String[] prioDescs;
+    public static String[]           prioDescs;
 
-    private PropMenuItem propItem;
+    private final PropMenuItem       propItem;
 
-    public DownloadTable(DownloadLinksPanel panel) {
+    public DownloadTable(final DownloadLinksPanel panel) {
         super(new DownloadJTableModel("gui2"));
         this.panel = panel;
-        addMouseListener(this);
-        addKeyListener(this);
+        this.addMouseListener(this);
+        this.addKeyListener(this);
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            setDropMode(DropMode.USE_SELECTION);
+            this.setDropMode(DropMode.USE_SELECTION);
         }
-        setDragEnabled(true);
-        setTransferHandler(new TableTransferHandler(this));
-        setColumnSelectionAllowed(false);
-        setRowSelectionAllowed(true);
+        this.setDragEnabled(true);
+        this.setTransferHandler(new TableTransferHandler(this));
+        this.setColumnSelectionAllowed(false);
+        this.setRowSelectionAllowed(true);
 
-        addDisabledHighlighter();
-        addPostErrorHighlighter();
-        addWaitHighlighter();
-        addPackageHighlighter();
-        prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "Default Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
-        propItem = new PropMenuItem(panel);
+        this.addDisabledHighlighter();
+        this.addPostErrorHighlighter();
+        this.addWaitHighlighter();
+        this.addPackageHighlighter();
+        DownloadTable.prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "Default Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
+        this.propItem = new PropMenuItem(panel);
     }
 
-    @Override
-    protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
-        boolean ret = super.processKeyBinding(ks, e, condition, pressed);
-        if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
-        if (getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(ks) != null) { return false; }
-        return ret;
+    private void addDisabledHighlighter() {
+        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100)) {
+            @Override
+            public boolean doHighlight(final Object o) {
+                return o != null && o instanceof DownloadLink && !((DownloadLink) o).isEnabled();
+            }
+        });
     }
 
     private void addPackageHighlighter() {
         this.addJDRowHighlighter(new JDRowHighlighter(UIManager.getColor("TableHeader.background")) {
             @Override
-            public boolean doHighlight(Object o) {
-                return (o != null && o instanceof FilePackage);
-            }
-        });
-    }
-
-    private void addWaitHighlighter() {
-        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100)) {
-            @Override
-            public boolean doHighlight(Object o) {
-                if (o == null || !(o instanceof DownloadLink)) return false;
-                DownloadLink dl = (DownloadLink) o;
-                if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED) || !dl.isEnabled() || dl.getLinkStatus().isPluginActive()) return false;
-                return (DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(dl.getHost()) > 0) || (DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(dl.getHost()) > 0);
+            public boolean doHighlight(final Object o) {
+                return o != null && o instanceof FilePackage;
             }
         });
     }
@@ -170,235 +133,112 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     private void addPostErrorHighlighter() {
         this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120)) {
             @Override
-            public boolean doHighlight(Object o) {
-                return (o != null && o instanceof DownloadLink && ((DownloadLink) o).getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS));
+            public boolean doHighlight(final Object o) {
+                return o != null && o instanceof DownloadLink && ((DownloadLink) o).getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS);
             }
         });
     }
 
-    private void addDisabledHighlighter() {
-        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100)) {
+    private void addWaitHighlighter() {
+        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100)) {
             @Override
-            public boolean doHighlight(Object o) {
-                return (o != null && o instanceof DownloadLink && !((DownloadLink) o).isEnabled());
+            public boolean doHighlight(final Object o) {
+                if (o == null || !(o instanceof DownloadLink)) { return false; }
+                final DownloadLink dl = (DownloadLink) o;
+                if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED) || !dl.isEnabled() || dl.getLinkStatus().isPluginActive()) { return false; }
+                return DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(dl.getHost()) > 0 || DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(dl.getHost()) > 0;
             }
         });
     }
 
-    public void fireTableChanged(final int id, final ArrayList<Object> objs) {
-        new GuiRunnable<Object>() {
-            // @Override
-            @Override
-            public Object runSave() {
-                final Rectangle viewRect = panel.getScrollPane().getViewport().getViewRect();
-                int first = rowAtPoint(new Point(0, viewRect.y));
-                int last = rowAtPoint(new Point(0, viewRect.y + viewRect.height - 1));
-                switch (id) {
-                case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
-                    for (Object obj : objs) {
-                        int row = getJDTableModel().getRowforObject(obj);
-                        if (row != -1) {
-                            if (last == -1) {
-                                getJDTableModel().fireTableRowsUpdated(row, row);
-                            } else if (row >= first && row <= last) {
-                                getJDTableModel().fireTableRowsUpdated(row, row);
-                            }
-                        }
-                    }
-                    return null;
-                case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
-                    DownloadLinkInfoCache.reset();
-                    FilePackageInfoCache.reset();
-                    getJDTableModel().fireTableDataChanged();
-                    return null;
-                case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
-                case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST:
-                    DownloadLinkInfoCache.reset();
-                    FilePackageInfoCache.reset();
-                    int[] rows = getSelectedRows();
-                    final ArrayList<Object> selected = new ArrayList<Object>();
-                    for (int row : rows) {
-                        Object elem = getValueAt(row, 0);
-                        if (elem != null) selected.add(elem);
-                    }
-                    getJDTableModel().refreshModel();
-                    getJDTableModel().fireTableStructureChanged();
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            for (Object obj : selected) {
-                                int row = getJDTableModel().getRowforObject(obj);
-                                if (row != -1) addRowSelectionInterval(row, row);
-                            }
-                            scrollRectToVisible(viewRect);
-                        }
-                    });
-                    return null;
-                }
-                return null;
-            }
-        }.start();
-    }
+    /**
+     * Creates all contextmenu items, and a initial rating for it.
+     * 
+     * @param obj
+     * @param col
+     * @param alllinks
+     * @param sfp
+     * @return
+     */
+    private RatedMenuController createMenuItems(final Object obj, final int col, final ArrayList<DownloadLink> alllinks, final ArrayList<FilePackage> sfp) {
+        final RatedMenuController ret = new RatedMenuController();
 
-    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
-        int[] rows = getSelectedRows();
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        for (int row : rows) {
-            Object element = this.getModel().getValueAt(row, 0);
-            if (element != null && element instanceof DownloadLink) {
-                ret.add((DownloadLink) element);
-            }
-        }
-        return ret;
-    }
-
-    public ArrayList<DownloadLink> getAllSelectedDownloadLinks() {
-        ArrayList<DownloadLink> links = getSelectedDownloadLinks();
-        ArrayList<FilePackage> fps = getSelectedFilePackages();
-        for (FilePackage filePackage : fps) {
-            for (DownloadLink dl : filePackage.getDownloadLinkList()) {
-                if (!links.contains(dl)) links.add(dl);
-            }
-        }
-        return links;
-    }
-
-    public ArrayList<FilePackage> getSelectedFilePackages() {
-        int[] rows = getSelectedRows();
-        ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
-        for (int row : rows) {
-            Object element = this.getModel().getValueAt(row, 0);
-            if (element != null && element instanceof FilePackage) {
-                ret.add((FilePackage) element);
-            }
-        }
-        return ret;
-    }
-
-    public void keyPressed(KeyEvent e) {
-    }
-
-    public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_DELETE || (OSDetector.isMac() && e.getKeyCode() == KeyEvent.VK_BACK_SPACE)) {
-            ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
-            if (alllinks.isEmpty()) return;
-            new DeleteAction(alllinks).actionPerformed(null);
-        }
-    }
-
-    public void keyTyped(KeyEvent e) {
-    }
-
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-        /* nicht auf headerclicks reagieren */
-        if (e.getSource() != this) return;
-        Point point = e.getPoint();
-        int row = rowAtPoint(point);
-        int col = realColumnAtPoint(point);
-
-        Object obj = this.getModel().getValueAt(row, 0);
-
-        if (obj == null) {
-            clearSelection();
-            return;
-        }
-
-        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            if (!isRowSelected(row)) {
-                clearSelection();
-                addRowSelectionInterval(row, row);
-            }
-
-            ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
-
-            ArrayList<FilePackage> sfp = getSelectedFilePackages();
-
-            JPopupMenu popup = new JPopupMenu();
-
-            popup.add(new StopsignAction(obj));
-            popup.add(new EnableAction(alllinks));
-            popup.add(new DisableAction(alllinks));
-            popup.add(createMoreMenu(alllinks));
-            popup.addSeparator();
-
-            if (obj instanceof FilePackage) {
-                popup.add(new OpenDirectoryAction(new File(((FilePackage) obj).getDownloadDirectory())));
-                addSortItem(popup, col, sfp, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
-                popup.add(new PackageNameAction(sfp));
-                popup.add(new PackageDirectoryAction(sfp));
-            } else if (obj instanceof DownloadLink) {
-                popup.add(new OpenDirectoryAction(new File(((DownloadLink) obj).getFileOutput()).getParentFile()));
-                popup.add(new OpenInBrowserAction(alllinks));
-
-                /*
-                 * check if Java version 1.6 or higher is installed, because the
-                 * Desktop-Class (e.g. to open a file with correct application)
-                 * is only supported by v1.6 or higher
-                 */
-                if (JDUtilities.getJavaVersion() >= 1.6) {
-                    // check if open a file is supported by this operating
-                    // system (on linux maybe wrong GNOME version)
-                    if (Desktop.isDesktopSupported()) {
-                        // add the Open File entry
-                        popup.add(new OpenFileAction(new File(((DownloadLink) obj).getFileOutput())));
-                    }
-                }
-            }
-            popup.addSeparator();
-
-            popup.add(createOtherMenu(alllinks));
-            popup.add(createPrioMenu(alllinks));
-            popup.add(createExtrasMenu(obj));
-            popup.addSeparator();
-
-            propItem.setObject(obj);
-            popup.add(propItem);
-
-            popup.show(this, point.x, point.y);
-        }
-    }
-
-    private JMenu createOtherMenu(ArrayList<DownloadLink> links) {
-        JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.other", "Other"));
-        pop.setIcon(JDTheme.II("gui.images.package", 16, 16));
-
-        pop.add(new NewPackageAction(links));
-        pop.add(new CheckStatusAction(links));
-        pop.add(new CreateDLCAction(links));
-        pop.add(new CopyURLAction(links));
-        pop.addSeparator();
-
-        pop.add(new SetPasswordAction(links));
-        pop.add(new CopyPasswordAction(links));
-        pop.add(ActionController.getToolBarAction("action.passwordlist"));
-
-        return pop;
-    }
-
-    private JMenu createMoreMenu(ArrayList<DownloadLink> links) {
-        JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.more", "More"));
-        pop.setIcon(JDTheme.II("gui.images.configuration", 16, 16));
-        pop.add(new ForceDownloadAction(links));
-        pop.add(new ResumeAction(links));
+        ret.add(new RatedMenuItem(new StopsignAction(alllinks), 10));
+        ret.add(new RatedMenuItem(new EnableAction(alllinks), 10));
+        ret.add(new RatedMenuItem(new DisableAction(alllinks), 10));
+        ret.add(new RatedMenuItem(new ForceDownloadAction(alllinks), 10));
+        ret.add(new RatedMenuItem(new ResumeAction(alllinks), 10));
         // pop.add(new StopAction(links));
-        pop.add(new ResetAction(links));
-        pop.addSeparator();
 
-        pop.add(new DeleteAction(links));
-        pop.add(new DeleteFromDiskAction(links));
-        return pop;
+        ret.add(new RatedMenuItem(new ResetAction(alllinks), 5));
+        ret.add(RatedMenuItem.createSeparator());
+
+        ret.add(new RatedMenuItem(new NewPackageAction(alllinks), 0));
+        ret.add(new RatedMenuItem(new CheckStatusAction(alllinks), 0));
+        ret.add(new RatedMenuItem(new CreateDLCAction(alllinks), 0));
+        ret.add(new RatedMenuItem(new CopyURLAction(alllinks), 0));
+        ret.add(RatedMenuItem.createSeparator());
+
+        ret.add(new RatedMenuItem(new SetPasswordAction(alllinks), 0));
+        ret.add(new RatedMenuItem(new CopyPasswordAction(alllinks), 0));
+        ret.add(new RatedMenuItem(ActionController.getToolBarAction("action.passwordlist"), 0));
+        ret.add(new RatedMenuItem(new DeleteAction(alllinks), 0));
+        ret.add(new RatedMenuItem(new DeleteFromDiskAction(alllinks), 0));
+
+        ret.add(RatedMenuItem.createSeparator());
+        if (obj instanceof FilePackage) {
+            ret.add(new RatedMenuItem(new OpenDirectoryAction(new File(((FilePackage) obj).getDownloadDirectory())), 0));
+
+            final JDTableColumn column = this.getJDTableModel().getJDTableColumn(col);
+            if (column.isSortable(obj)) {
+                this.getDefaultSortMenuItem().set(column, obj, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + this.getJDTableModel().getColumnName(col) + ")");
+                ret.add(new RatedMenuItem("SORTITEM", this.getDefaultSortMenuItem(), 0));
+            }
+
+            ret.add(new RatedMenuItem(new PackageNameAction(sfp), 0));
+            ret.add(new RatedMenuItem(new PackageDirectoryAction(sfp), 0));
+        } else if (obj instanceof DownloadLink) {
+            ret.add(new RatedMenuItem(new OpenDirectoryAction(new File(((DownloadLink) obj).getFileOutput()).getParentFile()), 0));
+            ret.add(new RatedMenuItem(new OpenInBrowserAction(alllinks), 0));
+
+            /*
+             * check if Java version 1.6 or higher is installed, because the
+             * Desktop-Class (e.g. to open a file with correct application) is
+             * only supported by v1.6 or higher
+             */
+            if (JDUtilities.getJavaVersion() >= 1.6) {
+                // check if open a file is supported by this operating
+                // system (on linux maybe wrong GNOME version)
+                if (Desktop.isDesktopSupported()) {
+                    // add the Open File entry
+                    ret.add(new RatedMenuItem(new OpenFileAction(new File(((DownloadLink) obj).getFileOutput())), 0));
+                }
+            }
+        }
+        ret.add(RatedMenuItem.createSeparator());
+        //
+        final ArrayList<MenuAction> entries = new ArrayList<MenuAction>();
+        JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
+        if (entries != null && entries.size() > 0) {
+            for (final MenuAction next : entries) {
+                final JMenuItem mi = next.toJMenuItem();
+                if (mi == null) {
+                    ret.add(RatedMenuItem.createSeparator());
+
+                } else {
+                    ret.add(new RatedMenuItem(next, 0));
+
+                }
+            }
+        }
+        ret.add(RatedMenuItem.createSeparator());
+        ret.add(new RatedMenuItem("PRIORITY", this.createPrioMenu(alllinks), 0));
+
+        return ret;
     }
 
-    private JMenu createPrioMenu(ArrayList<DownloadLink> links) {
-        JMenu prioPopup = new JMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
+    private JMenu createPrioMenu(final ArrayList<DownloadLink> links) {
+        final JMenu prioPopup = new JMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
 
         prioPopup.add(new PriorityAction(links, 3));
@@ -410,51 +250,209 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         return prioPopup;
     }
 
-    private JMenu createExtrasMenu(Object obj) {
-        JMenu pluginPopup = new JMenu(JDL.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
-        pluginPopup.setIcon(JDTheme.II("gui.images.config.packagemanager", 16, 16));
-        ArrayList<MenuAction> entries = new ArrayList<MenuAction>();
-        JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
-        if (entries != null && entries.size() > 0) {
-            for (MenuAction next : entries) {
-                JMenuItem mi = next.toJMenuItem();
-                if (mi == null) {
-                    pluginPopup.addSeparator();
-                } else {
-                    pluginPopup.add(mi);
+    public void fireTableChanged(final int id, final ArrayList<Object> objs) {
+        new GuiRunnable<Object>() {
+            // @Override
+            @Override
+            public Object runSave() {
+                final Rectangle viewRect = DownloadTable.this.panel.getScrollPane().getViewport().getViewRect();
+                final int first = DownloadTable.this.rowAtPoint(new Point(0, viewRect.y));
+                final int last = DownloadTable.this.rowAtPoint(new Point(0, viewRect.y + viewRect.height - 1));
+                switch (id) {
+                case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
+                    for (final Object obj : objs) {
+                        final int row = DownloadTable.this.getJDTableModel().getRowforObject(obj);
+                        if (row != -1) {
+                            if (last == -1) {
+                                DownloadTable.this.getJDTableModel().fireTableRowsUpdated(row, row);
+                            } else if (row >= first && row <= last) {
+                                DownloadTable.this.getJDTableModel().fireTableRowsUpdated(row, row);
+                            }
+                        }
+                    }
+                    return null;
+                case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
+                    DownloadLinkInfoCache.reset();
+                    FilePackageInfoCache.reset();
+                    DownloadTable.this.getJDTableModel().fireTableDataChanged();
+                    return null;
+                case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
+                case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST:
+                    DownloadLinkInfoCache.reset();
+                    FilePackageInfoCache.reset();
+                    final int[] rows = DownloadTable.this.getSelectedRows();
+                    final ArrayList<Object> selected = new ArrayList<Object>();
+                    for (final int row : rows) {
+                        final Object elem = DownloadTable.this.getValueAt(row, 0);
+                        if (elem != null) {
+                            selected.add(elem);
+                        }
+                    }
+                    DownloadTable.this.getJDTableModel().refreshModel();
+                    DownloadTable.this.getJDTableModel().fireTableStructureChanged();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            for (final Object obj : selected) {
+                                final int row = DownloadTable.this.getJDTableModel().getRowforObject(obj);
+                                if (row != -1) {
+                                    DownloadTable.this.addRowSelectionInterval(row, row);
+                                }
+                            }
+                            DownloadTable.this.scrollRectToVisible(viewRect);
+                        }
+                    });
+                    return null;
                 }
+                return null;
             }
-        } else {
-            pluginPopup.setEnabled(false);
-        }
-        return pluginPopup;
+        }.start();
     }
 
-    public void mouseReleased(MouseEvent e) {
-        /* nicht auf headerclicks reagieren */
-        if (e.getSource() != this) return;
-        int row = rowAtPoint(e.getPoint());
-        if (row == -1) return;
-        /* deselect package */
-        if (row >= 0 && !isRowSelected(row)) {
-            Object obj = getValueAt(row, 0);
-            if (obj != null && obj instanceof DownloadLink) {
-                int row2 = getJDTableModel().getRowforObject(((DownloadLink) obj).getFilePackage());
-                if (row >= 0 && isRowSelected(row2)) removeRowSelectionInterval(row2, row2);
+    public ArrayList<DownloadLink> getAllSelectedDownloadLinks() {
+        final ArrayList<DownloadLink> links = this.getSelectedDownloadLinks();
+        final ArrayList<FilePackage> fps = this.getSelectedFilePackages();
+        for (final FilePackage filePackage : fps) {
+            for (final DownloadLink dl : filePackage.getDownloadLinkList()) {
+                if (!links.contains(dl)) {
+                    links.add(dl);
+                }
             }
         }
-        int column = realColumnAtPoint(e.getPoint());
+        return links;
+    }
+
+    public ArrayList<DownloadLink> getSelectedDownloadLinks() {
+        final int[] rows = this.getSelectedRows();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        for (final int row : rows) {
+            final Object element = this.getModel().getValueAt(row, 0);
+            if (element != null && element instanceof DownloadLink) {
+                ret.add((DownloadLink) element);
+            }
+        }
+        return ret;
+    }
+
+    public ArrayList<FilePackage> getSelectedFilePackages() {
+        final int[] rows = this.getSelectedRows();
+        final ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
+        for (final int row : rows) {
+            final Object element = this.getModel().getValueAt(row, 0);
+            if (element != null && element instanceof FilePackage) {
+                ret.add((FilePackage) element);
+            }
+        }
+        return ret;
+    }
+
+    public void keyPressed(final KeyEvent e) {
+    }
+
+    public void keyReleased(final KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_DELETE || OSDetector.isMac() && e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+            final ArrayList<DownloadLink> alllinks = this.getAllSelectedDownloadLinks();
+            if (alllinks.isEmpty()) { return; }
+            new DeleteAction(alllinks).actionPerformed(null);
+        }
+    }
+
+    public void keyTyped(final KeyEvent e) {
+    }
+
+    public void mouseClicked(final MouseEvent e) {
+    }
+
+    public void mouseEntered(final MouseEvent e) {
+    }
+
+    public void mouseExited(final MouseEvent e) {
+    }
+
+    public void mousePressed(final MouseEvent e) {
+        /* nicht auf headerclicks reagieren */
+        if (e.getSource() != this) { return; }
+        final Point point = e.getPoint();
+        final int row = this.rowAtPoint(point);
+        final int col = this.realColumnAtPoint(point);
+
+        final Object obj = this.getModel().getValueAt(row, 0);
+
+        if (obj == null) {
+            this.clearSelection();
+            return;
+        }
+
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+            if (!this.isRowSelected(row)) {
+                this.clearSelection();
+                this.addRowSelectionInterval(row, row);
+            }
+
+            final ArrayList<DownloadLink> alllinks = this.getAllSelectedDownloadLinks();
+
+            final ArrayList<FilePackage> sfp = this.getSelectedFilePackages();
+
+            final JPopupMenu popup = new JPopupMenu();
+
+            final RatedMenuController items = this.createMenuItems(obj, col, alllinks, sfp);
+
+            items.init(10);
+            while (items.getMain().size() > 0) {
+
+                items.getMain().remove(0).addToPopup(popup);
+
+            }
+
+            final JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.more", "More"));
+            popup.add(pop);
+            pop.setIcon(JDTheme.II("gui.images.configuration", 16, 16));
+            while (items.getSub().size() > 0) {
+
+                items.getSub().remove(0).addToPopup(pop);
+
+            }
+
+            // popup.add(this.createMoreMenu(alllinks));
+            // popup.addSeparator();
+
+            popup.addSeparator();
+
+            // popup.add(this.createPrioMenu(alllinks));
+
+            this.propItem.setObject(obj);
+            popup.add(this.propItem);
+
+            popup.show(this, point.x, point.y);
+        }
+    }
+
+    public void mouseReleased(final MouseEvent e) {
+        /* nicht auf headerclicks reagieren */
+        if (e.getSource() != this) { return; }
+        final int row = this.rowAtPoint(e.getPoint());
+        if (row == -1) { return; }
+        /* deselect package */
+        if (row >= 0 && !this.isRowSelected(row)) {
+            final Object obj = this.getValueAt(row, 0);
+            if (obj != null && obj instanceof DownloadLink) {
+                final int row2 = this.getJDTableModel().getRowforObject(((DownloadLink) obj).getFilePackage());
+                if (row >= 0 && this.isRowSelected(row2)) {
+                    this.removeRowSelectionInterval(row2, row2);
+                }
+            }
+        }
+        final int column = this.realColumnAtPoint(e.getPoint());
         if (column == 0 && e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 1) {
-            Point p = this.getPointinCell(e.getPoint());
+            final Point p = this.getPointinCell(e.getPoint());
             if (p != null && p.getX() < 30) {
-                Object element = getValueAt(row, 0);
+                final Object element = this.getValueAt(row, 0);
                 if (element != null && element instanceof FilePackage) {
                     if (e.isControlDown() && !e.isShiftDown()) {
-                        toggleFilePackageExpand((FilePackage) element, EXPCOL_BOT);
+                        this.toggleFilePackageExpand((FilePackage) element, DownloadTable.EXPCOL_BOT);
                     } else if (e.isControlDown() && e.isShiftDown()) {
-                        toggleFilePackageExpand((FilePackage) element, EXPCOL_TOP);
+                        this.toggleFilePackageExpand((FilePackage) element, DownloadTable.EXPCOL_TOP);
                     } else {
-                        toggleFilePackageExpand((FilePackage) element, EXPCOL_CUR);
+                        this.toggleFilePackageExpand((FilePackage) element, DownloadTable.EXPCOL_CUR);
                     }
                     return;
                 }
@@ -462,44 +460,52 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         }
         if (e.getButton() == MouseEvent.BUTTON1) {
             if (column == 0) {
-                Point p = this.getPointinCell(e.getPoint());
+                final Point p = this.getPointinCell(e.getPoint());
                 /* dont react here on collapse/expand icon */
-                if (p != null && p.getX() < 30) return;
+                if (p != null && p.getX() < 30) { return; }
             }
-            if ((e.getClickCount() == 1 && panel.isFilePackageInfoVisible(null)) || e.getClickCount() == 2) {
-                Object element = getValueAt(row, 0);
-                if (panel.isFilePackageInfoVisible(element) && e.getClickCount() == 2) {
-                    panel.hideFilePackageInfo();
+            if (e.getClickCount() == 1 && this.panel.isFilePackageInfoVisible(null) || e.getClickCount() == 2) {
+                final Object element = this.getValueAt(row, 0);
+                if (this.panel.isFilePackageInfoVisible(element) && e.getClickCount() == 2) {
+                    this.panel.hideFilePackageInfo();
                 } else if (element instanceof FilePackage) {
-                    panel.showFilePackageInfo((FilePackage) element);
+                    this.panel.showFilePackageInfo((FilePackage) element);
                 } else {
-                    panel.showDownloadLinkInfo((DownloadLink) element);
+                    this.panel.showDownloadLinkInfo((DownloadLink) element);
                 }
             }
         }
 
     }
 
-    public void toggleFilePackageExpand(FilePackage fp, byte mode) {
-        boolean cur = !fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
+    @Override
+    protected boolean processKeyBinding(final KeyStroke ks, final KeyEvent e, final int condition, final boolean pressed) {
+        final boolean ret = super.processKeyBinding(ks, e, condition, pressed);
+        if (this.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
+        if (this.getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(ks) != null) { return false; }
+        return ret;
+    }
+
+    public void toggleFilePackageExpand(final FilePackage fp, final byte mode) {
+        final boolean cur = !fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
         switch (mode) {
         case EXPCOL_CUR:
             fp.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
             break;
         case EXPCOL_TOP: {
-            ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
-            int indexfp = DownloadController.getInstance().indexOf(fp);
+            final ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+            final int indexfp = DownloadController.getInstance().indexOf(fp);
             for (int index = 0; index <= indexfp; index++) {
-                FilePackage fp2 = packages.get(index);
+                final FilePackage fp2 = packages.get(index);
                 fp2.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
             }
         }
             break;
         case EXPCOL_BOT: {
-            ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
-            int indexfp = DownloadController.getInstance().indexOf(fp);
+            final ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+            final int indexfp = DownloadController.getInstance().indexOf(fp);
             for (int index = indexfp; index < packages.size(); index++) {
-                FilePackage fp2 = packages.get(index);
+                final FilePackage fp2 = packages.get(index);
                 fp2.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
             }
         }
@@ -507,6 +513,33 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         default:
             return;
         }
-        panel.updateTableTask(DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST, null);
+        this.panel.updateTableTask(DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST, null);
+    }
+}
+
+class PropMenuItem extends JMenuItem implements ActionListener {
+
+    private static final long        serialVersionUID = 6328630034846759725L;
+    private Object                   obj;
+    private final DownloadLinksPanel panel;
+
+    public PropMenuItem(final DownloadLinksPanel panel) {
+        super(JDL.L("gui.table.contextmenu.prop", "Properties"));
+        this.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
+        this.panel = panel;
+        this.addActionListener(this);
+    }
+
+    public void actionPerformed(final ActionEvent e) {
+        if (this.obj == null) { return; }
+        if (this.obj instanceof DownloadLink) {
+            this.panel.showDownloadLinkInfo((DownloadLink) this.obj);
+        } else if (this.obj instanceof FilePackage) {
+            this.panel.showFilePackageInfo((FilePackage) this.obj);
+        }
+    }
+
+    public void setObject(final Object obj) {
+        this.obj = obj;
     }
 }

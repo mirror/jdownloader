@@ -29,7 +29,6 @@ import java.util.LinkedHashMap;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -46,151 +45,117 @@ import javax.swing.table.TableColumnModel;
 import jd.config.SubConfiguration;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.JXTable;
 
-class SortMenuItem extends JMenuItem implements ActionListener {
-
-    private static final long serialVersionUID = 6328630034846759725L;
-    private Object obj = null;
-    private JDTableColumn column = null;
-    private static String defaultString = JDL.L("gui.table.contextmenu.sort", "Sort");
-
-    public SortMenuItem() {
-        super(defaultString);
-        this.setIcon(JDTheme.II("gui.images.sort", 16, 16));
-        this.addActionListener(this);
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (column == null) return;
-        if (column.isSortable(obj)) column.doSort(obj);
-    }
-
-    public void set(JDTableColumn column, Object obj, String desc) {
-        if (desc == null) desc = defaultString;
-        this.column = column;
-        this.obj = obj;
-        this.setText(desc);
-    }
-}
-
 public class JDTable extends JXTable {
 
-    private static final long serialVersionUID = -6631229711568284941L;
-    private static final String JDL_PREFIX = "jd.gui.swing.components.table.JDTable.";
-    private JDTableModel model;
-    private SubConfiguration tableconfig;
-    private SortMenuItem defaultSortMenuItem;
-    public static final int ROWHEIGHT = 19;
+    private static final long      serialVersionUID = -6631229711568284941L;
+    private static final String    JDL_PREFIX       = "jd.gui.swing.components.table.JDTable.";
+    private final JDTableModel     model;
+    private final SubConfiguration tableconfig;
+    private final SortMenuItem     defaultSortMenuItem;
+    public static final int        ROWHEIGHT        = 19;
 
-    public JDTable(JDTableModel model) {
+    public JDTable(final JDTableModel model) {
         super(model);
         this.model = model;
         model.setJDTable(this);
-        tableconfig = model.getConfig();
-        createColumns();
-        setSortable(false);
-        setShowHorizontalLines(false);
-        setShowVerticalLines(false);
+        this.tableconfig = model.getConfig();
+        this.createColumns();
+        this.setSortable(false);
+        this.setShowHorizontalLines(false);
+        this.setShowVerticalLines(false);
         UIManager.put("Table.focusCellHighlightBorder", null);
-        defaultSortMenuItem = new SortMenuItem();
-        getTableHeader().addMouseListener(new JDMouseAdapter() {
+        this.defaultSortMenuItem = new SortMenuItem();
+        this.getTableHeader().addMouseListener(new JDMouseAdapter() {
 
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mouseClicked(final MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    int col = realColumnAtPoint(e.getPoint());
-                    if (getJDTableModel().getJDTableColumn(col).isSortable(null)) getJDTableModel().getJDTableColumn(col).doSort(null);
+                    final int col = JDTable.this.realColumnAtPoint(e.getPoint());
+                    if (JDTable.this.getJDTableModel().getJDTableColumn(col).isSortable(null)) {
+                        JDTable.this.getJDTableModel().getJDTableColumn(col).doSort(null);
+                    }
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
-                    columControlMenu().show(getTableHeader(), e.getX(), e.getY());
+                    JDTable.this.columControlMenu().show(JDTable.this.getTableHeader(), e.getX(), e.getY());
                 }
             }
 
         });
-        getTableHeader().addMouseMotionListener(new JDMouseAdapter() {
+        this.getTableHeader().addMouseMotionListener(new JDMouseAdapter() {
             @Override
-            public void mouseMoved(MouseEvent e) {
-                int col = realColumnAtPoint(e.getPoint());
-                getTableHeader().setToolTipText(getJDTableModel().getJDTableColumn(col).getName());
+            public void mouseMoved(final MouseEvent e) {
+                final int col = JDTable.this.realColumnAtPoint(e.getPoint());
+                JDTable.this.getTableHeader().setToolTipText(JDTable.this.getJDTableModel().getJDTableColumn(col).getName());
             }
         });
-        getTableHeader().setReorderingAllowed(true);
-        getTableHeader().setResizingAllowed(true);
-        setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        setAutoscrolls(true);
-        this.setRowHeight(ROWHEIGHT);
-        installColumnControlButton();
-        getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
+        this.getTableHeader().setReorderingAllowed(true);
+        this.getTableHeader().setResizingAllowed(true);
+        this.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+        this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        this.setAutoscrolls(true);
+        this.setRowHeight(JDTable.ROWHEIGHT);
+        this.installColumnControlButton();
+        this.getTableHeader().setPreferredSize(new Dimension(this.getColumnModel().getTotalColumnWidth(), 19));
         // This method is 1.6 only
-        if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            this.setFillsViewportHeight(true);
+        }
 
-        getColumnModel().addColumnModelListener(new TableColumnModelListener() {
+        this.getColumnModel().addColumnModelListener(new TableColumnModelListener() {
 
-            public void columnAdded(TableColumnModelEvent e) {
+            public void columnAdded(final TableColumnModelEvent e) {
             }
 
-            public void columnMarginChanged(ChangeEvent e) {
+            public void columnMarginChanged(final ChangeEvent e) {
             }
 
-            public void columnMoved(TableColumnModelEvent e) {
-                if (e == null) return;
-                if (e.getFromIndex() == e.getToIndex()) return;
-                TableColumnModel tcm = getColumnModel();
+            public void columnMoved(final TableColumnModelEvent e) {
+                if (e == null) { return; }
+                if (e.getFromIndex() == e.getToIndex()) { return; }
+                final TableColumnModel tcm = JDTable.this.getColumnModel();
                 for (int i = 0; i < tcm.getColumnCount(); i++) {
-                    tableconfig.setProperty("POS_COL_" + i, getJDTableModel().getJDTableColumn(tcm.getColumn(i).getModelIndex()).getID());
+                    JDTable.this.tableconfig.setProperty("POS_COL_" + i, JDTable.this.getJDTableModel().getJDTableColumn(tcm.getColumn(i).getModelIndex()).getID());
                 }
-                tableconfig.save();
+                JDTable.this.tableconfig.save();
             }
 
-            public void columnRemoved(TableColumnModelEvent e) {
+            public void columnRemoved(final TableColumnModelEvent e) {
             }
 
-            public void columnSelectionChanged(ListSelectionEvent e) {
+            public void columnSelectionChanged(final ListSelectionEvent e) {
             }
 
         });
     }
 
-    private void installColumnControlButton() {
-        JButton button = new JButton(((JButton) getColumnControl()).getIcon());
-        button.setToolTipText(JDL.L(JDL_PREFIX + "columnControl", "Change Columns"));
-        button.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent event) {
-                JButton source = (JButton) event.getSource();
-                int x = source.getLocation().x;
-                int y = source.getLocation().y;
-                columControlMenu().show(getTableHeader(), x, y);
-            }
-
-        });
-        this.setColumnControl(button);
-        this.setColumnControlVisible(true);
+    public void addJDRowHighlighter(final JDRowHighlighter high) {
+        this.model.addJDRowHighlighter(high);
     }
 
     public JPopupMenu columControlMenu() {
-        JPopupMenu popup = new JPopupMenu();
-        JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[getJDTableModel().getColumnCount()];
+        final JPopupMenu popup = new JPopupMenu();
+        final JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[this.getJDTableModel().getColumnCount()];
 
-        for (int i = 0; i < getJDTableModel().getColumnCount(); ++i) {
+        for (int i = 0; i < this.getJDTableModel().getColumnCount(); ++i) {
             final int j = i;
-            final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(getJDTableModel().getColumnName(i));
+            final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(this.getJDTableModel().getColumnName(i));
             mi.setHideOnClick(false);
             mis[i] = mi;
-            if (i == 0) mi.setEnabled(false);
-            mi.setSelected(getJDTableModel().isVisible(i));
+            if (i == 0) {
+                mi.setEnabled(false);
+            }
+            mi.setSelected(this.getJDTableModel().isVisible(i));
             mi.addActionListener(new ActionListener() {
 
-                public void actionPerformed(ActionEvent e) {
-                    getJDTableModel().setVisible(j, mi.isSelected());
-                    createColumns();
-                    revalidate();
-                    repaint();
+                public void actionPerformed(final ActionEvent e) {
+                    JDTable.this.getJDTableModel().setVisible(j, mi.isSelected());
+                    JDTable.this.createColumns();
+                    JDTable.this.revalidate();
+                    JDTable.this.repaint();
                 }
 
             });
@@ -199,95 +164,111 @@ public class JDTable extends JXTable {
         return popup;
     }
 
-    public ArrayList<JDRowHighlighter> getJDRowHighlighter() {
-        return model.getJDRowHighlighter();
-    }
-
-    public void addJDRowHighlighter(JDRowHighlighter high) {
-        model.addJDRowHighlighter(high);
-    }
-
-    public JDTableModel getJDTableModel() {
-        return model;
-    }
-
-    @Override
-    public TableCellRenderer getCellRenderer(int row, int col) {
-        return model.getJDTableColumn(convertColumnIndexToModel(col));
-    }
-
-    @Override
-    public TableCellEditor getCellEditor(int row, int col) {
-        return model.getJDTableColumn(convertColumnIndexToModel(col));
-    }
-
     private void createColumns() {
-        setAutoCreateColumnsFromModel(false);
-        TableColumnModel tcm = getColumnModel();
+        this.setAutoCreateColumnsFromModel(false);
+        final TableColumnModel tcm = this.getColumnModel();
         while (tcm.getColumnCount() > 0) {
             tcm.removeColumn(tcm.getColumn(0));
         }
-        LinkedHashMap<String, TableColumn> columns = new LinkedHashMap<String, TableColumn>();
-        for (int i = 0; i < getModel().getColumnCount(); ++i) {
+        final LinkedHashMap<String, TableColumn> columns = new LinkedHashMap<String, TableColumn>();
+        for (int i = 0; i < this.getModel().getColumnCount(); ++i) {
             final int j = i;
 
-            TableColumn tableColumn = new TableColumn(i);
+            final TableColumn tableColumn = new TableColumn(i);
             tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
+                public void propertyChange(final PropertyChangeEvent evt) {
                     if (evt.getPropertyName().equals("width")) {
-                        tableconfig.setProperty("WIDTH_COL_" + model.getJDTableColumn(j).getID(), evt.getNewValue());
-                        tableconfig.save();
-                        model.getJDTableColumn(j).setCurWidth(Integer.parseInt(evt.getNewValue().toString()));
+                        JDTable.this.tableconfig.setProperty("WIDTH_COL_" + JDTable.this.model.getJDTableColumn(j).getID(), evt.getNewValue());
+                        JDTable.this.tableconfig.save();
+                        JDTable.this.model.getJDTableColumn(j).setCurWidth(Integer.parseInt(evt.getNewValue().toString()));
                     }
                 }
             });
-            if (model.getJDTableColumn(j).getMaxWidth() >= 0) tableColumn.setMaxWidth(model.getJDTableColumn(j).getMaxWidth());
-            int w = tableconfig.getIntegerProperty("WIDTH_COL_" + model.getJDTableColumn(j).getID(), tableColumn.getWidth());
+            if (this.model.getJDTableColumn(j).getMaxWidth() >= 0) {
+                tableColumn.setMaxWidth(this.model.getJDTableColumn(j).getMaxWidth());
+            }
+            final int w = this.tableconfig.getIntegerProperty("WIDTH_COL_" + this.model.getJDTableColumn(j).getID(), tableColumn.getWidth());
             tableColumn.setPreferredWidth(w);
-            model.getJDTableColumn(j).setCurWidth(w);
-            if (!model.isVisible(i)) continue;
-            columns.put(model.getJDTableColumn(j).getID(), tableColumn);
+            this.model.getJDTableColumn(j).setCurWidth(w);
+            if (!this.model.isVisible(i)) {
+                continue;
+            }
+            columns.put(this.model.getJDTableColumn(j).getID(), tableColumn);
         }
         int index = 0;
         while (true) {
-            if (columns.isEmpty()) break;
-            if (index < getModel().getColumnCount()) {
-                String id = tableconfig.getStringProperty("POS_COL_" + index, null);
+            if (columns.isEmpty()) {
+                break;
+            }
+            if (index < this.getModel().getColumnCount()) {
+                final String id = this.tableconfig.getStringProperty("POS_COL_" + index, null);
                 index++;
                 if (id != null) {
-                    TableColumn item = columns.remove(id);
-                    if (item != null) addColumn(item);
+                    final TableColumn item = columns.remove(id);
+                    if (item != null) {
+                        this.addColumn(item);
+                    }
                 }
             } else {
-                for (TableColumn ritem : columns.values()) {
-                    addColumn(ritem);
+                for (final TableColumn ritem : columns.values()) {
+                    this.addColumn(ritem);
                 }
                 break;
             }
         }
     }
 
-    public int realColumnAtPoint(Point point) {
-        int x = columnAtPoint(point);
-        return convertColumnIndexToModel(x);
+    @Override
+    public TableCellEditor getCellEditor(final int row, final int col) {
+        return this.model.getJDTableColumn(this.convertColumnIndexToModel(col));
     }
 
-    public void addSortItem(JPopupMenu menu, int colindex, Object obj, String desc) {
-        if (menu == null) return;
-        JDTableColumn col = model.getJDTableColumn(colindex);
-        if (col.isSortable(obj)) {
-            defaultSortMenuItem.set(col, obj, desc);
-            menu.add(defaultSortMenuItem);
-        }
+    @Override
+    public TableCellRenderer getCellRenderer(final int row, final int col) {
+        return this.model.getJDTableColumn(this.convertColumnIndexToModel(col));
     }
 
-    public Point getPointinCell(Point x) {
-        int row = rowAtPoint(x);
-        if (row == -1) return null;
-        Rectangle cellPosition = getCellRect(row, columnAtPoint(x), true);
-        Point p = new Point();
+    public SortMenuItem getDefaultSortMenuItem() {
+        return this.defaultSortMenuItem;
+    }
+
+    public ArrayList<JDRowHighlighter> getJDRowHighlighter() {
+        return this.model.getJDRowHighlighter();
+    }
+
+    public JDTableModel getJDTableModel() {
+        return this.model;
+    }
+
+    public Point getPointinCell(final Point x) {
+        final int row = this.rowAtPoint(x);
+        if (row == -1) { return null; }
+        final Rectangle cellPosition = this.getCellRect(row, this.columnAtPoint(x), true);
+        final Point p = new Point();
         p.setLocation(x.getX() - cellPosition.getX(), x.getY() - cellPosition.getY());
         return p;
+    }
+
+    private void installColumnControlButton() {
+        final JButton button = new JButton(((JButton) this.getColumnControl()).getIcon());
+        button.setToolTipText(JDL.L(JDTable.JDL_PREFIX + "columnControl", "Change Columns"));
+        button.addActionListener(new ActionListener() {
+
+            public void actionPerformed(final ActionEvent event) {
+                final JButton source = (JButton) event.getSource();
+                final int x = source.getLocation().x;
+                final int y = source.getLocation().y;
+                JDTable.this.columControlMenu().show(JDTable.this.getTableHeader(), x, y);
+            }
+
+        });
+        this.setColumnControl(button);
+        this.setColumnControlVisible(true);
+    }
+
+    public int realColumnAtPoint(final Point point) {
+        final int x = this.columnAtPoint(point);
+        return this.convertColumnIndexToModel(x);
     }
 
 }

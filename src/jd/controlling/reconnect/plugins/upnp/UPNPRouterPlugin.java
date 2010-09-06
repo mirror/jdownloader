@@ -147,7 +147,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
 
                             private static final long serialVersionUID = 3607383089555373774L;
 
-                            @SuppressWarnings("unchecked")
                             @Override
                             public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
                                 final JLabel label = (JLabel) super.getListCellRendererComponent(list, ((UpnpRouterDevice) value).getFriendlyname(), index, isSelected, cellHasFocus);
