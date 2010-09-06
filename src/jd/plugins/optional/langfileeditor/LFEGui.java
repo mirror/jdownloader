@@ -110,8 +110,8 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     private int                           numOld                   = 0;
     private final File                    dirLanguages, dirWorkingCopy;
 
-    public static final Color             COLOR_DONE               = new Color(204, 255, 170);
-    public static final Color             COLOR_MISSING            = new Color(221, 34, 34);
+    public static final Color             COLOR_DONE               = new Color(204, 255, 170, 20);
+    public static final Color             COLOR_MISSING            = new Color(221, 34, 34, 20);
     public static final Color             COLOR_OLD                = Color.ORANGE;
 
     private SrcParser                     sourceParser;
@@ -395,11 +395,11 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
             private static final long serialVersionUID = 7054804074534585633L;
 
-            protected JPopupMenu onContextMenu(JPopupMenu popup, KeyInfo contextObject, java.util.ArrayList<KeyInfo> selection) {
-                if (mnuContextPopup == null) {
-                    buildContextMenu();
+            protected JPopupMenu onContextMenu(final JPopupMenu popup, final KeyInfo contextObject, final java.util.ArrayList<KeyInfo> selection) {
+                if (LFEGui.this.mnuContextPopup == null) {
+                    LFEGui.this.buildContextMenu();
                 }
-                return mnuContextPopup;
+                return LFEGui.this.mnuContextPopup;
             }
 
         };
@@ -409,9 +409,9 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         this.table.addRowHighlighter(new ExtRowHighlighter(null, LFEGui.COLOR_MISSING) {
 
             @Override
-            public boolean doHighlight(ExtTable<?> extTable, int row) {
-                // TODO: change after fixing the highlighting
-                return ((KeyInfo) extTable.getExtTableModel().getValueAt(row, 0)).isMissing() && false;
+            public boolean doHighlight(final ExtTable<?> extTable, final int row) {
+
+                return ((KeyInfo) extTable.getExtTableModel().getValueAt(row, 0)).isMissing();
             }
 
         });
@@ -419,9 +419,9 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         this.table.addRowHighlighter(new ExtRowHighlighter(null, LFEGui.COLOR_OLD) {
 
             @Override
-            public boolean doHighlight(ExtTable<?> extTable, int row) {
-                // TODO: change after fixing the highlighting
-                return ((KeyInfo) extTable.getExtTableModel().getValueAt(row, 0)).isOld() && false;
+            public boolean doHighlight(final ExtTable<?> extTable, final int row) {
+
+                return ((KeyInfo) extTable.getExtTableModel().getValueAt(row, 0)).isOld();
             }
 
         });
