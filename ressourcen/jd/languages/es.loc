@@ -873,7 +873,7 @@ jd.controlling.reconnect.httpliveheader.step = HTTP Live Header: paso %s
 jd.controlling.reconnect.plugins.dummyrouterplugin.getgui = Seleccione un complemento de Reconexión:
 jd.controlling.reconnect.plugins.dummyrouterplugin.getname = No hay complementos de Reconexión
 jd.controlling.reconnect.plugins.reconnectpluginconfiggui.initgui.comboboxlabel = Complemento de Reconexión activo:
-jd.controlling.reconnect.reconnector.progress.failed = Reconexión fallida! Por favor verifique su configuración de reconexión e intente una Reconexión Manual!
+jd.controlling.reconnect.reconnector.progress.failed = Reconexión fallida! Verifique su configuración. Recuerde que no funciona con IPs Fijas.
 jd.controlling.reconnect.reconnector.progress.failed2 = La reconexión falló muchas veces y la Reconexión Automática esta deshabilitada! Verifique su configuración.
 jd.controlling.singledownloadcontroller.askexists = El archivo \r\n%s\r\n ya existe. Que desea hacer?
 jd.controlling.singledownloadcontroller.askexists.title = El archivo ya existe
@@ -895,7 +895,7 @@ jd.gui.swing.components.jdcloseaction.closetab = Cerrar pestaña
 jd.gui.swing.components.jdcollapser.closetooltip = Cerrar %s
 jd.gui.swing.components.table.jdtable.columncontrol = Cambiar columnas
 jd.gui.swing.jdgui.actions.actioncontroller.buy.message = Que servidor te interesa?
-jd.gui.swing.jdgui.actions.actioncontroller.buy.title = Comprar  Premium
+jd.gui.swing.jdgui.actions.actioncontroller.buy.title = Comprar Premium
 jd.gui.swing.jdgui.actions.actioncontroller.continue = Continuar
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip = Detiene las descargas tras finalizar las que estan en curso
 jd.gui.swing.jdgui.menu.actions.backuplinklistaction.password = Ingresar contraseña de encripción
@@ -1239,6 +1239,10 @@ jd.utils.webupdate.message = <font face="Verdana, Arial, Helvetica, sans-serif">
 jd.utils.webupdate.message2 = <font face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
 jd.utils.webupdate.progresscontroller.text = Actualizacion ejecutandose...
 jd.utils.webupdate.whatchangedlink = <hr/><a href='http://jdownloader.org/latestchanges'>Novedades</a>
+lfegui.plugins.optional.langfileeditor.addkey.error.message = La tecla '%s' ya está en uso!
+lfegui.plugins.optional.langfileeditor.save.error.message = Error al escribir el archivo de idioma:\n%s
+lfegui.plugins.optional.langfileeditor.savechanges.message = Guardar fuera de línea los cambios a %?
+lfegui.plugins.optional.langfileeditor.savechanges.message.upload = Guardar y enviar los cambios a %s?
 linkgrabber.onlinestatus.offline = Fuera de línea
 linkgrabber.onlinestatus.online = En línea
 linkgrabber.onlinestatus.uncheckable = Servidor temporalmente no disponible
