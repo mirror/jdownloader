@@ -110,9 +110,9 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     private int                           numOld                   = 0;
     private final File                    dirLanguages, dirWorkingCopy;
 
-    public static final Color             COLOR_DONE               = new Color(204, 255, 170, 20);
-    public static final Color             COLOR_MISSING            = new Color(221, 34, 34, 20);
-    public static final Color             COLOR_OLD                = Color.ORANGE;
+    public static final Color             COLOR_DONE               = new Color(204, 255, 170, 50);
+    public static final Color             COLOR_MISSING            = new Color(221, 34, 34, 50);
+    public static final Color             COLOR_OLD                = new Color(255, 200, 0, 50);
 
     private SrcParser                     sourceParser;
 
