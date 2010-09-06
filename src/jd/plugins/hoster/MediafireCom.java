@@ -258,7 +258,13 @@ public class MediafireCom extends PluginForHost {
                     if (MediafireCom.isVisible(l)) {
                         System.out.println("visible");
                         if (new Regex(l.getAbsoluteHref(), "http://.*?/[a-z0-9]+/[a-z0-9]+/.*").matches()) {
-                            if (new Regex(l.getAbsoluteHref(), "http://\\d\\.\\d\\.\\d\\.\\d/[a-z0-9]+/[a-z0-9]+/.*").matches()) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60000l); }
+                            // we do not know yet, why there are urls with ip
+                            // only, and urls with domain
+                            // if (new Regex(l.getAbsoluteHref(),
+                            // "http://\\d\\.\\d\\.\\d\\.\\d/[a-z0-9]+/[a-z0-9]+/.*").matches())
+                            // { throw new
+                            // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+                            // "Server error", 2 * 60000l); }
                             System.out.println("contains mf");
                             return l.getAbsoluteHref();
                         }
