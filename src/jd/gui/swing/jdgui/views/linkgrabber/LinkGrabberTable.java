@@ -42,7 +42,6 @@ import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.views.downloads.RatedMenuItem;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyURLAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CreateDLCAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.DisableAction;
@@ -72,8 +71,8 @@ import jd.utils.locale.JDL;
 class PropMenuItem extends JMenuItem implements ActionListener {
 
     private static final long serialVersionUID = 6328630034846759725L;
-    private Object obj;
-    private LinkGrabberPanel linkgrabber;
+    private Object            obj;
+    private LinkGrabberPanel  linkgrabber;
 
     public PropMenuItem(LinkGrabberPanel linkgrabber) {
         super(JDL.L("gui.table.contextmenu.prop", "Properties"));
@@ -93,14 +92,14 @@ class PropMenuItem extends JMenuItem implements ActionListener {
 
 public class LinkGrabberTable extends JDTable implements MouseListener, KeyListener {
 
-    public final static byte EXPCOL_TOP = 0;
-    public final static byte EXPCOL_CUR = 1;
-    public final static byte EXPCOL_BOT = 2;
-    private static final long serialVersionUID = 1L;
+    public final static byte   EXPCOL_TOP       = 0;
+    public final static byte   EXPCOL_CUR       = 1;
+    public final static byte   EXPCOL_BOT       = 2;
+    private static final long  serialVersionUID = 1L;
 
     protected LinkGrabberPanel linkgrabber;
 
-    private PropMenuItem propItem;
+    private PropMenuItem       propItem;
 
     public LinkGrabberPanel getLinkGrabber() {
         return linkgrabber;
@@ -334,13 +333,13 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
 
             if (obj instanceof LinkGrabberFilePackage) {
                 popup.add(new SplitHosterAction(sfp));
-               
+
                 final JDTableColumn column = this.getJDTableModel().getJDTableColumn(col);
                 if (column.isSortable(obj)) {
                     this.getDefaultSortMenuItem().set(column, obj, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
-                  popup.add(this.getDefaultSortMenuItem());
+                    popup.add(this.getDefaultSortMenuItem());
                 }
-                
+
                 popup.add(new PackageDirectoryAction(sfp));
             } else if (obj instanceof DownloadLink) {
                 popup.add(new CopyURLAction(alllinks));

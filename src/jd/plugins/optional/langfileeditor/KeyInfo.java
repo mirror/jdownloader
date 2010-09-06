@@ -22,15 +22,15 @@ public class KeyInfo implements Comparable<KeyInfo> {
 
     private final String key;
 
-    private String source = "";
+    private String       source                 = "";
 
-    private String language = "";
+    private String       language               = "";
 
-    private String english = "";
+    private String       english                = "";
 
-    private int sourceParameterCount = -1;
+    private int          sourceParameterCount   = -1;
 
-    private int languageParameterCount = -1;
+    private int          languageParameterCount = -1;
 
     public KeyInfo(String key, String source, String language, String english) {
         this.key = key;

@@ -7,12 +7,12 @@ import jd.utils.locale.JDL;
 
 public class LFEInfoPanel extends InfoPanel {
 
-    private static final long serialVersionUID = 1314727641431663267L;
-    private static final String LOCALE_PREFIX = "plugins.optional.langfileeditor.";
-    private static LFEInfoPanel INSTANCE = null;
+    private static final long   serialVersionUID = 1314727641431663267L;
+    private static final String LOCALE_PREFIX    = "plugins.optional.langfileeditor.";
+    private static LFEInfoPanel INSTANCE         = null;
 
-    private PieChartAPI keyChart;
-    private ChartAPIEntity entDone, entMissing, entOld;
+    private PieChartAPI         keyChart;
+    private ChartAPIEntity      entDone, entMissing, entOld;
 
     public static LFEInfoPanel getInstance() {
         if (INSTANCE == null) INSTANCE = new LFEInfoPanel();

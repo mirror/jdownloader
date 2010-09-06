@@ -16,41 +16,27 @@
 
 package jd.plugins.optional.langfileeditor;
 
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.ArrayList;
 
-import jd.gui.swing.components.table.JDTableModel;
-import jd.plugins.optional.langfileeditor.columns.EnglishColumn;
-import jd.plugins.optional.langfileeditor.columns.KeyColumn;
 import jd.plugins.optional.langfileeditor.columns.LanguageColumn;
-import jd.plugins.optional.langfileeditor.columns.SourceColumn;
 import jd.utils.locale.JDL;
 
-public class LFETableModel extends JDTableModel {
+import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
 
-    public static final int SORT_KEY = 0;
-    public static final int SORT_SOURCE = 1;
-    public static final int SORT_LANGUAGE = 2;
-    public static final int SORT_ENGLISH = 3;
+public class LFETableModel extends ExtTableModel<KeyInfo> {
 
-    private static final long serialVersionUID = -1775792404758292253L;
-    private static final String LOCALE_PREFIX = "plugins.optional.langfileeditor.";
+    private static final long   serialVersionUID = -1775792404758292253L;
+    private static final String LOCALE_PREFIX    = "plugins.optional.langfileeditor.";
 
-    private Integer sorting = SORT_KEY;
-    private Boolean toggle = true;
-
-    private LFEGui gui;
+    private final LFEGui        gui;
 
     public LFETableModel(LFEGui gui) {
         super("lfetable");
-        this.gui = gui;
-    }
 
-    public void setSorting(int sorting, boolean toggle) {
-        this.sorting = sorting;
-        this.toggle = toggle;
-        refreshModel();
-        fireTableDataChanged();
+        this.gui = gui;
+
+        refreshData();
     }
 
     public LFEGui getGui() {
@@ -59,41 +45,49 @@ public class LFETableModel extends JDTableModel {
 
     @Override
     protected void initColumns() {
-        this.addColumn(new KeyColumn(JDL.L(LOCALE_PREFIX + "key", "Key"), this));
-        this.addColumn(new SourceColumn(JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), this));
-        this.addColumn(new EnglishColumn(JDL.L(LOCALE_PREFIX + "english", "en.loc"), this));
+        this.addColumn(new ExtTextEditorColumn<KeyInfo>(JDL.L(LOCALE_PREFIX + "key", "Key"), this) {
+
+            private static final long serialVersionUID = 7120563498624188924L;
+
+            @Override
+            protected String getStringValue(KeyInfo value) {
+                return value.getKey();
+            }
+
+        });
+        this.addColumn(new ExtTextEditorColumn<KeyInfo>(JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), this) {
+
+            private static final long serialVersionUID = 8317088520940463895L;
+
+            @Override
+            protected String getStringValue(KeyInfo value) {
+                return value.getSource();
+            }
+
+        });
+        this.addColumn(new ExtTextEditorColumn<KeyInfo>(JDL.L(LOCALE_PREFIX + "english", "en.loc"), this) {
+
+            private static final long serialVersionUID = -2259126596005921191L;
+
+            @Override
+            protected String getStringValue(KeyInfo value) {
+                return value.getEnglish();
+            }
+
+        });
         this.addColumn(new LanguageColumn(JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value"), this));
     }
 
-    @Override
-    public void refreshModel() {
-        synchronized (list) {
-            list.clear();
-            if (sorting != null && toggle != null) {
-                Collections.sort(gui.getData(), new Comparator<KeyInfo>() {
+    protected void refreshData() {
+        final ArrayList<KeyInfo> tmp = new ArrayList<KeyInfo>(gui.getData());
 
-                    public int compare(KeyInfo o1, KeyInfo o2) {
-                        if (!toggle) return compareInner(o2, o1);
-                        return compareInner(o1, o2);
-                    }
+        final ArrayList<KeyInfo> selection = this.getSelectedObjects();
+        tableData = tmp;
+        refreshSort();
 
-                    private int compareInner(KeyInfo o1, KeyInfo o2) {
-                        switch (sorting) {
-                        case SORT_KEY:
-                            return o1.getKey().compareToIgnoreCase(o2.getKey());
-                        case SORT_SOURCE:
-                            return o1.getSource().compareToIgnoreCase(o2.getSource());
-                        case SORT_LANGUAGE:
-                            return o1.getLanguage().compareToIgnoreCase(o2.getLanguage());
-                        case SORT_ENGLISH:
-                            return o1.getEnglish().compareToIgnoreCase(o2.getEnglish());
-                        }
-                        return 0;
-                    }
+        fireTableStructureChanged();
 
-                });
-            }
-            list.addAll(gui.getData());
-        }
+        setSelectedObjects(selection);
     }
+
 }

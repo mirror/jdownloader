@@ -34,8 +34,8 @@ import org.appwork.utils.event.Eventsender;
 
 public class SrcParser {
 
-    private final File root;
-    private final int rootLen;
+    private final File                                   root;
+    private final int                                    rootLen;
     private Eventsender<MessageListener, MessageEvent> broadcaster;
 
     public static void deleteCache() {
@@ -74,9 +74,9 @@ public class SrcParser {
     }
 
     private ArrayList<LngEntry> entries;
-    private File currentFile;
-    private String currentContent;
-    private ArrayList<String> pattern = new ArrayList<String>();
+    private File                currentFile;
+    private String              currentContent;
+    private ArrayList<String>   pattern = new ArrayList<String>();
 
     public ArrayList<String> getPattern() {
         return pattern;

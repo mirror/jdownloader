@@ -56,9 +56,9 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
         pc = new ProgressController(JDL.L("controller.downloadautostart", "Autostart downloads in few seconds..."), null);
         pc.getBroadcaster().addListener(new ProgressControllerListener() {
             public void onProgressControllerEvent(ProgressControllerEvent event) {
-                if (event.getID() == ProgressControllerEvent.CANCEL) {
+                if (event.getEventID() == ProgressControllerEvent.CANCEL) {
                     pc.setStatusText("Autostart aborted!");
-                } else if (event.getID() == ProgressControllerEvent.FINISHED) {
+                } else if (event.getEventID() == ProgressControllerEvent.FINISHED) {
                     if (!pc.isAbort()) {
                         ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
                         for (int i = 0; i < fps.size(); i++) {

@@ -21,8 +21,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -56,8 +54,6 @@ import jd.event.MessageListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.table.JDRowHighlighter;
-import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.dialog.TwoTextFieldDialog;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
@@ -71,11 +67,12 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdesktop.swingx.search.SearchFactory;
+import org.appwork.utils.swing.table.ExtRowHighlighter;
+import org.appwork.utils.swing.table.ExtTable;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNInfo;
 
-public class LFEGui extends SwitchPanel implements ActionListener, MouseListener {
+public class LFEGui extends SwitchPanel implements ActionListener {
 
     private static final long             serialVersionUID         = -143452893912428555L;
 
@@ -94,13 +91,13 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private final LFEInfoPanel            infoPanel;
     private LFETableModel                 tableModel;
-    private JDTable                       table;
+    private ExtTable<KeyInfo>             table;
     private File                          languageFile;
 
     private JMenuBar                      menubar;
     private JMenu                         mnuFile, mnuLoad, mnuKey, mnuTest;
     private JMenuItem                     mnuSave, mnuSaveLocal, mnuReload, mnuCompleteReload;
-    private JMenuItem                     mnuAdd, mnuAdopt, mnuClear, mnuDelete, mnuDeleteOld, mnuOpenSearchDialog;
+    private JMenuItem                     mnuAdd, mnuAdopt, mnuClear, mnuDelete, mnuDeleteOld;
     private JMenuItem                     mnuCurrent, mnuKeymode;
     private JPopupMenu                    mnuContextPopup;
     private JMenuItem                     mnuContextAdopt, mnuContextClear, mnuContextDelete;
@@ -186,8 +183,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 }
             }
             this.data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], this.languageENKeysFormFile.get(result[0].toLowerCase())));
-            this.tableModel.refreshModel();
-            this.tableModel.fireTableDataChanged();
+            this.tableModel.refreshData();
             this.updateKeyChart();
 
         } else if (e.getSource() == this.mnuDelete || e.getSource() == this.mnuContextDelete) {
@@ -208,10 +204,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             }
             this.dataChanged();
 
-        } else if (e.getSource() == this.mnuOpenSearchDialog) {
-
-            SearchFactory.getInstance().showFindInput(this.table, this.table.getSearchable());
-
         } else if (e.getSource() == this.mnuDeleteOld) {
 
             if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L(LFEGui.LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LFEGui.LOCALE_PREFIX + "deleteOld.message", "Delete all %s old Key(s)?", this.numOld)), UserIO.RETURN_OK)) {
@@ -223,7 +215,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     }
 
     private void buildContextMenu() {
-        // Context Menü
+        // Context Menu
         this.mnuContextPopup = new JPopupMenu();
 
         this.mnuContextPopup.add(this.mnuContextDelete = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
@@ -339,8 +331,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     }
 
     public void dataChanged() {
-        this.tableModel.refreshModel();
-        this.tableModel.fireTableDataChanged();
+        this.tableModel.refreshData();
         this.updateKeyChart();
         this.changed = true;
     }
@@ -400,25 +391,37 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private void initGui() {
         this.tableModel = new LFETableModel(this);
-        this.table = new JDTable(this.tableModel);
+        this.table = new ExtTable<KeyInfo>(this.tableModel, "lfe") {
+
+            private static final long serialVersionUID = 7054804074534585633L;
+
+            protected JPopupMenu onContextMenu(JPopupMenu popup, KeyInfo contextObject, java.util.ArrayList<KeyInfo> selection) {
+                if (mnuContextPopup == null) {
+                    buildContextMenu();
+                }
+                return mnuContextPopup;
+            }
+
+        };
+        this.table.setSearchEnabled(true);
         this.table.setEnabled(false);
-        this.table.addMouseListener(this);
         this.table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        this.table.setAutoStartEditOnKeyStroke(false);
-        this.table.addJDRowHighlighter(new JDRowHighlighter(LFEGui.COLOR_MISSING) {
+        this.table.addRowHighlighter(new ExtRowHighlighter(null, LFEGui.COLOR_MISSING) {
 
             @Override
-            public boolean doHighlight(final Object obj) {
-                return ((KeyInfo) obj).isMissing();
+            public boolean doHighlight(ExtTable<?> extTable, int row) {
+                // TODO: change after fixing the highlighting
+                return ((KeyInfo) extTable.getExtTableModel().getValueAt(row, 0)).isMissing() && false;
             }
 
         });
 
-        this.table.addJDRowHighlighter(new JDRowHighlighter(LFEGui.COLOR_OLD) {
+        this.table.addRowHighlighter(new ExtRowHighlighter(null, LFEGui.COLOR_OLD) {
 
             @Override
-            public boolean doHighlight(final Object obj) {
-                return ((KeyInfo) obj).isOld();
+            public boolean doHighlight(ExtTable<?> extTable, int row) {
+                // TODO: change after fixing the highlighting
+                return ((KeyInfo) extTable.getExtTableModel().getValueAt(row, 0)).isOld() && false;
             }
 
         });
@@ -546,8 +549,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         Collections.sort(this.data);
 
-        this.tableModel.refreshModel();
-        this.tableModel.fireTableDataChanged();
+        this.tableModel.refreshData();
         this.changed = false;
 
         SwingUtilities.invokeLater(new Runnable() {
@@ -566,12 +568,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     public void initMenu(final JMenuBar menubar) {
         this.menubar = menubar;
-        // Load Menü
+        // Load Menu
         this.mnuLoad = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "load", "Load Language"));
 
         this.populateLngMenu();
 
-        // File Menü
+        // File Menu
         this.mnuFile = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "file", "File"));
 
         this.mnuFile.add(this.mnuLoad);
@@ -593,7 +595,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         this.mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
 
-        // Key Menü
+        // Key Menu
         this.mnuKey = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "key", "Key"));
         this.mnuKey.setEnabled(false);
 
@@ -604,18 +606,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         this.mnuKey.add(this.mnuAdopt = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
         this.mnuKey.addSeparator();
         this.mnuKey.add(this.mnuDeleteOld = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "deleteOldKeys", "Delete Old Key(s)")));
-        this.mnuKey.addSeparator();
-        this.mnuKey.add(this.mnuOpenSearchDialog = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
 
         this.mnuAdd.addActionListener(this);
         this.mnuDelete.addActionListener(this);
         this.mnuClear.addActionListener(this);
         this.mnuAdopt.addActionListener(this);
         this.mnuDeleteOld.addActionListener(this);
-        this.mnuOpenSearchDialog.addActionListener(this);
 
         this.mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
-        this.mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK));
 
         // Test
         this.mnuTest = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "test", "Test"));
@@ -626,37 +624,11 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         this.mnuKeymode.addActionListener(this);
         this.mnuCurrent.setEnabled(false);
 
-        // Menü-Bar zusammensetzen
+        // Menu-Bar zusammensetzen
         menubar.add(this.mnuFile);
         menubar.add(this.mnuKey);
         menubar.add(this.mnuTest);
         menubar.setEnabled(false);
-
-    }
-
-    public void mouseClicked(final MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON3) {
-            final int row = this.table.rowAtPoint(e.getPoint());
-            if (!this.table.isRowSelected(row)) {
-                this.table.getSelectionModel().setSelectionInterval(row, row);
-            }
-            if (this.mnuContextPopup == null) {
-                this.buildContextMenu();
-            }
-            this.mnuContextPopup.show(this.table, e.getX(), e.getY());
-        }
-    }
-
-    public void mouseEntered(final MouseEvent e) {
-    }
-
-    public void mouseExited(final MouseEvent e) {
-    }
-
-    public void mousePressed(final MouseEvent e) {
-    }
-
-    public void mouseReleased(final MouseEvent e) {
     }
 
     @Override

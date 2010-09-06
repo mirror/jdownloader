@@ -21,6 +21,7 @@ public class RatedMenuController extends ArrayList<RatedMenuItem> {
         return this.sub;
     }
 
+    @SuppressWarnings("unchecked")
     public void init(final int i) {
         // first lets find the i best rated items
         final ArrayList<RatedMenuItem> sorted = (ArrayList<RatedMenuItem>) this.clone();

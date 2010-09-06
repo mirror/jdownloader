@@ -50,10 +50,10 @@ import jd.utils.locale.JDL;
 public class LangFileEditor extends PluginOptional {
 
     private final SingletonPanel lfe;
-    private MenuAction activateAction;
-    private LFEView lfeView;
-    private String user;
-    private String pass;
+    private MenuAction           activateAction;
+    private LFEView              lfeView;
+    private String               user;
+    private String               pass;
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);

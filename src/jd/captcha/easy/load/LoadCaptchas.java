@@ -495,10 +495,8 @@ public class LoadCaptchas {
                     if (!threaded) {
                         for (int k = 0; k < loadinfo.menge; k++) {
                             try {
-
                                 File f2 = new File(dir + System.currentTimeMillis() + imageType);
                                 br.getDownload(f2, loadinfo.link);
-                                final int c = k;
 
                             } catch (Exception ev) {
                                 ev.printStackTrace();
@@ -526,20 +524,16 @@ public class LoadCaptchas {
                             });
                             ths[k].start();
                         }
-                        int k = 0;
                         for (Thread thread : ths) {
                             while (thread.isAlive()) {
                                 synchronized (thread) {
                                     try {
                                         thread.wait(30000);
                                     } catch (InterruptedException e) {
-                                        // TODO Auto-generated catch block
                                         e.printStackTrace();
                                     }
                                 }
                             }
-                            final int c = k;
-                            k++;
                         }
                     }
                 }
@@ -643,7 +637,6 @@ public class LoadCaptchas {
                     jb[i].start();
                 }
 
-                int c = 0;
                 for (Thread thread : jb) {
                     while (thread.isAlive()) {
                         synchronized (thread) {
@@ -654,7 +647,6 @@ public class LoadCaptchas {
                             }
                         }
                     }
-                    final int d = c++;
                 }
             }
         });
@@ -678,7 +670,6 @@ public class LoadCaptchas {
                         if (!threaded) {
                             for (int k = 1; k < loadinfo.menge - 1; k++) {
                                 selectedImage.directCaptchaLoad(dir);
-                                final int d = k;
                             }
                         } else {
                             Thread[] ths = new Thread[loadinfo.menge];
@@ -699,20 +690,16 @@ public class LoadCaptchas {
                                 });
                                 ths[k].start();
                             }
-                            int k = 0;
                             for (Thread thread : ths) {
                                 while (thread != null && thread.isAlive()) {
                                     synchronized (thread) {
                                         try {
                                             thread.wait(30000);
                                         } catch (InterruptedException e) {
-                                            // TODO Auto-generated catch block
                                             e.printStackTrace();
                                         }
                                     }
                                 }
-                                final int c = k;
-                                k++;
                             }
                         }
 
@@ -722,8 +709,6 @@ public class LoadCaptchas {
                         if (!threaded) {
                             for (int k = 1; k < loadinfo.menge - 1; k++) {
                                 selectedImage.load(host);
-                                final int d = k;
-
                             }
                         } else {
                             Thread[] ths = new Thread[loadinfo.menge];
@@ -738,26 +723,21 @@ public class LoadCaptchas {
                                         }
                                         synchronized (this) {
                                             this.notify();
-
                                         }
                                     }
                                 });
                                 ths[k].start();
                             }
-                            int k = 0;
                             for (Thread thread : ths) {
                                 while (thread != null && thread.isAlive()) {
                                     synchronized (thread) {
                                         try {
                                             thread.wait(30000);
                                         } catch (InterruptedException e) {
-                                            // TODO Auto-generated catch block
                                             e.printStackTrace();
                                         }
                                     }
                                 }
-                                final int c = k;
-                                k++;
                             }
                         }
 
@@ -770,7 +750,6 @@ public class LoadCaptchas {
 
         Thread th2 = new Thread(runnable);
         th2.start();
-
     }
 
 }

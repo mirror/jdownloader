@@ -16,80 +16,60 @@
 
 package jd.plugins.optional.langfileeditor.columns;
 
-import java.awt.Component;
-
-import javax.swing.JComponent;
-
-import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.components.table.JDTextEditorTableColumn;
 import jd.parser.Regex;
 import jd.plugins.optional.langfileeditor.KeyInfo;
 import jd.plugins.optional.langfileeditor.LFEGui;
 import jd.plugins.optional.langfileeditor.LFETableModel;
 import jd.utils.locale.JDL;
 
-public class LanguageColumn extends JDTextEditorTableColumn {
+import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
 
-    private static final long serialVersionUID = -2305836770033923728L;
-    private static final String JDL_PREFIX = "jd.plugins.optional.langfileeditor.columns.LanguageColumn.";
+public class LanguageColumn extends ExtTextEditorColumn<KeyInfo> {
 
-    public LanguageColumn(String name, JDTableModel table) {
+    private static final long   serialVersionUID = -2305836770033923728L;
+    private static final String JDL_PREFIX       = "jd.plugins.optional.langfileeditor.columns.LanguageColumn.";
+
+    public LanguageColumn(String name, ExtTableModel<KeyInfo> table) {
         super(name, table);
     }
 
     @Override
-    public boolean isEditable(Object obj) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Object obj) {
-        return true;
-    }
-
-    @Override
-    public boolean isSortable(Object obj) {
-        return true;
-    }
-
-    @Override
-    public void sort(Object obj, boolean sortingToggle) {
-        ((LFETableModel) getJDTableModel()).setSorting(LFETableModel.SORT_LANGUAGE, sortingToggle);
-    }
-
-    @Override
-    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
-        if (((KeyInfo) value).hasWrongParameterCount()) {
-            c.setBackground(LFEGui.COLOR_MISSING);
-            ((JComponent) c).setToolTipText(JDL.L(JDL_PREFIX + "tooltip.wrongParameterCount", "Your translated String contains a wrong count of placeholders!"));
-            return;
+    protected void prepareLabel(KeyInfo value) {
+        if (value.hasWrongParameterCount()) {
+            label.setBackground(LFEGui.COLOR_MISSING);
+        } else if (new Regex(value.getKey(), "gui\\.menu\\.(.*?)\\.accel").matches() && new Regex(value.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
+            label.setBackground(LFEGui.COLOR_MISSING);
         }
-        String match = new Regex(((KeyInfo) value).getKey(), "gui\\.menu\\.(.*?)\\.accel").getMatch(0);
+    }
+
+    @Override
+    public String getToolTip(KeyInfo obj) {
+        if (obj.hasWrongParameterCount()) return JDL.L(JDL_PREFIX + "tooltip.wrongParameterCount", "Your translated String contains a wrong count of placeholders!");
+
+        String match = new Regex(((KeyInfo) obj).getKey(), "gui\\.menu\\.(.*?)\\.accel").getMatch(0);
         if (match != null) {
             StringBuilder toolTip = new StringBuilder();
-
             toolTip.append(JDL.LF(JDL_PREFIX + "tooltip.accelerator", "Insert the hotkey for the action %s here. Allowed modifiers are CTRL, ALTGR, ALT, META, SHIFT", match));
-            String match2 = new Regex(((KeyInfo) value).getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").getMatch(0);
-            if (match2 != null) {
+            if (new Regex(obj.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
                 toolTip.append(new char[] { ' ', '[' }).append(JDL.LF(JDL_PREFIX + "tooltip.accelerator.wrong", "The modifier %s isn't allowed!")).append(']');
-                c.setBackground(LFEGui.COLOR_MISSING);
             }
-            ((JComponent) c).setToolTipText(toolTip.toString());
-        } else {
-            ((JComponent) c).setToolTipText(null);
+            return toolTip.toString();
         }
+
+        return super.getToolTip(obj);
     }
 
     @Override
-    protected String getStringValue(Object value) {
-        return ((KeyInfo) value).getLanguage();
+    protected String getStringValue(KeyInfo value) {
+        return value.getLanguage();
     }
 
     @Override
-    protected void setStringValue(String value, Object object) {
-        if (((KeyInfo) object).getLanguage().equals(value)) return;
-        ((KeyInfo) object).setLanguage(value);
-        ((LFETableModel) getJDTableModel()).getGui().dataChanged();
+    public void setValue(final Object value, final KeyInfo object) {
+        if (object.getLanguage().equals(value)) return;
+        object.setLanguage(value == null ? "" : value.toString());
+        ((LFETableModel) getModel()).getGui().dataChanged();
     }
 
 }

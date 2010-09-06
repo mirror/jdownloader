@@ -22,14 +22,15 @@ public class ProgressControllerEvent extends DefaultEvent {
 
     public ProgressControllerEvent(Object source, int ID) {
         super(source, ID);
-        // TODO Auto-generated constructor stub
     }
 
-    public static final int CANCEL = 1;
+    public static final int CANCEL   = 1;
 
     public static final int FINISHED = 2;
 
-    /* needed for current stable 0.9580 */
+    /**
+     * needed for current stable 0.9580
+     */
     @Deprecated
     public int getID() {
         return getEventID();

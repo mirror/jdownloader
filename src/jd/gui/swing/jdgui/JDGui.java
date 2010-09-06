@@ -256,10 +256,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
     }
 
-    private JDMenuBar createMenuBar() {
-        return new JDMenuBar();
-    }
-
     /**
      * TODO: mal durch ein einheitliches notification system ersetzen, welches
      * an das eventsystem gekoppelt ist
@@ -280,7 +276,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     private void initComponents() {
-        this.menuBar = this.createMenuBar();
+        this.menuBar = new JDMenuBar();
         this.statusBar = new JDStatusBar();
         this.waitingPane = new JPanel();
         this.waitingPane.setOpaque(false);

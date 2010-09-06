@@ -26,9 +26,9 @@ import jd.utils.locale.JDL;
 
 public class LFEView extends ClosableView {
 
-    private static final long serialVersionUID = -1676038853735547928L;
-    private static final String JDL_PREFIX = "jd.plugins.optional.langfileeditor.LFEView.";
-    private LFEGui lfeGui;
+    private static final long   serialVersionUID = -1676038853735547928L;
+    private static final String JDL_PREFIX       = "jd.plugins.optional.langfileeditor.LFEView.";
+    private LFEGui              lfeGui;
 
     public LFEView(SwitchPanel panel) {
         super();

@@ -22,9 +22,9 @@ public class LngEntry implements Serializable {
 
     private static final long serialVersionUID = -4522709262578144738L;
 
-    private String value;
+    private String            value;
 
-    private String key;
+    private String            key;
 
     public LngEntry(String key, String value) {
         this.key = key.toLowerCase();
