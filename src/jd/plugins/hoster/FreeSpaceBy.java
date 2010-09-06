@@ -43,8 +43,8 @@ public class FreeSpaceBy extends PluginForHost {
         return "http://freespace.by/info/rules";
     }
 
-    private static final String MAINPAGE = "http://freespace.by/";
-    private static final String COUNTRYBLOCKED = "Услуги FreeSpace доступны только для белорусских сетей\\.";
+    private static final String MAINPAGE           = "http://freespace.by/";
+    private static final String COUNTRYBLOCKED     = "Услуги FreeSpace доступны только для белорусских сетей\\.";
     private static final String COUNTRYBLOCKEDTEXT = "This hoster is now available in your country!";
 
     @Override
@@ -112,6 +112,7 @@ public class FreeSpaceBy extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.getPage(MAINPAGE);
+        if (br.containsHTML(COUNTRYBLOCKED)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         String post = "action[0]=AuthExt.logon&username[0]=" + Encoding.urlEncode(account.getUser()) + "&password[0]=" + Encoding.urlEncode(account.getPass()) + "&remember[0]=1";
         String postPage = "http://freespace.by/api.php?format=ajax&lang=ru&PHPSESSID=" + br.getCookie(MAINPAGE, "PHPSESSID") + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml";
         br.postPage(postPage, post);

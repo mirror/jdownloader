@@ -36,11 +36,11 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigasize.com" }, urls = { "http://[\\w\\.]*?gigasize\\.com/get\\.php.*" }, flags = { 2 })
 public class GigaSizeCom extends PluginForHost {
 
-    private static final String AGB_LINK = "http://www.gigasize.com/page.php?p=terms";
-    private static int simultanpremium = 1;
-    private static final Object PREMLOCK = new Object();
+    private static final String AGB_LINK        = "http://www.gigasize.com/page.php?p=terms";
+    private static int          simultanpremium = 1;
+    private static final Object PREMLOCK        = new Object();
 
-    public String agent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+    public String               agent           = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
 
     public GigaSizeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,9 +50,10 @@ public class GigaSizeCom extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setDebug(true);
         br.getHeaders().put("User-Agent", agent);
-        br.getPage("http://www.gigasize.com/index.php?lang=de");
+        br.getPage("http://gigasize.com/index.php?lang=de");
         Form ff = new Form();
         ff.setAction("http://www.gigasize.com/login.php");
         ff.setMethod(MethodType.POST);
@@ -61,8 +62,7 @@ public class GigaSizeCom extends PluginForHost {
         ff.put("d", "Login");
         ff.put("login", "1");
         br.submitForm(ff);
-        String cookie = br.getCookie("http://www.gigasize.com", "GigSizeCookieJar");
-        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML(">\\&raquo; E-Mail-Adresse oder Passwort ung\\&uuml;ltig\\!</div>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public boolean isPremium() throws IOException {

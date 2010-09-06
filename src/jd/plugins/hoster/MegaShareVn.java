@@ -25,7 +25,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?megashare\\.vn/(download\\.php\\?uid=[0-9]+\\&id=[0-9]+|dl\\.php/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?(megashare\\.vn/(download\\.php\\?uid=[0-9]+\\&id=[0-9]+|dl\\.php/\\d+)|share\\.megaplus\\.vn/dl\\.php/\\d+)" }, flags = { 0 })
 public class MegaShareVn extends PluginForHost {
 
     public MegaShareVn(PluginWrapper wrapper) {
@@ -33,7 +33,11 @@ public class MegaShareVn extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("download.php?id=", "dl.php/"));
+        String theLink = link.getDownloadURL();
+        theLink = theLink.replace("download.php?id=", "dl.php/");
+        String theID = new Regex(theLink, "megashare\\.vn/dl\\.php/(\\d+)").getMatch(0);
+        if (theID != null) theLink = "http://share.megaplus.vn/dl.php/" + theID;
+        link.setUrlDownload(theLink);
     }
 
     @Override
@@ -46,13 +50,12 @@ public class MegaShareVn extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("fn\" value=\"(.*?)\"").getMatch(0);
-        if (filename == null) br.getRegex("<strong>Tên file:</strong></td>.*?<td width=.*?>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<strong>Dung lượng:</strong></td>.*?<td>(.*?)</td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>DOWNLOAD NOT FOUND<|>File không tìm thấy hoặc đã bị xóa<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("\">Tên file:</td>[\t\r\n ]+<td class=\"content_tx\">(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("\">Dung lượng:</td>[\r\t\n ]+<td class=\"content_tx\">(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
+        parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -60,10 +63,14 @@ public class MegaShareVn extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        String dllink = br.getRegex("button-large\\\\\" a href=\\\\\"(.*?)\\\\\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!dllink.contains("http")) dllink = "http://megashare.vn/" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        String waittime = br.getRegex("id=\\'timewait\\' value='\\d+'>(\\d+)</span>").getMatch(0);
+        int waitThat = 20;
+        if (waittime != null) waitThat = Integer.parseInt(waittime);
+        sleep(waitThat * 1001l, link);
+        br.getPage("http://share.megaplus.vn/getlink.php");
+        String dllink = br.toString();
+        if (dllink == null || !dllink.startsWith("http://") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html") && !new Regex(dllink, ".+html?$").matches()) {
             /* buggy server sends html content if filename ends on html */
             br.followConnection();
