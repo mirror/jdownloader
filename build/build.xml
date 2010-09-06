@@ -80,6 +80,13 @@
 		<copy todir="${jd}/licenses">
 			<fileset dir="${res}/licenses" includes="**/*" />
 		</copy>
+
+		<copy todir="${jd}/languages">
+			<fileset dir="../../AppWorkUtils/resources/languages/" includes="**/*.loc" />
+		</copy>
+		<copy todir="${jd}/images">
+			<fileset dir="../../AppWorkUtils/resources/images/" includes="**/*.png" />
+		</copy>
 		<copy todir="${jd}/tools">
 			<fileset dir="${res}/tools" includes="**/*" />
 		</copy>

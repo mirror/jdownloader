@@ -30,9 +30,12 @@ import javax.swing.SwingUtilities;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
+import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.BatchReconnect;
@@ -50,7 +53,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class MethodSelection extends ConfigPanel implements ActionListener {
+public class ReconnectMethodSelector extends ConfigPanel implements ActionListener {
 
     private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.";
     private static final long   serialVersionUID = 3383448498625377495L;
@@ -75,7 +78,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
     }
 
     public static String getTitle() {
-        return JDL.L(MethodSelection.JDL_PREFIX + "reconnect.title", "Reconnection");
+        return JDL.L(ReconnectMethodSelector.JDL_PREFIX + "reconnect.title", "Reconnection");
     }
 
     private JButton             btn;
@@ -98,9 +101,21 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     private JLabel              time;
 
-    public MethodSelection() {
+    public ReconnectMethodSelector() {
         super();
+        // controllistener to update gui if selected reconnect method got
+        // changed externally
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(ReconnectMethod.PARAM_RECONNECT_TYPE) {
 
+            @Override
+            public void onPropertyChanged(final Property source, final String propertyName) {
+                if (source == ReconnectMethodSelector.this.configuration) {
+
+                    ReconnectMethodSelector.this.loadSpecial();
+                }
+            }
+
+        });
         this.configuration = JDUtilities.getConfiguration();
 
         this.init();
@@ -130,9 +145,9 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
                         @Override
                         public Object runSave() {
-                            MethodSelection.this.time.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
-                            MethodSelection.this.time.setEnabled(true);
-                            MethodSelection.this.timeLabel.setEnabled(true);
+                            ReconnectMethodSelector.this.time.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
+                            ReconnectMethodSelector.this.time.setEnabled(true);
+                            ReconnectMethodSelector.this.timeLabel.setEnabled(true);
                             return null;
                         }
 
@@ -166,16 +181,16 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                         @Override
                         public Object runSave() {
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                MethodSelection.this.message.setText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
+                                ReconnectMethodSelector.this.message.setText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
                             } else {
-                                MethodSelection.this.message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                                ReconnectMethodSelector.this.message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
                             }
-                            MethodSelection.this.success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
-                            MethodSelection.this.success.setEnabled(true);
+                            ReconnectMethodSelector.this.success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
+                            ReconnectMethodSelector.this.success.setEnabled(true);
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                MethodSelection.this.currentip.setText("?");
+                                ReconnectMethodSelector.this.currentip.setText("?");
                             } else {
-                                MethodSelection.this.currentip.setText(IPCheck.getIPAddress());
+                                ReconnectMethodSelector.this.currentip.setText(IPCheck.getIPAddress());
                             }
                             return null;
                         }
@@ -187,13 +202,13 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
                         @Override
                         public Object runSave() {
-                            MethodSelection.this.message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
-                            MethodSelection.this.success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
-                            MethodSelection.this.success.setEnabled(true);
+                            ReconnectMethodSelector.this.message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
+                            ReconnectMethodSelector.this.success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
+                            ReconnectMethodSelector.this.success.setEnabled(true);
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                                MethodSelection.this.currentip.setText("?");
+                                ReconnectMethodSelector.this.currentip.setText("?");
                             } else {
-                                MethodSelection.this.currentip.setText(IPCheck.getIPAddress());
+                                ReconnectMethodSelector.this.currentip.setText(IPCheck.getIPAddress());
                             }
                             return null;
                         }
@@ -248,8 +263,8 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         this.tabbed.setTabPlacement(SwingConstants.TOP);
 
         this.tabbed.addTab(JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), new SubPanelLiveHeaderReconnect(this.configuration));
-        this.tabbed.addTab(JDL.L("modules.reconnect.types.extern", "Extern"), MethodSelection.getPanelFor(new ExternReconnect()));
-        this.tabbed.addTab(JDL.L("modules.reconnect.types.batch", "Batch"), MethodSelection.getPanelFor(new BatchReconnect()));
+        this.tabbed.addTab(JDL.L("modules.reconnect.types.extern", "Extern"), ReconnectMethodSelector.getPanelFor(new ExternReconnect()));
+        this.tabbed.addTab(JDL.L("modules.reconnect.types.batch", "Batch"), ReconnectMethodSelector.getPanelFor(new BatchReconnect()));
         this.tabbed.addTab(JDL.L("modules.reconnect.types.clr", "CLR Script"), new SubPanelCLRReconnect(this.configuration));
 
         this.tabbed.addTab(JDL.L("modules.reconnect.types.custom", "Special"), ReconnectPluginController.getInstance().getGUI());
@@ -288,7 +303,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                     final String ip = IPCheck.getIPAddress();
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            MethodSelection.this.currentip.setText(ip);
+                            ReconnectMethodSelector.this.currentip.setText(ip);
                         }
                     });
                 }
@@ -297,7 +312,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
         final ConfigContainer container = new ConfigContainer();
 
-        container.setGroup(new ConfigGroup(MethodSelection.getTitle(), MethodSelection.getIconKey()));
+        container.setGroup(new ConfigGroup(ReconnectMethodSelector.getTitle(), ReconnectMethodSelector.getIconKey()));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, this.tabbed, "growy, pushy"));
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), "gui.images.reconnect_selection"));

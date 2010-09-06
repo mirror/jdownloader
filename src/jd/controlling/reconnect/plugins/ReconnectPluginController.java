@@ -29,6 +29,12 @@ import com.sun.istack.internal.Nullable;
 public class ReconnectPluginController extends ReconnectMethod {
     private static final ReconnectPluginController INSTANCE = new ReconnectPluginController();
 
+    public static void activatePluginReconnect() {
+        JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.PLUGIN);
+        JDUtilities.getConfiguration();
+
+    }
+
     private static List<Class<?>> findPlugins(final URL directory, final String packageName, final ClassLoader classLoader) throws ClassNotFoundException {
         final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
         File[] files = null;
@@ -170,13 +176,10 @@ public class ReconnectPluginController extends ReconnectMethod {
         final File[] files = JDUtilities.getResourceFile("reconnect").listFiles(new JDFileFilter(null, ".rec", false));
         this.plugins = new ArrayList<RouterPlugin>();
         this.plugins.add(DummyRouterPlugin.getInstance());
+        final ArrayList<URL> urls = new ArrayList<URL>();
         if (files != null) {
-            final File file;
-            final String name;
-            final String absolutePath;
-
             final int length = files.length;
-            final ArrayList<URL> urls = new ArrayList<URL>();
+
             for (int i = 0; i < length; i++) {
                 try {
                     urls.add(files[i].toURI().toURL());
@@ -184,43 +187,40 @@ public class ReconnectPluginController extends ReconnectMethod {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-
             }
+        }
+        final URLClassLoader classLoader = new URLClassLoader(urls.toArray(new URL[] {}));
+        try {
+            final Enumeration<URL> resources = classLoader.getResources("jd/controlling/reconnect/plugins/");
 
-            final URLClassLoader classLoader = new URLClassLoader(urls.toArray(new URL[] {}));
-            try {
-                final Enumeration<URL> resources = classLoader.getResources("jd/controlling/reconnect/plugins/");
+            final HashMap<String, Class<?>> classes = new HashMap<String, Class<?>>();
+            while (resources.hasMoreElements()) {
 
-                final HashMap<String, Class<?>> classes = new HashMap<String, Class<?>>();
-                while (resources.hasMoreElements()) {
+                classloop: for (final Class<?> c : ReconnectPluginController.findPlugins(resources.nextElement(), "jd.controlling.reconnect.plugins", classLoader)) {
 
-                    classloop: for (final Class<?> c : ReconnectPluginController.findPlugins(resources.nextElement(), "jd.controlling.reconnect.plugins", classLoader)) {
-
-                        if (classes.containsKey(c.getName())) {
-                            continue;
-                        }
-                        // in Eclipse, we often load class files from classptha
-                        // AND the jars. classfiles are loaded before jars. we
-                        // always use the FIRST class found.
-
-                        classes.put(c.getName(), c);
-                        final RouterPlugin plg = (RouterPlugin) c.newInstance();
-                        // do not add two different plugins with the same ID
-                        for (final RouterPlugin p : this.plugins) {
-                            if (p.getID().equals(plg)) {
-                                Log.L.severe("Tried to add two plugins with ID: " + p.getID());
-                                continue classloop;
-                            }
-                        }
-                        this.plugins.add(plg);
+                    if (classes.containsKey(c.getName())) {
+                        continue;
                     }
+                    // in Eclipse, we often load class files from classptha
+                    // AND the jars. classfiles are loaded before jars. we
+                    // always use the FIRST class found.
 
+                    classes.put(c.getName(), c);
+                    final RouterPlugin plg = (RouterPlugin) c.newInstance();
+                    // do not add two different plugins with the same ID
+                    for (final RouterPlugin p : this.plugins) {
+                        if (p.getID().equals(plg)) {
+                            Log.L.severe("Tried to add two plugins with ID: " + p.getID());
+                            continue classloop;
+                        }
+                    }
+                    this.plugins.add(plg);
                 }
 
-            } catch (final Exception e) {
-                e.printStackTrace();
             }
 
+        } catch (final Exception e) {
+            e.printStackTrace();
         }
 
     }

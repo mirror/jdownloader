@@ -24,11 +24,13 @@ import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JRootPane;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
@@ -39,65 +41,51 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTRunner;
+
 public class ToolBar extends JToolBar {
 
-    private static final long serialVersionUID = 7533137014274040205L;
+    private static final long             serialVersionUID = 7533137014274040205L;
 
-    private static final Object UPDATELOCK = new Object();
+    private static final Object           UPDATELOCK       = new Object();
 
-    public static final ArrayList<String> DEFAULT_LIST = new ArrayList<String>();
+    public static final ArrayList<String> DEFAULT_LIST     = new ArrayList<String>();
     static {
-        DEFAULT_LIST.add("toolbar.control.start");
-        DEFAULT_LIST.add("toolbar.control.pause");
-        DEFAULT_LIST.add("toolbar.control.stop");
-        DEFAULT_LIST.add("toolbar.separator");
-        DEFAULT_LIST.add("action.downloadview.movetotop");
-        DEFAULT_LIST.add("action.downloadview.moveup");
-        DEFAULT_LIST.add("action.downloadview.movedown");
-        DEFAULT_LIST.add("action.downloadview.movetobottom");
-        DEFAULT_LIST.add("toolbar.separator");
-        DEFAULT_LIST.add("action.settings");
-        DEFAULT_LIST.add("toolbar.separator");
-        DEFAULT_LIST.add("toolbar.quickconfig.clipboardoberserver");
-        DEFAULT_LIST.add("toolbar.quickconfig.reconnecttoggle");
-        DEFAULT_LIST.add("toolbar.control.stopmark");
-        DEFAULT_LIST.add("premiumMenu.toggle");
-        DEFAULT_LIST.add("toolbar.separator");
-        DEFAULT_LIST.add("toolbar.interaction.reconnect");
-        DEFAULT_LIST.add("toolbar.interaction.update");
+        ToolBar.DEFAULT_LIST.add("toolbar.control.start");
+        ToolBar.DEFAULT_LIST.add("toolbar.control.pause");
+        ToolBar.DEFAULT_LIST.add("toolbar.control.stop");
+        ToolBar.DEFAULT_LIST.add("toolbar.separator");
+        ToolBar.DEFAULT_LIST.add("action.downloadview.movetotop");
+        ToolBar.DEFAULT_LIST.add("action.downloadview.moveup");
+        ToolBar.DEFAULT_LIST.add("action.downloadview.movedown");
+        ToolBar.DEFAULT_LIST.add("action.downloadview.movetobottom");
+        ToolBar.DEFAULT_LIST.add("toolbar.separator");
+        ToolBar.DEFAULT_LIST.add("action.settings");
+        ToolBar.DEFAULT_LIST.add("toolbar.separator");
+        ToolBar.DEFAULT_LIST.add("toolbar.quickconfig.clipboardoberserver");
+        ToolBar.DEFAULT_LIST.add("toolbar.quickconfig.reconnecttoggle");
+        ToolBar.DEFAULT_LIST.add("toolbar.control.stopmark");
+        ToolBar.DEFAULT_LIST.add("premiumMenu.toggle");
+        ToolBar.DEFAULT_LIST.add("toolbar.separator");
+        ToolBar.DEFAULT_LIST.add("toolbar.interaction.reconnect");
+        ToolBar.DEFAULT_LIST.add("toolbar.interaction.update");
     }
 
-    private String[] current = null;
+    private String[]                      current          = null;
 
-    private JRootPane rootpane;
+    private JRootPane                     rootpane;
 
     public ToolBar() {
-        super(JToolBar.HORIZONTAL);
+        super(SwingConstants.HORIZONTAL);
 
-        setRollover(true);
-        setFloatable(false);
+        this.setRollover(true);
+        this.setFloatable(false);
 
-        current = DEFAULT_LIST.toArray(new String[] {});
+        this.current = ToolBar.DEFAULT_LIST.toArray(new String[] {});
     }
 
-    public void setList(String[] newlist) {
-        if (newlist == current) return;
-        synchronized (UPDATELOCK) {
-            if (newlist == null || newlist.length == 0) {
-                current = DEFAULT_LIST.toArray(new String[] {});
-            } else {
-                current = newlist;
-            }
-            this.updateToolbar();
-        }
-    }
-
-    public String[] getList() {
-        return current;
-    }
-
-    protected String getColConstraints(String[] list) {
-        StringBuilder sb = new StringBuilder();
+    protected String getColConstraints(final String[] list) {
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < list.length; ++i) {
             sb.append("[]2");
         }
@@ -105,24 +93,19 @@ public class ToolBar extends JToolBar {
         return sb.toString();
     }
 
-    /**
-     * USed to register the shortcuts to the rootpane during init
-     * 
-     * @param jdGui
-     */
-    public void registerAccelerators(SwingGui jdGui) {
-        rootpane = jdGui.getMainFrame().getRootPane();
+    public String[] getList() {
+        return this.current;
     }
 
-    private void initToolbar(String[] list) {
-        if (list == null) return;
+    private void initToolbar(final String[] list) {
+        if (list == null) { return; }
         synchronized (list) {
             SwingGui.checkEDT();
-            setLayout(new MigLayout("ins 0", getColConstraints(list), "[grow,fill,32!]"));
+            this.setLayout(new MigLayout("ins 0", this.getColConstraints(list), "[grow,fill,32!]"));
             AbstractButton ab;
             boolean lastseparator = false;
-            for (String key : list) {
-                ToolBarAction action = ActionController.getToolBarAction(key);
+            for (final String key : list) {
+                final ToolBarAction action = ActionController.getToolBarAction(key);
 
                 if (action == null) {
                     JDLogger.warning("The Action " + key + " is not available");
@@ -140,18 +123,18 @@ public class ToolBar extends JToolBar {
                 }
                 switch (action.getType()) {
                 case NORMAL:
-                    add(ab = new JButton(action), "w 32!");
+                    this.add(ab = new JButton(action), "w 32!");
                     ab.setHideActionText(true);
                     lastseparator = false;
                     break;
                 case SEPARATOR:
                     if (!lastseparator) {
-                        add(new JSeparator(JSeparator.VERTICAL), "gapleft 10,gapright 10");
+                        this.add(new JSeparator(SwingConstants.VERTICAL), "gapleft 10,gapright 10");
                         lastseparator = true;
                     }
                     break;
                 case TOGGLE:
-                    add(ab = new JToggleButton(action), "w 32!");
+                    this.add(ab = new JToggleButton(action), "w 32!");
                     ab.setHideActionText(true);
                     if (JDUtilities.getJavaVersion() < 1.6) {
                         final AbstractButton button = ab;
@@ -159,7 +142,7 @@ public class ToolBar extends JToolBar {
                         action.addPropertyChangeListener(new PropertyChangeListener() {
 
                             public void propertyChange(final PropertyChangeEvent evt) {
-                                if (evt.getPropertyName() == ToolBarAction.SELECTED_KEY) {
+                                if (evt.getPropertyName() == Action.SELECTED_KEY) {
                                     new GuiRunnable<Object>() {
 
                                         @Override
@@ -169,7 +152,7 @@ public class ToolBar extends JToolBar {
                                         }
 
                                     }.start();
-                                } else if (evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY) {
+                                } else if (evt.getPropertyName() == Action.LARGE_ICON_KEY) {
                                     new GuiRunnable<Object>() {
 
                                         @Override
@@ -189,19 +172,44 @@ public class ToolBar extends JToolBar {
 
                 if (ab != null) {
                     if (JDUtilities.getJavaVersion() < 1.6) {
-                        if (action.getValue(Action.LARGE_ICON_KEY) != null) ab.setIcon((Icon) action.getValue(Action.LARGE_ICON_KEY));
+                        if (action.getValue(Action.LARGE_ICON_KEY) != null) {
+                            ab.setIcon((Icon) action.getValue(Action.LARGE_ICON_KEY));
+                        }
                     }
-                    Object value = action.getValue(Action.ACCELERATOR_KEY);
-                    if (value == null) continue;
-                    KeyStroke ks = (KeyStroke) value;
-                    rootpane.getInputMap(JButton.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
-                    rootpane.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
-                    rootpane.getActionMap().put(action, action);
+                    final Object value = action.getValue(Action.ACCELERATOR_KEY);
+                    if (value == null) {
+                        continue;
+                    }
+                    final KeyStroke ks = (KeyStroke) value;
+                    this.rootpane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
+                    this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
+                    this.rootpane.getActionMap().put(action, action);
 
-                    String shortCut = action.getShortCutString();
+                    final String shortCut = action.getShortCutString();
                     ab.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
                 }
             }
+        }
+    }
+
+    /**
+     * USed to register the shortcuts to the rootpane during init
+     * 
+     * @param jdGui
+     */
+    public void registerAccelerators(final SwingGui jdGui) {
+        this.rootpane = jdGui.getMainFrame().getRootPane();
+    }
+
+    public void setList(final String[] newlist) {
+        if (newlist == this.current) { return; }
+        synchronized (ToolBar.UPDATELOCK) {
+            if (newlist == null || newlist.length == 0) {
+                this.current = ToolBar.DEFAULT_LIST.toArray(new String[] {});
+            } else {
+                this.current = newlist;
+            }
+            this.updateToolbar();
         }
     }
 
@@ -216,19 +224,20 @@ public class ToolBar extends JToolBar {
      * Updates the toolbar
      */
     private final void updateToolbar() {
-        synchronized (UPDATELOCK) {
-            new GuiRunnable<Object>() {
+        synchronized (ToolBar.UPDATELOCK) {
+            new EDTRunner() {
+
                 @Override
-                public Object runSave() {
-                    setVisible(false);
-                    removeAll();
-                    initToolbar(current);
-                    updateSpecial();
-                    setVisible(true);
-                    revalidate();
-                    return null;
+                protected void runInEDT() {
+                    ToolBar.this.setVisible(false);
+                    ToolBar.this.removeAll();
+                    ToolBar.this.initToolbar(ToolBar.this.current);
+                    ToolBar.this.updateSpecial();
+                    ToolBar.this.setVisible(true);
+                    ToolBar.this.revalidate();
                 }
-            }.waitForEDT();
+
+            };
         }
     }
 

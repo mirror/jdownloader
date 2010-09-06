@@ -168,6 +168,8 @@ public final class Reconnecter {
         for (final DownloadLink link : disabled) {
             link.setEnabled(true);
         }
+        JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_AFTER_RECONNECT, null));
+
         return ipChangeSuccess;
     }
 
@@ -183,7 +185,6 @@ public final class Reconnecter {
             ret = Reconnecter.doReconnectIfRequestedInternal(doit);
             if (ret) {
                 Reconnecter.resetAllLinks();
-                JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_AFTER_RECONNECT, null));
             }
         } catch (final Exception e) {
         }

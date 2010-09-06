@@ -48,13 +48,154 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)" }, flags = { 0, 0 })
 public class DirectHTTP extends PluginForHost {
 
-    private static final String JDL_PREFIX = "jd.plugins.hoster.DirectHTTP.";
-    public static final String ENDINGS = "\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)";
+    public static class Recaptcha {
 
-    public static final String NORESUME = "nochunkload";
-    public static final String NOCHUNKS = "nochunk";
-    public static final String FORCE_NORESUME = "forcenochunkload";
-    public static final String FORCE_NOCHUNKS = "forcenochunk";
+        private final Browser br;
+        private String        challenge;
+        private String        server;
+        private String        captchaAddress;
+        private String        id;
+        private Browser       rcBr;
+        private Form          form;
+
+        public Recaptcha(final Browser br) {
+            this.br = br;
+        }
+
+        public File downloadCaptcha(final File captchaFile) throws IOException {
+            /* follow redirect needed as google redirects to another domain */
+            this.rcBr.setFollowRedirects(true);
+            Browser.download(captchaFile, this.rcBr.openGetConnection(this.captchaAddress));
+            return captchaFile;
+        }
+
+        public String getCaptchaAddress() {
+            return this.captchaAddress;
+        }
+
+        public String getChallenge() {
+            return this.challenge;
+        }
+
+        public Form getForm() {
+            return this.form;
+        }
+
+        public String getId() {
+            return this.id;
+        }
+
+        public String getServer() {
+            return this.server;
+        }
+
+        public void load() throws IOException, PluginException {
+            this.rcBr = this.br.cloneBrowser();
+            /* follow redirect needed as google redirects to another domain */
+            this.rcBr.setFollowRedirects(true);
+            this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
+            this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
+            this.server = this.rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+            if (this.challenge == null || this.server == null) {
+                JDLogger.getLogger().severe("Recaptcha Module fails: " + this.br.getHttpConnection());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.captchaAddress = this.server + "image?c=" + this.challenge;
+        }
+
+        public void parse() throws IOException, PluginException {
+            final Form[] forms = this.br.getForms();
+            this.form = null;
+            for (final Form f : forms) {
+                if (f.getInputField("recaptcha_challenge_field") != null) {
+                    this.form = f;
+                    break;
+                }
+            }
+            if (this.form == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
+                if (this.id == null || this.id.equals("")) {
+                    Plugin.logger.warning("reCaptcha ID couldn't be found...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    this.id = this.id.replace("&amp;error=1", "");
+                }
+            }
+        }
+
+        public void setCaptchaAddress(final String captchaAddress) {
+            this.captchaAddress = captchaAddress;
+        }
+
+        public void setChallenge(final String challenge) {
+            this.challenge = challenge;
+        }
+
+        public Browser setCode(final String code) throws Exception {
+            // <textarea name="recaptcha_challenge_field" rows="3"
+            // cols="40"></textarea>\n <input type="hidden"
+            // name="recaptcha_response_field" value="manual_challenge"/>
+            this.form.put("recaptcha_challenge_field", this.challenge);
+            this.form.put("recaptcha_response_field", Encoding.urlEncode(code));
+            this.br.submitForm(this.form);
+            return this.br;
+        }
+
+        public void setForm(final Form form) {
+            this.form = form;
+        }
+
+        public void setId(final String id) {
+            this.id = id;
+        }
+
+        public void setServer(final String server) {
+            this.server = server;
+        }
+    }
+
+    private static final String JDL_PREFIX     = "jd.plugins.hoster.DirectHTTP.";
+
+    public static final String  ENDINGS        = "\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)";
+    public static final String  NORESUME       = "nochunkload";
+    public static final String  NOCHUNKS       = "nochunk";
+    public static final String  FORCE_NORESUME = "forcenochunkload";
+
+    public static final String  FORCE_NOCHUNKS = "forcenochunk";
+
+    /**
+     * TODO: Remove with next major-update!
+     */
+    public static ArrayList<String> findUrls(final String source) {
+        /* TODO: better parsing */
+        /* remove tags!! */
+        final ArrayList<String> ret = new ArrayList<String>();
+        try {
+
+            for (final String link : new Regex(source, "((https?|ftp):((//)|(\\\\\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)(\n|\r|$|<|\")").getColumn(0)) {
+                try {
+                    new URL(link);
+                    if (!ret.contains(link)) {
+                        ret.add(link);
+                    }
+                } catch (final MalformedURLException e) {
+
+                }
+            }
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+        }
+        return DirectHTTP.removeDuplicates(ret);
+    }
+
+    /**
+     * Returns the annotations flags array
+     */
+    public static int[] getAnnotationFlags() {
+        return new int[] { 0, 0 };
+    }
 
     /**
      * Returns the annotations names array
@@ -67,64 +208,47 @@ public class DirectHTTP extends PluginForHost {
      * Returns the annotation pattern array
      */
     public static String[] getAnnotationUrls() {
-        return new String[] { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*" + ENDINGS };
+        return new String[] { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*" + DirectHTTP.ENDINGS };
     }
 
     /**
-     * Returns the annotations flags array
+     * TODO: Remove with next major-update!
      */
-    public static int[] getAnnotationFlags() {
-        return new int[] { 0, 0 };
+    public static ArrayList<String> removeDuplicates(final ArrayList<String> links) {
+        final ArrayList<String> tmplinks = new ArrayList<String>();
+        if (links == null || links.size() == 0) { return tmplinks; }
+        for (final String link : links) {
+            if (link.contains("...")) {
+                final String check = link.substring(0, link.indexOf("..."));
+                String found = link;
+                for (final String link2 : links) {
+                    if (link2.startsWith(check) && !link2.contains("...")) {
+                        found = link2;
+                        break;
+                    }
+                }
+                if (!tmplinks.contains(found)) {
+                    tmplinks.add(found);
+                }
+            } else {
+                tmplinks.add(link);
+            }
+        }
+        return tmplinks;
     }
 
-    private String contentType = "";
+    private String contentType       = "";
 
     private String customFavIconHost = null;
 
-    public DirectHTTP(PluginWrapper wrapper) {
+    public DirectHTTP(final PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
+        this.setConfigElements();
     }
 
-    @Override
-    public String getAGBLink() {
-        return "";
-    }
-
-    @Override
-    public String getFileInformationString(DownloadLink parameter) {
-        return "(" + contentType + ")" + parameter.getName();
-    }
-
-    public void setDownloadLink(DownloadLink link) {
-        try {
-            super.setDownloadLink(link);
-            customFavIconHost = Browser.getHost(new URL(link.getDownloadURL()));
-        } catch (Throwable e) {
-        }
-    }
-
-    private String getBasicAuth(DownloadLink link) {
-        String url;
-        if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-            url = link.getHost();
-        } else {
-            url = link.getBrowserUrl();
-        }
-        String username = null;
-        String password = null;
-        try {
-            username = getUserInput(JDL.LF(JDL_PREFIX + "username", "Username (BasicAuth) for %s", url), link);
-            password = getUserInput(JDL.LF(JDL_PREFIX + "password", "Password (BasicAuth) for %s", url), link);
-        } catch (Exception e) {
-            return null;
-        }
-        return "Basic " + Encoding.Base64Encode(username + ":" + password);
-    }
-
-    private void BasicAuthfromURL(DownloadLink link) {
+    private void BasicAuthfromURL(final DownloadLink link) {
         String url = null;
-        String basicauth = new Regex(link.getDownloadURL(), "http.*?/([^/]{1}.*?)@").getMatch(0);
+        final String basicauth = new Regex(link.getDownloadURL(), "http.*?/([^/]{1}.*?)@").getMatch(0);
         if (basicauth != null && basicauth.contains(":")) {
             /* https */
             url = new Regex(link.getDownloadURL(), "https.*?@(.+)").getMatch(0);
@@ -136,32 +260,124 @@ public class DirectHTTP extends PluginForHost {
                 if (url != null) {
                     link.setUrlDownload("http://" + url);
                 } else {
-                    logger.severe("Could not parse basicAuth from " + link.getDownloadURL());
+                    Plugin.logger.severe("Could not parse basicAuth from " + link.getDownloadURL());
                 }
             }
             HTACCESSController.getInstance().add(link.getDownloadURL(), Encoding.Base64Encode(basicauth));
         }
     }
 
-    private void setCustomHeaders(Browser br, DownloadLink downloadLink) {
-        /* allow customized headers, eg useragent */
-        ArrayList<String[]> custom = downloadLink.getGenericProperty("customHeader", new ArrayList<String[]>());
-        if (custom != null && custom.size() > 0) {
-            for (String[] header : custom) {
-                br.getHeaders().put(header[0], header[1]);
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().startsWith("directhttp")) {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("^directhttp://", ""));
+        } else {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://"));
+            /* this extension allows to manually add unknown extensions */
+            link.setUrlDownload(link.getDownloadURL().replaceAll("\\.jdeatme$", ""));
+        }
+        this.BasicAuthfromURL(link);
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "";
+    }
+
+    private String getBasicAuth(final DownloadLink link) {
+        String url;
+        if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+            url = link.getHost();
+        } else {
+            url = link.getBrowserUrl();
+        }
+        String username = null;
+        String password = null;
+        try {
+            username = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "username", "Username (BasicAuth) for %s", url), link);
+            password = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "password", "Password (BasicAuth) for %s", url), link);
+        } catch (final Exception e) {
+            return null;
+        }
+        return "Basic " + Encoding.Base64Encode(username + ":" + password);
+    }
+
+    public String getCustomFavIconURL() {
+        if (this.customFavIconHost != null) { return this.customFavIconHost; }
+        return null;
+    }
+
+    @Override
+    public String getFileInformationString(final DownloadLink parameter) {
+        return "(" + this.contentType + ")" + parameter.getName();
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    /**
+     * TODO: can be removed with next major update cause of recaptcha change
+     */
+    public Recaptcha getReCaptcha(final Browser br) {
+        return new Recaptcha(br);
+    }
+
+    public String getSessionInfo() {
+        if (this.customFavIconHost != null) { return this.customFavIconHost; }
+        return "";
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        this.requestFileInformation(downloadLink);
+        final String auth = this.br.getHeaders().get("Authorization");
+        /*
+         * replace with br.setCurrentURL(null); in future (after 0.9)
+         */
+        this.br = new Browser();/* needed to clean referer */
+        if (auth != null) {
+            this.br.getHeaders().put("Authorization", auth);
+        }
+        /* workaround to clear referer */
+        this.br.setFollowRedirects(true);
+        this.br.setDebug(true);
+        boolean resume = true;
+        int chunks = 0;
+
+        if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) || downloadLink.getBooleanProperty(DirectHTTP.FORCE_NORESUME, false)) {
+            resume = false;
+        }
+        if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) || downloadLink.getBooleanProperty(DirectHTTP.FORCE_NOCHUNKS, false) || resume == false) {
+            chunks = 1;
+        }
+        this.setCustomHeaders(this.br, downloadLink);
+        if (downloadLink.getStringProperty("post", null) != null) {
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null), resume, chunks);
+        } else {
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
+        }
+        if (!this.dl.startDownload()) {
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
-        }
-        if (downloadLink.getStringProperty("referer", null) != null) {
-            br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
-        }
-        if (downloadLink.getStringProperty("cookies", null) != null) {
-            br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
         }
     }
 
-    private URLConnectionAdapter prepareConnection(Browser br, DownloadLink downloadLink) throws IOException {
+    private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
         URLConnectionAdapter urlConnection = null;
-        setCustomHeaders(br, downloadLink);
+        this.setCustomHeaders(br, downloadLink);
         if (downloadLink.getStringProperty("post", null) != null) {
             urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
         } else {
@@ -171,31 +387,33 @@ public class DirectHTTP extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
-        br.getHeaders().put("Accept-Encoding", "");
+        this.br.getHeaders().put("Accept-Encoding", "");
         String basicauth = HTACCESSController.getInstance().get(downloadLink.getDownloadURL());
         if (basicauth == null) {
             basicauth = downloadLink.getStringProperty("pass", null);
-            if (basicauth != null) basicauth = "Basic " + Encoding.Base64Encode(basicauth);
+            if (basicauth != null) {
+                basicauth = "Basic " + Encoding.Base64Encode(basicauth);
+            }
         }
         if (basicauth != null) {
-            br.getHeaders().put("Authorization", basicauth);
+            this.br.getHeaders().put("Authorization", basicauth);
         }
-        br.setFollowRedirects(true);
+        this.br.setFollowRedirects(true);
         URLConnectionAdapter urlConnection = null;
         try {
-            urlConnection = prepareConnection(br, downloadLink);
-            if (urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 403) {
+            urlConnection = this.prepareConnection(this.br, downloadLink);
+            if (urlConnection.getResponseCode() == 401) {
                 if (basicauth != null) {
                     HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
                 }
                 urlConnection.disconnect();
-                basicauth = getBasicAuth(downloadLink);
-                if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
-                br.getHeaders().put("Authorization", basicauth);
-                urlConnection = prepareConnection(br, downloadLink);
+                basicauth = this.getBasicAuth(downloadLink);
+                if (basicauth == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed")); }
+                this.br.getHeaders().put("Authorization", basicauth);
+                urlConnection = this.prepareConnection(this.br, downloadLink);
                 if (urlConnection.getResponseCode() == 401) {
                     urlConnection.disconnect();
                     HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
@@ -209,24 +427,26 @@ public class DirectHTTP extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* if final filename already set, do not change */
-            if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
+            if (downloadLink.getFinalFileName() == null) {
+                downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
+            }
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
-            if (contentType.startsWith("text/html")) {
+            if (this.contentType.startsWith("text/html")) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
-                br.followConnection();
+                this.br.followConnection();
                 /* search urls */
                 /*
                  * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls
                  * with next major-udpate
                  */
-                ArrayList<String> follow = findUrls(br.toString());
+                final ArrayList<String> follow = DirectHTTP.findUrls(this.br.toString());
                 /*
                  * if we already tried htmlRedirect or not exactly one link
                  * found, throw File not available
                  */
-                if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) return AvailableStatus.FALSE;
+                if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) { return AvailableStatus.FALSE; }
                 /* found one valid url */
                 downloadLink.setUrlDownload(follow.get(0).trim());
                 /* we set property here to avoid loops */
@@ -236,263 +456,59 @@ public class DirectHTTP extends PluginForHost {
                 urlConnection.disconnect();
             }
             return AvailableStatus.TRUE;
-        } catch (PluginException e2) {
+        } catch (final PluginException e2) {
             throw e2;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             JDLogger.exception(e);
         } finally {
-            if (urlConnection != null) urlConnection.disconnect();
+            if (urlConnection != null) {
+                urlConnection.disconnect();
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        if (link.getDownloadURL().startsWith("directhttp")) {
-            link.setUrlDownload(link.getDownloadURL().replaceAll("^directhttp://", ""));
-        } else {
-            link.setUrlDownload(link.getDownloadURL().replaceAll("httpviajd://", "http://").replaceAll("httpsviajd://", "https://"));
-            /* this extension allows to manually add unknown extensions */
-            link.setUrlDownload(link.getDownloadURL().replaceAll("\\.jdeatme$", ""));
-        }
-        BasicAuthfromURL(link);
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String auth = br.getHeaders().get("Authorization");
-        /*
-         * replace with br.setCurrentURL(null); in future (after 0.9)
-         */
-        br = new Browser();/* needed to clean referer */
-        if (auth != null) br.getHeaders().put("Authorization", auth);
-        /* workaround to clear referer */
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        boolean resume = true;
-        int chunks = 0;
-
-        if (downloadLink.getBooleanProperty(NORESUME, false) || downloadLink.getBooleanProperty(FORCE_NORESUME, false)) resume = false;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false) || downloadLink.getBooleanProperty(FORCE_NOCHUNKS, false) || resume == false) {
-            chunks = 1;
-        }
-        setCustomHeaders(br, downloadLink);
-        if (downloadLink.getStringProperty("post", null) != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null), resume, chunks);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
-        }
-        if (!dl.startDownload()) {
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
-                if (downloadLink.getBooleanProperty(NORESUME, false) == false) {
-                    downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            } else {
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
-    private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
-    }
-
     @Override
-    public void resetDownloadlink(DownloadLink link) {
-        link.setProperty(NORESUME, false);
-        link.setProperty(NOCHUNKS, false);
+    public void resetDownloadlink(final DownloadLink link) {
+        link.setProperty(DirectHTTP.NORESUME, false);
+        link.setProperty(DirectHTTP.NOCHUNKS, false);
     }
 
     @Override
     public void resetPluginGlobals() {
     }
 
-    public String getCustomFavIconURL() {
-        if (customFavIconHost != null) return customFavIconHost;
-        return null;
+    private void setConfigElements() {
+        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
     }
 
-    public String getSessionInfo() {
-        if (customFavIconHost != null) return customFavIconHost;
-        return "";
-    }
-
-    /**
-     * TODO: can be removed with next major update cause of recaptcha change
-     */
-    public Recaptcha getReCaptcha(final Browser br) {
-        return new Recaptcha(br);
-    }
-
-    public static class Recaptcha {
-
-        private final Browser br;
-        private String challenge;
-        private String server;
-        private String captchaAddress;
-        private String id;
-        private Browser rcBr;
-        private Form form;
-
-        public Recaptcha(final Browser br) {
-            this.br = br;
-        }
-
-        public String getChallenge() {
-            return challenge;
-        }
-
-        public void setChallenge(final String challenge) {
-            this.challenge = challenge;
-        }
-
-        public String getServer() {
-            return server;
-        }
-
-        public void setServer(final String server) {
-            this.server = server;
-        }
-
-        public String getCaptchaAddress() {
-            return captchaAddress;
-        }
-
-        public void setCaptchaAddress(final String captchaAddress) {
-            this.captchaAddress = captchaAddress;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(final String id) {
-            this.id = id;
-        }
-
-        public Form getForm() {
-            return form;
-        }
-
-        public void setForm(final Form form) {
-            this.form = form;
-        }
-
-        public void parse() throws IOException, PluginException {
-            final Form[] forms = br.getForms();
-            form = null;
-            for (final Form f : forms) {
-                if (f.getInputField("recaptcha_challenge_field") != null) {
-                    form = f;
-                    break;
-                }
-            }
-            if (form == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                id = form.getRegex("k=(.*?)\"").getMatch(0);
-                if (id == null || id.equals("")) {
-                    logger.warning("reCaptcha ID couldn't be found...");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else
-                    id = id.replace("&amp;error=1", "");
+    private void setCustomHeaders(final Browser br, final DownloadLink downloadLink) {
+        /* allow customized headers, eg useragent */
+        final ArrayList<String[]> custom = downloadLink.getGenericProperty("customHeader", new ArrayList<String[]>());
+        if (custom != null && custom.size() > 0) {
+            for (final String[] header : custom) {
+                br.getHeaders().put(header[0], header[1]);
             }
         }
-
-        public void load() throws IOException, PluginException {
-            rcBr = br.cloneBrowser();
-            /* follow redirect needed as google redirects to another domain */
-            rcBr.setFollowRedirects(true);
-            rcBr.getPage("http://api.recaptcha.net/challenge?k=" + id);
-            challenge = rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
-            server = rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
-            if (challenge == null || server == null) {
-                JDLogger.getLogger().severe("Recaptcha Module fails: " + br.getHttpConnection());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            captchaAddress = server + "image?c=" + challenge;
+        if (downloadLink.getStringProperty("referer", null) != null) {
+            br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         }
-
-        public File downloadCaptcha(final File captchaFile) throws IOException {
-            /* follow redirect needed as google redirects to another domain */
-            rcBr.setFollowRedirects(true);
-            Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
-            return captchaFile;
-        }
-
-        public Browser setCode(final String code) throws Exception {
-            // <textarea name="recaptcha_challenge_field" rows="3"
-            // cols="40"></textarea>\n <input type="hidden"
-            // name="recaptcha_response_field" value="manual_challenge"/>
-            form.put("recaptcha_challenge_field", challenge);
-            form.put("recaptcha_response_field", Encoding.urlEncode(code));
-            br.submitForm(form);
-            return br;
+        if (downloadLink.getStringProperty("cookies", null) != null) {
+            br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
         }
     }
 
-    /**
-     * TODO: Remove with next major-update!
-     */
-    public static ArrayList<String> findUrls(String source) {
-        /* TODO: better parsing */
-        /* remove tags!! */
-        final ArrayList<String> ret = new ArrayList<String>();
+    public void setDownloadLink(final DownloadLink link) {
         try {
-
-            for (String link : new Regex(source, "((https?|ftp):((//)|(\\\\\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)(\n|\r|$|<|\")").getColumn(0)) {
-                try {
-                    new URL(link);
-                    if (!ret.contains(link)) ret.add(link);
-                } catch (MalformedURLException e) {
-
-                }
-            }
-        } catch (Exception e) {
-            JDLogger.exception(e);
+            super.setDownloadLink(link);
+            this.customFavIconHost = Browser.getHost(new URL(link.getDownloadURL()));
+        } catch (final Throwable e) {
         }
-        return removeDuplicates(ret);
-    }
-
-    /**
-     * TODO: Remove with next major-update!
-     */
-    public static ArrayList<String> removeDuplicates(ArrayList<String> links) {
-        ArrayList<String> tmplinks = new ArrayList<String>();
-        if (links == null || links.size() == 0) return tmplinks;
-        for (String link : links) {
-            if (link.contains("...")) {
-                String check = link.substring(0, link.indexOf("..."));
-                String found = link;
-                for (String link2 : links) {
-                    if (link2.startsWith(check) && !link2.contains("...")) {
-                        found = link2;
-                        break;
-                    }
-                }
-                if (!tmplinks.contains(found)) tmplinks.add(found);
-            } else {
-                tmplinks.add(link);
-            }
-        }
-        return tmplinks;
     }
 
 }

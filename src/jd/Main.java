@@ -524,27 +524,23 @@ public class Main {
          */
         Main.LOG.info("update start");
 
-        new Thread() {
+        new Thread("Update and dynamics") {
             @Override
             public void run() {
                 try {
                     Thread.sleep(5000);
                     WebUpdate.doUpdateCheck(false);
-                } catch (final InterruptedException e) {
+
+                    Main.loadDynamics();
+
+                    WebUpdate.dynamicPluginsFinished();
+                } catch (final Exception e) {
                     e.printStackTrace();
                 }
             }
         }.start();
 
-        try {
-            Main.loadDynamics();
-        } catch (final Exception e1) {
-            JDLogger.exception(Level.FINEST, e1);
-        }
-        WebUpdate.dynamicPluginsFinished();
-
         Main.LOG.info("update end");
-
     }
 
 }

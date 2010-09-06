@@ -56,7 +56,7 @@ public class ConfigTreeModel implements TreeModel {
 
         teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelCaptcha.class));
 
-        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.MethodSelection.class));
+        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectMethodSelector.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.Advanced.class));
 
         teTop.add(teLeaf = new TreeEntry(JDL.L(JDL_PREFIX + "passwordsAndLogins", "Passwords & Logins"), "gui.images.list"));
