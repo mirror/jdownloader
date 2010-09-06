@@ -69,6 +69,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtRowHighlighter;
 import org.appwork.utils.swing.table.ExtTable;
+import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNInfo;
 
@@ -113,6 +114,8 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     public static final Color             COLOR_DONE               = new Color(204, 255, 170, 50);
     public static final Color             COLOR_MISSING            = new Color(221, 34, 34, 50);
     public static final Color             COLOR_OLD                = new Color(255, 200, 0, 50);
+
+    private static final Color            COLOR_SELECTED_ROW       = new Color(200, 200, 200, 80);
 
     private SrcParser                     sourceParser;
 
@@ -425,7 +428,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             }
 
         });
-
+        this.table.addRowHighlighter(new SelectionHighlighter(null, LFEGui.COLOR_SELECTED_ROW));
         this.setLayout(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[][grow, fill]"));
         this.warning = new JButton(JDL.L(LFEGui.LOCALE_PREFIX + "account.warning", "SVN Account missing. Click here to read more."));
         this.warning.setVisible(false);
