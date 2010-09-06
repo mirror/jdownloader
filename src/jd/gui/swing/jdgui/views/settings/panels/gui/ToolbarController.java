@@ -49,7 +49,7 @@ import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class ToolbarController extends ConfigPanel {
-    private static final ArrayList<String> WHITELIST = new ArrayList<String>();
+    private static final ArrayList<String> WHITELIST        = new ArrayList<String>();
     static {
         // controls
         WHITELIST.add("toolbar.control.start");
@@ -112,6 +112,7 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.opendlfolder");
         WHITELIST.add("action.restore");
         WHITELIST.add("premiumMenu.configuration");
+        WHITELIST.add("action.passwordlist");
         WHITELIST.add("action.premiumview.addacc");
         WHITELIST.add("action.premium.buy");
 
@@ -121,8 +122,8 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("action.restart");
         WHITELIST.add("action.exit");
     }
-    private static final long serialVersionUID = -7024581410075950497L;
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
+    private static final long              serialVersionUID = -7024581410075950497L;
+    private static final String            JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "toolbarController.title", "Toolbar Manager");
@@ -132,13 +133,13 @@ public class ToolbarController extends ConfigPanel {
         return "gui.images.toolbar";
     }
 
-    private JXTable table;
+    private JXTable                  table;
 
-    private InternalTableModel tableModel;
+    private InternalTableModel       tableModel;
 
     private ArrayList<ToolBarAction> actions;
 
-    private ArrayList<String> list;
+    private ArrayList<String>        list;
 
     public ToolbarController() {
         super();
@@ -336,7 +337,7 @@ public class ToolbarController extends ConfigPanel {
 
         private static final long serialVersionUID = 1L;
 
-        private JRendererLabel label;
+        private JRendererLabel    label;
 
         public TableRenderer() {
             label = new JRendererLabel();

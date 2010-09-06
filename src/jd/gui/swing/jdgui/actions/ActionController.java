@@ -48,6 +48,7 @@ import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
+import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
 import jd.nutils.JDFlags;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.PluginForHost;
@@ -612,6 +613,19 @@ public class ActionController {
             @Override
             public void onAction(ActionEvent e) {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
+            }
+
+            @Override
+            public void initDefaults() {
+            }
+        };
+        
+        new ToolBarAction("action.passwordlist", PasswordList.getIconKey()) {
+            private static final long serialVersionUID = -4111402172655120550L;
+
+            @Override
+            public void onAction(ActionEvent e) {
+                SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, PasswordList.class);
             }
 
             @Override

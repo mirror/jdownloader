@@ -247,23 +247,18 @@ public class JDInit {
                 final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), null, null, null);
                 dialog.setLeftActions(new AbstractAction(JDL.L("system.update.showchangelogv2", "What's new?")) {
 
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = 1L;
 
                     public void actionPerformed(final ActionEvent e) {
                         try {
                             OS.launchBrowser("http://jdownloader.org/changes/index");
                         } catch (final IOException e1) {
-                            // TODO Auto-generated catch block
                             e1.printStackTrace();
                         }
                     }
 
                 });
-                final Integer ret = Dialog.getInstance().showDialog(dialog);
-
+                Dialog.getInstance().showDialog(dialog);
             }
         }
         this.submitVersion();

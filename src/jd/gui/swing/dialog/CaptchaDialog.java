@@ -45,9 +45,6 @@ import org.appwork.utils.swing.dialog.Dialog;
  */
 public class CaptchaDialog extends AbstractDialog<String> implements ActionListener, KeyListener, WindowListener, MouseListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     private JTextField        textField;

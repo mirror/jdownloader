@@ -53,7 +53,6 @@ public class TwoTextFieldDialog extends AbstractDialog<String[]> {
 
     @Override
     protected String[] createReturnValue() {
-
         return new String[] { this.txtFieldOne.getText(), this.txtFieldTwo.getText() };
     }
 

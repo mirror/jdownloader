@@ -263,7 +263,6 @@
 		<buildAddon number="132" package="Customizer" include="customizer/**" />
 		<buildAddon number="133" package="AntiShutdown" include="antistandby/**" />
 		<buildAddon number="134" package="RouterDBEditor" include="routerdbeditor/**" />
-		<buildAddon number="135" package="RouterSend" include="routersend/**" />
 		<buildAddon number="136" package="proxyrot" include="proxyrot/**" />
 		<buildAddon number="137" package="scriptlauncher" include="scriptlauncher/**" />
 		<buildAddon number="102" package="infobar" include="infobar/**" />

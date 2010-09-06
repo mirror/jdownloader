@@ -43,6 +43,7 @@ import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CheckStatusAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyPasswordAction;
@@ -59,7 +60,6 @@ import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenFileAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.OpenInBrowserAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageDirectoryAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.PackageNameAction;
-import jd.gui.swing.jdgui.views.downloads.contextmenu.PasswordListAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.PriorityAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.ResetAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.ResumeAction;
@@ -378,7 +378,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
         pop.add(new SetPasswordAction(links));
         pop.add(new CopyPasswordAction(links));
-        pop.add(new PasswordListAction());
+        pop.add(ActionController.getToolBarAction("action.passwordlist"));
 
         return pop;
     }

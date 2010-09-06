@@ -46,7 +46,6 @@ public class TextAreaDialog extends AbstractDialog<String> {
 
     @Override
     protected String createReturnValue() {
-        // TODO Auto-generated method stub
         return this.txtArea.getText();
     }
 

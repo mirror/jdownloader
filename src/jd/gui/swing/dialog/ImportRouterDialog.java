@@ -81,7 +81,6 @@ public class ImportRouterDialog extends AbstractDialog<Object> {
 
     @Override
     protected Object createReturnValue() {
-        // TODO Auto-generated method stub
         return this.getReturnmask();
     }
 

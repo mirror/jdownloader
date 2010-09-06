@@ -36,9 +36,10 @@ import jd.config.SubConfiguration;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 
-public class ClickPositionDialog extends org.appwork.utils.swing.dialog.AbstractDialog<Point> implements ActionListener, MouseListener {
+public class ClickPositionDialog extends AbstractDialog<Point> implements ActionListener, MouseListener {
 
     private static final long serialVersionUID = 5540481255364141955L;
 

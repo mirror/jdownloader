@@ -78,7 +78,6 @@ public class AccountDialog extends AbstractDialog<Integer> {
 
     @Override
     protected Integer createReturnValue() {
-        // TODO Auto-generated method stub
         return this.getReturnmask();
     }
 

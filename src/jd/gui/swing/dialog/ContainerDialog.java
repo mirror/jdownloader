@@ -27,7 +27,6 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
  * A Basic dialog, that accepts a JPanel.
  * 
  * @author thomas
- * 
  */
 public class ContainerDialog extends AbstractDialog<Integer> {
 
@@ -42,13 +41,11 @@ public class ContainerDialog extends AbstractDialog<Integer> {
 
     @Override
     protected Integer createReturnValue() {
-        // TODO Auto-generated method stub
         return this.getReturnmask();
     }
 
     @Override
     public JComponent layoutDialogContent() {
-        // TODO Auto-generated method stub
         return this.panel;
     }
 

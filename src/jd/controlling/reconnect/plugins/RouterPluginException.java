@@ -2,7 +2,9 @@ package jd.controlling.reconnect.plugins;
 
 public class RouterPluginException extends Exception {
 
-    public RouterPluginException(final Exception e) {
+    private static final long serialVersionUID = 2065340827332607180L;
+
+    public RouterPluginException(final Throwable e) {
         super(e);
     }
 
