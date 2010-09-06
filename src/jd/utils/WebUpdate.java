@@ -319,7 +319,7 @@ public class WebUpdate {
                     final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100, "gui.images.update");
                     updater.getBroadcaster().addListener(messageListener = new MessageListener() {
                         public void onMessage(final MessageEvent event) {
-                            progress.setStatusText(event.getSource() + ": " + event.getMessage());
+                            progress.setStatusText(event.getCaller() + ": " + event.getMessage());
                         }
                     });
 
@@ -456,7 +456,7 @@ public class WebUpdate {
                         updater.getBroadcaster().addListener(new MessageListener() {
 
                             public void onMessage(final MessageEvent event) {
-                                pc.setStatusText(event.getSource().toString() + ": " + event.getMessage());
+                                pc.setStatusText(event.getCaller().toString() + ": " + event.getMessage());
 
                             }
 

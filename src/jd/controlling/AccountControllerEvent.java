@@ -16,10 +16,12 @@
 
 package jd.controlling;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
+
+
 import jd.plugins.Account;
 
-public class AccountControllerEvent extends JDEvent {
+public class AccountControllerEvent extends DefaultEvent {
 
     private final Account account;
     private final String host;

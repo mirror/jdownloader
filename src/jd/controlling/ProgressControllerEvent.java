@@ -16,9 +16,9 @@
 
 package jd.controlling;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
 
-public class ProgressControllerEvent extends JDEvent {
+public class ProgressControllerEvent extends DefaultEvent {
 
     public ProgressControllerEvent(Object source, int ID) {
         super(source, ID);
@@ -29,4 +29,9 @@ public class ProgressControllerEvent extends JDEvent {
 
     public static final int FINISHED = 2;
 
+    /* needed for current stable 0.9580 */
+    @Deprecated
+    public int getID() {
+        return getEventID();
+    }
 }

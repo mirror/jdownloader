@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.http.Browser;
@@ -29,6 +28,8 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.event.Eventsender;
 
 public class FileUpdate {
 
@@ -47,7 +48,7 @@ public class FileUpdate {
 
     private String relURL;
     private File workingDir;
-    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
+    private Eventsender<MessageListener, MessageEvent> broadcaster;
 
     public FileUpdate(String serverString, final String hash) {
         this.hash = hash;
@@ -71,7 +72,7 @@ public class FileUpdate {
     }
 
     private void initBroadcaster() {
-        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+        this.broadcaster = new Eventsender<MessageListener, MessageEvent>() {
 
             @Override
             protected void fireEvent(final MessageListener listener, final MessageEvent event) {
@@ -81,7 +82,7 @@ public class FileUpdate {
         };
     }
 
-    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+    public Eventsender<MessageListener, MessageEvent> getBroadcaster() {
         return broadcaster;
     }
 

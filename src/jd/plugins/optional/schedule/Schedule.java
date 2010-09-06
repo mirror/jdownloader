@@ -158,7 +158,7 @@ public class Schedule extends PluginOptional {
 
                 @Override
                 public void onPanelEvent(SwitchPanelEvent event) {
-                    if (event.getID() == SwitchPanelEvent.ON_REMOVE) activateAction.setSelected(false);
+                    if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) activateAction.setSelected(false);
                 }
 
             });

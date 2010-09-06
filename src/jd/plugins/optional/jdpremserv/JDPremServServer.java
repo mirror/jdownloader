@@ -219,9 +219,9 @@ public class JDPremServServer implements Handler, ControlListener {
 
     public void controlEvent(ControlEvent event) {
         if (event == null) return;
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getSource() instanceof PluginForHost)) return;
+            if (!(event.getCaller() instanceof PluginForHost)) return;
             DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             synchronized (LOCK) {
                 startedLinks.values().remove(lastDownloadFinished);

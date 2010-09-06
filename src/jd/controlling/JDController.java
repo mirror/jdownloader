@@ -42,6 +42,8 @@ import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.event.Eventsender;
+
 /**
  * Im JDController wird das ganze App gesteuert. Events werden deligiert.
  * 
@@ -50,13 +52,10 @@ import jd.utils.locale.JDL;
 public class JDController implements ControlListener {
 
     public static JDController getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new JDController();
-        }
         return INSTANCE;
     }
 
-    private class EventSender extends Thread {
+    private class EventSender extends Eventsender<ControlListener, ControlEvent> {
 
         protected static final long MAX_EVENT_TIME = 10000;
         private ControlListener currentListener;
@@ -64,10 +63,62 @@ public class JDController implements ControlListener {
         private long eventStart = 0;
         public boolean waitFlag = true;
         private Thread watchDog;
+        private Thread runDog;
+        private Object LOCK = new Object();
+
+        public Object getLOCK() {
+            return LOCK;
+        }
+
+        public void handleEvent(final ControlEvent event) {
+            currentListener = null;
+            fireEvent(event);
+            try {
+                /*
+                 * the last one to call is the JDController itself
+                 */
+                controlEvent(event);
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
+        }
 
         public EventSender() {
-            super("EventSender");
-            watchDog = new Thread("EventSenderWatchDog") {
+            runDog = new Thread("EventSender:runDog") {
+                @Override
+                public void run() {
+                    eventStart = 0;
+                    while (true) {
+                        synchronized (LOCK) {
+                            while (waitFlag) {
+                                try {
+                                    LOCK.wait();
+                                } catch (Exception e) {
+                                    JDLogger.exception(e);
+                                }
+                            }
+                        }
+                        try {
+                            synchronized (eventQueue) {
+                                if (eventQueue.size() > 0) {
+                                    event = eventQueue.remove(0);
+                                } else {
+                                    eventStart = 0;
+                                    event = null;
+                                    waitFlag = true;
+                                }
+                            }
+                            if (event == null) continue;
+                            handleEvent(event);
+                        } catch (Exception e) {
+                            JDLogger.exception(e);
+                            eventStart = 0;
+                        }
+                    }
+                }
+            };
+            runDog.start();
+            watchDog = new Thread("EventSender:watchDog") {
                 @Override
                 public void run() {
                     while (true) {
@@ -90,64 +141,25 @@ public class JDController implements ControlListener {
         }
 
         @Override
-        public void run() {
-            while (true) {
-                synchronized (this) {
-                    while (waitFlag) {
-                        try {
-                            wait();
-                        } catch (Exception e) {
-                            JDLogger.exception(e);
-                        }
-                    }
-                }
+        protected void fireEvent(ControlListener listener, ControlEvent event) {
+            if (Thread.currentThread() == runDog) {
+                /* only runDog should be watched by watchDog :p */
+                eventStart = System.currentTimeMillis();
                 try {
-                    synchronized (eventQueue) {
-                        if (eventQueue.size() > 0) {
-                            event = eventQueue.remove(0);
-                        } else {
-                            eventStart = 0;
-                            waitFlag = true;
-                            // JDUtilities.getLogger().severe("PAUSE");
-                        }
-                    }
-                    if (event == null || waitFlag) continue;
-                    eventStart = System.currentTimeMillis();
-                    currentListener = JDController.this;
-                    eventStart = 0;
-                    synchronized (controlListener) {
-                        if (controlListener.size() > 0) {
-                            currentcontrolListener.clear();
-                            currentcontrolListener.addAll(controlListener);
-                            for (ControlListener cl : currentcontrolListener) {
-                                eventStart = System.currentTimeMillis();
-                                try {
-                                    cl.controlEvent(event);
-                                } catch (Exception e) {
-                                    JDLogger.exception(e);
-                                }
-                                eventStart = 0;
-                            }
-                        }
-                        synchronized (removeList) {
-                            controlListener.removeAll(removeList);
-                            removeList.clear();
-                        }
-                    }
-                    try {
-                        /* the last one to call is the JDController itself */
-                        controlEvent(event);
-                    } catch (Exception e) {
-                        JDLogger.exception(e);
-                    }
-                    // JDUtilities.getLogger().severe("THREAD2");
-
+                    currentListener = listener;
+                    this.event=event;
+                    listener.controlEvent(event);
                 } catch (Exception e) {
                     JDLogger.exception(e);
-                    eventStart = 0;
+                }
+                eventStart = 0;
+            } else {
+                try {
+                    listener.controlEvent(event);
+                } catch (Exception e) {
+                    JDLogger.exception(e);
                 }
             }
-
         }
 
     }
@@ -157,9 +169,6 @@ public class JDController implements ControlListener {
      * Listener werden benachrichtigt, wenn mittels
      * {@link #fireControlEvent(ControlEvent)} ein Event losgeschickt wird.
      */
-    private transient ArrayList<ControlListener> controlListener = new ArrayList<ControlListener>();
-    private transient ArrayList<ControlListener> currentcontrolListener = new ArrayList<ControlListener>();
-    private transient ArrayList<ControlListener> removeList = new ArrayList<ControlListener>();
 
     private ArrayList<ControlEvent> eventQueue = new ArrayList<ControlEvent>();
 
@@ -177,7 +186,7 @@ public class JDController implements ControlListener {
      */
 
     private static ArrayList<String> delayMap = new ArrayList<String>();
-    private static JDController INSTANCE;
+    private static JDController INSTANCE = new JDController();;
 
     private static final Object SHUTDOWNLOCK = new Object();
 
@@ -185,7 +194,7 @@ public class JDController implements ControlListener {
      * Private constructor. Use singleton method instead!
      */
     private JDController() {
-        eventSender = getEventSender();
+        eventSender = new EventSender();
     }
 
     /**
@@ -195,13 +204,7 @@ public class JDController implements ControlListener {
      *            Ein neuer Listener
      */
     public void addControlListener(ControlListener listener) {
-        if (listener == null) throw new NullPointerException();
-        synchronized (controlListener) {
-            synchronized (removeList) {
-                if (removeList.contains(listener)) removeList.remove(listener);
-            }
-            if (!controlListener.contains(listener)) controlListener.add(listener);
-        }
+        eventSender.addListener(listener);
     }
 
     private String callService(String service, String key) throws Exception {
@@ -228,7 +231,7 @@ public class JDController implements ControlListener {
             logger.warning("event= NULL");
             return;
         }
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
             DownloadWatchDog.getInstance();
             break;
@@ -244,7 +247,7 @@ public class JDController implements ControlListener {
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) return;
+            if (!(event.getCaller() instanceof PluginForHost)) return;
             DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
 
             // Prüfen ob das Paket fertig ist und entfernt werden soll
@@ -420,10 +423,10 @@ public class JDController implements ControlListener {
         try {
             synchronized (eventQueue) {
                 eventQueue.add(controlEvent);
-                synchronized (eventSender) {
+                synchronized (eventSender.getLOCK()) {
                     if (eventSender.waitFlag) {
                         eventSender.waitFlag = false;
-                        eventSender.notify();
+                        eventSender.getLOCK().notify();
                     }
                 }
             }
@@ -434,27 +437,7 @@ public class JDController implements ControlListener {
     public void fireControlEventDirect(ControlEvent controlEvent) {
         if (controlEvent == null) return;
         try {
-            synchronized (controlListener) {
-                synchronized (removeList) {
-                    controlListener.removeAll(removeList);
-                    removeList.clear();
-                }
-                if (controlListener.size() > 0) {
-                    for (ControlListener cl : controlListener) {
-                        try {
-                            cl.controlEvent(controlEvent);
-                        } catch (Exception e) {
-                            JDLogger.exception(e);
-                        }
-                    }
-                }
-                try {
-                    /* the last one to call is the JDController itself */
-                    controlEvent(controlEvent);
-                } catch (Exception e) {
-                    JDLogger.exception(e);
-                }
-            }
+            eventSender.handleEvent(controlEvent);
         } catch (Exception e) {
         }
     }
@@ -462,13 +445,6 @@ public class JDController implements ControlListener {
     public void fireControlEvent(int controlID, Object param) {
         ControlEvent c = new ControlEvent(this, controlID, param);
         fireControlEvent(c);
-    }
-
-    private EventSender getEventSender() {
-        if (this.eventSender != null && this.eventSender.isAlive()) return this.eventSender;
-        EventSender th = new EventSender();
-        th.start();
-        return th;
     }
 
     public int getForbiddenReconnectDownloadNum() {
@@ -541,9 +517,7 @@ public class JDController implements ControlListener {
      *            Der zu entfernende Listener
      */
     public synchronized void removeControlListener(ControlListener listener) {
-        synchronized (removeList) {
-            if (!removeList.contains(listener)) removeList.add(listener);
-        }
+        eventSender.removeListener(listener);
     }
 
     public static void loadContainerFile(final File file) {

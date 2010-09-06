@@ -712,13 +712,13 @@ public class JDChat extends PluginOptional {
 
     @Override
     public void onControlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
+        if (event.getEventID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
             if (SwingGui.getInstance().getMainFrame().isActive() && !nickaway) {
                 initIRC();
             } else {
                 addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
             }
-        } else if (event.getID() == ControlEvent.CONTROL_BEFORE_RECONNECT) {
+        } else if (event.getEventID() == ControlEvent.CONTROL_BEFORE_RECONNECT) {
             // sendMessage(CHANNEL, "/me is reconnecting...");
             if (conn != null && conn.isConnected()) {
                 addToText(null, STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
@@ -1436,7 +1436,7 @@ public class JDChat extends PluginOptional {
 
                     @Override
                     public void onPanelEvent(SwitchPanelEvent event) {
-                        if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                        if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
                             setGuiEnable(false);
                         }
                     }

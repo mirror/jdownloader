@@ -212,7 +212,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     public void controlEvent(final ControlEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
             JDLogger.getLogger().info("Init complete");
             new GuiRunnable<Object>() {

@@ -43,7 +43,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
             onControlEvent(event);
 
             // Deaktiviert das Plugin beim Beenden
-            if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+            if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
                 final String id = JDController.requestDelayExit(((OptionalPluginWrapper) wrapper).getID());
                 try {
                     stopAddon();

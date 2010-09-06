@@ -161,7 +161,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
             view.getBroadcaster().addListener(new SwitchPanelListener() {
                 @Override
                 public void onPanelEvent(SwitchPanelEvent event) {
-                    if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                    if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
                         showGuiAction.setSelected(false);
                     }
                 }

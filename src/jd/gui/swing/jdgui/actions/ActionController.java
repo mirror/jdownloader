@@ -114,7 +114,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        switch (event.getID()) {
+                        switch (event.getEventID()) {
                         case ControlEvent.CONTROL_DOWNLOAD_START:
                             setEnabled(false);
                             break;
@@ -165,7 +165,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        switch (event.getID()) {
+                        switch (event.getEventID()) {
                         case ControlEvent.CONTROL_DOWNLOAD_START:
                             setEnabled(true);
                             setSelected(false);
@@ -200,7 +200,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        switch (event.getID()) {
+                        switch (event.getEventID()) {
                         case ControlEvent.CONTROL_DOWNLOAD_START:
                             setEnabled(true);
                             break;
@@ -399,7 +399,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
-                        switch (event.getID()) {
+                        switch (event.getEventID()) {
                         case ControlEvent.CONTROL_DOWNLOAD_START:
                             setEnabled(true);
                             break;

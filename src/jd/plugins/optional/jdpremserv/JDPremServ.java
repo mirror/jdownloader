@@ -55,7 +55,7 @@ public class JDPremServ extends PluginOptional {
 
     @Override
     public void onControlEvent(ControlEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
             startServer();
         }
@@ -117,7 +117,7 @@ public class JDPremServ extends PluginOptional {
 
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
-                if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
                     setGuiEnable(false);
                 }
             }

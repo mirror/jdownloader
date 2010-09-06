@@ -16,9 +16,9 @@
 
 package jd.controlling;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
 
-public class DownloadControllerEvent extends JDEvent {
+public class DownloadControllerEvent extends DefaultEvent {
 
     /**
      * Wird bei Strukturänderungen der DownloadListe

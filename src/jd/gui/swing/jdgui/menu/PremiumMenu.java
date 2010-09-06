@@ -155,7 +155,7 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
     }
 
     public void onAccountControllerEvent(AccountControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
         case AccountControllerEvent.ACCOUNT_REMOVED:
             updateAsync.restart();

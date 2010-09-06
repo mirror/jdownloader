@@ -154,7 +154,7 @@ public class Config {
         controller.addControlListener(new ControlListener() {
 
             public void controlEvent(final ControlEvent event) {
-                if (event.getSource() == tmplaf && event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
+                if (event.getCaller() == tmplaf && event.getEventID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
                     final String strParam = event.getParameter().toString();
                     Object value = tmplaf.getProperty(strParam);
                     if (value == null) {

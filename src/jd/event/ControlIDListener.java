@@ -31,7 +31,7 @@ public abstract class ControlIDListener implements ControlListener {
     }
 
     public void controlEvent(final ControlEvent event) {
-        final int eventId = event.getID();
+        final int eventId = event.getEventID();
         for (final int id : ids) {
             if (id == eventId) {
                 controlIDEvent(event);

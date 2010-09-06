@@ -278,7 +278,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case DownloadControllerEvent.REMOVE_FILPACKAGE:
             if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((FilePackage) event.getParameter())) {
                 this.hideFilePackageInfo();

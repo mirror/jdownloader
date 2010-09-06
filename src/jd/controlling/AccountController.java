@@ -26,9 +26,10 @@ import java.util.TreeMap;
 
 import javax.swing.Timer;
 
+import org.appwork.utils.event.Eventsender;
+
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.event.JDBroadcaster;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -50,7 +51,7 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private static AccountController INSTANCE = new AccountController();
 
-    private JDBroadcaster<AccountControllerListener, AccountControllerEvent> broadcaster = new JDBroadcaster<AccountControllerListener, AccountControllerEvent>() {
+    private Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
         @Override
         protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
@@ -377,7 +378,7 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public void onAccountControllerEvent(final AccountControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             JDUtilities.getConfiguration().save();

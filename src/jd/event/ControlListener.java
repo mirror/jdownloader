@@ -16,7 +16,9 @@
 
 package jd.event;
 
-public interface ControlListener {
+import java.util.EventListener;
+
+public interface ControlListener extends EventListener  {
 
     void controlEvent(ControlEvent event);
 

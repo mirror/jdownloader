@@ -225,7 +225,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     public void onAccountControllerEvent(AccountControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_UPDATE:
@@ -300,7 +300,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+        if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getCaller() instanceof Main) {
             guiInitComplete = true;
             JDUtilities.getController().removeControlListener(this);
             requestUpdate();

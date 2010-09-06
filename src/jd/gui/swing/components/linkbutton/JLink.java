@@ -31,10 +31,11 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.table.TableCellRenderer;
 
+import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.Eventsender;
+
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.event.JDBroadcaster;
-import jd.event.JDEvent;
 import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
@@ -86,7 +87,7 @@ public class JLink extends JLabel {
 
     private URL url;
     private JDUnderlinedText mouseListener;
-    private transient JDBroadcaster<ActionListener, JDEvent> broadcaster;
+    private transient Eventsender<ActionListener, DefaultEvent> broadcaster;
 
     public JLink() {
         this(null, null, null);
@@ -133,18 +134,16 @@ public class JLink extends JLabel {
     }
 
     private void initBroadcaster() {
-        this.broadcaster = new JDBroadcaster<ActionListener, JDEvent>() {
-
-            @Override
-            protected void fireEvent(ActionListener listener, JDEvent event) {
+        this.broadcaster = new Eventsender<ActionListener, DefaultEvent>() {            
+            
+            protected void fireEvent(final ActionListener listener, final DefaultEvent event) {
                 listener.actionPerformed(new ActionEvent(JLink.this, JLink.CLICKED, getText()));
-
             }
 
         };
     }
 
-    public JDBroadcaster<ActionListener, JDEvent> getBroadcaster() {
+    public Eventsender<ActionListener, DefaultEvent> getBroadcaster() {
         if (broadcaster == null) initBroadcaster();
         return broadcaster;
     }

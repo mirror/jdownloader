@@ -560,7 +560,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     @SuppressWarnings("unchecked")
     public void onLinkCheckEvent(LinkCheckEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case LinkCheckEvent.AFTER_CHECK:
             if (event.getParameter() instanceof ArrayList) {
                 afterLinkGrabber((ArrayList<DownloadLink>) event.getParameter());
@@ -577,7 +577,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getSource() == this.pc) {
+        if (event.getCaller() == this.pc) {
             lc.abortLinkCheck();
             this.stopLinkGatherer();
             return;
@@ -589,7 +589,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case LinkGrabberControllerEvent.ADD_FILEPACKAGE:
             if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_INFOPANEL_ONLINKGRAB)) {
                 showFilePackageInfo((LinkGrabberFilePackage) event.getParameter());

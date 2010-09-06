@@ -45,7 +45,7 @@ public class MainToolBar extends ToolBar {
 
                     @Override
                     public Object runSave() {
-                        switch (event.getID()) {
+                        switch (event.getEventID()) {
                         case ControlEvent.CONTROL_DOWNLOAD_START:
                             speedmeter.start();
                             break;

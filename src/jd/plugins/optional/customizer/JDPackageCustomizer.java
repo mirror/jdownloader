@@ -100,7 +100,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
                 @Override
                 public void onPanelEvent(SwitchPanelEvent event) {
-                    if (event.getID() == SwitchPanelEvent.ON_REMOVE) showAction.setSelected(false);
+                    if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) showAction.setSelected(false);
                 }
 
             });

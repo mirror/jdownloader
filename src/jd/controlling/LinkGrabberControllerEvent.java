@@ -16,9 +16,9 @@
 
 package jd.controlling;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
 
-public class LinkGrabberControllerEvent extends JDEvent {
+public class LinkGrabberControllerEvent extends DefaultEvent {
     public LinkGrabberControllerEvent(Object source, int ID) {
         super(source, ID);
     }

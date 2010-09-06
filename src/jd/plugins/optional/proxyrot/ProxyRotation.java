@@ -49,7 +49,7 @@ public class ProxyRotation extends PluginOptional {
 
     @Override
     public void onControlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_RECONNECT_REQUEST) {
+        if (event.getEventID() == ControlEvent.CONTROL_RECONNECT_REQUEST) {
             try {
                 String[] lines = Regex.getLines(cfg.getStringProperty(PARAM_PROXYLIST, ""));
                 // get next line in list;

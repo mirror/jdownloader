@@ -16,14 +16,14 @@
 
 package jd.event;
 
-import java.awt.AWTEvent;
+import org.appwork.utils.event.DefaultEvent;
 
 /**
  * Diese Klasse realisiert Ereignisse, die zum Steuern des Programmes dienen
  * 
  * @author astaldo
  */
-public class ControlEvent extends AWTEvent {
+public class ControlEvent extends DefaultEvent {
 
     private static final long serialVersionUID = 1639354503246054870L;
 
@@ -139,17 +139,12 @@ public class ControlEvent extends AWTEvent {
         this.parameter = parameter;
     }
 
-    @Override
-    public int getID() {
-        return controlID;
-    }
-
     public Object getParameter() {
         return parameter;
     }
 
     @Override
     public String toString() {
-        return "[source:" + source + ", controlID:" + controlID + ", parameter:" + parameter + "]";
+        return "[source:" + getCaller() + ", controlID:" + controlID + ", parameter:" + parameter + "]";
     }
 }

@@ -45,7 +45,7 @@ public class RestoreAction extends ToolBarAction {
             exec.setWaitTimeout(0);
             JDController.getInstance().addControlListener(new ControlListener() {
                 public void controlEvent(ControlEvent event) {
-                    if (event.getID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
+                    if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
                         exec.start();
                         try {
                             Thread.sleep(1000);

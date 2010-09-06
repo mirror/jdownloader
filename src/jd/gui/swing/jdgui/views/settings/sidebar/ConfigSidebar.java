@@ -158,7 +158,7 @@ public class ConfigSidebar extends SwitchPanel implements ControlListener {
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+        if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             saveCurrentState();
         }
     }

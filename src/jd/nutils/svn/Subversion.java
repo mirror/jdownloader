@@ -21,11 +21,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import jd.controlling.JDLogger;
-import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.nutils.io.JDIO;
 
+import org.appwork.utils.event.Eventsender;
 import org.tmatesoft.svn.core.SVNCancelException;
 import org.tmatesoft.svn.core.SVNCommitInfo;
 import org.tmatesoft.svn.core.SVNDepth;
@@ -69,7 +69,7 @@ public class Subversion implements ISVNEventHandler {
     private SVNCommitClient commitClient;
     private SVNWCClient wcClient;
 
-    private final JDBroadcaster<MessageListener, MessageEvent> broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+    private final Eventsender<MessageListener, MessageEvent> broadcaster = new Eventsender<MessageListener, MessageEvent>() {
 
         @Override
         protected void fireEvent(MessageListener listener, MessageEvent event) {
@@ -91,7 +91,7 @@ public class Subversion implements ISVNEventHandler {
         checkRoot();
     }
 
-    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+    public Eventsender<MessageListener, MessageEvent> getBroadcaster() {
         return broadcaster;
     }
 

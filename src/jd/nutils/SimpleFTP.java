@@ -54,9 +54,9 @@ import java.util.StringTokenizer;
 
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
-import jd.event.JDBroadcaster;
 import jd.parser.Regex;
 
+import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
@@ -76,9 +76,9 @@ public class SimpleFTP {
     private BufferedWriter writer = null;
     private String dir = "/";
     private String host;
-    private JDBroadcaster<FtpListener, FtpEvent> broadcaster;
+    private Eventsender<FtpListener, FtpEvent> broadcaster;
 
-    public JDBroadcaster<FtpListener, FtpEvent> getBroadcaster() {
+    public Eventsender<FtpListener, FtpEvent> getBroadcaster() {
         return broadcaster;
     }
 
@@ -90,11 +90,11 @@ public class SimpleFTP {
     }
 
     private void initBroadcaster() {
-        this.broadcaster = new JDBroadcaster<FtpListener, FtpEvent>() {
+        this.broadcaster = new Eventsender<FtpListener, FtpEvent>() {
 
             @Override
             protected void fireEvent(FtpListener listener, FtpEvent event) {
-                if (event.getID() == FtpEvent.DOWNLOAD_PROGRESS) listener.onDownloadProgress(event);
+                if (event.getEventID() == FtpEvent.DOWNLOAD_PROGRESS) listener.onDownloadProgress(event);
 
             }
 

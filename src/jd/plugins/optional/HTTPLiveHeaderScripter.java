@@ -375,7 +375,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
-                switch (event.getID()) {
+                switch (event.getEventID()) {
                 case SwitchPanelEvent.ON_REMOVE:
                     action.setSelected(false);
                     break;

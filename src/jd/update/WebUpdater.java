@@ -31,7 +31,6 @@ import javax.swing.JProgressBar;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.http.Browser;
@@ -41,6 +40,8 @@ import jd.nutils.io.JDIO;
 import jd.nutils.zip.UnZip;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.event.Eventsender;
 
 /**
  * Webupdater lädt pfad und hash infos von einem server und vergleicht sie mit
@@ -100,7 +101,7 @@ public class WebUpdater implements Serializable {
     private Browser br;
 
     private String[] branches;
-    private transient JDBroadcaster<MessageListener, MessageEvent> broadcaster;
+    private transient Eventsender<MessageListener, MessageEvent> broadcaster;
     private Integer errors = 0;
 
     private boolean ignorePlugins = true;
@@ -274,7 +275,7 @@ public class WebUpdater implements Serializable {
         return betaBranch;
     }
 
-    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+    public Eventsender<MessageListener, MessageEvent> getBroadcaster() {
         return broadcaster;
     }
 
@@ -336,7 +337,7 @@ public class WebUpdater implements Serializable {
     }
 
     private void initBroadcaster() {
-        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+        this.broadcaster = new Eventsender<MessageListener, MessageEvent>() {
 
             @Override
             protected void fireEvent(MessageListener listener, MessageEvent event) {

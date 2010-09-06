@@ -54,7 +54,7 @@ public class UserController implements ControlListener {
     }
 
     public void controlEvent(ControlEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_SYSTEM_EXIT:
             save();
         }

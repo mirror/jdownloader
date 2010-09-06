@@ -43,17 +43,17 @@ public abstract class ConfigPropertyListener implements ControlListener {
     }
 
     public void controlEvent(final ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
+        if (event.getEventID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
             for (final String key : list) {
                 if (strict) {
                     // if an addon sets property.setProperty(null,bla) rthis
                     // leads to nullpointers here
                     if ((event.getParameter() == null && key == null) || (event.getParameter() != null && event.getParameter().equals(key))) {
-                        onPropertyChanged((Property) event.getSource(), key);
+                        onPropertyChanged((Property) event.getCaller(), key);
                     }
                 } else {
                     if (event.getParameter() == key) {
-                        onPropertyChanged((Property) event.getSource(), key);
+                        onPropertyChanged((Property) event.getCaller(), key);
                     }
                 }
             }

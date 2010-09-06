@@ -16,9 +16,9 @@
 
 package jd.controlling;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
 
-public class LinkCheckEvent extends JDEvent {
+public class LinkCheckEvent extends DefaultEvent {
 
     public LinkCheckEvent(Object source, int ID, Object parameter) {
         super(source, ID, parameter);

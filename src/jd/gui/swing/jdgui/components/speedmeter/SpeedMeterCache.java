@@ -19,10 +19,11 @@ package jd.gui.swing.jdgui.components.speedmeter;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.controlling.DownloadWatchDog;
-import jd.event.JDBroadcaster;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.event.Eventsender;
 
 public class SpeedMeterCache extends Thread implements Runnable {
 
@@ -43,7 +44,7 @@ public class SpeedMeterCache extends Thread implements Runnable {
 
     private int window;
 
-    private JDBroadcaster<SpeedMeterListener, SpeedMeterEvent> broadcaster = new JDBroadcaster<SpeedMeterListener, SpeedMeterEvent>() {
+    private Eventsender<SpeedMeterListener, SpeedMeterEvent> broadcaster = new Eventsender<SpeedMeterListener, SpeedMeterEvent>() {
 
         @Override
         protected void fireEvent(SpeedMeterListener listener, SpeedMeterEvent event) {
@@ -71,7 +72,7 @@ public class SpeedMeterCache extends Thread implements Runnable {
         });
     }
 
-    public JDBroadcaster<SpeedMeterListener, SpeedMeterEvent> getBroadcaster() {
+    public Eventsender<SpeedMeterListener, SpeedMeterEvent> getBroadcaster() {
         return broadcaster;
     }
 

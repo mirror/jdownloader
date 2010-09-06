@@ -138,7 +138,7 @@ public class SplashScreen implements ControlListener {
     }
 
     public void controlEvent(final ControlEvent event) {
-        final int id = event.getID();
+        final int id = event.getEventID();
         if (id == SPLASH_PROGRESS) {
             final Object parameter = event.getParameter();
             if (parameter instanceof String) {
@@ -147,7 +147,7 @@ public class SplashScreen implements ControlListener {
                 }
             }
             incProgress();
-        } else if (id == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+        } else if (id == ControlEvent.CONTROL_INIT_COMPLETE && event.getCaller() instanceof Main) {
             JDUtilities.getController().removeControlListener(this);
             finish();
         } else if (id == SPLASH_FINISH) {

@@ -49,7 +49,7 @@ public class LinkgrabberView extends View {
 
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-                switch (event.getID()) {
+                switch (event.getEventID()) {
                 case LinkGrabberControllerEvent.ADDED:
                     JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
                     break;

@@ -182,7 +182,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     @Override
     public void onControlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+        if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getCaller() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
             guiFrame = JDGui.getInstance().getMainFrame();
             if (guiFrame != null) {
@@ -194,9 +194,9 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
                 miniIt(true);
             }
-        } else if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+        } else if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             shutdown = true;
-        } else if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_START) {
+        } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOAD_START) {
             updateThread = new Thread("Tray Icon Updater") {
                 @Override
                 public void run() {
@@ -221,7 +221,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 }
             };
             updateThread.start();
-        } else if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_STOP) {
+        } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOAD_STOP) {
             if (updateThread != null) updateThread.interrupt();
             JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
         }
@@ -467,7 +467,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-        if (event.getID() == LinkGrabberControllerEvent.NEW_LINKS && ((subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true) && !guiFrame.isVisible()) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false))) {
+        if (event.getEventID() == LinkGrabberControllerEvent.NEW_LINKS && ((subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true) && !guiFrame.isVisible()) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false))) {
             /* dont try to restore jd if password required */
             if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) return;
             if (!guiFrame.isVisible()) {

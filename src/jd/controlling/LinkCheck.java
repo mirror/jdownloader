@@ -25,7 +25,8 @@ import java.util.Iterator;
 
 import javax.swing.Timer;
 
-import jd.event.JDBroadcaster;
+import org.appwork.utils.event.Eventsender;
+
 import jd.http.Browser;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
@@ -33,7 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-class LinkCheckBroadcaster extends JDBroadcaster<LinkCheckListener, LinkCheckEvent> {
+class LinkCheckBroadcaster extends Eventsender<LinkCheckListener, LinkCheckEvent> {
 
     // @Override
     protected void fireEvent(LinkCheckListener listener, LinkCheckEvent event) {
@@ -71,9 +72,8 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         return checkRunning;
     }
 
-    public synchronized JDBroadcaster<LinkCheckListener, LinkCheckEvent> getBroadcaster() {
-        if (broadcaster == null) broadcaster = new LinkCheckBroadcaster();
-        return this.broadcaster;
+    public Eventsender<LinkCheckListener, LinkCheckEvent> getBroadcaster() {
+        return broadcaster;
     }
 
     public void removefromWaitingList(ArrayList<DownloadLink> links) {
@@ -105,7 +105,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             @SuppressWarnings("unchecked")
             public void onLinkCheckEvent(LinkCheckEvent event) {
                 synchronized (check) {
-                    if (event.getID() == LinkCheckEvent.AFTER_CHECK) {
+                    if (event.getEventID() == LinkCheckEvent.AFTER_CHECK) {
                         if (event.getParameter() instanceof ArrayList<?>) {
                             ArrayList<DownloadLink> arrayList = (ArrayList<DownloadLink>) event.getParameter();
                             for (DownloadLink k : arrayList) {
@@ -120,7 +120,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                             }
                         }
                     }
-                    if (event.getID() == LinkCheckEvent.STOP || event.getID() == LinkCheckEvent.ABORT) {
+                    if (event.getEventID() == LinkCheckEvent.STOP || event.getEventID() == LinkCheckEvent.ABORT) {
                         synchronized (lock) {
                             if (check.size() == 0) {
                                 lock.notify();
@@ -281,7 +281,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     }
 
     public void onProgressControllerEvent(ProgressControllerEvent event) {
-        if (event.getSource() == this.pc) {
+        if (event.getCaller() == this.pc) {
             this.abortLinkCheck();
             getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.ABORT));
             return;

@@ -16,18 +16,18 @@
 
 package jd.gui.swing.jdgui.interfaces;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
+
 /**
  * 
  * @author Coalado
- *
+ * 
  */
-public class SwitchPanelEvent extends JDEvent {
+public class SwitchPanelEvent extends DefaultEvent {
 
- 
-/**
- * panel is noe visible on screen
- */
+    /**
+     * panel is noe visible on screen
+     */
     public static final int ON_SHOW = 0;
     /**
      * Panel is not visible any more
@@ -38,20 +38,19 @@ public class SwitchPanelEvent extends JDEvent {
      * e.g. it may be a tab of a tabbedpane, but not the selected one
      */
     public static final int ON_ADD = 2;
-    
+
     /**
      * Panel has been removed from gui. see SwitchPanelEvent.ON_ADD
      */
     public static final int ON_REMOVE = 3;
+
     public SwitchPanelEvent(Object source, int ID, Object parameter) {
-        super(source, ID,parameter);
-     
-       
+        super(source, ID, parameter);
+
     }
 
     public SwitchPanelEvent(Object source, int ID) {
-      this(source,ID,null);
+        this(source, ID, null);
     }
-
 
 }

@@ -22,7 +22,7 @@ import java.awt.LayoutManager;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-import jd.event.JDBroadcaster;
+import org.appwork.utils.event.Eventsender;
 
 /**
  * a panel which gets informed if it gets displayed or removed from display
@@ -34,7 +34,7 @@ public abstract class SwitchPanel extends JPanel {
 
     private static final long serialVersionUID = -7856570342778191232L;
     private boolean currentlyVisible = false;
-    private JDBroadcaster<SwitchPanelListener, SwitchPanelEvent> broadcaster;
+    private Eventsender<SwitchPanelListener, SwitchPanelEvent> broadcaster;
 
     public SwitchPanel(LayoutManager layout) {
         super(layout);
@@ -48,7 +48,7 @@ public abstract class SwitchPanel extends JPanel {
     }
 
     private void initBroadcaster() {
-        broadcaster = new JDBroadcaster<SwitchPanelListener, SwitchPanelEvent>() {
+        broadcaster = new Eventsender<SwitchPanelListener, SwitchPanelEvent>() {
 
             @Override
             protected void fireEvent(SwitchPanelListener listener, SwitchPanelEvent event) {
@@ -63,7 +63,7 @@ public abstract class SwitchPanel extends JPanel {
      * 
      * @return
      */
-    public JDBroadcaster<SwitchPanelListener, SwitchPanelEvent> getBroadcaster() {
+    public Eventsender<SwitchPanelListener, SwitchPanelEvent> getBroadcaster() {
         return broadcaster;
     }
 

@@ -16,9 +16,11 @@
 
 package jd.plugins;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
 
-public class FilePackageEvent extends JDEvent {
+
+
+public class FilePackageEvent extends DefaultEvent {
 
     /* ein wichtiger Wert wurde geändert */
     public static final int FILEPACKAGE_UPDATE = 1;

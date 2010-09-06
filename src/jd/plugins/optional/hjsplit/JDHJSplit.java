@@ -96,9 +96,9 @@ public class JDHJSplit extends PluginOptional {
     @Override
     public void onControlEvent(ControlEvent event) {
         DownloadLink link;
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getSource() instanceof PluginForHost)) return;
+            if (!(event.getCaller() instanceof PluginForHost)) return;
             link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             /* react if HJSplit is activated or package has flag for autoextract */
             if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isPostProcessing()) {
@@ -121,8 +121,8 @@ public class JDHJSplit extends PluginOptional {
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
             ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
             MenuAction m;
-            if (event.getSource() instanceof DownloadLink) {
-                link = (DownloadLink) event.getSource();
+            if (event.getCaller() instanceof DownloadLink) {
+                link = (DownloadLink) event.getCaller();
 
                 m = new MenuAction("optional.jdhjsplit.linkmenu.merge", 1000);
                 m.setIcon("gui.images.addons.merge");
@@ -133,7 +133,7 @@ public class JDHJSplit extends PluginOptional {
                 m = new MenuAction("optional.jdhjsplit.linkmenu.package.merge", 1001);
                 m.setIcon("gui.images.addons.merge");
                 m.setActionListener(this);
-                m.setProperty("PACKAGE", (FilePackage) event.getSource());
+                m.setProperty("PACKAGE", (FilePackage) event.getCaller());
             }
             items.add(m);
             break;

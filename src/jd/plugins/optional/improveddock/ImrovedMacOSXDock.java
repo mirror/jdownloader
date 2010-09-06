@@ -53,7 +53,7 @@ public class ImrovedMacOSXDock extends PluginOptional {
 
     @Override
     public void onControlEvent(ControlEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_DOWNLOAD_START:
             if (updateThread == null) {
                 updateThread = new MacDockIconChanger();

@@ -166,7 +166,7 @@ public class Neembuu extends PluginOptional {
         // downloadstarts/end,pluginstart/pluginend
 
         DownloadLink link;
-        switch (event.getID()) {
+        switch (event.getEventID()) {
 
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
             ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
@@ -174,8 +174,8 @@ public class Neembuu extends PluginOptional {
             MenuAction container = new MenuAction("jd.plugins.optional.neembuu.Neembuu.menu.container", 0);
             container.setIcon(this.getIconKey());
             items.add(container);
-            if (event.getSource() instanceof DownloadLink) {
-                link = (DownloadLink) event.getSource();
+            if (event.getCaller() instanceof DownloadLink) {
+                link = (DownloadLink) event.getCaller();
 
                 container.addMenuItem(m = new MenuAction("jd.plugins.optional.neembuu.Neembuu.menu.watch.link", CONTEXT_MENU_ID_WATCH_LINK));
                 m.setProperty("LINK", link);
@@ -185,7 +185,7 @@ public class Neembuu extends PluginOptional {
                 m.setProperty("LINK", link);
 
             } else {
-                FilePackage fp = (FilePackage) event.getSource();
+                FilePackage fp = (FilePackage) event.getCaller();
 
                 container.addMenuItem(m = new MenuAction("jd.plugins.optional.neembuu.Neembuu.menu.watch.package", CONTEXT_MENU_ID_WATCH_PACKAGE));
                 m.setProperty("PACKAGE", fp);
@@ -245,7 +245,7 @@ public class Neembuu extends PluginOptional {
 
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
-                if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
                     setGuiEnable(false);
                 }
             }

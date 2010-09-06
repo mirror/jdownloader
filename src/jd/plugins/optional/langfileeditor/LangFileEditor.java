@@ -134,7 +134,7 @@ public class LangFileEditor extends PluginOptional {
 
                     @Override
                     public void onPanelEvent(SwitchPanelEvent event) {
-                        if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                        if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
                             activateAction.setSelected(false);
                         }
                     }
@@ -163,7 +163,7 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public void onControlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+        if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             if (lfeView != null && JDGui.getInstance().getMainTabbedPane().contains(lfeView)) {
                 lfeView.getLFEGui().saveChanges(false);
             }

@@ -82,10 +82,10 @@ public class JDInfoFileWriter extends PluginOptional {
     @SuppressWarnings("unchecked")
     @Override
     public void onControlEvent(ControlEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) return;
+            if (!(event.getCaller() instanceof PluginForHost)) return;
 
             DownloadLink dl = ((SingleDownloadController) event.getParameter()).getDownloadLink();
 
@@ -105,10 +105,10 @@ public class JDInfoFileWriter extends PluginOptional {
             }
             break;
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
-            if (event.getSource() instanceof DownloadLink && subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) return;
-            if (event.getSource() instanceof FilePackage && subConfig.getIntegerProperty(PARAM_CREATION, 0) == 1) return;
+            if (event.getCaller() instanceof DownloadLink && subConfig.getIntegerProperty(PARAM_CREATION, 0) == 0) return;
+            if (event.getCaller() instanceof FilePackage && subConfig.getIntegerProperty(PARAM_CREATION, 0) == 1) return;
 
-            final Property obj = (Property) event.getSource();
+            final Property obj = (Property) event.getCaller();
             final MenuAction m = new MenuAction(JDL.L(JDL_PREFIX + "createInfoFile", "Create Info File"), 1337);
             m.setIcon(this.getIconKey());
             m.setSelected(obj.getBooleanProperty(PARAM_CREATE_FILE, true));

@@ -111,8 +111,8 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_ON_PROGRESS && event.getSource() instanceof ProgressController) {
-            ProgressController source = (ProgressController) event.getSource();
+        if (event.getEventID() == ControlEvent.CONTROL_ON_PROGRESS && event.getCaller() instanceof ProgressController) {
+            ProgressController source = (ProgressController) event.getCaller();
             if (!source.isFinished()) {
                 addController(source);
                 if (updateThreadWaiting) {

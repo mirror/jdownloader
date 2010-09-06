@@ -27,12 +27,13 @@ import java.util.Set;
 
 import jd.config.Property;
 import jd.controlling.DownloadController;
-import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePackageEvent> {
+import org.appwork.utils.event.Eventsender;
+
+class FilePackageBroadcaster extends Eventsender<FilePackageListener, FilePackageEvent> {
 
     @Override
     protected void fireEvent(FilePackageListener listener, FilePackageEvent event) {
@@ -634,7 +635,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void onDownloadLinkEvent(DownloadLinkEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case DownloadLinkEvent.DISABLED:
             synchronized (links_Disabled) {
                 links_Disabled++;
@@ -651,7 +652,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void onFilePackageEvent(FilePackageEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case FilePackageEvent.DOWNLOADLINK_ADDED:
         case FilePackageEvent.DOWNLOADLINK_REMOVED:
             ListHoster = null;

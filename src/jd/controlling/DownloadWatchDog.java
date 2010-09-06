@@ -405,7 +405,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public void controlEvent(final ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
+        if (event.getEventID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getCaller() instanceof PluginForHost) {
             this.deactivateDownload(((SingleDownloadController) event.getParameter()).getDownloadLink());
         }
     }
@@ -958,7 +958,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public void onDownloadControllerEvent(final DownloadControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case DownloadControllerEvent.REMOVE_FILPACKAGE:
         case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
             synchronized (stopMark) {

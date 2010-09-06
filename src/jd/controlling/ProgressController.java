@@ -20,14 +20,15 @@ import java.awt.Color;
 
 import javax.swing.Icon;
 
+import org.appwork.utils.event.Eventsender;
+
 import jd.event.ControlEvent;
-import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> {
+class ProgressControllerBroadcaster extends Eventsender<ProgressControllerListener, ProgressControllerEvent> {
 
     @Override
     protected void fireEvent(ProgressControllerListener listener, ProgressControllerEvent event) {
@@ -81,10 +82,10 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         progresscolor = null;
         this.icon = JDTheme.II(iconKey, ICONSIZE, ICONSIZE);
         fireChanges();
+        broadcaster = new ProgressControllerBroadcaster();
     }
 
-    public synchronized JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> getBroadcaster() {
-        if (broadcaster == null) broadcaster = new ProgressControllerBroadcaster();
+    public Eventsender<ProgressControllerListener, ProgressControllerEvent> getBroadcaster() {
         return this.broadcaster;
     }
 

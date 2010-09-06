@@ -97,8 +97,8 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            final Property p = (Property) event.getSource();
+        if (event.getEventID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
+            final Property p = (Property) event.getCaller();
             if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {

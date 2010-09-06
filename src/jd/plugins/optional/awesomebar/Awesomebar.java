@@ -37,7 +37,7 @@ public class Awesomebar extends PluginOptional {
      */
     @Override
     public void onControlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE) {
+        if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE) {
             setGuiEnable(true);
         }
     }

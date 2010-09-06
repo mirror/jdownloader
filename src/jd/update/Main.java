@@ -201,7 +201,7 @@ public class Main {
                         return;
 
                     }
-                    if (event.getID() == WebUpdater.DO_UPDATE_FAILED || event.getID() == FileUpdate.ERROR) {
+                    if (event.getEventID() == WebUpdater.DO_UPDATE_FAILED || event.getEventID() == FileUpdate.ERROR) {
 
                         msg2 = msg1;
                         msg1 = msg0;
@@ -211,7 +211,7 @@ public class Main {
 
                     }
 
-                    if (event.getID() == WebUpdater.DO_UPDATE_SUCCESS) {
+                    if (event.getEventID() == WebUpdater.DO_UPDATE_SUCCESS) {
                         warnings.setText("Update is too slow and takes too much time?\r\n\r\n\r\nDownload latest Version at http://jdownloader.org/download");
 
                     }

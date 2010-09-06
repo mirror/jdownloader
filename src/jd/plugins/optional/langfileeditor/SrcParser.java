@@ -22,7 +22,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
-import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.nutils.JDHash;
@@ -31,11 +30,13 @@ import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.event.Eventsender;
+
 public class SrcParser {
 
     private final File root;
     private final int rootLen;
-    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
+    private Eventsender<MessageListener, MessageEvent> broadcaster;
 
     public static void deleteCache() {
         File dir = JDUtilities.getResourceFile("tmp/lfe/cache/");
@@ -52,7 +53,7 @@ public class SrcParser {
         this.rootLen = root.getAbsolutePath().length() + 1;
         this.entries = new ArrayList<LngEntry>();
 
-        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+        this.broadcaster = new Eventsender<MessageListener, MessageEvent>() {
 
             @Override
             protected void fireEvent(MessageListener listener, MessageEvent event) {
@@ -64,7 +65,7 @@ public class SrcParser {
         pattern.add("sys\\.warning\\.dlcerror\\.(.+?)");
     }
 
-    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+    public Eventsender<MessageListener, MessageEvent> getBroadcaster() {
         return broadcaster;
     }
 

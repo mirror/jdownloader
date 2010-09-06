@@ -297,14 +297,12 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
     }
 
     @Override
-    public boolean canCheckIP() {
-        // TODO Auto-generated method stub
+    public boolean canCheckIP() {       
         return this.storage.get(UPNPRouterPlugin.CANCHECKIP, true);
     }
 
     @Override
-    public boolean canRefreshIP() {
-        // TODO Auto-generated method stub
+    public boolean canRefreshIP() {        
         return true;
     }
 
@@ -314,7 +312,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
         final boolean allowed = configuration.getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
         final boolean rcOK = configuration.getBooleanProperty(Configuration.PARAM_RECONNECT_OKAY, true);
         final int failCount = configuration.getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0);
-        switch (event.getID()) {
+        switch (event.getEventID()) {
 
         case ControlEvent.CONTROL_INIT_COMPLETE:
 

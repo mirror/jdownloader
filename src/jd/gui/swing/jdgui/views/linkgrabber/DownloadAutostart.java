@@ -83,7 +83,7 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
     }
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case LinkGrabberControllerEvent.FINISHED:
             launchAutostart();
             break;

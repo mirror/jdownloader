@@ -44,7 +44,6 @@ import javax.swing.SpinnerNumberModel;
 import jd.captcha.easy.EasyMethodFile;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDTextField;
-import jd.gui.swing.dialog.ProgressDialog;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
@@ -491,13 +490,6 @@ public class LoadCaptchas {
 
         final String imageType = getImageExtentionFromHeader(br);
         if (imageType != null) {
-            final ProgressDialog pd = new GuiRunnable<ProgressDialog>() {
-                public ProgressDialog runSave() {
-
-                    return new ProgressDialog(owner, JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
-                }
-            }.getReturnValue();
-            pd.setAlwaysOnTop(true);
             Runnable runnable = new Runnable() {
                 public void run() {
                     if (!threaded) {
@@ -507,12 +499,6 @@ public class LoadCaptchas {
                                 File f2 = new File(dir + System.currentTimeMillis() + imageType);
                                 br.getDownload(f2, loadinfo.link);
                                 final int c = k;
-                                new GuiRunnable<Object>() {
-                                    public Object runSave() {
-                                        pd.setValue(c);
-                                        return null;
-                                    }
-                                }.waitForEDT();
 
                             } catch (Exception ev) {
                                 ev.printStackTrace();
@@ -554,26 +540,12 @@ public class LoadCaptchas {
                             }
                             final int c = k;
                             k++;
-                            new GuiRunnable<Object>() {
-                                public Object runSave() {
-                                    pd.setValue(c);
-                                    return null;
-                                }
-                            }.waitForEDT();
                         }
                     }
-                    pd.dispose();
                 }
             };
             final Thread th = new Thread(runnable);
             th.start();
-            new GuiRunnable<Object>() {
-                public Object runSave() {
-                    pd.setThread(th);
-                    pd.setVisible(true);
-                    return null;
-                }
-            }.waitForEDT();
 
             return true;
         }
@@ -652,13 +624,7 @@ public class LoadCaptchas {
      * 
      */
     private void loadImages() {
-        final ProgressDialog pd = new GuiRunnable<ProgressDialog>() {
-            public ProgressDialog runSave() {
 
-                return new ProgressDialog(owner, JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
-            }
-        }.getReturnValue();
-        pd.setAlwaysOnTop(true);
         final Thread th = new Thread(new Runnable() {
             public void run() {
                 final Thread[] jb = new Thread[images.size()];
@@ -676,12 +642,6 @@ public class LoadCaptchas {
                     });
                     jb[i].start();
                 }
-                new GuiRunnable<Object>() {
-                    public Object runSave() {
-                        pd.setMaximum(images.size());
-                        return null;
-                    }
-                }.waitForEDT();
 
                 int c = 0;
                 for (Thread thread : jb) {
@@ -695,41 +655,15 @@ public class LoadCaptchas {
                         }
                     }
                     final int d = c++;
-                    new GuiRunnable<Object>() {
-                        public Object runSave() {
-                            pd.setValue(d);
-                            return null;
-                        }
-                    }.waitForEDT();
                 }
-                new GuiRunnable<Object>() {
-                    public Object runSave() {
-                        pd.dispose();
-                        return null;
-                    }
-                }.waitForEDT();
             }
         });
 
         th.start();
-        new GuiRunnable<Object>() {
-            public Object runSave() {
-                pd.setThread(th);
-                pd.setVisible(true);
-                return null;
-            }
-        }.waitForEDT();
+
     }
 
     private void loadProcess() {
-
-        final ProgressDialog pd = new GuiRunnable<ProgressDialog>() {
-            public ProgressDialog runSave() {
-
-                return new ProgressDialog(owner, JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
-            }
-        }.getReturnValue();
-        pd.setAlwaysOnTop(true);
         final Runnable runnable = new Runnable() {
             public void run() {
                 try {
@@ -740,23 +674,11 @@ public class LoadCaptchas {
                     }
                     boolean direct = selectedImage.directCaptchaLoad(dir);
                     LoadImage.save(selectedImage, host);
-                    new GuiRunnable<Object>() {
-                        public Object runSave() {
-                            pd.setValue(1);
-                            return null;
-                        }
-                    }.waitForEDT();
                     if (direct && loadinfo.directLoad) {
                         if (!threaded) {
                             for (int k = 1; k < loadinfo.menge - 1; k++) {
                                 selectedImage.directCaptchaLoad(dir);
                                 final int d = k;
-                                new GuiRunnable<Object>() {
-                                    public Object runSave() {
-                                        pd.setValue(d);
-                                        return null;
-                                    }
-                                }.waitForEDT();
                             }
                         } else {
                             Thread[] ths = new Thread[loadinfo.menge];
@@ -791,12 +713,6 @@ public class LoadCaptchas {
                                 }
                                 final int c = k;
                                 k++;
-                                new GuiRunnable<Object>() {
-                                    public Object runSave() {
-                                        pd.setValue(c);
-                                        return null;
-                                    }
-                                }.waitForEDT();
                             }
                         }
 
@@ -807,12 +723,6 @@ public class LoadCaptchas {
                             for (int k = 1; k < loadinfo.menge - 1; k++) {
                                 selectedImage.load(host);
                                 final int d = k;
-                                new GuiRunnable<Object>() {
-                                    public Object runSave() {
-                                        pd.setValue(d);
-                                        return null;
-                                    }
-                                }.waitForEDT();
 
                             }
                         } else {
@@ -848,12 +758,6 @@ public class LoadCaptchas {
                                 }
                                 final int c = k;
                                 k++;
-                                new GuiRunnable<Object>() {
-                                    public Object runSave() {
-                                        pd.setValue(c);
-                                        return null;
-                                    }
-                                }.waitForEDT();
                             }
                         }
 
@@ -861,24 +765,11 @@ public class LoadCaptchas {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                new GuiRunnable<Object>() {
-                    public Object runSave() {
-                        pd.dispose();
-                        return null;
-                    }
-                }.waitForEDT();
             }
         };
-        new GuiRunnable<Object>() {
-            public Object runSave() {
-                Thread th2 = new Thread(runnable);
-                th2.start();
-                pd.setMaximum(loadinfo.menge - 1);
-                pd.setThread(th2);
-                pd.setVisible(true);
-                return null;
-            }
-        }.waitForEDT();
+
+        Thread th2 = new Thread(runnable);
+        th2.start();
 
     }
 

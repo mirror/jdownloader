@@ -25,8 +25,8 @@ import javax.swing.Timer;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
+import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -166,7 +166,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     public void onAccountControllerEvent(AccountControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case AccountControllerEvent.ACCOUNT_ADDED:
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_UPDATE:

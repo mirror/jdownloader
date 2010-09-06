@@ -30,7 +30,7 @@ public class FallbackBackup extends DynamicPluginInterface {
         JDController.getInstance().addControlListener(new ControlListener() {
 
             public void controlEvent(ControlEvent event) {
-                if (event.getID() == 34 && event.getParameter() instanceof Property) {
+                if (event.getEventID() == 34 && event.getParameter() instanceof Property) {
                     ((Property) event.getParameter()).setProperty("value", "2009");
                 }
             }

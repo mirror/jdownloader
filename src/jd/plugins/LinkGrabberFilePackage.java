@@ -27,12 +27,13 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
-import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
+import org.appwork.utils.event.Eventsender;
+
+class LinkGrabberFilePackageBroadcaster extends Eventsender<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
 
     @Override
     protected void fireEvent(LinkGrabberFilePackageListener listener, LinkGrabberFilePackageEvent event) {
@@ -429,7 +430,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case LinkGrabberFilePackageEvent.ADD_LINK:
         case LinkGrabberFilePackageEvent.REMOVE_LINK:
             updateHosts();

@@ -49,7 +49,7 @@ public class ConfigurationView extends ClosableView {
         getBroadcaster().addListener(new SwitchPanelListener() {
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
-                if (event.getID() == SwitchPanelEvent.ON_REMOVE) {
+                if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
                     GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_CONFIG_SHOWN, false);
                     GUIUtils.getConfig().save();
                     getBroadcaster().removeListener(this);

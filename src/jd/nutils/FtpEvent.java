@@ -16,9 +16,9 @@
 
 package jd.nutils;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
 
-public class FtpEvent extends JDEvent {
+public class FtpEvent extends DefaultEvent {
 
     public static final int DOWNLOAD_PROGRESS = 0;
     private long progress;

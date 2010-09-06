@@ -82,10 +82,10 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
     @Override
     public void onControlEvent(ControlEvent event) {
         DownloadLink link;
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) return;
+            if (!(event.getCaller() instanceof PluginForHost)) return;
             link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             /* react if JDUnrar is activated or package has flag for autoextract */
             if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isPostProcessing()) {
@@ -135,8 +135,8 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
             MenuAction container = new MenuAction("optional.jdunrar.linkmenu.container", 0);
             container.setIcon("gui.images.addons.unrar");
             items.add(container);
-            if (event.getSource() instanceof DownloadLink) {
-                link = (DownloadLink) event.getSource();
+            if (event.getCaller() instanceof DownloadLink) {
+                link = (DownloadLink) event.getCaller();
 
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.extract", 1000));
                 m.setIcon("gui.images.addons.unrar");
@@ -164,7 +164,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                 link.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
                 m.setProperty("LINK", link);
             } else {
-                FilePackage fp = (FilePackage) event.getSource();
+                FilePackage fp = (FilePackage) event.getCaller();
 
                 container.addMenuItem(m = new MenuAction("optional.jdunrar.linkmenu.package.extract", 1001));
                 m.setIcon("gui.images.addons.unrar");

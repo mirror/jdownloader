@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.event.JDBroadcaster;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -36,7 +35,9 @@ import jd.plugins.LinkGrabberFilePackageEvent;
 import jd.plugins.LinkGrabberFilePackageListener;
 import jd.utils.locale.JDL;
 
-class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
+import org.appwork.utils.event.Eventsender;
+
+class LinkGrabberControllerBroadcaster extends Eventsender<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
 
     @Override
     protected void fireEvent(LinkGrabberControllerListener listener, LinkGrabberControllerEvent event) {
@@ -534,9 +535,9 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public void handle_LinkGrabberFilePackageEvent(LinkGrabberFilePackageEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case LinkGrabberFilePackageEvent.EMPTY_EVENT:
-            removePackage(((LinkGrabberFilePackage) event.getSource()));
+            removePackage(((LinkGrabberFilePackage) event.getCaller()));
             if (packages.size() == 0 && this.FP_FILTERED.size() == 0) {
                 clearExtensionFilter();
                 broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.EMPTY));
@@ -544,14 +545,14 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             break;
         case LinkGrabberFilePackageEvent.ADD_LINK:
         case LinkGrabberFilePackageEvent.REMOVE_LINK:
-            if (!packages.contains(event.getSource())) {
-                addPackage(((LinkGrabberFilePackage) event.getSource()));
+            if (!packages.contains(event.getCaller())) {
+                addPackage(((LinkGrabberFilePackage) event.getCaller()));
             } else {
-                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE, event.getSource()));
+                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE, event.getCaller()));
             }
             break;
         case LinkGrabberFilePackageEvent.UPDATE_EVENT:
-            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE, event.getSource()));
+            broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE, event.getCaller()));
             break;
         default:
             break;
@@ -563,7 +564,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case LinkGrabberControllerEvent.ADD_FILEPACKAGE:
         case LinkGrabberControllerEvent.REMOVE_FILEPACKAGE:
             broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));

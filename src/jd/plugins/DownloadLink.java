@@ -30,12 +30,13 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
+import org.appwork.utils.event.Eventsender;
+
 import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
-import jd.event.JDBroadcaster;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -46,7 +47,7 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> {
+class DownloadLinkBroadcaster extends Eventsender<DownloadLinkListener, DownloadLinkEvent> {
 
     @Override
     protected void fireEvent(DownloadLinkListener listener, DownloadLinkEvent event) {
@@ -253,8 +254,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.created = created;
     }
 
-    public synchronized JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> getBroadcaster() {
-        if (broadcaster == null) broadcaster = new DownloadLinkBroadcaster();
+    private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        broadcaster = new DownloadLinkBroadcaster();
+    }
+
+    public Eventsender<DownloadLinkListener, DownloadLinkEvent> getBroadcaster() {
         return broadcaster;
     }
 

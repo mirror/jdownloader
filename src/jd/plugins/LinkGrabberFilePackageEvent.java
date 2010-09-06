@@ -16,9 +16,9 @@
 
 package jd.plugins;
 
-import jd.event.JDEvent;
+import org.appwork.utils.event.DefaultEvent;
 
-public class LinkGrabberFilePackageEvent extends JDEvent {
+public class LinkGrabberFilePackageEvent extends DefaultEvent {
 
     public LinkGrabberFilePackageEvent(final Object source, final int ID) {
         super(source, ID);

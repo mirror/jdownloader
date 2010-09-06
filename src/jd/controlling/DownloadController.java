@@ -25,9 +25,10 @@ import java.util.logging.Logger;
 
 import javax.swing.Timer;
 
+import org.appwork.utils.event.Eventsender;
+
 import jd.Main;
 import jd.config.Configuration;
-import jd.event.JDBroadcaster;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageEvent;
@@ -37,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
-class DownloadControllerBroadcaster extends JDBroadcaster<DownloadControllerListener, DownloadControllerEvent> {
+class DownloadControllerBroadcaster extends Eventsender<DownloadControllerListener, DownloadControllerEvent> {
 
     protected void fireEvent(final DownloadControllerListener listener, final DownloadControllerEvent event) {
         listener.onDownloadControllerEvent(event);
@@ -719,7 +720,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     public void onDownloadControllerEvent(final DownloadControllerEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case DownloadControllerEvent.ADD_DOWNLOADLINK:
         case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
         case DownloadControllerEvent.ADD_FILEPACKAGE:
@@ -733,7 +734,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     public void onFilePackageEvent(final FilePackageEvent event) {
-        switch (event.getID()) {
+        switch (event.getEventID()) {
         case FilePackageEvent.DOWNLOADLINK_ADDED:
             broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.ADD_DOWNLOADLINK, event.getParameter()));
             break;
@@ -744,7 +745,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
             this.fireStructureUpdate();
             break;
         case FilePackageEvent.FILEPACKAGE_EMPTY:
-            this.removePackage((FilePackage) event.getSource());
+            this.removePackage((FilePackage) event.getCaller());
             break;
         }
     }
