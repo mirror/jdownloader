@@ -1567,6 +1567,6 @@ updater.beta.rlyupdate.title = Aggiornare alla versione BETA ora?
 updater.newbeta.message = Volete provare la nuova versione BETA?\r\nFare clic su OK per ottenere ulteriori informazioni.
 updater.newbeta.title = Nuova versione BETA disponibile
 userio.errorregex = .*(errore|fallito).*
-wrapper.webupdate.updatenewupdater = Nuovo jdupdate.jar in download
+wrapper.webupdate.updatenewupdater = Download nuovo jdupdate.jar in corso...
 wrapper.webupdate.updateupdater.error_rename = Impossibile rinominare jdupdate.jar.tmp in jdupdate.jar
 wrapper.webupdate.updateupdater.error_reqeust2 = Impossibile scaricare l'attuale jdupdate.jar
