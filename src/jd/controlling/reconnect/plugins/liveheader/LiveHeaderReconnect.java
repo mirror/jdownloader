@@ -597,7 +597,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     @Override
     public String getExternalIP() throws GetIpException {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -676,7 +675,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     @Override
     public String getID() {
-        // TODO Auto-generated method stub
         return "httpliveheader";
     }
 
@@ -714,7 +712,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
         return "LiveHeader";
     }
 
@@ -765,18 +762,15 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         } else {
             LiveHeaderReconnect.LOG.severe("Regular Expression without matches: " + patStr);
         }
-
     }
 
     @Override
     public boolean isIPCheckEnabled() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean isReconnectionEnabled() {
-        // TODO Auto-generated method stub
         return true;
     }
 
@@ -824,7 +818,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     @Override
     public void setCanCheckIP(final boolean b) {
-        // TODO Auto-generated method stub
 
     }
 

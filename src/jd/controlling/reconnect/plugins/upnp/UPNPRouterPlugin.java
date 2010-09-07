@@ -103,12 +103,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
             final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
 
                 public int getProgress() {
-                    // TODO Auto-generated method stub
                     return -1;
                 }
 
                 public String getString() {
-                    // TODO Auto-generated method stub
                     return null;
                 }
 
@@ -132,12 +130,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
             final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
 
                 public int getProgress() {
-                    // TODO Auto-generated method stub
                     return -1;
                 }
 
                 public String getString() {
-                    // TODO Auto-generated method stub
                     return null;
                 }
 
@@ -188,16 +184,12 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                         final ConfirmDialog cDialog = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.title", "UPNP Router found"), Loc.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.message", "It seems that your reconnection is not setup perfectly. JDownloader found %s UPNPRouter device(s).\r\n\r\nShould JDownloader try to auto-configure your reconnect?", UPNPRouterPlugin.this.devices.size()), null, null, null);
                         cDialog.setLeftActions(new AbstractAction(Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.morebutton", " ... read more")) {
 
-                            /**
-                             * 
-                             */
                             private static final long serialVersionUID = 1L;
 
                             public void actionPerformed(final ActionEvent e) {
                                 try {
                                     OS.launchBrowser("http://board.jdownloader.org/showthread.php?t=16450");
                                 } catch (final IOException e1) {
-                                    // TODO Auto-generated catch block
                                     e1.printStackTrace();
                                 }
                             }
@@ -218,12 +210,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                                 private int              progress;
 
                                 public int getProgress() {
-                                    // TODO Auto-generated method stub
                                     return this.progress;
                                 }
 
                                 public String getString() {
-                                    // TODO Auto-generated method stub
                                     return this.device != null ? this.device.getFriendlyname() : "";
                                 }
 
@@ -258,7 +248,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                                             steps++;
                                             this.progress = steps * 100 / maxSteps;
                                         } catch (final Exception e) {
-                                            // TODO Auto-generated catch block
                                             e.printStackTrace();
                                         }
                                         deviceCount++;
@@ -289,7 +278,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                         }
                     }
                 } catch (final IOException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
@@ -428,7 +416,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
 
     @Override
     public String getID() {
-        // TODO Auto-generated method stub
         return "SIMPLEUPNP";
     }
 
@@ -472,7 +459,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
         return "UPNP - Universal Plug & Play (Fritzbox,...)";
     }
 
@@ -685,7 +671,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                 } catch (final ParserConfigurationException e) {
                     Log.exception(e);
                 } catch (final SAXException e) {
-                    // TODO Auto-generated catch block
                     Log.exception(e);
                 }
 
@@ -715,7 +700,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                 final String ip = this.getIP(upnpRouterDevice.getServiceType(), upnpRouterDevice.getControlURL());
                 this.storage.put(UPNPRouterPlugin.EXTERNALIP, ip);
             } catch (final GetIpException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             this.updateGUI();

@@ -258,7 +258,6 @@
 		<buildAddon number="104" package="JDRemoteControl" include="remotecontrol/**" />
 		<buildAddon number="105" package="JDScheduler" include="schedule/**" />
 		<buildAddon number="106" package="JDShutdown" include="JDShutdown*" />
-		<buildAddon number="117" package="JDHttpLiveScripter" include="HTTPLiveHeaderScripter*" />
 		<buildAddon number="120" package="JDLangFileEditor" include="langfileeditor/**" />
 		<buildAddon number="122" package="JDInfoFileWriter" include="JDInfoFileWriter*" />
 		<buildAddon number="123" package="JDUnrar" include="jdunrar/**" />

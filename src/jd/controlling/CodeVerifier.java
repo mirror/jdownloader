@@ -18,17 +18,16 @@ import org.appwork.utils.swing.dialog.Dialog;
  * wants to import them
  * 
  * @author thomas
- * 
  */
 public class CodeVerifier {
     public enum State {
-        // not tested
+        /** not tested */
         NOT_VERIFIED,
-        // asked user, and he trusted the file
+        /** asked user, and he trusted the file */
         USER_DECIDED_TRUSTED,
-        // asked user, and he decided not to trust the file
+        /** asked user, and he decided not to trust the file */
         USER_DECIDED_NOT_TRUSTED,
-        // whitelist (server) ok
+        /** whitelist (server) ok */
         TRUSTED;
     }
 
@@ -38,7 +37,6 @@ public class CodeVerifier {
     private static final CodeVerifier INSTANCE = new CodeVerifier();
 
     public static CodeVerifier getInstance() {
-
         return CodeVerifier.INSTANCE;
     }
 
@@ -71,19 +69,17 @@ public class CodeVerifier {
         State state = this.storage.get(hash, State.NOT_VERIFIED);
         if (state == State.NOT_VERIFIED) {
             try {
-
                 state = this.checkWhitelist(hash, file);
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
         }
         if (state != State.TRUSTED && state != State.USER_DECIDED_TRUSTED) {
-            final ConfirmDialog dialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "Unkown author", Loc.LF("jd.controlling.CodeVerifier.isJarAllowed.message", "The file %s is not an offical part of JDownloader.\r\n\r\nDo only accept and load it, if you trust the author or content provider!\r\nLoad this file?", file.getName()), null, null, null) {
-                /**
-                         * 
-                         */
+            final ConfirmDialog dialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "Unknown author", Loc.LF("jd.controlling.CodeVerifier.isJarAllowed.message", "The file %s is not an offical part of JDownloader.\r\n\r\nDo only accept and load it, if you trust the author or content provider!\r\nLoad this file?", file.getName()), null, null, null) {
+
                 private static final long serialVersionUID = 1L;
 
+                @Override
                 protected String getDontShowAgainKey() {
                     // override to have an hash dependend don't
                     // show_again_trigger key
@@ -100,11 +96,9 @@ public class CodeVerifier {
                     state = State.USER_DECIDED_TRUSTED;
                     this.storage.put(hash, state);
                 } else {
-
                     state = State.USER_DECIDED_NOT_TRUSTED;
                 }
             } else {
-
                 state = State.USER_DECIDED_NOT_TRUSTED;
                 this.storage.put(hash, state);
             }

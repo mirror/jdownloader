@@ -17,19 +17,16 @@ public class DummyRouterPlugin extends RouterPlugin {
     private static final DummyRouterPlugin INSTANCE = new DummyRouterPlugin();
 
     public static RouterPlugin getInstance() {
-        // TODO Auto-generated method stub
         return DummyRouterPlugin.INSTANCE;
     }
 
     @Override
     public void doReconnect(final ProgressController progress) throws ReconnectException {
-        // TODO Auto-generated method stub
 
     }
 
     @Override
     public String getExternalIP() {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -54,37 +51,30 @@ public class DummyRouterPlugin extends RouterPlugin {
         text.setText(JDL.L("jd.controlling.reconnect.plugins.DummyRouterPlugin.getGUI", "<b><u>No Reconnect selected</u></b><br/><p>Reconnection is an advanced approach for skipping long waits that some hosts impose on free users. <br>It is not helpful while using a premium account.</p><p>Read more about Reconnect <a href='http://board.jdownloader.org/showthread.php?t=16450'>here</a></p>"));
         p.add(text);
         return p;
-
     }
 
     @Override
     public String getID() {
-        // TODO Auto-generated method stub
         return "DummyRouterPlugin";
     }
 
     @Override
     public String getName() {
-
         return JDL.L("jd.controlling.reconnect.plugins.DummyRouterPlugin.getName", "No Reconnect");
     }
 
     @Override
     public boolean isIPCheckEnabled() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean isReconnectionEnabled() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public void setCanCheckIP(final boolean b) {
-        // TODO Auto-generated method stub
-
     }
 
 }
