@@ -22,7 +22,11 @@ SetCompressor lzma
   !ifdef ADVERTISING_OPENCANDY
     !include ".\advertising\OpenCandy\OpenCandy.nsh"
   !else
-    !include ".\advertising\template.nsh"
+    !ifdef ADVERTISING_GUTSCHEINRAUSCH
+      !include ".\advertising\gutscheinrausch\gutscheinrausch.nsh"
+    !else
+      !include ".\advertising\template.nsh"
+    !endif
   !endif
 !endif
     

@@ -1,10 +1,8 @@
 #Kikin Advertising plugin
 
-#TODO Opt-In Mechanism like OC
-
 #!undef LICENSE
 #!define LICENSE ".\res\license_sample.txt"
-!ifdef KIKIN_OPTOUT
+!ifdef ADVERTISING_OPTOUT
 OutFile ".\..\..\dist\JDownloaderSetup_kikin_optout.exe"
 !else
 OutFile ".\..\..\dist\JDownloaderSetup_kikin.exe"
@@ -63,8 +61,9 @@ Function KikinPage
   ; Set header text using localized strings.
   !insertmacro MUI_HEADER_TEXT "$(KIKIN_PITCH_PAGE_TITLE)" ""
   
-  !ifdef KIKIN_OPTOUT
+  !ifdef ADVERTISING_OPTOUT
     !insertmacro INSTALLOPTIONS_WRITE "$(KIKIN_PITCH_PAGE_DIALOG)" "Field 4" "State" "1"
+    !insertmacro INSTALLOPTIONS_WRITE "$(KIKIN_PITCH_PAGE_DIALOG)" "Field 5" "State" "0"
   !endif
   ; Initialize dialog but don't show it yet because we have to send some messages
   ; to the controls in the dialog.
@@ -80,7 +79,7 @@ Function KikinPage
   CreateFont $FONT "$(^Font)" "$(^FontSize)" "700" 
   SendMessage $DLGITEM ${WM_SETFONT} $FONT 1
   
-  !ifndef KIKIN_OPTOUT
+  !ifndef ADVERTISING_OPTOUT
     #Disable Next button
     GetDlgItem $1 $HWNDPARENT 1 
     EnableWindow $1 0 
@@ -93,7 +92,7 @@ Function KikinPage
 FunctionEnd
  
 Function KikinPageLeave
-  !ifndef KIKIN_OPTOUT
+  !ifndef ADVERTISING_OPTOUT
     !insertmacro KikinOptInCheck
   !endif
   !insertmacro INSTALLOPTIONS_READ $0 "$(KIKIN_PITCH_PAGE_DIALOG)" "Settings" "State"
