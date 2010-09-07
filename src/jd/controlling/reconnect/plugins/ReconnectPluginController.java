@@ -6,19 +6,30 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+import java.util.logging.Logger;
 
 import javax.swing.JComponent;
 
+import jd.config.Configuration;
+import jd.config.SubConfiguration;
+import jd.controlling.CodeVerifier;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ReconnectMethod;
+import jd.controlling.reconnect.Reconnecter;
+import jd.gui.UserIF;
+import jd.nrouter.IPCheck;
+import jd.nutils.IPAddress;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
@@ -26,10 +37,10 @@ import org.appwork.utils.logging.Log;
 
 import com.sun.istack.internal.Nullable;
 
-public class ReconnectPluginController extends ReconnectMethod {
-    public static final String PRO_ACTIVEPLUGIN = "ACTIVEPLUGIN";
+public class ReconnectPluginController {
+    public static final String                     PRO_ACTIVEPLUGIN = "ACTIVEPLUGIN";
 
-    private static final ReconnectPluginController INSTANCE = new ReconnectPluginController();
+    private static final ReconnectPluginController INSTANCE         = new ReconnectPluginController();
 
     private static List<Class<?>> findPlugins(final URL directory, final String packageName, final ClassLoader classLoader) throws ClassNotFoundException {
         final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
@@ -100,6 +111,8 @@ public class ReconnectPluginController extends ReconnectMethod {
 
     private final Storage           storage;
 
+    protected static final Logger   LOG = JDLogger.getLogger();
+
     private ReconnectPluginController() {
         this.storage = JSonStorage.getStorage("ReconnectPluginController");
         this.scan();
@@ -118,13 +131,128 @@ public class ReconnectPluginController extends ReconnectMethod {
     }
 
     /**
+     * Performs a reconnect
+     * 
+     * @return true if ip changed
+     */
+    public final boolean doReconnect() {
+        final RouterPlugin active = this.getActivePlugin();
+        if (active == DummyRouterPlugin.getInstance()) { return false; }
+
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+            /*
+             * disabled ipcheck, let run 1 reconnect round and guess it has been
+             * successful
+             */
+            this.doReconnectInternal(1);
+
+            return true;
+        } else {
+            int maxretries = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RETRIES, 5);
+            boolean ret = false;
+            int retry = 0;
+            if (maxretries < 0) {
+                maxretries = Integer.MAX_VALUE;
+            } else if (maxretries == 0) {
+                maxretries = 1;
+            }
+            for (retry = 0; retry < maxretries; retry++) {
+                if ((ret = this.doReconnectInternal(retry + 1)) == true) {
+                    break;
+                }
+            }
+            return ret;
+        }
+    }
+
+    public final boolean doReconnectInternal(final int retry) {
+        final ProgressController progress = new ProgressController(this.toString(), 10, "gui.images.reconnect");
+        progress.setStatusText(JDL.L("reconnect.progress.1_retries", "Reconnect #") + retry);
+        try {
+            final Configuration configuration = JDUtilities.getConfiguration();
+            final int waitForIp = configuration.getIntegerProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, 30);
+            final int checkInterval = this.getIpCheckInterval();
+
+            final int waittime = this.getWaittimeBeforeFirstIPCheck();
+
+            ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + retry);
+            final String preIp = this.getIP();
+
+            progress.increase(1);
+            progress.setStatusText(JDL.L("reconnect.progress.2_oldIP", "Reconnect Old IP:") + preIp);
+
+            try {
+                this.getActivePlugin().doReconnect(progress);
+            } catch (final Exception e) {
+                progress.doFinalize();
+                e.printStackTrace();
+                ReconnectPluginController.LOG.severe("An error occured while processing the reconnect ... Terminating");
+                return false;
+            }
+
+            ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");
+            try {
+                Thread.sleep(waittime * 1000);
+            } catch (final InterruptedException e) {
+            }
+            String afterIP = this.getIP();
+            progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
+            long endTime = System.currentTimeMillis() + waitForIp * 1000;
+            ReconnectPluginController.LOG.info("Wait " + waitForIp + " sec for new ip");
+            while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
+                ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+                try {
+                    Thread.sleep(5 * 1000);
+                } catch (final InterruptedException e) {
+                }
+                afterIP = this.getIP();
+                progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
+            }
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) { return true; }
+            ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+            if ((afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE) && !afterIP.equals(preIp)) {
+                ReconnectPluginController.LOG.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
+                endTime = System.currentTimeMillis() + 120 * 1000;
+                while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
+                    ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+                    try {
+                        Thread.sleep(5 * 1000);
+                    } catch (final InterruptedException e) {
+                    }
+                    afterIP = this.getIP();
+                    progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", preIp, afterIP));
+                }
+            }
+
+            if (!afterIP.equals(preIp) && !(afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
+                ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+                /* Reconnect scheint erfolgreich gewesen zu sein */
+                /* nun IP validieren */
+                if (!IPAddress.validateIP(afterIP)) {
+                    ReconnectPluginController.LOG.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
+                    UserIF.getInstance().displayMiniWarning(JDL.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDL.LF("reconnect.ipfiltered.warning.short", "The IP %s is not allowed!", afterIP));
+                    Reconnecter.setCurrentIP(RouterPlugin.NOT_AVAILABLE);
+                    return false;
+                } else {
+                    progress.doFinalize();
+                    Reconnecter.setCurrentIP(afterIP);
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            progress.doFinalize();
+        }
+    }
+
+    /**
      * returns the currently active routerplugin. Only one plugin may be active
      * 
      * @return
      */
     public RouterPlugin getActivePlugin() {
 
-        RouterPlugin active = ReconnectPluginController.getInstance().getPluginByID(this.storage.get(PRO_ACTIVEPLUGIN, DummyRouterPlugin.getInstance().getID()));
+        RouterPlugin active = ReconnectPluginController.getInstance().getPluginByID(this.storage.get(ReconnectPluginController.PRO_ACTIVEPLUGIN, DummyRouterPlugin.getInstance().getID()));
         if (active == null) {
             active = DummyRouterPlugin.getInstance();
         }
@@ -140,6 +268,54 @@ public class ReconnectPluginController extends ReconnectMethod {
     public JComponent getGUI() {
         // TODO Auto-generated method stub
         return ReconnectPluginConfigGUI.getInstance();
+    }
+
+    /**
+     * Returns the current external IP. Checks the currenta ctive plugin, and
+     * uses IPCHeck class as fallback
+     * 
+     * @return
+     */
+    private String getIP() {
+        String ret = RouterPlugin.NOT_AVAILABLE;
+
+        cond: if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+
+            // use own ipcheck if possible
+            if (this.getActivePlugin().isIPCheckEnabled()) {
+                try {
+                    ret = ReconnectPluginController.getInstance().getActivePlugin().getExternalIP();
+                    break cond;
+                } catch (final Throwable e) {
+
+                    this.getActivePlugin().setCanCheckIP(false);
+                    Log.exception(e);
+                }
+
+            }
+            ret = IPCheck.getIPAddress();
+        }
+        Reconnecter.setCurrentIP(ret);
+        return ret;
+    }
+
+    /**
+     * returns how long the controller has to wait between two ip checks
+     * 
+     * @return
+     */
+    private int getIpCheckInterval() {
+        if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+
+            // use own ipcheck if possible
+            if (this.getActivePlugin().isIPCheckEnabled()) { return this.getActivePlugin().getIpCheckInterval();
+
+            }
+            return 5;
+
+        }
+        // ip check disabled
+        return 0;
     }
 
     @Nullable
@@ -172,17 +348,18 @@ public class ReconnectPluginController extends ReconnectMethod {
         return this.storage;
     }
 
-    @Override
-    protected void initConfig() {
-        // TODO Auto-generated method stub
+    private int getWaittimeBeforeFirstIPCheck() {
+        if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
 
-    }
+            // use own ipcheck if possible
+            if (this.getActivePlugin().isIPCheckEnabled()) { return this.getActivePlugin().getWaittimeBeforeFirstIPCheck();
 
-    @Override
-    protected boolean runCommands(final ProgressController progress) {
-        final RouterPlugin active = this.getActivePlugin();
-        if (active == DummyRouterPlugin.getInstance()) { return false; }
-        return active.doReconnect(progress);
+            }
+            return JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, 5);
+
+        }
+        // ip check disabled
+        return 0;
     }
 
     /**
@@ -198,8 +375,13 @@ public class ReconnectPluginController extends ReconnectMethod {
 
             for (int i = 0; i < length; i++) {
                 try {
-                    urls.add(files[i].toURI().toURL());
+                    if (CodeVerifier.getInstance().isJarAllowed(files[i])) {
+                        urls.add(files[i].toURI().toURL());
+                    }
                 } catch (final IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (final NoSuchAlgorithmException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -242,7 +424,7 @@ public class ReconnectPluginController extends ReconnectMethod {
     }
 
     public void setActivePlugin(final RouterPlugin selectedItem) {
-        this.storage.put(PRO_ACTIVEPLUGIN, selectedItem.getID());
+        this.storage.put(ReconnectPluginController.PRO_ACTIVEPLUGIN, selectedItem.getID());
 
     }
 }

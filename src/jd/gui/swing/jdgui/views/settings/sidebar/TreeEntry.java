@@ -6,6 +6,7 @@ import java.util.HashMap;
 import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.SingletonPanel;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 
@@ -20,39 +21,20 @@ public class TreeEntry {
      * @param clazz
      * @return
      */
-    public static TreeEntry getTreeByClass(Class<?> clazz) {
-        return PANELS.get(clazz);
+    public static TreeEntry getTreeByClass(final Class<?> clazz) {
+        return TreeEntry.PANELS.get(clazz);
     }
 
     private Class<? extends ConfigPanel> clazz;
-    private ConfigPanel panel;
+    private SwitchPanel                  panel;
 
-    private String title;
-    private ImageIcon iconSmall;
-    private ImageIcon icon;
-    private ArrayList<TreeEntry> entries;
+    private String                       title;
+    private ImageIcon                    iconSmall;
+    private ImageIcon                    icon;
+    private final ArrayList<TreeEntry>   entries;
 
     private TreeEntry() {
         this.entries = new ArrayList<TreeEntry>();
-    }
-
-    public TreeEntry(String title, String iconKey) {
-        this();
-        setTitle(title);
-        setIcon(iconKey);
-    }
-
-    /**
-     * Adds a configpanel
-     * 
-     * @param panel
-     * @param title
-     * @param iconKey
-     */
-    public TreeEntry(ConfigPanel panel, String title, String iconKey) {
-        this(title, iconKey);
-
-        this.panel = panel;
     }
 
     /**
@@ -66,80 +48,99 @@ public class TreeEntry {
         this();
 
         try {
-            setTitle(clazz.getMethod("getTitle").invoke(null).toString());
-        } catch (Exception e) {
+            this.setTitle(clazz.getMethod("getTitle").invoke(null).toString());
+        } catch (final Exception e) {
             e.printStackTrace();
-            setTitle(clazz.getSimpleName());
+            this.setTitle(clazz.getSimpleName());
         }
 
         try {
-            setIcon(clazz.getMethod("getIconKey").invoke(null).toString());
-        } catch (Exception e) {
+            this.setIcon(clazz.getMethod("getIconKey").invoke(null).toString());
+        } catch (final Exception e) {
             e.printStackTrace();
-            setIcon("gui.images.taskpanes.configuration");
+            this.setIcon("gui.images.taskpanes.configuration");
         }
 
-        PANELS.put(clazz, this);
+        TreeEntry.PANELS.put(clazz, this);
 
         this.clazz = clazz;
     }
 
-    private void setTitle(String title) {
-        this.title = title;
+    public TreeEntry(final String title, final String iconKey) {
+        this();
+        this.setTitle(title);
+        this.setIcon(iconKey);
     }
 
-    private void setIcon(String iconKey) {
+    /**
+     * Adds a configpanel
+     * 
+     * @param panel
+     * @param title
+     * @param iconKey
+     */
+    public TreeEntry(final SwitchPanel panel, final String title, final String iconKey) {
+        this(title, iconKey);
+
+        this.panel = panel;
+    }
+
+    public void add(final TreeEntry treeEntry) {
+        this.entries.add(treeEntry);
+    }
+
+    public Object get(final int index) {
+        return this.entries.get(index);
+    }
+
+    public Class<? extends ConfigPanel> getClazz() {
+        return this.clazz;
+    }
+
+    public ArrayList<TreeEntry> getEntries() {
+        return this.entries;
+    }
+
+    public ImageIcon getIcon() {
+        return this.icon;
+    }
+
+    public ImageIcon getIconSmall() {
+        return this.iconSmall;
+    }
+
+    public SwitchPanel getPanel() {
+        if (this.panel == null) {
+            if (this.clazz != null) {
+                this.panel = new SingletonPanel(this.clazz).getPanel();
+            } else if (!this.entries.isEmpty()) {
+                this.panel = this.entries.get(0).getPanel();
+            }
+        }
+        return this.panel;
+    }
+
+    public String getTitle() {
+        return this.title;
+    }
+
+    public int indexOf(final Object child) {
+        return this.entries.indexOf(child);
+    }
+
+    private void setIcon(final String iconKey) {
         if (iconKey != null) {
             this.iconSmall = JDTheme.II(iconKey, 16, 16);
             this.icon = JDTheme.II(iconKey, 20, 20);
         }
     }
 
-    public Class<? extends ConfigPanel> getClazz() {
-        return clazz;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public ImageIcon getIcon() {
-        return icon;
-    }
-
-    public ImageIcon getIconSmall() {
-        return iconSmall;
-    }
-
-    public ConfigPanel getPanel() {
-        if (panel == null) {
-            if (clazz != null) {
-                panel = (ConfigPanel) new SingletonPanel(clazz).getPanel();
-            } else if (!entries.isEmpty()) {
-                panel = entries.get(0).getPanel();
-            }
-        }
-        return panel;
-    }
-
-    public ArrayList<TreeEntry> getEntries() {
-        return entries;
-    }
-
-    public int indexOf(Object child) {
-        return entries.indexOf(child);
+    private void setTitle(final String title) {
+        this.title = title;
     }
 
     public int size() {
-        return entries.size();
-    }
-
-    public Object get(int index) {
-        return entries.get(index);
-    }
-
-    public void add(TreeEntry treeEntry) {
-        entries.add(treeEntry);
+        return this.entries.size();
     }
 
 }

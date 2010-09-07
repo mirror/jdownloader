@@ -40,13 +40,15 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
+import jd.controlling.reconnect.plugins.GetIpException;
+import jd.controlling.reconnect.plugins.ReconnectException;
 import jd.controlling.reconnect.plugins.ReconnectPluginController;
 import jd.controlling.reconnect.plugins.RouterPlugin;
-import jd.controlling.reconnect.plugins.RouterPluginException;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.nrouter.IPCheck;
+import jd.nutils.IPAddress;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -143,7 +145,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                     try {
                         final ArrayList<UpnpRouterDevice> devices = UPNPRouterPlugin.this.scanDevices();
                         if (Thread.currentThread().isInterrupted()) { return; }
-                        final int ret = UserIO.getInstance().requestComboDialog(0, "Select Router", "Please select the router that handles your internet connection", devices.toArray(new HashMap[] {}), 0, null, null, null, new DefaultListCellRenderer() {
+                        final int ret = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, "Select Router", "Please select the router that handles your internet connection", devices.toArray(new HashMap[] {}), 0, null, null, null, new DefaultListCellRenderer() {
 
                             private static final long serialVersionUID = 3607383089555373774L;
 
@@ -295,16 +297,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
 
     }
 
-    @Override
-    public boolean canCheckIP() {       
-        return this.storage.get(UPNPRouterPlugin.CANCHECKIP, true);
-    }
-
-    @Override
-    public boolean canRefreshIP() {        
-        return true;
-    }
-
     public void controlEvent(final ControlEvent event) {
         if (UPNPRouterPlugin.this.storage.get(UPNPRouterPlugin.TRIED_AUTOFIND, false)) { return; }
         final Configuration configuration = JDUtilities.getConfiguration();
@@ -338,52 +330,35 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
     }
 
     @Override
-    public boolean doReconnect(final ProgressController progress) {
+    public void doReconnect(final ProgressController progress) throws ReconnectException {
 
         try {
             this.runCommand(this.storage.get(UpnpRouterDevice.SERVICETYPE, ""), this.storage.get(UpnpRouterDevice.CONTROLURL, ""), "ForceTermination");
             Thread.sleep(2000);
             this.runCommand(this.storage.get(UpnpRouterDevice.SERVICETYPE, ""), this.storage.get(UpnpRouterDevice.CONTROLURL, ""), "RequestConnection");
-            return true;
+
         } catch (final Throwable e) {
-            return false;
+            throw new ReconnectException(e);
         }
 
     }
 
     @Override
-    public String getExternalIP() throws RouterPluginException {
-
-        String ipxml;
-
+    public String getExternalIP() throws GetIpException {
         try {
-            ipxml = this.runCommand(this.storage.get(UpnpRouterDevice.SERVICETYPE, ""), this.storage.get(UpnpRouterDevice.CONTROLURL, ""), "GetExternalIPAddress");
+            final String ip = this.getIP(this.storage.get(UpnpRouterDevice.SERVICETYPE, ""), this.storage.get(UpnpRouterDevice.CONTROLURL, ""));
+            this.storage.put(UPNPRouterPlugin.EXTERNALIP, ip);
+            return ip;
+        } catch (final GetIpException e) {
+            // failed. disable ipcheck for this upnp device
 
-        } catch (final Exception e) {
-            this.storage.put(UPNPRouterPlugin.CANCHECKIP, false);
-            throw new RouterPluginException(e);
+            throw e;
         }
-
-        final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);
-        if (ipm.find()) {
-            final String ip = ipm.group(1);
-
-            if (ip.matches("(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)")) {
-                this.storage.put(UPNPRouterPlugin.EXTERNALIP, ip);
-
-                return ip;
-            } else {
-                throw new RouterPluginException("Invalid IP");
-            }
-        }
-        this.storage.put(UPNPRouterPlugin.CANCHECKIP, false);
-        throw new RouterPluginException("Could not get IP/No GetExternalIPAddress");
-
     }
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 0,wrap 3", "[][][grow,fill]", "[]"));
+        final JPanel p = new JPanel(new MigLayout("ins 10,wrap 3", "[][][grow,fill]", "[]"));
         this.find = new JButton("Find Routers");
         this.find.addActionListener(this);
         this.auto = new JButton("Setup Wizard");
@@ -420,7 +395,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
 
             private void update() {
                 UPNPRouterPlugin.this.storage.put(UpnpRouterDevice.SERVICETYPE, UPNPRouterPlugin.this.serviceTypeTxt.getText());
-                UPNPRouterPlugin.this.storage.put(UPNPRouterPlugin.CANCHECKIP, true);
+                UPNPRouterPlugin.this.setCanCheckIP(true);
             }
 
         });
@@ -443,7 +418,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
 
             private void update() {
                 UPNPRouterPlugin.this.storage.put(UpnpRouterDevice.CONTROLURL, UPNPRouterPlugin.this.controlURLTxt.getText());
-                UPNPRouterPlugin.this.storage.put(UPNPRouterPlugin.CANCHECKIP, true);
+                UPNPRouterPlugin.this.setCanCheckIP(true);
             }
 
         });
@@ -457,10 +432,63 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
         return "SIMPLEUPNP";
     }
 
+    private String getIP(final String serviceType, final String controlURL) throws GetIpException {
+        String ipxml;
+
+        try {
+            ipxml = this.runCommand(serviceType, controlURL, "GetExternalIPAddress");
+
+        } catch (final Exception e) {
+            // this.storage.put(UPNPRouterPlugin.CANCHECKIP, false);
+            throw new GetIpException("GetExternalIPAddress failed", e);
+        }
+
+        final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);
+        if (ipm.find()) {
+            final String ip = ipm.group(1);
+            if ("0.0.0.0".equals(ip)) {
+                // Fritzbox returns 0.0.0.0 in offline mode
+
+                return RouterPlugin.OFFLINE;
+
+            }
+            if (ip.matches(IPAddress.IP_PATTERN)) {
+
+                return ip;
+            } else {
+                // TODO: differ between NA and OFFLINE
+                return RouterPlugin.NOT_AVAILABLE;
+
+            }
+        }
+        // this.storage.put(UPNPRouterPlugin.CANCHECKIP, false);
+        throw new GetIpException("Could not get IP/No GetExternalIPAddress");
+    }
+
+    public int getIpCheckInterval() {
+        // if ipcheck is done over upnp, we do not have to use long intervals
+        return 1;
+    }
+
     @Override
     public String getName() {
         // TODO Auto-generated method stub
         return "UPNP - Universal Plug & Play (Fritzbox,...)";
+    }
+
+    public int getWaittimeBeforeFirstIPCheck() {
+        // if ipcheck is done over upnp, we do not have to use long intervals
+        return 1;
+    }
+
+    @Override
+    public boolean isIPCheckEnabled() {
+        return this.storage.get(UPNPRouterPlugin.CANCHECKIP, true);
+    }
+
+    @Override
+    public boolean isReconnectionEnabled() {
+        return true;
     }
 
     private String runCommand(final String serviceType, final String controlUrl, final String command) throws IOException {
@@ -651,6 +679,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                             }
 
                             foundDevices.add(device);
+
                         }
                     }
                 } catch (final ParserConfigurationException e) {
@@ -666,6 +695,12 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
         return foundDevices;
     }
 
+    @Override
+    public void setCanCheckIP(final boolean b) {
+        this.storage.put(UPNPRouterPlugin.CANCHECKIP, b);
+
+    }
+
     private void setDevice(final UpnpRouterDevice upnpRouterDevice) {
         if (upnpRouterDevice == null) {
             this.storage.clear();
@@ -675,7 +710,14 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                 final Entry<String, String> next = it.next();
                 this.storage.put(next.getKey(), next.getValue());
             }
-            this.storage.put(UPNPRouterPlugin.CANCHECKIP, true);
+            this.setCanCheckIP(true);
+            try {
+                final String ip = this.getIP(upnpRouterDevice.getServiceType(), upnpRouterDevice.getControlURL());
+                this.storage.put(UPNPRouterPlugin.EXTERNALIP, ip);
+            } catch (final GetIpException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             this.updateGUI();
         }
     }

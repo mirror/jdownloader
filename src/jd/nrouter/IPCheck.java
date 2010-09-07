@@ -25,116 +25,7 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.reconnect.ReconnectMethod;
-import jd.controlling.reconnect.plugins.ReconnectPluginController;
 import jd.http.Browser;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.logging.Log;
-
-public class IPCheck {
-
-    /** IPCheckProvider use this to Signal Error or Seq.failing */
-    public static enum CheckStatus {
-        FAILED, SEQFAILED
-    }
-
-    public static ArrayList<IPCheckProvider> IP_CHECK_SERVICES  = new ArrayList<IPCheckProvider>();
-    private static int                       IP_CHECK_INDEX     = 0;
-    private static final Object              LOCK               = new Object();
-
-    private static final IPCheckProvider     CUSTOM_WEB_IPCHECK = new CustomWebIPCheck();
-
-    static {
-        /* IPCheck Service powered by JDownloader */
-        IPCheck.IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck3.jdownloader.org", "(\\d+\\.\\d+\\.\\d+\\.\\d+)"));
-        IPCheck.IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck2.jdownloader.org", "(\\d+\\.\\d+\\.\\d+\\.\\d+)"));
-        IPCheck.IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck1.jdownloader.org", "(\\d+\\.\\d+\\.\\d+\\.\\d+)"));
-        IPCheck.IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck0.jdownloader.org", "(\\d+\\.\\d+\\.\\d+\\.\\d+)"));
-        Collections.shuffle(IPCheck.IP_CHECK_SERVICES);
-    }
-
-    public static String                     LATEST_IP          = null;
-
-    /**
-     * Uses IP_CHECK_SERVICES (current JDownloader IPCheck) to get the current
-     * IP. rotates through IP_CHECK_SERVICES which is random sorted.
-     * 
-     * @Deprecated Returning Object is Bad. Better: return IP, or throw
-     *             exceptions
-     * 
-     * @return current IP string object or IPCheck.CheckStatus.FAILED if there
-     *         has been an error or IPCheck.CheckStatus.SEQFAILED if this method
-     *         should be paused
-     */
-    private static String checkIPProvider() throws IPCheckException {
-        if (IPCheck.IP_CHECK_SERVICES.size() == 0) return null;
-        synchronized (IPCheck.LOCK) {
-            IPCheck.IP_CHECK_INDEX = IPCheck.IP_CHECK_INDEX % IPCheck.IP_CHECK_SERVICES.size();
-            final IPCheckProvider ipcheck = IPCheck.IP_CHECK_SERVICES.get(IPCheck.IP_CHECK_INDEX);
-            IPCheck.IP_CHECK_INDEX++;
-            return ipcheck.getIP();
-        }
-    }
-
-    /**
-     * Fetches the current IP Address by asking
-     * 
-     * a.) one of the above CHECK_SERVICES (random)
-     * 
-     * b.) the userdefined IP check location
-     * 
-     * @return ip or "na" for notavailable
-     */
-    public static String getIPAddress() {
-
-        String ip = null;
-        synchronized (IPCheck.LOCK) {
-            /* check if user uses a reconnect plugin */
-            if (JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.PLUGIN && ReconnectPluginController.getInstance().getActivePlugin().canCheckIP()) {
-                try {
-                    ip = ReconnectPluginController.getInstance().getActivePlugin().getExternalIP();
-                } catch (final Throwable e) {
-                    Log.exception(e);
-                }
-            } else if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
-                /* use registered ipcheckprovider (balanced) */
-                for (int i = 0; i < IPCheck.IP_CHECK_SERVICES.size() / 2 + 1; i++) {
-                    try {
-                        ip = IPCheck.checkIPProvider();
-                    } catch (final IPCheckException e) {
-                        if (e.getId() == IPCheckException.FAILED) {
-                            /* normal error, wait 3 secs for retry */
-                            try {
-                                Thread.sleep(3000);
-                            } catch (final InterruptedException e1) {
-                            }
-                        } else if (e.getId() == IPCheckException.SEQ_FAILED) {
-                            /* seq error, wait 9 secs for retry */
-                            try {
-                                Thread.sleep(9000);
-                            } catch (final InterruptedException e1) {
-                            }
-                        }
-                    }
-                }
-            } else {
-                /* use userdefined ipcheck, try it only once */
-                try {
-                    ip = IPCheck.CUSTOM_WEB_IPCHECK.getIP();
-                } catch (final IPCheckException e) {
-                }
-            }
-        }
-
-        if (ip == null) {
-            JDLogger.getLogger().severe("IPCheck failed");
-            return "na";
-        }
-        return ip.toString().trim();
-    }
-
-}
 
 /** this CustomWebIPCheck uses the UserDefined Settings */
 class CustomWebIPCheck implements IPCheckProvider {
@@ -176,6 +67,103 @@ class CustomWebIPCheck implements IPCheckProvider {
         this.errorcount++;
         throw new IPCheckException(IPCheckException.FAILED);
     }
+}
+
+public class IPCheck {
+
+    /** IPCheckProvider use this to Signal Error or Seq.failing */
+    public static enum CheckStatus {
+        FAILED, SEQFAILED
+    }
+
+    public static ArrayList<IPCheckProvider> IP_CHECK_SERVICES  = new ArrayList<IPCheckProvider>();
+    private static int                       IP_CHECK_INDEX     = 0;
+    private static final Object              LOCK               = new Object();
+
+    private static final IPCheckProvider     CUSTOM_WEB_IPCHECK = new CustomWebIPCheck();
+
+    static {
+        /* IPCheck Service powered by JDownloader */
+        IPCheck.IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck3.jdownloader.org", "(\\d+\\.\\d+\\.\\d+\\.\\d+)"));
+        IPCheck.IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck2.jdownloader.org", "(\\d+\\.\\d+\\.\\d+\\.\\d+)"));
+        IPCheck.IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck1.jdownloader.org", "(\\d+\\.\\d+\\.\\d+\\.\\d+)"));
+        IPCheck.IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck0.jdownloader.org", "(\\d+\\.\\d+\\.\\d+\\.\\d+)"));
+        Collections.shuffle(IPCheck.IP_CHECK_SERVICES);
+    }
+
+    public static String                     LATEST_IP          = null;
+
+    /**
+     * Uses IP_CHECK_SERVICES (current JDownloader IPCheck) to get the current
+     * IP. rotates through IP_CHECK_SERVICES which is random sorted.
+     * 
+     * @Deprecated Returning Object is Bad. Better: return IP, or throw
+     *             exceptions
+     * 
+     * @return current IP string object or IPCheck.CheckStatus.FAILED if there
+     *         has been an error or IPCheck.CheckStatus.SEQFAILED if this method
+     *         should be paused
+     */
+    private static String checkIPProvider() throws IPCheckException {
+        if (IPCheck.IP_CHECK_SERVICES.size() == 0) { return null; }
+        synchronized (IPCheck.LOCK) {
+            IPCheck.IP_CHECK_INDEX = IPCheck.IP_CHECK_INDEX % IPCheck.IP_CHECK_SERVICES.size();
+            final IPCheckProvider ipcheck = IPCheck.IP_CHECK_SERVICES.get(IPCheck.IP_CHECK_INDEX);
+            IPCheck.IP_CHECK_INDEX++;
+            return ipcheck.getIP();
+        }
+    }
+
+    /**
+     * Fetches the current IP Address by asking
+     * 
+     * a.) one of the above CHECK_SERVICES (random)
+     * 
+     * b.) the userdefined IP check location
+     * 
+     * @return ip or "na" for notavailable
+     */
+    public static String getIPAddress() {
+
+        String ip = null;
+        synchronized (IPCheck.LOCK) {
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
+                /* use registered ipcheckprovider (balanced) */
+                for (int i = 0; i < IPCheck.IP_CHECK_SERVICES.size() / 2 + 1; i++) {
+                    try {
+                        ip = IPCheck.checkIPProvider();
+                    } catch (final IPCheckException e) {
+                        if (e.getId() == IPCheckException.FAILED) {
+                            /* normal error, wait 3 secs for retry */
+                            try {
+                                Thread.sleep(3000);
+                            } catch (final InterruptedException e1) {
+                            }
+                        } else if (e.getId() == IPCheckException.SEQ_FAILED) {
+                            /* seq error, wait 9 secs for retry */
+                            try {
+                                Thread.sleep(9000);
+                            } catch (final InterruptedException e1) {
+                            }
+                        }
+                    }
+                }
+            } else {
+                /* use userdefined ipcheck, try it only once */
+                try {
+                    ip = IPCheck.CUSTOM_WEB_IPCHECK.getIP();
+                } catch (final IPCheckException e) {
+                }
+            }
+        }
+
+        if (ip == null) {
+            JDLogger.getLogger().severe("IPCheck failed");
+            return "na";
+        }
+        return ip.toString().trim();
+    }
+
 }
 
 /** IPCheck Provider using a Website that provides Client IP */

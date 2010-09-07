@@ -23,23 +23,24 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import jd.OptionalPluginWrapper;
+import jd.controlling.reconnect.plugins.ReconnectPluginConfigGUI;
 import jd.utils.locale.JDL;
 
 public class ConfigTreeModel implements TreeModel {
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
+    private static final String JDL_PREFIX   = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
 
-    private TreeEntry root;
+    private final TreeEntry     root;
     /** Listeners. */
     protected EventListenerList listenerList = new EventListenerList();
-    private TreeEntry addons;
+    private TreeEntry           addons;
 
-    private TreeEntry plugins;
+    private TreeEntry           plugins;
 
     public ConfigTreeModel() {
-        root = new TreeEntry("_ROOT_", null);
+        this.root = new TreeEntry("_ROOT_", null);
 
         TreeEntry teTop, teLeaf;
-        root.add(teTop = new TreeEntry(JDL.L(JDL_PREFIX + "basics.title", "Basics"), "gui.images.config.home"));
+        this.root.add(teTop = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "basics.title", "Basics"), "gui.images.config.home"));
 
         teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral.class));
 
@@ -52,33 +53,26 @@ public class ConfigTreeModel implements TreeModel {
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Browser.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Advanced.class));
 
-        root.add(teTop = new TreeEntry(JDL.L(JDL_PREFIX + "modules.title", "Modules"), "gui.images.config.home"));
+        this.root.add(teTop = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "modules.title", "Modules"), "gui.images.config.home"));
 
         teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelCaptcha.class));
 
-        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectMethodSelector.class));
+        teTop.add(teLeaf = new TreeEntry(ReconnectPluginConfigGUI.getInstance(), JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginConfigGUI.sidebar.title", "Reconnection"), "gui.images.config.reconnect"));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.reconnect.Advanced.class));
 
-        teTop.add(teLeaf = new TreeEntry(JDL.L(JDL_PREFIX + "passwordsAndLogins", "Passwords & Logins"), "gui.images.list"));
+        teTop.add(teLeaf = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "passwordsAndLogins", "Passwords & Logins"), "gui.images.list"));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordListHTAccess.class));
 
-        root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons"), "gui.images.config.home"));
+        this.root.add(this.plugins = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "plugins.title", "Plugins & Add-ons"), "gui.images.config.home"));
 
-        plugins.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPluginForHost.class));
+        this.plugins.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPluginForHost.class));
 
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.premium.Premium.class));
 
-        plugins.add(addons = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons.class));
+        this.plugins.add(this.addons = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons.class));
 
-        initExtensions(addons);
-    }
-
-    private void initExtensions(TreeEntry addons) {
-        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!plg.isLoaded() || !plg.isEnabled() || !plg.hasConfig()) continue;
-            addons.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), "", true), plg.getHost(), plg.getPlugin().getIconKey()));
-        }
+        this.initExtensions(this.addons);
     }
 
     /**
@@ -88,8 +82,51 @@ public class ConfigTreeModel implements TreeModel {
      * @param l
      *            the listener to add
      */
-    public void addTreeModelListener(TreeModelListener l) {
-        listenerList.add(TreeModelListener.class, l);
+    public void addTreeModelListener(final TreeModelListener l) {
+        this.listenerList.add(TreeModelListener.class, l);
+    }
+
+    private void fireTreeStructureChanged(final TreePath path) {
+
+        final Object[] listeners = this.listenerList.getListenerList();
+        TreeModelEvent e = null;
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == TreeModelListener.class) {
+                if (e == null) {
+                    e = new TreeModelEvent(this, path);
+                }
+                ((TreeModelListener) listeners[i + 1]).treeStructureChanged(e);
+            }
+        }
+    }
+
+    public Object getChild(final Object parent, final int index) {
+        return ((TreeEntry) parent).get(index);
+    }
+
+    public int getChildCount(final Object parent) {
+        return ((TreeEntry) parent).size();
+    }
+
+    public int getIndexOfChild(final Object parent, final Object child) {
+        return ((TreeEntry) parent).indexOf(child);
+    }
+
+    public Object getRoot() {
+        return this.root;
+    }
+
+    private void initExtensions(final TreeEntry addons) {
+        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+            if (!plg.isLoaded() || !plg.isEnabled() || !plg.hasConfig()) {
+                continue;
+            }
+            addons.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), "", true), plg.getHost(), plg.getPlugin().getIconKey()));
+        }
+    }
+
+    public boolean isLeaf(final Object node) {
+        return ((TreeEntry) node).size() == 0;
     }
 
     /**
@@ -100,43 +137,8 @@ public class ConfigTreeModel implements TreeModel {
      * @param l
      *            the listener to remove
      */
-    public void removeTreeModelListener(TreeModelListener l) {
-        listenerList.remove(TreeModelListener.class, l);
-    }
-
-    public Object getChild(Object parent, int index) {
-        return ((TreeEntry) parent).get(index);
-    }
-
-    public int getChildCount(Object parent) {
-        return ((TreeEntry) parent).size();
-    }
-
-    public int getIndexOfChild(Object parent, Object child) {
-        return ((TreeEntry) parent).indexOf(child);
-    }
-
-    public Object getRoot() {
-        return root;
-    }
-
-    public boolean isLeaf(Object node) {
-        return ((TreeEntry) node).size() == 0;
-    }
-
-    public void valueForPathChanged(TreePath path, Object newValue) {
-    }
-
-    private void fireTreeStructureChanged(TreePath path) {
-
-        Object[] listeners = listenerList.getListenerList();
-        TreeModelEvent e = null;
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == TreeModelListener.class) {
-                if (e == null) e = new TreeModelEvent(this, path);
-                ((TreeModelListener) listeners[i + 1]).treeStructureChanged(e);
-            }
-        }
+    public void removeTreeModelListener(final TreeModelListener l) {
+        this.listenerList.remove(TreeModelListener.class, l);
     }
 
     /**
@@ -145,10 +147,13 @@ public class ConfigTreeModel implements TreeModel {
      * @return
      */
     public TreePath updateAddons() {
-        addons.getEntries().clear();
-        initExtensions(addons);
-        TreePath path = new TreePath(new Object[] { getRoot(), plugins, addons });
-        fireTreeStructureChanged(path);
+        this.addons.getEntries().clear();
+        this.initExtensions(this.addons);
+        final TreePath path = new TreePath(new Object[] { this.getRoot(), this.plugins, this.addons });
+        this.fireTreeStructureChanged(path);
         return path;
+    }
+
+    public void valueForPathChanged(final TreePath path, final Object newValue) {
     }
 }

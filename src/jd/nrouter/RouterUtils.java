@@ -16,7 +16,6 @@
 
 package jd.nrouter;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -28,186 +27,138 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
-import jd.controlling.ProgressController;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
-import jd.utils.locale.JDL;
 
 public class RouterUtils {
 
+    private static class WebServerChecker implements JDRunnable {
+
+        private final String host;
+        private InetAddress  address = null;
+
+        public WebServerChecker(final String host) {
+            this.host = host;
+        }
+
+        public InetAddress getAddress() {
+            return this.address;
+        }
+
+        public void go() throws Exception {
+            try {
+                final InetAddress ia = InetAddress.getByName(this.host);
+                if (ia.isReachable(1500)) {
+                    if (RouterUtils.checkPort(this.host, 80)) {
+                        this.address = ia;
+                    }
+                }
+            } catch (final IOException e) {
+            }
+        }
+    }
+
     public final static ArrayList<String> HOST_NAMES = new ArrayList<String>();
-    private static InetAddress ADDRESS_CACHE;
+
+    private static InetAddress            ADDRESS_CACHE;
 
     static {
 
-        HOST_NAMES.add("fritz.fonwlan.box");
-        HOST_NAMES.add("speedport.ip");
-        HOST_NAMES.add("fritz.box");
-        HOST_NAMES.add("dsldevice.lan");
-        HOST_NAMES.add("speedtouch.lan");
-        HOST_NAMES.add("mygateway1.ar7");
-        HOST_NAMES.add("fritz.fon.box");
-        HOST_NAMES.add("home");
-        HOST_NAMES.add("arcor.easybox");
-        HOST_NAMES.add("fritz.slwlan.box");
-        HOST_NAMES.add("eumex.ip");
-        HOST_NAMES.add("easy.box");
-        HOST_NAMES.add("my.router");
-        HOST_NAMES.add("fritz.fon");
-        HOST_NAMES.add("router");
-        HOST_NAMES.add("mygateway.ar7");
-        HOST_NAMES.add("login.router");
-        HOST_NAMES.add("SX541");
-        HOST_NAMES.add("SE515.home");
-        HOST_NAMES.add("sinus.ip");
-        HOST_NAMES.add("fritz.wlan.box");
-        HOST_NAMES.add("my.siemens");
-        HOST_NAMES.add("local.gateway");
-        HOST_NAMES.add("congstar.box");
-        HOST_NAMES.add("login.modem");
-        HOST_NAMES.add("homegate.homenet.telecomitalia.it");
-        HOST_NAMES.add("SE551");
-        HOST_NAMES.add("home.gateway");
-        HOST_NAMES.add("alice.box");
-        HOST_NAMES.add("www.brntech.com.tw");
-        HOST_NAMES.add("buffalo.setup");
-        HOST_NAMES.add("vood.lan");
-        HOST_NAMES.add("DD-WRT");
-        HOST_NAMES.add("versatel.modem");
-        HOST_NAMES.add("myrouter.home");
-        HOST_NAMES.add("MyDslModem.local.lan");
-        HOST_NAMES.add("alicebox");
-        HOST_NAMES.add("HSIB.home");
-        HOST_NAMES.add("AolynkDslRouter.local.lan");
-        HOST_NAMES.add("SL2141I.home");
-        HOST_NAMES.add("e.home");
-        HOST_NAMES.add("dsldevice.domain.name");
-        HOST_NAMES.add("192.168.1.1");
-        HOST_NAMES.add("192.168.2.1");
-        HOST_NAMES.add("192.168.0.1");
-        HOST_NAMES.add("192.168.178.1");
-        HOST_NAMES.add("192.168.1.254");
-        HOST_NAMES.add("10.0.0.138");
-        HOST_NAMES.add("10.0.0.2");
-        HOST_NAMES.add("192.168.123.254");
-        HOST_NAMES.add("192.168.1.2");
-        HOST_NAMES.add("192.168.0.254");
-        HOST_NAMES.add("10.0.0.1");
-        HOST_NAMES.add("192.168.10.1");
-        HOST_NAMES.add("192.168.220.1");
-        HOST_NAMES.add("192.168.254.254");
-        HOST_NAMES.add("192.168.0.2");
-        HOST_NAMES.add("192.168.100.1");
-        HOST_NAMES.add("192.168.1.100");
-        HOST_NAMES.add("10.1.1.1");
-        HOST_NAMES.add("192.168.0.100");
-        HOST_NAMES.add("192.168.3.1");
-        HOST_NAMES.add("192.168.5.1");
-        HOST_NAMES.add("192.168.2.2");
-        HOST_NAMES.add("192.168.11.1");
-        HOST_NAMES.add("192.168.1.10");
-        HOST_NAMES.add("192.168.0.10");
-        HOST_NAMES.add("192.168.0.253");
-        HOST_NAMES.add("192.168.7.1");
-        HOST_NAMES.add("192.168.182.1");
-        HOST_NAMES.add("192.168.2.254");
-        HOST_NAMES.add("192.168.178.2");
-        HOST_NAMES.add("192.168.15.1");
-        HOST_NAMES.add("192.168.1.5");
-        HOST_NAMES.add("192.168.0.3");
-        HOST_NAMES.add("192.168.123.1");
-        HOST_NAMES.add("192.168.1.253");
-        HOST_NAMES.add("192.168.0.99");
-        HOST_NAMES.add("172.16.0.1");
-        HOST_NAMES.add("192.168.4.1");
+        RouterUtils.HOST_NAMES.add("fritz.fonwlan.box");
+        RouterUtils.HOST_NAMES.add("speedport.ip");
+        RouterUtils.HOST_NAMES.add("fritz.box");
+        RouterUtils.HOST_NAMES.add("dsldevice.lan");
+        RouterUtils.HOST_NAMES.add("speedtouch.lan");
+        RouterUtils.HOST_NAMES.add("mygateway1.ar7");
+        RouterUtils.HOST_NAMES.add("fritz.fon.box");
+        RouterUtils.HOST_NAMES.add("home");
+        RouterUtils.HOST_NAMES.add("arcor.easybox");
+        RouterUtils.HOST_NAMES.add("fritz.slwlan.box");
+        RouterUtils.HOST_NAMES.add("eumex.ip");
+        RouterUtils.HOST_NAMES.add("easy.box");
+        RouterUtils.HOST_NAMES.add("my.router");
+        RouterUtils.HOST_NAMES.add("fritz.fon");
+        RouterUtils.HOST_NAMES.add("router");
+        RouterUtils.HOST_NAMES.add("mygateway.ar7");
+        RouterUtils.HOST_NAMES.add("login.router");
+        RouterUtils.HOST_NAMES.add("SX541");
+        RouterUtils.HOST_NAMES.add("SE515.home");
+        RouterUtils.HOST_NAMES.add("sinus.ip");
+        RouterUtils.HOST_NAMES.add("fritz.wlan.box");
+        RouterUtils.HOST_NAMES.add("my.siemens");
+        RouterUtils.HOST_NAMES.add("local.gateway");
+        RouterUtils.HOST_NAMES.add("congstar.box");
+        RouterUtils.HOST_NAMES.add("login.modem");
+        RouterUtils.HOST_NAMES.add("homegate.homenet.telecomitalia.it");
+        RouterUtils.HOST_NAMES.add("SE551");
+        RouterUtils.HOST_NAMES.add("home.gateway");
+        RouterUtils.HOST_NAMES.add("alice.box");
+        RouterUtils.HOST_NAMES.add("www.brntech.com.tw");
+        RouterUtils.HOST_NAMES.add("buffalo.setup");
+        RouterUtils.HOST_NAMES.add("vood.lan");
+        RouterUtils.HOST_NAMES.add("DD-WRT");
+        RouterUtils.HOST_NAMES.add("versatel.modem");
+        RouterUtils.HOST_NAMES.add("myrouter.home");
+        RouterUtils.HOST_NAMES.add("MyDslModem.local.lan");
+        RouterUtils.HOST_NAMES.add("alicebox");
+        RouterUtils.HOST_NAMES.add("HSIB.home");
+        RouterUtils.HOST_NAMES.add("AolynkDslRouter.local.lan");
+        RouterUtils.HOST_NAMES.add("SL2141I.home");
+        RouterUtils.HOST_NAMES.add("e.home");
+        RouterUtils.HOST_NAMES.add("dsldevice.domain.name");
+        RouterUtils.HOST_NAMES.add("192.168.1.1");
+        RouterUtils.HOST_NAMES.add("192.168.2.1");
+        RouterUtils.HOST_NAMES.add("192.168.0.1");
+        RouterUtils.HOST_NAMES.add("192.168.178.1");
+        RouterUtils.HOST_NAMES.add("192.168.1.254");
+        RouterUtils.HOST_NAMES.add("10.0.0.138");
+        RouterUtils.HOST_NAMES.add("10.0.0.2");
+        RouterUtils.HOST_NAMES.add("192.168.123.254");
+        RouterUtils.HOST_NAMES.add("192.168.1.2");
+        RouterUtils.HOST_NAMES.add("192.168.0.254");
+        RouterUtils.HOST_NAMES.add("10.0.0.1");
+        RouterUtils.HOST_NAMES.add("192.168.10.1");
+        RouterUtils.HOST_NAMES.add("192.168.220.1");
+        RouterUtils.HOST_NAMES.add("192.168.254.254");
+        RouterUtils.HOST_NAMES.add("192.168.0.2");
+        RouterUtils.HOST_NAMES.add("192.168.100.1");
+        RouterUtils.HOST_NAMES.add("192.168.1.100");
+        RouterUtils.HOST_NAMES.add("10.1.1.1");
+        RouterUtils.HOST_NAMES.add("192.168.0.100");
+        RouterUtils.HOST_NAMES.add("192.168.3.1");
+        RouterUtils.HOST_NAMES.add("192.168.5.1");
+        RouterUtils.HOST_NAMES.add("192.168.2.2");
+        RouterUtils.HOST_NAMES.add("192.168.11.1");
+        RouterUtils.HOST_NAMES.add("192.168.1.10");
+        RouterUtils.HOST_NAMES.add("192.168.0.10");
+        RouterUtils.HOST_NAMES.add("192.168.0.253");
+        RouterUtils.HOST_NAMES.add("192.168.7.1");
+        RouterUtils.HOST_NAMES.add("192.168.182.1");
+        RouterUtils.HOST_NAMES.add("192.168.2.254");
+        RouterUtils.HOST_NAMES.add("192.168.178.2");
+        RouterUtils.HOST_NAMES.add("192.168.15.1");
+        RouterUtils.HOST_NAMES.add("192.168.1.5");
+        RouterUtils.HOST_NAMES.add("192.168.0.3");
+        RouterUtils.HOST_NAMES.add("192.168.123.1");
+        RouterUtils.HOST_NAMES.add("192.168.1.253");
+        RouterUtils.HOST_NAMES.add("192.168.0.99");
+        RouterUtils.HOST_NAMES.add("172.16.0.1");
+        RouterUtils.HOST_NAMES.add("192.168.4.1");
 
-    }
-
-    public static void findIP(final GUIConfigEntry ip, boolean waitForResult) {
-        GuiRunnable<Object> run = new GuiRunnable<Object>() {
-
-            @Override
-            public Object runSave() {
-                final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100, null);
-
-                ip.setData(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
-
-                progress.setStatus(80);
-                InetAddress ia = RouterUtils.getAddress(false);
-                if (ia != null) ip.setData(ia.getHostAddress());
-                progress.setStatus(100);
-                if (ia != null) {
-                    progress.setStatusText(JDL.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
-                    progress.doFinalize(3000);
-                } else {
-                    progress.setStatusText(JDL.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
-                    progress.doFinalize(3000);
-                    progress.setColor(Color.RED);
-                }
-                return null;
-            }
-
-        };
-        if (waitForResult) {
-            run.waitForEDT();
-        } else {
-            run.start();
-        }
     }
 
     /**
-     * Validates the givvei ip. a) checks if it is a valid IP adress (regex) b)
-     * checks if it is available within a timeout of 1500 ms
-     * 
-     * @param iPaddress
-     * @return
-     */
-    public static boolean validateIP(String iPaddress) {
-        final Pattern IP_PATTERN = Pattern.compile("\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        if (IP_PATTERN.matcher(iPaddress).matches()) {
-            return true;
-        } else {
-            try {
-                if (InetAddress.getByName(iPaddress).isReachable(1500)) return true;
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns all InetAddresses of the local Network devices.
+     * Runs throw a predefined Host Table (multithreaded) and checks if there is
+     * a service on port 80. returns the ip if there is a webservice on any
+     * adress. See {@link #updateHostTable()}
      * 
      * @return
      */
-    public static ArrayList<InetAddress> getNetworkDeviceAdresses() {
-        ArrayList<InetAddress> ret = new ArrayList<InetAddress>();
-        try {
-            Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-
-            while (e.hasMoreElements()) {
-                NetworkInterface ni = e.nextElement();
-
-                Enumeration<InetAddress> e2 = ni.getInetAddresses();
-
-                while (e2.hasMoreElements()) {
-                    InetAddress ip = e2.nextElement();
-                    if (ip.isLoopbackAddress()) break;
-                    if (ip.getHostAddress().matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) ret.add(ip);
-                }
-            }
-        } catch (Exception e) {
-            JDLogger.exception(e);
-        }
-        return ret;
-    }
+    private static InetAddress            ASYNCH_RETURN;
 
     /**
      * checks if there is a open port at host. e.gh. test if there is a
@@ -217,13 +168,13 @@ public class RouterUtils {
      * @param port
      * @return
      */
-    public static boolean checkPort(String host, int port) {
+    public static boolean checkPort(final String host, final int port) {
         Socket sock;
         try {
             sock = new Socket(host, port);
             sock.setSoTimeout(200);
             return true;
-        } catch (Exception e) {
+        } catch (final Exception e) {
         }
         return false;
     }
@@ -236,90 +187,77 @@ public class RouterUtils {
      * 
      * @return
      */
-    public synchronized static InetAddress getAddress(boolean force) {
-        if (!force && ADDRESS_CACHE != null) return ADDRESS_CACHE;
+    public synchronized static InetAddress getAddress(final boolean force) {
+        if (!force && RouterUtils.ADDRESS_CACHE != null) { return RouterUtils.ADDRESS_CACHE; }
         InetAddress address = null;
         try {
-            address = getIPFormNetStat();
-            if (address != null) return address;
-            address = getIPFromRouteCommand();
-            if (address != null) return address;
-            address = getIpFormHostTable();
+            address = RouterUtils.getIPFormNetStat();
+            if (address != null) { return address; }
+            address = RouterUtils.getIPFromRouteCommand();
+            if (address != null) { return address; }
+            address = RouterUtils.getIpFormHostTable();
             return address;
         } finally {
-            ADDRESS_CACHE = address;
+            RouterUtils.ADDRESS_CACHE = address;
         }
     }
-
-    /**
-     * Updates the host table and adds the full ip range (0-255) of the local
-     * devices to the table.
-     */
-    private static void updateHostTable() {
-        String ip;
-
-        for (InetAddress ia : RouterUtils.getNetworkDeviceAdresses()) {
-            try {
-
-                if (RouterUtils.validateIP(ia.getHostAddress() + "")) {
-                    ip = ia.getHostAddress();
-
-                    if (ip != null && ip.lastIndexOf(".") != -1) {
-                        String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
-                        for (int i = 0; i < 255; i++) {
-                            String lhost = host + i;
-                            if (!lhost.equals(ip) && !HOST_NAMES.contains(lhost)) {
-                                HOST_NAMES.add(lhost);
-                            }
-
-                        }
-                    }
-                }
-                HOST_NAMES.remove(ia.getHostName());
-                HOST_NAMES.remove(ia.getAddress());
-            } catch (Exception exc) {
-                JDLogger.exception(exc);
-            }
-        }
-    }
-
-    /**
-     * Runs throw a predefined Host Table (multithreaded) and checks if there is
-     * a service on port 80. returns the ip if there is a webservice on any
-     * adress. See {@link #updateHostTable()}
-     * 
-     * @return
-     */
-    private static InetAddress ASYNCH_RETURN;
 
     public static InetAddress getIpFormHostTable() {
-        updateHostTable();
-        ASYNCH_RETURN = null;
-        final int size = HOST_NAMES.size();
+        RouterUtils.updateHostTable();
+        RouterUtils.ASYNCH_RETURN = null;
+        final int size = RouterUtils.HOST_NAMES.size();
         final Threader threader = new Threader();
         for (int i = 0; i < size; i++) {
-            threader.add(new WebServerChecker(HOST_NAMES.get(i)));
+            threader.add(new WebServerChecker(RouterUtils.HOST_NAMES.get(i)));
         }
 
         threader.getBroadcaster().addListener(new WorkerListener() {
 
-            public void onThreadException(Threader th, JDRunnable job, Throwable e) {
+            public void onThreadException(final Threader th, final JDRunnable job, final Throwable e) {
             }
 
-            public void onThreadFinished(Threader th, JDRunnable runnable) {
+            public void onThreadFinished(final Threader th, final JDRunnable runnable) {
                 if (((WebServerChecker) runnable).getAddress() != null) {
                     th.interrupt();
-                    ASYNCH_RETURN = ((WebServerChecker) runnable).getAddress();
+                    RouterUtils.ASYNCH_RETURN = ((WebServerChecker) runnable).getAddress();
                 }
 
             }
 
-            public void onThreadStarts(Threader threader, JDRunnable runnable) {
+            public void onThreadStarts(final Threader threader, final JDRunnable runnable) {
             }
 
         });
         threader.startAndWait();
-        return ASYNCH_RETURN;
+        return RouterUtils.ASYNCH_RETURN;
+    }
+
+    /**
+     * Calls netstat -nt to find the router's ip. returns null if nothing found
+     * and the ip if found something;
+     * http://jdownloader.net:8081/pastebin/1ab4eabb60df171d0d442f0c7fb875a0
+     */
+    public static InetAddress getIPFormNetStat() {
+        try {
+            final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
+            final Executer exec = new Executer("netstat");
+            exec.addParameter("-rn");
+            exec.setWaitTimeout(5000);
+            exec.start();
+            exec.waitTimeout();
+
+            final String[] out = Regex.getLines(exec.getOutputStream());
+            for (final String string : out) {
+                final String m = new Regex(string, pat).getMatch(0);
+                if (m != null) {
+                    final InetAddress ia = InetAddress.getByName(m);
+                    if (ia.isReachable(1500)) { return ia; }
+                }
+            }
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+        }
+        return null;
     }
 
     /**
@@ -335,31 +273,31 @@ public class RouterUtils {
 
                 if (OSDetector.isMac()) {
 
-                    Executer exec = new Executer("/sbin/route");
+                    final Executer exec = new Executer("/sbin/route");
                     exec.addParameters(new String[] { "-n", "get", "default" });
                     exec.setRunin("/");
                     exec.setWaitTimeout(1000);
                     exec.start();
                     exec.waitTimeout();
-                    String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-                    Pattern pattern = Pattern.compile("gateway: (\\S*)", Pattern.CASE_INSENSITIVE);
-                    Matcher matcher = pattern.matcher(routingt);
+                    final String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+                    final Pattern pattern = Pattern.compile("gateway: (\\S*)", Pattern.CASE_INSENSITIVE);
+                    final Matcher matcher = pattern.matcher(routingt);
                     while (matcher.find()) {
-                        String hostname = matcher.group(1).trim();
+                        final String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
-                                InetAddress ia = InetAddress.getByName(hostname);
+                                final InetAddress ia = InetAddress.getByName(hostname);
                                 if (ia.isReachable(1500)) {
-                                    if (RouterUtils.checkPort(hostname, 80)) return ia;
+                                    if (RouterUtils.checkPort(hostname, 80)) { return ia; }
                                 }
-                            } catch (Exception e) {
+                            } catch (final Exception e) {
                                 JDLogger.exception(e);
                             }
                         }
 
                     }
                 } else {
-                    Executer exec = new Executer("/sbin/route");
+                    final Executer exec = new Executer("/sbin/route");
                     exec.addParameters(new String[] { "-n", "get", "default" });
                     exec.setRunin("/");
                     exec.setWaitTimeout(1000);
@@ -368,24 +306,24 @@ public class RouterUtils {
                     String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
                     routingt = routingt.replaceFirst(".*\n.*", "");
 
-                    Pattern pattern = Pattern.compile(".{16}(.{16}).*", Pattern.CASE_INSENSITIVE);
-                    Matcher matcher = pattern.matcher(routingt);
+                    final Pattern pattern = Pattern.compile(".{16}(.{16}).*", Pattern.CASE_INSENSITIVE);
+                    final Matcher matcher = pattern.matcher(routingt);
                     while (matcher.find()) {
-                        String hostname = matcher.group(1).trim();
+                        final String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
-                                InetAddress ia = InetAddress.getByName(hostname);
+                                final InetAddress ia = InetAddress.getByName(hostname);
                                 if (ia.isReachable(1500)) {
-                                    if (RouterUtils.checkPort(hostname, 80)) return ia;
+                                    if (RouterUtils.checkPort(hostname, 80)) { return ia; }
                                 }
-                            } catch (Exception e) {
+                            } catch (final Exception e) {
                                 JDLogger.exception(e);
                             }
                         }
 
                     }
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
             }
 
         }
@@ -393,57 +331,87 @@ public class RouterUtils {
     }
 
     /**
-     * Calls netstat -nt to find the router's ip. returns null if nothing found
-     * and the ip if found something;
-     * http://jdownloader.net:8081/pastebin/1ab4eabb60df171d0d442f0c7fb875a0
+     * Returns all InetAddresses of the local Network devices.
+     * 
+     * @return
      */
-    public static InetAddress getIPFormNetStat() {
+    public static ArrayList<InetAddress> getNetworkDeviceAdresses() {
+        final ArrayList<InetAddress> ret = new ArrayList<InetAddress>();
         try {
-            Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
-            Executer exec = new Executer("netstat");
-            exec.addParameter("-rn");
-            exec.setWaitTimeout(5000);
-            exec.start();
-            exec.waitTimeout();
+            final Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
 
-            String[] out = Regex.getLines(exec.getOutputStream());
-            for (String string : out) {
-                String m = new Regex(string, pat).getMatch(0);
-                if (m != null) {
-                    InetAddress ia = InetAddress.getByName(m);
-                    if (ia.isReachable(1500)) return ia;
-                }
-            }
-        } catch (Exception e) {
-            JDLogger.exception(e);
-        }
-        return null;
-    }
+            while (e.hasMoreElements()) {
+                final NetworkInterface ni = e.nextElement();
 
-    private static class WebServerChecker implements JDRunnable {
+                final Enumeration<InetAddress> e2 = ni.getInetAddresses();
 
-        private String host;
-        private InetAddress address = null;
-
-        public InetAddress getAddress() {
-            return address;
-        }
-
-        public WebServerChecker(String host) {
-            this.host = host;
-        }
-
-        public void go() throws Exception {
-            try {
-                InetAddress ia = InetAddress.getByName(host);
-                if (ia.isReachable(1500)) {
-                    if (RouterUtils.checkPort(host, 80)) {
-                        address = ia;
+                while (e2.hasMoreElements()) {
+                    final InetAddress ip = e2.nextElement();
+                    if (ip.isLoopbackAddress()) {
+                        break;
+                    }
+                    if (ip.getHostAddress().matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) {
+                        ret.add(ip);
                     }
                 }
-            } catch (IOException e) {
+            }
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+        }
+        return ret;
+    }
+
+    /**
+     * Updates the host table and adds the full ip range (0-255) of the local
+     * devices to the table.
+     */
+    private static void updateHostTable() {
+        String ip;
+
+        for (final InetAddress ia : RouterUtils.getNetworkDeviceAdresses()) {
+            try {
+
+                if (RouterUtils.validateIP(ia.getHostAddress() + "")) {
+                    ip = ia.getHostAddress();
+
+                    if (ip != null && ip.lastIndexOf(".") != -1) {
+                        final String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
+                        for (int i = 0; i < 255; i++) {
+                            final String lhost = host + i;
+                            if (!lhost.equals(ip) && !RouterUtils.HOST_NAMES.contains(lhost)) {
+                                RouterUtils.HOST_NAMES.add(lhost);
+                            }
+
+                        }
+                    }
+                }
+                RouterUtils.HOST_NAMES.remove(ia.getHostName());
+                RouterUtils.HOST_NAMES.remove(ia.getAddress());
+            } catch (final Exception exc) {
+                JDLogger.exception(exc);
             }
         }
+    }
+
+    /**
+     * Validates the givvei ip. a) checks if it is a valid IP adress (regex) b)
+     * checks if it is available within a timeout of 1500 ms
+     * 
+     * @param iPaddress
+     * @return
+     */
+    public static boolean validateIP(final String iPaddress) {
+        final Pattern IP_PATTERN = Pattern.compile("\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
+        if (IP_PATTERN.matcher(iPaddress).matches()) {
+            return true;
+        } else {
+            try {
+                if (InetAddress.getByName(iPaddress).isReachable(1500)) { return true; }
+            } catch (final Exception e) {
+                JDLogger.exception(e);
+            }
+        }
+        return false;
     }
 
 }

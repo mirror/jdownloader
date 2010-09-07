@@ -22,6 +22,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.border.Border;
 
 import jd.gui.swing.SwingGui;
@@ -37,159 +38,49 @@ import net.miginfocom.swing.MigLayout;
 public abstract class View extends SwitchPanel {
 
     private static final long serialVersionUID = 8661526331504317690L;
-    public static final int ICON_SIZE = 16;
+    public static final int   ICON_SIZE        = 16;
 
-    private JPanel rightPane;
-    private JScrollPane sidebar;
-    private SwitchPanel sidebarContent;
-    private SwitchPanel content;
-    private JPanel topContent;
-    private JPanel bottomContent;
-    private SwitchPanel infoPanel;
-    private SwitchPanel defaultInfoPanel;
+    private JPanel            rightPane;
+    private JScrollPane       sidebar;
+    private SwitchPanel       sidebarContent;
+    private SwitchPanel       content;
+    private JPanel            topContent;
+    private JPanel            bottomContent;
+    private SwitchPanel       infoPanel;
+    private SwitchPanel       defaultInfoPanel;
 
     public View() {
         SwingGui.checkEDT();
-        setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
+        this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
 
-        add(sidebar = new JScrollPane(), "w 225!,hidemode 2");
-        sidebar.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        sidebar.setVisible(false);
-        Border insideBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
-        Border outsideBorder = BorderFactory.createMatteBorder(0, 0, 0, 2, getBackground().darker());
-        Border compoundBorder = BorderFactory.createCompoundBorder(outsideBorder, insideBorder);
-        sidebar.setBorder(compoundBorder);
+        this.add(this.sidebar = new JScrollPane(), "w 225!,hidemode 2");
+        this.sidebar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        this.sidebar.setVisible(false);
+        final Border insideBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+        final Border outsideBorder = BorderFactory.createMatteBorder(0, 0, 0, 2, this.getBackground().darker());
+        final Border compoundBorder = BorderFactory.createCompoundBorder(outsideBorder, insideBorder);
+        this.sidebar.setBorder(compoundBorder);
 
-        add(rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));
+        this.add(this.rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));
 
-        add(topContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "gapbottom 3,dock NORTH,hidemode 3");
-        topContent.setVisible(false);
+        this.add(this.topContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "gapbottom 3,dock NORTH,hidemode 3");
+        this.topContent.setVisible(false);
 
-        add(bottomContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock SOUTH,hidemode 3");
-        bottomContent.setVisible(false);
+        this.add(this.bottomContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock SOUTH,hidemode 3");
+        this.bottomContent.setVisible(false);
     }
 
-    /**
-     * Sets the default infopanel
-     * 
-     * @param panel
-     */
-    protected void setDefaultInfoPanel(DroppedPanel panel) {
-
-        this.defaultInfoPanel = panel;
-        if (this.getInfoPanel() == null) setInfoPanel(panel);
-    }
-
-    /**
-     * SOUTH CONTENT sets the south infopanel. if set to null, the default info
-     * panel is shown. of this is null, too the info area is hidden
-     * 
-     * @param infoPanel
-     */
-    public void setInfoPanel(SwitchPanel info) {
-        SwingGui.checkEDT();
-        if (info == null) info = defaultInfoPanel;
-        if (infoPanel == info) return;
-
-        if (info == null) {
-            bottomContent.setVisible(false);
-        } else {
-            bottomContent.setVisible(true);
-            bottomContent.removeAll();
-            bottomContent.add(info);
-        }
-        if (infoPanel != null && isShown()) infoPanel.setHidden();
-        revalidate();
-        this.infoPanel = info;
-        if (this.infoPanel != null && isShown()) this.infoPanel.setShown();
-    }
-
-    public SwitchPanel getInfoPanel() {
-        return infoPanel;
-    }
-
-    /**
-     * TOPCONTENT Sets the views toolbar. null removes the toolbar
-     * 
-     * @param toolbar
-     */
-    protected void setToolBar(ViewToolbar toolbar) {
-        SwingGui.checkEDT();
-        if (toolbar == null) {
-            topContent.setVisible(false);
-        } else {
-            topContent.setVisible(true);
-            topContent.removeAll();
-            topContent.add(toolbar);
-        }
-        revalidate();
-    }
-
-    /**
-     * CENTER-MAIN-CONTENT Sets the left side main content bar
-     * 
-     * @param right
-     */
-    public synchronized void setContent(SwitchPanel right) {
-        SwingGui.checkEDT();
-        boolean found = false;
-        for (Component c : rightPane.getComponents()) {
-            c.setVisible(false);
-            if (c == right) found = true;
-        }
-
-        if (right != null) {
-            right.setVisible(true);
-            if (!found) rightPane.add(right, "hidemode 3");
-        }
-        if (this.content != null && isShown()) this.content.setHidden();
-        this.content = right;
-        this.revalidate();
-        if (this.content != null && isShown()) this.content.setShown();
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof View)) { return false; }
+        if (this.getID().equalsIgnoreCase(((View) o).getID())) { return true; }
+        return false;
     }
 
     public SwitchPanel getContent() {
-        return content;
+        return this.content;
     }
-
-    /**
-     * SIDEBAR WEST CONTENT sets the left sidebar
-     * 
-     * @param left
-     */
-    public void setSideBar(SwitchPanel left) {
-        SwingGui.checkEDT();
-        if (left == sidebarContent) return;
-        if (left == null) {
-            sidebar.setVisible(false);
-        } else {
-            sidebar.setVisible(true);
-            sidebar.setViewportView(left);
-        }
-
-        if (sidebarContent != null && isShown()) sidebarContent.setHidden();
-
-        this.sidebarContent = left;
-        if (isShown()) left.setShown();
-    }
-
-    public SwitchPanel getSidebar() {
-        return sidebarContent;
-    }
-
-    /**
-     * returns the Tab tooltip
-     * 
-     * @return
-     */
-    abstract public String getTooltip();
-
-    /**
-     * Returns the tab title
-     * 
-     * @return
-     */
-    abstract public String getTitle();
 
     /**
      * returns the tab icon
@@ -205,12 +96,142 @@ public abstract class View extends SwitchPanel {
      */
     abstract public String getID();
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof View)) return false;
-        if (this.getID().equalsIgnoreCase(((View) o).getID())) return true;
-        return false;
+    public SwitchPanel getInfoPanel() {
+        return this.infoPanel;
+    }
+
+    public SwitchPanel getSidebar() {
+        return this.sidebarContent;
+    }
+
+    /**
+     * Returns the tab title
+     * 
+     * @return
+     */
+    abstract public String getTitle();
+
+    /**
+     * returns the Tab tooltip
+     * 
+     * @return
+     */
+    abstract public String getTooltip();
+
+    /**
+     * CENTER-MAIN-CONTENT Sets the left side main content bar
+     * 
+     * @param right
+     */
+    public synchronized void setContent(final SwitchPanel right) {
+        SwingGui.checkEDT();
+        boolean found = false;
+        for (final Component c : this.rightPane.getComponents()) {
+            c.setVisible(false);
+            if (c == right) {
+                found = true;
+            }
+        }
+
+        if (right != null) {
+            right.setVisible(true);
+            if (!found) {
+                this.rightPane.add(right, "hidemode 3");
+            }
+        }
+        if (this.content != null && this.isShown()) {
+            this.content.setHidden();
+        }
+        this.content = right;
+        this.revalidate();
+        if (this.content != null && this.isShown()) {
+            this.content.setShown();
+        }
+    }
+
+    /**
+     * Sets the default infopanel
+     * 
+     * @param panel
+     */
+    protected void setDefaultInfoPanel(final DroppedPanel panel) {
+
+        this.defaultInfoPanel = panel;
+        if (this.getInfoPanel() == null) {
+            this.setInfoPanel(panel);
+        }
+    }
+
+    /**
+     * SOUTH CONTENT sets the south infopanel. if set to null, the default info
+     * panel is shown. of this is null, too the info area is hidden
+     * 
+     * @param infoPanel
+     */
+    public void setInfoPanel(SwitchPanel info) {
+        SwingGui.checkEDT();
+        if (info == null) {
+            info = this.defaultInfoPanel;
+        }
+        if (this.infoPanel == info) { return; }
+
+        if (info == null) {
+            this.bottomContent.setVisible(false);
+        } else {
+            this.bottomContent.setVisible(true);
+            this.bottomContent.removeAll();
+            this.bottomContent.add(info);
+        }
+        if (this.infoPanel != null && this.isShown()) {
+            this.infoPanel.setHidden();
+        }
+        this.revalidate();
+        this.infoPanel = info;
+        if (this.infoPanel != null && this.isShown()) {
+            this.infoPanel.setShown();
+        }
+    }
+
+    /**
+     * SIDEBAR WEST CONTENT sets the left sidebar
+     * 
+     * @param left
+     */
+    public void setSideBar(final SwitchPanel left) {
+        SwingGui.checkEDT();
+        if (left == this.sidebarContent) { return; }
+        if (left == null) {
+            this.sidebar.setVisible(false);
+        } else {
+            this.sidebar.setVisible(true);
+            this.sidebar.setViewportView(left);
+        }
+
+        if (this.sidebarContent != null && this.isShown()) {
+            this.sidebarContent.setHidden();
+        }
+
+        this.sidebarContent = left;
+        if (this.isShown()) {
+            left.setShown();
+        }
+    }
+
+    /**
+     * TOPCONTENT Sets the views toolbar. null removes the toolbar
+     * 
+     * @param toolbar
+     */
+    protected void setToolBar(final ViewToolbar toolbar) {
+        SwingGui.checkEDT();
+        if (toolbar == null) {
+            this.topContent.setVisible(false);
+        } else {
+            this.topContent.setVisible(true);
+            this.topContent.removeAll();
+            this.topContent.add(toolbar);
+        }
+        this.revalidate();
     }
 
 }

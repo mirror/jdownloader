@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.dialog;
+package jd.controlling.reconnect.plugins.liveheader;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -22,7 +22,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -41,36 +43,41 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.io.JDIO;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.Dialog;
 
 public class ImportRouterDialog extends AbstractDialog<Object> {
 
     private static final long serialVersionUID = 2043825047691368115L;
 
-    public static String[] showDialog() {
-        final ImportRouterDialog dialog = new ImportRouterDialog();
+    @SuppressWarnings("unchecked")
+    public static ArrayList<String[]> getLHScripts() {
+        final File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "router").listFiles();
+        final ArrayList<String[]> ret = new ArrayList<String[]>();
+        for (final File element : list) {
+            if (element.isFile() && element.getName().toLowerCase().matches(".*\\.xml$")) {
+                ret.addAll((Collection<? extends String[]>) JDIO.loadObject(element, true));
+            }
+        }
 
-        if (Dialog.isOK(Dialog.getInstance().showDialog(dialog))) { return dialog.getResult(); }
-        return null;
+        return ret;
     }
 
     private final ArrayList<String[]> scripts;
-
     private JList                     list;
 
-    private ImportRouterDialog() {
+    public ImportRouterDialog(final ArrayList<String[]> scripts) {
         super(UserIO.NO_COUNTDOWN, JDL.L("gui.config.liveheader.dialog.importrouter", "Import Router"), JDTheme.II("gui.images.search", 32, 32), null, null);
 
-        this.scripts = HTTPLiveHeader.getLHScripts();
+        this.scripts = scripts;
         Collections.sort(this.scripts, new Comparator<String[]>() {
             public int compare(final String[] a, final String[] b) {
                 return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
