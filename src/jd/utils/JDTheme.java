@@ -16,7 +16,6 @@
 
 package jd.utils;
 
-import java.awt.Color;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -41,15 +40,15 @@ public final class JDTheme {
     private JDTheme() {
     }
 
-    private static HashMap<String, String> data = new HashMap<String, String>();
+    private static HashMap<String, String> data      = new HashMap<String, String>();
 
     private static HashMap<String, String> defaultData;
 
-    private static final Logger LOG = JDLogger.getLogger();
+    private static final Logger            LOG       = JDLogger.getLogger();
 
-    public static final String THEME_DIR = "jd/themes/";
+    private static final String             THEME_DIR = "jd/themes/";
 
-    private static String currentTheme;
+    private static String                  currentTheme;
 
     public static ArrayList<String> getThemeIDs() {
         final File dir = JDUtilities.getResourceFile(THEME_DIR);
@@ -83,21 +82,6 @@ public final class JDTheme {
         data.put(key, def);
 
         return def;
-    }
-
-    /**
-     * Gibt eine Farbe zum key zurück
-     * 
-     * @param key
-     * @return
-     */
-    public static Color C(final String key, final String def) {
-        return new Color(Integer.parseInt(JDTheme.V(key, def), 16));
-    }
-
-    public static Color C(final String key, final String def, final int alpha) {
-        final String hex = JDTheme.V(key, def);
-        return new Color(Integer.parseInt(hex.substring(0, 2), 16), Integer.parseInt(hex.substring(2, 4), 16), Integer.parseInt(hex.substring(4), 16), alpha);
     }
 
     /**

@@ -57,29 +57,29 @@ import net.miginfocom.swing.MigLayout;
 public class JDRouterEditor extends PluginOptional {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDRouterEditor.";
-    private Boolean readonly = false;
-    private Vector<String> shipped = null;
-    private MenuAction activateAction;
-    private JDRouterEditorView view;
-    private SwitchPanel frame;
-    private JComboBox fileselector;
-    private Vector<String> files = new Vector<String>();
-    private JButton newbutton;
-    private JButton selbutton;
-    private JButton newrouterbutton;
-    private JButton delrouterbutton;
-    private JButton saverouterbutton;
-    private RouterTable routertable;
-    private RouterList router = new RouterList();
-    private JTextField routerhersteller;
-    private JTextField routername;
-    private JTextField routerpass;
-    private JTextField routeruser;
-    private JTextField routerregex;
-    private JTextArea routerscript;
-    private JScrollPane routerscriptScrollPane;
-    private Router currentrouter;
-    private String currentfile;
+    private Boolean             readonly   = false;
+    private Vector<String>      shipped    = null;
+    private MenuAction          activateAction;
+    private JDRouterEditorView  view;
+    private SwitchPanel         frame;
+    private JComboBox           fileselector;
+    private Vector<String>      files      = new Vector<String>();
+    private JButton             newbutton;
+    private JButton             selbutton;
+    private JButton             newrouterbutton;
+    private JButton             delrouterbutton;
+    private JButton             saverouterbutton;
+    private RouterTable         routertable;
+    private RouterList          router     = new RouterList();
+    private JTextField          routerhersteller;
+    private JTextField          routername;
+    private JTextField          routerpass;
+    private JTextField          routeruser;
+    private JTextField          routerregex;
+    private JTextArea           routerscript;
+    private JScrollPane         routerscriptScrollPane;
+    private Router              currentrouter;
+    private String              currentfile;
 
     public JDRouterEditor(PluginWrapper wrapper) {
         super(wrapper);
@@ -130,7 +130,7 @@ public class JDRouterEditor extends PluginOptional {
         loadShippedFileList(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/jd/router/lock");
         getFiles();
         fileselector = new JComboBox(files);
-        newbutton = new JButton(JDL.L(JDL_PREFIX + "newbutton", "+"));
+        newbutton = new JButton(JDL.L(JDL_PREFIX + "newbutton", "Add"));
         newbutton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {

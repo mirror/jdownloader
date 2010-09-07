@@ -117,8 +117,7 @@ public class UgotFileCom extends PluginForHost {
             String regexedBlock = br.getRegex("Only premium members may download file larger than (\\d+)MB\\.").getMatch(0);
             if (regexedBlock == null) regexedBlock = br.getRegex("You are trying to download file larger than (\\d+)MB\\.").getMatch(0);
             if (regexedBlock != null) defaultblock = regexedBlock;
-            logger.warning(JDL.L("plugins.hoster.UhotFileCom.errors.only4premium", "Only premium users can download files larger than " + defaultblock + " MB."));
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.UhotFileCom.errors.only4premium", "Only premium users can download files larger than " + defaultblock + " MB."));
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.UhotFileCom.errors.only4premium", "Only premium users can download files larger than %s MB.", defaultblock));
         }
         // IP:Blocked handling
         int sleep = 30;

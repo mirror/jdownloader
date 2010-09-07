@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
+import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -113,7 +114,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     }
 
     private void addDisabledHighlighter() {
-        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100)) {
+        this.addJDRowHighlighter(new JDRowHighlighter(new Color(173, 173, 173, 100)) {
             @Override
             public boolean doHighlight(final Object o) {
                 return o != null && o instanceof DownloadLink && !((DownloadLink) o).isEnabled();
@@ -131,7 +132,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     }
 
     private void addPostErrorHighlighter() {
-        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120)) {
+        this.addJDRowHighlighter(new JDRowHighlighter(new Color(255, 153, 54, 120)) {
             @Override
             public boolean doHighlight(final Object o) {
                 return o != null && o instanceof DownloadLink && ((DownloadLink) o).getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS);
@@ -140,7 +141,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     }
 
     private void addWaitHighlighter() {
-        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100)) {
+        this.addJDRowHighlighter(new JDRowHighlighter(new Color(255, 153, 54, 100)) {
             @Override
             public boolean doHighlight(final Object o) {
                 if (o == null || !(o instanceof DownloadLink)) { return false; }

@@ -398,7 +398,8 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
             private static final long serialVersionUID = 7054804074534585633L;
 
-            protected JPopupMenu onContextMenu(final JPopupMenu popup, final KeyInfo contextObject, final java.util.ArrayList<KeyInfo> selection) {
+            @Override
+            protected JPopupMenu onContextMenu(final JPopupMenu popup, final KeyInfo contextObject, final ArrayList<KeyInfo> selection) {
                 if (LFEGui.this.mnuContextPopup == null) {
                     LFEGui.this.buildContextMenu();
                 }
@@ -413,23 +414,20 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
             @Override
             public boolean doHighlight(final ExtTable<?> extTable, final int row) {
-
                 return ((KeyInfo) extTable.getExtTableModel().getValueAt(row, 0)).isMissing();
             }
 
         });
-
         this.table.addRowHighlighter(new ExtRowHighlighter(null, LFEGui.COLOR_OLD) {
 
             @Override
             public boolean doHighlight(final ExtTable<?> extTable, final int row) {
-
                 return ((KeyInfo) extTable.getExtTableModel().getValueAt(row, 0)).isOld();
             }
 
         });
         this.table.addRowHighlighter(new SelectionHighlighter(null, LFEGui.COLOR_SELECTED_ROW));
-        this.setLayout(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[][grow, fill]"));
+
         this.warning = new JButton(JDL.L(LFEGui.LOCALE_PREFIX + "account.warning", "SVN Account missing. Click here to read more."));
         this.warning.setVisible(false);
         this.warning.addActionListener(new ActionListener() {
@@ -444,6 +442,8 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             }
 
         });
+
+        this.setLayout(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[][grow, fill]"));
         this.add(this.warning, "grow, hidemode 2");
         this.add(new JScrollPane(this.table), "grow");
 

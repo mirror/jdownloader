@@ -28,14 +28,13 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.event.Eventsender;
 
 public class SrcParser {
 
-    private final File                                   root;
-    private final int                                    rootLen;
+    private final File                                 root;
+    private final int                                  rootLen;
     private Eventsender<MessageListener, MessageEvent> broadcaster;
 
     public static void deleteCache() {
@@ -75,6 +74,7 @@ public class SrcParser {
 
     private ArrayList<LngEntry> entries;
     private File                currentFile;
+    private String              currentFileName;
     private String              currentContent;
     private ArrayList<String>   pattern = new ArrayList<String>();
 
@@ -93,9 +93,14 @@ public class SrcParser {
      * parses an java file and writes all JDL Matches to entries and pattern. this method uses a cache to be faster
      */
     private void parseFile(File file) {
-
         this.currentFile = file;
-        broadcaster.fireEvent(new MessageEvent(this, 0, JDL.LF("jd.plugins.optional.langfileeditor.SrcParser.parse", "Parse %s", file.getAbsolutePath().substring(rootLen))));
+        this.currentFileName = file.getName();
+        this.currentFileName = this.currentFileName.substring(0, this.currentFileName.length() - 5);
+
+        broadcaster.fireEvent(new MessageEvent(this, 0, "Parse " + file.getAbsolutePath().substring(rootLen)));
+
+        /* Dont parse the code of the SrcParser. */
+        if (currentFileName.equals("SrcParser")) return;
 
         // find all lines containing JDL calls
         currentContent = JDIO.readFileToString(file);
@@ -276,7 +281,6 @@ public class SrcParser {
                 String[] parameter = m.split(",");
 
                 if (orgm.startsWith("LF ") || orgm.startsWith("LF(")) {
-
                     if (orgm.substring(2).trim().charAt(0) != '(') {
                         JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + m);
                         continue;
@@ -296,13 +300,13 @@ public class SrcParser {
                      */
                     while (parameter[0].contains("+")) {
                         try {
-                            String[][] matches = new Regex(parameter[0], "(\\+(\\w+)\\+?)").getMatches();
+                            String[][] matches = new Regex(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
                                 } catch (Exception e) {
-                                    JDLogger.getLogger().severe("Malformated translation key in " + currentFile + " : " + match);
+                                    JDLogger.getLogger().severe("LF1 Malformated translation key in " + currentFile + " : " + match);
                                     break main;
                                 }
                             }
@@ -312,13 +316,13 @@ public class SrcParser {
                         }
 
                         try {
-                            String[][] matches = new Regex(parameter[0], "(\\+?(\\w+)\\+)").getMatches();
+                            String[][] matches = new Regex(parameter[0], "(\\+?([^%]+)\\+)").getMatches();
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
                                 } catch (Exception e) {
-                                    JDLogger.getLogger().severe("Malformated translation key in 2" + currentFile + " : " + match);
+                                    JDLogger.getLogger().severe("LF2 Malformated translation key in " + currentFile + " : " + match);
                                     break main;
                                 }
                             }
@@ -326,13 +330,14 @@ public class SrcParser {
                             e.printStackTrace();
                             break;
                         }
-
                     }
+
                     for (int x = 0; x < parameter.length; x++) {
                         while (parameter[x].contains("%%%S%%%")) {
                             parameter[x] = parameter[x].replaceFirst("%%%S%%%", Matcher.quoteReplacement(strings[i++]));
                         }
                     }
+
                     String error;
                     if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
                         int index = parameter[0].indexOf(error);
@@ -380,9 +385,9 @@ public class SrcParser {
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
-                                    System.out.println(mm[0] + " - " + mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
                                 } catch (Exception e) {
+                                    JDLogger.getLogger().severe("L1 Malformated translation key in " + currentFile + " : " + match);
                                     parameter[0] = parameter[0].replace(mm[0], "*");
                                 }
                             }
@@ -397,9 +402,8 @@ public class SrcParser {
                                 try {
                                     String value = getValueOf(mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
-
                                 } catch (Exception e) {
-                                    JDLogger.getLogger().severe("Malformated translation key in 1" + currentFile + " : " + match);
+                                    JDLogger.getLogger().severe("L2 Malformated translation key in " + currentFile + " : " + match);
                                     break main;
                                 }
                             }
@@ -407,7 +411,6 @@ public class SrcParser {
                             e.printStackTrace();
                             break;
                         }
-
                     }
 
                     for (int x = 0; x < parameter.length; x++) {
@@ -459,15 +462,21 @@ public class SrcParser {
     }
 
     private String getValueOf(String variable) {
+        /*
+         * Workaround for JDL prefixes with static access. Simple remove the
+         * static prefix!
+         */
+        variable = variable.replace(currentFileName + ".", "");
+
         String[] matches = new Regex(currentContent, variable + "\\s*=(.*?);").getColumn(0);
         String ret = matches[matches.length - 1].trim();
-        while (ret.startsWith("\""))
+        while (ret.startsWith("\"")) {
             ret = ret.substring(1);
-        while (ret.endsWith("\""))
+        }
+        while (ret.endsWith("\"")) {
             ret = ret.substring(0, ret.length() - 1);
+        }
 
         return ret;
-
     }
-
 }

@@ -134,14 +134,3 @@ gui.images.disabled                  = default/disabled
 gui.images.filter                    = default/filter
 gui.images.addselected               = default/edit-find
 gui.images.folderwatch               = default/folder-watch
-
-# Cursor. ATTENTION. CURSOR are GIFS!!
-gui.cursor.help                      = default/cursor/help
-
-# Colors
-gui.color.statusbar.maxspeedhighlight    = ff0c03
-
-# Note: All these colors are about 50% transparent.
-gui.color.downloadlist.error_post        = ff9936
-gui.color.downloadlist.row_link_disabled = adadad
-gui.color.linkgrabber.error_exists       = ff9936

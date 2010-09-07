@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.jdtrayicon;
 
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.MouseInfo;
@@ -48,29 +49,28 @@ import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class TrayIconPopup extends JWindow implements MouseListener, ChangeListener {
 
-    private static final long serialVersionUID = 2623190748929934409L;
+    private static final long        serialVersionUID  = 2623190748929934409L;
 
-    private SubConfiguration config;
-    private JPanel entryPanel;
-    private JPanel quickConfigPanel;
-    private JPanel bottomPanel;
-    private boolean enteredPopup;
-    private JDSpinner spMaxSpeed;
-    private JDSpinner spMaxDls;
-    private JDSpinner spMaxChunks;
-    private boolean hideThreadrunning = false;
+    private SubConfiguration         config;
+    private JPanel                   entryPanel;
+    private JPanel                   quickConfigPanel;
+    private JPanel                   bottomPanel;
+    private boolean                  enteredPopup;
+    private JDSpinner                spMaxSpeed;
+    private JDSpinner                spMaxDls;
+    private JDSpinner                spMaxChunks;
+    private boolean                  hideThreadrunning = false;
 
-    private JPanel exitPanel;
+    private JPanel                   exitPanel;
     private ArrayList<JToggleButton> resizecomps;
 
-    private transient Thread hideThread;
+    private transient Thread         hideThread;
 
     public TrayIconPopup() {
         // required. JWindow needs a parent to grant a nested Component focus
@@ -302,7 +302,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     /** färbt den spinner ein, falls speedbegrenzung aktiv */
     private void colorizeSpinnerSpeed() {
         if (spMaxSpeed.getValue() > 0) {
-            spMaxSpeed.setColor(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
+            spMaxSpeed.setColor(new Color(255, 12, 3));
         } else {
             spMaxSpeed.setColor(null);
         }

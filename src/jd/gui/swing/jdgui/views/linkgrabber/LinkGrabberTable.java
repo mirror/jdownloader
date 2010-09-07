@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -117,9 +118,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
         setTransferHandler(new LinkGrabberTableTransferHandler(this));
         setColumnSelectionAllowed(false);
         setRowSelectionAllowed(true);
-        addPackageHighlighter();
-        addDisabledHighlighter();
-        addExistsHighlighter();
+        addHighlighter();
         propItem = new PropMenuItem(linkgrabber);
     }
 
@@ -419,26 +418,20 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
         return prioPopup;
     }
 
-    private void addDisabledHighlighter() {
-        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100)) {
+    private void addHighlighter() {
+        this.addJDRowHighlighter(new JDRowHighlighter(new Color(173, 173, 173, 100)) {
             @Override
             public boolean doHighlight(Object o) {
                 return (o != null && o instanceof DownloadLink && !((DownloadLink) o).isEnabled());
             }
         });
-    }
-
-    private void addPackageHighlighter() {
         this.addJDRowHighlighter(new JDRowHighlighter(UIManager.getColor("TableHeader.background")) {
             @Override
             public boolean doHighlight(Object o) {
                 return (o != null && o instanceof LinkGrabberFilePackage);
             }
         });
-    }
-
-    private void addExistsHighlighter() {
-        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.linkgrabber.error_exists", "ff7f00", 120)) {
+        this.addJDRowHighlighter(new JDRowHighlighter(new Color(255, 153, 54, 120)) {
             @Override
             public boolean doHighlight(Object o) {
                 return (o != null && o instanceof DownloadLink && ((DownloadLink) o).getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS));

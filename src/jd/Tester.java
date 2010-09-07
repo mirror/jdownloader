@@ -1,17 +1,26 @@
 package jd;
 
-import jd.http.Browser;
-
 public class Tester {
 
     public static void main(String[] args) throws Throwable {
-        long c = 0;
-        while (c < 8000000) {
-
-            System.out.println(new Browser().getPage("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=convertpoints_v1&cookie=DC91B872E97A03FAD08401913F58919E53C7696134E4D008FB042E2C6EBF2652BFC15FD6C0F818622096B3F3FB204EF7&cmd=newaccount&days=365"));
-            c += 50000;
-
-        }
+        convert("ff0c03", null);
+        convert("adadad", 100);
+        convert("ff9936", 120);
     }
 
+    private static void convert(String hex, Integer alpha) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Color(");
+        sb.append(Integer.parseInt(hex.substring(0, 2), 16));
+        sb.append(", ");
+        sb.append(Integer.parseInt(hex.substring(2, 4), 16));
+        sb.append(", ");
+        sb.append(Integer.parseInt(hex.substring(4, 6), 16));
+        if (alpha != null) {
+            sb.append(", ");
+            sb.append(alpha);
+        }
+        sb.append(")");
+        System.out.println(sb.toString());
+    }
 }

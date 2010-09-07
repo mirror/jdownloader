@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.components;
 
+import java.awt.Color;
+
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
@@ -34,22 +36,21 @@ import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.components.modules.ModuleStatus;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.nutils.Formatter;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class JDStatusBar extends JPanel implements ChangeListener, ControlListener {
 
-    private static final long serialVersionUID = 3676496738341246846L;
+    private static final long      serialVersionUID = 3676496738341246846L;
 
     private final SubConfiguration dlConfig;
 
-    private JDSpinner spMaxChunks;
+    private JDSpinner              spMaxChunks;
 
-    private JDSpinner spMaxDls;
+    private JDSpinner              spMaxDls;
 
-    private JDSpinner spMaxSpeed;
+    private JDSpinner              spMaxSpeed;
 
     public JDStatusBar() {
         dlConfig = SubConfiguration.getConfig("DOWNLOAD");
@@ -90,7 +91,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     private void colorizeSpinnerSpeed() {
         /* färbt den spinner ein, falls speedbegrenzung aktiv */
         if (spMaxSpeed.getValue() > 0) {
-            spMaxSpeed.setColor(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
+            spMaxSpeed.setColor(new Color(255, 12, 3));
         } else {
             spMaxSpeed.setColor(null);
         }

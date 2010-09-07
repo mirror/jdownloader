@@ -342,6 +342,7 @@ jd/img/default/remove-failed.png
 jd/img/default/remove-ok.png
 jd/img/default/list-remove_disabled.png
 jd/img/default/flashgot.png
+jd/img/default/cursor
 jd/plugins/hoster/PlikHostPl.class
 jd/plugins/hoster/UploadLu.class
 jd/plugins/hoster/SaveAm.class
