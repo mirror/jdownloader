@@ -22,10 +22,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/folder/[A-Z|0-9]+" }, flags = { 0 })
 public class Mg1280CmFldr extends PluginForDecrypt {
@@ -39,21 +41,20 @@ public class Mg1280CmFldr extends PluginForDecrypt {
         String parameter = param.toString();
         boolean failed = false;
         br.getPage(parameter);
-        String fpName = br.getRegex("<title>-- mega\\.1280\\.com -(.*?)-- </title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<strong class=\"clr04\">(.*?)</strong").getMatch(0);
-        br.getPage("http://mega.1280.com/getlinks.php?onLoad=[type Function]");
-        String[] linkinformation = br.getRegex("(\\&file_name[0-9]+=.*?\\&file_size[0-9]+=.*?\\&file_linkcode[0-9]+=http://mega\\.1280\\.com/file/.*?\\&)").getColumn(0);
-        if (linkinformation.length == 0) {
+        if (!br.containsHTML("filename")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        String fpName = br.getRegex("<title>-- Mega 1280 --(.*?)-- </title>").getMatch(0);
+        String[] linkinformation = br.getRegex("(=\"http://mega\\.1280\\.com/file/[A-Z0-9]+/\" target=\"_blank\"><span class=\"filename\">.*?</span></a><br />[\n\t\r ]+<span class=\"filesize\">[0-9\\.]+ .*?</span>)").getColumn(0);
+        if (linkinformation == null || linkinformation.length == 0) {
             failed = true;
             linkinformation = br.getRegex("(http://mega\\.1280\\.com/file/[A-Z0-9]+)").getColumn(0);
         }
-        if (linkinformation.length == 0) return null;
+        if (linkinformation == null || linkinformation.length == 0) return null;
         for (String data : linkinformation) {
             if (failed) {
                 decryptedLinks.add(createDownloadlink(data));
             } else {
-                String filename = new Regex(data, "file_name[0-9]+=(.*?)\\&").getMatch(0);
-                String filesize = new Regex(data, "file_size[0-9]+=(.*?)\\&").getMatch(0);
+                String filename = new Regex(data, "class=\"filename\">(.*?)</span").getMatch(0);
+                String filesize = new Regex(data, "class=\"filesize\">(.*?)</span>").getMatch(0);
                 String dlink = new Regex(data, "(http://mega\\.1280\\.com/file/[A-Z0-9]+)").getMatch(0);
                 if (dlink == null) return null;
                 DownloadLink aLink = createDownloadlink(dlink);
