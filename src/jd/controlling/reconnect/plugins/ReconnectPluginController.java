@@ -176,7 +176,7 @@ public class ReconnectPluginController {
             final int waittime = this.getWaittimeBeforeFirstIPCheck();
 
             ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + retry);
-            final String preIp = this.getIP();
+            final String preIp = this.getExternalIP();
 
             progress.increase(1);
             progress.setStatusText(JDL.L("reconnect.progress.2_oldIP", "Reconnect Old IP:") + preIp);
@@ -195,17 +195,17 @@ public class ReconnectPluginController {
                 Thread.sleep(waittime * 1000);
             } catch (final InterruptedException e) {
             }
-            String afterIP = this.getIP();
+            String afterIP = this.getExternalIP();
             progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
             long endTime = System.currentTimeMillis() + waitForIp * 1000;
             ReconnectPluginController.LOG.info("Wait " + waitForIp + " sec for new ip");
             while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
                 ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
                 try {
-                    Thread.sleep(5 * 1000);
+                    Thread.sleep(checkInterval * 1000);
                 } catch (final InterruptedException e) {
                 }
-                afterIP = this.getIP();
+                afterIP = this.getExternalIP();
                 progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
             }
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) { return true; }
@@ -219,7 +219,7 @@ public class ReconnectPluginController {
                         Thread.sleep(5 * 1000);
                     } catch (final InterruptedException e) {
                     }
-                    afterIP = this.getIP();
+                    afterIP = this.getExternalIP();
                     progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", preIp, afterIP));
                 }
             }
@@ -260,23 +260,12 @@ public class ReconnectPluginController {
     }
 
     /**
-     * returns the gui panel. This mopdule uses the new appwork JSonStorage and
-     * does not need to use teh old ConfigPanel System.
-     * 
-     * @return
-     */
-    public JComponent getGUI() {
-        // TODO Auto-generated method stub
-        return ReconnectPluginConfigGUI.getInstance();
-    }
-
-    /**
-     * Returns the current external IP. Checks the currenta ctive plugin, and
+     * Returns the current external IP. Checks the current active plugin, and
      * uses IPCHeck class as fallback
      * 
      * @return
      */
-    private String getIP() {
+    public String getExternalIP() {
         String ret = RouterPlugin.NOT_AVAILABLE;
 
         cond: if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
@@ -297,6 +286,17 @@ public class ReconnectPluginController {
         }
         Reconnecter.setCurrentIP(ret);
         return ret;
+    }
+
+    /**
+     * returns the gui panel. This mopdule uses the new appwork JSonStorage and
+     * does not need to use teh old ConfigPanel System.
+     * 
+     * @return
+     */
+    public JComponent getGUI() {
+        // TODO Auto-generated method stub
+        return ReconnectPluginConfigGUI.getInstance();
     }
 
     /**

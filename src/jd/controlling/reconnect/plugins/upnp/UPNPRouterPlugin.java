@@ -47,7 +47,6 @@ import jd.controlling.reconnect.plugins.RouterPlugin;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.nrouter.IPCheck;
 import jd.nutils.IPAddress;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -230,7 +229,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                                             UPNPRouterPlugin.this.setDevice(device);
                                             // get real ext IP:
 
-                                            final String ipBefore = IPCheck.getIPAddress();
+                                            final String ipBefore = ReconnectPluginController.getInstance().getExternalIP();
                                             // TODO what if ipBefore is null
                                             String ipAfter;
                                             UPNPRouterPlugin.this.doReconnect(null);
@@ -238,9 +237,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                                             for (int w = 0; w < 20; w++) {
                                                 steps++;
                                                 this.progress = steps * 100 / maxSteps;
-                                                ipAfter = IPCheck.getIPAddress();
+                                                ipAfter = ReconnectPluginController.getInstance().getExternalIP();
+                                                ;
 
-                                                if (!ipBefore.equals(ipAfter)) {
+                                                if (ipAfter != RouterPlugin.NOT_AVAILABLE && ipAfter != RouterPlugin.OFFLINE && !ipBefore.equals(ipAfter)) {
                                                     // success
                                                     break loop;
                                                 }
@@ -339,7 +339,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
             return ip;
         } catch (final GetIpException e) {
             // failed. disable ipcheck for this upnp device
-
+            this.storage.put(UPNPRouterPlugin.EXTERNALIP, RouterPlugin.NOT_AVAILABLE);
             throw e;
         }
     }
