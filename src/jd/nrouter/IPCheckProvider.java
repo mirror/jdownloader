@@ -35,6 +35,6 @@ public interface IPCheckProvider {
      * @return
      * @see IPCheck.CheckStatus
      */
-    @Deprecated
-    public Object getIP();
+    public String getIP() throws IPCheckException;
+
 }

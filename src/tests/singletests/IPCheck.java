@@ -16,53 +16,37 @@
 
 package tests.singletests;
 
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 
+import jd.nrouter.IPCheckException;
 import jd.nrouter.IPCheckProvider;
 
-import org.junit.Before;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class IPCheck {
 
-    private String ip;
-
-    @Before
-    public void setUp() throws Exception {
-        // TestUtils.initJD();
-    }
-
     @Test
     public void checkIPTable() {
-
         ArrayList<IPCheckProvider> table = jd.nrouter.IPCheck.IP_CHECK_SERVICES;
-        System.out.println("IPCHECKS:" + table.size());
+        System.out.println("Number of available IPCheckProvider: " + table.size());
+
+        Assert.assertFalse(table.isEmpty());
+
+        String ip = null;
         for (IPCheckProvider prov : table) {
             try {
+                String curip = prov.getIP();
+                System.out.println(prov.getInfo() + ": Reported " + curip);
+                if (ip == null) ip = curip;
 
-                Object lip = prov.getIP();
-                String curip = null;
-                if (lip instanceof String) {
-                    curip = (String) lip;
-                    System.out.println(prov.getInfo() + " reported: " + curip);
-                    if (ip == null) ip = curip;
+                if (!ip.equals(curip)) {
+                    Assert.fail(prov.getInfo() + ": Regex for " + prov.getIP() + " may be invalid!");
                 }
-
-                if (curip == null || !ip.equals(curip)) {
-                    System.out.println("regex for " + prov.getIP() + " may be invalid");
-                    assertTrue(false);
-                }
-            } catch (Exception e) {
-                System.out.println(prov.getIP() + " broken");
-                assertTrue(false);
+            } catch (IPCheckException e) {
+                Assert.fail(prov.getInfo() + ": Broken");
             }
         }
-
-        // for (int i = 0; i < 30; i++) {
-        // System.out.println(jd.nrouter.IPCheck.getIPAddress());
-        // }
-
     }
+
 }

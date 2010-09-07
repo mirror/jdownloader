@@ -39,59 +39,11 @@ public class IPCheck {
         FAILED, SEQFAILED
     }
 
-    public static ArrayList<IPCheckProvider> IP_CHECK_SERVICES = new ArrayList<IPCheckProvider>();
-    private static int IP_CHECK_INDEX = 0;
-    private static final Object LOCK = new Object();
+    public static ArrayList<IPCheckProvider> IP_CHECK_SERVICES  = new ArrayList<IPCheckProvider>();
+    private static int                       IP_CHECK_INDEX     = 0;
+    private static final Object              LOCK               = new Object();
 
-    /** this CustomWebIPCheck uses the UserDefined Settings */
-    private static final IPCheckProvider CUSTOM_WEB_IPCHECK = new IPCheckProvider() {
-
-        private final int maxerror = 2;
-        private int errorcount = 0;
-        private final Browser br = new Browser();
-
-        public String getInfo() {
-            return "Customized IPCheck: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
-        }
-
-        public Object getIP() {
-            if (this.errorcount > this.maxerror) {
-                /*
-                 * maxerror reached , pause this method
-                 */
-                this.errorcount = 0;
-                return IPCheck.CheckStatus.SEQFAILED;
-            }
-            final String site = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
-            final String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Please enter Regex for IPCheck here");
-            try {
-                new URL(site); /*
-                                * check for valid website
-                                */
-                /*
-                 * call website and check for ip
-                 */
-                this.br.setConnectTimeout(15000);
-                this.br.setReadTimeout(15000);
-                final Matcher matcher = Pattern.compile(patt, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(this.br.getPage(site));
-                if (matcher.find()) {
-                    if (matcher.groupCount() > 0) {
-                        this.errorcount = 0;/*
-                                             * reset error count
-                                             */
-                        return matcher.group(1);
-                    }
-                }
-            } catch (final Exception e) {
-                JDLogger.exception(e);
-            }
-            /*
-             * error occured , return failed
-             */
-            this.errorcount++;
-            return IPCheck.CheckStatus.FAILED;
-        }
-    };
+    private static final IPCheckProvider     CUSTOM_WEB_IPCHECK = new CustomWebIPCheck();
 
     static {
         /* IPCheck Service powered by JDownloader */
@@ -102,7 +54,7 @@ public class IPCheck {
         Collections.shuffle(IPCheck.IP_CHECK_SERVICES);
     }
 
-    public static String LATEST_IP = null;
+    public static String                     LATEST_IP          = null;
 
     /**
      * Uses IP_CHECK_SERVICES (current JDownloader IPCheck) to get the current
@@ -115,9 +67,8 @@ public class IPCheck {
      *         has been an error or IPCheck.CheckStatus.SEQFAILED if this method
      *         should be paused
      */
-    @Deprecated
-    private static Object checkIPProvider() {
-        if (IPCheck.IP_CHECK_SERVICES.size() == 0) { return null; }
+    private static String checkIPProvider() throws IPCheckException {
+        if (IPCheck.IP_CHECK_SERVICES.size() == 0) return null;
         synchronized (IPCheck.LOCK) {
             IPCheck.IP_CHECK_INDEX = IPCheck.IP_CHECK_INDEX % IPCheck.IP_CHECK_SERVICES.size();
             final IPCheckProvider ipcheck = IPCheck.IP_CHECK_SERVICES.get(IPCheck.IP_CHECK_INDEX);
@@ -135,52 +86,48 @@ public class IPCheck {
      * 
      * @return ip or "na" for notavailable
      */
-
-    @SuppressWarnings("deprecation")
     public static String getIPAddress() {
 
-        Object ip = null;
+        String ip = null;
         synchronized (IPCheck.LOCK) {
-            // check if user uses a reconnect plugin
-
+            /* check if user uses a reconnect plugin */
             if (JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) == ReconnectMethod.PLUGIN && ReconnectPluginController.getInstance().getActivePlugin().canCheckIP()) {
-
                 try {
                     ip = ReconnectPluginController.getInstance().getActivePlugin().getExternalIP();
                 } catch (final Throwable e) {
                     Log.exception(e);
                 }
-
             } else if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
-
                 /* use registered ipcheckprovider (balanced) */
                 for (int i = 0; i < IPCheck.IP_CHECK_SERVICES.size() / 2 + 1; i++) {
-                    ip = IPCheck.checkIPProvider();
-
-                    if (ip == null || ip == CheckStatus.FAILED) {
-                        /* normal error, wait 3 secs for retry */
-                        try {
-                            Thread.sleep(3000);
-                        } catch (final InterruptedException e) {
+                    try {
+                        ip = IPCheck.checkIPProvider();
+                    } catch (final IPCheckException e) {
+                        if (e.getId() == IPCheckException.FAILED) {
+                            /* normal error, wait 3 secs for retry */
+                            try {
+                                Thread.sleep(3000);
+                            } catch (final InterruptedException e1) {
+                            }
+                        } else if (e.getId() == IPCheckException.SEQ_FAILED) {
+                            /* seq error, wait 9 secs for retry */
+                            try {
+                                Thread.sleep(9000);
+                            } catch (final InterruptedException e1) {
+                            }
                         }
-                    } else if (ip == CheckStatus.SEQFAILED) {
-                        /* seq error, wait 9 secs for retry */
-                        try {
-                            Thread.sleep(9000);
-                        } catch (final InterruptedException e) {
-                        }
-                    } else if (ip instanceof String) {
-                        break;
                     }
-
                 }
             } else {
                 /* use userdefined ipcheck, try it only once */
-                ip = IPCheck.CUSTOM_WEB_IPCHECK.getIP();
+                try {
+                    ip = IPCheck.CUSTOM_WEB_IPCHECK.getIP();
+                } catch (final IPCheckException e) {
+                }
             }
         }
-        // URGS! see @Deprecated comment
-        if (ip == null || ip instanceof CheckStatus || !(ip instanceof String)) {
+
+        if (ip == null) {
             JDLogger.getLogger().severe("IPCheck failed");
             return "na";
         }
@@ -189,13 +136,55 @@ public class IPCheck {
 
 }
 
+/** this CustomWebIPCheck uses the UserDefined Settings */
+class CustomWebIPCheck implements IPCheckProvider {
+
+    private final int     maxerror   = 2;
+    private int           errorcount = 0;
+    private final Browser br         = new Browser();
+
+    public String getInfo() {
+        return "Customized IPCheck: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
+    }
+
+    public String getIP() throws IPCheckException {
+        if (this.errorcount > this.maxerror) {
+            /* maxerror reached , pause this method */
+            this.errorcount = 0;
+            throw new IPCheckException(IPCheckException.SEQ_FAILED);
+        }
+        final String site = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
+        final String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Please enter Regex for IPCheck here");
+        try {
+            /* check for valid website */
+            new URL(site);
+            /* call website and check for ip */
+            this.br.setConnectTimeout(15000);
+            this.br.setReadTimeout(15000);
+            final Matcher matcher = Pattern.compile(patt, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(this.br.getPage(site));
+            if (matcher.find()) {
+                if (matcher.groupCount() > 0) {
+                    /* reset error count */
+                    this.errorcount = 0;
+                    return matcher.group(1);
+                }
+            }
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+        }
+        /* error occured , return failed */
+        this.errorcount++;
+        throw new IPCheckException(IPCheckException.FAILED);
+    }
+}
+
 /** IPCheck Provider using a Website that provides Client IP */
 class WebIPCheck implements IPCheckProvider {
 
-    private static int maxerror = 5;
-    private final String url;
-    private Pattern pattern;
-    private int errorcount = 0;
+    private static int    maxerror   = 5;
+    private final String  url;
+    private Pattern       pattern;
+    private int           errorcount = 0;
     private final Browser br;
 
     public WebIPCheck(final String url, final String regex) {
@@ -213,11 +202,11 @@ class WebIPCheck implements IPCheckProvider {
         return this.url;
     }
 
-    public Object getIP() {
+    public String getIP() throws IPCheckException {
         if (this.errorcount > WebIPCheck.maxerror) {
             /* maxerror reached, pause this method */
             this.errorcount = 0;
-            return IPCheck.CheckStatus.SEQFAILED;
+            throw new IPCheckException(IPCheckException.SEQ_FAILED);
         }
         try {
             /* call website and check for ip */
@@ -233,6 +222,6 @@ class WebIPCheck implements IPCheckProvider {
         }
         /* error occured, return failed */
         this.errorcount++;
-        return IPCheck.CheckStatus.FAILED;
+        throw new IPCheckException(IPCheckException.FAILED);
     }
 }

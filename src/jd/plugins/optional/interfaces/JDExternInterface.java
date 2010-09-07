@@ -103,7 +103,7 @@ public class JDExternInterface extends PluginOptional {
 
         if (jk != null) {
 
-            Context cx = ContextFactory.getGlobal().enter();
+            Context cx = ContextFactory.getGlobal().enterContext();
             try {
                 cx.setClassShutter(new ClassShutter() {
                     public boolean visibleToScripts(String className) {

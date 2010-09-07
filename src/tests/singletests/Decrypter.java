@@ -27,7 +27,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,7 +37,6 @@ public class Decrypter {
 
     @Before
     public void setUp() {
-
         TestUtils.mainInit();
         TestUtils.initDecrypter();
         TestUtils.initHosts();
@@ -78,8 +76,4 @@ public class Decrypter {
         }
     }
 
-    @After
-    public void tearDown() throws Exception {
-        // JDUtilities.getController().exit();
-    }
 }

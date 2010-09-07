@@ -95,7 +95,7 @@ public class PluginUtils {
             htmlcode = br.getRequest().getHtmlCode();
 
             for (String c : containers) {
-                final Context cx = ContextFactory.getGlobal().enter();
+                final Context cx = ContextFactory.getGlobal().enterContext();
                 final Scriptable scope = cx.initStandardObjects();
                 c = c.replaceAll("return p\\}\\(", " return p}  f(").replaceAll("function\\s*\\(p\\,a\\,c\\,k\\,e\\,d\\)", "function f(p,a,c,k,e,d)");
                 final Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);

@@ -31,7 +31,7 @@ import tests.utils.TestUtils;
 public class FTP {
 
     // private static final String URL = null;
-    private SimpleFTP ftp;
+    private SimpleFTP               ftp;
     private HashMap<String, String> links;
 
     @Before

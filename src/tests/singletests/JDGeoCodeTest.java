@@ -19,15 +19,9 @@ package tests.singletests;
 import static org.junit.Assert.assertFalse;
 import jd.utils.JDGeoCode;
 
-import org.junit.Before;
 import org.junit.Test;
 
 public class JDGeoCodeTest {
-
-    @Before
-    public void setUp() throws Exception {
-
-    }
 
     @Test
     public void geoCodeTest() {
@@ -102,6 +96,6 @@ public class JDGeoCodeTest {
 
         /* getNativelanguage */
         assertFalse("Result error for tr->Türkçe", !"Türkçe".equals(JDGeoCode.getNativeLanguage("tr")));
-
     }
+
 }

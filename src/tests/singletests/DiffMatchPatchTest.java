@@ -23,6 +23,11 @@
  */
 package tests.singletests;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,15 +40,18 @@ import java.util.Set;
 import jd.nutils.DiffMatchPatch;
 import jd.nutils.DiffMatchPatch.Diff;
 import jd.nutils.DiffMatchPatch.Patch;
-import junit.framework.TestCase;
 
-public class DiffMatchPatchTest extends TestCase {
+import org.junit.Before;
+import org.junit.Test;
 
-    private DiffMatchPatch dmp;
+public class DiffMatchPatchTest {
+
+    private DiffMatchPatch           dmp;
     private DiffMatchPatch.Operation DELETE = DiffMatchPatch.Operation.DELETE;
-    private DiffMatchPatch.Operation EQUAL = DiffMatchPatch.Operation.EQUAL;
+    private DiffMatchPatch.Operation EQUAL  = DiffMatchPatch.Operation.EQUAL;
     private DiffMatchPatch.Operation INSERT = DiffMatchPatch.Operation.INSERT;
 
+    @Before
     protected void setUp() {
         // Create an instance of the DiffMatchPatch object.
         dmp = new DiffMatchPatch();
@@ -51,6 +59,7 @@ public class DiffMatchPatchTest extends TestCase {
 
     // DIFF TEST FUNCTIONS
 
+    @Test
     public void testDiffCommonPrefix() {
         // Detect and remove any common prefix.
         assertEquals("diffCommonPrefix: Null case.", 0, dmp.diffCommonPrefix("abc", "xyz"));
@@ -58,6 +67,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffCommonPrefix: Non-null case.", 4, dmp.diffCommonPrefix("1234abcdef", "1234xyz"));
     }
 
+    @Test
     public void testDiffCommonSuffix() {
         // Detect and remove any common suffix.
         assertEquals("diffCommonSuffix: Null case.", 0, dmp.diffCommonSuffix("abc", "xyz"));
@@ -65,6 +75,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffCommonSuffix: Non-null case.", 4, dmp.diffCommonSuffix("abcdef1234", "xyz1234"));
     }
 
+    @Test
     public void testDiffHalfmatch() {
         // Detect a halfmatch.
         assertNull("diffHalfMatch: No match.", dmp.diffHalfMatch("1234567890", "abcdef"));
@@ -80,6 +91,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertArrayEquals("diffHalfMatch: Multiple Matches #3.", new String[] { "-=-=-=-=-=", "", "", "y", "-=-=-=-=-=-=-=y" }, dmp.diffHalfMatch("-=-=-=-=-=-=-=-=-=-=-=-=y", "-=-=-=-=-=-=-=yy"));
     }
 
+    @Test
     public void testDiffLinesToChars() {
         // Convert lines down to characters
         ArrayList<String> tmpVector = new ArrayList<String>();
@@ -120,6 +132,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertArrayEquals("diffLinesToChars: More than 256.", new Object[] { chars, "", tmpVector }, dmp.diffLinesToChars(lines, ""));
     }
 
+    @Test
     public void testDiffCharsToLines() {
         // First check that Diff equality works
         assertTrue("diffCharsToLines:", new Diff(EQUAL, "a").equals(new Diff(EQUAL, "a")));
@@ -156,6 +169,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffCharsToLines: More than 256.", diffList(new Diff(DELETE, lines)), diffs);
     }
 
+    @Test
     public void testDiffCleanupMerge() {
         // Cleanup a messy diff
         LinkedList<Diff> diffs = diffList();
@@ -203,6 +217,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffCleanupMerge: Slide edit right recursive.", diffList(new Diff(EQUAL, "xca"), new Diff(DELETE, "cba")), diffs);
     }
 
+    @Test
     public void testDiffCleanupSemanticLossless() {
         // Slide diffs to match logical boundaries
         LinkedList<Diff> diffs = diffList();
@@ -234,6 +249,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffCleanupSemanticLossless: Hitting the end.", diffList(new Diff(EQUAL, "xaa"), new Diff(DELETE, "a")), diffs);
     }
 
+    @Test
     public void testDiffCleanupSemantic() {
         // Cleanup semantically trivial equalities
         LinkedList<Diff> diffs = diffList();
@@ -261,6 +277,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffCleanupSemantic: Word boundaries.", diffList(new Diff(EQUAL, "The "), new Diff(DELETE, "cow and the "), new Diff(EQUAL, "cat.")), diffs);
     }
 
+    @Test
     public void testDiffCleanupEfficiency() {
         // Cleanup operationally trivial equalities
         dmp.diffEditCost = 4;
@@ -291,12 +308,14 @@ public class DiffMatchPatchTest extends TestCase {
         dmp.diffEditCost = 4;
     }
 
+    @Test
     public void testDiffPrettyHtml() {
         // Pretty print
         LinkedList<Diff> diffs = diffList(new Diff(EQUAL, "a\n"), new Diff(DELETE, "<B>b</B>"), new Diff(INSERT, "c&d"));
         assertEquals("diffPrettyHtml:", "<SPAN TITLE=\"i=0\">a&para;<BR></SPAN><DEL STYLE=\"background:#FFE6E6;\" TITLE=\"i=2\">&lt;B&gt;b&lt;/B&gt;</DEL><INS STYLE=\"background:#E6FFE6;\" TITLE=\"i=2\">c&amp;d</INS>", dmp.diffPrettyHtml(diffs));
     }
 
+    @Test
     public void testDiffText() {
         // Compute the source and destination texts
         LinkedList<Diff> diffs = diffList(new Diff(EQUAL, "jump"), new Diff(DELETE, "s"), new Diff(INSERT, "ed"), new Diff(EQUAL, " over "), new Diff(DELETE, "the"), new Diff(INSERT, "a"), new Diff(EQUAL, " lazy"));
@@ -304,6 +323,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffText2:", "jumped over a lazy", dmp.diffText2(diffs));
     }
 
+    @Test
     public void testDiffDelta() {
         // Convert a diff into delta string
         LinkedList<Diff> diffs = diffList(new Diff(EQUAL, "jump"), new Diff(DELETE, "s"), new Diff(INSERT, "ed"), new Diff(EQUAL, " over "), new Diff(DELETE, "the"), new Diff(INSERT, "a"), new Diff(EQUAL, " lazy"), new Diff(INSERT, "old dog"));
@@ -362,6 +382,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffFromDelta: Unchanged characters.", diffs, dmp.diffFromDelta("", delta));
     }
 
+    @Test
     public void testDiffXIndex() {
         // Translate a location in text1 to text2
         LinkedList<Diff> diffs = diffList(new Diff(DELETE, "a"), new Diff(INSERT, "1234"), new Diff(EQUAL, "xyz"));
@@ -371,6 +392,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffXIndex: Translation on deletion.", 1, dmp.diffXIndex(diffs, 3));
     }
 
+    @Test
     public void testDiffLevenshtein() {
         LinkedList<Diff> diffs = diffList(new Diff(DELETE, "abc"), new Diff(INSERT, "1234"), new Diff(EQUAL, "xyz"));
         assertEquals("Levenshtein with trailing equality.", 4, dmp.diffLevenshtein(diffs));
@@ -382,6 +404,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("Levenshtein with middle equality.", 7, dmp.diffLevenshtein(diffs));
     }
 
+    @Test
     public void testDiffPath() {
         // First, check footprints are different.
         assertTrue("diffFootprint:", dmp.diffFootprint(1, 10) != dmp.diffFootprint(10, 1));
@@ -505,6 +528,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("diffPath2: Double letters.", diffs, dmp.diffPath2(vMap, "CD34", "34YZ"));
     }
 
+    @Test
     public void testDiffMain() {
         // Perform a trivial diff
         LinkedList<Diff> diffs = diffList(new Diff(EQUAL, "abc"));
@@ -572,7 +596,7 @@ public class DiffMatchPatchTest extends TestCase {
     }
 
     // MATCH TEST FUNCTIONS
-
+    @Test
     public void testMatchAlphabet() {
         // Initialise the bitmasks for Bitap
         Map<Character, Integer> bitmask;
@@ -589,6 +613,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("matchAlphabet: Duplicates.", bitmask, dmp.matchAlphabet("abcaba"));
     }
 
+    @Test
     public void testMatchBitap() {
         // Bitap algorithm
         dmp.matchBalance = 0.5f;
@@ -630,6 +655,7 @@ public class DiffMatchPatchTest extends TestCase {
         dmp.matchBalance = 0.5f;
     }
 
+    @Test
     public void testMatchMain() {
         // Full match
         assertEquals("matchMain: Equality.", 0, dmp.matchMain("abcdef", "abcdef", 1000));
@@ -646,7 +672,7 @@ public class DiffMatchPatchTest extends TestCase {
     }
 
     // PATCH TEST FUNCTIONS
-
+    @Test
     public void testPatchObj() {
         // Patch Object
         Patch p = new Patch();
@@ -659,6 +685,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("Patch: toString.", strp, p.toString());
     }
 
+    @Test
     public void testPatchFromText() {
         assertTrue("patchFromText: #0.", dmp.patchFromText("").isEmpty());
 
@@ -680,6 +707,7 @@ public class DiffMatchPatchTest extends TestCase {
         }
     }
 
+    @Test
     public void testPatchToText() {
         String strp = "@@ -21,18 +22,17 @@\n jump\n-s\n+ed\n  over \n-the\n+a\n  laz\n";
         List<Patch> patches;
@@ -691,6 +719,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("patchToText: Dual", strp, dmp.patchToText(patches));
     }
 
+    @Test
     public void testPatchAddContext() {
         dmp.patchMargin = 4;
         Patch p;
@@ -711,6 +740,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("patchAddContext: Ambiguity.", "@@ -1,27 +1,28 @@\n Th\n-e\n+at\n  quick brown fox jumps. \n", p.toString());
     }
 
+    @Test
     public void testPatchMake() {
         LinkedList<Patch> patches;
         String text1 = "The quick brown fox jumps over the lazy dog.";
@@ -748,6 +778,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("patchMake: Long string with repeats.", expectedPatch, dmp.patchToText(patches));
     }
 
+    @Test
     public void testPatchSplitMax() {
         // Assumes that MatchMaxBits is 32.
         LinkedList<Patch> patches;
@@ -764,6 +795,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("patchSplitMax: #3.", "@@ -2,32 +2,32 @@\n bcdefghij , h : \n-0\n+1\n  , t : 1 abcdef\n@@ -29,32 +29,32 @@\n bcdefghij , h : \n-0\n+1\n  , t : 1 abcdef\n", dmp.patchToText(patches));
     }
 
+    @Test
     public void testPatchAddPadding() {
         LinkedList<Patch> patches;
         patches = dmp.patchMake("", "test");
@@ -782,6 +814,7 @@ public class DiffMatchPatchTest extends TestCase {
         assertEquals("patchAddPadding: Both edges none.", "@@ -5,8 +5,12 @@\n XXXX\n+test\n YYYY\n", dmp.patchToText(patches));
     }
 
+    @Test
     public void testPatchApply() {
         LinkedList<Patch> patches;
         patches = dmp.patchMake("The quick brown fox jumps over the lazy dog.", "That quick brown fox jumped over a lazy dog.");

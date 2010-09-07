@@ -16,7 +16,6 @@
 
 package tests.utils;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -42,50 +41,20 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 public abstract class TestUtils {
-    /**
-     * Normal usual downloadlink
-     */
-    public static final String HOSTER_LINKTYPE_NORMAL         = "NORMAL_DOWNLOADLINK_";
-    /**
-     * File not found downloadlink. invalid URL. NOT ABUSED!
-     */
-    public static final String HOSTER_LINKTYPE_FNF            = "FNF_DOWNLOADLINK_";
-    /**
-     * Very very tiny download. just a few kb or less
-     */
-    public static final String HOSTER_LINKTYPE_TINY           = "TINY_DOWNLOADLINK_";
-    /**
-     * Bigger than normaldownloadlinks
-     */
-    public static final String HOSTER_LINKTYPE_OVERSIZE       = "OVERSIZE_DOWNLOADLINK_";
-    /**
-     * Link abused
-     */
-    public static final String HOSTER_LINKTYPE_ABUSED         = "ABUSED_DOWNLOADLINK_";
-    /**
-     * Serverside error
-     */
-    public static final String HOSTER_LINKTYPE_ERROR_HARDWARE = "HARDWARE_ERROR_DOWNLOADLINK_";
-    /**
-     * Tempora. unavailable
-     */
-    public static final String HOSTER_LINKTYPE_ERROR_TEMP     = "TEM_ERROR_DOWNLOADLINK_";
 
-    private static JFrame      FRAME;
+    private static JFrame FRAME;
 
-    private static JDInit      jdi;
+    private static JDInit jdi;
 
-    private static String      WIKI_USER;
+    private static String WIKI_USER;
 
-    private static String      WIKI_PASS;
+    private static String WIKI_PASS;
 
     public static boolean ask(final String question) {
         return UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "We need to know if..?", question, null, null, null) == UserIO.RETURN_OK;
-
     }
 
     public static void finishInit() {
-
         try {
             Main.loadDynamics();
         } catch (final Exception e1) {
@@ -93,64 +62,6 @@ public abstract class TestUtils {
         }
         WebUpdate.doUpdateCheck(false);
         JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
-    }
-
-    /**
-     * 
-     * 
-     * 
-     NORMAL_DECRYPTERLINK_1
-     * 
-     * 
-     * DLC_DECRYPTER_LINK_1
-     * 
-     * 
-     * PASSWORD_PROTECTED_1:12345
-     * 
-     * PASSWORD_PROTECTED_2:12345
-     * 
-     * 
-     * CAPTCHA_DECRYPTER_1
-     * 
-     * FOLDER_DECRYPTER_1
-     * 
-     * 
-     * @param string
-     * @return
-     */
-    public static HashMap<String, String> getDecrypterLinks(final String string) {
-        final HashMap<String, String> ret = new HashMap<String, String>();
-        try {
-
-            final Browser br = new Browser();
-            br.setFollowRedirects(true);
-            br.setDebug(true);
-            br.getPage("http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/decrypter/" + string + "?lng=en");
-            final String login = br.getRegex("(http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/decrypter/" + string + "\\?do=login\\&amp\\;sectok=.*?)\"").getMatch(0);
-            br.getPage(login);
-
-            final Form form = br.getForm(2);
-            if (TestUtils.WIKI_USER == null) {
-                TestUtils.WIKI_USER = TestUtils.getStringProperty("JD_WIKI_USER");
-                TestUtils.WIKI_PASS = TestUtils.getStringProperty("JD_WIKI_PASS");
-            }
-            form.put("u", TestUtils.WIKI_USER);
-            form.put("p", TestUtils.WIKI_PASS);
-            br.submitForm(form);
-            final String[][] matches = br.getRegex("<div class=\"li\"> <a href=\"(.*?)\" class=\"urlextern\" target=\"_blank\" title=\".*?\"  rel=\"nofollow\">(.*?)</a>").getMatches();
-            if (matches == null) { return ret; }
-            for (final String[] m : matches) {
-                if (!m[0].trim().equalsIgnoreCase("http://decryptlink")) {
-                    ret.put(m[1].trim(), m[0].trim());
-                }
-            }
-
-        } catch (final Exception e) {
-            e.printStackTrace();
-
-        }
-        return ret;
-
     }
 
     /**
@@ -235,7 +146,6 @@ public abstract class TestUtils {
 
     public static void initContainer() {
         TestUtils.jdi.loadCPlugins();
-
     }
 
     public static void initControllers() {
@@ -243,12 +153,11 @@ public abstract class TestUtils {
     }
 
     public static void initDecrypter() {
-        if (DecryptPluginWrapper.getDecryptWrapper().size() > 0) { return; }
-
+        if (DecryptPluginWrapper.getDecryptWrapper().size() > 0) return;
     }
 
     public static void initGUI() {
-        if (SwingGui.getInstance() != null) { return; }
+        if (SwingGui.getInstance() != null) return;
 
         new GuiRunnable<Object>() {
             @Override
@@ -258,13 +167,10 @@ public abstract class TestUtils {
                 return null;
             }
         }.waitForEDT();
-
-        // SwingGui.getInstance().setVisible(false);
     }
 
     public static void initHosts() {
-        if (HostPluginWrapper.getHostWrapper().size() > 0) { return; }
-
+        if (HostPluginWrapper.getHostWrapper().size() > 0) return;
     }
 
     public static void initJD() {
@@ -274,11 +180,10 @@ public abstract class TestUtils {
         TestUtils.initContainer();
         TestUtils.initHosts();
         TestUtils.finishInit();
-        // JDLogger.getLogger().setLevel(Level.ALL);
     }
 
     public static void initOptionalPlugins() {
-        if (OptionalPluginWrapper.getOptionalWrapper().size() > 0) { return; }
+        if (OptionalPluginWrapper.getOptionalWrapper().size() > 0) return;
 
         TestUtils.jdi.loadPluginOptional();
     }
@@ -289,8 +194,6 @@ public abstract class TestUtils {
     }
 
     public static void mainInit() {
-        // if (JDUtilities.getController() != null) return;
-
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
@@ -300,7 +203,6 @@ public abstract class TestUtils {
             }
         }.waitForEDT();
 
-        // frame.setAlwaysOnTop(true);
         System.setProperty("file.encoding", "UTF-8");
         // Mac specific //
         if (OSDetector.isMac()) {
@@ -342,13 +244,9 @@ public abstract class TestUtils {
             form.put("u", TestUtils.WIKI_USER);
             form.put("p", TestUtils.WIKI_PASS);
             br.submitForm(form);
-        } catch (final IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (final Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
     }
+
 }

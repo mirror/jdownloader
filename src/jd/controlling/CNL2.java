@@ -115,7 +115,7 @@ public final class CNL2 {
         final byte[] key;
 
         if (jk != null) {
-            final Context cx = ContextFactory.getGlobal().enter();
+            final Context cx = ContextFactory.getGlobal().enterContext();
             final Scriptable scope = cx.initStandardObjects();
             final String fun = jk + "  f()";
             final Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);

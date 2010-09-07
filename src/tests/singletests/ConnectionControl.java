@@ -69,7 +69,7 @@ public class ConnectionControl {
         TestUtils.log("Endtime: " + System.currentTimeMillis());
         long dif = System.currentTimeMillis() - start;
         TestUtils.log("Test took " + dif + " ms");
-        assertTrue(((long)requests * interval) < dif + interval);
+        assertTrue(((long) requests * interval) < dif + interval);
         // if () { throw new UnitTestException("time error"); }
 
     }
@@ -108,7 +108,7 @@ public class ConnectionControl {
         TestUtils.log("Endtime: " + System.currentTimeMillis());
         long dif = System.currentTimeMillis() - start;
         TestUtils.log("Test took " + dif + " ms");
-        assertTrue(((long)requests * interval) < dif + interval);
+        assertTrue(((long) requests * interval) < dif + interval);
 
     }
 
@@ -116,20 +116,16 @@ public class ConnectionControl {
         return new JDRunnable() {
 
             public void go() throws Exception {
-
                 for (int ii = 0; ii < i; ii++) {
                     try {
                         br.getPage(string);
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
-
                     }
                 }
-
             }
 
         };
-
     }
+
 }

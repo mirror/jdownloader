@@ -21,16 +21,9 @@ import java.net.InetAddress;
 import jd.nrouter.RouterUtils;
 import jd.nrouter.UPNPRouter;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 public class UPNP {
-
-    @Before
-    public void setUp() {
-
-    }
 
     @Test
     public void ipcheck() {
@@ -61,21 +54,15 @@ public class UPNP {
                 ip = upnp.getExternalIPAddress();
                 if (!ip.equals(oldip)) {
                     if (ip.equals("0.0.0.0")) {
-                        oldip=ip;
+                        oldip = ip;
                         System.out.println("OFFLINE");
                     } else {
                         System.out.println(upnp + "NEW external ip " + ip);
                         break;
                     }
                 }
-
             }
-
         }
     }
 
-    @After
-    public void tearDown() throws Exception {
-
-    }
 }

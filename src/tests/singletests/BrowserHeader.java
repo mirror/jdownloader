@@ -16,19 +16,14 @@
 
 package tests.singletests;
 
-import static org.junit.Assert.assertTrue;
 import jd.http.Browser;
 
-import org.junit.Before;
+import org.junit.Assert;
 import org.junit.Test;
 
 import tests.utils.TestUtils;
 
 public class BrowserHeader {
-
-    @Before
-    public void setUp() throws Exception {
-    }
 
     @Test
     public void CheckPortRequest() {
@@ -38,8 +33,8 @@ public class BrowserHeader {
             br.getPage("http://jdownloader.net:8081/knowledge/wiki/development/intern/brunittest");
         } catch (Exception e) {
             e.printStackTrace();
-            assertTrue(false);
+            Assert.fail();
         }
-
     }
+
 }

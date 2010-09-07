@@ -31,12 +31,7 @@ public class CheckHostOnline {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.mainInit();
-        TestUtils.initGUI();
-        TestUtils.initDecrypter();
-        TestUtils.initContainer();
-        TestUtils.initHosts();
-        TestUtils.finishInit();
+        TestUtils.initJD();
     }
 
     @Test
@@ -61,4 +56,5 @@ public class CheckHostOnline {
             System.out.println("\t" + pw.getHost() + "\t\t" + pw.getPlugin().getAGBLink());
         }
     }
+
 }

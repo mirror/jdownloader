@@ -20,22 +20,14 @@ import java.net.InetAddress;
 
 import jd.nrouter.RouterUtils;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import tests.utils.TestUtils;
 
 public class RouterTest {
 
-    @Before
-    public void setUp() {
-
-    }
-
     @Test
     public void ipcheck() {
-
         InetAddress address = RouterUtils.getIPFormNetStat();
 
         TestUtils.log("RouterTest getIPFormNetStat check: " + address);
@@ -44,11 +36,6 @@ public class RouterTest {
         TestUtils.log("RouterTest getIPFromRouteCommand check: " + address);
         address = RouterUtils.getIpFormHostTable();
         TestUtils.log("RouterTest getIpFormHostTable check: " + address);
-
     }
 
-    @After
-    public void tearDown() throws Exception {
-
-    }
 }

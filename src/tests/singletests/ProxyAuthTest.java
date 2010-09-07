@@ -53,12 +53,12 @@ public class ProxyAuthTest {
         if (pass != null && pass.trim().length() > 0) {
             pr.setPass(pass);
         }
-//        Browser.setGlobalProxy(pr);
+        // Browser.setGlobalProxy(pr);
 
         try {
-Browser br = new Browser();
-br.setProxy(pr);
-br.getPage("http://freakshare.net/?language=US");
+            Browser br = new Browser();
+            br.setProxy(pr);
+            br.getPage("http://freakshare.net/?language=US");
             String ip = IPCheck.getIPAddress();
             InetSocketAddress proxyadress = new InetSocketAddress(pr.getHost(), pr.getPort());
             String proxyip = proxyadress.getAddress().getHostAddress();
@@ -73,4 +73,5 @@ br.getPage("http://freakshare.net/?language=US");
 
         }
     }
+
 }
