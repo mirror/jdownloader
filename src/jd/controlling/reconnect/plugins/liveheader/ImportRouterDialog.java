@@ -54,7 +54,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 
-public class ImportRouterDialog extends AbstractDialog<Object> {
+public class ImportRouterDialog extends AbstractDialog<Integer> {
 
     private static final long serialVersionUID = 2043825047691368115L;
 
@@ -87,7 +87,7 @@ public class ImportRouterDialog extends AbstractDialog<Object> {
     }
 
     @Override
-    protected Object createReturnValue() {
+    protected Integer createReturnValue() {
         return this.getReturnmask();
     }
 

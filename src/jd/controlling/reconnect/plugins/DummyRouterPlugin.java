@@ -6,7 +6,6 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.controlling.ProgressController;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -21,7 +20,7 @@ public class DummyRouterPlugin extends RouterPlugin {
     }
 
     @Override
-    public void doReconnect(final ProgressController progress) throws ReconnectException {
+    public void doReconnect() throws ReconnectException {
 
     }
 
@@ -32,7 +31,7 @@ public class DummyRouterPlugin extends RouterPlugin {
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
+        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 1", "[grow,fill]", "[][grow,fill]"));
         final JTextPane text = new JTextPane();
         text.setContentType("text/html");
         text.addHyperlinkListener(new HyperlinkListener() {

@@ -135,114 +135,151 @@ public class ReconnectPluginController {
      * 
      * @return true if ip changed
      */
-    public final boolean doReconnect() {
+    public synchronized final boolean doReconnect() {
+
         final RouterPlugin active = this.getActivePlugin();
         if (active == DummyRouterPlugin.getInstance()) { return false; }
+        final ProgressController progress = new ProgressController(this.toString(), 10, "gui.images.reconnect");
+        try {
+            progress.increase(4);
+            progress.setStatusText(JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginController.doReconnect_1", "Reconnect #") + 1);
+            int retry;
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                /*
+                 * disabled ipcheck, let run 1 reconnect round and guess it has
+                 * been successful
+                 */
 
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            /*
-             * disabled ipcheck, let run 1 reconnect round and guess it has been
-             * successful
-             */
-            this.doReconnectInternal(1);
+                this.doReconnect(this.getActivePlugin());
+                progress.setStatusText(JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginController.doReconnect_2", "Reconnection successfull"));
 
-            return true;
-        } else {
-            int maxretries = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RETRIES, 5);
-            boolean ret = false;
-            int retry = 0;
-            if (maxretries < 0) {
-                maxretries = Integer.MAX_VALUE;
-            } else if (maxretries == 0) {
-                maxretries = 1;
-            }
-            for (retry = 0; retry < maxretries; retry++) {
-                if ((ret = this.doReconnectInternal(retry + 1)) == true) {
-                    break;
+                return true;
+            } else {
+                int maxretries = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RETRIES, 5);
+                boolean ret = false;
+                retry = 0;
+                if (maxretries < 0) {
+                    maxretries = Integer.MAX_VALUE;
+                } else if (maxretries == 0) {
+                    maxretries = 1;
                 }
+                progress.setRange(maxretries + 10, 10);
+                for (retry = 0; retry < maxretries; retry++) {
+                    ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + (retry + 1));
+                    progress.increase(1);
+                    progress.setStatusText(JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginController.doReconnect_1", "Reconnect #") + (retry + 1));
+                    if ((ret = this.doReconnect(this.getActivePlugin())) == true) {
+                        break;
+                    }
+                }
+                return ret;
             }
-            return ret;
+        } finally {
+            progress.doFinalize(1000);
         }
     }
 
-    public final boolean doReconnectInternal(final int retry) {
-        final ProgressController progress = new ProgressController(this.toString(), 10, "gui.images.reconnect");
-        progress.setStatusText(JDL.L("reconnect.progress.1_retries", "Reconnect #") + retry);
+    /**
+     * Performs a reconnect with plugin plg.
+     * 
+     * @param retry
+     * @param plg
+     * @return
+     */
+    public final boolean doReconnect(final RouterPlugin plg) {
+
+        final Configuration configuration = JDUtilities.getConfiguration();
+        final int waitForIp = configuration.getIntegerProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, 30);
+        final int checkInterval = this.getIpCheckInterval();
+
+        final int waittime = this.getWaittimeBeforeFirstIPCheck();
+
+        final String preIp = this.getExternalIP();
+
         try {
-            final Configuration configuration = JDUtilities.getConfiguration();
-            final int waitForIp = configuration.getIntegerProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, 30);
-            final int checkInterval = this.getIpCheckInterval();
+            plg.doReconnect();
+        } catch (final Exception e) {
 
-            final int waittime = this.getWaittimeBeforeFirstIPCheck();
+            e.printStackTrace();
+            ReconnectPluginController.LOG.severe("An error occured while processing the reconnect ... Terminating");
+            return false;
+        }
 
-            ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + retry);
-            final String preIp = this.getExternalIP();
-
-            progress.increase(1);
-            progress.setStatusText(JDL.L("reconnect.progress.2_oldIP", "Reconnect Old IP:") + preIp);
+        ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");
+        try {
+            Thread.sleep(waittime * 1000);
+        } catch (final InterruptedException e) {
+        }
+        boolean offline = false;
+        String afterIP = this.getExternalIP();
+        if (preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
+            // connection is offline now.
+            offline = true;
+            ReconnectPluginController.LOG.finer("OFFLINE NOW");
+        }
+        long endTime = System.currentTimeMillis() + waitForIp * 1000;
+        ReconnectPluginController.LOG.info("Wait " + waitForIp + " sec for new ip");
+        while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
 
             try {
-                this.getActivePlugin().doReconnect(progress);
-            } catch (final Exception e) {
-                progress.doFinalize();
-                e.printStackTrace();
-                ReconnectPluginController.LOG.severe("An error occured while processing the reconnect ... Terminating");
+                Thread.sleep(checkInterval * 1000);
+            } catch (final InterruptedException e) {
+            }
+            afterIP = this.getExternalIP();
+            ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+            if (!offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
+                // connection is offline now.
+                offline = true;
+                ReconnectPluginController.LOG.finer("OFFLINE NOW");
+            }
+            if (offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && afterIP.equals(preIp)) {
+                ReconnectPluginController.LOG.finer("Has been offline and is now online with same IP. Fail");
                 return false;
             }
 
-            ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");
-            try {
-                Thread.sleep(waittime * 1000);
-            } catch (final InterruptedException e) {
-            }
-            String afterIP = this.getExternalIP();
-            progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
-            long endTime = System.currentTimeMillis() + waitForIp * 1000;
-            ReconnectPluginController.LOG.info("Wait " + waitForIp + " sec for new ip");
+        }
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) { return true; }
+        ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+        if ((afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE) && !afterIP.equals(preIp)) {
+            ReconnectPluginController.LOG.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
+            endTime = System.currentTimeMillis() + 120 * 1000;
             while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-                ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+
                 try {
                     Thread.sleep(checkInterval * 1000);
                 } catch (final InterruptedException e) {
                 }
                 afterIP = this.getExternalIP();
-                progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
-            }
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) { return true; }
-            ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
-            if ((afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE) && !afterIP.equals(preIp)) {
-                ReconnectPluginController.LOG.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
-                endTime = System.currentTimeMillis() + 120 * 1000;
-                while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-                    ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
-                    try {
-                        Thread.sleep(5 * 1000);
-                    } catch (final InterruptedException e) {
-                    }
-                    afterIP = this.getExternalIP();
-                    progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", preIp, afterIP));
+                ReconnectPluginController.LOG.finer("IP before2: " + preIp + " after: " + afterIP);
+                if (!offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
+                    // connection is offline now.
+                    offline = true;
+                    ReconnectPluginController.LOG.finer("OFFLINE NOW");
                 }
-            }
-
-            if (!afterIP.equals(preIp) && !(afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-                ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
-                /* Reconnect scheint erfolgreich gewesen zu sein */
-                /* nun IP validieren */
-                if (!IPAddress.validateIP(afterIP)) {
-                    ReconnectPluginController.LOG.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
-                    UserIF.getInstance().displayMiniWarning(JDL.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDL.LF("reconnect.ipfiltered.warning.short", "The IP %s is not allowed!", afterIP));
-                    Reconnecter.setCurrentIP(RouterPlugin.NOT_AVAILABLE);
+                if (offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && afterIP.equals(preIp)) {
+                    ReconnectPluginController.LOG.finer("Has been offline and is now online with same IP. Fail");
                     return false;
-                } else {
-                    progress.doFinalize();
-                    Reconnecter.setCurrentIP(afterIP);
-                    return true;
                 }
             }
-            return false;
-        } finally {
-            progress.doFinalize();
         }
+
+        if (!afterIP.equals(preIp) && !(afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
+            ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+            /* Reconnect scheint erfolgreich gewesen zu sein */
+            /* nun IP validieren */
+            if (!IPAddress.validateIP(afterIP)) {
+                ReconnectPluginController.LOG.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
+                UserIF.getInstance().displayMiniWarning(JDL.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDL.LF("reconnect.ipfiltered.warning.short", "The IP %s is not allowed!", afterIP));
+                Reconnecter.setCurrentIP(RouterPlugin.NOT_AVAILABLE);
+                return false;
+            } else {
+
+                Reconnecter.setCurrentIP(afterIP);
+                return true;
+            }
+        }
+        return false;
+
     }
 
     /**
@@ -290,7 +327,7 @@ public class ReconnectPluginController {
 
     /**
      * returns the gui panel. This mopdule uses the new appwork JSonStorage and
-     * does not need to use teh old ConfigPanel System.
+     * does not need to use the old ConfigPanel System.
      * 
      * @return
      */

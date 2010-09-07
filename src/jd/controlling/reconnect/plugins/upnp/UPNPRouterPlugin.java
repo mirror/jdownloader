@@ -1,6 +1,7 @@
 package jd.controlling.reconnect.plugins.upnp;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -20,7 +21,6 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
@@ -39,7 +39,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.ProgressController;
 import jd.controlling.reconnect.plugins.GetIpException;
 import jd.controlling.reconnect.plugins.ReconnectException;
 import jd.controlling.reconnect.plugins.ReconnectPluginController;
@@ -63,7 +62,6 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.lobobrowser.util.OS;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -119,10 +117,13 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
 
                 }
 
-            }, 0, "Looking for routers", "Wait while JDownloader is looking for router interfaces", null);
+            }, 0, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"),
 
+            Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), null);
+            dialog.setPreferredSize(new Dimension(500, 150));
             Dialog.getInstance().showDialog(dialog);
             if (this.devices != null && this.devices.size() > 0) {
+
                 this.autoFind();
             }
         } else if (e.getSource() == this.find) {
@@ -140,7 +141,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                     try {
                         final ArrayList<UpnpRouterDevice> devices = UPNPRouterPlugin.this.scanDevices();
                         if (Thread.currentThread().isInterrupted()) { return; }
-                        final int ret = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, "Select Router", "Please select the router that handles your internet connection", devices.toArray(new HashMap[] {}), 0, null, null, null, new DefaultListCellRenderer() {
+                        final int ret = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"),
+
+                        Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), devices.toArray(new HashMap[] {}), 0, null, null, null, new DefaultListCellRenderer() {
 
                             private static final long serialVersionUID = 3607383089555373774L;
 
@@ -176,108 +179,84 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
         new Thread("UPNPFinder") {
             public void run() {
                 try {
-                    if (UPNPRouterPlugin.this.devices == null || UPNPRouterPlugin.this.devices.size() == 0) {
-                        UPNPRouterPlugin.this.devices = UPNPRouterPlugin.this.scanDevices();
-                    }
-                    if (UPNPRouterPlugin.this.devices.size() > 0) {
-                        final ConfirmDialog cDialog = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.title", "UPNP Router found"), Loc.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.message", "It seems that your reconnection is not setup perfectly. JDownloader found %s UPNPRouter device(s).\r\n\r\nShould JDownloader try to auto-configure your reconnect?", UPNPRouterPlugin.this.devices.size()), null, null, null);
-                        cDialog.setLeftActions(new AbstractAction(Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.morebutton", " ... read more")) {
 
-                            private static final long serialVersionUID = 1L;
+                    // final ProgressGetter progressGetter, final int
+                    // flags,
+                    // final String title, final String message, final
+                    // ImageIcon
+                    // icon
+                    final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
 
-                            public void actionPerformed(final ActionEvent e) {
-                                try {
-                                    OS.launchBrowser("http://board.jdownloader.org/showthread.php?t=16450");
-                                } catch (final IOException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
+                        private UpnpRouterDevice device;
+                        private int              progress;
 
-                        });
-                        cDialog.displayDialog();
-
-                        if (Dialog.isOK(Dialog.getInstance().showDialog(cDialog))) {
-
-                            // final ProgressGetter progressGetter, final int
-                            // flags,
-                            // final String title, final String message, final
-                            // ImageIcon
-                            // icon
-                            final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
-
-                                private UpnpRouterDevice device;
-                                private int              progress;
-
-                                public int getProgress() {
-                                    return this.progress;
-                                }
-
-                                public String getString() {
-                                    return this.device != null ? this.device.getFriendlyname() : "";
-                                }
-
-                                public void run() throws Exception {
-                                    // used for progresscontroll only
-                                    int steps = 0;
-                                    final int maxSteps = UPNPRouterPlugin.this.devices.size() * 22;
-                                    int deviceCount = 0;
-                                    loop: for (final UpnpRouterDevice device : UPNPRouterPlugin.this.devices) {
-                                        steps++;
-                                        this.progress = steps * 100 / maxSteps;
-                                        try {
-                                            this.device = device;
-                                            UPNPRouterPlugin.this.setDevice(device);
-                                            // get real ext IP:
-
-                                            final String ipBefore = ReconnectPluginController.getInstance().getExternalIP();
-                                            // TODO what if ipBefore is null
-                                            String ipAfter;
-                                            UPNPRouterPlugin.this.doReconnect(null);
-                                            // wait max 20 seconds
-                                            for (int w = 0; w < 20; w++) {
-                                                steps++;
-                                                this.progress = steps * 100 / maxSteps;
-                                                ipAfter = ReconnectPluginController.getInstance().getExternalIP();
-                                                ;
-
-                                                if (ipAfter != RouterPlugin.NOT_AVAILABLE && ipAfter != RouterPlugin.OFFLINE && !ipBefore.equals(ipAfter)) {
-                                                    // success
-                                                    break loop;
-                                                }
-                                            }
-                                            steps++;
-                                            this.progress = steps * 100 / maxSteps;
-                                        } catch (final Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                        deviceCount++;
-                                        steps = deviceCount * 22;
-                                        this.progress = steps * 100 / maxSteps;
-                                        this.device = null;
-                                        UPNPRouterPlugin.this.setDevice(null);
-                                    }
-
-                                }
-
-                            }, 0, "Check Devices", "JDownloader now tests all found Router devices", null);
-
-                            Dialog.getInstance().showDialog(dialog);
-
-                            // test is done here. if we found a successfull
-                            // device, it
-                            // is already set
-
-                            UPNPRouterPlugin.this.storage.put(UPNPRouterPlugin.TRIED_AUTOFIND, true);
-                            if (UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.CONTROLURL, null) != null) {
-
-                                final ImageIcon icon = JDTheme.II("gui.images.ok", 32, 32);
-
-                                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.title", "Successfull"), JDL.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.message", "JD set up the reconnection settings successfully!\r\n\r\nYour Router is \r\n'%s'", UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
-                                ReconnectPluginController.getInstance().activatePluginReconnect(UPNPRouterPlugin.this);
-                            }
+                        public int getProgress() {
+                            return this.progress;
                         }
+
+                        public String getString() {
+                            return this.device != null ? this.device.getFriendlyname() : "";
+                        }
+
+                        public void run() throws Exception {
+                            // used for progresscontroll only
+                            int steps = 0;
+                            final int maxSteps = UPNPRouterPlugin.this.devices.size();
+
+                            for (final UpnpRouterDevice device : UPNPRouterPlugin.this.devices) {
+                                steps++;
+
+                                this.progress = -1;
+                                try {
+                                    UPNPRouterPlugin.this.setDevice(device);
+                                    if (ReconnectPluginController.getInstance().doReconnect(UPNPRouterPlugin.this)) {
+                                        this.progress = 100;
+                                        return;
+                                    }
+                                    this.progress = steps * 100 / maxSteps;
+                                } catch (final Exception e) {
+                                    e.printStackTrace();
+                                }
+                                this.progress = steps * 100 / maxSteps;
+                                if (this.progress < 100) {
+                                    Thread.sleep(2000);
+                                }
+
+                                this.device = null;
+                                UPNPRouterPlugin.this.setDevice(null);
+                            }
+
+                        }
+
+                    }, 0, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"),
+
+                    Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.test.message", "Testing each network devices for reconnect and IP change features."), null);
+                    dialog.setPreferredSize(new Dimension(500, 150));
+                    Dialog.getInstance().showDialog(dialog);
+
+                    // test is done here. if we found a successfull
+                    // device, it
+                    // is already set
+
+                    UPNPRouterPlugin.this.storage.put(UPNPRouterPlugin.TRIED_AUTOFIND, true);
+                    if (UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.CONTROLURL, null) != null) {
+
+                        final ImageIcon icon = JDTheme.II("gui.images.ok", 32, 32);
+
+                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.title", "Successfull"), JDL.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.message", "JD set up the reconnection settings successfully!\r\n\r\nYour Router is \r\n'%s'", UPNPRouterPlugin.this.storage.get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
+
+                        d.setPreferredSize(new Dimension(500, 150));
+                        Dialog.getInstance().showDialog(d);
+                        ReconnectPluginController.getInstance().activatePluginReconnect(UPNPRouterPlugin.this);
+                    } else {
+                        final ImageIcon icon = JDTheme.II("gui.images.bad", 32, 32);
+
+                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.faileddialog.title", "Failed"), JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.faileddialog.message", "Could not find any working UPNP Routers"), icon, null, null);
+                        d.setPreferredSize(new Dimension(500, 150));
+                        Dialog.getInstance().showDialog(d);
                     }
-                } catch (final IOException e) {
+
+                } catch (final Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -292,12 +271,43 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
         final boolean rcOK = configuration.getBooleanProperty(Configuration.PARAM_RECONNECT_OKAY, true);
         final int failCount = configuration.getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0);
         switch (event.getEventID()) {
-
+        // if (UPNPRouterPlugin.this.devices == null ||
+        // UPNPRouterPlugin.this.devices.size() == 0) {
+        // UPNPRouterPlugin.this.devices = UPNPRouterPlugin.this.scanDevices();
+        // }
+        // if (UPNPRouterPlugin.this.devices.size() > 0) {
+        // final ConfirmDialog cDialog = new
+        // ConfirmDialog(Dialog.LOGIC_COUNTDOWN |
+        // Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
+        // Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.title",
+        // "UPNP Router found"),
+        // Loc.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.message",
+        // "It seems that your reconnection is not setup perfectly. JDownloader found %s UPNPRouter device(s).\r\n\r\nShould JDownloader try to auto-configure your reconnect?",
+        // UPNPRouterPlugin.this.devices.size()), null, null, null);
+        // cDialog.setLeftActions(new
+        // AbstractAction(Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.morebutton",
+        // " ... read more")) {
+        //
+        // private static final long serialVersionUID = 1L;
+        //
+        // public void actionPerformed(final ActionEvent e) {
+        // try {
+        // OS.launchBrowser("http://board.jdownloader.org/showthread.php?t=16450");
+        // } catch (final IOException e1) {
+        // e1.printStackTrace();
+        // }
+        // }
+        //
+        // });
+        // cDialog.displayDialog();
+        //
+        // if (Dialog.isOK(Dialog.getInstance().showDialog(cDialog))) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
 
             // case: autoreconnect disable ddue to too many failed
             if (!allowed && !rcOK && failCount == 0) {
                 // try to autoconfiger upnp router
+
                 this.autoFind();
             } else if (allowed && failCount > 0) {
                 // reconnect failed
@@ -318,7 +328,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
     }
 
     @Override
-    public void doReconnect(final ProgressController progress) throws ReconnectException {
+    public void doReconnect() throws ReconnectException {
 
         try {
             this.runCommand(this.storage.get(UpnpRouterDevice.SERVICETYPE, ""), this.storage.get(UpnpRouterDevice.CONTROLURL, ""), "ForceTermination");
@@ -464,7 +474,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
 
     public int getWaittimeBeforeFirstIPCheck() {
         // if ipcheck is done over upnp, we do not have to use long intervals
-        return 1;
+        return 0;
     }
 
     @Override
@@ -696,12 +706,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, Co
                 this.storage.put(next.getKey(), next.getValue());
             }
             this.setCanCheckIP(true);
-            try {
-                final String ip = this.getIP(upnpRouterDevice.getServiceType(), upnpRouterDevice.getControlURL());
-                this.storage.put(UPNPRouterPlugin.EXTERNALIP, ip);
-            } catch (final GetIpException e) {
-                e.printStackTrace();
-            }
+
             this.updateGUI();
         }
     }

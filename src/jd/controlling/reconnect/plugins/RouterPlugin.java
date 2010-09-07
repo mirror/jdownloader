@@ -2,7 +2,6 @@ package jd.controlling.reconnect.plugins;
 
 import javax.swing.JComponent;
 
-import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.utils.JDUtilities;
 
@@ -21,28 +20,12 @@ public abstract class RouterPlugin {
     public static final String NOT_AVAILABLE = "na";
 
     /**
-     * returns true, if this router implementation is able to check the external
-     * IP
-     * 
-     * @return
-     */
-    public abstract boolean isIPCheckEnabled();
-
-    /**
-     * returns true, if this router implementation is able to perform a
-     * reconnect
-     * 
-     * @return
-     */
-    public abstract boolean isReconnectionEnabled();
-
-    /**
      * performs all reconnect actions
      * 
      * @param progress
      * @return
      */
-    public abstract void doReconnect(ProgressController progress) throws ReconnectException;
+    public abstract void doReconnect() throws ReconnectException;
 
     /**
      * returns the external IP
@@ -96,6 +79,22 @@ public abstract class RouterPlugin {
     public int getWaittimeBeforeFirstIPCheck() {
         return JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, 5);
     }
+
+    /**
+     * returns true, if this router implementation is able to check the external
+     * IP
+     * 
+     * @return
+     */
+    public abstract boolean isIPCheckEnabled();
+
+    /**
+     * returns true, if this router implementation is able to perform a
+     * reconnect
+     * 
+     * @return
+     */
+    public abstract boolean isReconnectionEnabled();
 
     public abstract void setCanCheckIP(boolean b);
 

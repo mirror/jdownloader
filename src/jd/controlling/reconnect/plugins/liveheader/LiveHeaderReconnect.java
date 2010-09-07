@@ -126,7 +126,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     @Override
-    public void doReconnect(final ProgressController progress) throws ReconnectException {
+    public void doReconnect() throws ReconnectException {
         String script;
 
         script = this.getScript();
@@ -136,7 +136,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         final String ip = this.getRouterIP();
 
         if (script == null || script.length() == 0) {
-            progress.doFinalize();
+
             LiveHeaderReconnect.LOG.severe("No LiveHeader Script found");
             throw new ReconnectException("No LiveHeader Script found");
         }
@@ -168,23 +168,22 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         try {
             xmlScript = JDUtilities.parseXmlString(script, false);
             if (xmlScript == null) {
-                progress.doFinalize();
+
                 LiveHeaderReconnect.LOG.severe("Error while parsing the xml string: " + script);
                 throw new ReconnectException("Error while parsing the xml string");
 
             }
             final Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
-                progress.doFinalize();
+
                 LiveHeaderReconnect.LOG.severe("Root Node must be [[[HSRC]]]*[/HSRC]");
                 throw new ReconnectException("Error while parsing the xml string. Root Node must be [[[HSRC]]]*[/HSRC]");
             }
 
             final NodeList steps = root.getChildNodes();
-            progress.addToMax(steps.getLength());
+
             for (int step = 0; step < steps.getLength(); step++) {
-                progress.setStatusText(JDL.LF(LiveHeaderReconnect.JDL_PREFIX + "step", "HTTPLiveHeader: Step %s", step));
-                progress.increase(1);
+
                 final Node current = steps.item(step);
 
                 if (current.getNodeType() == 3) {
@@ -192,7 +191,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                 }
 
                 if (!current.getNodeName().equalsIgnoreCase("STEP")) {
-                    progress.doFinalize();
+
                     LiveHeaderReconnect.LOG.severe("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
                     throw new ReconnectException("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
 
@@ -201,8 +200,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                 final int toDosLength = toDos.getLength();
                 for (int toDoStep = 0; toDoStep < toDosLength; toDoStep++) {
                     final Node toDo = toDos.item(toDoStep);
-
-                    progress.setStatusText(JDL.LF(LiveHeaderReconnect.JDL_PREFIX + "step", "HTTPLiveHeader: Step %s", toDo.getNodeName()));
 
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
@@ -277,7 +274,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                         boolean ishttps = false;
                         boolean israw = false;
                         if (toDo.getChildNodes().getLength() != 1) {
-                            progress.doFinalize();
+
                             LiveHeaderReconnect.LOG.severe("A REQUEST Tag is not allowed to have childTags.");
                             throw new ReconnectException("A REQUEST Tag is not allowed to have childTags.");
 
@@ -310,7 +307,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                     if (toDo.getNodeName().equalsIgnoreCase("RESPONSE")) {
                         LiveHeaderReconnect.LOG.finer("get Response");
                         if (toDo.getChildNodes().getLength() != 1) {
-                            progress.doFinalize();
+
                             LiveHeaderReconnect.LOG.severe("A RESPONSE Tag is not allowed to have childTags.");
                             throw new ReconnectException("A RESPONSE Tag is not allowed to have childTags.");
 
@@ -318,7 +315,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
                         final NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("keys") == null) {
-                            progress.doFinalize();
+
                             LiveHeaderReconnect.LOG.severe("A RESPONSE Node needs a Keys Attribute: " + toDo);
                             throw new ReconnectException("A RESPONSE Node needs a Keys Attribute: " + toDo);
 
@@ -364,7 +361,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             }
         } catch (final Exception e) {
             JDLogger.exception(e);
-            progress.doFinalize();
+
             LiveHeaderReconnect.LOG.severe(e.getCause() + " : " + e.getMessage());
             throw new ReconnectException(e);
         }
@@ -517,18 +514,19 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
                 final ImportRouterDialog importDialog = new ImportRouterDialog(LiveHeaderReconnect.getLHScripts());
                 // clrDialog.setPreferredSize(new Dimension(500, 400));
-                Dialog.getInstance().showDialog(importDialog);
-                final String[] data = importDialog.getResult();
+                if (Dialog.isOK(Dialog.getInstance().showDialog(importDialog))) {
+                    final String[] data = importDialog.getResult();
 
-                if (data != null) {
+                    if (data != null) {
 
-                    if (data[2].toLowerCase().indexOf("curl") >= 0) {
-                        UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
+                        if (data[2].toLowerCase().indexOf("curl") >= 0) {
+                            UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
+                        }
+
+                        dialog.setDefaultMessage(data[2]);
+                        LiveHeaderReconnect.this.setRouterName(data[0] + " - " + data[1]);
+
                     }
-
-                    dialog.setDefaultMessage(data[2]);
-                    LiveHeaderReconnect.this.setRouterName(data[0] + " - " + data[1]);
-
                 }
 
             }
@@ -545,6 +543,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                 clrDialog.setPreferredSize(new Dimension(500, 400));
                 final String clr = Dialog.getInstance().showDialog(clrDialog);
                 if (clr == null) { return; }
+
                 final String[] ret = CLRLoader.createLiveHeader(clr);
 
                 String script;
