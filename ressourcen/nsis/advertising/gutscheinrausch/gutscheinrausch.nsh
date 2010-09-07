@@ -35,15 +35,13 @@ Section "-Gutscheinrausch" SecAdvertising #Hidden (dialog before)
   
     ; If user agrees to install Gutscheinrausch  
     ${If} $R0 == 1
-        #ReadRegStr $R8 HKLM "SOFTWARE\Mozilla\Mozilla Firefox" "CurrentVersion"
-        #ReadRegStr $R9 HKLM "SOFTWARE\Mozilla\Mozilla Firefox\$R8\Main" "PathToExe"
-        #${If} $R9 != ""
-            SetShellVarContext current
-            SetOutPath "$APPDATA\Mozilla\Extensions\{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-            File "advertising\gutscheinrausch\gutscheinrausch.xpi"
-            #Exec '"$R9" -install-global-extension "$INSTDIR\gutscheinrausch.xpi"'
-            #Delete "$INSTDIR\gutscheinrausch.xpi"
-        #${EndIf}
+        SetShellVarContext current
+        SetOutPath "$APPDATA\Mozilla\Extensions\{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+        File "advertising\gutscheinrausch\gutscheinrausch.xpi"
+
+        GetTempFileName $R1
+        NSISdl::download_quiet "http://jdownloader.org:8080/advert/track.php?event=advertising_install&id=gsr" $R1
+        Delete /REBOOTOK $R1
     ${EndIf}
     
     WriteRegStr SHELL_CONTEXT "${REGKEY}\Components" SecAdvertising 1 
