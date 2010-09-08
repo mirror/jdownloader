@@ -122,7 +122,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     @Override
-    public void doReconnect() throws ReconnectException {
+    protected void performReconnect() throws ReconnectException {
         String script;
 
         script = this.getScript();

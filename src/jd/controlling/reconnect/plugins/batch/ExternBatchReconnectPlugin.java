@@ -52,7 +52,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     }
 
     @Override
-    public void doReconnect() throws ReconnectException {
+    protected void performReconnect() throws ReconnectException {
         final int waitForReturn = this.getWaitForReturn();
         final String executeIn = this.getExecuteIn();
 

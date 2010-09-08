@@ -24,7 +24,7 @@ public class DummyRouterPlugin extends RouterPlugin {
     }
 
     @Override
-    public void doReconnect() throws ReconnectException {
+    protected void performReconnect() throws ReconnectException {
 
     }
 

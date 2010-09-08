@@ -62,7 +62,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     }
 
     @Override
-    public void doReconnect() throws ReconnectException {
+    protected void performReconnect() throws ReconnectException {
         final int waitForReturn = this.getWaitForReturn();
         final String command = this.getCommand();
         if (command.length() == 0) { throw new ReconnectException("Command Invalid: " + command); }

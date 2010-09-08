@@ -55,6 +55,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
     private JLabel                lblBeforeIpLabel;
     private JLabel                lblBeforeIP;
     private JScrollPane           scrollPane;
+    private JButton               autoButton;
 
     protected static final Logger LOG = JDLogger.getLogger();
 
@@ -67,6 +68,8 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == this.btnTest) {
             this.testReconnect();
+        } else if (e.getSource() == this.autoButton) {
+            ReconnectPluginController.getInstance().autoFind();
         } else {
             ReconnectPluginController.getInstance().setActivePlugin((RouterPlugin) this.combobox.getSelectedItem());
             //
@@ -78,10 +81,12 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
 
         this.combobox = new JComboBox(ReconnectPluginController.getInstance().getPlugins().toArray(new RouterPlugin[] {}));
         this.scrollPane = new JScrollPane();
-
+        this.autoButton = new JButton("Reconnect Wizard");
+        this.autoButton.addActionListener(this);
         this.add(Factory.createHeader("Reconnection", JDTheme.II("gui.images.config.reconnect", 32, 32)), "spanx");
-        this.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginConfigGUI.initGUI.comboboxlabel", "Reconnect Method:")), "split 2,shrinkx,gapleft 37");
+        this.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginConfigGUI.initGUI.comboboxlabel", "Reconnect Method:")), "split 3,shrinkx,gapleft 37");
         this.add(this.combobox, "growx, pushx");
+        this.add(this.autoButton);
 
         this.add(this.scrollPane, "gapleft 37");
         // this.viewPort.setView(((RouterPlugin)

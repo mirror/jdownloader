@@ -18,6 +18,8 @@ public abstract class RouterPlugin {
     protected static final Logger LOG           = JDLogger.getLogger();
 
     private final Storage         storage;
+
+    private long                  lastDuration;
     /**
      * Constant that has to be returned by {@link #getExternalIP()} if there is
      * no internet connection
@@ -35,12 +37,20 @@ public abstract class RouterPlugin {
     }
 
     /**
-     * performs all reconnect actions
+     * Finds all settings for a complete reconnect without user interaction
      * 
-     * @param progress
      * @return
      */
-    public abstract void doReconnect() throws ReconnectException;
+    public int autoDetection() {
+        // TODO Auto-generated method stub
+        return -1;
+    }
+
+    final public void doReconnect() throws ReconnectException {
+        final long start = System.currentTimeMillis();
+        this.performReconnect();
+        this.lastDuration = System.currentTimeMillis() - start;
+    }
 
     /**
      * returns the external IP
@@ -79,6 +89,15 @@ public abstract class RouterPlugin {
     }
 
     /**
+     * returns the duration fot he latest reconnect call in ms
+     * 
+     * @return
+     */
+    public long getLastDuration() {
+        return this.lastDuration;
+    }
+
+    /**
      * Returns a translated readable name of the plugin
      * 
      * @return
@@ -105,6 +124,28 @@ public abstract class RouterPlugin {
     }
 
     /**
+     * Returns if this plugin might be able to find a valid setup without any
+     * userinteraktion
+     * 
+     * @return
+     */
+    public boolean hasAutoDetection() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /**
+     * If the plugin has an interactive Settingsdetection wizard, this method
+     * has to return true;
+     * 
+     * @return
+     */
+    public boolean hasDetectionWizard() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /**
      * returns true, if this router implementation is able to check the external
      * IP
      * 
@@ -119,6 +160,25 @@ public abstract class RouterPlugin {
      * @return
      */
     public abstract boolean isReconnectionEnabled();
+
+    /**
+     * performs all reconnect actions
+     * 
+     * @param progress
+     * @return
+     */
+    protected abstract void performReconnect() throws ReconnectException;
+
+    /**
+     * runs a detection wizard and
+     * 
+     * @return returns the time the reconnect took. returns -1 if the action has
+     *         not been successfull
+     */
+    public int runDetectionWizard() {
+        // TODO Auto-generated method stub
+        return -1;
+    }
 
     public abstract void setCanCheckIP(boolean b);
 

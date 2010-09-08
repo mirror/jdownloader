@@ -36,7 +36,7 @@ public class ProxyRotation extends RouterPlugin {
     }
 
     @Override
-    public void doReconnect() throws ReconnectException {
+    protected void performReconnect() throws ReconnectException {
         try {
             final String[] lines = Regex.getLines(this.getProxyList());
             // get next line in list;
