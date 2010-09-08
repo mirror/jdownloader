@@ -138,6 +138,12 @@ public class Configuration extends SubConfiguration implements Serializable {
      */
     public static final String SOCKS_TYPE = "SOCKS_TYPE";
 
+    public static final String    PARAM_IPCHECKWAITTIME = "RECONNECT_IPCHECKWAITTIME2";
+
+    public static final String    PARAM_RETRIES         = "RECONNECT_RETRIES2";
+
+    public static final String    PARAM_WAITFORIPCHANGE = "RECONNECT_WAITFORIPCHANGE2";
+
     /**
      * Konstruktor für ein Configuration Object
      */

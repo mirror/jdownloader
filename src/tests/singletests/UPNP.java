@@ -18,7 +18,7 @@ package tests.singletests;
 
 import java.net.InetAddress;
 
-import jd.nrouter.RouterUtils;
+import jd.controlling.reconnect.RouterUtils;
 import jd.nrouter.UPNPRouter;
 
 import org.junit.Test;

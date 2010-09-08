@@ -22,9 +22,9 @@ import static org.junit.Assert.fail;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 
+import jd.controlling.reconnect.IPCheck;
 import jd.http.Browser;
 import jd.http.JDProxy;
-import jd.nrouter.IPCheck;
 
 import org.junit.Before;
 import org.junit.Test;

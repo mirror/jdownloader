@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.nrouter;
+package jd.controlling.reconnect;
 
 import java.net.URL;
 import java.util.ArrayList;

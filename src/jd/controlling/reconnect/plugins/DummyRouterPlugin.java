@@ -19,6 +19,10 @@ public class DummyRouterPlugin extends RouterPlugin {
         return DummyRouterPlugin.INSTANCE;
     }
 
+    private DummyRouterPlugin() {
+
+    }
+
     @Override
     public void doReconnect() throws ReconnectException {
 

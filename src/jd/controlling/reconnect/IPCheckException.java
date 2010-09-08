@@ -1,4 +1,4 @@
-package jd.nrouter;
+package jd.controlling.reconnect;
 
 public class IPCheckException extends Exception {
 

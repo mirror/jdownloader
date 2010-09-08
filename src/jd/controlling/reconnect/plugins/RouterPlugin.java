@@ -1,23 +1,38 @@
 package jd.controlling.reconnect.plugins;
 
+import java.util.logging.Logger;
+
 import javax.swing.JComponent;
 
-import jd.controlling.reconnect.ReconnectMethod;
+import jd.config.Configuration;
+import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
 
 import com.sun.istack.internal.Nullable;
 
 public abstract class RouterPlugin {
+
+    protected static final Logger LOG           = JDLogger.getLogger();
+
+    private final Storage         storage;
     /**
      * Constant that has to be returned by {@link #getExternalIP()} if there is
      * no internet connection
      */
-    public static final String OFFLINE       = "offline";
+    public static final String    OFFLINE       = "offline";
+
     /**
      * constant that has to be returned by {@link #getExternalIP()} if a ip
      * chekc is temp. not available
      */
-    public static final String NOT_AVAILABLE = "na";
+    public static final String    NOT_AVAILABLE = "na";
+
+    public RouterPlugin() {
+        this.storage = JSonStorage.getPlainStorage(this.getID());
+    }
 
     /**
      * performs all reconnect actions
@@ -71,13 +86,22 @@ public abstract class RouterPlugin {
     public abstract String getName();
 
     /**
+     * Returns the storage INstance for this plugin
+     * 
+     * @return
+     */
+    public Storage getStorage() {
+        return this.storage;
+    }
+
+    /**
      * override this method to set a special waittime. For example, if the check
      * is local through the users router, we do not have to wait long.<br>
      * By default, this method returns the settings form advanced reconnect
      * panel
      */
     public int getWaittimeBeforeFirstIPCheck() {
-        return JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, 5);
+        return JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_IPCHECKWAITTIME, 5);
     }
 
     /**

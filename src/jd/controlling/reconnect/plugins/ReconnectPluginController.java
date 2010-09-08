@@ -22,12 +22,15 @@ import jd.config.SubConfiguration;
 import jd.controlling.CodeVerifier;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.controlling.reconnect.ReconnectMethod;
+import jd.controlling.reconnect.IPCheck;
 import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.plugins.batch.ExternBatchReconnectPlugin;
+import jd.controlling.reconnect.plugins.extern.ExternReconnectPlugin;
+import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.gui.UserIF;
-import jd.nrouter.IPCheck;
 import jd.nutils.IPAddress;
 import jd.nutils.io.JDFileFilter;
+import jd.utils.CLRLoader;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -38,7 +41,7 @@ import org.appwork.utils.logging.Log;
 import com.sun.istack.internal.Nullable;
 
 public class ReconnectPluginController {
-    public static final String                     PRO_ACTIVEPLUGIN = "ACTIVEPLUGIN";
+    public static final String                     PRO_ACTIVEPLUGIN = "ACTIVEPLUGIN2";
 
     private static final ReconnectPluginController INSTANCE         = new ReconnectPluginController();
 
@@ -120,14 +123,43 @@ public class ReconnectPluginController {
     }
 
     /**
-     * Activates Special reconnect for the givven reconnect plugin
+     * Maps old reconnect panel, to new one. can be removed after 2.*
      * 
-     * @param upnpRouterPlugin
+     * @return
      */
-    public void activatePluginReconnect(final RouterPlugin plg) {
-        this.setActivePlugin(plg);
-        JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.PLUGIN);
-        JDUtilities.getConfiguration();
+    /*
+     * 
+     * 
+     * public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
+     * 
+     * public static final int LIVEHEADER = 0; public static final int EXTERN =
+     * 1; public static final int BATCH = 2; public static final int CLR = 3;
+     * public static final int PLUGIN = 4;
+     */
+    private String convertFromOldSystem() {
+        final int id = JDUtilities.getConfiguration().getIntegerProperty("RECONNECT_TYPE", 0);
+        String[] ret;
+        switch (id) {
+        case 0:
+            return LiveHeaderReconnect.ID;
+        case 1:
+            return ExternReconnectPlugin.ID;
+        case 2:
+            return ExternBatchReconnectPlugin.ID;
+        case 3:
+            // we need to convert clr script
+
+            final String clr = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR);
+            ret = CLRLoader.createLiveHeader(clr);
+
+            if (ret != null) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, ret[1]);
+
+            }
+            return LiveHeaderReconnect.ID;
+
+        }
+        return DummyRouterPlugin.getInstance().getID();
     }
 
     /**
@@ -155,7 +187,7 @@ public class ReconnectPluginController {
 
                 return true;
             } else {
-                int maxretries = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RETRIES, 5);
+                int maxretries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RETRIES, 5);
                 boolean ret = false;
                 retry = 0;
                 if (maxretries < 0) {
@@ -189,7 +221,7 @@ public class ReconnectPluginController {
     public final boolean doReconnect(final RouterPlugin plg) {
 
         final Configuration configuration = JDUtilities.getConfiguration();
-        final int waitForIp = configuration.getIntegerProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, 30);
+        final int waitForIp = configuration.getIntegerProperty(Configuration.PARAM_WAITFORIPCHANGE, 30);
         final int checkInterval = this.getIpCheckInterval();
 
         final int waittime = this.getWaittimeBeforeFirstIPCheck();
@@ -288,10 +320,16 @@ public class ReconnectPluginController {
      * @return
      */
     public RouterPlugin getActivePlugin() {
-
-        RouterPlugin active = ReconnectPluginController.getInstance().getPluginByID(this.storage.get(ReconnectPluginController.PRO_ACTIVEPLUGIN, DummyRouterPlugin.getInstance().getID()));
+        // convert only once
+        String id = this.storage.get(ReconnectPluginController.PRO_ACTIVEPLUGIN, null);
+        if (id == null) {
+            id = this.convertFromOldSystem();
+            this.storage.put(ReconnectPluginController.PRO_ACTIVEPLUGIN, id);
+        }
+        RouterPlugin active = ReconnectPluginController.getInstance().getPluginByID(id);
         if (active == null) {
             active = DummyRouterPlugin.getInstance();
+            this.storage.put(ReconnectPluginController.PRO_ACTIVEPLUGIN, active.getID());
         }
         return active;
     }
@@ -392,7 +430,7 @@ public class ReconnectPluginController {
             if (this.getActivePlugin().isIPCheckEnabled()) { return this.getActivePlugin().getWaittimeBeforeFirstIPCheck();
 
             }
-            return JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, 5);
+            return JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_IPCHECKWAITTIME, 5);
 
         }
         // ip check disabled
@@ -460,8 +498,23 @@ public class ReconnectPluginController {
 
     }
 
+    /**
+     * Sets the active reconnect plugin
+     * 
+     * @param id
+     */
     public void setActivePlugin(final RouterPlugin selectedItem) {
         this.storage.put(ReconnectPluginController.PRO_ACTIVEPLUGIN, selectedItem.getID());
+
+    }
+
+    /**
+     * Sets the active reconnect plugin
+     * 
+     * @param id
+     */
+    public void setActivePlugin(final String id) {
+        this.setActivePlugin(this.getPluginByID(id));
 
     }
 }

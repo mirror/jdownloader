@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.nrouter.recorder;
+package jd.controlling.reconnect.plugins.liveheader.recorder;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -33,10 +33,11 @@ import javax.swing.WindowConstants;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.reconnect.ReconnectMethod;
+import jd.controlling.reconnect.IPCheck;
+import jd.controlling.reconnect.plugins.ReconnectPluginController;
+import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.nrouter.IPCheck;
 import jd.nutils.JDFlags;
 import jd.parser.Regex;
 import jd.utils.JDTheme;
@@ -263,8 +264,6 @@ public class Gui extends AbstractDialog<Object> {
         final int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.config.jdrr.success", "Success!"), JDL.L("gui.config.jdrr.savereconnect", "Reconnection was successful. Save now?"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
         if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
 
-            final Configuration configuration = JDUtilities.getConfiguration();
-
             final StringBuilder b = new StringBuilder();
             final String br = System.getProperty("line.separator");
             for (final String element : ReconnectRecorder.steps) {
@@ -275,15 +274,18 @@ public class Gui extends AbstractDialog<Object> {
             if (ReconnectRecorder.AUTH != null) {
                 this.user = new Regex(ReconnectRecorder.AUTH, "(.+?):").getMatch(0);
                 this.pass = new Regex(ReconnectRecorder.AUTH, ".+?:(.+)").getMatch(0);
-                configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, this.user);
-                configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, this.pass);
+
+                ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setUser(this.user);
+                ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setPassword(this.pass);
             }
             // TODO
             // btnCancel.setText(JDL.L("gui.btn_close", "Close"));
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, this.routerip.getText().trim());
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, this.methode);
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Method");
-            configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
+
+            ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setRouterIP(this.routerip.getText().trim());
+            ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setScript(this.methode);
+            ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setRouterName("Reconnect Recorder Method");
+
+            ReconnectPluginController.getInstance().setActivePlugin(LiveHeaderReconnect.ID);
             if (Gui.RECONNECT_DURATION <= 2000) {
                 Gui.RECONNECT_DURATION = 2000;
                 /* minimum von 2 seks */
@@ -296,9 +298,10 @@ public class Gui extends AbstractDialog<Object> {
             if (ab < 30) {
                 ab = 5;
             }
-            configuration.setProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, aa);
-            configuration.setProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, ab);
-            configuration.save();
+
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_IPCHECKWAITTIME, aa);
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_IPCHECKWAITTIME, ab);
+            JDUtilities.getConfiguration().save();
             this.saved = true;
             this.dispose();
         }

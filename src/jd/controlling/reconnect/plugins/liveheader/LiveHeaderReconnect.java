@@ -28,16 +28,16 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
+import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.GetIpException;
 import jd.controlling.reconnect.plugins.ReconnectException;
 import jd.controlling.reconnect.plugins.RouterPlugin;
+import jd.controlling.reconnect.plugins.liveheader.recorder.Gui;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.http.Browser;
 import jd.http.JDProxy;
 import jd.http.RequestHeader;
-import jd.nrouter.RouterUtils;
-import jd.nrouter.recorder.Gui;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -48,8 +48,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -81,7 +79,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         return ret;
     }
 
-    private final Storage           storage;
     private HashMap<String, String> variables;
     private HashMap<String, String> headerProperties;
     private JButton                 btnAuto;
@@ -95,9 +92,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     private JTextField              txtName;
 
-    protected static final Logger   LOG        = JDLogger.getLogger();
-
-    private static final String     JDL_PREFIX = "jd.controlling.reconnect.HTTPLiveHeader.";
+    protected static final Logger   LOG = JDLogger.getLogger();
+    public static final String      ID  = "httpliveheader";
 
     /*
      * DO NOT REMOVE THIS OR REPLACE BY Regex.getLines()
@@ -109,7 +105,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     public LiveHeaderReconnect() {
-        this.storage = JSonStorage.getPlainStorage(this.getID());
+        super();
 
     }
 
@@ -601,7 +597,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     @Override
     public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 10,wrap 3", "[][][grow,fill]", "[]"));
+        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 3", "[][][grow,fill]", "[]"));
         this.btnAuto = new JButton("Auto Setup");
         this.btnAuto.addActionListener(this);
         // auto search is not ready yet
@@ -674,7 +670,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     @Override
     public String getID() {
-        return "httpliveheader";
+        return LiveHeaderReconnect.ID;
     }
 
     private String getModifiedVariable(String key) {
@@ -716,12 +712,13 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     private String getPassword() {
         // convert to new storagesys
-        return this.storage.get(LiveHeaderReconnect.PASSWORD, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_PASS));
+
+        return this.getStorage().get(LiveHeaderReconnect.PASSWORD, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_PASS));
     }
 
     private String getRouterIP() {
         // convert to new storagesys
-        return this.storage.get(LiveHeaderReconnect.ROUTERIP, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP));
+        return this.getStorage().get(LiveHeaderReconnect.ROUTERIP, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP));
     }
 
     /**
@@ -730,17 +727,17 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
      * @return
      */
     public String getRouterName() {
-        return this.storage.get(LiveHeaderReconnect.ROUTERNAME, "Unknown");
+        return this.getStorage().get(LiveHeaderReconnect.ROUTERNAME, "Unknown");
     }
 
     private String getScript() {
         // convert to new storagesys
-        return this.storage.get(LiveHeaderReconnect.SCRIPT, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
+        return this.getStorage().get(LiveHeaderReconnect.SCRIPT, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
     }
 
     private String getUser() {
         // convert to new storagesys
-        return this.storage.get(LiveHeaderReconnect.USER, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_USER));
+        return this.getStorage().get(LiveHeaderReconnect.USER, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_USER));
     }
 
     private void getVariables(final String patStr, final String[] keys, final Browser br) {
@@ -821,26 +818,26 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     public void setPassword(final String pass) {
-        this.storage.get(LiveHeaderReconnect.PASSWORD, pass);
+        this.getStorage().get(LiveHeaderReconnect.PASSWORD, pass);
         this.updateGUI();
     }
 
-    protected void setRouterIP(final String hostAddress) {
-        this.storage.put(LiveHeaderReconnect.ROUTERIP, hostAddress);
+    public void setRouterIP(final String hostAddress) {
+        this.getStorage().put(LiveHeaderReconnect.ROUTERIP, hostAddress);
         this.updateGUI();
     }
 
-    protected void setRouterName(final String string) {
-        this.storage.put(LiveHeaderReconnect.ROUTERNAME, string);
+    public void setRouterName(final String string) {
+        this.getStorage().put(LiveHeaderReconnect.ROUTERNAME, string);
         this.updateGUI();
     }
 
-    private void setScript(final String newScript) {
-        this.storage.put(LiveHeaderReconnect.SCRIPT, newScript);
+    public void setScript(final String newScript) {
+        this.getStorage().put(LiveHeaderReconnect.SCRIPT, newScript);
     }
 
-    protected void setUser(final String user) {
-        this.storage.put(LiveHeaderReconnect.USER, user);
+    public void setUser(final String user) {
+        this.getStorage().put(LiveHeaderReconnect.USER, user);
     }
 
     private void updateGUI() {
@@ -850,7 +847,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                     LiveHeaderReconnect.this.txtName.setText(LiveHeaderReconnect.this.getRouterName());
                 } catch (final java.lang.IllegalStateException e) {
                     // throws an java.lang.IllegalStateException if the caller
-                    // is a changelistener of this field's document
 
                 }
                 try {

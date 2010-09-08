@@ -18,8 +18,8 @@ package tests.singletests;
 
 import java.util.ArrayList;
 
-import jd.nrouter.IPCheckException;
-import jd.nrouter.IPCheckProvider;
+import jd.controlling.reconnect.IPCheckException;
+import jd.controlling.reconnect.IPCheckProvider;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,7 +28,7 @@ public class IPCheck {
 
     @Test
     public void checkIPTable() {
-        ArrayList<IPCheckProvider> table = jd.nrouter.IPCheck.IP_CHECK_SERVICES;
+        ArrayList<IPCheckProvider> table = jd.controlling.reconnect.IPCheck.IP_CHECK_SERVICES;
         System.out.println("Number of available IPCheckProvider: " + table.size());
 
         Assert.assertFalse(table.isEmpty());

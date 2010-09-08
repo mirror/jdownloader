@@ -31,7 +31,6 @@ import jd.controlling.reconnect.plugins.ReconnectPluginController;
 import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
-import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -107,7 +106,6 @@ public final class Reconnecter {
         // direct eventsender call
         JDUtilities.getController().fireControlEvent(new ControlEvent(JDUtilities.getController(), ControlEvent.CONTROL_BEFORE_RECONNECT, messageBox));
 
-        final int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
         Reconnecter.LOG.info("Try to reconnect...");
         /* laufende downloads stoppen */
         final ArrayList<DownloadLink> disabled = DownloadWatchDog.getInstance().getRunningDownloads();
@@ -146,20 +144,9 @@ public final class Reconnecter {
             }
         } else {
             try {
-                switch (type) {
-                case ReconnectMethod.PLUGIN:
-                    ipChangeSuccess = ReconnectPluginController.getInstance().doReconnect();
 
-                    break;
-                case ReconnectMethod.EXTERN:
-                    ipChangeSuccess = new ExternReconnect().doReconnect();
-                    break;
-                case ReconnectMethod.BATCH:
-                    ipChangeSuccess = new BatchReconnect().doReconnect();
-                    break;
-                default:
-                    ipChangeSuccess = new HTTPLiveHeader().doReconnect();
-                }
+                ipChangeSuccess = ReconnectPluginController.getInstance().doReconnect();
+
             } catch (final Exception e) {
                 Reconnecter.LOG.severe("ReconnectMethod failed!");
             }

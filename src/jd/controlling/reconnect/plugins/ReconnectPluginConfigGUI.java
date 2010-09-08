@@ -11,18 +11,18 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.controlling.reconnect.ReconnectMethod;
+import jd.controlling.reconnect.IPCheck;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.Factory;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -97,13 +97,12 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
         this.add(Box.createGlue(), "pushy,growy");
         this.add(Factory.createHeader(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.reconnect_selection", 32, 32)), "spanx");
 
-        final JPanel p = new JPanel(new MigLayout("ins 0, wrap 7", "[]5[fill]5[right]20[right]20[right]20[right]20[right]", "[][]"));
+        final JPanel p = new JPanel(new MigLayout("ins 0, wrap 6", "[]5[right]20[right]20[right]20[right]20[right]", "[][]"));
 
-        p.add(this.btnTest = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP")), "spany, aligny top");
+        p.add(this.btnTest = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP")), "spanx,shrinkx, aligny top,wrap");
         this.btnTest.setIcon(JDTheme.II("gui.images.config.reconnect", 16, 16));
         this.btnTest.addActionListener(this);
 
-        p.add(new JPanel(), "h 32!, spany, alignx left, pushx");
         p.add(this.lblDuration = new JLabel(JDL.L("gui.config.reconnect.showcase.time", "Reconnect duration")));
         this.lblDuration.setEnabled(false);
 
@@ -112,9 +111,10 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
 
         p.add(new JLabel(JDL.L("gui.config.reconnect.showcase.currentip", "Your current IP")));
         p.add(this.lblCurrentIP = new JLabel("---"));
-
+        p.add(Box.createGlue(), "spany,pushx,growx");
         p.add(this.lblSuccessIcon = new JLabel(JDTheme.II("gui.images.selected", 32, 32)), "spany,alignx right");
         this.lblSuccessIcon.setEnabled(false);
+        this.lblSuccessIcon.setHorizontalTextPosition(SwingConstants.LEFT);
 
         p.add(this.lblStatusMessage = new JLabel(JDL.L("gui.config.reconnect.showcase.message.none", "Not tested yet")), "spanx 2");
         this.lblStatusMessage.setEnabled(false);
@@ -216,12 +216,12 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
             }
         };
         timer.start();
-        final int retries = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RETRIES, 5);
+        final int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RETRIES, 5);
         progress.setStatus(30);
         new Thread() {
             @Override
             public void run() {
-                JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, 0);
                 if (Reconnecter.doManualReconnect()) {
                     if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                         progress.setStatusText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
@@ -269,7 +269,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                 timer.interrupt();
                 progress.setStatus(100);
                 progress.doFinalize(5000);
-                JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, retries);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, retries);
             }
         }.start();
     }

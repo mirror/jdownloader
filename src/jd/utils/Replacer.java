@@ -22,7 +22,7 @@ import java.util.Calendar;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.nrouter.IPCheck;
+import jd.controlling.reconnect.IPCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;

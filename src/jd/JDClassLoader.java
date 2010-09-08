@@ -45,16 +45,45 @@ public class JDClassLoader extends ClassLoader {
 
     private static final Logger logger = JDLogger.getLogger();
 
-    private final Vector<File> jarFile;
-    private final JarFile[] jars;
+    public static byte[] getSig(final String jarfile) {
+        try {
+            final JarFile jar = new JarFile(jarfile);
+            final String dsa = "META-INF/JDOWNLOA.DSA";
 
-    private final ClassLoader classLoaderParent;
-    private final URLClassLoader rootClassLoader;
+            final ZipEntry entry = jar.getEntry(dsa);
 
-    private final String rootDir;
+            final byte[] b = new byte[1];
+            final InputStream in = new BufferedInputStream(jar.getInputStream(entry));
+            final byte[] res = new byte[692];
+            int c = 0;
+            int n = 0;
+            while ((n = in.read(b)) > -1) {
+                if (n > 0) {
+                    c++;
+                    if (c >= 24 && c < 24 + 692) {
+                        res[c - 24] = b[0];
+                        // System.out.println(c + ". " + b[0]);
+                    }
+                }
+            }
+            return res;
+        } catch (final Exception e) {
+            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.
+            // SEVERE,"Exception occurred",e);
+        }
+        return null;
+    }
+
+    private final Vector<File>    jarFile;
+
+    private final JarFile[]       jars;
+    private final ClassLoader     classLoaderParent;
+
+    private final URLClassLoader  rootClassLoader;
+    private final String          rootDir;
+
     private final ArrayList<File> lafs;
-
-    private static final byte[] S = new byte[] { (byte) 2, (byte) 1, (byte) 1, (byte) 49, (byte) 11, (byte) 48, (byte) 9, (byte) 6, (byte) 5, (byte) 43, (byte) 14, (byte) 3, (byte) 2, (byte) 26, (byte) 5, (byte) 0, (byte) 48, (byte) 11, (byte) 6, (byte) 9, (byte) 42, (byte) -122, (byte) 72, (byte) -122, (byte) -9, (byte) 13, (byte) 1, (byte) 7, (byte) 1, (byte) -96, (byte) -126, (byte) 2, (byte) -111, (byte) 48, (byte) -126, (byte) 2, (byte) -115, (byte) 48, (byte) -126, (byte) 2, (byte) 75, (byte) 2, (byte) 4, (byte) 70, (byte) -60, (byte) 21, (byte) -27, (byte) 48, (byte) 11, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 3, (byte) 5, (byte) 0, (byte) 48, (byte) 44, (byte) 49, (byte) 24, (byte) 48, (byte) 22, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 10, (byte) 19, (byte) 15, (byte) 103, (byte) 117, (byte) 108, (byte) 108,
+    private static final byte[]   S        = new byte[] { (byte) 2, (byte) 1, (byte) 1, (byte) 49, (byte) 11, (byte) 48, (byte) 9, (byte) 6, (byte) 5, (byte) 43, (byte) 14, (byte) 3, (byte) 2, (byte) 26, (byte) 5, (byte) 0, (byte) 48, (byte) 11, (byte) 6, (byte) 9, (byte) 42, (byte) -122, (byte) 72, (byte) -122, (byte) -9, (byte) 13, (byte) 1, (byte) 7, (byte) 1, (byte) -96, (byte) -126, (byte) 2, (byte) -111, (byte) 48, (byte) -126, (byte) 2, (byte) -115, (byte) 48, (byte) -126, (byte) 2, (byte) 75, (byte) 2, (byte) 4, (byte) 70, (byte) -60, (byte) 21, (byte) -27, (byte) 48, (byte) 11, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 3, (byte) 5, (byte) 0, (byte) 48, (byte) 44, (byte) 49, (byte) 24, (byte) 48, (byte) 22, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 10, (byte) 19, (byte) 15, (byte) 103, (byte) 117, (byte) 108, (byte) 108,
             (byte) 105, (byte) 32, (byte) 67, (byte) 111, (byte) 109, (byte) 109, (byte) 117, (byte) 110, (byte) 105, (byte) 116, (byte) 121, (byte) 49, (byte) 16, (byte) 48, (byte) 14, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 3, (byte) 19, (byte) 7, (byte) 97, (byte) 115, (byte) 116, (byte) 97, (byte) 108, (byte) 100, (byte) 111, (byte) 48, (byte) 30, (byte) 23, (byte) 13, (byte) 48, (byte) 55, (byte) 48, (byte) 56, (byte) 49, (byte) 54, (byte) 48, (byte) 57, (byte) 49, (byte) 54, (byte) 50, (byte) 49, (byte) 90, (byte) 23, (byte) 13, (byte) 48, (byte) 57, (byte) 48, (byte) 56, (byte) 48, (byte) 53, (byte) 48, (byte) 57, (byte) 49, (byte) 54, (byte) 50, (byte) 49, (byte) 90, (byte) 48, (byte) 44, (byte) 49, (byte) 24, (byte) 48, (byte) 22, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 10, (byte) 19, (byte) 15, (byte) 103, (byte) 117, (byte) 108, (byte) 108, (byte) 105,
             (byte) 32, (byte) 67, (byte) 111, (byte) 109, (byte) 109, (byte) 117, (byte) 110, (byte) 105, (byte) 116, (byte) 121, (byte) 49, (byte) 16, (byte) 48, (byte) 14, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 3, (byte) 19, (byte) 7, (byte) 97, (byte) 115, (byte) 116, (byte) 97, (byte) 108, (byte) 100, (byte) 111, (byte) 48, (byte) -126, (byte) 1, (byte) -72, (byte) 48, (byte) -126, (byte) 1, (byte) 44, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 1, (byte) 48, (byte) -126, (byte) 1, (byte) 31, (byte) 2, (byte) -127, (byte) -127, (byte) 0, (byte) -3, (byte) 127, (byte) 83, (byte) -127, (byte) 29, (byte) 117, (byte) 18, (byte) 41, (byte) 82, (byte) -33, (byte) 74, (byte) -100, (byte) 46, (byte) -20, (byte) -28, (byte) -25, (byte) -10, (byte) 17, (byte) -73, (byte) 82, (byte) 60, (byte) -17, (byte) 68, (byte) 0, (byte) -61,
             (byte) 30, (byte) 63, (byte) -128, (byte) -74, (byte) 81, (byte) 38, (byte) 105, (byte) 69, (byte) 93, (byte) 64, (byte) 34, (byte) 81, (byte) -5, (byte) 89, (byte) 61, (byte) -115, (byte) 88, (byte) -6, (byte) -65, (byte) -59, (byte) -11, (byte) -70, (byte) 48, (byte) -10, (byte) -53, (byte) -101, (byte) 85, (byte) 108, (byte) -41, (byte) -127, (byte) 59, (byte) -128, (byte) 29, (byte) 52, (byte) 111, (byte) -14, (byte) 102, (byte) 96, (byte) -73, (byte) 107, (byte) -103, (byte) 80, (byte) -91, (byte) -92, (byte) -97, (byte) -97, (byte) -24, (byte) 4, (byte) 123, (byte) 16, (byte) 34, (byte) -62, (byte) 79, (byte) -69, (byte) -87, (byte) -41, (byte) -2, (byte) -73, (byte) -58, (byte) 27, (byte) -8, (byte) 59, (byte) 87, (byte) -25, (byte) -58, (byte) -88, (byte) -90, (byte) 21, (byte) 15, (byte) 4, (byte) -5, (byte) -125, (byte) -10, (byte) -45, (byte) -59, (byte) 30,
@@ -63,8 +92,11 @@ public class JDClassLoader extends ClassLoader {
             (byte) -15, (byte) -66, (byte) -88, (byte) 81, (byte) -112, (byte) -119, (byte) -88, (byte) -125, (byte) -33, (byte) -31, (byte) 90, (byte) -27, (byte) -97, (byte) 6, (byte) -110, (byte) -117, (byte) 102, (byte) 94, (byte) -128, (byte) 123, (byte) 85, (byte) 37, (byte) 100, (byte) 1, (byte) 76, (byte) 59, (byte) -2, (byte) -49, (byte) 73, (byte) 42, (byte) 3, (byte) -127, (byte) -123, (byte) 0, (byte) 2, (byte) -127, (byte) -127, (byte) 0, (byte) -116, (byte) 41, (byte) 78, (byte) 97, (byte) 29, (byte) -39, (byte) -6, (byte) -125, (byte) -99, (byte) -18, (byte) -77, (byte) 120, (byte) 40, (byte) 126, (byte) -104, (byte) 69, (byte) -60, (byte) -33, (byte) 40, (byte) 9, (byte) 11, (byte) -48, (byte) 85, (byte) -62, (byte) -93, (byte) 100, (byte) 38, (byte) 106, (byte) 74, (byte) -116, (byte) 0, (byte) 123, (byte) -11, (byte) -122, (byte) 125, (byte) 127, (byte) 2, (byte) 21,
             (byte) -77, (byte) 18, (byte) -53, (byte) -85, (byte) 48, (byte) 118, (byte) 56, (byte) 80, (byte) -38, (byte) 67, (byte) -56, (byte) -96, (byte) 122, (byte) 66, (byte) 9, (byte) -7, (byte) -124, (byte) -90, (byte) -3, (byte) 115, (byte) 122, (byte) -128, (byte) -32, (byte) -31, (byte) -22, (byte) -12, (byte) 1, (byte) 76, (byte) 102, (byte) -54, (byte) 124, (byte) -112, (byte) 0, (byte) -55, (byte) -11, (byte) -101, (byte) -69, (byte) -19, (byte) 77, (byte) -65, (byte) -86, (byte) 61, (byte) 111, (byte) 119, (byte) -107, (byte) -56, (byte) 110, (byte) -116, (byte) -39, (byte) -9, (byte) 46, (byte) 18, (byte) -106, (byte) -28, (byte) 23, (byte) 113, (byte) -39, (byte) -12, (byte) 41, (byte) 47, (byte) -79, (byte) -72, (byte) 125, (byte) -84, (byte) -120, (byte) -115, (byte) 125, (byte) -95, (byte) 111, (byte) -44, (byte) 125, (byte) -77, (byte) 45, (byte) 10, (byte) -5,
             (byte) -104, (byte) 47, (byte) -41, (byte) -119, (byte) 106, (byte) 97, (byte) -95, (byte) -9, (byte) 80, (byte) -29, (byte) 26, (byte) -111, (byte) -102, (byte) -109, (byte) -116, (byte) 48, (byte) 11, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 3, (byte) 5, (byte) 0, (byte) 3, (byte) 47, (byte) 0, (byte) 48, (byte) 44, (byte) 2, (byte) 20, (byte) 31, (byte) 93, (byte) -31, (byte) 109, (byte) -22, (byte) -112, (byte) -62, (byte) 99, (byte) -20, (byte) -5, (byte) 17, (byte) -9, (byte) 123, (byte) 116, (byte) 1, (byte) -78, (byte) 3, (byte) 60, (byte) 122, (byte) 60, (byte) 2, (byte) 20, (byte) 48, (byte) -86, (byte) 15, (byte) 10, (byte) 63, (byte) -70, (byte) -20, (byte) 37, (byte) -16, (byte) -79, (byte) 19, (byte) 58, (byte) 104, (byte) -122, (byte) 26, (byte) -85, (byte) -49, (byte) 63, (byte) 104, (byte) 49, (byte) 49,
-            (byte) -127 };
-    private static final int S_LENGTH = S.length; // at now equals 692
+            (byte) -127                   };
+
+    private static final int      S_LENGTH = JDClassLoader.S.length; // at now
+                                                                     // equals
+                                                                     // 692
 
     /**
      * 
@@ -72,16 +104,16 @@ public class JDClassLoader extends ClassLoader {
      * @param classLoaderParent
      */
     public JDClassLoader(final String rootDir, final ClassLoader classLoaderParent) {
-        if (rootDir == null) throw new IllegalArgumentException("Null root directory");
+        if (rootDir == null) { throw new IllegalArgumentException("Null root directory"); }
 
         this.rootDir = rootDir;
         this.classLoaderParent = classLoaderParent;
-        logger.finest("rootDir:" + rootDir);
+        JDClassLoader.logger.finest("rootDir:" + rootDir);
 
         URLClassLoader urlClassLoader = null;
         try {
             urlClassLoader = new URLClassLoader(new URL[] { new File(rootDir).toURI().toURL() }, null);
-        } catch (MalformedURLException e) {
+        } catch (final MalformedURLException e) {
             JDLogger.exception(e);
         }
         this.rootClassLoader = urlClassLoader;
@@ -92,15 +124,16 @@ public class JDClassLoader extends ClassLoader {
 
         boolean isWebupdater = false;
         System.out.println(rootDir);
-        System.out.println(" " + rootClassLoader.getResource("jd"));
+        System.out.println(" " + this.rootClassLoader.getResource("jd"));
         isWebupdater = (classLoaderParent.getResource("jd") + "").contains("jdupdate.jar") || (classLoaderParent.getResource("jd") + "").contains("webupdater.jar");
         if (!isWebupdater) {
             // Hier werden die JAR Dateien ausgelesen
-            Vector<JarFile> jarFiles = new Vector<JarFile>();
+            final Vector<JarFile> jarFiles = new Vector<JarFile>();
             jarFile = new Vector<File>();
-            ArrayList<String> names = new ArrayList<String>();
+            final ArrayList<String> names = new ArrayList<String>();
             File[] files = new File(new File(rootDir), "plugins").listFiles(new JDFileFilter(null, ".jar", false));
-            if (files != null) {
+            // do not load optional jars in eclipse.
+            if (files != null && JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL) {
                 File file;
                 String name;
                 String absolutePath;
@@ -111,21 +144,21 @@ public class JDClassLoader extends ClassLoader {
                         absolutePath = file.getAbsolutePath();
                         name = file.getName();
                         if (!absolutePath.endsWith("webupdater.jar") || !absolutePath.endsWith("jdupdate.jar")) {
-                            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !comp(getSig(absolutePath))) {
-                                logger.severe("Not loaded due to sig violation: " + file);
+                            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !this.comp(JDClassLoader.getSig(absolutePath))) {
+                                JDClassLoader.logger.severe("Not loaded due to sig violation: " + file);
                                 continue;
                             }
 
                             if (names.contains(name)) {
-                                logger.severe("Duplicate Jars found: " + absolutePath);
+                                JDClassLoader.logger.severe("Duplicate Jars found: " + absolutePath);
                             } else {
                                 names.add(name);
-                                logger.finer("Jar file loaded: " + absolutePath);
+                                JDClassLoader.logger.finer("Jar file loaded: " + absolutePath);
                                 jarFile.add(file);
                                 jarFiles.add(new JarFile(file));
                             }
                         }
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         JDLogger.exception(e);
                     }
                 }
@@ -143,21 +176,21 @@ public class JDClassLoader extends ClassLoader {
                         name = file.getName();
                         absolutePath = file.getAbsolutePath();
                         if (!absolutePath.endsWith("webupdater.jar") && !absolutePath.endsWith("jdupdate.jar")) {
-                            if (!comp(getSig(absolutePath))) {
-                                logger.severe("Not loaded due to sig violation: " + file);
+                            if (!this.comp(JDClassLoader.getSig(absolutePath))) {
+                                JDClassLoader.logger.severe("Not loaded due to sig violation: " + file);
                                 continue;
                             }
                             if (names.contains(name)) {
-                                logger.severe("Duplicate Jars found: " + absolutePath);
+                                JDClassLoader.logger.severe("Duplicate Jars found: " + absolutePath);
                             } else {
                                 names.add(name);
-                                logger.finer("Jar file loaded: " + absolutePath);
+                                JDClassLoader.logger.finer("Jar file loaded: " + absolutePath);
                                 jarFile.add(file);
                                 jarFiles.add(new JarFile(file));
                             }
                         }
 
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         JDLogger.exception(e);
                     }
                 }
@@ -185,17 +218,17 @@ public class JDClassLoader extends ClassLoader {
                             // continue;
                             // }
                             if (names.contains(name)) {
-                                logger.severe("Duplicate Jars found: " + absolutePath);
+                                JDClassLoader.logger.severe("Duplicate Jars found: " + absolutePath);
                             } else {
                                 names.add(name);
-                                logger.finer("Look and Feel JAR loaded: " + absolutePath);
+                                JDClassLoader.logger.finer("Look and Feel JAR loaded: " + absolutePath);
                                 jarFile.add(file);
                                 lafs.add(file);
                                 jarFiles.add(new JarFile(file));
                             }
                         }
 
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         JDLogger.exception(e);
                     }
                 }
@@ -207,10 +240,6 @@ public class JDClassLoader extends ClassLoader {
         this.lafs = lafs;
     }
 
-    public ArrayList<File> getLafs() {
-        return lafs;
-    }
-
     private boolean comp(final byte[] sig) {
         // if (sig == null) return false;
         // for (int i = 0; i < S.length; i++) {
@@ -219,90 +248,72 @@ public class JDClassLoader extends ClassLoader {
         // if (a != b) return false;
         // }
         // return true;
-        if (sig == null) return false;
-        final int length = S_LENGTH;
+        if (sig == null) { return false; }
+        final int length = JDClassLoader.S_LENGTH;
         for (int i = 0; i < length; i++) {
-            if (S[i] != sig[i]) return false;
+            if (JDClassLoader.S[i] != sig[i]) { return false; }
         }
         return true;
         // May be Arrays.equals(S, sig) ?
     }
 
-    public static byte[] getSig(final String jarfile) {
-        try {
-            final JarFile jar = new JarFile(jarfile);
-            final String dsa = "META-INF/JDOWNLOA.DSA";
-
-            final ZipEntry entry = jar.getEntry(dsa);
-
-            final byte[] b = new byte[1];
-            final InputStream in = new BufferedInputStream(jar.getInputStream(entry));
-            final byte[] res = new byte[692];
-            int c = 0;
-            int n = 0;
-            while ((n = in.read(b)) > -1) {
-                if (n > 0) {
-                    c++;
-                    if (c >= 24 && c < 24 + 692) {
-                        res[c - 24] = b[0];
-                        // System.out.println(c + ". " + b[0]);
-                    }
-                }
-            }
-            return res;
-        } catch (Exception e) {
-            // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.
-            // SEVERE,"Exception occurred",e);
+    public String findJar(final String name) throws ClassNotFoundException {
+        for (final JarFile element : this.jars) {
+            if (element.getJarEntry(name.replace('.', '/') + ".class") != null) { return element.getName(); }
         }
         return null;
     }
 
     @Override
     protected URL findResource(final String name) {
-        final URL url = rootClassLoader.findResource(name);
-        return (url != null) ? url : super.findResource(name);
+        final URL url = this.rootClassLoader.findResource(name);
+        return url != null ? url : super.findResource(name);
     }
 
     public Vector<File> getJars() {
         final Vector<File> ret = new Vector<File>();
-        ret.addAll(jarFile);
+        ret.addAll(this.jarFile);
         return ret;
     }
 
+    public ArrayList<File> getLafs() {
+        return this.lafs;
+    }
+
     public URL getResource(final byte[] key) {
-        return getResource(new String(key));
+        return this.getResource(new String(key));
     }
 
     @Override
     public URL getResource(final String name) {
-        if (jars != null) {
+        if (this.jars != null) {
             // An dieser Stelle werden die JAR Dateien überprüft
             JarEntry entry;
-            for (JarFile element : jars) {
+            for (final JarFile element : this.jars) {
                 if (element != null && (entry = element.getJarEntry(name)) != null) {
                     try {
                         return new URL(entry.getName());
-                    } catch (MalformedURLException e) {
+                    } catch (final MalformedURLException e) {
                     }
                 }
             }
         }
-        URL url = rootClassLoader.getResource(name);
-        if (url != null) return url;
+        URL url = this.rootClassLoader.getResource(name);
+        if (url != null) { return url; }
 
         url = super.getResource(name);
-        if (url != null) return url;
+        if (url != null) { return url; }
 
-        url = classLoaderParent.getResource(name);
-        if (url != null) return url;
+        url = this.classLoaderParent.getResource(name);
+        if (url != null) { return url; }
 
         try {
             // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
             // Objekt zurückgegeben
             // Ist für das Abspeichern der Captcha notwendig
 
-            return new File(new File(rootDir), name).toURI().toURL();
-        } catch (MalformedURLException e) {
+            return new File(new File(this.rootDir), name).toURI().toURL();
+        } catch (final MalformedURLException e) {
         }
         return null;
     }
@@ -311,25 +322,25 @@ public class JDClassLoader extends ClassLoader {
     public Enumeration<URL> getResources(final String name) throws IOException {
         final Vector<URL> urls = new Vector<URL>();
 
-        final Enumeration<URL> en = classLoaderParent.getResources(name);
+        final Enumeration<URL> en = this.classLoaderParent.getResources(name);
         while (en.hasMoreElements()) {
             urls.add(en.nextElement());
         }
-        if (jars != null) {
+        if (this.jars != null) {
             JarEntry entry;
-            for (JarFile element : jars) {
+            for (final JarFile element : this.jars) {
                 if (element != null && (entry = element.getJarEntry(name)) != null) {
                     try {
                         // Das sollte nun hoffentlich eine Systemunabhängige
                         // Implementierung sein.
                         urls.add(new URL("jar", "", new File(element.getName().replace("\\", "/")).toURI().toURL() + "!/" + entry.getName()));
-                    } catch (MalformedURLException e) {
+                    } catch (final MalformedURLException e) {
                         JDLogger.exception(e);
                     }
                 }
             }
         }
-        logger.info(urls + "");
+        JDClassLoader.logger.info(urls + "");
         return urls.elements();
     }
 
@@ -340,49 +351,42 @@ public class JDClassLoader extends ClassLoader {
      */
     @Override
     protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
-        Class<?> c = findLoadedClass(name);
+        Class<?> c = this.findLoadedClass(name);
         if (c == null) {
             try {
-                c = findSystemClass(name);
-            } catch (Exception e) {
+                c = this.findSystemClass(name);
+            } catch (final Exception e) {
             }
             if (c == null) {
                 try {
-                    c = classLoaderParent.loadClass(name);
-                } catch (Exception e) {
+                    c = this.classLoaderParent.loadClass(name);
+                } catch (final Exception e) {
                 }
             }
         }
         if (c == null) {
             JarEntry entry = null;
-            for (JarFile element : jars) {
+            for (final JarFile element : this.jars) {
                 if ((entry = element.getJarEntry(name.replace('.', '/') + ".class")) != null) {
                     try {
-                        final byte data[] = loadClassData(element, entry);
+                        final byte data[] = this.loadClassData(element, entry);
                         System.out.println("Loaded class " + name + " from " + element.getName());
-                        c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
-                        if (c == null) throw new ClassNotFoundException(name);
-                    } catch (java.lang.VerifyError e) {
+                        c = this.defineClass(name, data, 0, data.length, this.getClass().getProtectionDomain());
+                        if (c == null) { throw new ClassNotFoundException(name); }
+                    } catch (final java.lang.VerifyError e) {
                         JDLogger.exception(e);
-                    } catch (ClassFormatError e) {
+                    } catch (final ClassFormatError e) {
                         JDLogger.exception(e);
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         JDLogger.exception(e);
                     }
                 }
             }
         }
         if (resolve) {
-            resolveClass(c);
+            this.resolveClass(c);
         }
         return c;
-    }
-
-    public String findJar(final String name) throws ClassNotFoundException {
-        for (JarFile element : jars) {
-            if ((element.getJarEntry(name.replace('.', '/') + ".class")) != null) return element.getName();
-        }
-        return null;
     }
 
     /**
