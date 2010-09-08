@@ -297,8 +297,11 @@
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
-		<buildRecPlugin name="upnp" />
-
+		<buildRecPlugin name="upnp" /> 
+		<buildRecPlugin name="batch" />
+		<buildRecPlugin name="extern" />
+		<buildRecPlugin name="liveheader" />
+		<buildRecPlugin name="proxyrot" />
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 	<!-- Copy optional addon plugins -->
