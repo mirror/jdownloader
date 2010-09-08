@@ -70,6 +70,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 br.getPage(host + singlelink);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+                if (dllink==null) dllink=br.getRegex("Please <a href=\"(http.*?)\"").getMatch(0);
             } else {
                 // Handling for already regexed final-links
                 dllink = singlelink;

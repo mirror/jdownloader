@@ -56,16 +56,16 @@ public class Megauploadcom extends PluginForHost {
         ONLINE, OFFLINE, API, BLOCKED
     }
 
-    private static final String MU_PARAM_PORT = "MU_PARAM_PORT_NEW1";
-    private static final String MU_PORTROTATION = "MU_PORTROTATION_NEW1";
-    private final static String[] ports = new String[] { "80", "800", "1723" };
-    private static String wwwWorkaround = null;
-    private static final Object Lock = new Object();
-    private static int simultanpremium = 1;
-    private boolean onlyapi = false;
-    private String wait = null;
+    private static final String   MU_PARAM_PORT      = "MU_PARAM_PORT_NEW1";
+    private final static String[] ports              = new String[] { "80", "800", "1723" };
+    private static String         wwwWorkaround      = null;
+    private static final Object   LOCK               = new Object();
+    private static final Object   LOCK2              = new Object();
+    private static int            simultanpremium    = 1;
+    private boolean               onlyapi            = false;
+    private String                wait               = null;
 
-    private static String agent = RandomUserAgent.generate();
+    private static String         agent              = RandomUserAgent.generate();
 
     /*
      * every jd session starts with 1=default, because no waittime does not work
@@ -74,9 +74,9 @@ public class Megauploadcom extends PluginForHost {
      * try to workaround the waittime, 0=no waittime, 1 = default, other = 60
      * secs
      */
-    private static int WaittimeWorkaround = 1;
+    private static int            WaittimeWorkaround = 1;
 
-    private static final Object PREMLOCK = new Object();
+    private static final Object   PREMLOCK           = new Object();
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
@@ -91,10 +91,6 @@ public class Megauploadcom extends PluginForHost {
 
     public int usePort(DownloadLink link) {
         int port = this.getPluginConfig().getIntegerProperty(MU_PARAM_PORT, 0);
-        if (this.getPluginConfig().getBooleanProperty("MU_PORTROTATION", true)) {
-            port += link.getIntegerProperty(MU_PARAM_PORT, 0);
-            if (port > 2) port -= 2;
-        }
         switch (port) {
         case 1:
             return 800;
@@ -113,7 +109,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void checkWWWWorkaround() {
-        synchronized (Lock) {
+        synchronized (LOCK) {
             if (wwwWorkaround != null) return;
             Browser tbr = new Browser();
             antiJDBlock(tbr);
@@ -136,23 +132,29 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public boolean isPremium(Account account, Browser br, boolean refresh) throws IOException {
-        if (account == null) return false;
-        if (account.getBooleanProperty("typeknown", false) == false || refresh) {
-            Browser brc = br.cloneBrowser();
-            antiJDBlock(brc);
-            brc.getPage("http://" + wwwWorkaround + "megaupload.com/?c=account");
-            String type = brc.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (type == null || type.equalsIgnoreCase("regular")) {
-                account.setProperty("ispremium", false);
-                account.setProperty("typeknown", true);
-                return false;
+        synchronized (LOCK2) {
+            if (account == null) return false;
+            if (account.getBooleanProperty("typeknown", false) == false || refresh) {
+                Browser brc = br.cloneBrowser();
+                antiJDBlock(brc);
+                brc.getPage("http://" + wwwWorkaround + "megaupload.com/?c=account");
+                String type = brc.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+                if (type == null || type.equalsIgnoreCase("regular")) {
+                    account.setProperty("ispremium", false);
+                    if (type != null) {
+                        account.setProperty("typeknown", true);
+                    } else {
+                        account.setProperty("typeknown", false);
+                    }
+                    return false;
+                } else {
+                    account.setProperty("ispremium", true);
+                    account.setProperty("typeknown", true);
+                    return true;
+                }
             } else {
-                account.setProperty("ispremium", true);
-                account.setProperty("typeknown", true);
-                return true;
+                return account.getBooleanProperty("ispremium", false);
             }
-        } else {
-            return account.getBooleanProperty("ispremium", false);
         }
     }
 
@@ -803,28 +805,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void limitReached(DownloadLink link, int secs, String message) throws PluginException {
-        if (this.getPluginConfig().getBooleanProperty(MU_PORTROTATION, false)) {
-            /* try portrotation */
-            int port = link.getIntegerProperty(MU_PARAM_PORT, 0);
-            port++;
-            if (port > 2) {
-                /* all ports tried, have to wait */
-                port = 0;
-                link.setProperty(MU_PARAM_PORT, port);
-                logger.info("All ports tried, throw IP_Blocked");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, message, secs * 1000l);
-            } else {
-                /* try next port */
-                link.getLinkStatus().setLatestStatus(link.getLinkStatus().getRetryCount() + 1);
-                link.setProperty(MU_PARAM_PORT, port);
-                logger.info("IP_Blocked: Lets try next port as workaround");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-        } else {
-            /* have to wait */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, message, secs * 1000l);
-        }
-
+        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, message, secs * 1000l);
     }
 
     /*
@@ -904,7 +885,6 @@ public class Megauploadcom extends PluginForHost {
 
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), MU_PARAM_PORT, ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), MU_PORTROTATION, ports, JDL.L("plugins.host.megaupload.portrotation", "Use Portrotation to increase downloadlimit?")).setDefaultValue(false));
     }
 
 }

@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 //by pspzockerscene
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt.to" }, urls = { "http://[\\w\\.]*?(crypt\\.to|mamangu\\.com)/(fid|links),[0-9a-zA-Z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt.to" }, urls = { "http://[\\w\\.]*?(crypt\\.to|mamangu\\.com)/(fid|links),[0-9a-zA-Z]+" }, flags = { PluginWrapper.CNL_2 })
 public class CrptTo extends PluginForDecrypt {
 
     public CrptTo(PluginWrapper wrapper) {
@@ -111,7 +111,23 @@ public class CrptTo extends PluginForDecrypt {
         // Webprotection decryption
         String linkid = br.getRegex("window\\.setTimeout\\('out\\(\\\\'(.*?)\\\\'").getMatch(0);
         String[] links = br.getRegex("window\\.setTimeout\\('out\\(\\\\'[0-9a-z]+\\\\', \\\\'(\\d+)\\\\'").getColumn(0);
-        if (links == null || links.length == 0 || linkid == null) return null;
+        if (links == null || links.length == 0 || linkid == null) {
+            /* check for cnl2 button and click it */
+            Form form = br.getForm(0);
+            if (form != null && form.getAction() != null && form.getAction().contains("addcrypted2")) {
+                Browser cnlbr=br.cloneBrowser();
+                cnlbr.setConnectTimeout(5000);
+                if (form.getAction().contains("http://localhost") || form.getAction().contains("http://127")) {
+                    cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+                }
+                try {
+                    cnlbr.submitForm(form);
+                    if (cnlbr.containsHTML("success")) return decryptedLinks;
+                } catch (Throwable e) {
+                }
+            }
+            return null;
+        }
         progress.setRange(links.length);
         decryptedLinks = new ArrayList<DownloadLink>();
         for (String link : links) {

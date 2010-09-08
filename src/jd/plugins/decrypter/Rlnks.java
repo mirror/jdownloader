@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +23,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -64,63 +62,42 @@ public class Rlnks extends PluginForDecrypt {
     private void decryptLinks(ArrayList<DownloadLink> decryptedLinks) throws IOException {
         br.setFollowRedirects(false);
         String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
-        String lastcaptcha = null;
         try {
             progress.addToMax(matches.length);
             for (String match : matches) {
                 try {
-                    boolean captcharetry = false;
                     Browser brc = null;
-                    for (int i = 0; i < 5; i++) {
-                        if (!captcharetry) {
-                            brc = br.cloneBrowser();
-                            // brc.setCookiesExclusive(true);
-                            brc.getHeaders().put("User-Agent", RandomUserAgent.generate());
-                            try {
-                                Thread.sleep((i + 1) * 2000);
-                            } catch (Exception e) {
-                            }
-                            brc.getPage("http://www.relink.us/frame.php?" + match);
-                        }
-                        captcharetry = false;
-                        if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
-                            try {
-                                Thread.sleep((i + 1) * 150);
-                            } catch (Exception e) {
-                            }
-                            brc.getPage(brc.getRedirectLocation());
-                        }
-                        if (brc.getRedirectLocation() != null) {
-                            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
-                            break;
-                        } else {
-                            String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
-                            if (url != null) {
-                                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
-                                break;
-                            } else {
-                                /* captcha handling does not work very good */
-                                if (match.equalsIgnoreCase(lastcaptcha)) break;
-                                Form f = brc.getForm(0);
-                                File file = this.getLocalCaptchaFile();
-                                Browser temp = brc.cloneBrowser();
-                                temp.getDownload(file, "http://www.relink.us/core/captcha/circlecaptcha.php");
-                                /* at the moment they dont check clickcaptcha ;) */
-                                Point p = UserIO.getInstance().requestClickPositionDialog(file, "relink.us", "Click on open Circle");
-                                f.put("button.x", p.x + "");
-                                f.put("button.y", p.y + "");
-                                br.submitForm(f);
-                                lastcaptcha = match;
-                            }
-                        }
+                    brc = br.cloneBrowser();
+                    // brc.setCookiesExclusive(true);
+                    brc.getHeaders().put("User-Agent", RandomUserAgent.generate());
+                    try {
+                        Thread.sleep(2000);
+                    } catch (Exception e) {
+                    }
+                    brc.getPage("http://www.relink.us/frame.php?" + match);
+                    if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
                         try {
-                            if (!captcharetry) Thread.sleep(2000 + i * 250);
+                            Thread.sleep(150);
                         } catch (Exception e) {
                         }
+                        brc.getPage(brc.getRedirectLocation());
                     }
-                    progress.increase(1);
+                    if (brc.getRedirectLocation() != null) {
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
+                        break;
+                    } else {
+                        String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
+                        if (url != null) {
+                            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
+                            break;
+                        } else {
+                            /* as bot detected */
+                            return;
+                        }
+                    }
                 } catch (Exception e) {
                 }
+                progress.increase(1);
             }
         } finally {
             br.setFollowRedirects(true);
@@ -156,6 +133,20 @@ public class Rlnks extends PluginForDecrypt {
         }
         if (okay == false) throw new DecrypterException(DecrypterException.CAPTCHA);
         progress.setRange(0);
+        /* use cnl2 button if available */
+        if (br.containsHTML("cnl2.swf")) {
+            String flashVars = br.getRegex("flashVars\" value=\"(.*?)\"").getMatch(0);
+            if (flashVars != null) {
+                Browser cnlbr = new Browser();
+                cnlbr.setConnectTimeout(5000);
+                cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+                try {
+                    cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", flashVars);
+                    if (cnlbr.containsHTML("success")) return decryptedLinks;
+                } catch (Throwable e) {
+                }
+            }
+        }
         if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
             if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
                 decryptContainer(page, parameter, "rsdf", decryptedLinks);

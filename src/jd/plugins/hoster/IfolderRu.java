@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -31,6 +33,8 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://([\\w.-]*?\\.)?(ifolder\\.ru|files\\.metalarea\\.org)/\\d+" }, flags = { 0 })
 public class IfolderRu extends PluginForHost {
+
+    private String ua = RandomUserAgent.generate();
 
     public IfolderRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,18 +49,18 @@ public class IfolderRu extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("files.metalarea.org", "ifolder.ru"));
     }
 
-    private static final String PWTEXT = "type=\"password\" name=\"pswd\"";
+    private static final String PWTEXT  = "type=\"password\" name=\"pswd\"";
     private static final String CAPTEXT = "/random/images/";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException, InterruptedException {
         this.setBrowserExclusive();
+        prepareBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
-
         if (br.containsHTML("<p>Файл номер <b>\\d+</b> удален !!!</p>") || br.containsHTML("<p>Файл номер <b>\\d+</b> не найден !!!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String filename = br.getRegex("Название:\\s+<b>(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("Размер:\\s+<b>(.*?)</b>").getMatch(0);
+        String filename = br.getRegex("Название:.*?<b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("Размер:.*?<b>(.*?)</b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (filename.contains("..")) {
             /* because of server problems check for final filename here */
@@ -68,6 +72,13 @@ public class IfolderRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void prepareBrowser(Browser br) {
+        if (br == null) return;
+        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+    }
+
     // If they change back to the "secret" value in the last form(s) look into
     // revision 11681
     @Override
@@ -77,6 +88,7 @@ public class IfolderRu extends PluginForHost {
         boolean withad = br.containsHTML("Вы можете получить этот файл, только если посетите сайт наших");
         if (br.containsHTML("На данный момент иностранный трафик у этого файла превышает российский") && !withad) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "At the moment foreign traffic of this file is larger than Russia's");
         br.setFollowRedirects(true);
+        br.setDebug(true);
         String passCode = null;
         String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {

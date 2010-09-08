@@ -66,10 +66,10 @@ import org.mozilla.javascript.Scriptable;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "externinterface", interfaceversion = 5)
 public class JDExternInterface extends PluginOptional {
 
-    private RequestHandler handler;
-    private HttpServer server = null;
+    private RequestHandler      handler;
+    private HttpServer          server    = null;
     private final static String LOCALONLY = "localonly";
-    private static String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/JDownloader.jar";
+    private static String       jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/JDownloader.jar";
 
     public JDExternInterface(PluginWrapper wrapper) {
         super(wrapper);
@@ -220,7 +220,7 @@ public class JDExternInterface extends PluginOptional {
     }
 
     class RequestHandler implements Handler {
-        private String namespace;
+        private String   namespace;
         private String[] splitPath;
 
         public void handle(Request request, Response response) {
@@ -454,7 +454,11 @@ public class JDExternInterface extends PluginOptional {
             if (url == null) {
                 url = request.getHeader("source");
             }
-
+            String jdrandomNumber = request.getHeader("jd.randomnumber");
+            if (jdrandomNumber != null && jdrandomNumber.equalsIgnoreCase(System.getProperty("jd.randomNumber"))) {
+                JDLogger.getLogger().warning("Request by JD granted");
+                return;
+            }
             app = url != null ? new URL(url).getHost() : app;
             if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
                 JDLogger.getLogger().warning("Denied access.");

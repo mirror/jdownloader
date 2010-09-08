@@ -59,70 +59,70 @@ import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/files/\\d+/.+" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
-    private static final int API_ID = 0;
-    private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Warten Sie bitte, bis der Download abgeschlossen ist)", Pattern.CASE_INSENSITIVE);
+    private static final int                          API_ID                          = 0;
+    private static final Pattern                      PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Warten Sie bitte, bis der Download abgeschlossen ist)", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
+    private static final Pattern                      PATTERN_FIND_DOWNLOAD_POST_URL  = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?herunterladen:.*?<p>(.*?)</p", Pattern.DOTALL);
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p.*?>(.*?</p.*?<p.*?)</p", Pattern.DOTALL);
+    private static final Pattern                      PATTERN_FIND_ERROR_MESSAGE      = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?herunterladen:.*?<p>(.*?)</p", Pattern.DOTALL);
+    private static final Pattern                      PATTERN_FIND_ERROR_MESSAGE_1    = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p.*?>(.*?</p.*?<p.*?)</p", Pattern.DOTALL);
 
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
+    private static final Pattern                      PATTERN_FIND_ERROR_MESSAGE_2    = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
 
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_3 = Pattern.compile("<!-- E#[\\d]{1,2} -->.*?<p>(.*?)<\\/p>", Pattern.DOTALL);
+    private static final Pattern                      PATTERN_FIND_ERROR_MESSAGE_3    = Pattern.compile("<!-- E#[\\d]{1,2} -->.*?<p>(.*?)<\\/p>", Pattern.DOTALL);
 
-    private static final Pattern PATTERN_FIND_MIRROR_URL = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
+    private static final Pattern                      PATTERN_FIND_MIRROR_URL         = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
 
-    private static final Pattern PATTERN_FIND_MIRROR_URLS = Pattern.compile("<input.*?type=\"radio\" name=\"mirror\" onclick=\"document\\.dlf?\\.action=[\\\\]?'(.*?)[\\\\]?';\" /> (.*?)<br />", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    private static final Pattern                      PATTERN_FIND_MIRROR_URLS        = Pattern.compile("<input.*?type=\"radio\" name=\"mirror\" onclick=\"document\\.dlf?\\.action=[\\\\]?'(.*?)[\\\\]?';\" /> (.*?)<br />", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern PATTERN_FIND_PRESELECTED_SERVER = Pattern.compile("<form name=\"dlf?\" action=\"(.*?)\" method=\"post\">");
+    private static final Pattern                      PATTERN_FIND_PRESELECTED_SERVER = Pattern.compile("<form name=\"dlf?\" action=\"(.*?)\" method=\"post\">");
 
-    private static final Pattern PATTERN_FIND_TICKET_WAITTIME = Pattern.compile("var c=([\\d]*?);");
+    private static final Pattern                      PATTERN_FIND_TICKET_WAITTIME    = Pattern.compile("var c=([\\d]*?);");
 
-    private static final String PROPERTY_INCREASE_TICKET = "INCREASE_TICKET";
+    private static final String                       PROPERTY_INCREASE_TICKET        = "INCREASE_TICKET";
 
-    private static final String PROPERTY_SELECTED_SERVER1 = "SELECTED_SERVER_51";
+    private static final String                       PROPERTY_SELECTED_SERVER1       = "SELECTED_SERVER_51";
 
-    private static final String PROPERTY_SELECTED_SERVER2 = "SELECTED_SERVER_52";
+    private static final String                       PROPERTY_SELECTED_SERVER2       = "SELECTED_SERVER_52";
 
-    private static final String PROPERTY_SELECTED_SERVER3 = "SELECTED_SERVER_53";
+    private static final String                       PROPERTY_SELECTED_SERVER3       = "SELECTED_SERVER_53";
 
-    private static final String PROPERTY_SELECTED_SERVER4 = "SELECTED_SERVER_54";
+    private static final String                       PROPERTY_SELECTED_SERVER4       = "SELECTED_SERVER_54";
 
-    private static final String PROPERTY_SELECTED_SERVER5 = "SELECTED_SERVER_55";
+    private static final String                       PROPERTY_SELECTED_SERVER5       = "SELECTED_SERVER_55";
 
-    private static final String PROPERTY_USE_PRESELECTED = "USE_PRESELECTED";
+    private static final String                       PROPERTY_USE_PRESELECTED        = "USE_PRESELECTED";
 
-    private static final String WAIT_HOSTERFULL = "WAIT_HOSTERFULL";
+    private static final String                       WAIT_HOSTERFULL                 = "WAIT_HOSTERFULL";
 
-    private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
+    private static final String                       PROPERTY_USE_TELEKOMSERVER      = "USE_TELEKOMSERVER";
 
-    private static final String HTTPS_WORKAROUND = "HTTPS_WORKAROUND";
+    private static final String                       HTTPS_WORKAROUND                = "HTTPS_WORKAROUND";
 
-    private static String[] serverList1 = new String[] { "cg", "cg2", "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tl", "tl2", "tl3" };
+    private static String[]                           serverList1                     = new String[] { "cg", "cg2", "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tl", "tl2", "tl3" };
 
-    private static String[] serverList2 = new String[] { "cg", "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tg2", "tl", "tl2", "tl3" };
+    private static String[]                           serverList2                     = new String[] { "cg", "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tg2", "tl", "tl2", "tl3" };
 
-    private static String[] serverList3 = new String[] { "cg", "dt", "l3", "l32", "l33", "l34", "tg", "tg2", "tl", "tl2", "tl3", "eu" };
+    private static String[]                           serverList3                     = new String[] { "cg", "dt", "l3", "l32", "l33", "l34", "tg", "tg2", "tl", "tl2", "tl3", "eu" };
 
-    private static String[] serverList4 = new String[] { "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tg2", "tl", "tl2", "tl3", "tl4" };
+    private static String[]                           serverList4                     = new String[] { "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tg2", "tl", "tl2", "tl3", "tl4" };
 
-    private static String[] serverList5 = new String[] { "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tl", "tl2", "tl3", "tl4", "eu" };
+    private static String[]                           serverList5                     = new String[] { "dt", "l3", "l32", "l33", "l34", "l35", "tg", "tl", "tl2", "tl3", "tl4", "eu" };
 
-    final static private Object LOCK = new Object();
+    final static private Object                       LOCK                            = new Object();
 
-    final static private ArrayList<Account> RESET_WAITING_ACCOUNTS = new ArrayList<Account>();
+    final static private ArrayList<Account>           RESET_WAITING_ACCOUNTS          = new ArrayList<Account>();
 
-    final static private Boolean HTMLWORKAROUND = new Boolean(false);
+    final static private Boolean                      HTMLWORKAROUND                  = new Boolean(false);
 
-    private static long RS_API_WAIT = 0;
+    private static long                               RS_API_WAIT                     = 0;
 
-    private static final String COOKIEPROP = "cookiesv2";
+    private static final String                       COOKIEPROP                      = "cookiesv2";
 
-    private static final Object menuLock = new Object();
-    private static final HashMap<Integer, MenuAction> menuActionMap = new HashMap<Integer, MenuAction>();
+    private static final Object                       menuLock                        = new Object();
+    private static final HashMap<Integer, MenuAction> menuActionMap                   = new HashMap<Integer, MenuAction>();
 
-    private static HashMap<String, String> serverMap = new HashMap<String, String>();
+    private static HashMap<String, String>            serverMap                       = new HashMap<String, String>();
     static {
         serverMap.put("Cogent #1", "cg");
         serverMap.put("Cogent #2", "cg2");
@@ -146,20 +146,20 @@ public class Rapidshare extends PluginForHost {
         serverMap.put("euNetworks", "eu");
     }
 
-    private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
+    private static final Account                      dummyAccount                    = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
+    private static final String                       PROPERTY_ONLY_HAPPYHOUR         = "PROPERTY_ONLY_HAPPYHOUR";
 
-    public static final int UPGRADEPROTECTION_SMALL = 0;
-    public static final int UPGRADEPROTECTION_MEDIUM = 1;
-    public static final int UPGRADEPROTECTION_BIG = 2;
-    public static final int UPGRADEPROTECTION_SUPERSIZE = 3;
-    public static final int UPGRADEPROTECTION_UNLIMITED = 4;
-    public static final int DOWNGRADETO_SMALL = 0;
-    public static final int DOWNGRADETO_MEDIUM = 1;
-    public static final int DOWNGRADETO_BIG = 2;
-    public static final int DOWNGRADETO_SUPERSIZE = 3;
-    public static final int DOWNGRADETO_DISABLED = 4;
+    public static final int                           UPGRADEPROTECTION_SMALL         = 0;
+    public static final int                           UPGRADEPROTECTION_MEDIUM        = 1;
+    public static final int                           UPGRADEPROTECTION_BIG           = 2;
+    public static final int                           UPGRADEPROTECTION_SUPERSIZE     = 3;
+    public static final int                           UPGRADEPROTECTION_UNLIMITED     = 4;
+    public static final int                           DOWNGRADETO_SMALL               = 0;
+    public static final int                           DOWNGRADETO_MEDIUM              = 1;
+    public static final int                           DOWNGRADETO_BIG                 = 2;
+    public static final int                           DOWNGRADETO_SUPERSIZE           = 3;
+    public static final int                           DOWNGRADETO_DISABLED            = 4;
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -182,9 +182,9 @@ public class Rapidshare extends PluginForHost {
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
-    private String selectedServer = null;
-    private String accName = null;
-    private static boolean updateNeeded = false;
+    private String         selectedServer = null;
+    private String         accName        = null;
+    private static boolean updateNeeded   = false;
 
     public Rapidshare(PluginWrapper wrapper) {
         super(wrapper);
@@ -690,26 +690,18 @@ public class Rapidshare extends PluginForHost {
         if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugin.host.rapidshare.status.ipblock", "Already a download from your ip in progress!"), 2 * 60 * 1000l); }
         // für java 1.5
         if (new Regex(error, "(kostenlose Nutzung erreicht)|(.*download.{0,3}limit.{1,50}free.{0,3}users.*)").matches()) {
-            if (false) {
-                /* do not remove this! */
-                String waitfor = br.getRegex("es in ca\\.(.*?)Minuten wieder").getMatch(0);
-                if (waitfor == null) {
-                    waitfor = br.getRegex("Or try again in about(.*?)minutes").getMatch(0);
-                }
-                long waitTime = 15 * 60 * 1000l;
-                try {
-                    waitTime = Long.parseLong(waitfor.trim()) * 60 * 1000l;
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, "Exception occurred", e);
-                }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
-            } else {
-                /*
-                 * changed to 5 mins, because next download could be possible
-                 * earlier
-                 */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            /* do not remove this! */
+            String waitfor = br.getRegex("es in ca\\.(.*?)Minuten wieder").getMatch(0);
+            if (waitfor == null) {
+                waitfor = br.getRegex("Or try again in about(.*?)minutes").getMatch(0);
             }
+            long waitTime = 15 * 60 * 1000l;
+            try {
+                waitTime = Long.parseLong(waitfor.trim()) * 60 * 1000l;
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Exception occurred", e);
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime+(1*60*1000l));
         }
         reportUnknownError(br, 2);
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dynTranslate(error));

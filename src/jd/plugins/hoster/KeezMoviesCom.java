@@ -27,33 +27,36 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(revision = "$Revision: 10931 $", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://[\\w\\.]*?keezmovies\\.com/video/[\\w-]+" }, flags = { 2 })
+public class KeezMoviesCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shufuni.com" }, urls = { "http://[\\w\\.]*?shufuni\\.com/[\\w-+]+" }, flags = { 2 })
-public class ShufuniCom extends PluginForHost {
-
-    public ShufuniCom(PluginWrapper wrapper) {
+    public KeezMoviesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String dllink = null;
+    public String dllink = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.shufuni.com/doc/agreement.html";
+        return "http://www.keezmovies.com/information";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        dllink = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("addVariable\\(\"videoName\", \"(.*?)\"\\);").getMatch(0);
-        dllink = br.getRegex("addVariable\\(\"CDNUrl\", \"(.*?)\"\\);").getMatch(0);
+        if (br.getRegex("(<form action=\"/age_verification\" method=\"post\">)").getMatch(0) != null) {
+            br.postPage("http://www.keezmovies.com/age_verification", "age_verified=1");
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        dllink = br.getRegex("flashvars.video_url = '(http.*?)';").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.trim() + ".flv");
-        URLConnectionAdapter con = null;
+
+        URLConnectionAdapter con = br.openGetConnection(dllink);
         try {
             con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html"))
@@ -92,5 +95,4 @@ public class ShufuniCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

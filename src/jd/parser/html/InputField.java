@@ -25,9 +25,9 @@ import jd.parser.Regex;
 public class InputField extends Property {
 
     private static final long serialVersionUID = 7859094911920903660L;
-    private String key = null;
-    private String value = null;
-    private String type = null;
+    private String            key              = null;
+    private String            value            = null;
+    private String            type             = null;
 
     public InputField(String key, String value) {
         this.key = key;
@@ -35,8 +35,12 @@ public class InputField extends Property {
     }
 
     public static InputField parse(String data) {
-
-        String[][] matches = new Regex(data, "[\"' ](\\w+?)[ ]*=[ ]*[\"'](.*?)[\"']").getMatches();
+        /* first we try values with " at start/end */
+        String[][] matches = new Regex(data, "[\"' ](\\w+?)[ ]*=[ ]*[\"](.*?)[\"]").getMatches();
+        if (matches == null || matches.length == 0) {
+            /* then we try values with ' at start/end */
+            matches = new Regex(data, "[\"' ](\\w+?)[ ]*=[ ]*['](.*?)[']").getMatches();
+        }
         String[][] matches2 = new Regex(data, "[\"' ](\\w+?)[ ]*=[ ]*([^>^ ^\"^']+)").getMatches();
         InputField ret = new InputField();
 

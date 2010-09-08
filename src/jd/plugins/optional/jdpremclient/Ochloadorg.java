@@ -21,14 +21,14 @@ import jd.plugins.download.DownloadInterface;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
-    private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
-    private static final int MAXDOWNLOADS = 5;
-    private volatile static int currentMaxDownloads = MAXDOWNLOADS;
+    private boolean                  proxyused           = false;
+    private String                   infostring          = null;
+    private PluginForHost            plugin              = null;
+    private static boolean           enabled             = false;
+    private static ArrayList<String> premiumHosts        = new ArrayList<String>();
+    private static final Object      LOCK                = new Object();
+    private static final int         MAXDOWNLOADS        = 5;
+    private volatile static int      currentMaxDownloads = MAXDOWNLOADS;
 
     public Ochloadorg(PluginWrapper wrapper) {
         super(wrapper);
@@ -110,6 +110,11 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         if (plugin != null) plugin.clean();
     }
 
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
+        link.requestGuiUpdate();
+    }
+
     private boolean handleOchLoad(DownloadLink link) throws Exception {
         synchronized (LOCK) {
             if (currentMaxDownloads == 0) return false;
@@ -137,14 +142,19 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             br.setDebug(true);
             dl = null;
             String url = Encoding.Base64Encode(link.getDownloadURL());
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, false, 1);
-            } catch (Throwable e) {
+            int conTry = 1;
+            while (true) {
+                showMessage(link, "ConnectTry: " + conTry);
                 try {
-                    dl.getConnection().disconnect();
-                } catch (Throwable e2) {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, false, 1);
+                    break;
+                } catch (Throwable e) {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (Throwable e2) {
+                    }
+                    if (++conTry > 4) { return false; }
                 }
-                return false;
             }
             if (!dl.getConnection().isContentDisposition()) {
                 /* unknown error */
