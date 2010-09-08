@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +36,7 @@ import java.util.zip.GZIPInputStream;
 
 import javax.imageio.ImageIO;
 
+import jd.http.URLConnectionAdapter.METHOD;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
@@ -76,44 +76,29 @@ public abstract class Request {
      * default timeouts, because 0 is infinite and BAD, if we need 0 then we
      * have to set it manually
      */
-    private int connectTimeout = 30000;
-    private int readTimeout = 60000;
-    private Cookies cookies = null;
-    private int followCounter = 0;
-    private boolean followRedirects = false;
+    private int                    connectTimeout = 30000;
+    private int                    readTimeout    = 60000;
+    private Cookies                cookies        = null;
 
-    private RequestHeader headers;
-    private String htmlCode;
+    private RequestHeader          headers;
+    private String                 htmlCode;
     protected URLConnectionAdapter httpConnection;
 
-    private long readTime = -1;
-    private boolean requested = false;
-    private long requestTime = -1;
+    private long                   readTime       = -1;
+    private boolean                requested      = false;
 
-    private URL url;
-    private JDProxy proxy;
-    private URL orgURL;
-    private String customCharset = null;
-    private byte[] byteArray;
-    private BufferedImage image;
-
-    private static String http2JDP(final String string) {
-        if (string.startsWith("http")) { return ("jdp" + string.substring(4)); }
-        return string;
-    }
-
-    private static String jdp2http(final String string) {
-        if (string.startsWith("jdp")) { return ("http" + string.substring(3)); }
-        return string;
-    }
+    private JDProxy                proxy;
+    private URL                    orgURL;
+    private String                 customCharset  = null;
+    private byte[]                 byteArray;
+    private BufferedImage          image;
 
     public void setCustomCharset(final String charset) {
         this.customCharset = charset;
     }
 
     public Request(final String url) throws MalformedURLException {
-        this.url = new URL(Encoding.urlEncode_light(http2JDP(url)));
-        this.orgURL = new URL(jdp2http(url));
+        this.orgURL = new URL(url);
         initDefaultHeader();
     }
 
@@ -134,7 +119,6 @@ public abstract class Request {
         collectCookiesFromConnection();
     }
 
-    @SuppressWarnings("unchecked")
     private void collectCookiesFromConnection() {
         final List<String> cookieHeaders = (List<String>) httpConnection.getHeaderFields().get("Set-Cookie");
         final String date = httpConnection.getHeaderField("Date");
@@ -158,24 +142,12 @@ public abstract class Request {
         requested = true;
         openConnection();
         postRequest(httpConnection);
+        httpConnection.connect();
         try {
             collectCookiesFromConnection();
         } catch (NullPointerException e) {
             throw new IOException("Malformed url?", e);
         }
-        // while (followRedirects && httpConnection.getHeaderField("Location")
-        // != null ) {
-        // followCounter++;
-        // if (followCounter >= MAX_REDIRECTS) { throw new
-        // IOException("Connection redirects too often. Max (" + MAX_REDIRECTS +
-        // ")");
-        //
-        // }
-        // url = new URL(httpConnection.getHeaderField("Location"));
-        // openConnection();
-        // postRequest(httpConnection);
-        // }
-
         return this;
     }
 
@@ -238,10 +210,6 @@ public abstract class Request {
             buffer.append(cookie.getValue());
         }
         return buffer.toString();
-    }
-
-    public int getFollowCounter() {
-        return followCounter;
     }
 
     public RequestHeader getHeaders() {
@@ -331,24 +299,19 @@ public abstract class Request {
     }
 
     public long getRequestTime() {
-        return requestTime;
+        return (httpConnection == null) ? -1 : httpConnection.getRequestTime();
     }
 
     public String getResponseHeader(final String key) {
         return (httpConnection == null) ? null : httpConnection.getHeaderField(key);
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, ArrayList<String>> getResponseHeaders() {
+    public Map<String, List<String>> getResponseHeaders() {
         return (httpConnection == null) ? null : httpConnection.getHeaderFields();
     }
 
     public URL getUrl() {
         return orgURL;
-    }
-
-    public URL getJDPUrl() {
-        return url;
     }
 
     private boolean hasCookies() {
@@ -368,10 +331,6 @@ public abstract class Request {
         headers.put("Connection", "close");
     }
 
-    public boolean isFollowRedirects() {
-        return followRedirects;
-    }
-
     public boolean isRequested() {
         return requested;
     }
@@ -383,23 +342,16 @@ public abstract class Request {
 
     private void openConnection() throws IOException {
 
-        long tima = System.currentTimeMillis();
-
         if (!headers.contains("Host")) {
-            if (url.getPort() != 80 && url.getPort() > 0) {
-                headers.setAt(0, "Host", url.getHost() + ":" + url.getPort());
+            if (orgURL.getPort() != 80 && orgURL.getPort() > 0) {
+                headers.setAt(0, "Host", orgURL.getHost() + ":" + orgURL.getPort());
             } else {
-                headers.setAt(0, "Host", url.getHost());
+                headers.setAt(0, "Host", orgURL.getHost());
             }
         }
-        if (proxy != null) {
-            httpConnection = (URLConnectionAdapter) url.openConnection(proxy);
-        } else {
-            httpConnection = (URLConnectionAdapter) url.openConnection();
-        }
+
+        httpConnection = new HTTPConnection(orgURL, proxy);
         httpConnection.setRequest(this);
-        httpConnection.setInstanceFollowRedirects(followRedirects);
-        requestTime = System.currentTimeMillis() - tima;
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(connectTimeout);
 
@@ -441,11 +393,16 @@ public abstract class Request {
             return null;
         }
         ByteArrayOutputStream tmpOut;
-        int contentLength = con.getContentLength();
+        long contentLength = con.getContentLength();
         if (contentLength != -1) {
-            tmpOut = new ByteArrayOutputStream(contentLength);
+            int length = contentLength > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) contentLength;
+            tmpOut = new ByteArrayOutputStream(length);
         } else {
             tmpOut = new ByteArrayOutputStream(16384);
+        }
+        byte[] preRead = con.preReadBytes();
+        if (preRead != null) {
+            tmpOut.write(preRead);
         }
         /* added "Corrupt GZIP trailer" for CamWinsCom */
         try {
@@ -486,10 +443,6 @@ public abstract class Request {
 
     public void setConnectTimeout(final int connectTimeout) {
         this.connectTimeout = connectTimeout;
-    }
-
-    public void setFollowRedirects(final boolean followRedirects) {
-        this.followRedirects = followRedirects;
     }
 
     // public void setProxy(String ip, String port) throws
@@ -535,12 +488,11 @@ public abstract class Request {
 
             // @Override
             public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
-                httpConnection.setRequestMethod("HEAD");
+                httpConnection.setRequestMethod(METHOD.HEAD);
             }
         };
         ret.connectTimeout = this.connectTimeout;
         ret.cookies = new Cookies(this.getCookies());
-        ret.followRedirects = this.followRedirects;
         ret.headers = (RequestHeader) this.getHeaders().clone();
         ret.setProxy(proxy);
         ret.readTime = this.readTimeout;

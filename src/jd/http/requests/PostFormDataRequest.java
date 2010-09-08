@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.URLConnectionAdapter.METHOD;
 
 /**
  * Extending the Request calss, this class is able to to HTML Formdata Posts.
@@ -59,8 +60,6 @@ public class PostFormDataRequest extends Request {
 
     // @Override
     public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
-        httpConnection.setDoOutput(true);
-
         output = httpConnection.getOutputStream();
 
         for (int i = 0; i < this.formDatas.size(); i++) {
@@ -73,10 +72,9 @@ public class PostFormDataRequest extends Request {
         writer.flush();
 
         if (output != null) {
-            output.flush();
-            output.close();
+            output.flush();            
         }
-
+        httpConnection.postDataSend();
     }
 
     private void write(FormData formData) throws IOException {
@@ -129,7 +127,7 @@ public class PostFormDataRequest extends Request {
 
     // @Override
     public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
-        httpConnection.setRequestMethod("POST");
+        httpConnection.setRequestMethod(METHOD.POST);
         httpConnection.setRequestProperty("Content-Type", encodeType + "; boundary=" + boundary.substring(2));
 
     }

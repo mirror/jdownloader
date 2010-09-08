@@ -120,6 +120,7 @@ public class IfolderRu extends PluginForHost {
                 }
                 int ticketTime = Integer.parseInt(ticketTimeS) * 1000;
                 this.sleep(ticketTime + 1, downloadLink);
+                /* this response comes without valid http header */
                 br.getPage(watchAd);
             } else {
                 logger.warning("second watchad equals null");
@@ -145,9 +146,12 @@ public class IfolderRu extends PluginForHost {
             /* Captcha */
             String captchaCode = getCaptchaCode(captchaurl, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
+            /* this hoster checks content encoding */
+            captchaForm.setEncoding("application/x-www-form-urlencoded");
             try {
                 br.submitForm(captchaForm);
             } catch (Exception e) {
+                e.printStackTrace();
                 br.submitForm(captchaForm);
             }
             if (!br.containsHTML(CAPTEXT)) break;

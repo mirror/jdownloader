@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.URLConnectionAdapter.METHOD;
 
 public class GetRequest extends Request {
 
@@ -37,7 +38,7 @@ public class GetRequest extends Request {
 
     // @Override
     public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
-        httpConnection.setRequestMethod("GET");
+        httpConnection.setRequestMethod(METHOD.GET);
 
     }
 

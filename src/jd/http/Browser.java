@@ -21,10 +21,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -54,9 +52,9 @@ import jd.parser.html.XPath;
 public class Browser {
     public class BrowserException extends IOException {
 
-        private static final long serialVersionUID = 1509988898224037320L;
+        private static final long    serialVersionUID = 1509988898224037320L;
         private URLConnectionAdapter connection;
-        private Exception e = null;
+        private Exception            e                = null;
 
         public BrowserException(final String string) {
             super(string);
@@ -99,10 +97,10 @@ public class Browser {
 
     }
 
-    private static JDProxy GLOBAL_PROXY = null;
-    private static Logger LOGGER;
+    private static JDProxy                        GLOBAL_PROXY = null;
+    private static Logger                         LOGGER;
     // added proxy map to find proxy passwords.
-    private static final HashMap<String, JDProxy> PROXIES = new HashMap<String, JDProxy>();
+    private static final HashMap<String, JDProxy> PROXIES      = new HashMap<String, JDProxy>();
 
     public static Logger getLogger() {
         return LOGGER;
@@ -125,13 +123,9 @@ public class Browser {
     }
 
     private static final HashMap<String, Cookies> COOKIES = new HashMap<String, Cookies>();
-    private HashMap<String, Cookies> cookies = new HashMap<String, Cookies>();
+    private HashMap<String, Cookies>              cookies = new HashMap<String, Cookies>();
 
-    private boolean debug = false;
-
-    private static final HashMap<URL, Browser> URL_LINK_MAP = new HashMap<URL, Browser>();
-
-    private HashMap<String, String[]> logins = new HashMap<String, String[]>();
+    private boolean                               debug   = false;
 
     /**
      * Clears all cookies for the given url. URL has to be a valid url if
@@ -244,56 +238,34 @@ public class Browser {
         cookies.add(request.getCookies());
     }
 
-    private String acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
+    private String                          acceptLanguage   = "de, en-gb;q=0.9, en;q=0.8";
 
     /*
      * -1 means use default Timeouts
      * 
      * 0 means infinite (DO NOT USE if not needed)
      */
-    private int connectTimeout = -1;
-    private int readTimeout = -1;
-    private static int TIMEOUT_READ = 30000;
-    private static int TIMEOUT_CONNECT = 30000;
+    private int                             connectTimeout   = -1;
+    private int                             readTimeout      = -1;
+    private static int                      TIMEOUT_READ     = 30000;
+    private static int                      TIMEOUT_CONNECT  = 30000;
 
-    private URL currentURL;
+    private URL                             currentURL;
 
-    private boolean doRedirects = false;
+    private boolean                         doRedirects      = false;
 
-    private RequestHeader headers;
+    private RequestHeader                   headers;
 
-    private int limit = 1 * 1024 * 1024;
-    private Request request;
-    private String customCharset = null;
-    private boolean cookiesExclusive = true;
-    private JDProxy proxy;
-    private HashMap<String, Integer> requestIntervalLimitMap;
-    private HashMap<String, Long> requestTimeMap;
+    private int                             limit            = 1 * 1024 * 1024;
+    private Request                         request;
+    private String                          customCharset    = null;
+    private boolean                         cookiesExclusive = true;
+    private JDProxy                         proxy;
+    private HashMap<String, Integer>        requestIntervalLimitMap;
+    private HashMap<String, Long>           requestTimeMap;
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
-    private static HashMap<String, Long> REQUESTTIME_MAP;
-    private static boolean VERBOSE = false;
-
-    private static final Authenticator AUTHENTICATOR = new Authenticator() {
-        protected PasswordAuthentication getPasswordAuthentication() {
-            if (this.getRequestingPrompt().contains("SOCKS")) {
-                /*
-                 * Socks Authentication does only have a RequestHost(Socks
-                 * Server), so we cannot differ between URLS because we dont see
-                 * them here
-                 */
-                if (Browser.getGlobalProxy() != null) {
-                    JDProxy tmpproxy = Browser.getGlobalProxy();
-                    if (tmpproxy.getHost().contains(this.getRequestingHost())) return new PasswordAuthentication(tmpproxy.getUser(), tmpproxy.getPass().toCharArray());
-                }
-            } else if (this.getRequestingURL() != null) {
-                /* normal ProxyAuth with URL */
-                Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
-                if (br != null) return br.getPasswordAuthentication(this.getRequestingHost(), this.getRequestingPort());
-            }
-            if (LOGGER != null) LOGGER.warning("Browser Auth Error!");
-            return null;
-        }
-    };
+    private static HashMap<String, Long>    REQUESTTIME_MAP;
+    private static boolean                  VERBOSE          = false;
 
     public Browser() {
 
@@ -362,13 +334,7 @@ public class Browser {
         } catch (InterruptedException e) {
             throw new IOException("requestIntervalTime Exception");
         }
-        try {
-            assignURLToBrowserInstance(request.getJDPUrl(), this);
-            request.connect();
-        } finally {
-            assignURLToBrowserInstance(request.getJDPUrl(), null);
-            assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
-        }
+        request.connect();
     }
 
     private static synchronized void waitForPageAccess(final Browser browser, final Request request) throws InterruptedException {
@@ -414,32 +380,6 @@ public class Browser {
                 REQUESTTIME_MAP.put(host, System.currentTimeMillis());
             }
         }
-    }
-
-    private static void assignURLToBrowserInstance(final URL url, final Browser browser) {
-        if (browser == null) {
-            URL_LINK_MAP.remove(url);
-        } else {
-            URL_LINK_MAP.put(url, browser);
-        }
-
-        // System.out.println("NO LINKED: " + URL_LINK_MAP);
-    }
-
-    public static URL reAssignUrlToBrowserInstance(final URL url1, final URL url2) {
-        assignURLToBrowserInstance(url2, getAssignedBrowserInstance(url1));
-        URL_LINK_MAP.remove(url1);
-        return url2;
-    }
-
-    /**
-     * Returns the Browserinstance that requestst this url connection
-     * 
-     * @param port
-     * @param host
-     */
-    public static Browser getAssignedBrowserInstance(final URL url) {
-        return URL_LINK_MAP.get(url);
     }
 
     /**
@@ -554,7 +494,7 @@ public class Browser {
 
         case POST:
             if (form.getEncoding() == null || !form.getEncoding().toLowerCase().endsWith("form-data")) {
-                return this.createPostRequest(action, form.getRequestVariables());
+                return this.createPostRequest(action, form.getRequestVariables(), form.getEncoding());
             } else {
                 final PostFormDataRequest request = (PostFormDataRequest) createPostFormDataRequest(action);
                 if (form.getEncoding() != null) {
@@ -864,13 +804,13 @@ public class Browser {
      * Creates a new POstrequest based on a variable hashmap
      */
     public Request createPostRequest(final String url, final LinkedHashMap<String, String> post) throws IOException {
-        return this.createPostRequest(url, PostRequest.variableMaptoArray(post));
+        return this.createPostRequest(url, PostRequest.variableMaptoArray(post), null);
     }
 
     /**
      * Creates a new postrequest based an an requestVariable Arraylist
      */
-    private Request createPostRequest(String url, final ArrayList<RequestVariable> post) throws IOException {
+    private Request createPostRequest(String url, final ArrayList<RequestVariable> post, final String encoding) throws IOException {
         url = getURL(url);
         boolean sendref = true;
         if (currentURL == null) {
@@ -885,6 +825,7 @@ public class Browser {
         }
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
+        if (encoding != null) request.getHeaders().put("Content-Type", encoding);
         // request.setFollowRedirects(doRedirects);
         /* set Timeouts */
         request.setConnectTimeout(getConnectTimeout());
@@ -936,7 +877,7 @@ public class Browser {
      * be send as it is
      */
     public String postPageRaw(final String url, final String post) throws IOException {
-        final PostRequest request = (PostRequest) this.createPostRequest(url, new ArrayList<RequestVariable>());
+        final PostRequest request = (PostRequest) this.createPostRequest(url, new ArrayList<RequestVariable>(), null);
         request.setCustomCharset(this.customCharset);
         if (post != null) {
             request.setPostDataString(post);
@@ -1115,7 +1056,6 @@ public class Browser {
 
     public void getDownload(final File file, final String urlString) throws IOException {
         final URLConnectionAdapter con = this.openGetConnection(URLDecoder.decode(urlString, "UTF-8"));
-        con.setInstanceFollowRedirects(true);
         download(file, con);
     }
 
@@ -1131,7 +1071,6 @@ public class Browser {
         if (con == null) {
             con = request.getHttpConnection();
         }
-        con.setInstanceFollowRedirects(true);
         download(file, con);
     }
 
@@ -1169,9 +1108,7 @@ public class Browser {
         br.limit = limit;
         br.readTimeout = readTimeout;
         br.request = request;
-        br.cookies = cookies;
-        br.logins = new HashMap<String, String[]>();
-        br.logins.putAll(logins);
+        br.cookies = cookies;        
         br.cookiesExclusive = cookiesExclusive;
         br.debug = debug;
         br.proxy = proxy;
@@ -1248,30 +1185,8 @@ public class Browser {
         }
     }
 
-    public void setAuth(String domain, final String user, final String pass) {
-        domain = domain.trim();
-        if (domain.indexOf(":") <= 0) {
-            domain += ":80";
-        }
-        logins.put(domain, new String[] { user, pass });
-    }
-
-    public String[] getAuth(String domain) {
-        domain = domain.trim();
-        if (domain.indexOf(":") <= 0) {
-            domain += ":80";
-        }
-        String[] ret = logins.get(domain);
-        if (ret == null) {
-            // see proxy auth
-
-            JDProxy proxyUsed = PROXIES.get(domain);
-            if (proxyUsed != null) {
-                ret = new String[] { proxyUsed.getUser(), proxyUsed.getPass() };
-            }
-
-        }
-        return ret;
+    /*TODO: setauth needs to be done*/
+    public void setAuth(String domain, final String user, final String pass) {        
     }
 
     public String submitForm(final String formname) throws Exception {
@@ -1330,33 +1245,7 @@ public class Browser {
         this.debug = b;
     }
 
-    /**
-     * Returns the Password Authentication if there are auth set for the given
-     * url
-     * 
-     * @param url
-     * @param port
-     * @param host
-     * @return
-     */
-    public PasswordAuthentication getPasswordAuthentication(final String host, int port) {
-        if (port <= 0) port = 80;
-        final String[] auth = this.getAuth(host + ":" + port);
-        if (auth == null) {
-            // auth=auth;
-            return null;
-        }
-        if (LOGGER != null) {
-            /*
-             * Removed logging of plain authentication password!
-             */
-            LOGGER.finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + "****");
-        }
-        return new PasswordAuthentication(auth[0], auth[1].toCharArray());
-    }
-
     public static void init() {
-        Authenticator.setDefault(AUTHENTICATOR);
         CookieHandler.setDefault(null);
         XTrustProvider.install();
         // Now you are telling the JRE to ignore the hostname

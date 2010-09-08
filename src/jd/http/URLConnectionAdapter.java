@@ -20,14 +20,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ProtocolException;
+import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public interface URLConnectionAdapter {
 
-    @SuppressWarnings("rawtypes")
-    Map getHeaderFields();
+    public static enum METHOD {
+        GET, POST, HEAD
+    }
+
+    Map<String, List<String>> getHeaderFields();
 
     String getHeaderField(String string);
 
@@ -37,8 +42,6 @@ public interface URLConnectionAdapter {
 
     long getLongContentLength();
 
-    void setInstanceFollowRedirects(boolean followRedirects);
-
     void setReadTimeout(int readTimeout);
 
     void setConnectTimeout(int connectTimeout);
@@ -47,27 +50,23 @@ public interface URLConnectionAdapter {
 
     InputStream getInputStream() throws IOException;
 
-    InputStream getErrorStream();
+    void setRequestMethod(METHOD method);
 
-    void setRequestMethod(String string) throws ProtocolException;
-
-    void setDoOutput(boolean b);
+    METHOD getRequestMethod();
 
     void connect() throws IOException;
 
     OutputStream getOutputStream() throws IOException;
 
-    Map<String, List<String>> getRequestProperties();
-
-    boolean getDoOutput();
+    Map<String, String> getRequestProperties();
 
     boolean isOK();
 
     long[] getRange();
 
-    String getResponseMessage() throws IOException;
+    String getResponseMessage() ;
 
-    int getResponseCode() throws IOException;
+    int getResponseCode();
 
     void disconnect();
 
@@ -87,4 +86,16 @@ public interface URLConnectionAdapter {
 
     public void setCharset(String charset);
 
+    public long getRequestTime();
+
+    /**
+     * returns bytearray that belongs to content, WARNING will get null after
+     * first call
+     * 
+     * @return
+     */
+    public byte[] preReadBytes();
+
+    /* needs to get called after postData is send */
+    public void postDataSend() throws IOException;
 }

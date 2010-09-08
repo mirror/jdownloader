@@ -27,11 +27,12 @@ import java.util.Map.Entry;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.URLConnectionAdapter.METHOD;
 import jd.parser.html.Form;
 
 public class PostRequest extends Request {
     private ArrayList<RequestVariable> postData;
-    private String postDataString = null;
+    private String                     postDataString = null;
 
     public PostRequest(final Form form) throws MalformedURLException {
         super(form.getAction(null));
@@ -47,9 +48,7 @@ public class PostRequest extends Request {
     // public Request toHeadRequest() throws MalformedURLException {
 
     public String getPostDataString() {
-        if (postData.isEmpty()) {
-            return postDataString;
-        }
+        if (postData.isEmpty()) { return postDataString; }
 
         final StringBuilder buffer = new StringBuilder();
 
@@ -75,7 +74,6 @@ public class PostRequest extends Request {
 
     // @Override
     public void postRequest(final URLConnectionAdapter httpConnection) throws IOException {
-        httpConnection.setDoOutput(true);
         String parameter = postDataString != null ? postDataString : getPostDataString();
         if (parameter != null) {
             if (postDataString == null) parameter = parameter.trim();
@@ -86,9 +84,8 @@ public class PostRequest extends Request {
             if (parameter != null) {
                 wr.write(parameter);
             }
-            wr.flush();
-            wr.close();
-
+            wr.flush();            
+            httpConnection.postDataSend();
         } else {
             httpConnection.setRequestProperty("Content-Length", "0");
         }
@@ -96,7 +93,7 @@ public class PostRequest extends Request {
 
     // @Override
     public void preRequest(final URLConnectionAdapter httpConnection) throws IOException {
-        httpConnection.setRequestMethod("POST");
+        httpConnection.setRequestMethod(METHOD.POST);
     }
 
     public void addVariable(final String key, final String value) {

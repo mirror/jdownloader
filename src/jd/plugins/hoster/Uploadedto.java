@@ -125,6 +125,7 @@ public class Uploadedto extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setDebug(true);
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("http://uploaded.to/login");

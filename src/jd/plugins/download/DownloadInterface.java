@@ -40,6 +40,7 @@ import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.URLConnectionAdapter.METHOD;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -199,12 +200,12 @@ abstract public class DownloadInterface {
                 br.setConnectTimeout(getRequestTimeout());
                 /* set requested range */
 
-                Map<String, List<String>> request = connection.getRequestProperties();
+                Map<String, String> request = connection.getRequestProperties();
                 if (request != null) {
                     String value;
-                    for (Entry<String, List<String>> next : request.entrySet()) {
+                    for (Entry<String, String> next : request.entrySet()) {
                         value = next.getValue().toString();
-                        br.getHeaders().put(next.getKey(), value.substring(1, value.length() - 1));
+                        br.getHeaders().put(next.getKey(), value);
                     }
                 }
                 if (!forwardReferer) {
@@ -212,7 +213,7 @@ abstract public class DownloadInterface {
                     br.setCurrentURL(null);
                 }
                 URLConnectionAdapter con;
-                if (connection.getDoOutput()) {
+                if (connection.getRequestMethod()==METHOD.POST) {
                     connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
                     con = br.openRequestConnection(connection.getRequest());
                 } else {
