@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataup.de", "dataup.to" }, urls = { "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)", "http://[\\w\\.]*?dataup\\.to/\\d+/(.*)" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataup.de", "dataup.to" }, urls = { "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)", "http://[\\w\\.]*?dataup\\.to/\\d+/." }, flags = { 0, 0 })
 public class Dataupde extends PluginForHost {
     public Dataupde(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,21 +39,17 @@ public class Dataupde extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        correctURL(downloadLink);
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        try {
-            String id = new Regex(downloadLink.getDownloadURL(), "dataup\\.de|to/(\\d+)").getMatch(0);
-            br.getPage("http://dataup.to/data/api/status.php?id=" + id.trim());
-            String[] data = br.getRegex("(.*?)#(\\d+)#(\\d+)#(.*)").getRow(0);
-            downloadLink.setFinalFileName(data[0]);
-            downloadLink.setDownloadSize(Long.parseLong(data[1]));
-            if (data[2].equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setMD5Hash(data[3].trim());
-            return AvailableStatus.TRUE;
-        } catch (NullPointerException e) {
-            return AvailableStatus.FALSE;
-        }
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Die Datei wird gerade verarbeitet und steht in wenigen Minuten bereit\\!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"box_header\"><h1>Download: (.*?)</h1></div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("Name: (.*?)<br />").getMatch(0);
+        String filesize = br.getRegex("Gr\\&ouml;\\&szlig;e: (.*?)<br").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(Regex.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -64,27 +60,10 @@ public class Dataupde extends PluginForHost {
         br.setCookie("http://www.dataup.to/", "language", "en");
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        int maxchunks = 1;
-        /* DownloadLink holen */
-        String dllink = null;
-        if (br.containsHTML("DivXBrowserPlugin.cab")) {
-            // Stream-links handling, also when downloading streams you can
-            // download the file with multiple connections (chunks)
-            maxchunks = 0;
-            dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://q[0-9]+\\.dataup\\.to:[0-9]+/download\\.php\\?id=[0-9]+\\&name=.*?)\"").getMatch(0);
-        } else {
-            // Normal-links handling
-            dllink = br.getRegex("div align=\"center\">.*?<form action=\"(.*?)\"").getMatch(0);
-        }
-        /* 10 seks warten, kann weggelassen werden */
-
-        // this.sleep(10000, downloadLink);
+        String dllink = br.getRegex("class=\"download\" href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://q\\d+\\.dataup\\.to:\\d+/download\\.php\\?id=\\d+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
-
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getLongContentLength() == 0) {
             dl.getConnection().disconnect();
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -106,7 +85,7 @@ public class Dataupde extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override

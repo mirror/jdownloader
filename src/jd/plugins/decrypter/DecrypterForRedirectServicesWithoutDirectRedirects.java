@@ -48,9 +48,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         br.setReadTimeout(60 * 1000);
         String finallink = null;
         if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("yourfileplace.com/") && !parameter.contains("oneclickmoviez.com/dwnl/") && !parameter.contains("1tool.biz") && !parameter.contains("catchfile.net") && !parameter.contains("file4ever.us") && !parameter.contains("trailerzone.info/") && !parameter.contains("fairtilizer.com/") && !parameter.contains("tm-exchange.com/")) br.getPage(parameter);
-        if (parameter.contains("adf.ly"))
-            finallink = br.getRegex("var target_url = '(http.*?)'").getMatch(0);
-        else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
+        if (parameter.contains("adf.ly/")) {
+            finallink = br.getRegex("\\.attr\\(\"href\", \\'(.*?)\\'\\)").getMatch(0);
+        } else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
             finallink = br.getRedirectLocation();
             if (finallink != null) finallink = "directhttp://" + finallink;
         } else if (parameter.contains("musicloud.fm/")) {
