@@ -1,4 +1,4 @@
-package jd.controlling.reconnect.plugins;
+package jd.controlling.reconnect;
 
 /**
  * Exception gets thrown of External IP Check failed.

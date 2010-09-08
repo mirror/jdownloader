@@ -9,8 +9,8 @@ import javax.swing.event.DocumentEvent;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.reconnect.plugins.ReconnectException;
-import jd.controlling.reconnect.plugins.RouterPlugin;
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.RouterPlugin;
 import jd.http.Browser;
 import jd.http.JDProxy;
 import jd.parser.Regex;

@@ -27,7 +27,6 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.ProgressController;
-import jd.controlling.reconnect.plugins.ReconnectPluginController;
 import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;

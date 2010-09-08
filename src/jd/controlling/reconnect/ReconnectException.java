@@ -1,4 +1,4 @@
-package jd.controlling.reconnect.plugins;
+package jd.controlling.reconnect;
 
 public class ReconnectException extends Exception {
 

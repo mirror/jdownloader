@@ -34,7 +34,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.IPCheck;
-import jd.controlling.reconnect.plugins.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;

@@ -1,4 +1,4 @@
-package jd.controlling.reconnect.plugins;
+package jd.controlling.reconnect;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -18,8 +18,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.controlling.reconnect.IPCheck;
-import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.Factory;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;

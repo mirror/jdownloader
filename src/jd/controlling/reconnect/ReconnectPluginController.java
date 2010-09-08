@@ -1,4 +1,4 @@
-package jd.controlling.reconnect.plugins;
+package jd.controlling.reconnect;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,8 +22,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.CodeVerifier;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.controlling.reconnect.IPCheck;
-import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.plugins.batch.ExternBatchReconnectPlugin;
 import jd.controlling.reconnect.plugins.extern.ExternReconnectPlugin;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;

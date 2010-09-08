@@ -23,7 +23,7 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import jd.OptionalPluginWrapper;
-import jd.controlling.reconnect.plugins.ReconnectPluginConfigGUI;
+import jd.controlling.reconnect.ReconnectPluginConfigGUI;
 import jd.utils.locale.JDL;
 
 public class ConfigTreeModel implements TreeModel {

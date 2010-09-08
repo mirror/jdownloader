@@ -11,8 +11,8 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
-import jd.controlling.reconnect.plugins.ReconnectException;
-import jd.controlling.reconnect.plugins.RouterPlugin;
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.RouterPlugin;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;

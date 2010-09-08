@@ -1,4 +1,4 @@
-package jd.controlling.reconnect.plugins;
+package jd.controlling.reconnect;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
