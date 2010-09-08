@@ -38,21 +38,21 @@ import jd.utils.JDUtilities;
 @OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 5)
 public class Schedule extends PluginOptional {
 
-    private ArrayList<Actions> actions;
+    private ArrayList<Actions>                  actions;
 
     private ArrayList<SchedulerModuleInterface> modules;
 
-    private SchedulerView view;
+    private SchedulerView                       view;
 
-    private MainGui gui;
+    private MainGui                             gui;
 
-    private Schedulercheck sc = null;
+    private Schedulercheck                      sc      = null;
 
-    private boolean running = false;
+    private boolean                             running = false;
 
-    private MenuAction activateAction;
+    private MenuAction                          activateAction;
 
-    public static final Object LOCK = new Object();
+    public static final Object                  LOCK    = new Object();
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
@@ -220,12 +220,12 @@ public class Schedule extends PluginOptional {
     }
 
     public class Schedulercheck extends Thread {
-        private Date today;
-        private SimpleDateFormat time;
-        private SimpleDateFormat date;
-        private ArrayList<Actions> tmpactions = null;
-        private ArrayList<Executions> tmpexe = null;
-        private boolean sleeping = false;
+        private Date                  today;
+        private SimpleDateFormat      time;
+        private SimpleDateFormat      date;
+        private ArrayList<Actions>    tmpactions = null;
+        private ArrayList<Executions> tmpexe     = null;
+        private boolean               sleeping   = false;
 
         public Schedulercheck() {
             super("Schedulercheck");

@@ -36,7 +36,12 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
     /**
      * is the optional plugin running
      */
-    private boolean running = false;
+    private boolean         running                 = false;
+
+    @Override
+    public OptionalPluginWrapper getWrapper() {
+        return (OptionalPluginWrapper) super.getWrapper();
+    }
 
     public final void controlEvent(ControlEvent event) {
         if (isRunning()) {
@@ -44,7 +49,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
             // Deaktiviert das Plugin beim Beenden
             if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
-                final String id = JDController.requestDelayExit(((OptionalPluginWrapper) wrapper).getID());
+                final String id = JDController.requestDelayExit(getWrapper().getID());
                 try {
                     stopAddon();
                 } catch (Exception e) {
@@ -120,7 +125,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     @Override
     public String getVersion() {
-        return ((OptionalPluginWrapper) this.getWrapper()).getVersion();
+        return getWrapper().getVersion();
     }
 
     /**

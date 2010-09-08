@@ -78,72 +78,72 @@ import org.schwering.irc.lib.IRCConnection;
 
 @OptionalPlugin(rev = "$Revision$", id = "chat", hasGui = true, interfaceversion = 5)
 public class JDChat extends PluginOptional {
-    private static final long AWAY_TIMEOUT = 15 * 60 * 1000;
-    private static String CHANNEL = "#jDownloader";
-    private static final Pattern CMD_ACTION = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_CONNECT = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_DISCONNECT = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_EXIT = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_MODE = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_JOIN = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_NICK = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_PM = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_SLAP = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_TOPIC = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_TRANSLATE = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CMD_VERSION = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
+    private static final long              AWAY_TIMEOUT           = 15 * 60 * 1000;
+    private static String                  CHANNEL                = "#jDownloader";
+    private static final Pattern           CMD_ACTION             = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_CONNECT            = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_DISCONNECT         = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_EXIT               = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_MODE               = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_JOIN               = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_NICK               = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_PM                 = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_SLAP               = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_TOPIC              = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_TRANSLATE          = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           CMD_VERSION            = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
 
-    private static final ArrayList<String> COMMANDS = new ArrayList<String>();
+    private static final ArrayList<String> COMMANDS               = new ArrayList<String>();
 
-    private static final String PARAM_HOST = "PARAM_HOST";
-    private static final String PARAM_NICK = "PARAM_NICK";
+    private static final String            PARAM_HOST             = "PARAM_HOST";
+    private static final String            PARAM_NICK             = "PARAM_NICK";
 
-    private static final String PARAM_PERFORM = "PARAM_PERFORM";
-    private static final String PARAM_PORT = "PARAM_PORT";
-    private static final String PARAM_USERCOLOR = "PARAM_USERCOLOR";
-    private static final String PARAM_USERLISTPOSITION = "PARAM_USERLISTPOSITION";
+    private static final String            PARAM_PERFORM          = "PARAM_PERFORM";
+    private static final String            PARAM_PORT             = "PARAM_PORT";
+    private static final String            PARAM_USERCOLOR        = "PARAM_USERCOLOR";
+    private static final String            PARAM_USERLISTPOSITION = "PARAM_USERLISTPOSITION";
 
-    public static final String STYLE = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
-    public static final String STYLE_ACTION = "action";
-    public static final String STYLE_ERROR = "error";
-    public static final String STYLE_HIGHLIGHT = "highlight";
-    public static final String STYLE_NOTICE = "notice";
-    public static final String STYLE_PM = "pm";
-    public static final String STYLE_SELF = "self";
-    public static final String STYLE_SYSTEM_MESSAGE = "system";
-    public static final String USERLIST_STYLE = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
-    private static final String CHANNEL_LNG = "CHANNEL_LNG3";
-    private JLabel top;
+    public static final String             STYLE                  = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
+    public static final String             STYLE_ACTION           = "action";
+    public static final String             STYLE_ERROR            = "error";
+    public static final String             STYLE_HIGHLIGHT        = "highlight";
+    public static final String             STYLE_NOTICE           = "notice";
+    public static final String             STYLE_PM               = "pm";
+    public static final String             STYLE_SELF             = "self";
+    public static final String             STYLE_SYSTEM_MESSAGE   = "system";
+    public static final String             USERLIST_STYLE         = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
+    private static final String            CHANNEL_LNG            = "CHANNEL_LNG3";
+    private JLabel                         top;
 
-    private IRCConnection conn;
-    private SwitchPanel frame;
-    private long lastAction;
-    private String lastCommand;
-    private boolean loggedIn;
-    private ArrayList<User> NAMES;
-    private String nick;
-    private boolean nickaway;
-    private int nickCount = 0;
-    private String orgNick;
-    private JTextPane right;
-    private TreeMap<String, JDChatPMS> pms = new TreeMap<String, JDChatPMS>();
-    private StringBuilder sb;
-    private JScrollPane scrollPane;
-    private JTextPane textArea;
-    private JTextField textField;
+    private IRCConnection                  conn;
+    private SwitchPanel                    frame;
+    private long                           lastAction;
+    private String                         lastCommand;
+    private boolean                        loggedIn;
+    private ArrayList<User>                NAMES;
+    private String                         nick;
+    private boolean                        nickaway;
+    private int                            nickCount              = 0;
+    private String                         orgNick;
+    private JTextPane                      right;
+    private TreeMap<String, JDChatPMS>     pms                    = new TreeMap<String, JDChatPMS>();
+    private StringBuilder                  sb;
+    private JScrollPane                    scrollPane;
+    private JTextPane                      textArea;
+    private JTextField                     textField;
 
     public TreeMap<String, JDChatPMS> getPms() {
         return pms;
     }
 
-    private JComboBox lang;
+    private JComboBox        lang;
 
     private SubConfiguration subConfig;
 
-    private JDChatView view;
-    private MenuAction activateAction;
-    private JTabbedPane tabbedPane;
-    private JButton closeTab;
+    private JDChatView       view;
+    private MenuAction       activateAction;
+    private JTabbedPane      tabbedPane;
+    private JButton          closeTab;
 
     public JDChat(PluginWrapper wrapper) {
         super(wrapper);
@@ -732,14 +732,9 @@ public class JDChat extends PluginOptional {
     @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        MenuAction m;
 
-        menu.add(m = activateAction);
-        if (view == null || !view.isVisible()) {
-            m.setSelected(false);
-        } else {
-            m.setSelected(true);
-        }
+        menu.add(activateAction);
+
         return menu;
     }
 
@@ -836,9 +831,8 @@ public class JDChat extends PluginOptional {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
 
-        activateAction = new MenuAction("chat", 0);
+        activateAction = new MenuAction("chat", getIconKey());
         activateAction.setActionListener(this);
-        activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
 
         return true;
@@ -911,8 +905,8 @@ public class JDChat extends PluginOptional {
         });
         textField.addKeyListener(new KeyListener() {
 
-            private int counter = 0;
-            private String last = null;
+            private int    counter = 0;
+            private String last    = null;
 
             public void keyPressed(KeyEvent e) {
                 int sel = tabbedPane.getSelectedIndex();

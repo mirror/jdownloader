@@ -65,14 +65,9 @@ public class JDPremServ extends PluginOptional {
     public ArrayList<MenuAction> createMenuitems() {
         // add main menu items.. this item is used to show/hide GUi
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        MenuAction m;
 
-        menu.add(m = activateAction);
-        if (tab == null || !tab.isVisible()) {
-            m.setSelected(false);
-        } else {
-            m.setSelected(true);
-        }
+        menu.add(activateAction);
+
         return menu;
     }
 

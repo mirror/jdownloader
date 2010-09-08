@@ -29,8 +29,8 @@ import jd.utils.locale.JDL;
 
 public class ActivateColumn extends JDCheckBoxTableColumn {
 
-    private static final long serialVersionUID = 658156218405204887L;
-    private final Configuration config;
+    private static final long       serialVersionUID = 658156218405204887L;
+    private final Configuration     config;
     private final ConfigPanelAddons addons;
 
     public ActivateColumn(String name, JDTableModel table, ConfigPanelAddons addons) {
@@ -53,10 +53,6 @@ public class ActivateColumn extends JDCheckBoxTableColumn {
     @Override
     public boolean isSortable(Object obj) {
         return false;
-    }
-
-    @Override
-    public void sort(Object obj, boolean sortingToggle) {
     }
 
     @Override
