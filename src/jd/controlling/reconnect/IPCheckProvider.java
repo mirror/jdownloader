@@ -26,14 +26,10 @@ public interface IPCheckProvider {
     public String getInfo();
 
     /**
-     * this method should return current IP as String Object or
-     * IPCheck.CheckStatus.FAILED if there has been an error or
-     * IPCheck.CheckStatus.SEQFAILED if this method should be paused
+     * this method should returns current IP as String or throws an exception if
+     * an error occured
      * 
-     * @Deprecated Returning Object is Bad. Better: return IP, or throw
-     *             exceptions
      * @return
-     * @see IPCheck.CheckStatus
      */
     public String getIP() throws IPCheckException;
 

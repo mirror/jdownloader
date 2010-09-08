@@ -15,8 +15,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.logging.Logger;
 
-import javax.swing.JComponent;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.CodeVerifier;
@@ -362,30 +360,15 @@ public class ReconnectPluginController {
     }
 
     /**
-     * returns the gui panel. This mopdule uses the new appwork JSonStorage and
-     * does not need to use the old ConfigPanel System.
-     * 
-     * @return
-     */
-    public JComponent getGUI() {
-        // TODO Auto-generated method stub
-        return ReconnectPluginConfigGUI.getInstance();
-    }
-
-    /**
      * returns how long the controller has to wait between two ip checks
      * 
      * @return
      */
     private int getIpCheckInterval() {
         if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-
             // use own ipcheck if possible
-            if (this.getActivePlugin().isIPCheckEnabled()) { return this.getActivePlugin().getIpCheckInterval();
-
-            }
+            if (this.getActivePlugin().isIPCheckEnabled()) { return this.getActivePlugin().getIpCheckInterval(); }
             return 5;
-
         }
         // ip check disabled
         return 0;
@@ -452,10 +435,8 @@ public class ReconnectPluginController {
                         urls.add(files[i].toURI().toURL());
                     }
                 } catch (final IOException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 } catch (final NoSuchAlgorithmException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
