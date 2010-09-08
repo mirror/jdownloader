@@ -45,17 +45,18 @@ public class Form extends Property {
     /**
      * Action der Form entspricht auch oft einer URL
      */
-    private String action;
+    private String                action;
 
     private ArrayList<InputField> inputfields;
 
-    private String htmlcode = null;
+    private String                htmlcode = null;
 
-    private MethodType method = MethodType.GET;
+    private MethodType            method   = MethodType.GET;
 
-    private String encoding;
+    /* default encoding for http forms */
+    private String                encoding = "application/x-www-form-urlencoded";
 
-    private InputField preferredSubmit;
+    private InputField            preferredSubmit;
 
     public Form(String total) {
         this();

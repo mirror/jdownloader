@@ -272,7 +272,7 @@ public class Megauploadcom extends PluginForHost {
                 } else {
                     /* still premium, so something went wrong */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                } 
             }
             Form form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
@@ -723,7 +723,7 @@ public class Megauploadcom extends PluginForHost {
             try {
                 /* traffic limit reached */
                 if (br.getRequest().getHttpConnection().getResponseCode() == 503) limitReached(downloadLink, 10 * 60, "API Limit reached!");
-            } catch (IOException e1) {
+            } catch (Exception e1) {
                 JDLogger.exception(e1);
             }
             /*
@@ -753,7 +753,7 @@ public class Megauploadcom extends PluginForHost {
                 try {
                     /* traffic limit reached */
                     if (br.getRequest().getHttpConnection().getResponseCode() == 503) limitReached(downloadLink, 10 * 60, "API Limit reached!");
-                } catch (IOException e1) {
+                } catch (Exception e1) {
                     JDLogger.exception(e1);
                 }
                 /*

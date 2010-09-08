@@ -109,15 +109,9 @@ public class ExtHTTPRequest implements HttpRequest {
 
     }
 
-    public int getStatus() {
-        try {
+    public int getStatus() {        
             if (request == null || request.getHttpConnection() == null) return 403;
             return request.getHttpConnection().getResponseCode();
-        } catch (IOException e) {
-            Log.exception(e);
-            return 511;
-        }
-
     }
 
     public String getStatusText() {

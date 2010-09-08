@@ -95,6 +95,7 @@ public class HTTPConnection implements URLConnectionAdapter {
         }
         httpSocket.setSoTimeout(readTimeout);
         httpResponseCode = -1;
+        /*host auflösen nur wenn kein proxy, ansonsten über proxy*/
         InetAddress host = Inet4Address.getByName(httpURL.getHost());
         int port = httpURL.getPort();
         if (port == -1) port = httpURL.getDefaultPort();
@@ -129,7 +130,7 @@ public class HTTPConnection implements URLConnectionAdapter {
         ByteBuffer header = HTTPConnectionUtils.readheader(httpSocket.getInputStream(), true);
         byte[] bytes = new byte[header.limit()];
         header.get(bytes);
-        httpHeader = new String(bytes, "UTF-8").trim();
+        httpHeader = new String(bytes, "ISO-8859-1").trim();
         /* parse response code/message */
         if (httpHeader.startsWith("HTTP")) {
             String code = new Regex(httpHeader, "HTTP.*? (\\d+)").getMatch(0);
