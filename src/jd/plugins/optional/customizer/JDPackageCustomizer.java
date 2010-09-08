@@ -38,17 +38,17 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", id = "packagecustomizer", hasGui = true, interfaceversion = 5)
 public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPackagingEvent {
 
-    private static final String JDL_PREFIX = "jd.plugins.optional.customizer.JDPackageCustomizer.";
+    private static final String   JDL_PREFIX        = "jd.plugins.optional.customizer.JDPackageCustomizer.";
 
-    public static final String PROPERTY_SETTINGS = "SETTINGS";
+    public static final String    PROPERTY_SETTINGS = "SETTINGS";
 
     private LinkGrabberController ctrl;
-    private final ImageIcon customIcon;
-    private final String customIconText;
+    private final ImageIcon       customIcon;
+    private final String          customIconText;
 
-    private CustomizerView view;
+    private CustomizerView        view;
 
-    private MenuAction showAction;
+    private MenuAction            showAction;
 
     public JDPackageCustomizer(PluginWrapper wrapper) {
         super(wrapper);
@@ -85,11 +85,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == showAction) {
-            if (showAction.isSelected()) {
-                showGui();
-            } else {
-                view.close();
-            }
+            setGuiEnable(showAction.isSelected());
         }
     }
 

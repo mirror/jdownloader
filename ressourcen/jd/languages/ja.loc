@@ -777,7 +777,7 @@ gui.textcomponent.context.selectall = すべて選択
 gui.textcomponent.context.selectall.acc = Ctrl+A
 gui.tooltip.statusbar.max_chunks = 1ファイルあたりの最大接続数 [1～20]
 gui.tooltip.statusbar.simultan_downloads = 最大同時ダウンロード数 [1～20]
-gui.tooltip.statusbar.speedlimiter = 速度制限(KB/s) [0 = 無制限]
+gui.tooltip.statusbar.speedlimiter = 速度制限(KiB/s) [0 = 無制限]
 gui.tooltips.linkgrabber.autostart = 選択された場合、リンクは追加取得され、自動的に開始します。
 gui.tooltips.linkgrabber.startlinksafteradd = 選択された場合、新しいリンクを追加後、ダウンロードを開始します。
 gui.tooltips.linkgrabber.toporbottom = 選択された場合、新しいリンクをダウンロード リストの先頭に追加します。

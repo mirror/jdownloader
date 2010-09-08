@@ -80,7 +80,7 @@ public class General extends ConfigPanel {
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, GUIUtils.getConfig(), JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDL.L("gui.config.download.startdownloadsonstartUp", "Start Downloads on Startup")).setDefaultValue(false));
 
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in kb/s"), 10, 500, 10).setDefaultValue(10));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in KiB/s"), 10, 500, 10).setDefaultValue(10));
 
         /* File Writing */
         container.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), "gui.images.save"));

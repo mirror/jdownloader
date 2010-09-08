@@ -35,7 +35,7 @@ import jd.plugins.optional.jdpremserv.gui.JDPremServGui;
 @OptionalPlugin(rev = "$Revision: 11760 $", id = "jdpremserv", hasGui = true, interfaceversion = 5, minJVM = 1.6, linux = true, windows = true, mac = true)
 public class JDPremServ extends PluginOptional {
 
-    private MenuAction activateAction;
+    private MenuAction    activateAction;
 
     private JDPremServGui tab;
 
@@ -96,9 +96,8 @@ public class JDPremServ extends PluginOptional {
     public boolean initAddon() {
         // this method is called ones after the addon has been loaded
 
-        activateAction = new MenuAction("PremServ", 0);
+        activateAction = new MenuAction("PremServ", getIconKey());
         activateAction.setActionListener(this);
-        activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
 
         if (Main.isInitComplete()) startServer();
@@ -134,21 +133,16 @@ public class JDPremServ extends PluginOptional {
     @Override
     public void setGuiEnable(boolean b) {
         if (b) {
-
             if (tab == null) {
                 initGUI();
-
             }
             SwingGui.getInstance().setContent(tab);
-
         } else {
-
             if (tab != null) {
                 SwingGui.getInstance().disposeView(tab);
                 this.stopAddon();
                 tab = null;
             }
-
         }
         if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
     }
