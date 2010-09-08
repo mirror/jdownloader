@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.Random;
 import java.util.TreeSet;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -237,6 +238,8 @@ public class Main {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
             Main.initMACProperties();
         }
+        /* random number: eg used for cnl2 without asking dialog */
+        System.setProperty("jd.randomNumber", "" + (System.currentTimeMillis() + new Random().nextLong()));
         System.setProperty("file.encoding", "UTF-8");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         // only use ipv4, because debian changed default stack to ipv6

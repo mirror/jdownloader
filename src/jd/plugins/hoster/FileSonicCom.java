@@ -89,7 +89,7 @@ public class FileSonicCom extends PluginForHost {
                 try {
                     br.getPage("http://www.filesonic.com/");
                     XMLRequest(br, "http://www.filesonic.com/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                } catch (Exception e) {
+                } catch (Exception e) {                    
                 }
                 br.setFollowRedirects(false);
                 String premCookie = br.getCookie("http://www.filesonic.com", "role");
