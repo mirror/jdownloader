@@ -173,19 +173,22 @@ public class ReconnectPluginController implements ControlListener {
 
                 ReconnectPluginController.this.setActivePlugin(DummyRouterPlugin.getInstance());
                 // used for progresscontroll only
-                int fastest = Integer.MAX_VALUE;
-                RouterPlugin fastestPlugin = null;
+                final int fastest = Integer.MAX_VALUE;
+                final RouterPlugin fastestPlugin = null;
 
-                for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
-                    if (plg.hasAutoDetection()) {
-                        this.statusMessage = Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName());
-                        final int time = plg.autoDetection();
-                        if (time >= 0 && time < fastest) {
-                            fastest = time;
-                            fastestPlugin = plg;
-                        }
-                    }
-                }
+                // for (final RouterPlugin plg :
+                // ReconnectPluginController.this.plugins) {
+                // if (plg.hasAutoDetection()) {
+                // this.statusMessage =
+                // Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status",
+                // "...testing %s", plg.getName());
+                // final int time = plg.autoDetection();
+                // if (time >= 0 && time < fastest) {
+                // fastest = time;
+                // fastestPlugin = plg;
+                // }
+                // }
+                // }
                 // if we find a woprking reconnect without any interaction, this
                 // is
                 // great
@@ -206,7 +209,7 @@ public class ReconnectPluginController implements ControlListener {
 
             }
 
-        }, 0, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.message", "JDownloader now tries to find the correct settings to perform a reconnect.\r\nThis might take a few minutes. Please be patient!"), null);
+        }, 0, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressdialog.message", "JDownloader now tries to find the correct settings to perform a reconnect.\r\nThis might take a few minutes. Please be patient!"), null);
 
         Dialog.getInstance().showDialog(dialog);
 

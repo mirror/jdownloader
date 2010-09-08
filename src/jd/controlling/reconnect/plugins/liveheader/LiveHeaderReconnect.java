@@ -121,6 +121,418 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         }
     }
 
+    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw) {
+        try {
+            final String requestType;
+            final String path;
+            final StringBuilder post = new StringBuilder();
+            String host = null;
+            final String http = ishttps ? "https://" : "http://";
+            if (LiveHeaderReconnect.LOG.isLoggable(Level.FINEST)) {
+                br.forceDebug(true);
+            } else {
+                br.forceDebug(false);
+            }
+            final HashMap<String, String> requestProperties = new HashMap<String, String>();
+            if (israw) {
+                br.setHeaders(new RequestHeader());
+            }
+            String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
+            // ArrayList<String> params =
+            // SimpleMatches.getAllSimpleMatches(request,
+            // "%%%°%%%", 1);
+            final String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
+            if (params.length > 0) {
+                final StringBuilder req;
+                if (request.startsWith(params[0])) {
+                    req = new StringBuilder();
+                    LiveHeaderReconnect.LOG.finer("Variables: " + this.variables);
+                    LiveHeaderReconnect.LOG.finer("Headerproperties: " + this.headerProperties);
+                    final int tmpLength = tmp.length;
+                    for (int i = 0; i <= tmpLength; i++) {
+                        LiveHeaderReconnect.LOG.finer("Replace variable: " + this.getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
+                        req.append(this.getModifiedVariable(params[i - 1]));
+                        if (i < tmpLength) {
+                            req.append(tmp[i]);
+                        }
+                    }
+                } else {
+                    req = new StringBuilder(tmp[0]);
+                    LiveHeaderReconnect.LOG.finer("Variables: " + this.variables);
+                    LiveHeaderReconnect.LOG.finer("Headerproperties: " + this.headerProperties);
+                    final int tmpLength = tmp.length;
+                    for (int i = 1; i <= tmpLength; i++) {
+                        if (i > params.length) {
+                            continue;
+                        }
+                        LiveHeaderReconnect.LOG.finer("Replace variable: " + this.getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
+                        req.append(this.getModifiedVariable(params[i - 1]));
+                        if (i < tmpLength) {
+                            req.append(tmp[i]);
+                        }
+                    }
+                }
+                request = req.toString();
+            }
+            final String[] requestLines = LiveHeaderReconnect.splitLines(request);
+            if (requestLines.length == 0) {
+                LiveHeaderReconnect.LOG.severe("Parse Fehler:" + request);
+                return null;
+            }
+            // RequestType
+            tmp = requestLines[0].split(" ");
+            if (tmp.length < 2) {
+                LiveHeaderReconnect.LOG.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
+                return null;
+            }
+            requestType = tmp[0];
+            path = tmp[1];
+            boolean headersEnd = false;
+            // Zerlege request
+
+            final int requestLinesLength = requestLines.length;
+            for (int li = 1; li < requestLinesLength; li++) {
+
+                if (headersEnd) {
+                    post.append(requestLines[li]);
+                    post.append(new char[] { '\r', '\n' });
+                    continue;
+                }
+                if (requestLines[li].trim().length() == 0) {
+                    headersEnd = true;
+                    continue;
+                }
+                final String[] p = requestLines[li].split("\\:");
+                if (p.length < 2) {
+                    LiveHeaderReconnect.LOG.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
+                    headersEnd = true;
+                    li--;
+                    continue;
+                }
+                requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
+
+                if (p[0].trim().equalsIgnoreCase("HOST")) {
+                    host = requestLines[li].substring(p[0].length() + 1).trim();
+                }
+            }
+
+            if (host == null) {
+                LiveHeaderReconnect.LOG.severe("Host nicht gefunden: " + request);
+                return null;
+            }
+            try {
+                br.setConnectTimeout(5000);
+                br.setReadTimeout(5000);
+                if (requestProperties != null) {
+                    br.getHeaders().putAll(requestProperties);
+                }
+                if (requestType.equalsIgnoreCase("GET")) {
+                    br.getPage(http + host + path);
+                } else if (requestType.equalsIgnoreCase("POST")) {
+                    final String poster = post.toString().trim();
+                    br.postPageRaw(http + host + path, poster);
+                } else if (requestType.equalsIgnoreCase("AUTH")) {
+                    LiveHeaderReconnect.LOG.finer("Convert AUTH->GET");
+                    br.getPage(http + host + path);
+                } else {
+                    LiveHeaderReconnect.LOG.severe("Unknown requesttyp: " + requestType);
+                    return null;
+                }
+                return br;
+            } catch (final IOException e) {
+                LiveHeaderReconnect.LOG.severe("IO Error: " + e.getLocalizedMessage());
+                JDLogger.exception(e);
+                return null;
+            }
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            return null;
+        }
+
+    }
+
+    private void editScript() {
+
+        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", this.getScript(), null, JDL.L("jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect.actionPerformed.save", "Save"), null);
+        dialog.setPreferredSize(new Dimension(700, 400));
+        // CLR Import
+        dialog.setLeftActions(new AbstractAction("Browser Scripts") {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            public void actionPerformed(final ActionEvent e) {
+
+                final ImportRouterDialog importDialog = new ImportRouterDialog(LiveHeaderReconnect.getLHScripts());
+                // clrDialog.setPreferredSize(new Dimension(500, 400));
+                if (Dialog.isOK(Dialog.getInstance().showDialog(importDialog))) {
+                    final String[] data = importDialog.getResult();
+
+                    if (data != null) {
+
+                        if (data[2].toLowerCase().indexOf("curl") >= 0) {
+                            UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
+                        }
+
+                        dialog.setDefaultMessage(data[2]);
+                        LiveHeaderReconnect.this.setRouterName(data[0] + " - " + data[1]);
+
+                    }
+                }
+
+            }
+        }, new AbstractAction("Import CLR Script") {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            public void actionPerformed(final ActionEvent e) {
+
+                final InputDialog clrDialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "CLR Import", "Please enter a Liveheader script below.", "", null, null, null);
+                clrDialog.setPreferredSize(new Dimension(500, 400));
+                final String clr = Dialog.getInstance().showDialog(clrDialog);
+                if (clr == null) { return; }
+
+                final String[] ret = CLRLoader.createLiveHeader(clr);
+
+                String script;
+                if (ret != null) {
+                    LiveHeaderReconnect.this.setRouterName(ret[0]);
+                    script = ret[1];
+                    dialog.setDefaultMessage(script);
+
+                }
+            }
+        });
+        final String newScript = Dialog.getInstance().showDialog(dialog);
+        if (newScript != null) {
+            this.setScript(newScript);
+
+        }
+    }
+
+    private void findIP() {
+        new EDTRunner() {
+
+            @Override
+            public void runInEDT() {
+                final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100, null);
+
+                LiveHeaderReconnect.this.txtIP.setText(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
+
+                progress.setStatus(80);
+                final InetAddress ia = RouterUtils.getAddress(false);
+                if (ia != null) {
+
+                    LiveHeaderReconnect.this.setRouterIP(ia.getHostAddress());
+                }
+                LiveHeaderReconnect.this.updateGUI();
+                progress.setStatus(100);
+                if (ia != null) {
+                    progress.setStatusText(JDL.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
+                    progress.doFinalize(3000);
+                } else {
+                    progress.setStatusText(JDL.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
+                    progress.doFinalize(3000);
+                    progress.setColor(Color.RED);
+                }
+
+            }
+
+        };
+
+    }
+
+    @Override
+    public String getExternalIP() throws GetIpException {
+        return null;
+    }
+
+    @Override
+    public JComponent getGUI() {
+        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 3", "[][][grow,fill]", "[]"));
+        this.btnAuto = new JButton("Auto Setup");
+        this.btnAuto.addActionListener(this);
+
+        // auto search is not ready yet
+        this.btnAuto.setEnabled(false);
+        this.btnRecord = new JButton("Record Wizard");
+        this.btnRecord.addActionListener(this);
+        this.btnFindIP = new JButton("Find Router IP");
+        this.btnFindIP.addActionListener(this);
+        this.btnEditScript = new JButton("Edit Script");
+        this.btnEditScript.addActionListener(this);
+        this.txtUser = new JTextField();
+        new TextComponentChangeListener(this.txtUser) {
+            @Override
+            protected void onChanged(final DocumentEvent e) {
+                LiveHeaderReconnect.this.setUser(LiveHeaderReconnect.this.txtUser.getText());
+
+            }
+        };
+        this.txtPassword = new JPasswordField();
+
+        new TextComponentChangeListener(this.txtPassword) {
+            @Override
+            protected void onChanged(final DocumentEvent e) {
+                LiveHeaderReconnect.this.setPassword(new String(LiveHeaderReconnect.this.txtPassword.getPassword()));
+
+            }
+        };
+        this.txtIP = new JTextField();
+        new TextComponentChangeListener(this.txtUser) {
+            @Override
+            protected void onChanged(final DocumentEvent e) {
+                LiveHeaderReconnect.this.setRouterIP(LiveHeaderReconnect.this.txtIP.getText());
+
+            }
+        };
+        this.txtName = new JTextField();
+        new TextComponentChangeListener(this.txtUser) {
+            @Override
+            protected void onChanged(final DocumentEvent e) {
+                LiveHeaderReconnect.this.setRouterName(LiveHeaderReconnect.this.txtName.getText());
+
+            }
+        };
+        //
+
+        p.add(this.btnAuto, "sg buttons,aligny top,newline,gapright 15");
+
+        p.add(new JLabel("Name"), "");
+        p.add(this.txtName, "spanx");
+        //
+        p.add(this.btnRecord, "sg buttons,aligny top,newline");
+        p.add(new JLabel("IP"), "");
+        p.add(this.txtIP, "spanx");
+        //
+        p.add(this.btnFindIP, "sg buttons,aligny top,newline");
+        p.add(new JLabel("User"), "");
+        p.add(this.txtUser, "spanx");
+        //
+        p.add(this.btnEditScript, "sg buttons,aligny top,newline");
+        p.add(new JLabel("Password"), "");
+        p.add(this.txtPassword, "spanx");
+        //
+
+        // p.add(new JLabel("Control URL"), "newline,skip");
+        // p.add(this.controlURLTxt);
+        // p.add(Box.createGlue(), "pushy,growy");
+        this.updateGUI();
+        return p;
+    }
+
+    @Override
+    public String getID() {
+        return LiveHeaderReconnect.ID;
+    }
+
+    private String getModifiedVariable(String key) {
+
+        if (key.indexOf(":::") == -1 && this.headerProperties.containsKey(key)) { return this.headerProperties.get(key); }
+        if (key.indexOf(":::") == -1) { return this.variables.get(key); }
+        String ret = this.variables.get(key.substring(key.lastIndexOf(":::") + 3));
+        if (this.headerProperties.containsKey(key.substring(key.lastIndexOf(":::") + 3))) {
+            ret = this.headerProperties.get(key.substring(key.lastIndexOf(":::") + 3));
+        }
+        if (ret == null) { return ""; }
+        int id;
+        String fnc;
+        while ((id = key.indexOf(":::")) >= 0) {
+            fnc = key.substring(0, id);
+            key = key.substring(id + 3);
+
+            if (fnc.equalsIgnoreCase("URLENCODE")) {
+                ret = Encoding.urlEncode(ret);
+            } else if (fnc.equalsIgnoreCase("URLDECODE")) {
+                ret = Encoding.htmlDecode(ret);
+            } else if (fnc.equalsIgnoreCase("UTF8DECODE")) {
+                ret = Encoding.UTF8Decode(ret);
+            } else if (fnc.equalsIgnoreCase("UTF8ENCODE")) {
+                ret = Encoding.UTF8Encode(ret);
+            } else if (fnc.equalsIgnoreCase("MD5")) {
+                ret = JDHash.getMD5(ret);
+            } else if (fnc.equalsIgnoreCase("BASE64")) {
+                ret = Encoding.Base64Encode(ret);
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public String getName() {
+        return "LiveHeader";
+    }
+
+    public String getPassword() {
+        // convert to new storagesys
+
+        return this.getStorage().get(LiveHeaderReconnect.PASSWORD, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_PASS));
+    }
+
+    public String getRouterIP() {
+        // convert to new storagesys
+        return this.getStorage().get(LiveHeaderReconnect.ROUTERIP, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP));
+    }
+
+    /**
+     * returns the routername
+     * 
+     * @return
+     */
+    public String getRouterName() {
+        return this.getStorage().get(LiveHeaderReconnect.ROUTERNAME, "Unknown");
+    }
+
+    public String getScript() {
+        // convert to new storagesys
+        return this.getStorage().get(LiveHeaderReconnect.SCRIPT, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
+    }
+
+    public String getUser() {
+        // convert to new storagesys
+        return this.getStorage().get(LiveHeaderReconnect.USER, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_USER));
+    }
+
+    private void getVariables(final String patStr, final String[] keys, final Browser br) {
+        LiveHeaderReconnect.LOG.info("GetVariables");
+        if (br == null) { return; }
+        // patStr="<title>(.*?)</title>";
+        LiveHeaderReconnect.LOG.finer(patStr);
+        final Pattern pattern = Pattern.compile(patStr, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+
+        // logger.info(requestInfo.getHtmlCode());
+        final Matcher matcher = pattern.matcher(br + "");
+        LiveHeaderReconnect.LOG.info("Matches: " + matcher.groupCount());
+        if (matcher.find() && matcher.groupCount() > 0) {
+            for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
+                this.variables.put(keys[i], matcher.group(i + 1));
+                LiveHeaderReconnect.LOG.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
+            }
+        } else {
+            LiveHeaderReconnect.LOG.severe("Regular Expression without matches: " + patStr);
+        }
+    }
+
+    public boolean hasDetectionWizard() {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean isIPCheckEnabled() {
+        return false;
+    }
+
+    @Override
+    public boolean isReconnectionEnabled() {
+        return true;
+    }
+
     @Override
     protected void performReconnect() throws ReconnectException {
         String script;
@@ -364,412 +776,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     }
 
-    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw) {
-        try {
-            final String requestType;
-            final String path;
-            final StringBuilder post = new StringBuilder();
-            String host = null;
-            final String http = ishttps ? "https://" : "http://";
-            if (LiveHeaderReconnect.LOG.isLoggable(Level.FINEST)) {
-                br.forceDebug(true);
-            } else {
-                br.forceDebug(false);
-            }
-            final HashMap<String, String> requestProperties = new HashMap<String, String>();
-            if (israw) {
-                br.setHeaders(new RequestHeader());
-            }
-            String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
-            // ArrayList<String> params =
-            // SimpleMatches.getAllSimpleMatches(request,
-            // "%%%°%%%", 1);
-            final String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
-            if (params.length > 0) {
-                final StringBuilder req;
-                if (request.startsWith(params[0])) {
-                    req = new StringBuilder();
-                    LiveHeaderReconnect.LOG.finer("Variables: " + this.variables);
-                    LiveHeaderReconnect.LOG.finer("Headerproperties: " + this.headerProperties);
-                    final int tmpLength = tmp.length;
-                    for (int i = 0; i <= tmpLength; i++) {
-                        LiveHeaderReconnect.LOG.finer("Replace variable: " + this.getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
-                        req.append(this.getModifiedVariable(params[i - 1]));
-                        if (i < tmpLength) {
-                            req.append(tmp[i]);
-                        }
-                    }
-                } else {
-                    req = new StringBuilder(tmp[0]);
-                    LiveHeaderReconnect.LOG.finer("Variables: " + this.variables);
-                    LiveHeaderReconnect.LOG.finer("Headerproperties: " + this.headerProperties);
-                    final int tmpLength = tmp.length;
-                    for (int i = 1; i <= tmpLength; i++) {
-                        if (i > params.length) {
-                            continue;
-                        }
-                        LiveHeaderReconnect.LOG.finer("Replace variable: " + this.getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
-                        req.append(this.getModifiedVariable(params[i - 1]));
-                        if (i < tmpLength) {
-                            req.append(tmp[i]);
-                        }
-                    }
-                }
-                request = req.toString();
-            }
-            final String[] requestLines = LiveHeaderReconnect.splitLines(request);
-            if (requestLines.length == 0) {
-                LiveHeaderReconnect.LOG.severe("Parse Fehler:" + request);
-                return null;
-            }
-            // RequestType
-            tmp = requestLines[0].split(" ");
-            if (tmp.length < 2) {
-                LiveHeaderReconnect.LOG.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
-                return null;
-            }
-            requestType = tmp[0];
-            path = tmp[1];
-            boolean headersEnd = false;
-            // Zerlege request
-
-            final int requestLinesLength = requestLines.length;
-            for (int li = 1; li < requestLinesLength; li++) {
-
-                if (headersEnd) {
-                    post.append(requestLines[li]);
-                    post.append(new char[] { '\r', '\n' });
-                    continue;
-                }
-                if (requestLines[li].trim().length() == 0) {
-                    headersEnd = true;
-                    continue;
-                }
-                final String[] p = requestLines[li].split("\\:");
-                if (p.length < 2) {
-                    LiveHeaderReconnect.LOG.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
-                    headersEnd = true;
-                    li--;
-                    continue;
-                }
-                requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
-
-                if (p[0].trim().equalsIgnoreCase("HOST")) {
-                    host = requestLines[li].substring(p[0].length() + 1).trim();
-                }
-            }
-
-            if (host == null) {
-                LiveHeaderReconnect.LOG.severe("Host nicht gefunden: " + request);
-                return null;
-            }
-            try {
-                br.setConnectTimeout(5000);
-                br.setReadTimeout(5000);
-                if (requestProperties != null) {
-                    br.getHeaders().putAll(requestProperties);
-                }
-                if (requestType.equalsIgnoreCase("GET")) {
-                    br.getPage(http + host + path);
-                } else if (requestType.equalsIgnoreCase("POST")) {
-                    final String poster = post.toString().trim();
-                    br.postPageRaw(http + host + path, poster);
-                } else if (requestType.equalsIgnoreCase("AUTH")) {
-                    LiveHeaderReconnect.LOG.finer("Convert AUTH->GET");
-                    br.getPage(http + host + path);
-                } else {
-                    LiveHeaderReconnect.LOG.severe("Unknown requesttyp: " + requestType);
-                    return null;
-                }
-                return br;
-            } catch (final IOException e) {
-                LiveHeaderReconnect.LOG.severe("IO Error: " + e.getLocalizedMessage());
-                JDLogger.exception(e);
-                return null;
-            }
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-            return null;
-        }
-
-    }
-
-    private void editScript() {
-
-        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", this.getScript(), null, JDL.L("jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect.actionPerformed.save", "Save"), null);
-        dialog.setPreferredSize(new Dimension(700, 400));
-        // CLR Import
-        dialog.setLeftActions(new AbstractAction("Browser Scripts") {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            public void actionPerformed(final ActionEvent e) {
-
-                final ImportRouterDialog importDialog = new ImportRouterDialog(LiveHeaderReconnect.getLHScripts());
-                // clrDialog.setPreferredSize(new Dimension(500, 400));
-                if (Dialog.isOK(Dialog.getInstance().showDialog(importDialog))) {
-                    final String[] data = importDialog.getResult();
-
-                    if (data != null) {
-
-                        if (data[2].toLowerCase().indexOf("curl") >= 0) {
-                            UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
-                        }
-
-                        dialog.setDefaultMessage(data[2]);
-                        LiveHeaderReconnect.this.setRouterName(data[0] + " - " + data[1]);
-
-                    }
-                }
-
-            }
-        }, new AbstractAction("Import CLR Script") {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            public void actionPerformed(final ActionEvent e) {
-
-                final InputDialog clrDialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "CLR Import", "Please enter a Liveheader script below.", "", null, null, null);
-                clrDialog.setPreferredSize(new Dimension(500, 400));
-                final String clr = Dialog.getInstance().showDialog(clrDialog);
-                if (clr == null) { return; }
-
-                final String[] ret = CLRLoader.createLiveHeader(clr);
-
-                String script;
-                if (ret != null) {
-                    LiveHeaderReconnect.this.setRouterName(ret[0]);
-                    script = ret[1];
-                    dialog.setDefaultMessage(script);
-
-                }
-            }
-        });
-        final String newScript = Dialog.getInstance().showDialog(dialog);
-        if (newScript != null) {
-            this.setScript(newScript);
-
-        }
-    }
-
-    private void findIP() {
-        new EDTRunner() {
-
-            @Override
-            public void runInEDT() {
-                final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100, null);
-
-                LiveHeaderReconnect.this.txtIP.setText(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
-
-                progress.setStatus(80);
-                final InetAddress ia = RouterUtils.getAddress(false);
-                if (ia != null) {
-
-                    LiveHeaderReconnect.this.setRouterIP(ia.getHostAddress());
-                }
-                LiveHeaderReconnect.this.updateGUI();
-                progress.setStatus(100);
-                if (ia != null) {
-                    progress.setStatusText(JDL.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
-                    progress.doFinalize(3000);
-                } else {
-                    progress.setStatusText(JDL.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
-                    progress.doFinalize(3000);
-                    progress.setColor(Color.RED);
-                }
-
-            }
-
-        };
-
-    }
-
-    @Override
-    public String getExternalIP() throws GetIpException {
-        return null;
-    }
-
-    @Override
-    public JComponent getGUI() {
-        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 3", "[][][grow,fill]", "[]"));
-        this.btnAuto = new JButton("Auto Setup");
-        this.btnAuto.addActionListener(this);
-        // auto search is not ready yet
-        this.btnAuto.setEnabled(false);
-        this.btnRecord = new JButton("Record Wizard");
-        this.btnRecord.addActionListener(this);
-        this.btnFindIP = new JButton("Find Router IP");
-        this.btnFindIP.addActionListener(this);
-        this.btnEditScript = new JButton("Edit Script");
-        this.btnEditScript.addActionListener(this);
-        this.txtUser = new JTextField();
-        new TextComponentChangeListener(this.txtUser) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
-                LiveHeaderReconnect.this.setUser(LiveHeaderReconnect.this.txtUser.getText());
-
-            }
-        };
-        this.txtPassword = new JPasswordField();
-
-        new TextComponentChangeListener(this.txtPassword) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
-                LiveHeaderReconnect.this.setPassword(new String(LiveHeaderReconnect.this.txtPassword.getPassword()));
-
-            }
-        };
-        this.txtIP = new JTextField();
-        new TextComponentChangeListener(this.txtUser) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
-                LiveHeaderReconnect.this.setRouterIP(LiveHeaderReconnect.this.txtIP.getText());
-
-            }
-        };
-        this.txtName = new JTextField();
-        new TextComponentChangeListener(this.txtUser) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
-                LiveHeaderReconnect.this.setRouterName(LiveHeaderReconnect.this.txtName.getText());
-
-            }
-        };
-        //
-
-        p.add(this.btnAuto, "sg buttons,aligny top,newline,gapright 15");
-
-        p.add(new JLabel("Name"), "");
-        p.add(this.txtName, "spanx");
-        //
-        p.add(this.btnRecord, "sg buttons,aligny top,newline");
-        p.add(new JLabel("IP"), "");
-        p.add(this.txtIP, "spanx");
-        //
-        p.add(this.btnFindIP, "sg buttons,aligny top,newline");
-        p.add(new JLabel("User"), "");
-        p.add(this.txtUser, "spanx");
-        //
-        p.add(this.btnEditScript, "sg buttons,aligny top,newline");
-        p.add(new JLabel("Password"), "");
-        p.add(this.txtPassword, "spanx");
-        //
-
-        // p.add(new JLabel("Control URL"), "newline,skip");
-        // p.add(this.controlURLTxt);
-        // p.add(Box.createGlue(), "pushy,growy");
-        this.updateGUI();
-        return p;
-    }
-
-    @Override
-    public String getID() {
-        return LiveHeaderReconnect.ID;
-    }
-
-    private String getModifiedVariable(String key) {
-
-        if (key.indexOf(":::") == -1 && this.headerProperties.containsKey(key)) { return this.headerProperties.get(key); }
-        if (key.indexOf(":::") == -1) { return this.variables.get(key); }
-        String ret = this.variables.get(key.substring(key.lastIndexOf(":::") + 3));
-        if (this.headerProperties.containsKey(key.substring(key.lastIndexOf(":::") + 3))) {
-            ret = this.headerProperties.get(key.substring(key.lastIndexOf(":::") + 3));
-        }
-        if (ret == null) { return ""; }
-        int id;
-        String fnc;
-        while ((id = key.indexOf(":::")) >= 0) {
-            fnc = key.substring(0, id);
-            key = key.substring(id + 3);
-
-            if (fnc.equalsIgnoreCase("URLENCODE")) {
-                ret = Encoding.urlEncode(ret);
-            } else if (fnc.equalsIgnoreCase("URLDECODE")) {
-                ret = Encoding.htmlDecode(ret);
-            } else if (fnc.equalsIgnoreCase("UTF8DECODE")) {
-                ret = Encoding.UTF8Decode(ret);
-            } else if (fnc.equalsIgnoreCase("UTF8ENCODE")) {
-                ret = Encoding.UTF8Encode(ret);
-            } else if (fnc.equalsIgnoreCase("MD5")) {
-                ret = JDHash.getMD5(ret);
-            } else if (fnc.equalsIgnoreCase("BASE64")) {
-                ret = Encoding.Base64Encode(ret);
-            }
-        }
-        return ret;
-    }
-
-    @Override
-    public String getName() {
-        return "LiveHeader";
-    }
-
-    private String getPassword() {
-        // convert to new storagesys
-
-        return this.getStorage().get(LiveHeaderReconnect.PASSWORD, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_PASS));
-    }
-
-    private String getRouterIP() {
-        // convert to new storagesys
-        return this.getStorage().get(LiveHeaderReconnect.ROUTERIP, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP));
-    }
-
-    /**
-     * returns the routername
-     * 
-     * @return
-     */
-    public String getRouterName() {
-        return this.getStorage().get(LiveHeaderReconnect.ROUTERNAME, "Unknown");
-    }
-
-    private String getScript() {
-        // convert to new storagesys
-        return this.getStorage().get(LiveHeaderReconnect.SCRIPT, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
-    }
-
-    private String getUser() {
-        // convert to new storagesys
-        return this.getStorage().get(LiveHeaderReconnect.USER, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_USER));
-    }
-
-    private void getVariables(final String patStr, final String[] keys, final Browser br) {
-        LiveHeaderReconnect.LOG.info("GetVariables");
-        if (br == null) { return; }
-        // patStr="<title>(.*?)</title>";
-        LiveHeaderReconnect.LOG.finer(patStr);
-        final Pattern pattern = Pattern.compile(patStr, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
-
-        // logger.info(requestInfo.getHtmlCode());
-        final Matcher matcher = pattern.matcher(br + "");
-        LiveHeaderReconnect.LOG.info("Matches: " + matcher.groupCount());
-        if (matcher.find() && matcher.groupCount() > 0) {
-            for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
-                this.variables.put(keys[i], matcher.group(i + 1));
-                LiveHeaderReconnect.LOG.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
-            }
-        } else {
-            LiveHeaderReconnect.LOG.severe("Regular Expression without matches: " + patStr);
-        }
-    }
-
-    @Override
-    public boolean isIPCheckEnabled() {
-        return false;
-    }
-
-    @Override
-    public boolean isReconnectionEnabled() {
-        return true;
-    }
-
     private void routerRecord() {
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "IP-Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
@@ -812,6 +818,18 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         }
     }
 
+    public int runDetectionWizard() {
+
+        final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
+        final int ret = wizard.runOfflineScan();
+        if (ret < 0) {
+            // TODO
+            // ret = wizard.runRouterRecorder();
+        }
+        return ret;
+
+    }
+
     @Override
     public void setCanCheckIP(final boolean b) {
 
@@ -845,28 +863,28 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             protected void runInEDT() {
                 try {
                     LiveHeaderReconnect.this.txtName.setText(LiveHeaderReconnect.this.getRouterName());
-                } catch (final java.lang.IllegalStateException e) {
-                    // throws an java.lang.IllegalStateException if the caller
+                } catch (final Throwable e) {
+                    // throws an Throwable if the caller
 
                 }
                 try {
                     LiveHeaderReconnect.this.txtIP.setText(LiveHeaderReconnect.this.getRouterIP());
-                } catch (final java.lang.IllegalStateException e) {
-                    // throws an java.lang.IllegalStateException if the caller
+                } catch (final Throwable e) {
+                    // throws an Throwable if the caller
                     // is a changelistener of this field's document
 
                 }
                 try {
                     LiveHeaderReconnect.this.txtPassword.setText(LiveHeaderReconnect.this.getPassword());
-                } catch (final java.lang.IllegalStateException e) {
-                    // throws an java.lang.IllegalStateException if the caller
+                } catch (final Throwable e) {
+                    // throws an Throwable if the caller
                     // is a changelistener of this field's document
 
                 }
                 try {
                     LiveHeaderReconnect.this.txtUser.setText(LiveHeaderReconnect.this.getUser());
-                } catch (final java.lang.IllegalStateException e) {
-                    // throws an java.lang.IllegalStateException if the caller
+                } catch (final Throwable e) {
+                    // throws an Throwable if the caller
                     // is a changelistener of this field's document
 
                 }
