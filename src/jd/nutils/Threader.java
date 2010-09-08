@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import jd.event.Broadcaster;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 
@@ -33,30 +32,23 @@ import jd.nutils.jobber.Jobber;
  */
 public class Threader {
 
-    private ArrayList<Worker> workerlist;
-    private Integer returnedWorker = 0;
-    private boolean waitFlag = false;
-    /**
-     * TODO: Why not {@link jd.event.JDBroadcaster}?
-     */
-    private Broadcaster<WorkerListener> broadcaster;
-    private boolean hasDied = false;
-    private boolean hasStarted = false;
+    private ArrayList<Worker>         workerList;
+    private Integer                   returnedWorker = 0;
+    private boolean                   waitFlag       = false;
+    private ArrayList<WorkerListener> listener;
+    private boolean                   hasDied        = false;
+    private boolean                   hasStarted     = false;
 
     public Threader() {
-        broadcaster = new Broadcaster<WorkerListener>();
-        workerlist = new ArrayList<Worker>();
-    }
-
-    public Broadcaster<WorkerListener> getBroadcaster() {
-        return broadcaster;
+        this.workerList = new ArrayList<Worker>();
+        this.listener = new ArrayList<WorkerListener>();
     }
 
     public void add(JDRunnable runnable) {
         if (this.hasDied) throw new IllegalStateException("Threader already has died");
         Worker worker = new Worker(runnable);
-        synchronized (workerlist) {
-            workerlist.add(worker);
+        synchronized (workerList) {
+            workerList.add(worker);
         }
         if (this.hasStarted) worker.start();
     }
@@ -70,17 +62,15 @@ public class Threader {
     }
 
     public synchronized void interrupt() {
-        for (Worker w : workerlist) {
+        for (Worker w : workerList) {
             if (w.isRunnableAlive()) w.interrupt();
         }
     }
 
     private synchronized void onWorkerFinished(Worker w) {
         returnedWorker++;
-        for (int i = 0; i < broadcaster.size(); i++) {
-            broadcaster.get(i).onThreadFinished(this, w.getRunnable());
-        }
-        if (returnedWorker == workerlist.size()) {
+        fireJobFinished(w.getRunnable());
+        if (returnedWorker == workerList.size()) {
             this.waitFlag = false;
             this.notify();
         }
@@ -88,7 +78,7 @@ public class Threader {
 
     public void startWorkers() {
         this.hasStarted = true;
-        for (Worker w : workerlist) {
+        for (Worker w : workerList) {
             w.start();
         }
 
@@ -101,7 +91,7 @@ public class Threader {
                 try {
                     wait();
                 } catch (InterruptedException e) {
-                    for (Worker w : workerlist)
+                    for (Worker w : workerList)
                         w.interrupt();
 
                     return;
@@ -113,7 +103,7 @@ public class Threader {
 
     public void startAndWait() {
         this.hasStarted = true;
-        for (Worker w : workerlist) {
+        for (Worker w : workerList) {
             w.start();
         }
 
@@ -123,7 +113,7 @@ public class Threader {
                 try {
                     wait();
                 } catch (InterruptedException e) {
-                    for (Worker w : workerlist) {
+                    for (Worker w : workerList) {
                         w.interrupt();
                     }
                     return;
@@ -133,10 +123,52 @@ public class Threader {
         this.hasDied = true;
     }
 
+    /**
+     * WorkingLIstener werden ueber den start und stop einzellner jobs
+     * informiert
+     * 
+     * @param wl
+     */
+    public void addWorkerListener(WorkerListener wl) {
+        synchronized (listener) {
+            listener.add(wl);
+        }
+    }
+
+    public void removeWorkerListener(WorkerListener wl) {
+        synchronized (listener) {
+            listener.remove(wl);
+        }
+    }
+
+    private void fireJobFinished(JDRunnable job) {
+        synchronized (listener) {
+            for (WorkerListener wl : listener) {
+                wl.onThreadFinished(this, job);
+            }
+        }
+    }
+
+    private void fireJobException(JDRunnable job, Exception e) {
+        synchronized (listener) {
+            for (WorkerListener wl : listener) {
+                wl.onThreadException(this, job, e);
+            }
+        }
+    }
+
+    private void fireJobStarted(JDRunnable job) {
+        synchronized (listener) {
+            for (WorkerListener wl : listener) {
+                wl.onThreadStarts(this, job);
+            }
+        }
+    }
+
     private class Worker extends Thread {
 
         private JDRunnable runnable;
-        private boolean runnableAlive = false;
+        private boolean    runnableAlive = false;
 
         public Worker(JDRunnable runnable) {
             this.runnable = runnable;
@@ -154,15 +186,11 @@ public class Threader {
         @Override
         public void run() {
             try {
-                for (int i = 0; i < broadcaster.size(); i++) {
-                    broadcaster.get(i).onThreadStarts(Threader.this, getRunnable());
-                }
+                fireJobStarted(getRunnable());
                 this.runnableAlive = true;
                 runnable.go();
-            } catch (Throwable e) {
-                for (int i = 0; i < broadcaster.size(); i++) {
-                    broadcaster.get(i).onThreadException(Threader.this, getRunnable(), e);
-                }
+            } catch (Exception e) {
+                fireJobException(getRunnable(), e);
             } finally {
                 this.runnableAlive = false;
                 onWorkerFinished(this);
@@ -186,15 +214,15 @@ public class Threader {
     }
 
     public int size() {
-        return workerlist.size();
+        return workerList.size();
     }
 
     public JDRunnable get(int i) {
-        return workerlist.get(i).getRunnable();
+        return workerList.get(i).getRunnable();
     }
 
     public void interrupt(JDRunnable slowest) {
-        for (Worker w : workerlist) {
+        for (Worker w : workerList) {
             if (w.getRunnable() == slowest) {
                 System.err.println("Interrupt: " + w + " - " + w.getRunnable());
                 w.interrupt();
@@ -204,12 +232,12 @@ public class Threader {
     }
 
     public void sort(Comparator<Worker> comparator) {
-        Collections.sort(workerlist, comparator);
+        Collections.sort(workerList, comparator);
     }
 
     public ArrayList<JDRunnable> getAlive() {
         ArrayList<JDRunnable> list = new ArrayList<JDRunnable>();
-        for (Worker w : workerlist) {
+        for (Worker w : workerList) {
             if (w.isRunnableAlive()) list.add(w.getRunnable());
         }
         return list;

@@ -24,14 +24,14 @@ import jd.controlling.JDLogger;
 
 public class Jobber {
 
-    private int paralellWorkerNum;
-    private LinkedList<JDRunnable> jobList;
-    private Vector<Worker> workerList = new Vector<Worker>();
+    private int                       paralellWorkerNum;
+    private LinkedList<JDRunnable>    jobList;
+    private Vector<Worker>            workerList                   = new Vector<Worker>();
     private ArrayList<WorkerListener> listener;
-    private boolean killWorkerAfterQueueFinished = true;
-    private boolean running = false;
-    private Integer jobsAdded = new Integer(0);
-    private boolean debug = false;
+    private boolean                   killWorkerAfterQueueFinished = true;
+    private boolean                   running                      = false;
+    private Integer                   jobsAdded                    = new Integer(0);
+    private boolean                   debug                        = false;
 
     public int getJobsAdded() {
         return jobsAdded;
@@ -240,9 +240,9 @@ public class Jobber {
      */
     public class Worker extends Thread {
 
-        private int id;
+        private int     id;
         private boolean waitFlag = false;
-        private Jobber jobber;
+        private Jobber  jobber;
 
         public int getWorkerID() {
             return id;

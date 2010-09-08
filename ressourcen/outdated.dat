@@ -366,6 +366,7 @@ plugins/JDHTTPLiveHeaderScripter.jar
 plugins/JDFolderWatch.jar
 plugins/RouterSend.jar
 plugins/JDHttpLiveScripter.jar
+plugins/proxyrot.jar
 jd/plugins/hoster/CrazyUploadCom.class
 jd/plugins/hoster/BigAndFreeCom.class
 jd/plugins/hoster/EvilShareCom.class

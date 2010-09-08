@@ -211,7 +211,7 @@ public class RouterUtils {
             threader.add(new WebServerChecker(RouterUtils.HOST_NAMES.get(i)));
         }
 
-        threader.getBroadcaster().addListener(new WorkerListener() {
+        threader.addWorkerListener(new WorkerListener() {
 
             public void onThreadException(final Threader th, final JDRunnable job, final Throwable e) {
             }
