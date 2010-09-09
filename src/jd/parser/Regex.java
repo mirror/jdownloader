@@ -23,6 +23,10 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
+/**
+ * TODO: Remove with next major update and change to
+ * {@link org.appwork.utils.Regex}
+ */
 public class Regex extends org.appwork.utils.Regex {
 
     public Regex(final Matcher matcher) {

@@ -16,34 +16,24 @@
 
 package jd.nutils;
 
+import org.appwork.utils.BinaryLogic;
+
+/**
+ * TODO: Remove with next major update and change to
+ * {@link org.appwork.utils.BinaryLogic}
+ */
 public class JDFlags {
 
-    /**
-     * checks wether status has all following flags
-     * 
-     * @param status
-     * @param flags
-     * @return
-     */
     public static boolean hasAllFlags(int status, int... flags) {
-        for (int i : flags) {
-            if ((status & i) == 0) return false;
-        }
-        return true;
+        return BinaryLogic.containsAll(status, flags);
     }
 
     public static boolean hasNoFlags(int status, int... flags) {
-        for (int i : flags) {
-            if ((status & i) != 0) return false;
-        }
-        return true;
+        return BinaryLogic.containsNone(status, flags);
     }
 
     public static boolean hasSomeFlags(int status, int... flags) {
-        for (int i : flags) {
-            if ((status & i) != 0) return true;
-        }
-        return false;
+        return BinaryLogic.containsSome(status, flags);
     }
 
     /**

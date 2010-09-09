@@ -20,6 +20,10 @@ import java.io.File;
 
 import org.appwork.utils.Hash;
 
+/**
+ * TODO: Remove with next major update and change to
+ * {@link org.appwork.utils.Hash}
+ */
 public class JDHash {
 
     public static String HASH_TYPE_MD5  = "md5";
