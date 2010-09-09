@@ -78,9 +78,9 @@ public class Dataupde extends PluginForHost {
         dl.startDownload();
     }
 
-    private void correctURL(DownloadLink downloadLink) {
+    @Override
+    public void correctDownloadLink(DownloadLink downloadLink) {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace(".de/", ".to/"));
-
     }
 
     @Override

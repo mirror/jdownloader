@@ -111,9 +111,9 @@ public class HTTPConnection implements URLConnectionAdapter {
         if (httpPath == null) httpPath = "/";
         /* now send Request */
         StringBuilder sb = new StringBuilder();
-        sb.append(httpMethod.name() + " " + httpPath + " HTTP/1.1\r\n");
+        sb.append(httpMethod.name()).append(' ').append(httpPath).append(" HTTP/1.1\r\n");
         for (String key : this.requestProperties.keySet()) {
-            sb.append(key + ": " + requestProperties.get(key) + "\r\n");
+            sb.append(key).append(": ").append(requestProperties.get(key)).append("\r\n");
         }
         sb.append("\r\n");
         httpSocket.getOutputStream().write(sb.toString().getBytes("UTF-8"));
@@ -246,11 +246,11 @@ public class HTTPConnection implements URLConnectionAdapter {
     public String toString() {
 
         StringBuilder sb = new StringBuilder();
-        sb.append("-->" + this.getURL() + "\r\n");
+        sb.append("-->").append(this.getURL()).append("\r\n");
 
         sb.append("----------------Request------------------\r\n");
 
-        sb.append(httpMethod.toString() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
+        sb.append(httpMethod.toString()).append(' ').append(getURL().getPath()).append((getURL().getQuery() != null ? "?" + getURL().getQuery() : "")).append(" HTTP/1.1\r\n");
 
         for (String key : this.getRequestProperties().keySet()) {
             String v = this.getRequestProperties().get(key);
@@ -274,7 +274,7 @@ public class HTTPConnection implements URLConnectionAdapter {
         }
 
         sb.append("----------------Response------------------\r\n");
-        sb.append(httpHeader + "\r\n");
+        sb.append(httpHeader).append("\r\n");
         for (Iterator<Entry<String, List<String>>> it = getHeaderFields().entrySet().iterator(); it.hasNext();) {
             Entry<String, List<String>> next = it.next();
             // Achtung cookie reihenfolge ist wichtig!!!

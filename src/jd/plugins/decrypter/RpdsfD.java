@@ -39,8 +39,7 @@ public class RpdsfD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @SuppressWarnings("unchecked")
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -202,13 +201,12 @@ public class RpdsfD extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-
     private String spin(String string) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         for (int i = string.length(); i >= 2; i -= 2) {
-            ret += string.substring(i - 2, i);
+            ret.append(string.substring(i - 2, i));
         }
-        return ret;
+        return ret.toString();
     }
+
 }

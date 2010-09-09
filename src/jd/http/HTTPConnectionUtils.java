@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import jd.controlling.JDLogger;
-
 public class HTTPConnectionUtils {
     public static InputStream newInputStream(final ByteBuffer buf) {
         return new InputStream() {
