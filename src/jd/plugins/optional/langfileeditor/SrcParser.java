@@ -240,22 +240,21 @@ public class SrcParser {
         String pat_string = "\"(.*?)(?<!\\\\)\"";
         LngEntry entry;
         String m;
+        String[] strings;
         main: for (String orgm : calls) {
-
             m = orgm;
             m = m.trim();
             if (m.startsWith("L")) {
+                strings = new Regex(m, pat_string).getColumn(0);
 
-                String[] strings = new Regex(m, pat_string).getColumn(0);
                 m = m.replace("\r", "");
                 m = m.replace("\n", "");
-
                 m = m.replaceAll(pat_string, "%%%S%%%");
-
                 m = m.replace(" ", "");
-                orgm = m;
-                try {
 
+                orgm = m;
+
+                try {
                     int com1 = m.indexOf(",");
                     int end = m.indexOf(")", com1 + 1);
                     int com2;
@@ -266,15 +265,13 @@ public class SrcParser {
                     } else {
                         m = m.substring(m.indexOf("(") + 1, end).trim();
                     }
-
                 } catch (Exception e) {
                     e.printStackTrace();
-
                 }
-                while (m.charAt(m.length() - 1) == ',')
+                while (m.length() > 0 && m.charAt(m.length() - 1) == ',') {
                     m = m.substring(0, m.length() - 1);
+                }
                 if (m == null || m.length() == 0) {
-                    // JDLogger.getLogger().severe("unknown: " + orgm);
                     continue;
                 }
                 m = m.replace("%%%+%%%", "%%%%%%");

@@ -16,7 +16,6 @@
 
 package jd.parser;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -83,10 +82,9 @@ public class Regex extends org.appwork.utils.Regex {
     public static long getMilliSeconds(final String expire, final String timeformat, final Locale l) {
         if (expire != null) {
             final SimpleDateFormat dateFormat = (l != null) ? new SimpleDateFormat(timeformat, l) : new SimpleDateFormat(timeformat);
-
             try {
-                return (dateFormat.parse(expire).getTime());
-            } catch (ParseException e) {
+                return dateFormat.parse(expire).getTime();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
