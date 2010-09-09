@@ -95,7 +95,7 @@ public class HTTPConnection implements URLConnectionAdapter {
         }
         httpSocket.setSoTimeout(readTimeout);
         httpResponseCode = -1;
-        /*host auflösen nur wenn kein proxy, ansonsten über proxy*/
+        /* host auflösen nur wenn kein proxy, ansonsten über proxy */
         InetAddress host = Inet4Address.getByName(httpURL.getHost());
         int port = httpURL.getPort();
         if (port == -1) port = httpURL.getDefaultPort();
@@ -152,7 +152,7 @@ public class HTTPConnection implements URLConnectionAdapter {
         String temp = new String(bytes, "UTF-8");
         String[] headerStrings = temp.split("\r\n");
         temp = null;
-        for (int i = 1; i <= headerStrings.length - 1; i++) {
+        for (int i = 0; i < headerStrings.length; i++) {
             String line = headerStrings[i];
             String key = null;
             String value = null;
@@ -199,7 +199,11 @@ public class HTTPConnection implements URLConnectionAdapter {
     public InputStream getInputStream() throws IOException {
         connect();
         connectInputStream();
-        return inputStream;
+        if (getResponseCode() >= 200 && getResponseCode() <= 400) {
+            return inputStream;
+        } else {
+            throw new IOException(getResponseCode() + " " + getResponseMessage());
+        }
     }
 
     public Map<String, String> getRequestProperties() {

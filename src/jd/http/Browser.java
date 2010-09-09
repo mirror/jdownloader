@@ -825,7 +825,12 @@ public class Browser {
         }
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
-        if (encoding != null) request.getHeaders().put("Content-Type", encoding);
+        if (encoding != null) {
+            request.getHeaders().put("Content-Type", encoding);
+        } else {
+            /* default content-type for post data */
+            request.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        }
         // request.setFollowRedirects(doRedirects);
         /* set Timeouts */
         request.setConnectTimeout(getConnectTimeout());
@@ -1108,7 +1113,7 @@ public class Browser {
         br.limit = limit;
         br.readTimeout = readTimeout;
         br.request = request;
-        br.cookies = cookies;        
+        br.cookies = cookies;
         br.cookiesExclusive = cookiesExclusive;
         br.debug = debug;
         br.proxy = proxy;
@@ -1185,8 +1190,8 @@ public class Browser {
         }
     }
 
-    /*TODO: setauth needs to be done*/
-    public void setAuth(String domain, final String user, final String pass) {        
+    /* TODO: setauth needs to be done */
+    public void setAuth(String domain, final String user, final String pass) {
     }
 
     public String submitForm(final String formname) throws Exception {

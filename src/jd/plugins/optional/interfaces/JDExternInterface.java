@@ -132,7 +132,7 @@ public class JDExternInterface extends PluginOptional {
         String decryted = decrypt(baseDecoded, key).trim();
 
         String passwords[] = Regex.getLines(password);
-        decryted = Encoding.htmlDecode(decryted);
+        /*links were not encoded, so we dont have to htmlDecode them again*/
         ArrayList<DownloadLink> links = new DistributeData(decryted).findLinks();
         for (DownloadLink link : links)
             link.addSourcePluginPasswords(passwords);

@@ -21,6 +21,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import org.appwork.utils.Hash;
+
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
@@ -84,7 +86,7 @@ public class RAFDownload extends DownloadInterface {
                     if (sfvText != null) sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
                     File outputFile = new File(downloadLink.getFileOutput());
                     if (sfvText != null && sfvText.contains(outputFile.getName())) {
-                        String crc = Long.toHexString(JDHash.getCRC(outputFile));
+                        String crc = Long.toHexString(Hash.getCRC32(outputFile));
 
                         hashType = "CRC32";
                         success = new Regex(sfvText, outputFile.getName() + "\\s*" + crc).matches();
