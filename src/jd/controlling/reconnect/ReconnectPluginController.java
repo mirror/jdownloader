@@ -173,22 +173,19 @@ public class ReconnectPluginController implements ControlListener {
 
                 ReconnectPluginController.this.setActivePlugin(DummyRouterPlugin.getInstance());
                 // used for progresscontroll only
-                final int fastest = Integer.MAX_VALUE;
-                final RouterPlugin fastestPlugin = null;
+                int fastest = Integer.MAX_VALUE;
+                RouterPlugin fastestPlugin = null;
 
-                // for (final RouterPlugin plg :
-                // ReconnectPluginController.this.plugins) {
-                // if (plg.hasAutoDetection()) {
-                // this.statusMessage =
-                // Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status",
-                // "...testing %s", plg.getName());
-                // final int time = plg.autoDetection();
-                // if (time >= 0 && time < fastest) {
-                // fastest = time;
-                // fastestPlugin = plg;
-                // }
-                // }
-                // }
+                for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
+                    if (plg.hasAutoDetection()) {
+                        this.statusMessage = Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName());
+                        final int time = plg.autoDetection();
+                        if (time >= 0 && time < fastest) {
+                            fastest = time;
+                            fastestPlugin = plg;
+                        }
+                    }
+                }
                 // if we find a woprking reconnect without any interaction, this
                 // is
                 // great
@@ -356,8 +353,9 @@ public class ReconnectPluginController implements ControlListener {
      * Performs a reconnect
      * 
      * @return true if ip changed
+     * @throws InterruptedException
      */
-    public synchronized final boolean doReconnect() {
+    public synchronized final boolean doReconnect() throws InterruptedException {
 
         final RouterPlugin active = this.getActivePlugin();
         if (active == DummyRouterPlugin.getInstance()) { return false; }
@@ -407,8 +405,9 @@ public class ReconnectPluginController implements ControlListener {
      * @param retry
      * @param plg
      * @return
+     * @throws InterruptedException
      */
-    public final boolean doReconnect(final RouterPlugin plg) {
+    public final boolean doReconnect(final RouterPlugin plg) throws InterruptedException {
 
         final Configuration configuration = JDUtilities.getConfiguration();
         final int waitForIp = configuration.getIntegerProperty(Configuration.PARAM_WAITFORIPCHANGE, 30);
@@ -420,6 +419,8 @@ public class ReconnectPluginController implements ControlListener {
 
         try {
             plg.doReconnect();
+        } catch (final InterruptedException e) {
+            throw e;
         } catch (final Exception e) {
 
             e.printStackTrace();
@@ -428,10 +429,9 @@ public class ReconnectPluginController implements ControlListener {
         }
 
         ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");
-        try {
-            Thread.sleep(waittime * 1000);
-        } catch (final InterruptedException e) {
-        }
+
+        Thread.sleep(waittime * 1000);
+
         boolean offline = false;
         String afterIP = this.getExternalIP();
         if (preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
@@ -443,10 +443,8 @@ public class ReconnectPluginController implements ControlListener {
         ReconnectPluginController.LOG.info("Wait " + waitForIp + " sec for new ip");
         while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
 
-            try {
-                Thread.sleep(checkInterval * 1000);
-            } catch (final InterruptedException e) {
-            }
+            Thread.sleep(checkInterval * 1000);
+
             afterIP = this.getExternalIP();
             ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
             if (!offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
@@ -467,10 +465,8 @@ public class ReconnectPluginController implements ControlListener {
             endTime = System.currentTimeMillis() + 120 * 1000;
             while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
 
-                try {
-                    Thread.sleep(checkInterval * 1000);
-                } catch (final InterruptedException e) {
-                }
+                Thread.sleep(checkInterval * 1000);
+
                 afterIP = this.getExternalIP();
                 ReconnectPluginController.LOG.finer("IP before2: " + preIp + " after: " + afterIP);
                 if (!offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {

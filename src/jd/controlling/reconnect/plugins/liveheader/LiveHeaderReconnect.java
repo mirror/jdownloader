@@ -392,7 +392,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             }
         };
         this.txtName = new JTextField();
-        new TextComponentChangeListener(this.txtUser) {
+        new TextComponentChangeListener(this.txtName) {
             @Override
             protected void onChanged(final DocumentEvent e) {
                 LiveHeaderReconnect.this.setRouterName(LiveHeaderReconnect.this.txtName.getText());
@@ -534,7 +534,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     @Override
-    protected void performReconnect() throws ReconnectException {
+    protected void performReconnect() throws ReconnectException, InterruptedException {
         String script;
 
         script = this.getScript();
@@ -767,6 +767,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
                 }
             }
+        } catch (final InterruptedException e) {
+            throw e;
         } catch (final Exception e) {
             JDLogger.exception(e);
 
@@ -818,7 +820,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         }
     }
 
-    public int runDetectionWizard() {
+    public int runDetectionWizard() throws InterruptedException {
 
         final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
         final int ret = wizard.runOfflineScan();
@@ -852,10 +854,12 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     public void setScript(final String newScript) {
         this.getStorage().put(LiveHeaderReconnect.SCRIPT, newScript);
+        this.updateGUI();
     }
 
     public void setUser(final String user) {
         this.getStorage().put(LiveHeaderReconnect.USER, user);
+        this.updateGUI();
     }
 
     private void updateGUI() {

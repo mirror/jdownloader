@@ -6,8 +6,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import jd.config.Configuration;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterUtils;
+import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.ContainerDialog;
@@ -27,7 +29,7 @@ public class LiveHeaderDetectionWizard {
         return (LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID);
     }
 
-    public int runOfflineScan() {
+    public int runOfflineScan() throws InterruptedException {
         int ret = -1;
         // final ArrayList<String[]> scripts =
         // LiveHeaderReconnect.getLHScripts();
@@ -99,7 +101,7 @@ public class LiveHeaderDetectionWizard {
         return -1;
     }
 
-    private int scanOfflineRouters(final String name, final String manufactor) {
+    private int scanOfflineRouters(final String name, final String manufactor) throws InterruptedException {
 
         final ArrayList<String[]> scripts = LiveHeaderReconnect.getLHScripts();
         final ArrayList<String[]> filtered = new ArrayList<String[]>();
@@ -127,9 +129,22 @@ public class LiveHeaderDetectionWizard {
             this.getPlugin().setScript(script[2]);
             final long start = System.currentTimeMillis();
             if (Thread.currentThread().isInterrupted()) { return -1; }
-            if (ReconnectPluginController.getInstance().doReconnect(this.getPlugin())) {
+            final int waitTimeBefore = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_WAITFORIPCHANGE, 30);
+            try {
+                // at least after 5 (init) +10 seconds, we should be offline. if
+                // we
+                // are offline, reconnectsystem increase waittime about 120
+                // seconds
+                // anyway
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WAITFORIPCHANGE, 10);
+                if (ReconnectPluginController.getInstance().doReconnect(this.getPlugin())) {
+                    // restore afterwards
 
-            return (int) (System.currentTimeMillis() - start); }
+                    return (int) (System.currentTimeMillis() - start);
+                }
+            } finally {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WAITFORIPCHANGE, waitTimeBefore);
+            }
         }
 
         return -1;

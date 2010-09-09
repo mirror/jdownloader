@@ -46,7 +46,7 @@ public abstract class RouterPlugin {
         return -1;
     }
 
-    final public void doReconnect() throws ReconnectException {
+    final public void doReconnect() throws ReconnectException, InterruptedException {
         final long start = System.currentTimeMillis();
         this.performReconnect();
         this.lastDuration = System.currentTimeMillis() - start;
@@ -167,15 +167,16 @@ public abstract class RouterPlugin {
      * @param progress
      * @return
      */
-    protected abstract void performReconnect() throws ReconnectException;
+    protected abstract void performReconnect() throws ReconnectException, InterruptedException;
 
     /**
      * runs a detection wizard and
      * 
      * @return returns the time the reconnect took. returns -1 if the action has
      *         not been successfull
+     * @throws InterruptedException
      */
-    public int runDetectionWizard() {
+    public int runDetectionWizard() throws InterruptedException {
         // TODO Auto-generated method stub
         return -1;
     }
