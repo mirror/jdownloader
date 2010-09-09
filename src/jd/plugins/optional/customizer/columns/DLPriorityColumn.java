@@ -19,25 +19,28 @@ package jd.plugins.optional.customizer.columns;
 import java.awt.Component;
 
 import javax.swing.JComboBox;
+import javax.swing.JTable;
 
-import jd.gui.swing.components.table.JDTableColumn;
-import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.plugins.optional.customizer.CustomizeSetting;
 
+import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
-public class DLPriorityColumn extends JDTableColumn {
+public class DLPriorityColumn extends ExtColumn<CustomizeSetting> {
 
-    private static final long serialVersionUID = 4640856288557573254L;
-    private static String[] prioDescs;
-    private JRendererLabel jlr;
-    private JComboBox prio;
+    private static final long    serialVersionUID = 4640856288557573254L;
+    private static String[]      prioDescs;
+    private final JRendererLabel jlr;
+    private final JComboBox      prio;
 
-    public DLPriorityColumn(String name, JDTableModel table) {
+    public DLPriorityColumn(String name, ExtTableModel<CustomizeSetting> table) {
         super(name, table);
+
         jlr = new JRendererLabel();
         jlr.setBorder(null);
+
         prio = new JComboBox(prioDescs = DownloadTable.prioDescs);
         prio.setBorder(null);
     }
@@ -48,35 +51,35 @@ public class DLPriorityColumn extends JDTableColumn {
     }
 
     @Override
-    public boolean isEditable(Object obj) {
+    public boolean isEditable(CustomizeSetting obj) {
         return isEnabled(obj);
     }
 
     @Override
-    public boolean isEnabled(Object obj) {
-        return ((CustomizeSetting) obj).isEnabled();
+    public boolean isEnabled(CustomizeSetting obj) {
+        return obj.isEnabled();
     }
 
     @Override
-    public boolean isSortable(Object obj) {
+    public boolean isSortable(CustomizeSetting obj) {
         return false;
     }
 
     @Override
-    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
+    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         prio.setSelectedIndex(((CustomizeSetting) value).getDLPriority() + 1);
         return prio;
     }
 
     @Override
-    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         jlr.setText(prioDescs[((CustomizeSetting) value).getDLPriority() + 1]);
         return jlr;
     }
 
     @Override
-    public void setValue(Object value, Object object) {
-        ((CustomizeSetting) object).setDLPriority((Integer) value - 1);
+    public void setValue(Object value, CustomizeSetting object) {
+        object.setDLPriority((Integer) value - 1);
     }
 
 }

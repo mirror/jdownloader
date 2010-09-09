@@ -31,7 +31,6 @@ import javax.swing.JTextField;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -41,13 +40,17 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.table.ExtRowHighlighter;
+import org.appwork.utils.swing.table.ExtTable;
+import org.appwork.utils.swing.table.SelectionHighlighter;
+
 public class CustomizerGui extends SwitchPanel {
 
-    private static final long serialVersionUID = 7508784076121700378L;
-    private static final String JDL_PREFIX = "jd.plugins.optional.customizer.CustomizerGui.";
+    private static final long     serialVersionUID = 7508784076121700378L;
+    private static final String   JDL_PREFIX       = "jd.plugins.optional.customizer.CustomizerGui.";
 
     private final CustomizerTable table;
-    private SubConfiguration config;
+    private SubConfiguration      config;
 
     public CustomizerInfoPanel getInfoPanel() {
         return new CustomizerInfoPanel();
@@ -84,8 +87,7 @@ public class CustomizerGui extends SwitchPanel {
                         String result = UserIO.getInstance().requestInputDialog(JDL.L("action.customize.addsetting.ask", "Please insert the name for the new Setting:"));
                         if (result != null) {
                             CustomizeSetting.getSettings().add(new CustomizeSetting(result));
-                            table.getModel().refreshModel();
-                            table.getModel().fireTableDataChanged();
+                            table.getModel().refreshData();
                         }
                         return null;
                     }
@@ -112,8 +114,7 @@ public class CustomizerGui extends SwitchPanel {
                         settings.remove(rows[i]);
                     }
                 }
-                table.getModel().refreshModel();
-                table.getModel().fireTableDataChanged();
+                table.getModel().refreshData();
             }
         };
     }
@@ -126,20 +127,19 @@ public class CustomizerGui extends SwitchPanel {
 
     @Override
     protected void onShow() {
-        table.getModel().refreshModel();
-        table.getModel().fireTableDataChanged();
+        table.getModel().refreshData();
     }
 
     public class CustomizerInfoPanel extends DroppedPanel implements KeyListener, ActionListener {
 
         private static final long serialVersionUID = 1313970313241445270L;
 
-        private final Color valueColor;
-        private final Color titleColor;
+        private final Color       valueColor;
+        private final Color       titleColor;
 
-        private JLabel iconContainer;
-        private JTextField tester;
-        private JButton reset;
+        private JLabel            iconContainer;
+        private JTextField        tester;
+        private JButton           reset;
 
         private CustomizerInfoPanel() {
             this.setLayout(new MigLayout("ins 5, wrap 2", "[]20[grow,fill]", "[][]"));
@@ -160,11 +160,20 @@ public class CustomizerGui extends SwitchPanel {
             tester.addKeyListener(this);
             reset.addActionListener(this);
 
-            table.addJDRowHighlighter(new JDRowHighlighter(new Color(204, 255, 170)) {
+            table.addRowHighlighter(new SelectionHighlighter(null, new Color(200, 200, 200, 80)));
+            table.addRowHighlighter(new ExtRowHighlighter(null, new Color(204, 255, 170, 50)) {
 
                 @Override
-                public boolean doHighlight(Object obj) {
-                    return tester.getText().length() > 0 && (CustomizeSetting) obj == CustomizeSetting.getFirstMatch(tester.getText());
+                public boolean doHighlight(ExtTable<?> extTable, int row) {
+                    return tester.getText().length() > 0 && (CustomizeSetting) extTable.getExtTableModel().getValueAt(row, 0) == CustomizeSetting.getFirstMatch(tester.getText());
+                }
+
+            });
+            table.addRowHighlighter(new ExtRowHighlighter(null, new Color(221, 34, 34, 50)) {
+
+                @Override
+                public boolean doHighlight(ExtTable<?> extTable, int row) {
+                    return !((CustomizeSetting) extTable.getExtTableModel().getValueAt(row, 0)).isRegexValid();
                 }
 
             });

@@ -18,29 +18,33 @@ package jd.plugins.optional.customizer.columns;
 
 import java.awt.Component;
 
+import javax.swing.JTable;
+
 import jd.gui.swing.components.BrowseFile;
-import jd.gui.swing.components.table.JDTableColumn;
-import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.customizer.CustomizeSetting;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.table.ExtColumn;
+import org.appwork.utils.swing.table.ExtTableModel;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
-public class DownloadDirColumn extends JDTableColumn {
+public class DownloadDirColumn extends ExtColumn<CustomizeSetting> {
 
-    private static final long serialVersionUID = 1687752044574718418L;
-    private JRendererLabel jlr;
-    private BrowseFile file;
+    private static final long    serialVersionUID = 1687752044574718418L;
+    private final JRendererLabel jlr;
+    private final BrowseFile     file;
 
-    public DownloadDirColumn(String name, JDTableModel table) {
+    public DownloadDirColumn(String name, ExtTableModel<CustomizeSetting> table) {
         super(name, table);
+        setClickcount(2);
+
         jlr = new JRendererLabel();
         jlr.setBorder(null);
+
         file = new BrowseFile(new MigLayout("ins 0", "[fill,grow]2[min!]", "[21!]"));
         file.setFileSelectionMode(BrowseFile.DIRECTORIES_ONLY);
         file.setButtonText("...");
         file.getTextField().setBorder(null);
-        setClickstoEdit(2);
     }
 
     @Override
@@ -49,35 +53,35 @@ public class DownloadDirColumn extends JDTableColumn {
     }
 
     @Override
-    public boolean isEditable(Object obj) {
+    public boolean isEditable(CustomizeSetting obj) {
         return isEnabled(obj);
     }
 
     @Override
-    public boolean isEnabled(Object obj) {
-        return ((CustomizeSetting) obj).isEnabled();
+    public boolean isEnabled(CustomizeSetting obj) {
+        return obj.isEnabled();
     }
 
     @Override
-    public boolean isSortable(Object obj) {
+    public boolean isSortable(CustomizeSetting obj) {
         return false;
     }
 
     @Override
-    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
+    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         file.setText(((CustomizeSetting) value).getDownloadDir());
         return file;
     }
 
     @Override
-    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         jlr.setText(((CustomizeSetting) value).getDownloadDir());
         return jlr;
     }
 
     @Override
-    public void setValue(Object value, Object object) {
-        ((CustomizeSetting) object).setDownloadDir((String) value);
+    public void setValue(Object value, CustomizeSetting object) {
+        object.setDownloadDir((String) value);
     }
 
 }

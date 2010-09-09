@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -9,7 +10,6 @@ import javax.swing.JFileChooser;
 
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.JDUtilities;
 
 public class HeaderChecker {
 
@@ -19,23 +19,22 @@ public class HeaderChecker {
         // hc.quickCheck();
     }
 
-    private static final boolean DEBUG = true;
-    private static final boolean FIXIT = false;
+    private static final boolean  FIXIT           = true;
 
-    private static final String[] IGNORE_NAMES = new String[] { "junique", "jaxe", "template", "ShortCuts", "DiffMatchPatch", "Tester", "Base64", "XTrustProvider", "HTMLEntities", "Win32" };
+    private static final String[] IGNORE_NAMES    = new String[] { "junique", "jaxe", "template", "ShortCuts", "DiffMatchPatch", "Tester", "Base64", "XTrustProvider", "HTMLEntities", "Win32" };
 
-    private static String LICENSE;
-    private static String LICENSE_PREFIX;
-    private static String LICENSE_PREFIX_TRIMMED;
+    private static final File     LICENSE_FILE    = new File("C:\\Dokumente und Einstellungen\\Towelie\\Eigene Dateien\\Java\\JDownloader\\ressourcen\\gpl.header");
+    private static String         LICENSE;
+    private static String         LICENSE_PREFIX;
+    private static String         LICENSE_PREFIX_TRIMMED;
 
-    private static final File START_DIRECTORY = new File("C:\\Dokumente und Einstellungen\\Towelie\\Eigene Dateien\\Java\\jd\\src\\");
+    private static final File     START_DIRECTORY = new File("C:\\Dokumente und Einstellungen\\Towelie\\Eigene Dateien\\Java\\JDownloader\\src\\");
 
-    private File dir;
-
-    private ArrayList<File> files;
+    private final File            dir;
+    private final ArrayList<File> files;
 
     public HeaderChecker(File dir) {
-        LICENSE = JDIO.readFileToString(JDUtilities.getResourceFile("gpl.header"));
+        LICENSE = JDIO.readFileToString(HeaderChecker.LICENSE_FILE);
         LICENSE_PREFIX = LICENSE.substring(0, Math.min(LICENSE.indexOf('\r'), LICENSE.indexOf('\n')));
         LICENSE_PREFIX_TRIMMED = LICENSE_PREFIX.substring(2).trim();
 
@@ -112,7 +111,7 @@ public class HeaderChecker {
     }
 
     private void debug(String string) {
-        if (DEBUG) System.out.println(string);
+        System.out.println(string);
     }
 
     private boolean ignoreFile(File file) {

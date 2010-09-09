@@ -1,18 +1,16 @@
 <project default="pack_all" basedir=".">
 
 	<!--
-                                                 ┌─► jarMain ───────────────────────────┐
-              ┌─► pack_multios ───┐              ├─► jarWebupdater ─────────────────────┤
-    pack_all ─┼─► pack_linux ─────┼─► build_all ─┼─► jarRestarter ──────────────────────┼─► compile ─┬─► clean
-              ├─► pack_mac ───────┤              ├─► copy_jarOptionals ─► jarOptionals ─┤            │
-              └─► pack_windows ───┘              ├─► copy_compiled ─────────────────────┘            │
-                                                 └─► copy_res ───────────────────────────────────────┘
-    
-    
-    sign ─► build_all
+                                                   ┌─► jarMain ───────────────────────────┐
+                                                   ├─► jarWebupdater ─────────────────────┤
+              ┌─► pack_multios ───┐                ├─► jarReconnectOptionals ─────────────┤
+    pack_all ─┼─► pack_linux ─────┼─┬─► build_all ─┼─► jarRestarter ──────────────────────┼─► compile ─┬─► clean
+              ├─► pack_mac ───────┤ │              ├─► copy_jarOptionals ─► jarOptionals ─┤            │
+              └─► pack_windows ───┘ │              ├─► copy_compiled ─────────────────────┘            │
+    sign ───────────────────────────┘              └─► copy_res ───────────────────────────────────────┘
     
     dlcEnabledBuild = sign & pack_all
-    signedBuild = sign & pack_all
+    
     -->
 
 	<property name="src" value="../src" />
@@ -392,9 +390,6 @@
 
 	<!-- dlcEnabledBuild -->
 	<target name="dlcEnabledBuild" depends="sign, pack_all" />
-
-	<!-- signedBuild -->
-	<target name="signedBuild" depends="sign, pack_all" />
 
 	<!-- Creates the javadocs -->
 	<target name="doc">

@@ -19,6 +19,7 @@ package jd.plugins.optional.customizer;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -46,25 +47,25 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
 
     private static final long serialVersionUID = 3295935612660256840L;
 
-    private String name;
+    private String            name;
 
-    private boolean enabled = true;
+    private boolean           enabled          = true;
 
-    private String regex;
+    private String            regex;
 
-    private String packageName;
+    private String            packageName;
 
-    private String downloadDir = JDUtilities.getDefaultDownloadDirectory();
+    private String            downloadDir      = JDUtilities.getDefaultDownloadDirectory();
 
-    private boolean extract = true;
+    private boolean           extract          = true;
 
-    private String password;
+    private String            password;
 
-    private boolean useSubDirectory = false;
+    private boolean           useSubDirectory  = false;
 
-    private int dlpriority = 0;
+    private int               dlpriority       = 0;
 
-    private transient int matchCount = 0;
+    private transient int     matchCount       = 0;
 
     public CustomizeSetting(String name) {
         setName(name);
@@ -101,6 +102,18 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
 
     public void setRegex(String regex) {
         this.regex = regex;
+    }
+
+    public boolean isRegexValid() {
+        if (regex == null || regex.equals("")) return false;
+
+        try {
+            Pattern.compile(regex);
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
     }
 
     public String getPackageName() {
@@ -151,8 +164,8 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
         this.dlpriority = dlpriority;
     }
 
-    public String getMatchCount() {
-        return String.valueOf(matchCount);
+    public int getMatchCount() {
+        return matchCount;
     }
 
     public void incMatchCount() {

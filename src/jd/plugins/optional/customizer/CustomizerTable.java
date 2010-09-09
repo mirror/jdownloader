@@ -16,14 +16,15 @@
 
 package jd.plugins.optional.customizer;
 
-import jd.gui.swing.components.table.JDTable;
+import org.appwork.utils.swing.table.ExtTable;
 
-public class CustomizerTable extends JDTable {
+public class CustomizerTable extends ExtTable<CustomizeSetting> {
 
     private static final long serialVersionUID = 2767338885884748758L;
 
     public CustomizerTable() {
-        super(new CustomizerTableModel("customizerview"));
+        super(new CustomizerTableModel(), "customizer");
+
         setRowHeight(22);
     }
 
