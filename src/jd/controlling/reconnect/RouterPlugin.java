@@ -42,7 +42,6 @@ public abstract class RouterPlugin {
      * @return
      */
     public int autoDetection() {
-        // TODO Auto-generated method stub
         return -1;
     }
 
@@ -84,7 +83,6 @@ public abstract class RouterPlugin {
      * @return
      */
     public int getIpCheckInterval() {
-        // TODO Auto-generated method stub
         return 5;
     }
 
@@ -125,12 +123,11 @@ public abstract class RouterPlugin {
 
     /**
      * Returns if this plugin might be able to find a valid setup without any
-     * userinteraktion
+     * userinteraction
      * 
      * @return
      */
     public boolean hasAutoDetection() {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -141,7 +138,6 @@ public abstract class RouterPlugin {
      * @return
      */
     public boolean hasDetectionWizard() {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -177,13 +173,14 @@ public abstract class RouterPlugin {
      * @throws InterruptedException
      */
     public int runDetectionWizard() throws InterruptedException {
-        // TODO Auto-generated method stub
         return -1;
     }
 
     public abstract void setCanCheckIP(boolean b);
 
+    @Override
     public String toString() {
         return this.getName();
     }
+
 }
