@@ -43,7 +43,6 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.CLRLoader;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -95,7 +94,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     protected static final Logger   LOG = JDLogger.getLogger();
     public static final String      ID  = "httpliveheader";
 
-    /*
+    /**
      * DO NOT REMOVE THIS OR REPLACE BY Regex.getLines()
      * 
      * REGEX ARE COMPLETE DIFFERENT AND DO NOT TRIM
@@ -138,9 +137,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                 br.setHeaders(new RequestHeader());
             }
             String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
-            // ArrayList<String> params =
-            // SimpleMatches.getAllSimpleMatches(request,
-            // "%%%°%%%", 1);
             final String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
             if (params.length > 0) {
                 final StringBuilder req;
@@ -258,15 +254,11 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         // CLR Import
         dialog.setLeftActions(new AbstractAction("Browser Scripts") {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = 1L;
 
             public void actionPerformed(final ActionEvent e) {
 
                 final ImportRouterDialog importDialog = new ImportRouterDialog(LiveHeaderReconnect.getLHScripts());
-                // clrDialog.setPreferredSize(new Dimension(500, 400));
                 if (Dialog.isOK(Dialog.getInstance().showDialog(importDialog))) {
                     final String[] data = importDialog.getResult();
 
@@ -285,9 +277,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             }
         }, new AbstractAction("Import CLR Script") {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = 1L;
 
             public void actionPerformed(final ActionEvent e) {
@@ -297,7 +286,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                 final String clr = Dialog.getInstance().showDialog(clrDialog);
                 if (clr == null) { return; }
 
-                final String[] ret = CLRLoader.createLiveHeader(clr);
+                final String[] ret = CLRConverter.createLiveHeader(clr);
 
                 String script;
                 if (ret != null) {
@@ -380,7 +369,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             @Override
             protected void onChanged(final DocumentEvent e) {
                 LiveHeaderReconnect.this.setPassword(new String(LiveHeaderReconnect.this.txtPassword.getPassword()));
-
             }
         };
         this.txtIP = new JTextField();
@@ -388,7 +376,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             @Override
             protected void onChanged(final DocumentEvent e) {
                 LiveHeaderReconnect.this.setRouterIP(LiveHeaderReconnect.this.txtIP.getText());
-
             }
         };
         this.txtName = new JTextField();
@@ -396,7 +383,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             @Override
             protected void onChanged(final DocumentEvent e) {
                 LiveHeaderReconnect.this.setRouterName(LiveHeaderReconnect.this.txtName.getText());
-
             }
         };
         //
@@ -470,7 +456,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     public String getPassword() {
         // convert to new storagesys
-
         return this.getStorage().get(LiveHeaderReconnect.PASSWORD, JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_PASS));
     }
 
@@ -519,7 +504,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     public boolean hasDetectionWizard() {
-        // TODO Auto-generated method stub
         return true;
     }
 
@@ -820,8 +804,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         }
     }
 
+    @Override
     public int runDetectionWizard() throws InterruptedException {
-
         final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
         final int ret = wizard.runOfflineScan();
         if (ret < 0) {
@@ -829,12 +813,10 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             // ret = wizard.runRouterRecorder();
         }
         return ret;
-
     }
 
     @Override
     public void setCanCheckIP(final boolean b) {
-
     }
 
     public void setPassword(final String pass) {
@@ -869,28 +851,25 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                     LiveHeaderReconnect.this.txtName.setText(LiveHeaderReconnect.this.getRouterName());
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
-
+                    // is a changelistener of this field's document
                 }
                 try {
                     LiveHeaderReconnect.this.txtIP.setText(LiveHeaderReconnect.this.getRouterIP());
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
                     // is a changelistener of this field's document
-
                 }
                 try {
                     LiveHeaderReconnect.this.txtPassword.setText(LiveHeaderReconnect.this.getPassword());
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
                     // is a changelistener of this field's document
-
                 }
                 try {
                     LiveHeaderReconnect.this.txtUser.setText(LiveHeaderReconnect.this.getUser());
                 } catch (final Throwable e) {
                     // throws an Throwable if the caller
                     // is a changelistener of this field's document
-
                 }
 
             }

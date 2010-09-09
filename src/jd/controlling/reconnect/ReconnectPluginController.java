@@ -26,13 +26,13 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.plugins.batch.ExternBatchReconnectPlugin;
 import jd.controlling.reconnect.plugins.extern.ExternReconnectPlugin;
+import jd.controlling.reconnect.plugins.liveheader.CLRConverter;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
 import jd.nutils.IPAddress;
 import jd.nutils.io.JDFileFilter;
-import jd.utils.CLRLoader;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -337,7 +337,7 @@ public class ReconnectPluginController implements ControlListener {
             // we need to convert clr script
 
             final String clr = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR);
-            ret = CLRLoader.createLiveHeader(clr);
+            ret = CLRConverter.createLiveHeader(clr);
 
             if (ret != null) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, ret[1]);

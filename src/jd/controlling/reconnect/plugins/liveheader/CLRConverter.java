@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils;
+package jd.controlling.reconnect.plugins.liveheader;
 
 import java.io.StringReader;
 import java.util.HashMap;
@@ -29,7 +29,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-public class CLRLoader {
+public class CLRConverter {
 
     private static final Logger logger = JDLogger.getLogger();
 
@@ -93,7 +93,7 @@ public class CLRLoader {
 
                     if (method.equalsIgnoreCase("post")) {
                         hlh.append("            Host: %%%routerip%%%" + "\r\n");
-                        CLRLoader.inputAuth(hlh, basicauth);
+                        CLRConverter.inputAuth(hlh, basicauth);
                         hlh.append("\r\n");
                         hlh.append(post.trim());
                         hlh.append("\r\n");
@@ -104,7 +104,7 @@ public class CLRLoader {
                             hlh.append("            " + method.toUpperCase() + " /" + action + "?" + post.trim() + " HTTP/1.1" + "\r\n");
                         }
                         hlh.append("            Host: %%%routerip%%%" + "\r\n");
-                        CLRLoader.inputAuth(hlh, basicauth);
+                        CLRConverter.inputAuth(hlh, basicauth);
                     }
                     hlh.append("        [[[/REQUEST]]]" + "\r\n");
                     hlh.append("    [[[/STEP]]]" + "\r\n");
