@@ -86,8 +86,8 @@ public class CPluginWrapper extends PluginWrapper {
     }
 
     @Override
-    public String getVersion() {
-        return this.isLoaded() ? this.getPlugin().getVersion() : "idle";
+    public long getVersion() {
+        return this.isLoaded() ? this.getPlugin().getVersion() : -1;
     }
 
 }

@@ -73,7 +73,7 @@ class PremShareHost extends HostPluginWrapper {
     }
 
     @Override
-    public String getVersion() {
+    public long getVersion() {
         if (replacedone != null) return replacedone.getVersion();
         return super.getVersion();
     }
@@ -138,14 +138,14 @@ class PremShareHost extends HostPluginWrapper {
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 5)
 public class JDPremium extends PluginOptional {
 
-    private static final Object LOCK = new Object();
-    private static boolean replaced = false;
-    private static boolean init = false;
-    private static boolean enabled = false;
-    private static String jdpremServer = null;
-    private static boolean preferLocalAccounts = false;
+    private static final Object                  LOCK                = new Object();
+    private static boolean                       replaced            = false;
+    private static boolean                       init                = false;
+    private static boolean                       enabled             = false;
+    private static String                        jdpremServer        = null;
+    private static boolean                       preferLocalAccounts = false;
 
-    private static final HashMap<String, String> premShareHosts = new HashMap<String, String>();
+    private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
 
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
@@ -254,7 +254,7 @@ public class JDPremium extends PluginOptional {
     }
 
     @Override
-    public String getVersion() {
+    public long getVersion() {
         return getVersion("$Revision$");
     }
 

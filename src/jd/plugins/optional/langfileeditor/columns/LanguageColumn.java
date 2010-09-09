@@ -66,9 +66,9 @@ public class LanguageColumn extends ExtTextEditorColumn<KeyInfo> {
     }
 
     @Override
-    public void setValue(final Object value, final KeyInfo object) {
+    protected void setStringValue(final String value, final KeyInfo object) {
         if (object.getLanguage().equals(value)) return;
-        object.setLanguage(value == null ? "" : value.toString());
+        object.setLanguage(value);
         ((LFETableModel) getModel()).getGui().dataChanged();
     }
 

@@ -14,26 +14,26 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.jdgui.views.settings.panels.addons.columns;
+package jd.gui.swing.jdgui.views.settings.panels.addons;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UserIO;
-import jd.gui.swing.components.table.JDCheckBoxTableColumn;
-import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
-import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class ActivateColumn extends JDCheckBoxTableColumn {
+import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.columns.ExtCheckColumn;
+
+public class ActivateColumn extends ExtCheckColumn<OptionalPluginWrapper> {
 
     private static final long       serialVersionUID = 658156218405204887L;
     private final Configuration     config;
     private final ConfigPanelAddons addons;
 
-    public ActivateColumn(String name, JDTableModel table, ConfigPanelAddons addons) {
+    public ActivateColumn(String name, ExtTableModel<OptionalPluginWrapper> table, ConfigPanelAddons addons) {
         super(name, table);
 
         this.config = JDUtilities.getConfiguration();
@@ -41,44 +41,33 @@ public class ActivateColumn extends JDCheckBoxTableColumn {
     }
 
     @Override
-    public boolean isEditable(Object obj) {
+    public boolean isEditable(OptionalPluginWrapper obj) {
         return true;
     }
 
     @Override
-    public boolean isEnabled(Object obj) {
-        return true;
+    protected boolean getBooleanValue(OptionalPluginWrapper value) {
+        return value.isEnabled();
     }
 
     @Override
-    public boolean isSortable(Object obj) {
-        return false;
-    }
-
-    @Override
-    protected boolean getBooleanValue(Object value) {
-        return ((OptionalPluginWrapper) value).isEnabled();
-    }
-
-    @Override
-    protected void setBooleanValue(boolean value, Object object) {
-        OptionalPluginWrapper plgWrapper = ((OptionalPluginWrapper) object);
-        if (value == plgWrapper.isEnabled()) return;
-        config.setProperty(plgWrapper.getConfigParamKey(), value);
+    protected void setBooleanValue(boolean value, OptionalPluginWrapper object) {
+        if (value == object.isEnabled()) return;
+        config.setProperty(object.getConfigParamKey(), value);
         config.save();
         if (value) {
-            if (plgWrapper.getPlugin().startAddon()) {
-                if (plgWrapper.getAnnotation().hasGui()) {
-                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, plgWrapper.getHost(), JDL.LF("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.askafterinit", "Show %s now?\r\nYou may open it later using Mainmenu->Addon", plgWrapper.getHost()));
+            if (object.getPlugin().startAddon()) {
+                if (object.getAnnotation().hasGui()) {
+                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getHost(), JDL.LF("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.askafterinit", "Show %s now?\r\nYou may open it later using Mainmenu->Addon", object.getHost()));
 
                     if (UserIO.isOK(ret)) {
-                        plgWrapper.getPlugin().setGuiEnable(true);
+                        object.getPlugin().setGuiEnable(true);
                     }
                 }
             }
         } else {
-            plgWrapper.getPlugin().setGuiEnable(false);
-            plgWrapper.getPlugin().stopAddon();
+            object.getPlugin().setGuiEnable(false);
+            object.getPlugin().stopAddon();
         }
         AddonsMenu.getInstance().update();
         ConfigSidebar.getInstance(null).updateAddons();

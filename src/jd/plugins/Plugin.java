@@ -396,9 +396,9 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return Versionsbezeichnung
      */
-    public abstract String getVersion();
+    public abstract long getVersion();
 
-    protected String getVersion(final String revision) {
+    protected long getVersion(final String revision) {
         return Formatter.getRevision(revision);
     }
 

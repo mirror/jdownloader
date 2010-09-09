@@ -54,6 +54,10 @@ public class LFETableModel extends ExtTableModel<KeyInfo> {
                 return value.getKey();
             }
 
+            @Override
+            protected void setStringValue(String value, KeyInfo object) {
+            }
+
         });
         this.addColumn(new ExtTextEditorColumn<KeyInfo>(JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), this) {
 
@@ -64,6 +68,10 @@ public class LFETableModel extends ExtTableModel<KeyInfo> {
                 return value.getSource();
             }
 
+            @Override
+            protected void setStringValue(String value, KeyInfo object) {
+            }
+
         });
         this.addColumn(new ExtTextEditorColumn<KeyInfo>(JDL.L(LOCALE_PREFIX + "english", "en.loc"), this) {
 
@@ -72,6 +80,10 @@ public class LFETableModel extends ExtTableModel<KeyInfo> {
             @Override
             protected String getStringValue(KeyInfo value) {
                 return value.getEnglish();
+            }
+
+            @Override
+            protected void setStringValue(String value, KeyInfo object) {
             }
 
         });

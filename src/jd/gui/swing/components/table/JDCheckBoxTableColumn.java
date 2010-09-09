@@ -13,7 +13,7 @@ public abstract class JDCheckBoxTableColumn extends JDTableColumn implements Act
     private static final long serialVersionUID = 5128718970314177880L;
 
     private JRendererCheckBox boolrend;
-    private JCheckBox checkbox;
+    private JCheckBox         checkbox;
 
     public JDCheckBoxTableColumn(String name, JDTableModel table) {
         super(name, table);
@@ -56,7 +56,7 @@ public abstract class JDCheckBoxTableColumn extends JDTableColumn implements Act
     public final void setValue(Object value, Object object) {
         setBooleanValue((Boolean) value, object);
     }
-    
+
     public void actionPerformed(ActionEvent e) {
         checkbox.removeActionListener(this);
         this.fireEditingStopped();

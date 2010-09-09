@@ -14,33 +14,34 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.swing.jdgui.views.settings.panels.hoster.columns;
+package jd.gui.swing.jdgui.views.settings.panels.hoster;
 
 import javax.swing.Icon;
 
 import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
-import jd.gui.swing.components.table.JDIconColumn;
-import jd.gui.swing.components.table.JDTableModel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class PremiumColumn extends JDIconColumn {
+import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.columns.ExtIconColumn;
 
-    private static final long serialVersionUID = 7674821108904765680L;
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.settings.panels.hoster.columns.PremiumColumn.";
+public class PremiumColumn extends ExtIconColumn<HostPluginWrapper> {
+
+    private static final long       serialVersionUID = 7674821108904765680L;
+    private static final String     JDL_PREFIX       = "jd.gui.swing.jdgui.views.settings.panels.hoster.columns.PremiumColumn.";
 
     private final AccountController controller;
 
-    private final Icon iconYellow;
-    private final Icon iconGreen;
-    private final Icon iconRed;
+    private final Icon              iconYellow;
+    private final Icon              iconGreen;
+    private final Icon              iconRed;
 
-    private final String stringNoAccount;
-    private final String stringValidAccount;
-    private final String stringExpiredAccount;
+    private final String            stringNoAccount;
+    private final String            stringValidAccount;
+    private final String            stringExpiredAccount;
 
-    public PremiumColumn(String name, JDTableModel table) {
+    public PremiumColumn(String name, ExtTableModel<HostPluginWrapper> table) {
         super(name, table);
 
         controller = AccountController.getInstance();
@@ -55,8 +56,14 @@ public class PremiumColumn extends JDIconColumn {
     }
 
     @Override
-    protected Icon getIcon(Object value) {
-        HostPluginWrapper hpw = ((HostPluginWrapper) value);
+    public boolean isSortable(HostPluginWrapper obj) {
+        /* TODO: There is a bug with sorting the column */
+        return false;
+    }
+
+    @Override
+    protected Icon getIcon(HostPluginWrapper value) {
+        HostPluginWrapper hpw = (value);
         if (!hpw.isPremiumEnabled()) return null;
         if (controller.hasValidAccount(hpw.getHost())) return iconGreen;
         if (!controller.hasAccounts(hpw.getHost())) return iconRed;
@@ -64,8 +71,8 @@ public class PremiumColumn extends JDIconColumn {
     }
 
     @Override
-    protected String getToolTip(Object value) {
-        HostPluginWrapper hpw = ((HostPluginWrapper) value);
+    protected String getToolTip(HostPluginWrapper value) {
+        HostPluginWrapper hpw = (value);
         if (!hpw.isPremiumEnabled()) return null;
         if (controller.hasValidAccount(hpw.getHost())) return stringValidAccount;
         if (!controller.hasAccounts(hpw.getHost())) return stringExpiredAccount;

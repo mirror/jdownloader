@@ -124,7 +124,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
     }
 
     @Override
-    public String getVersion() {
+    public long getVersion() {
         return getWrapper().getVersion();
     }
 

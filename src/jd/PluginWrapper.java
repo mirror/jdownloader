@@ -43,14 +43,14 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     /**
      * Usage Flag for {@link PluginWrapper(String, String, String, String, int)}
      */
-    public static final int LOAD_ON_INIT = 1 << 1;
+    public static final int                             LOAD_ON_INIT    = 1 << 1;
 
     /**
      * By default, plugins can be disabled. But in some cases plugins should not
      * be disabled for controlling reasons. Use this flag to prevent the plugin
      * from disabeling
      */
-    public static final int ALWAYS_ENABLED = 1 << 3;
+    public static final int                             ALWAYS_ENABLED  = 1 << 3;
 
     /**
      * See http://wiki.jdownloader.org/knowledge/wiki/glossary/cnl2 for cnl2
@@ -59,68 +59,68 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * deepencrypted links. Direct links will be opened in th systems
      * defaultbrowser to use CNL
      */
-    public static final int CNL_2 = 1 << 4;
+    public static final int                             CNL_2           = 1 << 4;
 
     /**
      * Load only if debug flag is set. For internal developer plugins
      */
-    public static final int DEBUG_ONLY = 1 << 5;
+    public static final int                             DEBUG_ONLY      = 1 << 5;
 
     /** Allow duplicate entries */
-    public static final int ALLOW_DUPLICATE = 1 << 6;
+    public static final int                             ALLOW_DUPLICATE = 1 << 6;
 
     /**
      * The Regular expression pattern. This pattern defines which urls can be
      * handeled by this plugin
      */
-    private final Pattern pattern;
+    private final Pattern                               pattern;
 
     /**
      * The domain of this plugin, which is the plugin's name, too
      */
-    private final String host;
+    private final String                                host;
 
     /**
      * Full qualified classname
      */
-    private final String className;
+    private final String                                className;
 
     /**
      * internal logger instance
      */
-    protected static final Logger logger = JDLogger.getLogger();
+    protected static final Logger                       logger          = JDLogger.getLogger();
 
     /**
      * field to cache the plugininstance if it is loaded already
      */
-    protected Plugin loadedPlugin = null;
+    protected Plugin                                    loadedPlugin    = null;
 
     /**
      * @see PluginWrapper#ALWAYS_ENABLED
      */
-    private boolean alwaysenabled = false;
+    private boolean                                     alwaysenabled   = false;
 
     /**
      * Usage and InitFlags created by <br> {@link PluginWrapper#CNL_2} <br>
      * {@link PluginWrapper#DEBUG_ONLY} <br> {@link PluginWrapper#LOAD_ON_INIT} <br>
      * {@link PluginWrapper#PATTERN_ACCEPTS_INVALID_URI}
      */
-    private final int flags;
+    private final int                                   flags;
 
-    private final String revision;
+    private final long                                  revision;
 
     /**
      * Static classloader. gets created when the first plugin should be
      * initiated.
      * 
      */
-    private static URLClassLoader CL;
+    private static URLClassLoader                       CL;
 
     /**
      * Static map where all pluginwrapper register themselves with key =
      * {@link PluginWrapper#className}
      */
-    private static final HashMap<String, PluginWrapper> WRAPPER = new HashMap<String, PluginWrapper>();
+    private static final HashMap<String, PluginWrapper> WRAPPER         = new HashMap<String, PluginWrapper>();
 
     /**
      * Creates a new wrapper
@@ -223,7 +223,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      * 
      * @return
      */
-    public String getVersion() {
+    public long getVersion() {
         return revision;
     }
 

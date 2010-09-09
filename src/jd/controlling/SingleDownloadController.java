@@ -52,29 +52,29 @@ import jd.utils.locale.JDL;
  * @author astaldo/JD-Team
  */
 public class SingleDownloadController extends Thread {
-    public static final String WAIT_TIME_ON_CONNECTION_LOSS = "WAIT_TIME_ON_CONNECTION_LOSS";
+    public static final String  WAIT_TIME_ON_CONNECTION_LOSS = "WAIT_TIME_ON_CONNECTION_LOSS";
 
-    private static final Object DUPELOCK = new Object();
+    private static final Object DUPELOCK                     = new Object();
 
-    private boolean aborted = false;
+    private boolean             aborted                      = false;
 
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
-    private PluginForHost currentPlugin;
+    private PluginForHost       currentPlugin;
 
-    private DownloadLink downloadLink;
+    private DownloadLink        downloadLink;
 
-    private LinkStatus linkStatus;
+    private LinkStatus          linkStatus;
 
     /**
      * Der Logger
      */
-    private Logger logger = JDLogger.getLogger();
+    private Logger              logger                       = JDLogger.getLogger();
 
-    private long startTime;
+    private long                startTime;
 
-    private Account account = null;
+    private Account             account                      = null;
 
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
@@ -157,7 +157,7 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.hosterproblem", "Hoster problem?"));
                 linkStatus.setValue(10 * 60 * 1000l);
             } catch (InterruptedException e) {
-                String rev = downloadLink.getLivePlugin() == null ? "" : downloadLink.getLivePlugin().getVersion();
+                long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
                 logger.finest("Hoster Plugin Version: " + rev);
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
@@ -255,7 +255,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
-        String rev = downloadLink.getLivePlugin() == null ? "" : downloadLink.getLivePlugin().getVersion();
+        long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
         logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
         if (downloadLink2.getLinkStatus().getErrorMessage() != null) logger.warning(downloadLink2.getLinkStatus().getErrorMessage());
         // Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb

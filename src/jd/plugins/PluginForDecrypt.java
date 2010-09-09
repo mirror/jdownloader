@@ -57,11 +57,11 @@ public abstract class PluginForDecrypt extends Plugin {
         this.br = br;
     }
 
-    private CryptedLink curcryptedLink = null;
+    private CryptedLink                                             curcryptedLink      = null;
 
-    private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForDecrypt>, Long>();
-    private static final String JDL_PREFIX = "jd.plugins.PluginForDecrypt.";
-    private Long WAIT_BETWEEN_STARTS = 0L;
+    private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME   = new HashMap<Class<? extends PluginForDecrypt>, Long>();
+    private static final String                                     JDL_PREFIX          = "jd.plugins.PluginForDecrypt.";
+    private Long                                                    WAIT_BETWEEN_STARTS = 0L;
 
     public synchronized long getLastTimeStarted() {
         if (!LAST_STARTED_TIME.containsKey(this.getClass())) { return 0; }
@@ -82,7 +82,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     @Override
-    public String getVersion() {
+    public long getVersion() {
         return this.getWrapper().getVersion();
     }
 
@@ -274,8 +274,8 @@ public abstract class PluginForDecrypt extends Plugin {
         Jobber decryptJobbers = new Jobber(4);
 
         class DThread extends Thread implements JDRunnable {
-            private CryptedLink decryptableLink = null;
-            private PluginForDecrypt plg = null;
+            private CryptedLink      decryptableLink = null;
+            private PluginForDecrypt plg             = null;
 
             public DThread(CryptedLink decryptableLink, PluginForDecrypt plg) {
                 this.decryptableLink = decryptableLink;

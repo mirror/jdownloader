@@ -73,11 +73,6 @@ public class EndlessAppsNet extends PluginForHost {
     }
 
     @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 6;
     }

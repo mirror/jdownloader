@@ -23,6 +23,7 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
@@ -36,20 +37,18 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.gui.UserIF;
-import jd.gui.swing.components.table.JDTable;
-import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.AcceptColumn;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.HostColumn;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.PremiumColumn;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.SettingsColumn;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.TosColumn;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.UseColumn;
-import jd.gui.swing.jdgui.views.settings.panels.hoster.columns.VersionColumn;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.swing.table.ExtTable;
+import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.columns.ExtCheckColumn;
+import org.appwork.utils.swing.table.columns.ExtIconColumn;
+import org.appwork.utils.swing.table.columns.ExtLongColumn;
+import org.appwork.utils.swing.table.columns.ExtTextColumn;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
 
@@ -63,45 +62,108 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         return "gui.images.config.host";
     }
 
-    private class InternalTableModel extends JDTableModel {
+    private class InternalTableModel extends ExtTableModel<HostPluginWrapper> {
 
         private static final long serialVersionUID = -5584463272737285033L;
 
         public InternalTableModel() {
-            super("hostertable");
+            super("hosterTable");
 
-            list.clear();
-            list.addAll(pluginsForHost);
+            tableData = new ArrayList<HostPluginWrapper>(pluginsForHost);
         }
 
         @Override
         protected void initColumns() {
-            this.addColumn(new HostColumn(JDL.L("gui.column_host", "Host"), this));
-            this.addColumn(new VersionColumn(JDL.L("gui.column_version", "Version"), this));
-            this.addColumn(new PremiumColumn(JDL.L("gui.column_premium", "Premium"), this));
-            this.addColumn(new SettingsColumn(JDL.L("gui.column_settings", "Settings"), this));
-            this.addColumn(new AcceptColumn(JDL.L("gui.column_agbchecked", "Accepted"), this));
-            this.addColumn(new TosColumn(JDL.L("gui.column_tos", "TOS"), this));
-            this.addColumn(new UseColumn(JDL.L("gui.column_useplugin", "Use Plugin"), this));
-        }
+            this.addColumn(new ExtTextColumn<HostPluginWrapper>(JDL.L("gui.column_host", "Host"), this) {
 
-        @Override
-        public void refreshModel() {
-            this.fireTableDataChanged();
+                private static final long serialVersionUID = -7209180150340921804L;
+
+                @Override
+                protected String getStringValue(HostPluginWrapper value) {
+                    return value.getHost();
+                }
+
+                @Override
+                protected Icon getIcon(HostPluginWrapper value) {
+                    return value.getIcon();
+                }
+
+            });
+            this.addColumn(new ExtLongColumn<HostPluginWrapper>(JDL.L("gui.column_version", "Version"), this) {
+
+                private static final long serialVersionUID = 8197242738899719303L;
+
+                @Override
+                protected long getLong(HostPluginWrapper value) {
+                    return value.getVersion();
+                }
+
+            });
+            this.addColumn(new PremiumColumn(JDL.L("gui.column_premium", "Premium"), this));
+            this.addColumn(new ExtIconColumn<HostPluginWrapper>(JDL.L("gui.column_settings", "Settings"), this) {
+
+                private static final long serialVersionUID = 4948749148702891718L;
+
+                private final Icon        icon             = JDTheme.II("gui.images.config.home", 16, 16);
+
+                @Override
+                public boolean isSortable(HostPluginWrapper obj) {
+                    /* TODO: There is a bug with sorting the column */
+                    return false;
+                }
+
+                @Override
+                protected Icon getIcon(HostPluginWrapper value) {
+                    return value.hasConfig() ? icon : null;
+                }
+
+            });
+            this.addColumn(new ExtCheckColumn<HostPluginWrapper>(JDL.L("gui.column_agbchecked", "Accepted"), this) {
+
+                private static final long serialVersionUID = 6843580898685333774L;
+
+                @Override
+                protected boolean getBooleanValue(HostPluginWrapper value) {
+                    return value.isAGBChecked();
+                }
+
+                @Override
+                protected void setBooleanValue(boolean value, HostPluginWrapper object) {
+                    object.setAGBChecked(value);
+                }
+
+            });
+            this.addColumn(new TosColumn(JDL.L("gui.column_tos", "TOS"), this));
+            this.addColumn(new ExtCheckColumn<HostPluginWrapper>(JDL.L("gui.column_useplugin", "Use Plugin"), this) {
+
+                private static final long serialVersionUID = 4765934516215953012L;
+
+                @Override
+                protected boolean getBooleanValue(HostPluginWrapper value) {
+                    return value.isEnabled();
+                }
+
+                @Override
+                protected void setBooleanValue(boolean value, HostPluginWrapper object) {
+                    object.setEnabled(value);
+                    PremiumMenu.getInstance().update();
+                }
+
+            });
         }
     }
 
-    private static final long serialVersionUID = -5219586497809869375L;
+    private static final long            serialVersionUID = -5219586497809869375L;
 
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
-    private JDTable table;
+    private ExtTable<HostPluginWrapper>  table;
 
-    private InternalTableModel tablemodel;
+    private InternalTableModel           tablemodel;
 
-    private JButton btnEdit;
+    private JButton                      btnEdit;
 
-    private JCheckBox chkUseAll;
+    private JCheckBox                    chkUseAll;
 
     public ConfigPanelPluginForHost() {
         super();
@@ -126,7 +188,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     @Override
     protected ConfigContainer setupContainer() {
-        table = new JDTable(tablemodel = new InternalTableModel());
+        table = new ExtTable<HostPluginWrapper>(tablemodel = new InternalTableModel(), "hosterTable");
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -188,7 +250,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         }
 
         PremiumMenu.getInstance().update();
-        tablemodel.refreshModel();
+        tablemodel.fireTableStructureChanged();
     }
 
     private boolean isAllInUse() {

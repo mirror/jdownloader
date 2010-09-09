@@ -22,8 +22,8 @@ public class RSUpdateNotifier extends DynamicPluginInterface {
     public void execute() {
         try {
             PluginForHost old = JDUtilities.getPluginForHost("rapidshare.com");
-            if (old != null && old.getVersion() != null) {
-                long version = Long.parseLong(old.getVersion());
+            if (old != null) {
+                long version = old.getVersion();
                 final ArrayList<Account> ret = AccountController.getInstance().getAllAccounts("rapidshare.com");
                 if (version < 12008) {
                     if (ret.size() > 0) {

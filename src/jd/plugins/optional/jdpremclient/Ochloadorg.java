@@ -55,7 +55,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     }
 
     @Override
-    public String getVersion() {
+    public long getVersion() {
         if (plugin == null) return getVersion("$Revision$");
         return plugin.getVersion();
     }

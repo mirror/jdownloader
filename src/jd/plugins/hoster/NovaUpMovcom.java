@@ -38,7 +38,7 @@ public class NovaUpMovcom extends PluginForHost {
         return "http://novamov.com/terms.html";
     }
 
-    String VIDEOREGEX = "\"file\",\"(.*?)\"";
+    private String VIDEOREGEX = "\"file\",\"(.*?)\"";
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
@@ -110,11 +110,6 @@ public class NovaUpMovcom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
     }
 
     @Override

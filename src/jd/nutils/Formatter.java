@@ -180,13 +180,13 @@ public class Formatter {
      * @param rev
      * @return
      */
-    public static String getRevision(String rev) {
-        if (rev == null) return null;
+    public static long getRevision(String rev) {
+        if (rev == null) return -1;
         try {
             int start = rev.indexOf("Revision: ") + 10;
-            return rev.substring(start, rev.indexOf(" ", start + 1));
+            return Long.parseLong(rev.substring(start, rev.indexOf(" ", start + 1)));
         } catch (Exception e) {
-            return "-1";
+            return -1;
         }
     }
 

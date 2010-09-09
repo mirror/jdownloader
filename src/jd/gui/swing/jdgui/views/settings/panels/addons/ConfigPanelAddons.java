@@ -34,16 +34,15 @@ import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.gui.swing.components.table.JDTable;
-import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.addons.columns.ActivateColumn;
-import jd.gui.swing.jdgui.views.settings.panels.addons.columns.NeedsColumn;
-import jd.gui.swing.jdgui.views.settings.panels.addons.columns.PluginColumn;
-import jd.gui.swing.jdgui.views.settings.panels.addons.columns.VersionColumn;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.swing.table.ExtTable;
+import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.columns.ExtLongColumn;
+import org.appwork.utils.swing.table.columns.ExtTextColumn;
 
 /**
  * @author JD-Team
@@ -59,41 +58,63 @@ public class ConfigPanelAddons extends ConfigPanel {
         return "gui.images.config.packagemanager";
     }
 
-    private class InternalTableModel extends JDTableModel {
+    private class InternalTableModel extends ExtTableModel<OptionalPluginWrapper> {
 
         private static final long serialVersionUID = 5847076032639053531L;
 
         public InternalTableModel() {
-            super("hostertable");
+            super("addonTable");
 
-            list.clear();
-            list.addAll(pluginsOptional);
+            tableData = new ArrayList<OptionalPluginWrapper>(pluginsOptional);
         }
 
         @Override
         protected void initColumns() {
             this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Activate"), this, ConfigPanelAddons.this));
-            this.addColumn(new PluginColumn(JDL.L("gui.column_plugin", "Plugin"), this));
-            this.addColumn(new VersionColumn(JDL.L("gui.column_version", "Version"), this));
-            this.addColumn(new NeedsColumn(JDL.L("gui.column_needs", "Needs"), this));
-        }
+            this.addColumn(new ExtTextColumn<OptionalPluginWrapper>(JDL.L("gui.column_plugin", "Plugin"), this) {
 
-        @Override
-        public void refreshModel() {
+                private static final long serialVersionUID = -3960914415647488335L;
+
+                @Override
+                protected String getStringValue(OptionalPluginWrapper value) {
+                    return value.getHost();
+                }
+
+            });
+            this.addColumn(new ExtLongColumn<OptionalPluginWrapper>(JDL.L("gui.column_version", "Version"), this) {
+
+                private static final long serialVersionUID = -7390851512040553114L;
+
+                @Override
+                protected long getLong(OptionalPluginWrapper value) {
+                    return value.getVersion();
+                }
+
+            });
+            this.addColumn(new ExtTextColumn<OptionalPluginWrapper>(JDL.L("gui.column_needs", "Needs"), this) {
+
+                private static final long serialVersionUID = 92691792879468744L;
+
+                @Override
+                protected String getStringValue(OptionalPluginWrapper value) {
+                    return "JRE " + value.getJavaVersion();
+                }
+
+            });
         }
 
     }
 
-    private static final long serialVersionUID = 4145243293360008779L;
+    private static final long                      serialVersionUID = 4145243293360008779L;
 
-    private final ImageIcon defaultIcon;
+    private final ImageIcon                        defaultIcon;
     private final ArrayList<OptionalPluginWrapper> pluginsOptional;
 
-    private JDTable table;
+    private ExtTable<OptionalPluginWrapper>        table;
 
-    private JLabel lblName;
-    private JLabel lblVersion;
-    private JTextPane txtDescription;
+    private JLabel                                 lblName;
+    private JLabel                                 lblVersion;
+    private JTextPane                              txtDescription;
 
     public ConfigPanelAddons() {
         super();
@@ -107,7 +128,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     @Override
     protected ConfigContainer setupContainer() {
-        table = new JDTable(new InternalTableModel());
+        table = new ExtTable<OptionalPluginWrapper>(new InternalTableModel(), "addonTable");
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
