@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.addons;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +42,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.appwork.utils.swing.table.columns.ExtLongColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 
@@ -129,6 +131,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     @Override
     protected ConfigContainer setupContainer() {
         table = new ExtTable<OptionalPluginWrapper>(new InternalTableModel(), "addonTable");
+        table.addRowHighlighter(new SelectionHighlighter(null, new Color(200, 200, 200, 80)));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {

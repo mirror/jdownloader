@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.hoster;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -45,6 +46,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtIconColumn;
 import org.appwork.utils.swing.table.columns.ExtLongColumn;
@@ -189,6 +191,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     @Override
     protected ConfigContainer setupContainer() {
         table = new ExtTable<HostPluginWrapper>(tablemodel = new InternalTableModel(), "hosterTable");
+        table.addRowHighlighter(new SelectionHighlighter(null, new Color(200, 200, 200, 80)));
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -237,13 +240,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void toggleUseAll() {
-        boolean checkvalue;
-
-        if (isAllInUse()) {
-            checkvalue = false;
-        } else {
-            checkvalue = true;
-        }
+        boolean checkvalue = !isAllInUse();
 
         for (HostPluginWrapper plugin : pluginsForHost) {
             plugin.setEnabled(checkvalue);
@@ -262,11 +259,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void setUseAllStatus() {
-        if (isAllInUse()) {
-            chkUseAll.setSelected(true);
-        } else {
-            chkUseAll.setSelected(false);
-        }
+        chkUseAll.setSelected(isAllInUse());
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -281,4 +274,5 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void mouseReleased(MouseEvent e) {
         setUseAllStatus();
     }
+
 }
