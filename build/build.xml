@@ -105,7 +105,6 @@
 		<jar file="${jd}/libs/JDHttp.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/http/**" />
-				<include name="sun/net/www/protocol/**" />
 			</fileset>
 		</jar>
 		<jar file="${jd}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
@@ -151,7 +150,6 @@
 				<exclude name="jd/plugins/decrypter/**" />
 				<exclude name="jd/plugins/optional/**" />
 				<exclude name="jd/utils/dev/**" />
-				<exclude name="sun/net/www/protocol/**" />
 				<exclude name="tests/**" />
 			</fileset>
 			<fileset dir="${res}">
@@ -180,9 +178,7 @@
 				<include name="jd/JDClassLoader.class" />
 				<include name="jd/utils/*.class" />
 				<include name="jd/plugins/PluginException.class" />
-				<include name="sun/net/www/protocol/jdps/*.class" />
 				<include name="jd/parser/Regex.class" />
-				<include name="sun/net/www/protocol/jdp/*.class" />
 			</fileset>
 			<zipfileset src="${res}/libs/hsqldb.jar" excludes="META-INF/*" />
 		</jar>
