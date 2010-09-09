@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.nutils;
+package jd.controlling.reconnect;
 
 import java.util.regex.Pattern;
 
@@ -23,10 +23,15 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 
 public class IPAddress {
-    public static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
+
+    private static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
+
+    public static String getIPPattern() {
+        return SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, IP_PATTERN);
+    }
 
     /**
-     * Überprüft ob eine IP gültig ist. das verwendete Pattern aknn in der
+     * Überprüft ob eine IP gültig ist. das verwendete Pattern kann in der
      * config editiert werden.
      * 
      * @param ip
@@ -35,7 +40,7 @@ public class IPAddress {
     public static boolean validateIP(String ip) {
         if (ip == null) return false;
         try {
-            return Pattern.compile(SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, IP_PATTERN)).matcher(ip.trim()).matches();
+            return Pattern.compile(getIPPattern()).matcher(ip.trim()).matches();
         } catch (Exception e) {
             JDLogger.getLogger().severe("Could not validate IP! " + e);
         }

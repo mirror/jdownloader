@@ -287,20 +287,15 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                 if (clr == null) { return; }
 
                 final String[] ret = CLRConverter.createLiveHeader(clr);
-
-                String script;
                 if (ret != null) {
                     LiveHeaderReconnect.this.setRouterName(ret[0]);
-                    script = ret[1];
-                    dialog.setDefaultMessage(script);
-
+                    dialog.setDefaultMessage(ret[1]);
                 }
             }
         });
         final String newScript = Dialog.getInstance().showDialog(dialog);
         if (newScript != null) {
             this.setScript(newScript);
-
         }
     }
 

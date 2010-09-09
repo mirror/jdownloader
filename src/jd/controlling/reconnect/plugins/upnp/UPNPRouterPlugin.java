@@ -38,11 +38,11 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.GetIpException;
+import jd.controlling.reconnect.IPAddress;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.gui.UserIO;
-import jd.nutils.IPAddress;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -160,6 +160,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
     /**
      * sets the correct router settings automatically
      */
+    @Override
     public int autoDetection() {
 
         final long start = System.currentTimeMillis();
@@ -385,23 +386,20 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
             final String ip = ipm.group(1);
             if ("0.0.0.0".equals(ip)) {
                 // Fritzbox returns 0.0.0.0 in offline mode
-
                 return RouterPlugin.OFFLINE;
-
             }
-            if (ip.matches(IPAddress.IP_PATTERN)) {
-
+            if (ip.matches(IPAddress.getIPPattern())) {
                 return ip;
             } else {
                 // TODO: differ between NA and OFFLINE
                 return RouterPlugin.NOT_AVAILABLE;
-
             }
         }
         // this.getStorage().put(UPNPRouterPlugin.CANCHECKIP, false);
         throw new GetIpException("Could not get IP/No GetExternalIPAddress");
     }
 
+    @Override
     public int getIpCheckInterval() {
         // if ipcheck is done over upnp, we do not have to use long intervals
         return 1;
@@ -412,11 +410,13 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
         return "UPNP - Universal Plug & Play (Fritzbox,...)";
     }
 
+    @Override
     public int getWaittimeBeforeFirstIPCheck() {
         // if ipcheck is done over upnp, we do not have to use long intervals
         return 0;
     }
 
+    @Override
     public boolean hasAutoDetection() {
         // UPNP settings might be found without user interaktion
         return true;
@@ -652,7 +652,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
     @Override
     public void setCanCheckIP(final boolean b) {
         this.getStorage().put(UPNPRouterPlugin.CANCHECKIP, b);
-
     }
 
     private void setDevice(final UpnpRouterDevice upnpRouterDevice) {

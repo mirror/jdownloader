@@ -31,7 +31,6 @@ import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
-import jd.nutils.IPAddress;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -491,7 +490,6 @@ public class ReconnectPluginController implements ControlListener {
                 Reconnecter.setCurrentIP(RouterPlugin.NOT_AVAILABLE);
                 return false;
             } else {
-
                 Reconnecter.setCurrentIP(afterIP);
                 return true;
             }
