@@ -46,25 +46,21 @@ public class CLRConverter {
             NodeList nodes = doc.getFirstChild().getChildNodes();
             String routerName = null;
             StringBuilder hlh = new StringBuilder();
-            hlh.append("[[[HSRC]]]");
-            hlh.append("\r\n");
+            hlh.append("[[[HSRC]]]\r\n");
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node node = nodes.item(i);
-                short type = node.getNodeType();
-                if (type != 1) {
-                    continue;
-                }
-                // logger.info(node.getNodeName() + "");
+                if (node.getNodeType() != 1) continue;
+
                 if (node.getNodeName().equalsIgnoreCase("router")) {
                     routerName = node.getAttributes().getNamedItem("name").getNodeValue().trim();
                 } else if (node.getNodeName().equalsIgnoreCase("command")) {
-                    hlh.append("    [[[STEP]]]" + "\r\n");
-                    hlh.append("        [[[REQUEST]]]" + "\r\n");
+                    hlh.append("    [[[STEP]]]\r\n");
+                    hlh.append("        [[[REQUEST]]]\r\n");
                     String method = node.getAttributes().getNamedItem("method").getNodeValue().trim();
                     String action = node.getAttributes().getNamedItem("action").getNodeValue().trim();
                     String basicauth = null;
                     if (method.equalsIgnoreCase("post")) {
-                        hlh.append("            " + method.toUpperCase() + " /" + action + " HTTP/1.1" + "\r\n");
+                        hlh.append("            ").append(method.toUpperCase()).append(" /").append(action).append(" HTTP/1.1\r\n");
                     } else if (method.equalsIgnoreCase("get")) {
                     } else if (method.equalsIgnoreCase("auth")) {
                         basicauth = action;
@@ -73,7 +69,7 @@ public class CLRConverter {
                     }
                     NodeList params = node.getChildNodes();
                     HashMap<String, String> p = new HashMap<String, String>();
-                    String post = "";
+                    StringBuilder post = new StringBuilder();
                     for (int ii = 0; ii < params.getLength(); ii++) {
                         Node param = params.item(ii);
                         try {
@@ -81,9 +77,9 @@ public class CLRConverter {
                             String value = param.getAttributes().getNamedItem("value").getNodeValue();
                             p.put(key, value);
                             if (post.equals("")) {
-                                post += key + "=" + value;
+                                post.append(key).append("=").append(value);
                             } else {
-                                post += "&" + key + "=" + value;
+                                post.append("&").append(key).append("=").append(value);
                             }
                         } catch (Exception ee) {
                             continue;
@@ -92,40 +88,39 @@ public class CLRConverter {
                     }
 
                     if (method.equalsIgnoreCase("post")) {
-                        hlh.append("            Host: %%%routerip%%%" + "\r\n");
+                        hlh.append("            Host: %%%routerip%%%\r\n");
                         CLRConverter.inputAuth(hlh, basicauth);
                         hlh.append("\r\n");
-                        hlh.append(post.trim());
+                        hlh.append(post.toString().trim());
                         hlh.append("\r\n");
                     } else {
-                        if (post.equals("")) {
-                            hlh.append("            " + method.toUpperCase() + " /" + action + " HTTP/1.1" + "\r\n");
+                        if (post.length() == 0) {
+                            hlh.append("            ").append(method.toUpperCase()).append(" /").append(action).append(" HTTP/1.1\r\n");
                         } else {
-                            hlh.append("            " + method.toUpperCase() + " /" + action + "?" + post.trim() + " HTTP/1.1" + "\r\n");
+                            hlh.append("            ").append(method.toUpperCase()).append(" /").append(action).append("?").append(post.toString().trim()).append(" HTTP/1.1\r\n");
                         }
-                        hlh.append("            Host: %%%routerip%%%" + "\r\n");
+                        hlh.append("            Host: %%%routerip%%%\r\n");
                         CLRConverter.inputAuth(hlh, basicauth);
                     }
-                    hlh.append("        [[[/REQUEST]]]" + "\r\n");
-                    hlh.append("    [[[/STEP]]]" + "\r\n");
+                    hlh.append("        [[[/REQUEST]]]\r\n");
+                    hlh.append("    [[[/STEP]]]\r\n");
                 } else {
-                    logger.info("UNKNOWN  command: " + node.getNodeName());
+                    logger.info("UNKNOWN COMMAND: " + node.getNodeName());
                 }
             }
             hlh.append("[[[/HSRC]]]");
-            // logger.info(hlh.toString());
+
             return new String[] { routerName, hlh.toString() };
         } catch (Exception e) {
             JDLogger.exception(e);
             return null;
         }
-
     }
 
     private static void inputAuth(StringBuilder hlh, String basicauth) {
         if (basicauth != null) {
             if (basicauth.equalsIgnoreCase("")) {
-                hlh.append("            Authorization: Basic %%%basicauth%%%" + "\r\n");
+                hlh.append("            Authorization: Basic %%%basicauth%%%\r\n");
             } else {
                 logger.severe("UNKNOWN AUTH TYPE");
             }
