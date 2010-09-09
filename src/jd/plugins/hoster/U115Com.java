@@ -27,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://[\\w\\.]*?u\\.115\\.com/file/[a-z0-9]+" }, flags = { 0 })
 public class U115Com extends PluginForHost {
@@ -41,11 +42,21 @@ public class U115Com extends PluginForHost {
         return "http://u.115.com/tos.html";
     }
 
+    private static final String UNDERMAINTENANCEURL  = "http://u.115.com/weihu.html";
+    private static final String UNDERMAINTENANCETEXT = "The servers are under maintenance";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         br.setCustomCharset("utf-8");
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) {
+                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (!br.containsHTML("class=\"alert-box\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("file_name = '(.*?)';").getMatch(0);
         if (filename == null) {
@@ -56,7 +67,7 @@ public class U115Com extends PluginForHost {
         }
         String filesize = br.getRegex("文件大小：(.*?)\\\\r\\\\n").getMatch(0);
         if (filesize == null) filesize = br.getRegex("文件大小：(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.replace(",", "");
         link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
@@ -70,6 +81,7 @@ public class U115Com extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
         String dllink = findLink();
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");

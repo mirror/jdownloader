@@ -53,13 +53,11 @@ public class HotShareNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.hotshare.net/", "language", "english");
         br.getPage(downloadLink.getDownloadURL().replaceAll("video", "file").replaceAll("audio", "file"));
-        String filename = br.getRegex(Pattern.compile("<h1 class=\"top_title_downloading\"><strong>(.*?)</strong> </h1>")).getMatch(0);
-        if (filename == null) {
-            // if old regular expression won't work anymore, use new one
-            filename = br.getRegex(Pattern.compile("</strong> \\((.*?)\\) </h1>")).getMatch(0);
-        }
+        if (br.containsHTML("(<h1>File not Found</h1>|<b>The file you requested cannot be found\\.|> Owner deleted this file\\.</p>|404\\.html\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(Pattern.compile("class=\"top_title_downloading\"><strong>.*?</strong> \\((.*?)\\)")).getMatch(0);
+        if (filename == null) filename = br.getRegex(Pattern.compile("<title>HotShare - (.*?)</title>")).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("<span class=\"arrow1\">Size: <b>(.*?)</b></span> ")).getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;

@@ -36,7 +36,6 @@ public class LnkPrtctrCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
         if (br.containsHTML("red>Bad Referrer!")) {
             String ref = br.getRegex("You could get this File only from t.*?<br><a.*?><b>(.*?)</b>").getMatch(0);
@@ -59,6 +58,7 @@ public class LnkPrtctrCm extends PluginForDecrypt {
         String link = null;
         if (do_continue == true) {
             link = br.getRegex("onClick=\"window.location='(.*?)'\" style=").getMatch(0);
+            if (link == null) link = br.getRegex("<form action=\"(.*?)\"").getMatch(0);
             if (link == null || link.length() < 10) {
                 Form form = br.getForm(0);
                 if (form != null) {

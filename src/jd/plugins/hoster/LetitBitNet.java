@@ -94,18 +94,32 @@ public class LetitBitNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCookie("http://letitbit.net/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        /* set english language */
-        br.postPage(downloadLink.getDownloadURL(), "en.x=10&en.y=8&vote_cr=en");
-        String filename = br.getRegex("<span>File::</span>(.*?)</h1>").getMatch(0);
-        String filesize = br.getRegex("<span>Size of file::</span>(.*?)</h1>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<span>File size::</span>(.*?)</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<br>File not found<br />|Запрашиваемый файл не найден<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // /* set english language */
+        // br.postPage(downloadLink.getDownloadURL(),
+        // "en.x=10&en.y=8&vote_cr=en");
+        String filename = br.getRegex("\"file-info\">File:: <span>(.*?)</span>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("class=\"first\">File:: <span>(.*?)</span></li>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("name=\"sssize\" value=\"(\\d+)\"").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<li>Size of file:: <span>(.*?)</span></li>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
+            }
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Their names often differ from other file hosting services. I noticed
         // that when in the filenames from other hosting services there are
         // "-"'s, letitbit uses "_"'s so let's correct this here ;)
         downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
