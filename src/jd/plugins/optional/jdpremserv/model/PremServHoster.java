@@ -1,10 +1,10 @@
 package jd.plugins.optional.jdpremserv.model;
 
-import org.appwork.utils.formatter.SizeFormater;
+import org.appwork.utils.formatter.SizeFormatter;
 
 public class PremServHoster implements Comparable<PremServHoster> {
     private String domain;
-    private long traffic = -1;
+    private long   traffic = -1;
 
     public PremServHoster(String domain, long traffic) {
         this.domain = domain.toLowerCase();
@@ -27,8 +27,9 @@ public class PremServHoster implements Comparable<PremServHoster> {
         this.traffic = traffic;
     }
 
+    @Override
     public String toString() {
-        return domain + "(" + SizeFormater.formatBytes(traffic) + ")";
+        return domain + "(" + SizeFormatter.formatBytes(traffic) + ")";
     }
 
     public int compareTo(PremServHoster o) {

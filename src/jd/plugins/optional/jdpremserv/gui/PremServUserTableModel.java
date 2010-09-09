@@ -10,14 +10,14 @@ import jd.plugins.optional.jdpremserv.model.PremServUser;
 
 import org.appwork.utils.event.BasicEvent;
 import org.appwork.utils.event.BasicListener;
-import org.appwork.utils.formatter.SizeFormater;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 
 public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
-    private static final long serialVersionUID = -161419710915552207L;
-    private static final PremServUserTableModel INSTANCE = new PremServUserTableModel();
+    private static final long                   serialVersionUID = -161419710915552207L;
+    private static final PremServUserTableModel INSTANCE         = new PremServUserTableModel();
 
     /**
      * s
@@ -114,7 +114,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
                     sb.append("<b>");
                     sb.append(next.getKey());
                     sb.append("</b>: ");
-                    sb.append(SizeFormater.formatBytes(next.getValue().getTraffic()));
+                    sb.append(SizeFormatter.formatBytes(next.getValue().getTraffic()));
                     sb.append("<br>");
 
                 }
@@ -138,7 +138,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
                 StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
                 sb.append("<h1>Total");
-                sb.append(SizeFormater.formatBytes(value.calculateTotalTraffic()));
+                sb.append(SizeFormatter.formatBytes(value.calculateTotalTraffic()));
                 sb.append("</h1>");
                 Entry<String, Long> next;
                 for (Iterator<Entry<String, Long>> it = value.createTrafficStats().entrySet().iterator(); it.hasNext();) {
@@ -146,7 +146,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
                     sb.append("<b>");
                     sb.append(next.getKey());
                     sb.append("</b>: ");
-                    sb.append(SizeFormater.formatBytes(next.getValue()));
+                    sb.append(SizeFormatter.formatBytes(next.getValue()));
                     sb.append("<br>");
 
                 }
@@ -156,7 +156,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
             @Override
             protected String getStringValue(PremServUser value) {
-                return SizeFormater.formatBytes(value.calculateTotalTraffic());
+                return SizeFormatter.formatBytes(value.calculateTotalTraffic());
             }
 
         });
@@ -167,7 +167,7 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
             @Override
             protected String getStringValue(PremServUser value) {
-                return SizeFormater.formatBytes(value.getAllowedTrafficPerMonth());
+                return SizeFormatter.formatBytes(value.getAllowedTrafficPerMonth());
             }
 
         });
