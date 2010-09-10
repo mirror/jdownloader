@@ -29,6 +29,48 @@ import org.appwork.utils.formatter.SizeFormatter;
  */
 public class Regex extends org.appwork.utils.Regex {
 
+    public static long getMilliSeconds(final String wait) {
+        String[][] matches = new Regex(wait, "([\\d]+) ?[\\.|\\,|\\:] ?([\\d]+)").getMatches();
+        if (matches == null || matches.length == 0) {
+            matches = new Regex(wait, Pattern.compile("([\\d]+)")).getMatches();
+        }
+
+        if (matches == null || matches.length == 0) { return -1; }
+
+        double res = 0;
+        if (matches[0].length == 1) {
+            res = Double.parseDouble(matches[0][0]);
+        }
+        if (matches[0].length == 2) {
+            res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
+        }
+
+        if (org.appwork.utils.Regex.matches(wait, Pattern.compile("(h|st)", Pattern.CASE_INSENSITIVE))) {
+            res *= 60 * 60 * 1000l;
+        } else if (org.appwork.utils.Regex.matches(wait, Pattern.compile("(m)", Pattern.CASE_INSENSITIVE))) {
+            res *= 60 * 1000l;
+        } else {
+            res *= 1000l;
+        }
+        return Math.round(res);
+    }
+
+    public static long getMilliSeconds(final String expire, final String timeformat, final Locale l) {
+        if (expire != null) {
+            final SimpleDateFormat dateFormat = l != null ? new SimpleDateFormat(timeformat, l) : new SimpleDateFormat(timeformat);
+            try {
+                return dateFormat.parse(expire).getTime();
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return -1;
+    }
+
+    public static long getSize(final String string) {
+        return SizeFormatter.getSize(string);
+    }
+
     public Regex(final Matcher matcher) {
         super(matcher);
     }
@@ -55,48 +97,6 @@ public class Regex extends org.appwork.utils.Regex {
 
     public Regex(final String data, final String pattern, final int flags) {
         super(data, pattern, flags);
-    }
-
-    public static long getMilliSeconds(final String wait) {
-        String[][] matches = new Regex(wait, "([\\d]+) ?[\\.|\\,|\\:] ?([\\d]+)").getMatches();
-        if (matches == null || matches.length == 0) {
-            matches = new Regex(wait, Pattern.compile("([\\d]+)")).getMatches();
-        }
-
-        if (matches == null || matches.length == 0) { return -1; }
-
-        double res = 0;
-        if (matches[0].length == 1) {
-            res = Double.parseDouble(matches[0][0]);
-        }
-        if (matches[0].length == 2) {
-            res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
-        }
-
-        if (Regex.matches(wait, Pattern.compile("(h|st)", Pattern.CASE_INSENSITIVE))) {
-            res *= 60 * 60 * 1000l;
-        } else if (Regex.matches(wait, Pattern.compile("(m)", Pattern.CASE_INSENSITIVE))) {
-            res *= 60 * 1000l;
-        } else {
-            res *= 1000l;
-        }
-        return Math.round(res);
-    }
-
-    public static long getMilliSeconds(final String expire, final String timeformat, final Locale l) {
-        if (expire != null) {
-            final SimpleDateFormat dateFormat = (l != null) ? new SimpleDateFormat(timeformat, l) : new SimpleDateFormat(timeformat);
-            try {
-                return dateFormat.parse(expire).getTime();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return -1;
-    }
-
-    public static long getSize(final String string) {
-        return SizeFormatter.getSize(string);
     }
 
 }

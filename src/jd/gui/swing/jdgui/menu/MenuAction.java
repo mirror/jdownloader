@@ -29,55 +29,59 @@ import jd.utils.JDUtilities;
 
 public class MenuAction extends ToolBarAction {
 
-    private static final long serialVersionUID = 2731508542740902624L;
+    private static final long     serialVersionUID = 2731508542740902624L;
     private ArrayList<MenuAction> items;
 
     public MenuAction() {
         super();
     }
 
-    public MenuAction(String name, int id) {
+    public MenuAction(final String name, final int id) {
         super(name, id);
     }
 
-    public MenuAction(String name, String icon) {
+    public MenuAction(final String name, final String icon) {
         super(name, icon);
     }
 
-    public MenuAction(Types type) {
+    public MenuAction(final Types type) {
         super();
         this.setType(type);
+    }
+
+    public void addMenuItem(final MenuAction m) {
+        this.getItems().add(m);
+        this.setType(Types.CONTAINER);
+    }
+
+    public MenuAction get(final int i) {
+        return this.getItems().get(i);
+    }
+
+    public ArrayList<MenuAction> getItems() {
+        if (this.items == null) {
+            this.items = new ArrayList<MenuAction>();
+        }
+        return this.items;
+    }
+
+    public int getSize() {
+        return this.getItems().size();
     }
 
     @Override
     public void initDefaults() {
     }
 
-    public void setItems(ArrayList<MenuAction> mis) {
-        if (mis != null && mis.size() > 0) this.setType(Types.CONTAINER);
+    public void setItems(final ArrayList<MenuAction> mis) {
+        if (mis != null && mis.size() > 0) {
+            this.setType(Types.CONTAINER);
+        }
         this.items = mis;
     }
 
-    public ArrayList<MenuAction> getItems() {
-        if (items == null) items = new ArrayList<MenuAction>();
-        return items;
-    }
-
-    public int getSize() {
-        return getItems().size();
-    }
-
-    public MenuAction get(int i) {
-        return getItems().get(i);
-    }
-
-    public void addMenuItem(MenuAction m) {
-        getItems().add(m);
-        this.setType(Types.CONTAINER);
-    }
-
     public JMenuItem toJMenuItem() {
-        switch (getType()) {
+        switch (this.getType()) {
         case SEPARATOR:
             return null;
         case NORMAL:
@@ -85,21 +89,22 @@ public class MenuAction extends ToolBarAction {
         case TOGGLE:
             if (JDUtilities.getJavaVersion() >= 1.6) {
                 // Togglebuttons for 1.6
-                JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(this);
+                final JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(this);
+
                 return m2;
             } else {
                 // 1.5 togle buttons need a changelistener in the menuitem
                 final JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(this);
                 this.addPropertyChangeListener(new PropertyChangeListener() {
-                    public void propertyChange(PropertyChangeEvent evt) {
+                    public void propertyChange(final PropertyChangeEvent evt) {
                         m2.setSelected(((ToolBarAction) evt.getSource()).isSelected());
                     }
                 });
                 return m2;
             }
         case CONTAINER:
-            JMenu m3 = new JMenu(getTitle());
-            m3.setIcon(getIcon());
+            final JMenu m3 = new JMenu(this.getTitle());
+            m3.setIcon(this.getIcon());
             JMenuItem c;
             for (int i = 0; i < this.getSize(); i++) {
                 c = this.get(i).toJMenuItem();

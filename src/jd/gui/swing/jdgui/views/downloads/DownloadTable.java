@@ -46,6 +46,7 @@ import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CheckStatusAction;
 import jd.gui.swing.jdgui.views.downloads.contextmenu.CopyPasswordAction;
@@ -222,8 +223,8 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         JDUtilities.getController().fireControlEventDirect(new ControlEvent(obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
         if (entries != null && entries.size() > 0) {
             for (final MenuAction next : entries) {
-                final JMenuItem mi = next.toJMenuItem();
-                if (mi == null) {
+
+                if (next.getType() == ToolBarAction.Types.SEPARATOR) {
                     ret.add(RatedMenuItem.createSeparator());
 
                 } else {
