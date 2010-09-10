@@ -32,7 +32,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 
 public class RouterSender {
     private static final RouterSender INSTANCE           = new RouterSender();
-    private static final String       ROUTER_COL_SERVICE = "http://localhost:8081";
+    private static final String       ROUTER_COL_SERVICE = "http://update3.jdownloader.org:44444";
 
     public static RouterSender getInstance() {
         return RouterSender.INSTANCE;

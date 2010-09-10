@@ -112,15 +112,22 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == this.btnAuto) {
-            try {
-                RouterSender.getInstance().run();
-            } catch (final JsonGenerationException e1) {
-                e1.printStackTrace();
-            } catch (final JsonMappingException e1) {
-                e1.printStackTrace();
-            } catch (final IOException e1) {
-                e1.printStackTrace();
-            }
+
+            new Thread() {
+                public void run() {
+                    try {
+                        RouterSender.getInstance().run();
+                        Dialog.getInstance().showMessageDialog("Thank you!\r\nYour reconnect script now has been sent to our server.");
+                    } catch (final JsonGenerationException e1) {
+                        e1.printStackTrace();
+                    } catch (final JsonMappingException e1) {
+                        e1.printStackTrace();
+                    } catch (final IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }.start();
+
         } else if (e.getSource() == this.btnEditScript) {
             this.editScript();
         } else if (e.getSource() == this.btnFindIP) {
@@ -349,7 +356,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 15,wrap 3", "[][][grow,fill]", "[]"));
-        this.btnAuto = new JButton("Auto Setup");
+        this.btnAuto = new JButton("Send Router Settings");
         this.btnAuto.addActionListener(this);
 
         // auto search is not ready yet
