@@ -51,6 +51,8 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.InputDialog;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -110,7 +112,15 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
 
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == this.btnAuto) {
-
+            try {
+                RouterSender.getInstance().run();
+            } catch (final JsonGenerationException e1) {
+                e1.printStackTrace();
+            } catch (final JsonMappingException e1) {
+                e1.printStackTrace();
+            } catch (final IOException e1) {
+                e1.printStackTrace();
+            }
         } else if (e.getSource() == this.btnEditScript) {
             this.editScript();
         } else if (e.getSource() == this.btnFindIP) {
@@ -343,7 +353,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
         this.btnAuto.addActionListener(this);
 
         // auto search is not ready yet
-        this.btnAuto.setEnabled(false);
+        // this.btnAuto.setEnabled(false);
         this.btnRecord = new JButton("Record Wizard");
         this.btnRecord.addActionListener(this);
         this.btnFindIP = new JButton("Find Router IP");
@@ -367,7 +377,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             }
         };
         this.txtIP = new JTextField();
-        new TextComponentChangeListener(this.txtUser) {
+        new TextComponentChangeListener(this.txtIP) {
             @Override
             protected void onChanged(final DocumentEvent e) {
                 LiveHeaderReconnect.this.setRouterIP(LiveHeaderReconnect.this.txtIP.getText());

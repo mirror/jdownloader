@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
@@ -33,6 +34,7 @@ import jd.nutils.Threader;
 import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
+import jd.utils.JDUtilities;
 
 public class RouterUtils {
 
@@ -159,6 +161,64 @@ public class RouterUtils {
      * @return
      */
     private static InetAddress            ASYNCH_RETURN;
+
+    private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
+
+        if (OSDetector.isWindows()) { return RouterUtils.callArpToolWindows(ipAddress); }
+
+        return RouterUtils.callArpToolDefault(ipAddress);
+    }
+
+    private static String callArpToolDefault(final String ipAddress) throws IOException, InterruptedException {
+        String out = null;
+        final InetAddress hostAddress = InetAddress.getByName(ipAddress);
+        ProcessBuilder pb = null;
+        try {
+            pb = new ProcessBuilder(new String[] { "ping", ipAddress });
+            pb.start();
+            out = JDUtilities.runCommand("arp", new String[] { ipAddress }, null, 10);
+            pb.directory();
+            if (!out.matches("(?is).*((" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ").*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?|.*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?.*(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")).*")) {
+                out = null;
+            }
+        } catch (final Exception e) {
+            if (pb != null) {
+                pb.directory();
+            }
+        }
+        if (out == null || out.trim().length() == 0) {
+            try {
+                pb = new ProcessBuilder(new String[] { "ping", ipAddress });
+                pb.start();
+                out = JDUtilities.runCommand("ip", new String[] { "neigh", "show" }, null, 10);
+                pb.directory();
+                if (out != null) {
+                    if (!out.matches("(?is).*((" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ").*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?|.*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?.*(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")).*")) {
+                        out = null;
+                    } else {
+                        out = new Regex(out, "(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")[^\r\n]*").getMatch(-1);
+                    }
+                }
+            } catch (final Exception e) {
+                if (pb != null) {
+                    pb.directory();
+                }
+            }
+        }
+        return out;
+    }
+
+    private static String callArpToolWindows(final String ipAddress) throws IOException, InterruptedException {
+        final ProcessBuilder pb = new ProcessBuilder(new String[] { "ping", ipAddress });
+        pb.start();
+
+        final String[] parts = JDUtilities.runCommand("arp", new String[] { "-a" }, null, 10).split(System.getProperty("line.separator"));
+        pb.directory();
+        for (final String part : parts) {
+            if (part.indexOf(ipAddress) > -1) { return part; }
+        }
+        return null;
+    }
 
     /**
      * checks if there is a open port at host. e.gh. test if there is a
@@ -328,6 +388,41 @@ public class RouterUtils {
 
         }
         return null;
+    }
+
+    public static String getMacAddress(final InetAddress hostAddress) throws IOException, InterruptedException {
+        final String resultLine = RouterUtils.callArpTool(hostAddress.getHostAddress());
+        if (resultLine == null) { return null; }
+        String rd = new Regex(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
+        if (rd == null) { return null; }
+        rd = rd.replaceAll("\\s", "0");
+        final String[] d = rd.split("[:\\-]");
+        final StringBuilder ret = new StringBuilder(18);
+        for (final String string : d) {
+
+            if (string.length() < 2) {
+                ret.append('0');
+            }
+            ret.append(string);
+            ret.append(':');
+        }
+        return ret.toString().substring(0, 17);
+    }
+
+    /**
+     * Returns the MAC adress behind the ip
+     * 
+     * @param ip
+     * @return
+     * @throws UnknownHostException
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public static String getMacAddress(final String ip) throws UnknownHostException, IOException, InterruptedException {
+
+        final String ret = RouterUtils.getMacAddress(InetAddress.getByName(ip));
+        if (ret != null) { return ret.replace(":", "").replace("-", "").toUpperCase(); }
+        return ret;
     }
 
     /**

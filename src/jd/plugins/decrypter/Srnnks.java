@@ -38,31 +38,64 @@ import jd.utils.EditDistance;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/(mu[_-]|rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]).*" }, flags = { 0 })
 public class Srnnks extends PluginForDecrypt {
-    private final static String[] passwords = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
-    private static long LATEST_BLOCK_DETECT = 0;
-    private static long LATEST_RECONNECT = 0;
+    class DecryptRunnable implements JDRunnable {
 
-    private static Object GLOBAL_LOCK = new Object();
+        private final String                  action;
+        private final Browser                 br;
+        private final ArrayList<DownloadLink> results;
+
+        public DecryptRunnable(final String action, final Browser br, final ArrayList<DownloadLink> results) {
+            this.action = action;
+            this.br = br;
+            this.results = results;
+        }
+
+        public void go() throws Exception {
+
+            // sj heuristic detection.
+
+            // this makes the jobber useless... but we have to use the 300 ms to
+            // work around sj's firewall
+
+            Thread.sleep(Srnnks.FW_WAIT);
+            this.br.getPage(this.action);
+            if (this.br.getRedirectLocation() != null) {
+                this.results.add(Srnnks.this.createDownloadlink(this.br.getRedirectLocation()));
+            } else {
+                // not sure if there are stil pages that use this old system
+
+                final String link = this.br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
+
+                if (link != null) {
+                    Thread.sleep(Srnnks.FW_WAIT);
+                    this.br.getPage(link);
+                    final String loc = this.br.getRedirectLocation();
+                    if (loc != null) {
+                        this.results.add(Srnnks.this.createDownloadlink(loc));
+                        return;
+                    } else {
+                        throw new Exception("no Redirect found");
+                    }
+                } else {
+
+                    throw new Exception("no Frame found");
+
+                }
+            }
+        }
+
+    }
+
+    private final static String[] passwords           = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
+    private static long           LATEST_BLOCK_DETECT = 0;
+
+    private static long           LATEST_RECONNECT    = 0;
+    private static Object         GLOBAL_LOCK         = new Object();
+
     // seems like sj does block ips if requestlimit is not ok
-    private static final long FW_WAIT = 300;
+    private static final long     FW_WAIT             = 300;
 
-    public Srnnks(PluginWrapper wrapper) {
-        super(wrapper);
-    }
-
-    @Override
-    protected String getInitials() {
-        return "SJ";
-    }
-
-    @Override
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink dlink = super.createDownloadlink(link);
-        dlink.addSourcePluginPasswords(passwords);
-        return dlink;
-    }
-
-    private synchronized static boolean limitsReached(Browser br) throws IOException {
+    private synchronized static boolean limitsReached(final Browser br) throws IOException {
         int ret = -100;
         if (br == null) {
             ret = UserIO.RETURN_OK;
@@ -74,8 +107,8 @@ public class Srnnks extends PluginForDecrypt {
 
             if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
 
-                if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
-                if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) {
+                if (System.currentTimeMillis() - Srnnks.LATEST_BLOCK_DETECT < 60000) { return true; }
+                if (System.currentTimeMillis() - Srnnks.LATEST_RECONNECT < 15000) {
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
                     return false;
@@ -84,8 +117,8 @@ public class Srnnks extends PluginForDecrypt {
 
             }
             if (br.containsHTML("Download-Limit")) {
-                if (System.currentTimeMillis() - LATEST_BLOCK_DETECT < 60000) return true;
-                if (System.currentTimeMillis() - LATEST_RECONNECT < 15000) {
+                if (System.currentTimeMillis() - Srnnks.LATEST_BLOCK_DETECT < 60000) { return true; }
+                if (System.currentTimeMillis() - Srnnks.LATEST_RECONNECT < 15000) {
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
                     return false;
@@ -100,19 +133,30 @@ public class Srnnks extends PluginForDecrypt {
 
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
-                    LATEST_RECONNECT = System.currentTimeMillis();
+                    Srnnks.LATEST_RECONNECT = System.currentTimeMillis();
                     return false;
                 }
             } else {
-                LATEST_BLOCK_DETECT = System.currentTimeMillis();
+                Srnnks.LATEST_BLOCK_DETECT = System.currentTimeMillis();
             }
             return true;
         }
         return false;
     }
 
+    public Srnnks(final PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, final ProgressController progress) throws Exception {
+    protected DownloadLink createDownloadlink(final String link) {
+        final DownloadLink dlink = super.createDownloadlink(link);
+        dlink.addSourcePluginPasswords(Srnnks.passwords);
+        return dlink;
+    }
+
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, final ProgressController progress) throws Exception {
         try {
             // Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
             // Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org",
@@ -120,70 +164,75 @@ public class Srnnks extends PluginForDecrypt {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             // progress.setStatusText("Lade Downloadseite");
             progress.setRange(100);
-            synchronized (GLOBAL_LOCK) {
-                Thread.sleep(FW_WAIT);
-                br.getPage(parameter.getCryptedUrl());
+            synchronized (Srnnks.GLOBAL_LOCK) {
+                Thread.sleep(Srnnks.FW_WAIT);
+                this.br.getPage(parameter.getCryptedUrl());
             }
-            if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
+            if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
 
-            if (br.containsHTML("<FRAME SRC")) {
+            if (this.br.containsHTML("<FRAME SRC")) {
                 // progress.setStatusText("Lade Downloadseitenframe");
-                synchronized (GLOBAL_LOCK) {
-                    Thread.sleep(FW_WAIT);
-                    br.getPage(br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
+                synchronized (Srnnks.GLOBAL_LOCK) {
+                    Thread.sleep(Srnnks.FW_WAIT);
+                    this.br.getPage(this.br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
                 }
             }
-            if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
+            if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
             progress.increase(5);
 
             // linkendung kommt auch im action der form vor
-            String sublink = parameter.getCryptedUrl().substring(parameter.getCryptedUrl().indexOf("org/") + 3);
+            final String sublink = parameter.getCryptedUrl().substring(parameter.getCryptedUrl().indexOf("org/") + 3);
 
             // try captcha max 5 times
+
+            progress.setRange(100);
+            progress.setStatus(5);
+
+            // suche wahrscheinlichste form
+            // progress.setStatusText("Suche Captcha Form");
+            Form form = null;
+
+            Form[] forms = this.br.getForms();
+            int bestdist = Integer.MAX_VALUE;
+            for (final Form form1 : forms) {
+                final int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
+                if (dist < bestdist) {
+                    form = form1;
+                    bestdist = dist;
+                }
+            }
+            if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
+                /* this form contains captcha image, so it must be valid */
+            } else if (bestdist > 100) {
+                form = null;
+            }
+
+            if (form == null) { throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!"); }
+            progress.increase(5);
+
+            // das bild in der Form ist das captcha
+            String captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
+            if (captchaLink == null) { throw new Exception("Serienjunkies Captcha konnte nicht gefunden werden!"); }
+            if (!captchaLink.toLowerCase().startsWith("http://")) {
+                captchaLink = "http://" + this.br.getHost() + captchaLink;
+            }
+
+            final File captcha = this.getLocalCaptchaFile(".png");
+            // captcha laden
+            synchronized (Srnnks.GLOBAL_LOCK) {
+                Thread.sleep(Srnnks.FW_WAIT);
+                final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
+                Browser.download(captcha, urlc);
+            }
+
             for (int i = 0; i < 5; i++) {
-
-                progress.setRange(100);
-                progress.setStatus(5);
-
-                // suche wahrscheinlichste form
-                // progress.setStatusText("Suche Captcha Form");
-                Form form = null;
-
-                Form[] forms = br.getForms();
-                int bestdist = Integer.MAX_VALUE;
-                for (Form form1 : forms) {
-                    int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
-                    if (dist < bestdist) {
-                        form = form1;
-                        bestdist = dist;
-                    }
-                }
-                if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
-                    /* this form contains captcha image, so it must be valid */
-                } else if (bestdist > 100) form = null;
-
-                if (form == null) throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!");
-                progress.increase(5);
-
-                // das bild in der Form ist das captcha
-                String captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
-                if (captchaLink == null) throw new Exception("Serienjunkies Captcha konnte nicht gefunden werden!");
-                if (!captchaLink.toLowerCase().startsWith("http://")) captchaLink = "http://" + br.getHost() + captchaLink;
-
-                File captcha = getLocalCaptchaFile(".png");
-                // captcha laden
-                synchronized (GLOBAL_LOCK) {
-                    Thread.sleep(FW_WAIT);
-                    URLConnectionAdapter urlc = br.cloneBrowser().openGetConnection(captchaLink);
-                    Browser.download(captcha, urlc);
-                }
                 String code;
                 // wenn es ein Einzellink ist soll die Captchaerkennung benutzt
                 // werden
                 if (captchaLink.contains(".gif")) {
-                    code = getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
+                    code = this.getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
                 } else {
-                    code = getCaptchaCode(captcha, parameter);
+                    code = this.getCaptchaCode(captcha, parameter);
                 }
                 if (code == null || code.length() != 3) {
                     progress.setStatusText("Captcha code falsch");
@@ -194,21 +243,21 @@ public class Srnnks extends PluginForDecrypt {
 
                 form.getInputFieldByType("text").setValue(code);
                 // System.out.println(code);
-                synchronized (GLOBAL_LOCK) {
-                    Thread.sleep(FW_WAIT);
-                    br.submitForm(form);
+                synchronized (Srnnks.GLOBAL_LOCK) {
+                    Thread.sleep(Srnnks.FW_WAIT);
+                    this.br.submitForm(form);
                 }
-                if (limitsReached(br)) return new ArrayList<DownloadLink>(ret);
-                if (br.getRedirectLocation() != null) {
-                    ret.add(createDownloadlink(br.getRedirectLocation()));
+                if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
+                if (this.br.getRedirectLocation() != null) {
+                    ret.add(this.createDownloadlink(this.br.getRedirectLocation()));
                     progress.doFinalize();
                     return new ArrayList<DownloadLink>(ret);
                 } else {
                     progress.setStatus(0);
-                    forms = br.getForms();
+                    forms = this.br.getForms();
                     // suche die downloadlinks
-                    ArrayList<String> actions = new ArrayList<String>();
-                    for (Form frm : forms) {
+                    final ArrayList<String> actions = new ArrayList<String>();
+                    for (final Form frm : forms) {
                         if (frm.getAction().contains("download.serienjunkies.org") && !frm.getAction().contains("firstload") && !frm.getAction().equals("http://mirror.serienjunkies.org")) {
                             actions.add(frm.getAction());
                         }
@@ -223,9 +272,9 @@ public class Srnnks extends PluginForDecrypt {
                     // we need the 300 ms gap between two requests..
                     progress.setRange(10 + actions.size());
                     progress.setStatus(10);
-                    synchronized (GLOBAL_LOCK) {
+                    synchronized (Srnnks.GLOBAL_LOCK) {
                         for (int d = 0; d < actions.size(); d++) {
-                            this.new DecryptRunnable(actions.get(d), br.cloneBrowser(), ret).go();
+                            this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).go();
                             progress.increase(1);
                         }
 
@@ -240,57 +289,14 @@ public class Srnnks extends PluginForDecrypt {
 
             }
             return new ArrayList<DownloadLink>(ret);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             JDLogger.exception(e);
             throw e;
         }
     }
 
-    class DecryptRunnable implements JDRunnable {
-
-        private String action;
-        private Browser br;
-        private ArrayList<DownloadLink> results;
-
-        public DecryptRunnable(String action, Browser br, ArrayList<DownloadLink> results) {
-            this.action = action;
-            this.br = br;
-            this.results = results;
-        }
-
-        public void go() throws Exception {
-
-            // sj heuristic detection.
-
-            // this makes the jobber useless... but we have to use the 300 ms to
-            // work around sj's firewall
-
-            Thread.sleep(FW_WAIT);
-            br.getPage(action);
-            if (br.getRedirectLocation() != null) {
-                results.add(createDownloadlink(br.getRedirectLocation()));
-            } else {
-                // not sure if there are stil pages that use this old system
-
-                String link = br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
-
-                if (link != null) {
-                    Thread.sleep(FW_WAIT);
-                    br.getPage(link);
-                    String loc = br.getRedirectLocation();
-                    if (loc != null) {
-                        results.add(createDownloadlink(loc));
-                        return;
-                    } else {
-                        throw new Exception("no Redirect found");
-                    }
-                } else {
-
-                    throw new Exception("no Frame found");
-
-                }
-            }
-        }
-
+    @Override
+    protected String getInitials() {
+        return "SJ";
     }
 }
