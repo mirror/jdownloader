@@ -36,7 +36,7 @@ public class FurkNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.furk.net/terms";
+        return "https://furk.net/terms";
     }
 
     @Override

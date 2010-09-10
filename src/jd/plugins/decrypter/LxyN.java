@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -43,7 +44,22 @@ public class LxyN extends PluginForDecrypt {
         if (br.containsHTML("404 No Page Found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         Form cryptform = br.getForm(0);
         if (cryptform == null) return null;
-        br.submitForm(cryptform);
+        if (!br.containsHTML("code\\.php\\?id=")) {
+            br.submitForm(cryptform);
+        } else {
+            boolean failed = true;
+            for (int i = 0; 0 <= 3; i++) {
+                cryptform.put("code", getCaptchaCode("http://lixy.in/code.php?id=" + new Regex(parameter, "lixy\\.in/-(\\d+)").getMatch(0), param));
+                br.submitForm(cryptform);
+                if (br.containsHTML("Code Incorrect<br>")) {
+                    br.getPage(parameter);
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         String finallink = br.getRedirectLocation();
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));

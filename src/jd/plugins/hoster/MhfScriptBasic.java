@@ -42,7 +42,7 @@ public class MhfScriptBasic extends PluginForHost {
         // this.enablePremium("http://Only4Devs2Test.com/register.php?g=3");
     }
 
-    // MhfScriptBasic 1.0
+    // MhfScriptBasic 1.1
     // This plugin is for developers to easily implement hosters using the MHF
     // script, it's still just a beta but i will improve it till it works for
     // nearly all of those hosters!
@@ -52,7 +52,7 @@ public class MhfScriptBasic extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://Only4Devs2Test.com";
-    private static final String IPBLOCKED = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
@@ -65,10 +65,17 @@ public class MhfScriptBasic extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
+        String newlink = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
+        if (newlink != null) {
+            logger.info("This link has moved, trying to find and set the new link...");
+            newlink = newlink.replaceAll("(\\&amp;|setlang=en)", "");
+            parameter.setUrlDownload(newlink);
+            br.getPage(newlink);
+        }
         if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+width=[\r\t\n ]+>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|left width=\\d+px)>(.*?)</td>").getMatch(1);
         if (filename == null) {
-            filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
+            filename = br.getRegex("\"Click (this to report for|Here to Report)(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
                 if (filename == null) {
@@ -76,7 +83,7 @@ public class MhfScriptBasic extends PluginForHost {
                 }
             }
         }
-        String filesize = br.getRegex("<b>File size:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|left)>(.*?)</td>").getMatch(2);
         if (filesize == null) filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
         if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());

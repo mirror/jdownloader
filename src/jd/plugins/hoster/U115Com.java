@@ -57,7 +57,7 @@ public class U115Com extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!br.containsHTML("class=\"alert-box\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("class=\"alert-box\"") || br.containsHTML("很抱歉，文件不存在。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("file_name = '(.*?)';").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)- 115网络U盘").getMatch(0);
