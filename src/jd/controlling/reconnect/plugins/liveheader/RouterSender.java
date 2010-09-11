@@ -135,6 +135,7 @@ public class RouterSender {
         try {
             br.getPage("http://" + this.routerIP);
             final URLConnectionAdapter con = br.getHttpConnection();
+            this.responseCode = con.getResponseCode();
             this.responseHeaders = new HashMap<String, String>();
             Entry<String, List<String>> next;
             for (final Iterator<Entry<String, List<String>>> it = con.getHeaderFields().entrySet().iterator(); it.hasNext();) {
@@ -149,17 +150,16 @@ public class RouterSender {
             this.pTagsCount = br.toString().split("<p>").length;
             this.frameTagCount = br.toString().split("<frame").length;
             // get favicon and build hash
-            final BufferedImage image = FavIconController.getInstance().downloadFavIcon(this.routerIP);
-            final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
-            imageFile.delete();
-            imageFile.deleteOnExit();
-            ImageIO.write(image, "png", imageFile);
-            this.favIconHash = Hash.getMD5(imageFile);
-
-            if (image != null) {
-                this.responseCode = con.getResponseCode();
+            try {
+                final BufferedImage image = FavIconController.getInstance().downloadFavIcon(this.routerIP);
+                final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
+                imageFile.delete();
+                imageFile.deleteOnExit();
+                ImageIO.write(image, "png", imageFile);
+                this.favIconHash = Hash.getMD5(imageFile);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
         } catch (final IOException e) {
             e.printStackTrace();
         }

@@ -36,7 +36,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.EditDistance;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/(mu[_-]|rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]).*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/(st[_-]|hf[_-]|fs[_-]|mu[_-]|rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]).*" }, flags = { 0 })
 public class Srnnks extends PluginForDecrypt {
     class DecryptRunnable implements JDRunnable {
 

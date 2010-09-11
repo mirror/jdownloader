@@ -633,7 +633,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
                                 }
                             }
 
-                            foundDevices.add(device);
+                            if (!foundDevices.contains(device))foundDevices.add(device);
 
                         }
                     }

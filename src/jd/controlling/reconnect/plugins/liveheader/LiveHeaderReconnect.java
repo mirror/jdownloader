@@ -372,7 +372,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             @Override
             protected void onChanged(final DocumentEvent e) {
                 LiveHeaderReconnect.this.setUser(LiveHeaderReconnect.this.txtUser.getText());
-
             }
         };
         this.txtPassword = new JPasswordField();
@@ -832,7 +831,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     public void setPassword(final String pass) {
-        this.getStorage().get(LiveHeaderReconnect.PASSWORD, pass);
+        this.getStorage().put(LiveHeaderReconnect.PASSWORD, pass);
         this.updateGUI();
     }
 

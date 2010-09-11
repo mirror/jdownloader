@@ -76,4 +76,24 @@ public class UpnpRouterDevice extends HashMap<String, String> {
         this.put(UpnpRouterDevice.WANSERVICE, wanservice);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || o.getClass() != UpnpRouterDevice.class) return false;
+        UpnpRouterDevice other = ((UpnpRouterDevice) o);
+        String c1 = this.get(LOCATION);
+        String c2 = other.get(LOCATION);
+        if (c1 != null && c2 != null && !c1.equalsIgnoreCase(c2)) return false;
+        String c3 = this.get(CONTROLURL);
+        String c4 = other.get(CONTROLURL);
+        /* only equal if location and controlurl are equal */
+        if (c3 != null && c4 != null && !c3.equalsIgnoreCase(c4)) return false;
+        if (c1 != null && c2 != null && c3 != null && c4 != null) return true;
+        return false;
+    }
+    
+    @Override
+    public int hashCode(){
+    return (this.get(LOCATION)+""+this.get(CONTROLURL)).hashCode();    
+    }
+
 }

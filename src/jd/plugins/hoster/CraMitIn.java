@@ -299,7 +299,7 @@ public class CraMitIn extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML("File Not Found")) {
+            if (br.containsHTML("File Not Found") || br.containsHTML("404 Not Found")) {
                 logger.warning("Server says link offline, please recheck that!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -426,7 +426,7 @@ public class CraMitIn extends PluginForHost {
             if (error == true) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                if (br.containsHTML("File Not Found")) {
+                if (br.containsHTML("File Not Found")|| br.containsHTML("404 Not Found")) {
                     logger.warning("Server says link offline, please recheck that!");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }

@@ -176,7 +176,8 @@ public class RouterUtils {
         try {
             pb = new ProcessBuilder(new String[] { "ping", ipAddress });
             pb.start();
-            out = JDUtilities.runCommand("arp", new String[] { ipAddress }, null, 10);
+            /*-n for dont resolv ip, MUCH MUCH faster*/
+            out = JDUtilities.runCommand("arp", new String[] { "-n", ipAddress }, null, 10);
             pb.directory();
             if (!out.matches("(?is).*((" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ").*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?|.*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?.*(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")).*")) {
                 out = null;
