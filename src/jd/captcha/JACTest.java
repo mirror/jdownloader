@@ -37,7 +37,7 @@ public class JACTest {
     }
 
     private void go() {
-        String hoster = "xfileseek.com";
+        String hoster = "externtest";
 
         JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
@@ -65,16 +65,17 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment
         // ().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+
         // "securedin1730080724541.jpg"),4);
-        File[] list = JDUtilities.getResourceFile("/captchas/" + jac.getMethodDirName()).listFiles();
-        int id = (int) (Math.random() * (list.length - 1));
+//        File[] list = JDUtilities.getResourceFile("/captchas/" + jac.getMethodDirName()).listFiles();
+//        int id = (int) (Math.random() * (list.length - 1));
         // id=21;
-        System.out.println("ID: " + id);
+//        System.out.println("ID: " + id);
         // File f = new
         // File("/home/dwd/.jd_home/captchas/linkbase.biz/400.png");
-        File f = list[2];
+        File f = new File("/home/dwd/.jd_home/captchas/serienjunkies.org_02.09.2010_10.31.44.277.png");
         System.out.println(f + "");
         // System.out.println(jac.checkCaptcha(f));
-        jac.showPreparedCaptcha(f);
+        System.out.println(jac.checkCaptcha(f));
+        System.exit(0);
         // jac.displayLibrary();
         // if (JOptionPane.showConfirmDialog(null, "train") ==
         // JOptionPane.OK_OPTION) {

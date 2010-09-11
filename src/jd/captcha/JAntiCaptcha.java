@@ -17,6 +17,7 @@
 package jd.captcha;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
@@ -36,6 +37,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
@@ -226,47 +228,47 @@ public class JAntiCaptcha {
      * Fenster die eigentlich nur zur Entwicklung sind um Basic GUI Elemente zu
      * haben
      */
-    private BasicWindow bw2;
+    private BasicWindow              bw2;
 
-    private BasicWindow bw3;
+    private BasicWindow              bw3;
 
-    private JDialog f;
+    private JDialog                  f;
 
     /**
      * Bildtyp. Falls dieser von jpg unterschiedlich ist, muss zuerst
      * konvertiert werden.
      */
-    private String imageType;
+    private String                   imageType;
 
     /**
      * jas Script Instanz. Sie verarbneitet das JACScript und speichert die
      * Parameter
      */
-    public JACScript jas;
+    public JACScript                 jas;
     /**
      * Vector mit den Buchstaben aus der MTHO File
      */
-    public ArrayList<Letter> letterDB;
+    public ArrayList<Letter>         letterDB;
 
-    private int[][] letterMap = null;
+    private int[][]                  letterMap    = null;
 
     /**
      * Anzahl der Buchstaben im Captcha. Wird aus der jacinfo.xml gelesen
      */
-    private int letterNum;
+    private int                      letterNum;
 
     /**
      * ordnername der methode
      */
-    private String methodDirName;
+    private String                   methodDirName;
 
-    private boolean showDebugGui = false;
+    private boolean                  showDebugGui = false;
 
-    private Vector<ScrollPaneWindow> spw = new Vector<ScrollPaneWindow>();
+    private Vector<ScrollPaneWindow> spw          = new Vector<ScrollPaneWindow>();
 
-    private Captcha workingCaptcha;
+    private Captcha                  workingCaptcha;
 
-    private boolean extern;
+    private boolean                  extern;
 
     public boolean isExtern() {
         return extern;
@@ -278,7 +280,7 @@ public class JAntiCaptcha {
 
     private String srcFile;
 
-    private Image sourceImage;
+    private Image  sourceImage;
 
     public JAntiCaptcha(String methodName) {
         JACMethod method = JACMethod.forServiceName(methodName);
@@ -485,19 +487,31 @@ public class JAntiCaptcha {
 
     }
 
-    private String callExtern() {
+    private BufferedImage toBufferedImage(Image i) {
+        if (i instanceof BufferedImage) {
+            return (BufferedImage)i;
+        }
+        Image img;
+        img = new ImageIcon(i).getImage();
+        BufferedImage b;
+        b = new BufferedImage(img.getWidth(null),img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics g = b.createGraphics();
+        g.drawImage(img, 0, 0, null);
+        g.dispose();
+        return b;
+    }
 
+    private String callExtern() {
         try {
             File file = JDUtilities.getResourceFile(this.srcFile);
             file.getParentFile().mkdirs();
             String ext = JDIO.getFileExtension(this.srcFile);
-            ImageIO.write((RenderedImage) this.sourceImage, ext, file);
-        } catch (IOException e) {
+            ImageIO.write(toBufferedImage(this.sourceImage), ext, file);
+        } catch (Exception e) {
             JDLogger.exception(e);
             return null;
         }
         Executer exec = new Executer(JDUtilities.getResourceFile(this.command).getAbsolutePath());
-
         exec.setRunin(JDUtilities.getResourceFile(this.command).getParent());
         exec.setWaitTimeout(300);
         exec.start();
@@ -524,7 +538,7 @@ public class JAntiCaptcha {
         }
         Image captchaImage = Utilities.loadImage(captchafile);
         Captcha captcha = createCaptcha(captchaImage);
-        captcha.setCaptchaFile(captchafile);
+        if (captcha != null) captcha.setCaptchaFile(captchafile);
         // captcha.printCaptcha();
         return checkCaptcha(captchafile, captcha);
     }
@@ -545,7 +559,6 @@ public class JAntiCaptcha {
             }
             return null;
         }
-
         Captcha ret = Captcha.getCaptcha(captchaImage, this);
         if (ret == null) { return null; }
         ret.setOwner(this);
@@ -1815,7 +1828,7 @@ public class JAntiCaptcha {
 
         class MyRunnable implements Runnable {
             public String code = null;
-            public int ret = 0;
+            public int    ret  = 0;
 
             public void run() {
                 if (getCodeFromFileName(captchafile.getName()) == null) {
