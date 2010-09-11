@@ -38,7 +38,10 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.GetIpException;
+import jd.controlling.reconnect.IP;
 import jd.controlling.reconnect.IPAddress;
+import jd.controlling.reconnect.IP_INVALID;
+import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterPlugin;
@@ -64,7 +67,6 @@ import org.xml.sax.SAXException;
 
 public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
 
-    private static final String           EXTERNALIP = "externalip";
     private static final String           CANCHECKIP = "cancheckip";
 
     private JButton                       find;
@@ -135,7 +137,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
 
                             @Override
                             public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
-                                final JLabel label = (JLabel) super.getListCellRendererComponent(list, ((UpnpRouterDevice) value).getFriendlyname(), index, isSelected, cellHasFocus);
+                                final JLabel label = (JLabel) super.getListCellRendererComponent(list, ((UpnpRouterDevice) value).getFriendlyname() + "(" + ((UpnpRouterDevice) value).getWanservice() + ")", index, isSelected, cellHasFocus);
 
                                 return label;
                             }
@@ -282,16 +284,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
     }
 
     @Override
-    public String getExternalIP() throws GetIpException {
-        try {
-            final String ip = this.getIP(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""));
-            this.getStorage().put(UPNPRouterPlugin.EXTERNALIP, ip);
-            return ip;
-        } catch (final GetIpException e) {
-            // failed. disable ipcheck for this upnp device
-            this.getStorage().put(UPNPRouterPlugin.EXTERNALIP, RouterPlugin.NOT_AVAILABLE);
-            throw e;
-        }
+    public IP getExternalIP() {
+        final IP ip = this.getIP(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""));
+        return ip;
     }
 
     @Override
@@ -370,33 +365,20 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
         return "SIMPLEUPNP";
     }
 
-    private String getIP(final String serviceType, final String controlURL) throws GetIpException {
+    private IP getIP(final String serviceType, final String controlURL) {
         String ipxml;
-
         try {
             ipxml = this.runCommand(serviceType, controlURL, "GetExternalIPAddress");
-
         } catch (final Exception e) {
-            // this.getStorage().put(UPNPRouterPlugin.CANCHECKIP, false);
-            throw new GetIpException("GetExternalIPAddress failed", e);
+            setCanCheckIP(false);
+            return new IP_NA("GetExternalIPAddress failed " + e);
         }
-
         final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);
         if (ipm.find()) {
-            final String ip = ipm.group(1);
-            if ("0.0.0.0".equals(ip)) {
-                // Fritzbox returns 0.0.0.0 in offline mode
-                return RouterPlugin.OFFLINE;
-            }
-            if (ip.matches(IPAddress.getIPPattern())) {
-                return ip;
-            } else {
-                // TODO: differ between NA and OFFLINE
-                return RouterPlugin.NOT_AVAILABLE;
-            }
+            return IP.getIP(ipm.group(1));
         }
-        // this.getStorage().put(UPNPRouterPlugin.CANCHECKIP, false);
-        throw new GetIpException("Could not get IP/No GetExternalIPAddress");
+        setCanCheckIP(false);
+        return new IP_NA("Could not get IP/No GetExternalIPAddress");
     }
 
     @Override
@@ -522,9 +504,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
             URL url;
             for (final String location : new Regex(response, "LOCATION\\s*:\\s*([^\\s]+)").getColumn(0)) {
                 try {
-                    final UpnpRouterDevice device = new UpnpRouterDevice();
                     url = new URL(location);
-                    device.setLocation(location);
                     // put(UPNPRouterPlugin.LOCATION, location);
                     final BufferedReader stream = new BufferedReader(new InputStreamReader(url.openStream()));
                     String xmlStr = "";
@@ -568,7 +548,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
                     } else if (urlbase.endsWith("/")) {
                         urlbase = urlbase.substring(0, urlbase.length() - 1);
                     }
-                    device.setUrlBase(urlbase);
+
                     // .put(UPNPRouterPlugin.URLBASE, urlbase);
                     // ############## friendlyname ##############
                     Element el = null;
@@ -584,7 +564,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
                                     // no sure why we do not use break here
                                     // device.put(UPNPRouterPlugin.FRIENDLYNAME,
                                     // friendlyname);
-                                    device.setFriendlyname(friendlyname);
                                 }
                             }
                         }
@@ -594,12 +573,12 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
                     // ################# wanip ################
                     nodes = el.getElementsByTagName(UpnpRouterDevice.SERVICETYPE);
                     for (int i = 0; i < nodes.getLength(); i++) {
-                        // TODO (NOT IMPORTANT) To simplify will return
-                        // after
-                        // the
-                        // first service matching
-                        // "urn:schemas-upnp-org:service:wan[i|p]pp?connection:1"
                         if (nodes.item(i).getTextContent().toLowerCase().matches("urn:schemas-upnp-org:service:wan[i|p]pp?connection:1")) {
+                            /* add device to found list */
+                            final UpnpRouterDevice device = new UpnpRouterDevice();
+                            device.setUrlBase(urlbase);
+                            device.setFriendlyname(friendlyname);
+                            device.setLocation(location);
                             final String servicetype = nodes.item(i).getTextContent();
                             device.setServiceType(servicetype);
                             // .put(UPNPRouterPlugin.SERVICETYPE, servicetype);
@@ -632,9 +611,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
 
                                 }
                             }
-
-                            if (!foundDevices.contains(device))foundDevices.add(device);
-
+                            foundDevices.add(device);
                         }
                     }
                 } catch (final ParserConfigurationException e) {
@@ -688,7 +665,12 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener {
                         UPNPRouterPlugin.this.controlURLTxt.setText(UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""));
                     } catch (final Throwable e) {
                     }
-                    final String ipcheckEnabled = UPNPRouterPlugin.this.isIPCheckEnabled() ? Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.text.yes", "Yes") : Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.text.no", "No");
+                    // final String ipcheckEnabled =
+                    // UPNPRouterPlugin.this.isIPCheckEnabled() ?
+                    // Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.text.yes",
+                    // "Yes") :
+                    // Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.text.no",
+                    // "No");
 
                 }
             }

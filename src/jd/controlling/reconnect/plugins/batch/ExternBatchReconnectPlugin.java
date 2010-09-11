@@ -11,6 +11,8 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
+import jd.controlling.reconnect.IP;
+import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.gui.swing.components.ComboBrowseFile;
@@ -89,8 +91,8 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     }
 
     @Override
-    public String getExternalIP() {
-        return null;
+    public IP getExternalIP() {
+        return IP_NA.IPCHECK_UNSUPPORTED;
     }
 
     @Override

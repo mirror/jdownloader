@@ -414,7 +414,7 @@ public class ReconnectPluginController implements ControlListener {
 
         final int waittime = this.getWaittimeBeforeFirstIPCheck();
 
-        final String preIp = this.getExternalIP();
+        final IP preIp = this.getExternalIP();
 
         try {
             plg.doReconnect();
@@ -431,63 +431,23 @@ public class ReconnectPluginController implements ControlListener {
 
         Thread.sleep(waittime * 1000);
 
-        boolean offline = false;
-        String afterIP = this.getExternalIP();
-        if (preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-            // connection is offline now.
-            offline = true;
-            ReconnectPluginController.LOG.finer("OFFLINE NOW");
-        }
+        IP afterIP = this.getExternalIP();
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         ReconnectPluginController.LOG.info("Wait " + waitForIp + " sec for new ip");
-        while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-
+        while (System.currentTimeMillis() <= endTime && (!preIp.changed(afterIP))) {
             Thread.sleep(checkInterval * 1000);
-
             afterIP = this.getExternalIP();
             ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
-            if (!offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-                // connection is offline now.
-                offline = true;
-                ReconnectPluginController.LOG.finer("OFFLINE NOW");
-            }
-            if (offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && afterIP.equals(preIp)) {
-                ReconnectPluginController.LOG.finer("Has been offline and is now online with same IP. Fail");
-                return false;
-            }
-
         }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) { return true; }
         ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
-        if ((afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE) && !afterIP.equals(preIp)) {
-            ReconnectPluginController.LOG.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
-            endTime = System.currentTimeMillis() + 120 * 1000;
-            while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-
-                Thread.sleep(checkInterval * 1000);
-
-                afterIP = this.getExternalIP();
-                ReconnectPluginController.LOG.finer("IP before2: " + preIp + " after: " + afterIP);
-                if (!offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && (afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-                    // connection is offline now.
-                    offline = true;
-                    ReconnectPluginController.LOG.finer("OFFLINE NOW");
-                }
-                if (offline && preIp != RouterPlugin.OFFLINE && preIp != RouterPlugin.NOT_AVAILABLE && afterIP.equals(preIp)) {
-                    ReconnectPluginController.LOG.finer("Has been offline and is now online with same IP. Fail");
-                    return false;
-                }
-            }
-        }
-
-        if (!afterIP.equals(preIp) && !(afterIP == RouterPlugin.OFFLINE || afterIP == RouterPlugin.NOT_AVAILABLE)) {
-            ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
+        if (preIp.changed(afterIP)) {
             /* Reconnect scheint erfolgreich gewesen zu sein */
             /* nun IP validieren */
-            if (!IPAddress.validateIP(afterIP)) {
+            if (!IPAddress.validateIP(afterIP.toString())) {
                 ReconnectPluginController.LOG.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
                 UserIF.getInstance().displayMiniWarning(JDL.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDL.LF("reconnect.ipfiltered.warning.short", "The IP %s is not allowed!", afterIP));
-                Reconnecter.setCurrentIP(RouterPlugin.NOT_AVAILABLE);
+                Reconnecter.setCurrentIP(IP_INVALID.IP_INVALID);
                 return false;
             } else {
                 Reconnecter.setCurrentIP(afterIP);
@@ -524,22 +484,13 @@ public class ReconnectPluginController implements ControlListener {
      * 
      * @return
      */
-    public String getExternalIP() {
-        String ret = RouterPlugin.NOT_AVAILABLE;
-
-        cond: if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-
+    public IP getExternalIP() {
+        IP ret = IP_NA.IPCHECK_UNSUPPORTED;
+        if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             // use own ipcheck if possible
             if (this.getActivePlugin().isIPCheckEnabled()) {
-                try {
-                    ret = ReconnectPluginController.getInstance().getActivePlugin().getExternalIP();
-                    break cond;
-                } catch (final Throwable e) {
-
-                    this.getActivePlugin().setCanCheckIP(false);
-                    Log.exception(e);
-                }
-
+                ret = ReconnectPluginController.getInstance().getActivePlugin().getExternalIP();
+                if (ret.isValid()) return ret;
             }
             ret = IPCheck.getIPAddress();
         }

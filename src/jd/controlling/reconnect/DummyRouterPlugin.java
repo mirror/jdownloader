@@ -29,8 +29,8 @@ public class DummyRouterPlugin extends RouterPlugin {
     }
 
     @Override
-    public String getExternalIP() {
-        return null;
+    public IP getExternalIP() {
+        return IP_NA.IPCHECK_UNSUPPORTED;
     }
 
     @Override

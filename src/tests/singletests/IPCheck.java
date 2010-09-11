@@ -18,7 +18,6 @@ package tests.singletests;
 
 import java.util.ArrayList;
 
-import jd.controlling.reconnect.IPCheckException;
 import jd.controlling.reconnect.IPCheckProvider;
 
 import org.junit.Assert;
@@ -35,17 +34,15 @@ public class IPCheck {
 
         String ip = null;
         for (IPCheckProvider prov : table) {
-            try {
-                String curip = prov.getIP();
-                System.out.println(prov.getInfo() + ": Reported " + curip);
-                if (ip == null) ip = curip;
 
-                if (!ip.equals(curip)) {
-                    Assert.fail(prov.getInfo() + ": Regex for " + prov.getIP() + " may be invalid!");
-                }
-            } catch (IPCheckException e) {
-                Assert.fail(prov.getInfo() + ": Broken");
+            String curip = prov.getIP().toString();
+            System.out.println(prov.getInfo() + ": Reported " + curip);
+            if (ip == null) ip = curip;
+
+            if (!ip.equals(curip)) {
+                Assert.fail(prov.getInfo() + ": Regex for " + prov.getIP() + " may be invalid!");
             }
+
         }
     }
 

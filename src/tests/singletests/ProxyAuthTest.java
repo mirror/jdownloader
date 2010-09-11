@@ -59,7 +59,7 @@ public class ProxyAuthTest {
             Browser br = new Browser();
             br.setProxy(pr);
             br.getPage("http://freakshare.net/?language=US");
-            String ip = IPCheck.getIPAddress();
+            String ip = IPCheck.getIPAddress().toString();
             InetSocketAddress proxyadress = new InetSocketAddress(pr.getHost(), pr.getPort());
             String proxyip = proxyadress.getAddress().getHostAddress();
 

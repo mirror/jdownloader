@@ -29,6 +29,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.GetIpException;
+import jd.controlling.reconnect.IP;
+import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.RouterUtils;
@@ -349,8 +351,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     @Override
-    public String getExternalIP() throws GetIpException {
-        return null;
+    public IP getExternalIP()  {
+        return IP_NA.IPCHECK_UNSUPPORTED;
     }
 
     @Override

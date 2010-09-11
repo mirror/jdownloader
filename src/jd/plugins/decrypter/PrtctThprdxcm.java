@@ -39,6 +39,7 @@ public class PrtctThprdxcm extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.postPage("http://protect.tehparadox.com/getdata.php", "id=" + parameter.substring(parameter.lastIndexOf("/") + 1, parameter.length() - 1));
+        if (br.containsHTML("requested cannot be found")) return decryptedLinks;
         String downloadlink = br.getRegex("<iframe name=\"ifram\" src=\"(.*?)\"").getMatch(0);
         if (downloadlink == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadlink)));

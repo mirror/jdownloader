@@ -33,6 +33,7 @@ import javax.swing.WindowConstants;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.controlling.reconnect.IP;
 import jd.controlling.reconnect.IPCheck;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
@@ -108,7 +109,7 @@ public class Gui extends AbstractDialog<Object> {
                     JDRRInfoPopup.this.cancelButton.setEnabled(false);
 
                     Gui.this.ip_after = IPCheck.getIPAddress();
-                    if (!Gui.this.ip_after.contains("offline") && !Gui.this.ip_after.equalsIgnoreCase(Gui.this.ip_before)) {
+                    if (Gui.this.ip_before.changed(Gui.this.ip_after)) {
                         if (JDRRInfoPopup.this.reconnect_timer == 0) {
                             /*
                              * Reconnect fand innerhalb des Check-Intervalls
@@ -123,7 +124,7 @@ public class Gui extends AbstractDialog<Object> {
                     } else {
                         JDRRInfoPopup.this.statusicon.setStatus(-1);
                     }
-                    if (!Gui.this.ip_after.contains("offline") && !Gui.this.ip_after.equalsIgnoreCase(Gui.this.ip_before)) {
+                    if (Gui.this.ip_before.changed(Gui.this.ip_after)) {
                         Gui.this.save();
                     } else {
                         UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
@@ -174,10 +175,10 @@ public class Gui extends AbstractDialog<Object> {
                         } catch (final Exception e) {
                         }
                         Gui.this.ip_after = IPCheck.getIPAddress();
-                        if (Gui.this.ip_after.contains("na") && JDRRInfoPopup.this.reconnect_timer == 0) {
+                        if (!Gui.this.ip_after.isValid() && JDRRInfoPopup.this.reconnect_timer == 0) {
                             JDRRInfoPopup.this.reconnect_timer = System.currentTimeMillis();
                         }
-                        if (!Gui.this.ip_after.contains("na") && !Gui.this.ip_after.equalsIgnoreCase(Gui.this.ip_before)) {
+                        if (Gui.this.ip_before.changed(Gui.this.ip_after)) {
                             JDRRInfoPopup.this.statusicon.setStatus(1);
                             if (ReconnectRecorder.running == true) {
                                 JDRRInfoPopup.this.closePopup();
@@ -195,8 +196,8 @@ public class Gui extends AbstractDialog<Object> {
     private JTextField          routerip;
     private JCheckBox           rawmode;
     public boolean              saved              = false;
-    private String              ip_before;
-    private String              ip_after;
+    private IP                  ip_before;
+    private IP                  ip_after;
     public String               ip                 = null;
     public String               methode            = null;
     public String               user               = null;

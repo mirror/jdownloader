@@ -305,7 +305,7 @@ public class UserIO {
      * @return
      */
     public int requestComboDialog(final int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
-        return this.convertAWAnswer(Dialog.getInstance().showComboDialog(this.convertFlagToAWDialog(flag), title, question, options, defaultSelection, icon, okText, cancelText, renderer));
+        return Dialog.getInstance().showComboDialog(this.convertFlagToAWDialog(flag), title, question, options, defaultSelection, icon, okText, cancelText, renderer);
     }
 
     public int requestConfirmDialog(final int flag, final String question) {

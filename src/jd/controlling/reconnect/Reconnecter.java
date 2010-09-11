@@ -49,7 +49,7 @@ public final class Reconnecter {
      */
     public static final String  VERIFY_IP_AGAIN       = "VERIFY_IP_AGAIN";
 
-    private static String       CURRENT_IP            = "";
+    private static IP           CURRENT_IP            = IP_NA.IP_NA;
 
     /**
      * Set to true only if there is a reconnect running currently
@@ -68,12 +68,9 @@ public final class Reconnecter {
     private static boolean checkExternalIPChange() {
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) { return false; }
         Reconnecter.LAST_UP_UPDATE_TIME = System.currentTimeMillis();
-        String tmp = Reconnecter.CURRENT_IP;
+        IP last = Reconnecter.CURRENT_IP;
         Reconnecter.CURRENT_IP = IPCheck.getIPAddress();
-        if (tmp == null) {
-            tmp = Reconnecter.CURRENT_IP;
-        }
-        if (!Reconnecter.CURRENT_IP.equals(Reconnecter.NA) && tmp.length() > 0 && !tmp.equals(Reconnecter.CURRENT_IP)) {
+        if (last.changed(CURRENT_IP)) {
             Reconnecter.LOG.info("Detected external IP Change.");
             return true;
         }
@@ -274,8 +271,8 @@ public final class Reconnecter {
         }
     }
 
-    public static void setCurrentIP(final String ip) {
-        Reconnecter.CURRENT_IP = ip == null ? Reconnecter.NA : ip;
+    public static void setCurrentIP(final IP ip) {
+        Reconnecter.CURRENT_IP = ip;
         Reconnecter.LAST_UP_UPDATE_TIME = System.currentTimeMillis();
     }
 

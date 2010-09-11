@@ -199,7 +199,7 @@ public class HTTPConnection implements URLConnectionAdapter {
     public InputStream getInputStream() throws IOException {
         connect();
         connectInputStream();
-        if (getResponseCode() >= 200 && getResponseCode() <= 400) {
+        if ((getResponseCode() >= 200 && getResponseCode() <= 400) || getResponseCode()==404) {
             return inputStream;
         } else {
             throw new IOException(getResponseCode() + " " + getResponseMessage());

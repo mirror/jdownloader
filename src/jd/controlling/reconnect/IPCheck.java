@@ -38,14 +38,15 @@ class CustomWebIPCheck implements IPCheckProvider {
         return "Customized IPCheck: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
     }
 
-    public String getIP() throws IPCheckException {
+    public IP getIP() {
         if (this.errorcount > this.maxerror) {
             /* maxerror reached , pause this method */
             this.errorcount = 0;
-            throw new IPCheckException(IPCheckException.SEQ_FAILED);
+            return new IP_NA("MAXREACHED", IP_NA.IP_NA_SEQ_FAILED);
         }
         final String site = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
         final String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Please enter Regex for IPCheck here");
+        Exception ee = null;
         try {
             /* check for valid website */
             new URL(site);
@@ -57,15 +58,15 @@ class CustomWebIPCheck implements IPCheckProvider {
                 if (matcher.groupCount() > 0) {
                     /* reset error count */
                     this.errorcount = 0;
-                    return matcher.group(1);
+                    return IP.getIP(matcher.group(1));
                 }
             }
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            ee = e;
         }
         /* error occured , return failed */
         this.errorcount++;
-        throw new IPCheckException(IPCheckException.FAILED);
+        return new IP_NA(ee != null ? ee.getMessage() : null, IP_NA.IP_NA_FAILED);
     }
 }
 
@@ -104,8 +105,8 @@ public class IPCheck {
      *         has been an error or IPCheck.CheckStatus.SEQFAILED if this method
      *         should be paused
      */
-    private static String checkIPProvider() throws IPCheckException {
-        if (IPCheck.IP_CHECK_SERVICES.size() == 0) { return null; }
+    private static IP checkIPProvider() {
+        if (IPCheck.IP_CHECK_SERVICES.size() == 0) { return IP_NA.IP_NA; }
         synchronized (IPCheck.LOCK) {
             IPCheck.IP_CHECK_INDEX = IPCheck.IP_CHECK_INDEX % IPCheck.IP_CHECK_SERVICES.size();
             final IPCheckProvider ipcheck = IPCheck.IP_CHECK_SERVICES.get(IPCheck.IP_CHECK_INDEX);
@@ -123,47 +124,39 @@ public class IPCheck {
      * 
      * @return ip or "na" for notavailable
      */
-    public static String getIPAddress() {
+    public static IP getIPAddress() {
 
-        String ip = null;
+        IP ip = null;
         synchronized (IPCheck.LOCK) {
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
-                /* use registered ipcheckprovider (balanced) */
-                for (int i = 0; i < IPCheck.IP_CHECK_SERVICES.size() / 2 + 1; i++) {
-                    try {
+            try {
+                if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
+                    /* use registered ipcheckprovider (balanced) */
+                    for (int i = 0; i < IPCheck.IP_CHECK_SERVICES.size() / 2 + 1; i++) {
                         ip = IPCheck.checkIPProvider();
-                    } catch (final IPCheckException e) {
-                        if (e.getId() == IPCheckException.FAILED) {
-                            /* normal error, wait 3 secs for retry */
-                            try {
+                        if (ip.isValid()) return ip;
+                        if (ip instanceof IP_NA) {
+                            IP_NA n = (IP_NA) ip;
+                            if (n.getReasonID() == IP_NA.IP_NA_FAILED) {
+                                /* normal error, wait 3 secs for retry */
                                 Thread.sleep(3000);
-                            } catch (final InterruptedException e1) {
-                            }
-                        } else if (e.getId() == IPCheckException.SEQ_FAILED) {
-                            /* seq error, wait 9 secs for retry */
-                            try {
+                            } else if (n.getReasonID() == IP_NA.IP_NA_SEQ_FAILED) {
+                                /* seq error, wait 9 secs for retry */
                                 Thread.sleep(9000);
-                            } catch (final InterruptedException e1) {
                             }
                         }
                     }
-                }
-            } else {
-                /* use userdefined ipcheck, try it only once */
-                try {
+                } else {
                     ip = IPCheck.CUSTOM_WEB_IPCHECK.getIP();
-                } catch (final IPCheckException e) {
                 }
+            } catch (Exception e) {
+                ip = new IP_NA(e.getMessage());
             }
         }
-
-        if (ip == null) {
+        if (ip instanceof IP_NA || ip instanceof IP_INVALID) {
             JDLogger.getLogger().severe("IPCheck failed");
-            return "na";
         }
-        return ip.toString().trim();
+        return ip;
     }
-
 }
 
 /** IPCheck Provider using a Website that provides Client IP */
@@ -190,26 +183,27 @@ class WebIPCheck implements IPCheckProvider {
         return this.url;
     }
 
-    public String getIP() throws IPCheckException {
+    public IP getIP() {
         if (this.errorcount > WebIPCheck.maxerror) {
             /* maxerror reached, pause this method */
             this.errorcount = 0;
-            throw new IPCheckException(IPCheckException.SEQ_FAILED);
+            return new IP_NA("MAXREACHED", IP_NA.IP_NA_SEQ_FAILED);
         }
+        Exception ee = null;
         try {
             /* call website and check for ip */
             final Matcher matcher = this.pattern.matcher(this.br.getPage(this.url));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
                     this.errorcount = 0;/* reset error count */
-                    return matcher.group(1);
+                    return IP.getIP(matcher.group(1));
                 }
             }
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            ee = e;
         }
-        /* error occured, return failed */
+        /* error occured , return failed */
         this.errorcount++;
-        throw new IPCheckException(IPCheckException.FAILED);
+        return new IP_NA(ee != null ? ee.getMessage() : null, IP_NA.IP_NA_FAILED);
     }
 }

@@ -139,7 +139,7 @@ public final class Replacer {
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                 return "IPCheck disabled";
             } else {
-                return IPCheck.getIPAddress();
+                return IPCheck.getIPAddress().toString();
             }
         }
 

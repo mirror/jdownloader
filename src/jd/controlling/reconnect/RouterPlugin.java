@@ -60,7 +60,7 @@ public abstract class RouterPlugin {
      *             if this plugin cannot get a valid IP response
      */
     @Nullable
-    public abstract String getExternalIP() throws GetIpException;
+    public abstract IP getExternalIP();
 
     /**
      * 

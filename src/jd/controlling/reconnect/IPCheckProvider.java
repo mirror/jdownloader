@@ -31,6 +31,6 @@ public interface IPCheckProvider {
      * 
      * @return
      */
-    public String getIP() throws IPCheckException;
+    public IP getIP();
 
 }

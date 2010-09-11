@@ -166,10 +166,10 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
         new Thread() {
             @Override
             public void run() {
-                final String ip = IPCheck.getIPAddress();
+                final IP ip = IPCheck.getIPAddress();
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        ReconnectPluginConfigGUI.this.lblCurrentIP.setText(ip);
+                        ReconnectPluginConfigGUI.this.lblCurrentIP.setText(ip.toString());
                     }
                 });
             }
@@ -245,7 +245,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText("?");
                             } else {
-                                ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPCheck.getIPAddress());
+                                ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPCheck.getIPAddress().toString());
                             }
                             return null;
                         }
@@ -263,7 +263,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText("?");
                             } else {
-                                ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPCheck.getIPAddress());
+                                ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPCheck.getIPAddress().toString());
                             }
                             return null;
                         }
