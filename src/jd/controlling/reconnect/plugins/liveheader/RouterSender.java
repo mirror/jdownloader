@@ -11,7 +11,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -76,18 +75,9 @@ public class RouterSender {
         return null;
     }
 
-    public static void main(final String[] args) throws IOException, InterruptedException {
-
-        final String mc = RouterUtils.getMacAddress("192.168.178.1");
-        System.out.println(RouterSender.getManufactor(mc));
-        // final Browser br = new Browser();
-        // br.getPage("http://standards.ieee.org/regauth/oui/oui.txt");
-        // for (final String[] match :
-        // br.getRegex("([0-9A-F]+)\\s+\\(base 16\\)\\s+([^\n]+)").getMatches())
-        // {
-        // System.out.println(match[0] + "=" + match[1]);
-        // }
-
+    public static void main(final String[] args) throws Exception {
+        final String mc = RouterUtils.getMacAddress("192.168.0.1");
+        System.out.println(mc + " => " + RouterSender.getManufactor(mc));
     }
 
     private String                  routerIP;
@@ -137,12 +127,8 @@ public class RouterSender {
             final URLConnectionAdapter con = br.getHttpConnection();
             this.responseCode = con.getResponseCode();
             this.responseHeaders = new HashMap<String, String>();
-            Entry<String, List<String>> next;
-            for (final Iterator<Entry<String, List<String>>> it = con.getHeaderFields().entrySet().iterator(); it.hasNext();) {
-                next = it.next();
-
+            for (Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
                 for (final String value : next.getValue()) {
-
                     this.responseHeaders.put(next.getKey().toLowerCase(), value);
                 }
             }

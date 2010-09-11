@@ -18,7 +18,6 @@ package jd.captcha;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 import jd.captcha.pixelgrid.BinLetters;
 import jd.captcha.pixelgrid.Letter;
@@ -26,10 +25,10 @@ import jd.captcha.pixelgrid.LevenshteinLetter;
 
 public class LevenShteinLetterComperator {
     public LevenshteinLetter[] letterDB;
-    public boolean onlySameWidth = false;
-    public int costs = 6;
-    public boolean detectVerticalOffset = false;
-    public boolean detectHorizonalOffset = false;
+    public boolean             onlySameWidth         = false;
+    public int                 costs                 = 6;
+    public boolean             detectVerticalOffset  = false;
+    public boolean             detectHorizonalOffset = false;
 
     public void run(Letter letter) {
         if (letterDB.length == 0 || letter.getWidth() == 0 || letter.getHeight() == 0) return;
@@ -93,10 +92,6 @@ public class LevenShteinLetterComperator {
                 }
             }
         }
-    }
-
-    public void run(List<Letter> letters) {
-        run(letters.toArray(new Letter[] {}));
     }
 
     public LevenShteinLetterComperator(JAntiCaptcha jac) {

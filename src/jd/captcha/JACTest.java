@@ -18,8 +18,6 @@ package jd.captcha;
 
 import java.io.File;
 
-import jd.utils.JDUtilities;
-
 /**
  * JAC Tester
  * 
@@ -27,11 +25,8 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class JACTest {
-    /**
-     * @param args
-     */
-    public static void main(String args[]) {
 
+    public static void main(String args[]) {
         JACTest main = new JACTest();
         main.go();
     }
@@ -39,58 +34,12 @@ public class JACTest {
     private void go() {
         String hoster = "externtest";
 
-        JAntiCaptcha jac = new JAntiCaptcha(hoster);
-
-        // jac.setShowDebugGui(true);
-        // LetterComperator.CREATEINTERSECTIONLETTER = true;
-        //
-        // jac.exportDB();
-        // Utilities.getLogger().info("has method:
-        // "+JAntiCaptcha.hasMethod(methodsPath, hoster));
-
-        //
-        // Megaupload2.writeDB();
-        // jac.importDB(JDUtilities.getResourceFile("caps/mu/explain/letters"));
-        // // jac.importDB();
-        // // MegaUpload.main(null);
-        // //
-        // //jac.displayLibrary();
-        // System.out.println("LETTERDB: "+jac.letterDB.size());
-        // jac.cleanLibrary(10.0);
-        // System.out.println("LETTERDB after filter: "+jac.letterDB.size());
-        // jac.displayLibrary();
-
-        // jac.getJas().set("preScanFilter", 0);
-        // jac.trainCaptcha(new
-        // File(JDUtilities.getJDHomeDirectoryFromEnvironment
-        // ().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+
-        // "securedin1730080724541.jpg"),4);
-//        File[] list = JDUtilities.getResourceFile("/captchas/" + jac.getMethodDirName()).listFiles();
-//        int id = (int) (Math.random() * (list.length - 1));
-        // id=21;
-//        System.out.println("ID: " + id);
-        // File f = new
-        // File("/home/dwd/.jd_home/captchas/linkbase.biz/400.png");
         File f = new File("/home/dwd/.jd_home/captchas/serienjunkies.org_02.09.2010_10.31.44.277.png");
         System.out.println(f + "");
-        // System.out.println(jac.checkCaptcha(f));
+
+        JAntiCaptcha jac = new JAntiCaptcha(hoster);
         System.out.println(jac.checkCaptcha(f));
         System.exit(0);
-        // jac.displayLibrary();
-        // if (JOptionPane.showConfirmDialog(null, "train") ==
-        // JOptionPane.OK_OPTION) {
-        // f.renameTo(new File("C:\\Users\\coalado\\Desktop\\caps\\" +
-        // f.getName()));
-        // }
-        // Utilities.getLogger().info(JAntiCaptcha.getCaptchaCode(Utilities.
-        // loadImage(new
-        // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
-        // +"/jd/captcha/methods"+
-        // "/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),
-        // null, "rapidshare.com"));
-        // jac.removeBadLetters(); 01801
-        // jac.addLetterMap();
-        // jac.saveMTHFile();
-
     }
+
 }

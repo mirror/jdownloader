@@ -24,7 +24,6 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -54,7 +53,6 @@ import jd.captcha.gui.ImageComponent;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
-import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
 import jd.gui.userio.DummyFrame;
@@ -84,31 +82,6 @@ public class JAntiCaptcha {
      * Logger
      */
     private static Logger logger = Utilities.getLogger();
-
-    /**
-     * Gibt den Captchacode zurück
-     * 
-     * @param img
-     * @param methodname
-     * @return Captchacode
-     */
-    public static String getCaptchaCode(File file, Image img, String methodname) {
-        JAntiCaptcha jac = new JAntiCaptcha(methodname);
-        // BasicWindow.showImage(img);
-        Captcha cap = jac.createCaptcha(img);
-        if (cap == null) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Captcha Bild konnte nicht eingelesen werden");
-            }
-            return "JACerror";
-        }
-        // BasicWindow.showImage(cap.getImageWithGaps(2));
-        String ret = jac.checkCaptcha(file, cap);
-        if (Utilities.isLoggerActive()) {
-            logger.info("captcha text:" + ret);
-        }
-        return ret;
-    }
 
     /**
      * Testet die Angegebene Methode. Dabei werden analysebilder erstellt.
@@ -446,55 +419,35 @@ public class JAntiCaptcha {
     }
 
     /**
-     * 826
-     * 
-     * Exportiert die aktelle Datenbank als PONG einzelbilder
-     * 
-     * 827
+     * Exportiert die aktelle Datenbank als PNG einzelbilder
      */
-
     public void exportDB() {
-
         File path = Utilities.directoryChooser();
 
         File file;
-
         BufferedImage img;
-
         int i = 0;
-
         for (Letter letter : letterDB) {
 
             img = letter.getFullImage();
-
             file = new File(path + "/letterDB/" + i++ + "_" + letter.getDecodedValue() + ".png");
-
             file.mkdirs();
 
             try {
-
                 logger.info("Write Db: " + file);
-
                 ImageIO.write(img, "png", file);
-
             } catch (IOException e) {
-
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
-
+                JDLogger.exception(e);
             }
-
         }
-
     }
 
     private BufferedImage toBufferedImage(Image i) {
-        if (i instanceof BufferedImage) {
-            return (BufferedImage)i;
-        }
+        if (i instanceof BufferedImage) { return (BufferedImage) i; }
         Image img;
         img = new ImageIcon(i).getImage();
         BufferedImage b;
-        b = new BufferedImage(img.getWidth(null),img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        b = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
         Graphics g = b.createGraphics();
         g.drawImage(img, 0, 0, null);
         g.dispose();
@@ -801,23 +754,21 @@ public class JAntiCaptcha {
         return imageType;
     }
 
-    /*
-     * Die Methode parst die jacinfo.xml
+    /**
+     * Die Methode parsed die jacinfo.xml
      */
     private void getJACInfo() {
-
-        Document doc;
         File f = getResourceFile("jacinfo.xml");
         if (!f.exists()) {
             if (Utilities.isLoggerActive()) {
-                logger.severe("" + "jacinfo.xml" + " is missing2");
+                logger.severe("jacinfo.xml is missing2");
             }
             return;
         }
-        doc = JDUtilities.parseXmlString(JDIO.readFileToString(f), false);
+        Document doc = JDUtilities.parseXmlString(JDIO.readFileToString(f), false);
         if (doc == null) {
             if (Utilities.isLoggerActive()) {
-                logger.severe("" + "jacinfo.xml" + " is missing2");
+                logger.severe("jacinfo.xml is missing2");
             }
             return;
         }
@@ -1334,10 +1285,6 @@ public class JAntiCaptcha {
         return workingCaptcha;
     }
 
-    public void importDB() {
-        importDB(Utilities.directoryChooser());
-    }
-
     /**
      * Importiert PNG einzelbilder aus einem ordner und erstellt daraus eine
      * neue db
@@ -1477,56 +1424,6 @@ public class JAntiCaptcha {
     protected void removeLetterFromLibrary(Letter letter) {
 
         logger.info("Remove" + letter + " : " + letterDB.remove(letter));
-
-    }
-
-    /**
-     * Führt diverse Tests durch. file dient als testcaptcha
-     * 
-     * @param file
-     */
-    public void runTestMode(File file) {
-        Image img = Utilities.loadImage(file);
-        Captcha captcha = createCaptcha(img);
-
-        BasicWindow.showImage(captcha.getImage(2), "Original bild");
-        captcha.testColor();
-        BasicWindow.showImage(captcha.getImage(2), "Farbtester. Bild sollte Identisch sein");
-
-        BasicWindow.showImage(captcha.getImage(2));
-        // jas.setBackgroundSampleCleanContrast(0.15);
-        // captcha.crop(80, 0, 0, 14);
-        captcha.cleanBackgroundByColor(14408167);
-        // captcha.reduceWhiteNoise(1);
-        // captcha.toBlackAndWhite(0.9);
-
-        BasicWindow.showImage(captcha.getImage(2));
-
-        Vector<PixelObject> letters = captcha.getBiggestObjects(4, 200, 0.7, 0.8);
-        for (int i = 0; i < letters.size(); i++) {
-            PixelObject obj = letters.elementAt(i);
-            // BasicWindow.showImage(obj.toLetter().getImage(3));
-
-            Letter l = obj.toLetter();
-            l.removeSmallObjects(0.3, 0.5);
-
-            l = l.align(0.5, -45, +45);
-
-            // BasicWindow.showImage(l.getImage(3));
-            l.reduceWhiteNoise(2);
-            l.toBlackAndWhite(0.6);
-            BasicWindow.showImage(l.getImage(1));
-
-        }
-
-        // captcha.crop(13,8,33,8);
-        // BasicWindow.showImage(captcha.getImage(3));
-        // captcha.blurIt(5);
-
-        //
-        // executePrepareCommands(captcha);
-
-        // BasicWindow.showImage(captcha.getImage(3),"With prepare Code");
 
     }
 
@@ -1827,8 +1724,8 @@ public class JAntiCaptcha {
         }
 
         class MyRunnable implements Runnable {
-            public String code = null;
-            public int    ret  = 0;
+            private String code = null;
+            private int    ret  = 0;
 
             public void run() {
                 if (getCodeFromFileName(captchafile.getName()) == null) {

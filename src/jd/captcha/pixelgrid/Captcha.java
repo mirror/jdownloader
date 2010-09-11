@@ -54,24 +54,9 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
  */
 public class Captcha extends PixelGrid {
 
-    private static Logger logger = Utilities.getLogger();
+    private static Logger     logger           = Utilities.getLogger();
 
     private static final long serialVersionUID = 1L;
-
-    /**
-     * Factory Funktion gibt einen captcha von File zurück
-     * 
-     * @param file
-     *            Pfad zum bild
-     * @param owner
-     *            Parameter Dump JAntiCaptcha
-     * @return Captcha neuer captcha
-     */
-    public static Captcha getCaptcha(final File file, final JAntiCaptcha owner) {
-        final Image img = Utilities.loadImage(file);
-        final Captcha ret = Captcha.getCaptcha(img, owner);
-        return ret;
-    }
 
     /**
      * factory Methode für eine captchainstanz
@@ -182,43 +167,43 @@ public class Captcha extends PixelGrid {
 
     }
 
-    private File captchafile;
+    private File               captchafile;
 
-    private ColorModel colorModel;
+    private ColorModel         colorModel;
 
-    private String correctCaptchaCode;
+    private String             correctCaptchaCode;
 
     /**
      * Array der länge getWidth()+1. hier werden gefundene Gaps abgelegt.
      * Einträge mit true bedeuten eine Lücke
      */
-    private boolean[] gaps;
+    private boolean[]          gaps;
 
     /**
      * Speichert die Positiond es letzten erkannten Letters
      */
-    private int lastletterX = 0;
+    private int                lastletterX = 0;
 
     private LetterComperator[] letterComperators;
 
-    private boolean perfectObjectDetection;
+    private boolean            perfectObjectDetection;
 
     /**
      * Speichert die Information ob der captcha schon vorverarbeitet wurde
      */
-    private boolean prepared = false;
+    private boolean            prepared    = false;
 
     /**
      * Speichert das original RGB Pixelgrid
      */
-    public int[][] rgbGrid;
+    public int[][]             rgbGrid;
 
     /**
      * Temp Array für die getrennten letters; *
      */
-    private Letter[] seperatedLetters;
+    private Letter[]           seperatedLetters;
 
-    private double valityPercent;
+    private double             valityPercent;
 
     /**
      * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden
@@ -457,15 +442,6 @@ public class Captcha extends PixelGrid {
 
             }
         }
-
-    }
-
-    /**
-     * Diese Methode gibt alle internen Datenresourcen wie pixeldaten wieder
-     * frei.
-     * 
-     */
-    public void destroyInternalData() {
 
     }
 
@@ -1602,15 +1578,6 @@ public class Captcha extends PixelGrid {
         }
         // BasicWindow.showImage(this.getImage());
         return false;
-    }
-
-    /**
-     * Gibt ein ACSI bild des Captchas aus
-     */
-    public void printCaptcha() {
-        if (Utilities.isLoggerActive()) {
-            logger.info("\r\n" + getString());
-        }
     }
 
     public int[][] getOrgGridCopy() {

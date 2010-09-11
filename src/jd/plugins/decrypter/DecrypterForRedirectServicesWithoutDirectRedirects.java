@@ -38,7 +38,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         super(wrapper);
     }
 
-    private static final String NEWSREGEX  = "<div id='prep2'( style='display:none;')?><a  href='(.*?)'";
     private static final String NEWSREGEX2 = "<div id='prep2' dir='ltr' ><a  href='(.*?)'";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

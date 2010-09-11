@@ -478,14 +478,14 @@ public class PixelGrid extends Property {
     /**
      * Internes grid
      */
-    public int[][] grid;
+    public int[][]      grid;
 
-    private int[] location = new int[] { 0, 0 };
+    private int[]       location = new int[] { 0, 0 };
 
     /**
      * Logger
      */
-    public Logger logger = Utilities.getLogger();
+    public Logger       logger   = Utilities.getLogger();
 
     /**
      * ParameterDump
@@ -495,9 +495,9 @@ public class PixelGrid extends Property {
     /**
      * Pixel Array
      */
-    public int[] pixel;
+    public int[]        pixel;
 
-    protected int[][] tmpGrid;
+    protected int[][]   tmpGrid;
 
     /**
      * Konstruktor
@@ -636,17 +636,6 @@ public class PixelGrid extends Property {
 
         return true;
 
-    }
-
-    public void cleanByHSBValue(Comparator<float[]> comparator) {
-        for (int x = 0; x < getWidth(); x++) {
-            for (int y = 0; y < getHeight(); y++) {
-                if (comparator.compare(null, Colors.rgb2hsb(this.getPixelValue(x, y))) == 1) {
-                    this.setPixelValue(x, y, getMaxPixelValue());
-                }
-
-            }
-        }
     }
 
     /**

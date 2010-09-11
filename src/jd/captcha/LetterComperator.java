@@ -34,120 +34,116 @@ import jd.controlling.JDLogger;
  * @author JD-Team
  */
 public class LetterComperator {
-    private static final int ANBCOLOR = 0xff0000;
-    private static final int ANBFILTEREDCOLOR = 0xffcccc;
-    private static final int BNACOLOR = 0x0000ff;
-    private static final int BNAFILTEREDCOLOR = 0xccccff;
+    private static final int        ANBCOLOR                    = 0xff0000;
+    private static final int        ANBFILTEREDCOLOR            = 0xffcccc;
+    private static final int        BNACOLOR                    = 0x0000ff;
+    private static final int        BNAFILTEREDCOLOR            = 0xccccff;
     // Farbkonstanten für die überlagerungsbilder
-    private static final int BOTHCOLOR = 0x660099;
+    private static final int        BOTHCOLOR                   = 0x660099;
     /**
      * Gibt an ob ein Intersectionletter( schnittbilder) erstellt werden soll.
      * Achtung langsam!
      */
-    public static boolean CREATEINTERSECTIONLETTER = false;
+    public static boolean           CREATEINTERSECTIONLETTER    = false;
     /**
      * Matchtable kann als Stringarray gesetzt werden... z.b.
      * {"123","456","789"} lässt auf id platz 1 nur 1,2 oder 3 zu usw.
      */
-    public static String[] MATCH_TABLE = null;
-    /**
-     * Detection IDS Keine ERkennung. fehler!
-     */
-    public static final int ERROR = -1;
+    public static String[]          MATCH_TABLE                 = null;
     // Ids die Auskunft über die Art der ERkennung geben
     /**
      * Detection IDS Erkennung durch einen Perfectmatch schwellwert
      */
-    public static final int PERFECTMATCH = 1;
+    public static final int         PERFECTMATCH                = 1;
     /**
      * Detection IDS Erkennung durch den quickscan
      */
-    public static final int QUICKSCANMATCH = 2;
+    public static final int         QUICKSCANMATCH              = 2;
     /**
      * Detection IDS Perfect Match durch den Quickscan
      */
-    public static final int QUICKSCANPERFECTMATCH = 3;
+    public static final int         QUICKSCANPERFECTMATCH       = 3;
     // Buchstaben a und b. a ist das captachbild und b das datenbankbild
-    private Letter a = null;
+    private Letter                  a                           = null;
 
-    private Letter b = null;
-    private int[] bc = new int[2];
-    Vector<Vector<Integer>> bothElements = new Vector<Vector<Integer>>();
-    private int bothElementsNum;
-    private double cleftFaktor;
-    private double coverageFaktorA = 0;
-    private double coverageFaktorAWeight;
-    private double coverageFaktorB = 0;
-    private double coverageFaktorBWeight;
-    private int detectionType;
-    private double divider;
-    Vector<Integer> element;
-    private int[][] elementGrid;
-    private double errorAWeight;
-    private double errorbWeight;
-    private Object[] extensionCodeArguments = new Object[] { null, 0.0 };
-    private Method extensionCodeMethod = null;
-    private Class<?>[] extensionCodeParameterTypes = new Class[] { LetterComperator.class, Double.class };
-    private double extensionError = 0.0;
-    private double heightFaktor = 0;
-    private int[] imgOffset;
-    private double intersectionAHeightFaktor;
-    private double intersectionAHeightWeight;
-    private double intersectionAWidthFaktor;
-    private double intersectionAWidthWeight;
-    public int[] intersectionDimension;
-    private double intersectionDimensionWeight;
-    private int[][] intersectionGrid = new int[0][0];
-    private int intersectionHeight = 0;
-    private Letter intersectionLetter = new Letter();
-    private int intersectionStartX = 0;
-    private int intersectionStartY = 0;
-    private int intersectionWidth = 0;
-    private JACScript jas;
-    private double localHeightPercent;
-    private double localWidthPercent;
-    private Logger logger = Utilities.getLogger();
-    int minCleftSize;
-    private int[] offset;
-    private int overlayNoiseSize;
-    private JAntiCaptcha owner;
-    private int pixelAll;
-    private int pixelANotB = 0;
-    private int pixelBNotA = 0;
-    private int pixelBoth = 0;
-    private double pixelErrorA = 0;
-    private double pixelErrorB = 0;
-    private double prescanDivider;
-    private int preScanFaktor;
-    private int preScanFilter;
-    private double preValityPercent;
+    private Letter                  b                           = null;
+    private int[]                   bc                          = new int[2];
+    private Vector<Vector<Integer>> bothElements                = new Vector<Vector<Integer>>();
+    private int                     bothElementsNum;
+    private double                  cleftFaktor;
+    private double                  coverageFaktorA             = 0;
+    private double                  coverageFaktorAWeight;
+    private double                  coverageFaktorB             = 0;
+    private double                  coverageFaktorBWeight;
+    private int                     detectionType;
+    private double                  divider;
+    private Vector<Integer>         element;
+    private int[][]                 elementGrid;
+    private double                  errorAWeight;
+    private double                  errorbWeight;
+    private Object[]                extensionCodeArguments      = new Object[] { null, 0.0 };
+    private Method                  extensionCodeMethod         = null;
+    private Class<?>[]              extensionCodeParameterTypes = new Class[] { LetterComperator.class, Double.class };
+    private double                  extensionError              = 0.0;
+    private double                  heightFaktor                = 0;
+    private int[]                   imgOffset;
+    private double                  intersectionAHeightFaktor;
+    private double                  intersectionAHeightWeight;
+    private double                  intersectionAWidthFaktor;
+    private double                  intersectionAWidthWeight;
+    private int[]                   intersectionDimension;
+    private double                  intersectionDimensionWeight;
+    private int[][]                 intersectionGrid            = new int[0][0];
+    private int                     intersectionHeight          = 0;
+    private Letter                  intersectionLetter          = new Letter();
+    private int                     intersectionStartX          = 0;
+    private int                     intersectionStartY          = 0;
+    private int                     intersectionWidth           = 0;
+    private JACScript               jas;
+    private double                  localHeightPercent;
+    private double                  localWidthPercent;
+    private Logger                  logger                      = Utilities.getLogger();
+    private int                     minCleftSize;
+    private int[]                   offset;
+    private int                     overlayNoiseSize;
+    private JAntiCaptcha            owner;
+    private int                     pixelAll;
+    private int                     pixelANotB                  = 0;
+    private int                     pixelBNotA                  = 0;
+    private int                     pixelBoth                   = 0;
+    private double                  pixelErrorA                 = 0;
+    private double                  pixelErrorB                 = 0;
+    private double                  prescanDivider;
+    private int                     preScanFaktor;
+    private int                     preScanFilter;
+    private double                  preValityPercent;
 
-    private double reliability;
-    private int scanStepX;
+    private double                  reliability;
+    private int                     scanStepX;
 
-    private int scanStepY;
-    private int scanTime = -1;
-    private int scanVarianceX = -1;
-    private int scanVarianceY = -1;
-    private double tmpCoverageFaktorA;
-    private double tmpCoverageFaktorB;
-    private double tmpErrorA;
-    private double tmpErrorB;
-    private double tmpErrorTotal;
-    public double tmpExtensionError = 0.0;
-    private double tmpHeightAFaktor;
-    private double tmpHeightFaktor;
-    private int tmpPixelAButNotB;
-    private int tmpPixelBButNotA;
-    private int tmpPixelBoth = 0;
-    private double tmpPreScanValue;
+    private int                     scanStepY;
+    private int                     scanTime                    = -1;
+    private int                     scanVarianceX               = -1;
+    private int                     scanVarianceY               = -1;
+    private double                  tmpCoverageFaktorA;
+    private double                  tmpCoverageFaktorB;
+    private double                  tmpErrorA;
+    private double                  tmpErrorB;
+    private double                  tmpErrorTotal;
+    private double                  tmpExtensionError           = 0.0;
+    private double                  tmpHeightAFaktor;
+    private double                  tmpHeightFaktor;
+    private int                     tmpPixelAButNotB;
+    private int                     tmpPixelBButNotA;
+    private int                     tmpPixelBoth                = 0;
+    private double                  tmpPreScanValue;
 
-    private double tmpWidthAFaktor;
-    private double tmpWidthFaktor;
-    private double totalPixelError = 0;
-    private double valityPercent = 10000.0;
-    private double widthFaktor = 0;
-    private int[] position;
+    private double                  tmpWidthAFaktor;
+    private double                  tmpWidthFaktor;
+    private double                  totalPixelError             = 0;
+    private double                  valityPercent               = 10000.0;
+    private double                  widthFaktor                 = 0;
+    private int[]                   position;
 
     /**
      * @param a
@@ -441,10 +437,11 @@ public class LetterComperator {
     public int[] getOffset() {
         return offset;
     }
-    public void setOffset(int[] offset)
-    {
-        this.offset=offset;
+
+    public void setOffset(int[] offset) {
+        this.offset = offset;
     }
+
     public JAntiCaptcha getOwner() {
         return owner;
     }
@@ -867,8 +864,8 @@ public class LetterComperator {
             localWidthPercent = (double) tmpIntersectionWidth / (double) b.getWidth();
             double lhp = 1.0 - getLocalHeightPercent();
             double lwp = 1.0 - localWidthPercent;
-            tmpHeightFaktor = lhp*lhp;
-            tmpWidthFaktor = lwp*lwp;
+            tmpHeightFaktor = lhp * lhp;
+            tmpWidthFaktor = lwp * lwp;
             tmpHeightAFaktor = 1.0 - (double) tmpIntersectionHeight / (double) a.getHeight();
             tmpWidthAFaktor = 1.0 - (double) tmpIntersectionWidth / (double) a.getWidth();
             // logger.info(tmpIntersectionWidth+ "/"+a.getWidth()+" =
@@ -947,8 +944,8 @@ public class LetterComperator {
             localWidthPercent = (double) tmpIntersectionWidth / (double) b.getWidth();
             double lhp = 1.0 - getLocalHeightPercent();
             double lwp = 1.0 - localWidthPercent;
-            tmpHeightFaktor = lhp*lhp;
-            tmpWidthFaktor = lwp*lwp;
+            tmpHeightFaktor = lhp * lhp;
+            tmpWidthFaktor = lwp * lwp;
 
             // tmpHeightAFaktor = Math.pow(1.0 - (double) tmpIntersectionHeight
             // / (double) a.getHeight(), 2);

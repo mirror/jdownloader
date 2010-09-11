@@ -91,7 +91,7 @@ public class BasicWindow extends JFrame {
      * @param height
      * @return Default GridBagConstraints
      */
-    public GridBagConstraints getGBC(int x, int y, int width, int height) {
+    protected GridBagConstraints getGBC(int x, int y, int width, int height) {
 
         GridBagConstraints gbc = Utilities.getGBC(x, y, width, height);
         gbc.anchor = GridBagConstraints.NORTHWEST;

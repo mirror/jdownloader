@@ -1318,7 +1318,7 @@ public class Rapidshare extends PluginForHost {
                 /* here we can add it every time */
                 MenuAction happyHourAction = menuActionMap.get(32767);
                 if (happyHourAction == null) {
-                    happyHourAction = new MenuAction(JDL.L("plugins.hoster.rapidshare.com.happyhour", "Only use Premium while Happy Hour?"), 32767);
+                    happyHourAction = new MenuAction("rsHappyHour", 32767);
                     happyHourAction.setType(Types.TOGGLE);
                     happyHourAction.setActionListener(this);
                     happyHourAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ONLY_HAPPYHOUR, false));
