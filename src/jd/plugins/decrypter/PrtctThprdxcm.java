@@ -22,31 +22,27 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Protect.Tehparadox.com" }, urls = { "http://[\\w\\.]*?protect\\.tehparadox\\.com/[\\w]+\\!" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.tehparadox.com" }, urls = { "http://[\\w\\.]*?protect\\.tehparadox\\.com/[\\w]+\\!" }, flags = { 0 })
 public class PrtctThprdxcm extends PluginForDecrypt {
 
     public PrtctThprdxcm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.postPage("http://protect.tehparadox.com/getdata.php", "id=" + parameter.substring(parameter.lastIndexOf("/") + 1, parameter.length() - 1));
-        if (br.containsHTML("requested cannot be found")) return decryptedLinks;
+        if (br.containsHTML("requested cannot be found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String downloadlink = br.getRegex("<iframe name=\"ifram\" src=\"(.*?)\"").getMatch(0);
         if (downloadlink == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadlink)));
-
         return decryptedLinks;
     }
-
-    // @Override
-
 }

@@ -392,3 +392,10 @@ jd/plugins/hoster/Moosharenet.class
 jd/captcha/methods/mshr
 jd/plugins/hoster/QshareCom.class
 jd/plugins/hoster/RapidSharkPl.class
+jd/plugins/hoster/AirSpeedFilesCom.class
+jd/plugins/hoster/TeraDepotCom.class
+jd/plugins/hoster/TwoBackupNet.class
+jd/plugins/hoster/XStreamTo.class
+jd/plugins/hoster/BigFileIn.class
+jd/plugins/hoster/FileRackCom.class
+jd/captcha/methods/flrck
