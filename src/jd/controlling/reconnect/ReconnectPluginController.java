@@ -285,10 +285,10 @@ public class ReconnectPluginController implements ControlListener {
             if (!allowed && !rcOK && failCount == 0 && !alreadyTriedAutofind) {
                 // try to autoconfiger upnp router
 
-                this.autoFind();
+                // this.autoFind();
             } else if (allowed && failCount > 0 && !alreadyTriedAutofind) {
                 // reconnect failed
-                this.autoFind();
+                // this.autoFind();
             }
 
             break;
@@ -296,11 +296,11 @@ public class ReconnectPluginController implements ControlListener {
         case ControlEvent.CONTROL_AFTER_RECONNECT:
             if (failCount > 0 && !alreadyTriedAutofind) {
                 // last reconnect failed.
-                this.autoFind();
+                // this.autoFind();
             } else if (failCount > 0 && allowed) {
                 // case not allowed, but tried manually and failed
 
-                this.autoFind();
+                // this.autoFind();
             }
             break;
 
@@ -432,9 +432,9 @@ public class ReconnectPluginController implements ControlListener {
         Thread.sleep(waittime * 1000);
 
         IP afterIP = this.getExternalIP();
-        long endTime = System.currentTimeMillis() + waitForIp * 1000;
+        final long endTime = System.currentTimeMillis() + waitForIp * 1000;
         ReconnectPluginController.LOG.info("Wait " + waitForIp + " sec for new ip");
-        while (System.currentTimeMillis() <= endTime && (!preIp.changed(afterIP))) {
+        while (System.currentTimeMillis() <= endTime && !preIp.changed(afterIP)) {
             Thread.sleep(checkInterval * 1000);
             afterIP = this.getExternalIP();
             ReconnectPluginController.LOG.finer("IP before: " + preIp + " after: " + afterIP);
@@ -490,7 +490,7 @@ public class ReconnectPluginController implements ControlListener {
             // use own ipcheck if possible
             if (this.getActivePlugin().isIPCheckEnabled()) {
                 ret = ReconnectPluginController.getInstance().getActivePlugin().getExternalIP();
-                if (ret.isValid()) return ret;
+                if (ret.isValid()) { return ret; }
             }
             ret = IPCheck.getIPAddress();
         }

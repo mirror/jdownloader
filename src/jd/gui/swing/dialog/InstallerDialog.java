@@ -24,12 +24,12 @@ import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.components.BrowseFile;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 
@@ -77,11 +77,11 @@ public class InstallerDialog extends AbstractDialog<Object> {
         if (dlFolder != null) {
             this.dlFolder = dlFolder;
         } else {
-            if (OSDetector.isMac()) {
+            if (CrossSystem.isMac()) {
                 this.dlFolder = new File(System.getProperty("user.home") + "/Downloads");
-            } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
+            } else if (CrossSystem.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
                 this.dlFolder = new File(System.getProperty("user.home") + "/Downloads");
-            } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
+            } else if (CrossSystem.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
                 this.dlFolder = new File(System.getProperty("user.home") + "/Download");
             } else {
                 this.dlFolder = JDUtilities.getResourceFile("downloads");
@@ -129,7 +129,7 @@ public class InstallerDialog extends AbstractDialog<Object> {
         lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
         lbl.setHorizontalAlignment(SwingConstants.CENTER);
 
-        if (OSDetector.getOSID() == OSDetector.OS_WINDOWS_VISTA || OSDetector.getOSID() == OSDetector.OS_WINDOWS_7) {
+        if (CrossSystem.getID() == CrossSystem.OS_WINDOWS_VISTA || CrossSystem.getID() == CrossSystem.OS_WINDOWS_7) {
             final String dir = JDUtilities.getResourceFile("downloads").getParent().substring(3).toLowerCase();
 
             if (!JDUtilities.getResourceFile("uninstall.exe").exists() && (dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {

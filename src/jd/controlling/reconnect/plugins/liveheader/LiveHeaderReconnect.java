@@ -26,15 +26,18 @@ import javax.swing.event.DocumentEvent;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.controlling.reconnect.GetIpException;
 import jd.controlling.reconnect.IP;
 import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.liveheader.recorder.Gui;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.http.Browser;
@@ -53,14 +56,12 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.InputDialog;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class LiveHeaderReconnect extends RouterPlugin implements ActionListener {
+public class LiveHeaderReconnect extends RouterPlugin implements ActionListener, ControlListener {
 
     private static final String PASSWORD   = "PASSWORD";
     private static final String ROUTERIP   = "ROUTERIP";
@@ -110,6 +111,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     public LiveHeaderReconnect() {
         super();
 
+        // only listen to system to autosend script
+        JDController.getInstance().addControlListener(this);
+
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -119,13 +123,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
                 public void run() {
                     try {
                         RouterSender.getInstance().run();
-                        Dialog.getInstance().showMessageDialog("Thank you!\r\nYour reconnect script now has been sent to our server.");
-                    } catch (final JsonGenerationException e1) {
-                        e1.printStackTrace();
-                    } catch (final JsonMappingException e1) {
-                        e1.printStackTrace();
-                    } catch (final IOException e1) {
-                        e1.printStackTrace();
+
+                    } catch (final Exception e) {
+                        e.printStackTrace();
                     }
                 }
             }.start();
@@ -136,6 +136,30 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
             this.findIP();
         } else if (e.getSource() == this.btnRecord) {
             this.routerRecord();
+        }
+    }
+
+    public void controlEvent(final ControlEvent event) {
+        if (event.getEventID() == ControlEvent.CONTROL_AFTER_RECONNECT && ReconnectPluginController.getInstance().getActivePlugin() == this && !this.getStorage().get("SENT", false)) {
+            final boolean rcOK = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RECONNECT_OKAY, true);
+            final int failCount = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0);
+            if (failCount == 0 && rcOK) {
+                final int count = this.getStorage().get("SUCCESSCOUNT", 0) + 1;
+                this.getStorage().put("SUCCESSCOUNT", count);
+                if (count > 2) {
+                    try {
+                        RouterSender.getInstance().run();
+
+                        this.getStorage().put("SENT", true);
+
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                this.getStorage().put("SUCCESSCOUNT", 0);
+            }
+
         }
     }
 
@@ -351,7 +375,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener 
     }
 
     @Override
-    public IP getExternalIP()  {
+    public IP getExternalIP() {
         return IP_NA.IPCHECK_UNSUPPORTED;
     }
 

@@ -35,7 +35,6 @@ import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.http.Browser;
 import jd.nutils.JDHash;
-import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.nutils.zip.UnZip;
 import jd.parser.Regex;
@@ -51,28 +50,35 @@ import org.appwork.utils.event.Eventsender;
  */
 public class WebUpdater implements Serializable {
 
-    public static final int DO_UPDATE_FAILED = 40;
-    public static final int DO_UPDATE_FILE = 42;
+    public static final int                   DO_UPDATE_FAILED      = 40;
+    public static final int                   DO_UPDATE_FILE        = 42;
 
-    public static final int DO_UPDATE_SUCCESS = 43;
+    public static final int                   DO_UPDATE_SUCCESS     = 43;
 
-    private static HashMap<String, File> fileMap;
-    private static final int NEW_FILE = 0;
-    public static HashMap<String, FileUpdate> PLUGIN_LIST = null;
-    private static final long serialVersionUID = 1946622313175234371L;
-    private static final int UPDATE_FILE = 1;
-    public static final String[] UPDATE_MIRROR = new String[] { "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", "http://update3.jdownloader.org/", };
-    private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
-    public static final String PARAM_BRANCH = "BRANCH";
-    public static final String BRANCHINUSE = "BRANCHINUSE";
+    private static HashMap<String, File>      fileMap;
+    private static final int                  NEW_FILE              = 0;
+    public static HashMap<String, FileUpdate> PLUGIN_LIST           = null;
+    private static final long                 serialVersionUID      = 1946622313175234371L;
+    private static final int                  UPDATE_FILE           = 1;
+    public static final String[]              UPDATE_MIRROR         = new String[] { "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", "http://update3.jdownloader.org/", };
+    private static final String               UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
+    public static final String                PARAM_BRANCH          = "BRANCH";
+    public static final String                BRANCHINUSE           = "BRANCHINUSE";
+
+    public static String formatPathReadable(String localPath) {
+        localPath = localPath.replace(".class", "-Plugin");
+        localPath = localPath.replace(".jar", "-Module");
+        localPath = localPath.replace("plugins/decrypter/.*", "Decrypter-Plugin");
+        return localPath;
+    }
 
     public static HashMap<String, File> getFileMap() {
-        return fileMap;
+        return WebUpdater.fileMap;
     }
 
     public static HashMap<String, FileUpdate> getPluginList() {
-        if (PLUGIN_LIST == null && JDUtilities.getResourceFile("tmp/hashlist.lst").exists()) {
-            PLUGIN_LIST = new HashMap<String, FileUpdate>();
+        if (WebUpdater.PLUGIN_LIST == null && JDUtilities.getResourceFile("tmp/hashlist.lst").exists()) {
+            WebUpdater.PLUGIN_LIST = new HashMap<String, FileUpdate>();
             final WebUpdater updater = new WebUpdater();
 
             // if
@@ -81,58 +87,76 @@ public class WebUpdater implements Serializable {
             updater.ignorePlugins(false);
             // }
 
-            updater.parseFileList(JDUtilities.getResourceFile("tmp/hashlist.lst"), null, PLUGIN_LIST);
+            updater.parseFileList(JDUtilities.getResourceFile("tmp/hashlist.lst"), null, WebUpdater.PLUGIN_LIST);
         }
 
-        return PLUGIN_LIST;
+        return WebUpdater.PLUGIN_LIST;
+    }
+
+    public static boolean isBetaBranch(final String string) {
+        return string.trim().startsWith("beta_");
     }
 
     public static void randomizeMirrors() {
         final ArrayList<String> mirrors = new ArrayList<String>();
-        for (String m : UPDATE_MIRROR) {
+        for (final String m : WebUpdater.UPDATE_MIRROR) {
             mirrors.add(m);
         }
-        final int length = UPDATE_MIRROR.length - 1;
+        final int length = WebUpdater.UPDATE_MIRROR.length - 1;
         for (int i = 0; i <= length; i++) {
-            UPDATE_MIRROR[i] = mirrors.remove((int) (Math.random() * (length - i)));
+            WebUpdater.UPDATE_MIRROR[i] = mirrors.remove((int) (Math.random() * (length - i)));
         }
     }
 
-    private Browser br;
+    private final Browser                                        br;
+    private String[]                                             branches;
 
-    private String[] branches;
     private transient Eventsender<MessageListener, MessageEvent> broadcaster;
-    private Integer errors = 0;
 
-    private boolean ignorePlugins = true;
+    private Integer                                              errors        = 0;
 
-    private StringBuilder logger;
+    private boolean                                              ignorePlugins = true;
 
-    private boolean OSFilter = true;
+    private StringBuilder                                        logger;
 
-    private JProgressBar progressload = null;
+    private boolean                                              OSFilter      = true;
+    private JProgressBar                                         progressload  = null;
+    public byte[]                                                sum;
+    private File                                                 workingdir;
 
-    public byte[] sum;
-    private File workingdir;
-    private String betaBranch;
+    private String                                               betaBranch;
+
     /**
      * if this field !=null, the updater uses this branch and ignores any other
      * branch settings
      */
-    private String branch;
+    private String                                               branch;
 
     /**
      * @param path
      *            (Dir Pfad zum Updateserver)
      */
     public WebUpdater() {
-        randomizeMirrors();
-        logger = new StringBuilder();
+        WebUpdater.randomizeMirrors();
+        this.logger = new StringBuilder();
         this.br = new Browser();
-        br.setReadTimeout(20 * 1000);
-        br.setConnectTimeout(10 * 1000);
-        errors = 0;
-        initBroadcaster();
+        this.br.setReadTimeout(20 * 1000);
+        this.br.setConnectTimeout(10 * 1000);
+        this.errors = 0;
+        this.initBroadcaster();
+    }
+
+    public void cleanUp() {
+    }
+
+    private void errorWait() {
+        try {
+            this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Server Busy. Wait 10 Seconds"));
+            Thread.sleep(10000);
+        } catch (final InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
@@ -140,21 +164,21 @@ public class WebUpdater implements Serializable {
      * 
      * @param files
      */
-    public void filterAvailableUpdates(ArrayList<FileUpdate> files) {
+    public void filterAvailableUpdates(final ArrayList<FileUpdate> files) {
         // log(files.toString());
 
-        for (Iterator<FileUpdate> it = files.iterator(); it.hasNext();) {
-            FileUpdate file = it.next();
+        for (final Iterator<FileUpdate> it = files.iterator(); it.hasNext();) {
+            final FileUpdate file = it.next();
             if (new File(file.getLocalFile(), ".noupdate").exists()) {
                 System.out.println("User excluded. " + file.getLocalPath());
                 it.remove();
             } else {
                 if (!file.exists()) {
-                    broadcaster.fireEvent(new MessageEvent(this, NEW_FILE, "New: " + WebUpdater.formatPathReadable(file.getLocalPath())));
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.NEW_FILE, "New: " + WebUpdater.formatPathReadable(file.getLocalPath())));
                     continue;
                 } else if (!file.equals()) {
 
-                    broadcaster.fireEvent(new MessageEvent(this, UPDATE_FILE, "Update: " + WebUpdater.formatPathReadable(file.getLocalPath())));
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.UPDATE_FILE, "Update: " + WebUpdater.formatPathReadable(file.getLocalPath())));
 
                     continue;
                 } else {
@@ -174,20 +198,24 @@ public class WebUpdater implements Serializable {
      */
     public ArrayList<FileUpdate> getAvailableFiles() throws Exception {
 
-        HashMap<String, FileUpdate> plugins = new HashMap<String, FileUpdate>();
-        ArrayList<FileUpdate> ret = new ArrayList<FileUpdate>();
+        final HashMap<String, FileUpdate> plugins = new HashMap<String, FileUpdate>();
+        final ArrayList<FileUpdate> ret = new ArrayList<FileUpdate>();
 
-        updateAvailableServers();
-        loadUpdateList();
+        this.updateAvailableServers();
+        this.loadUpdateList();
 
-        parseFileList(fileMap.get("hashlist.lst"), ret, plugins);
+        this.parseFileList(WebUpdater.fileMap.get("hashlist.lst"), ret, plugins);
 
         return ret;
     }
 
     private ArrayList<Server> getAvailableServers() {
-        if (Main.clone) return Main.clonePrefix;
+        if (Main.clone) { return Main.clonePrefix; }
         return SubConfiguration.getConfig("WEBUPDATE").getGenericProperty("SERVERLIST", new ArrayList<Server>());
+    }
+
+    public String getBetaBranch() {
+        return this.betaBranch;
     }
 
     /**
@@ -197,17 +225,19 @@ public class WebUpdater implements Serializable {
      */
     public String getBranch() {
         try {
-            if (branch != null) return branch;
-            String latestBranch = getLatestBranch();
+            if (this.branch != null) { return this.branch; }
+            final String latestBranch = this.getLatestBranch();
 
             String ret = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
-            if (ret == null) ret = latestBranch;
+            if (ret == null) {
+                ret = latestBranch;
+            }
 
             SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, ret);
             SubConfiguration.getConfig("WEBUPDATE").save();
             return ret;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return null;
         }
     }
@@ -218,70 +248,73 @@ public class WebUpdater implements Serializable {
      * @return
      */
     private String[] getBranches() {
-        ArrayList<String> mirrors = new ArrayList<String>();
-        for (String m : UPDATE_MIRROR)
+        final ArrayList<String> mirrors = new ArrayList<String>();
+        for (final String m : WebUpdater.UPDATE_MIRROR) {
             mirrors.add(m);
+        }
 
-        for (int i = 0; i < UPDATE_MIRROR.length; i++) {
-            String serv = mirrors.remove((int) (Math.random() * (UPDATE_MIRROR.length - 1 - i)));
+        for (int i = 0; i < WebUpdater.UPDATE_MIRROR.length; i++) {
+            final String serv = mirrors.remove((int) (Math.random() * (WebUpdater.UPDATE_MIRROR.length - 1 - i)));
             try {
 
-                br.getPage(serv + "branches.lst");
-                if (br.getRequest().getHttpConnection().isOK()) {
-                    String[] bs = Regex.getLines(br.toString());
+                this.br.getPage(serv + "branches.lst");
+                if (this.br.getRequest().getHttpConnection().isOK()) {
+                    final String[] bs = org.appwork.utils.Regex.getLines(this.br.toString());
 
-                    ArrayList<String> ret = new ArrayList<String>();
-                    branches = new String[bs.length];
+                    final ArrayList<String> ret = new ArrayList<String>();
+                    this.branches = new String[bs.length];
                     for (int ii = 0; ii < bs.length; ii++) {
 
-                        if (isBetaBranch(bs[ii]) && betaBranch == null) {
-                            betaBranch = bs[ii];
-                        } else if (!isBetaBranch(bs[ii])) {
+                        if (WebUpdater.isBetaBranch(bs[ii]) && this.betaBranch == null) {
+                            this.betaBranch = bs[ii];
+                        } else if (!WebUpdater.isBetaBranch(bs[ii])) {
                             ret.add(bs[ii]);
                         }
 
                     }
-                    branches = ret.toArray(new String[] {});
-                    System.out.println("Found branches on " + serv + ":\r\n" + br);
+                    this.branches = ret.toArray(new String[] {});
+                    System.out.println("Found branches on " + serv + ":\r\n" + this.br);
 
-                    String savedBranch = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
+                    final String savedBranch = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
-                    if (branches.length > 0 && savedBranch != null && isBetaBranch(savedBranch)) {
+                    if (this.branches.length > 0 && savedBranch != null && WebUpdater.isBetaBranch(savedBranch)) {
 
-                        if (betaBranch == null || !savedBranch.equals(betaBranch)) {
-                            SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branches[0]);
+                        if (this.betaBranch == null || !savedBranch.equals(this.betaBranch)) {
+                            SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, this.branches[0]);
                             SubConfiguration.getConfig("WEBUPDATE").save();
                             JDLogger.getLogger().severe("RESETTED BRANCH; SINCE BETA branch " + savedBranch + " is not available any more");
                         }
 
                     }
 
-                    return branches;
+                    return this.branches;
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 e.printStackTrace();
-                errorWait();
+                this.errorWait();
             }
             System.err.println("No branches found on " + serv);
         }
-        return branches = new String[] {};
-    }
-
-    public static boolean isBetaBranch(String string) {
-        return string.trim().startsWith("beta_");
-    }
-
-    public String getBetaBranch() {
-        return betaBranch;
+        return this.branches = new String[] {};
     }
 
     public Eventsender<MessageListener, MessageEvent> getBroadcaster() {
-        return broadcaster;
+        return this.broadcaster;
+    }
+
+    /**
+     * Return the internal browser object
+     * 
+     * @return
+     */
+    public Browser getBrowser() {
+        // TODO Auto-generated method stub
+        return this.br;
     }
 
     public int getErrors() {
-        synchronized (errors) {
-            return errors;
+        synchronized (this.errors) {
+            return this.errors;
         }
     }
 
@@ -291,21 +324,21 @@ public class WebUpdater implements Serializable {
      * @return
      */
     private synchronized String getLatestBranch() {
-        if (branches == null) {
+        if (this.branches == null) {
             this.getBranches();
         }
-        if (branches == null || branches.length == 0) return null;
+        if (this.branches == null || this.branches.length == 0) { return null; }
 
-        return branches[0];
+        return this.branches[0];
     }
 
-    public String getListPath(int trycount) {
-        if (getBranch() == null) return null;
-        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_server.list";
+    public String getListPath(final int trycount) {
+        if (this.getBranch() == null) { return null; }
+        return WebUpdater.UPDATE_MIRROR[trycount % WebUpdater.UPDATE_MIRROR.length] + this.getBranch() + "_server.list";
     }
 
     public StringBuilder getLogger() {
-        return logger;
+        return this.logger;
     }
 
     public boolean getOSFilter() {
@@ -313,16 +346,16 @@ public class WebUpdater implements Serializable {
     }
 
     public File getWorkingdir() {
-        return workingdir;
+        return this.workingdir;
     }
 
-    private String getZipMD5(int trycount) {
+    private String getZipMD5(final int trycount) {
 
-        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_update.md5";
+        return WebUpdater.UPDATE_MIRROR[trycount % WebUpdater.UPDATE_MIRROR.length] + this.getBranch() + "_update.md5";
     }
 
-    private String getZipUrl(int trycount) {
-        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_update.zip";
+    private String getZipUrl(final int trycount) {
+        return WebUpdater.UPDATE_MIRROR[trycount % WebUpdater.UPDATE_MIRROR.length] + this.getBranch() + "_update.zip";
     }
 
     /**
@@ -332,7 +365,7 @@ public class WebUpdater implements Serializable {
      * 
      * @param b
      */
-    public void ignorePlugins(boolean b) {
+    public void ignorePlugins(final boolean b) {
         this.ignorePlugins = b;
     }
 
@@ -340,7 +373,7 @@ public class WebUpdater implements Serializable {
         this.broadcaster = new Eventsender<MessageListener, MessageEvent>() {
 
             @Override
-            protected void fireEvent(MessageListener listener, MessageEvent event) {
+            protected void fireEvent(final MessageListener listener, final MessageEvent event) {
                 listener.onMessage(event);
 
             }
@@ -349,45 +382,49 @@ public class WebUpdater implements Serializable {
     }
 
     public boolean isIgnorePlugins() {
-        return ignorePlugins;
+        return this.ignorePlugins;
     }
 
     private void loadUpdateList() throws Exception {
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
-                String path = getZipMD5(trycount);
-                if (path == null) continue;
-                String serverHash = br.getPage(path + "?t=" + System.currentTimeMillis()).trim();
-                String localHash = JDHash.getMD5(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH));
-                if (!serverHash.equalsIgnoreCase(localHash)) {
-                    path = getZipUrl(trycount);
-                    if (path == null) continue;
-                    Browser.download(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), path + "?t=" + System.currentTimeMillis());
+                String path = this.getZipMD5(trycount);
+                if (path == null) {
+                    continue;
                 }
-                UnZip u = new UnZip(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), JDUtilities.getResourceFile("tmp/"));
+                final String serverHash = this.br.getPage(path + "?t=" + System.currentTimeMillis()).trim();
+                final String localHash = JDHash.getMD5(JDUtilities.getResourceFile(WebUpdater.UPDATE_ZIP_LOCAL_PATH));
+                if (!serverHash.equalsIgnoreCase(localHash)) {
+                    path = this.getZipUrl(trycount);
+                    if (path == null) {
+                        continue;
+                    }
+                    Browser.download(JDUtilities.getResourceFile(WebUpdater.UPDATE_ZIP_LOCAL_PATH), path + "?t=" + System.currentTimeMillis());
+                }
+                final UnZip u = new UnZip(JDUtilities.getResourceFile(WebUpdater.UPDATE_ZIP_LOCAL_PATH), JDUtilities.getResourceFile("tmp/"));
 
-                File[] efiles = u.extract();
-                fileMap = new HashMap<String, File>();
-                for (File f : efiles) {
-                    fileMap.put(f.getName().toLowerCase(), f);
+                final File[] efiles = u.extract();
+                WebUpdater.fileMap = new HashMap<String, File>();
+                for (final File f : efiles) {
+                    WebUpdater.fileMap.put(f.getName().toLowerCase(), f);
                 }
                 return;
-            } catch (Exception e) {
+            } catch (final Exception e) {
             }
             try {
                 Thread.sleep(250);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 continue;
             }
         }
         throw new Exception("could not load Updatelist");
     }
 
-    private void parseFileList(File file, ArrayList<FileUpdate> ret, HashMap<String, FileUpdate> plugins) {
+    private void parseFileList(final File file, final ArrayList<FileUpdate> ret, final HashMap<String, FileUpdate> plugins) {
         String source;
         source = JDIO.readFileToString(file);
 
-        String pattern = "[\r\n\\;]*([^=]+)\\=(.*?)\\;";
+        final String pattern = "[\r\n\\;]*([^=]+)\\=(.*?)\\;";
 
         if (source == null) {
             System.out.println("filelist nicht verfüpgbar");
@@ -395,18 +432,18 @@ public class WebUpdater implements Serializable {
         }
         FileUpdate entry;
 
-        String[] os = new String[] { "windows", "mac", "linux" };
-        String[][] matches = new Regex(source, pattern).getMatches();
-        ArrayList<Byte> sum = new ArrayList<Byte>();
-        for (String[] m : matches) {
+        final String[] os = new String[] { "windows", "mac", "linux" };
+        final String[][] matches = new Regex(source, pattern).getMatches();
+        final ArrayList<Byte> sum = new ArrayList<Byte>();
+        for (final String[] m : matches) {
 
             if (this.workingdir != null) {
-                entry = new FileUpdate(m[0], m[1], workingdir);
+                entry = new FileUpdate(m[0], m[1], this.workingdir);
             } else {
                 entry = new FileUpdate(m[0], m[1]);
             }
 
-            entry.getBroadcaster().addAllListener(broadcaster.getListener());
+            entry.getBroadcaster().addAllListener(this.broadcaster.getListener());
 
             sum.add((byte) entry.getRemoteHash().charAt(0));
 
@@ -417,12 +454,14 @@ public class WebUpdater implements Serializable {
             if (!entry.getLocalPath().endsWith(".class") || !this.ignorePlugins) {
                 boolean osFound = false;
                 boolean correctOS = false;
-                for (String element : os) {
+                for (final String element : os) {
                     String url = entry.getRawUrl();
-                    if (url == null) url = entry.getRelURL();
+                    if (url == null) {
+                        url = entry.getRelURL();
+                    }
                     if (url.toLowerCase().indexOf(element) >= 0) {
                         osFound = true;
-                        if (OSDetector.getOSString().toLowerCase().indexOf(element) >= 0) {
+                        if (System.getProperty("os.name").toLowerCase().indexOf(element) >= 0) {
                             correctOS = true;
                         }
                     }
@@ -430,15 +469,21 @@ public class WebUpdater implements Serializable {
                 }
                 if (this.OSFilter == true) {
                     if (!osFound || osFound && correctOS) {
-                        if (ret != null) ret.add(entry);
+                        if (ret != null) {
+                            ret.add(entry);
+                        }
                     } else {
                         String url = entry.getRawUrl();
-                        if (url == null) url = entry.getRelURL();
+                        if (url == null) {
+                            url = entry.getRelURL();
+                        }
                         System.out.println("OS Filter: " + url);
 
                     }
                 } else {
-                    if (ret != null) ret.add(entry);
+                    if (ret != null) {
+                        ret.add(entry);
+                    }
                 }
             }
 
@@ -454,28 +499,39 @@ public class WebUpdater implements Serializable {
     }
 
     public void resetErrors() {
-        synchronized (errors) {
-            errors = 0;
+        synchronized (this.errors) {
+            this.errors = 0;
         }
     }
 
-    public void setDownloadProgress(JProgressBar progresslist) {
-        progressload = progresslist;
+    /**
+     * sets the branch to use. This overwrites the webupdater settings. This
+     * means that the updater uses this branch and ignores anything else
+     * 
+     * @param branchtoUse
+     */
+    public void setBranch(final String branchtoUse) {
+        this.branch = branchtoUse;
+
     }
 
-    public void setIgnorePlugins(boolean ignorePlugins) {
+    public void setDownloadProgress(final JProgressBar progresslist) {
+        this.progressload = progresslist;
+    }
+
+    public void setIgnorePlugins(final boolean ignorePlugins) {
         this.ignorePlugins = ignorePlugins;
     }
 
-    public void setLogger(StringBuilder log) {
-        logger = log;
+    public void setLogger(final StringBuilder log) {
+        this.logger = log;
     }
 
-    public void setOSFilter(boolean filter) {
+    public void setOSFilter(final boolean filter) {
         this.OSFilter = filter;
     }
 
-    public void setWorkingdir(File workingdir) {
+    public void setWorkingdir(final File workingdir) {
         this.workingdir = workingdir;
     }
 
@@ -489,51 +545,55 @@ public class WebUpdater implements Serializable {
         boolean fnf = true;
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
-                broadcaster.fireEvent(new MessageEvent(this, 0, "Update Downloadmirrors"));
+                this.broadcaster.fireEvent(new MessageEvent(this, 0, "Update Downloadmirrors"));
 
-                String path = getListPath(trycount);
-                if (path == null) continue;
-                br.getPage(path + "?t=" + System.currentTimeMillis());
-                if (br.getRequest().getHttpConnection().getResponseCode() == 404l) {
+                final String path = this.getListPath(trycount);
+                if (path == null) {
+                    continue;
+                }
+                this.br.getPage(path + "?t=" + System.currentTimeMillis());
+                if (this.br.getRequest().getHttpConnection().getResponseCode() == 404l) {
                     /*
                      * if branchname is not available on any server then its no
                      * longer valid
                      */
                     fnf = false;
                 }
-                if (br.getRequest().getHttpConnection().getResponseCode() != 200l) {
-                    errorWait();
+                if (this.br.getRequest().getHttpConnection().getResponseCode() != 200l) {
+                    this.errorWait();
                     continue;
                 }
                 int total = 0;
-                ArrayList<Server> servers = new ArrayList<Server>();
+                final ArrayList<Server> servers = new ArrayList<Server>();
                 Server serv;
                 boolean auto = false;
-                for (String[] match : br.getRegex("(\\-?\\d+)\\:([^\r^\n]*)").getMatches()) {
+                for (final String[] match : this.br.getRegex("(\\-?\\d+)\\:([^\r^\n]*)").getMatches()) {
                     servers.add(serv = new Server(Integer.parseInt(match[0]), match[1].trim()));
-                    if (serv.getPercent() < 0) auto = true;
+                    if (serv.getPercent() < 0) {
+                        auto = true;
+                    }
                     total += serv.getPercent();
                 }
-                for (Server s : servers) {
+                for (final Server s : servers) {
                     if (auto) {
                         s.setPercent(-1);
                     } else {
-                        s.setPercent((s.getPercent() * 100) / total);
+                        s.setPercent(s.getPercent() * 100 / total);
                     }
-                    broadcaster.fireEvent(new MessageEvent(this, 0, "Updateserver: " + s));
+                    this.broadcaster.fireEvent(new MessageEvent(this, 0, "Updateserver: " + s));
 
                 }
                 if (servers.size() > 0) {
                     SubConfiguration.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
                 }
-                return getAvailableServers();
-            } catch (Exception e) {
+                return this.getAvailableServers();
+            } catch (final Exception e) {
                 e.printStackTrace();
-                errorWait();
+                this.errorWait();
             }
             try {
                 Thread.sleep(250);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 continue;
             }
         }
@@ -541,26 +601,16 @@ public class WebUpdater implements Serializable {
             System.err.println("Branch " + SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) + " is not available any more. Reset to default");
             SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, null);
             SubConfiguration.getConfig("WEBUPDATE").save();
-            return updateAvailableServers();
+            return this.updateAvailableServers();
         }
-        return getAvailableServers();
+        return this.getAvailableServers();
     }
 
-    private void errorWait() {
-        try {
-            broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Server Busy. Wait 10 Seconds"));
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public void updateFile(final Vector<String> file) throws IOException {
 
-    }
+        final String[] tmp = file.elementAt(0).split("\\?");
 
-    public void updateFile(Vector<String> file) throws IOException {
-
-        String[] tmp = file.elementAt(0).split("\\?");
-
-        broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FILE, String.format("Download %s to %s", WebUpdater.formatPathReadable(tmp[1]), WebUpdater.formatPathReadable(JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()))));
+        this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FILE, String.format("Download %s to %s", WebUpdater.formatPathReadable(tmp[1]), WebUpdater.formatPathReadable(JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()))));
 
         Browser.download(JDUtilities.getResourceFile(tmp[0]), tmp[0]);
 
@@ -574,104 +624,85 @@ public class WebUpdater implements Serializable {
      *            TODO
      * @throws IOException
      */
-    public void updateFiles(ArrayList<FileUpdate> files, ProgressController prg) throws IOException {
+    public void updateFiles(final ArrayList<FileUpdate> files, final ProgressController prg) throws IOException {
 
-        if (progressload != null) {
-            progressload.setMaximum(files.size());
+        if (this.progressload != null) {
+            this.progressload.setMaximum(files.size());
         }
 
         int i = 0;
-        if (prg != null) prg.addToMax(files.size());
-        for (FileUpdate file : files) {
+        if (prg != null) {
+            prg.addToMax(files.size());
+        }
+        for (final FileUpdate file : files) {
             try {
-                broadcaster.fireEvent(new MessageEvent(this, 0, String.format("Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
-                if (updateUpdatefile(file)) {
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, WebUpdater.formatPathReadable(file.toString())));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, "Successfull"));
+                this.broadcaster.fireEvent(new MessageEvent(this, 0, String.format("Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
+                if (this.updateUpdatefile(file)) {
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, WebUpdater.formatPathReadable(file.toString())));
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, "Successfull"));
                 } else {
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Failed"));
-                    if (progressload != null) progressload.setForeground(Color.RED);
-                    if (prg != null) prg.setColor(Color.RED);
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Failed"));
+                    if (this.progressload != null) {
+                        this.progressload.setForeground(Color.RED);
+                    }
+                    if (prg != null) {
+                        prg.setColor(Color.RED);
+                    }
                 }
 
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 e.printStackTrace();
-                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, e.getLocalizedMessage()));
-                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
-                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Failed"));
-                if (progressload != null) progressload.setForeground(Color.RED);
-                if (prg != null) prg.setColor(Color.RED);
+                this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, e.getLocalizedMessage()));
+                this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
+                this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Failed"));
+                if (this.progressload != null) {
+                    this.progressload.setForeground(Color.RED);
+                }
+                if (prg != null) {
+                    prg.setColor(Color.RED);
+                }
             }
 
             i++;
 
-            if (progressload != null) {
-                progressload.setValue(i);
+            if (this.progressload != null) {
+                this.progressload.setValue(i);
             }
 
-            if (prg != null) prg.increase(1);
+            if (prg != null) {
+                prg.increase(1);
+            }
         }
-        if (progressload != null) {
-            progressload.setValue(100);
+        if (this.progressload != null) {
+            this.progressload.setValue(100);
         }
     }
 
-    public static String formatPathReadable(String localPath) {
-        localPath = localPath.replace(".class", "-Plugin");
-        localPath = localPath.replace(".jar", "-Module");
-        localPath = localPath.replace("plugins/decrypter/.*", "Decrypter-Plugin");
-        return localPath;
-    }
-
-    public boolean updateUpdatefile(FileUpdate file) {
-        if (file.update(getAvailableServers())) {
+    public boolean updateUpdatefile(final FileUpdate file) {
+        if (file.update(this.getAvailableServers())) {
             if (file.getLocalTmpFile().getName().endsWith(".extract")) {
-                UnZip u = new UnZip(file.getLocalTmpFile(), file.getLocalTmpFile().getParentFile());
+                final UnZip u = new UnZip(file.getLocalTmpFile(), file.getLocalTmpFile().getParentFile());
                 u.setOverwrite(false);
                 File[] efiles;
                 try {
                     efiles = u.extract();
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, "Extracted " + file.getLocalTmpFile().getName() + ": " + efiles.length + " files"));
-                } catch (Exception e) {
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, e.getLocalizedMessage()));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Extracting " + file.getLocalTmpFile().getAbsolutePath() + " failed"));
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, "Extracted " + file.getLocalTmpFile().getName() + ": " + efiles.length + " files"));
+                } catch (final Exception e) {
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, e.getLocalizedMessage()));
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Extracting " + file.getLocalTmpFile().getAbsolutePath() + " failed"));
                     e.printStackTrace();
                     file.getLocalTmpFile().delete();
                     file.getLocalTmpFile().deleteOnExit();
-                    errors++;
+                    this.errors++;
                     return false;
                 }
             }
 
             return true;
         }
-        errors++;
+        this.errors++;
         return false;
-    }
-
-    public void cleanUp() {
-    }
-
-    /**
-     * sets the branch to use. This overwrites the webupdater settings. This
-     * means that the updater uses this branch and ignores anything else
-     * 
-     * @param branchtoUse
-     */
-    public void setBranch(String branchtoUse) {
-        this.branch = branchtoUse;
-
-    }
-
-    /**
-     * Return the internal browser object
-     * 
-     * @return
-     */
-    public Browser getBrowser() {
-        // TODO Auto-generated method stub
-        return br;
     }
 
 }

@@ -16,6 +16,9 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 import jd.controlling.FavIconController;
 import jd.controlling.reconnect.ReconnectPluginController;
@@ -23,11 +26,12 @@ import jd.controlling.reconnect.RouterUtils;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Hash;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
+import org.appwork.utils.swing.dialog.ContainerDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 
 public class RouterSender {
     private static final RouterSender INSTANCE           = new RouterSender();
@@ -96,29 +100,80 @@ public class RouterSender {
     private int                     frameTagCount;
 
     private String                  favIconHash;
+    private JTextField              txtName;
+    private JTextField              txtManufactor;
+    private JTextField              txtUser;
+    private JTextField              txtPass;
+    private JTextField              txtIP;
+    private JTextField              txtFirmware;
+    private String                  firmware;
 
     private RouterSender() {
 
     }
 
-    private void collectData() {
-        this.routerName = this.trim(this.getPlugin().getRouterName());
-        this.routerIP = this.trim(this.getPlugin().getRouterIP());
+    private void collectData() throws Exception {
+        try {
+            this.mac = RouterUtils.getMacAddress(this.getPlugin().getRouterIP());
+            this.manufactor = RouterSender.getManufactor(this.mac);
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        this.txtName = new JTextField(this.routerName);
+        this.txtManufactor = new JTextField(this.manufactor);
+        this.txtFirmware = new JTextField();
+        this.txtUser = new JTextField(this.getPlugin().getUser());
+        this.txtPass = new JTextField(this.getPlugin().getPassword());
+        this.txtIP = new JTextField(this.getPlugin().getRouterIP());
+
+        final JPanel p = new JPanel(new MigLayout("ins 5,wrap 2", "[][grow,fill]", "[grow,fill]"));
+        p.add(new JLabel("Please enter your router information as far as possible."), "spanx");
+        p.add(new JLabel("We will not transfer username or password!"), "spanx");
+        p.add(new JLabel("Model Name"));
+        p.add(this.txtName);
+
+        p.add(new JLabel("Manufactor"));
+        p.add(this.txtManufactor);
+        p.add(new JLabel("Firmware"));
+        p.add(this.txtFirmware);
+        // p.add(new JLabel("Firmware"));
+        // p.add(this.txtFirmware);
+
+        p.add(new JLabel("Webinterface IP"));
+        p.add(this.txtIP);
+
+        p.add(new JLabel("Webinterface User"));
+        p.add(this.txtUser);
+        p.add(new JLabel("Webinterface Password"));
+        p.add(this.txtPass);
+        this.txtUser.setText(this.getPlugin().getUser());
+        this.txtPass.setText(this.getPlugin().getPassword());
+        this.txtName.setText(this.getPlugin().getRouterName());
+        this.txtIP.setText(this.getPlugin().getRouterIP());
+
+        final ContainerDialog routerInfo = new ContainerDialog(0, "Enter Router Information", p, null, "Continue", null);
+
+        this.firmware = this.txtFirmware.getText();
+        this.manufactor = this.txtManufactor.getText();
+        this.routerName = this.txtName.getText();
+        this.routerIP = this.txtIP.getText();
+
+        try {
+            this.mac = RouterUtils.getMacAddress(this.routerIP);
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        if (!Dialog.isOK(Dialog.getInstance().showDialog(routerInfo))) { throw new Exception("User canceled"); }
+        final String userName = this.txtUser.getText();
+        final String password = this.txtPass.getText();
+
         this.script = this.trim(this.getPlugin().getScript());
-        final String userName = this.trim(this.getPlugin().getUser());
-        final String password = this.trim(this.getPlugin().getPassword());
         if (userName != null && userName.length() > 2) {
             this.script = Pattern.compile(Pattern.quote(userName), Pattern.CASE_INSENSITIVE).matcher(this.script).replaceAll("%%%user%%%");
         }
         if (password != null && password.length() > 2) {
             this.script = Pattern.compile(Pattern.quote(password), Pattern.CASE_INSENSITIVE).matcher(this.script).replaceAll("%%%pass%%%");
-        }
-
-        try {
-            this.mac = RouterUtils.getMacAddress(this.routerIP);
-            this.manufactor = RouterSender.getManufactor(this.mac);
-        } catch (final Exception e) {
-            e.printStackTrace();
         }
 
         final Browser br = new Browser();
@@ -127,7 +182,7 @@ public class RouterSender {
             final URLConnectionAdapter con = br.getHttpConnection();
             this.responseCode = con.getResponseCode();
             this.responseHeaders = new HashMap<String, String>();
-            for (Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
+            for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
                 for (final String value : next.getValue()) {
                     this.responseHeaders.put(next.getKey().toLowerCase(), value);
                 }
@@ -143,7 +198,7 @@ public class RouterSender {
                 imageFile.deleteOnExit();
                 ImageIO.write(image, "png", imageFile);
                 this.favIconHash = Hash.getMD5(imageFile);
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 e.printStackTrace();
             }
         } catch (final IOException e) {
@@ -153,6 +208,10 @@ public class RouterSender {
 
     public String getFavIconHash() {
         return this.favIconHash;
+    }
+
+    public String getFirmware() {
+        return this.firmware;
     }
 
     public int getFrameTagCount() {
@@ -199,7 +258,14 @@ public class RouterSender {
         return this.title;
     }
 
-    public void run() throws JsonGenerationException, JsonMappingException, IOException {
+    public void run() throws Exception {
+        final int ret = Dialog.getInstance().showConfirmDialog(0, "Router Sender", "We need your help to improve our reconnect database.\r\nPlease contribute to the 'JD Project' and send in our reconnect script.\r\nThis wizard will guide you through all required steps.", null, null, null);
+
+        if (!Dialog.isOK(ret)) {
+            Dialog.getInstance().showMessageDialog("You can send your reconnect script at any time by clicking the 'Send Button' in your reconnect settings panel");
+            return;
+
+        }
         this.collectData();
 
         final String dataString = JSonStorage.toString(this);
@@ -209,7 +275,12 @@ public class RouterSender {
         final String data = URLEncoder.encode(dataString, "UTF-8");
         URLDecoder.decode(data.trim(), "UTF-8");
         br.postPage(RouterSender.ROUTER_COL_SERVICE, "action=add&data=" + data);
+        if (br.getRegex(".*?exists.*?").matches()) {
+            Dialog.getInstance().showMessageDialog("We noticed, that your script already exists in our database.\r\nThanks anyway.");
 
+        } else {
+            Dialog.getInstance().showMessageDialog("Thank you!\r\nWe added your script to our router reconnect database.");
+        }
     }
 
     public void setFavIconHash(final String favIconHash) {
