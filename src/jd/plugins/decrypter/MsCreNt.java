@@ -48,53 +48,55 @@ public class MsCreNt extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replace("amp;", "");
         br.setCookiesExclusive(true);
-        if (!getUserLogin(parameter)) return null;
-        br.setFollowRedirects(false);
-        // Access the page
-        if (!br.getURL().equals(parameter)) br.getPage(parameter);
-        if (!parameter.contains("musicore.net/forums/index.php?")) {
-            if (br.containsHTML("(An error occurred|We're sorry for the inconvenience)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                logger.warning("finallink from the following link had to be regexes and could not be found by the direct redirect: " + parameter);
-                finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
-            }
-            if (finallink == null) {
-                logger.warning("Decrypter is defect, browser contains: " + br.toString());
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
-        } else {
-            String fpName = br.getRegex("<title>(.*?)- musiCore Forums</title>").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<h1>musiCore Forums:(.*?)- musiCore Forums").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("class='main_topic_title'>(.*?)<span class=").getMatch(0);
-                }
-            }
-            String redirectlinks[] = br.getRegex("'(http://r\\.musicore\\.net/\\?id=.*?url=.*?)'").getColumn(0);
-            if (redirectlinks == null || redirectlinks.length == 0) return null;
-            progress.setRange(redirectlinks.length);
-            for (String redirectlink : redirectlinks) {
-                redirectlink = redirectlink.replace("amp;", "");
-                br.getPage(redirectlink);
+        synchronized (LOCK) {
+            if (!getUserLogin(parameter)) return null;
+            br.setFollowRedirects(false);
+            // Access the page
+            if (!br.getURL().equals(parameter)) br.getPage(parameter);
+            if (!parameter.contains("musicore.net/forums/index.php?")) {
+                if (br.containsHTML("(An error occurred|We're sorry for the inconvenience)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
                 String finallink = br.getRedirectLocation();
-                if (finallink == null) finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
                 if (finallink == null) {
                     logger.warning("finallink from the following link had to be regexes and could not be found by the direct redirect: " + parameter);
-                    logger.warning("Browser contains test: " + br.toString());
                     finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
                 }
+                if (finallink == null) {
+                    logger.warning("Decrypter is defect, browser contains: " + br.toString());
+                    return null;
+                }
                 decryptedLinks.add(createDownloadlink(finallink));
-                progress.increase(1);
+            } else {
+                String fpName = br.getRegex("<title>(.*?)- musiCore Forums</title>").getMatch(0);
+                if (fpName == null) {
+                    fpName = br.getRegex("<h1>musiCore Forums:(.*?)- musiCore Forums").getMatch(0);
+                    if (fpName == null) {
+                        fpName = br.getRegex("class='main_topic_title'>(.*?)<span class=").getMatch(0);
+                    }
+                }
+                String redirectlinks[] = br.getRegex("'(http://r\\.musicore\\.net/\\?id=.*?url=.*?)'").getColumn(0);
+                if (redirectlinks == null || redirectlinks.length == 0) return null;
+                progress.setRange(redirectlinks.length);
+                for (String redirectlink : redirectlinks) {
+                    redirectlink = redirectlink.replace("amp;", "");
+                    br.getPage(redirectlink);
+                    String finallink = br.getRedirectLocation();
+                    if (finallink == null) finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        logger.warning("finallink from the following link had to be regexes and could not be found by the direct redirect: " + parameter);
+                        logger.warning("Browser contains test: " + br.toString());
+                        finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
+                    }
+                    decryptedLinks.add(createDownloadlink(finallink));
+                    progress.increase(1);
+                }
+                if (fpName != null) {
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fpName.trim());
+                    fp.addLinks(decryptedLinks);
+                }
             }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
-            }
+            return decryptedLinks;
         }
-        return decryptedLinks;
 
     }
 

@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -40,18 +39,30 @@ public class EdiskCz extends PluginForHost {
     public String getAGBLink() {
         return "http://www.edisk.cz/kontakt";
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("edisk.sk", "edisk.cz"));
     }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Tento soubor již neexistuje z následujích")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("Sta.*?en.*?souboru &quot;(.*?)&quot").getMatch(0));
-        String filesize = br.getRegex("Velikost souboru: (.*?)<br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
+        if (br.containsHTML("(Tento soubor již neexistuje z následujích důvodů:|<li>soubor byl smazán majitelem</li>|<li>vypršela doba, po kterou může být soubor nahrán</li>|<li>odkaz je uvedený v nesprávném tvaru</li>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("Stáhnout soubor:\\&nbsp;<span class=\"bold\">(.*?) \\(\\d+").getMatch(0));
+        if (filename == null) filename = br.getRegex("<title> \\&nbsp;\\&quot;(.*?)\\&quot; (").getMatch(0);
+        String filesize = br.getRegex("<p>Velikost souboru: <strong>(.*?)</strong></p>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<title> \\&nbsp;\\&quot;.*?\\&quot; \\((.*?)\\) - stáhnout soubor\\&nbsp; </title>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("Stáhnout soubor:\\&nbsp;<span class=\"bold\">.*? \\((.*?)\\)</span>").getMatch(0);
+            }
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Set the final filename here because server gives us filename +
+        // ".html" which is bad
+        link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -59,40 +70,19 @@ public class EdiskCz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL().replace("/stahni/", "/stahni-pomalu/"));
         br.setFollowRedirects(true);
-        br.setDebug(true);
-        String posturl = br.getRegex("Naposledy st.*?hnut.*?action=\"(http://.*?)\"").getMatch(0);
-        Form captchaForm = br.getForm(0);
-        if (captchaForm == null || posturl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        captchaForm.setAction(posturl);
-        String code = "";
-        for (int i = 0; i < 5; i++) {
-            if (!br.containsHTML("Opi.*?te text z obr.*?zku")) break;
-            String captchaurl0 = br.getRegex("captchaImgWrapper.*?src=\"(.*?)\"").getMatch(0);
-            if (captchaurl0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String captchaurl = "http://www.edisk.cz" + captchaurl0;
-            code = getCaptchaCode(captchaurl, downloadLink);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaForm.put("captchaCode", code);
-            br.submitForm(captchaForm);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        String postUrl = downloadLink.getDownloadURL().replace("/stahni/", "/x-download/");
+        String postData = "action=" + new Regex(downloadLink.getDownloadURL(), "/stahni/(\\d+.*?\\.html)").getMatch(0);
+        br.postPage(postUrl, postData);
+        String dllink = br.toString().trim();
+        if (!dllink.startsWith("http://") || !dllink.endsWith(".html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.toString().trim(), true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        if (br.containsHTML("Opi.*?te text z obr.*?zku")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String[] countDownInfo = br.getRegex("countDown\\(.*?'(.*?)'.*?,.*?'(.*?)'.*?,.*?'(.*?)'.*?,(.*?)").getRow(0);
-        // you dont have to wait
-        // (25001l, downloadLink);
-        // make sure the form have cookies
-        Form dlform = br.getForm(0);
-        dlform.getInputFields().clear();
-        dlform.setAction("/x-download/" + countDownInfo[1]);
-        dlform.setMethod(Form.MethodType.POST);
-        dlform.put("captchaCode", code);
-        dlform.put("type", countDownInfo[0]);
-        // System.out.println(dlform);
-        br.submitForm(dlform);
-        // String dllink =
-        // br.getRegex("captchaImgWrapper.*?src=\"(.*?)\"").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.toString().trim(), true, 0);
         dl.startDownload();
     }
 
@@ -102,7 +92,7 @@ public class EdiskCz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
