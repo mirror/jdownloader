@@ -53,7 +53,7 @@ public class LoadFilesIn extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://loadfiles.in";
-    public boolean nopremium = false;
+    public boolean              nopremium   = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -291,7 +291,6 @@ public class LoadFilesIn extends PluginForHost {
         if (error2 == true) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            System.out.print(br.toString());
             if (br.containsHTML("(File Not Found|<h1>Not Found</h1>|<title>404 Not Found</title>)")) {
                 logger.warning("Server says link offline, please recheck that!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -496,6 +495,7 @@ public class LoadFilesIn extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
+        if (br.containsHTML(">Requested file Required More points then you have")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
     }
 
     @Override
