@@ -111,12 +111,14 @@ public class TurboShareCom extends PluginForHost {
             br.submitForm(freeform);
             doSomething();
         }
-        String md5hash = br.getRegex("<b>MD5.*?</b>.*?nowrap>([a-z0-9]+)<").getMatch(0);
-        if (md5hash != null) {
-            md5hash = md5hash.trim();
-            logger.info("Found md5hash: " + md5hash);
-            downloadLink.setMD5Hash(md5hash);
-        }
+        // Their site shows wrong MD5 hashes so we don't set it in JD
+        // String md5hash =
+        // br.getRegex("<b>MD5.*?</b>.*?nowrap>([a-z0-9]+)<").getMatch(0);
+        // if (md5hash != null) {
+        // md5hash = md5hash.trim();
+        // logger.info("Found md5hash: " + md5hash);
+        // downloadLink.setMD5Hash(md5hash);
+        // }
         br.setFollowRedirects(false);
         String loginpw = null;
         String passCode = null;

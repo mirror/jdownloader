@@ -26,7 +26,6 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -46,14 +45,22 @@ public class SaveTv extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String NORANDOMNUMBERS = "";
-    private static final String USEORIGINALFILENAME = "";
+    private static final String NORANDOMNUMBERS         = "";
+    private static final String USEORIGINALFILENAME     = "";
+    private static final String PREFERADSFREE           = "";
+    private static final String ADSFREEAVAILABLE        = "for=\"archive-layer-adfree\">Schnittliste vor dem Download / Streaming anwenden<";
+    private static final String ADSFREEAVAILABLETEXT    = "Video ist ohne Werbung verfügbar";
+    private static final String ADSFREEANOTVAILABLETEXT = "Videos ohne Werbung werden bevorzugt, dieses ist aber nur mit Werbung verfügbar";
+    private static final String FREEPOSTPAGE            = "https://www.save.tv/STV/M/Index.cfm?sk=freesave";
+    private static final String PREMIUMPOSTPAGE         = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NORANDOMNUMBERS, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Keine Zufallszahlen an Dateinamen anhängen (kann Probleme verursachen)")).setDefaultValue(false);
         ConfigEntry cond2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false);
+        ConfigEntry cond3 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Geschnittene Videos (Videos ohne Werbung) bevorzugen")).setDefaultValue(false);
         config.addEntry(cond);
         config.addEntry(cond2);
+        config.addEntry(cond3);
     }
 
     @Override
@@ -67,11 +74,11 @@ public class SaveTv extends PluginForHost {
         for (int i = 0; i <= 1; i++) {
             String acctype = this.getPluginConfig().getStringProperty("premium", null);
             if (acctype != null) {
-                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
                 break;
             } else {
-                extendedLogin("http://free.save.tv", Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML("Sie sind Kunde des EasyRecord Plugins")) {
+                extendedLogin("http://free.save.tv/", FREEPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("id=\"loginform\"")) {
                     this.getPluginConfig().setProperty("premium", "1");
                     this.getPluginConfig().save();
                     continue;
@@ -126,9 +133,12 @@ public class SaveTv extends PluginForHost {
         br.getPage(addedlink);
         // On their page this step is made by java script but leaving some vars
         // out, it still works :D
-        String postThat = "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + new Regex(addedlink, "TelecastID=(\\d+)").getMatch(0) + "&c0-param1=number:0&c0-param2=boolean:false&xml=true&";
+        boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
+        String downloadWithoutAds = "false";
+        if (preferAdsFree) downloadWithoutAds = "true";
+        String postThat = "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + new Regex(addedlink, "TelecastID=(\\d+)").getMatch(0) + "&c0-param1=number:0&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&";
         br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", postThat);
-        String dllink = br.getRegex("\\[ 'OK','(http://.*?)','").getMatch(0);
+        String dllink = br.getRegex("\\[ 'OK','(http://.*?)\\',\\'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("'(http://.*?/\\?m=dl)'").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (dllink) is null");
@@ -149,16 +159,16 @@ public class SaveTv extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) return false;
         try {
             Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa.toString().contains("false")) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
             br.setFollowRedirects(true);
             String acctype = this.getPluginConfig().getStringProperty("premium", null);
             if (acctype != null) {
-                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", Encoding.urlEncode(aa.getUser()), Encoding.urlEncode(aa.getPass()));
+                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(aa.getUser()), Encoding.urlEncode(aa.getPass()));
             } else {
-                extendedLogin("http://free.save.tv", Encoding.urlEncode(aa.getUser()), Encoding.urlEncode(aa.getPass()));
+                extendedLogin("http://free.save.tv", FREEPOSTPAGE, Encoding.urlEncode(aa.getUser()), Encoding.urlEncode(aa.getPass()));
             }
             for (DownloadLink dl : urls) {
                 String addedlink = dl.getDownloadURL();
@@ -184,6 +194,10 @@ public class SaveTv extends PluginForHost {
                         }
                         boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
                         boolean dontModifyFilename = getPluginConfig().getBooleanProperty(NORANDOMNUMBERS);
+                        boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
+                        if (preferAdsFree && br.containsHTML(ADSFREEAVAILABLE))
+                            dl.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", ADSFREEAVAILABLETEXT));
+                        else if (preferAdsFree && !br.containsHTML(ADSFREEAVAILABLE)) dl.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailable", ADSFREEANOTVAILABLETEXT));
                         if (!dontModifyFilename || useOriginalFilename) filename = filename + new Random().nextInt(1000);
                         dl.setName(filename + ".avi");
                         dl.setAvailable(true);
@@ -198,14 +212,10 @@ public class SaveTv extends PluginForHost {
         return true;
     }
 
-    public void extendedLogin(String accessSite, String user, String password) throws Exception {
+    public void extendedLogin(String accessSite, String postPage, String user, String password) throws Exception {
         br.getPage(accessSite);
-        Form loginform = br.getFormbyProperty("id", "loginform");
-        if (loginform == null) loginform = br.getFormbyProperty("name", "LoginForm");
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("sUsername", user);
-        loginform.put("sPassword", password);
-        br.submitForm(loginform);
+        String postData = "sUsername=" + Encoding.urlEncode_light(user) + "&sPassword=" + Encoding.urlEncode_light(password) + "&image.x=" + new Random().nextInt(100) + "&image.y=" + new Random().nextInt(100) + "&image=Login&bAutoLoginActivate=1";
+        br.postPage(postPage, postData);
     }
 
     @Override

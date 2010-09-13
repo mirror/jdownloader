@@ -38,9 +38,9 @@ public class MvWrldNt extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        Boolean decrypterUnfinished = true;
-        if (decrypterUnfinished) {
-            logger.warning("The mov-wrld decrypter is still in development and does not work at the moment!!");
+        Boolean decrypterBroken = true;
+        if (decrypterBroken) {
+            logger.warning("The mov-wrld decrypter is broken!!");
             return null;
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -48,7 +48,7 @@ public class MvWrldNt extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
-        String captchaUrl = br.getRegex("\"(/captcha/[a-zA-Z0-9]+\\.gif)\"").getMatch(0);
+        String captchaUrl = br.getRegex("\"(/captcha/-[a-zA-Z0-9]+\\.gif)\"").getMatch(0);
         Form captchaForm = br.getForm(0);
         if (captchaUrl == null || captchaForm == null) return null;
         Browser brc = br.cloneBrowser();
