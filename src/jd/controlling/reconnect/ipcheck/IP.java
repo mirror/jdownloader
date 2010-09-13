@@ -78,9 +78,7 @@ public class IP {
     public boolean equals(final Object c) {
         if (c != null && c instanceof IP) {
             final IP ip = (IP) c;
-
             return ip.ip.equals(this.ip);
-
         }
         return false;
     }

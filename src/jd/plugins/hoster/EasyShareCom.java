@@ -127,6 +127,7 @@ public class EasyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,15*60*1000l);
         if (br.containsHTML("You need a premium membership to download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         String wait = br.getRegex("w='(\\d+)'").getMatch(0);
         int waittime = 0;
@@ -155,6 +156,7 @@ public class EasyShareCom extends PluginForHost {
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
 
         if (id == null) br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,15*60*1000l);
         // br = br;
         int tries = 0;
         while (true) {
@@ -184,13 +186,13 @@ public class EasyShareCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
+                if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
                 if (br.containsHTML("Entered code is invalid")) {
                     if (tries <= 5) {
                         continue;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-
                 }
 
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

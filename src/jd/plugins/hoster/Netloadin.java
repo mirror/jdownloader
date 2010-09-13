@@ -41,25 +41,25 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netload.in" }, urls = { "http://[\\w\\.]*?netload\\.in/.+" }, flags = { 2 })
 public class Netloadin extends PluginForHost {
-    static private final String AGB_LINK = "http://netload.in/index.php?id=13";
+    static private final String  AGB_LINK            = "http://netload.in/index.php?id=13";
 
-    static private final String CAPTCHA_WRONG = "Sicherheitsnummer nicht eingegeben";
+    static private final String  CAPTCHA_WRONG       = "Sicherheitsnummer nicht eingegeben";
 
-    static private final String DOWNLOAD_CAPTCHA = "download_captcha.tpl";
-    static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
-    static private final String DOWNLOAD_START = "download_load.tpl";
-    static private final String DOWNLOAD_STARTXMAS = "download_load_xmas.tpl";
-    static private final String DOWNLOAD_STARTXMAS2 = "download_load_xmas2.tpl";
-    private String LINK_PASS = null;
+    static private final String  DOWNLOAD_CAPTCHA    = "download_captcha.tpl";
+    static private final String  DOWNLOAD_LIMIT      = "download_limit.tpl";
+    static private final String  DOWNLOAD_START      = "download_load.tpl";
+    static private final String  DOWNLOAD_STARTXMAS  = "download_load_xmas.tpl";
+    static private final String  DOWNLOAD_STARTXMAS2 = "download_load_xmas2.tpl";
+    private String               LINK_PASS           = null;
 
-    static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
+    static private final Pattern DOWNLOAD_WAIT_TIME  = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
 
-    static private final String FILE_DAMAGED = "(Die Datei wurde Opfer einer defekten Festplatte|Diese Datei liegt auf einem Server mit einem technischen Defekt|This Server is currently in maintenance work)";
+    static private final String  FILE_DAMAGED        = "(Die Datei wurde Opfer einer defekten Festplatte|Diese Datei liegt auf einem Server mit einem technischen Defekt|This Server is currently in maintenance work)";
 
-    static private final String FILE_NOT_FOUND = "Die Datei konnte leider nicht gefunden werden";
+    static private final String  FILE_NOT_FOUND      = "Die Datei konnte leider nicht gefunden werden";
 
-    static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
-    static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
+    static private final String  LIMIT_REACHED       = "share/images/download_limit_go_on.gif";
+    static private final String  NEW_HOST_URL        = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
 
     private static String getID(String link) {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
@@ -121,6 +121,7 @@ public class Netloadin extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return;
             }
+            if (br.containsHTML("We occurred an unexpected error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("Im Link ist ein Schreibfehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML(FILE_DAMAGED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.netloadin.errors.fileondmgserver", "File on damaged server"), 20 * 60 * 1000l);
             if ((!br.containsHTML(DOWNLOAD_START) && !br.containsHTML(DOWNLOAD_STARTXMAS) && !br.containsHTML(DOWNLOAD_STARTXMAS2)) || url == null) {
@@ -340,6 +341,7 @@ public class Netloadin extends PluginForHost {
             br.followConnection();
             checkPassword(downloadLink);
             handleErrors(downloadLink);
+            if (br.containsHTML("We occurred an unexpected error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             String url = br.getRedirectLocation();
             if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));

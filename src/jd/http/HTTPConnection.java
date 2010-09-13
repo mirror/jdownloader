@@ -68,6 +68,7 @@ public class HTTPConnection implements URLConnectionAdapter {
     private boolean                             inputStreamConnected = false;
     private String                              httpHeader           = null;
     private byte[]                              preReadBytes         = null;
+    private boolean                             outputClosed         = false;
 
     public boolean isConnected() {
         if (httpSocket != null && httpSocket.isConnected()) return true;
@@ -81,7 +82,7 @@ public class HTTPConnection implements URLConnectionAdapter {
     public HTTPConnection(URL url, JDProxy p) {
         httpURL = url;
         proxy = p;
-        requestProperties = new LinkedHashMap<String,String>();
+        requestProperties = new LinkedHashMap<String, String>();
         headers = new LowerCaseHashMap<List<String>>();
     }
 
@@ -113,12 +114,14 @@ public class HTTPConnection implements URLConnectionAdapter {
         StringBuilder sb = new StringBuilder();
         sb.append(httpMethod.name()).append(' ').append(httpPath).append(" HTTP/1.1\r\n");
         for (String key : this.requestProperties.keySet()) {
+            if (requestProperties.get(key) == null) continue;
             sb.append(key).append(": ").append(requestProperties.get(key)).append("\r\n");
         }
         sb.append("\r\n");
         httpSocket.getOutputStream().write(sb.toString().getBytes("UTF-8"));
         httpSocket.getOutputStream().flush();
         if (httpMethod != METHOD.POST) {
+            outputClosed = true;
             connectInputStream();
         }
     }
@@ -258,6 +261,7 @@ public class HTTPConnection implements URLConnectionAdapter {
 
         for (String key : this.getRequestProperties().keySet()) {
             String v = this.getRequestProperties().get(key);
+            if (v == null) continue;
             sb.append(key);
             sb.append(new char[] { ':', ' ' });
             sb.append(v);
@@ -327,6 +331,7 @@ public class HTTPConnection implements URLConnectionAdapter {
 
     public OutputStream getOutputStream() throws IOException {
         connect();
+        if (outputClosed) throw new IOException("OutputStream no longer available");
         return httpSocket.getOutputStream();
     }
 
@@ -378,6 +383,8 @@ public class HTTPConnection implements URLConnectionAdapter {
 
     public void postDataSend() throws IOException {
         if (!this.isConnected()) return;
+        /* disable outputStream now */
+        outputClosed = true;
         connectInputStream();
     }
 

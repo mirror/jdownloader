@@ -825,12 +825,6 @@ public class Browser {
         }
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
-        if (encoding != null) {
-            request.getHeaders().put("Content-Type", encoding);
-        } else {
-            /* default content-type for post data */
-            request.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        }
         // request.setFollowRedirects(doRedirects);
         /* set Timeouts */
         request.setConnectTimeout(getConnectTimeout());
@@ -842,6 +836,14 @@ public class Browser {
         if (post != null) {
             request.addAll(post);
         }
+        /* check browser/call for content type encoding, or set to default */
+        String brContentType = null;
+        if (headers != null) {
+            brContentType = headers.remove("Content-Type");
+        }
+        if (brContentType == null) brContentType = encoding;
+        if (brContentType == null) brContentType = "application/x-www-form-urlencoded";
+        request.setContentType(brContentType);
         if (headers != null) {
             mergeHeaders(request);
         }

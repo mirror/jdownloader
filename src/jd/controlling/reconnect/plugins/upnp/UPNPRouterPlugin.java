@@ -406,7 +406,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     }
 
     public boolean isIPCheckEnabled() {
-
         return this.getStorage().get(UPNPRouterPlugin.CANCHECKIP, true);
     }
 
@@ -417,7 +416,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
     @Override
     protected void performReconnect() throws ReconnectException {
-
         try {
             this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "ForceTermination");
             Thread.sleep(2000);

@@ -318,8 +318,8 @@ public class MegaPornCom extends PluginForHost {
         br.getHeaders().put("Referer", null);
 
         br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
-        br.getHeaders().put("Content-Length", "12");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        br.getHeaders().put("Content-Length", "12");        
         int checked = 0;
         try {
             String[] Dls = br.postPage("http://megaporn.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");

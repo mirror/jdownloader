@@ -278,7 +278,7 @@ public class RAFDownload extends DownloadInterface {
      */
     public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws IOException, PluginException {
         /* disable gzip, because current downloadsystem cannot handle it correct */
-        request.getHeaders().put("Accept-Encoding", "");
+        request.getHeaders().put("Accept-Encoding", null);
         DownloadInterface dl = new RAFDownload(downloadLink.getLivePlugin(), downloadLink, request);
         downloadLink.getLivePlugin().setDownloadInterface(dl);
         dl.setResume(b);

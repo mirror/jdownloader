@@ -49,7 +49,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
-    private String ua = RandomUserAgent.generate();
+    private String              ua   = RandomUserAgent.generate();
     private static final Object LOCK = new Object();
 
     public HotFileCom(PluginWrapper wrapper) {
@@ -59,7 +59,7 @@ public class HotFileCom extends PluginForHost {
     }
 
     private static final String UNLIMITEDMAXCON = "UNLIMITEDMAXCON";
-    private static final String TRY_IWL_BYPASS = "TRY_IWL_BYPASS";
+    private static final String TRY_IWL_BYPASS  = "TRY_IWL_BYPASS";
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), TRY_IWL_BYPASS, JDL.L("plugins.hoster.HotFileCom.TRYIWLBYPASS", "Try IWL-Filter list bypass?")).setDefaultValue(false);
@@ -186,17 +186,20 @@ public class HotFileCom extends PluginForHost {
         if (info.get("httpresponse").contains("premium required")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         String finalUrls = info.get("httpresponse").trim();
         if (finalUrls == null || finalUrls.startsWith(".")) {
+            if (finalUrls != null) {
+                if (finalUrls.startsWith(".too many failed")) {
+                    logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
+                    handlePremiumWebsite(downloadLink, account);
+                    return;
+                }
+                if (finalUrls.startsWith(".ip blocked")) {
+                    logger.severe("api reports: ip blocked! using website fallback!");
+                    handlePremiumWebsite(downloadLink, account);
+                    return;
+                }
+                if (finalUrls.startsWith(".server that hosts the file is temporarily")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily unavailable", 30 * 60 * 1000l); }
+            }
             logger.severe(finalUrls);
-            if (finalUrls != null && finalUrls.startsWith(".too many failed")) {
-                logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
-                handlePremiumWebsite(downloadLink, account);
-                return;
-            }
-            if (finalUrls != null && finalUrls.startsWith(".ip blocked")) {
-                logger.severe("api reports: ip blocked! using website fallback!");
-                handlePremiumWebsite(downloadLink, account);
-                return;
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dlUrls[] = Regex.getLines(finalUrls);
@@ -236,6 +239,25 @@ public class HotFileCom extends PluginForHost {
         br.getHeaders().put("User-Agent", ua);
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Cache-Control", null);
+    }
+
+    private void submit(Browser br, Form form) throws Exception {
+        br.getHeaders().setDominant(true);
+        br.setCookie("http://hotfile.com", "lang", "en");
+        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept-Encoding", null);
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        br.getHeaders().put("Connection", "close");
+        br.getHeaders().put("Referer", br.getHeaders().get("Referer"));
+        br.getHeaders().put("Cookie", br.getHeaders().get("Cookie"));
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        br.submitForm(form);
+        br.getHeaders().put("Content-Type", null);
+        br.getHeaders().put("Accept-Encoding","gzip");
     }
 
     @SuppressWarnings("unchecked")
@@ -332,10 +354,15 @@ public class HotFileCom extends PluginForHost {
         br.setDebug(true);
         /* workaround as server does not send correct encoding information */
         br.setCustomCharset("UTF-8");
+        String lastDl = parameter.getDownloadURL().replaceFirst("http://.*?/", "/");
+        br.setCookie("http://hotfile.com", "lastdl", Encoding.urlEncode(lastDl));
         prepareBrowser(br);
         br.getPage(parameter.getDownloadURL());
-        Browser cl = br.cloneBrowser();
-        cl.getPage("http://hotfile.com/styles/structure.css");
+        Browser cl = new Browser();
+        cl.setDebug(true);
+        cl.setCookie("http://hotfile.com", "lastdl", br.getCookie("http://hotfile.com", "lastdl"));
+        prepareBrowser(cl);
+        cl.getHeaders().put("Referer", "http://hotfile.com/styles/structure.css");
         Browser.download(this.getLocalCaptchaFile(), cl.openGetConnection("http://hotfile.com/i/blank.gif"));
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String filename = br.getRegex("Downloading <b>(.+?)</b>").getMatch(0);
@@ -381,9 +408,7 @@ public class HotFileCom extends PluginForHost {
         // Reconnect if the waittime is too big!
         if (sleeptime > 100 * 1000l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime);
         this.sleep(sleeptime, link);
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.submitForm(form);
-        br.getHeaders().put("Content-Type", null);
+        submit(br, form);
         // captcha
         if (!br.containsHTML("Click here to download")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");

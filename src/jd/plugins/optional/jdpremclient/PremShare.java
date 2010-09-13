@@ -293,7 +293,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
             form.setAction("/?info=1");
             form.setMethod(MethodType.GET);
             form.put("username", Encoding.urlEncode(account.getUser()));
-            form.put("password", Encoding.urlEncode(account.getPass()));
+            form.put("password", Encoding.urlEncode(account.getPass()));            
             String page = br.submitForm(form);
             if (page.contains("OK: USER")) {
                 /* parse available premium hosts */

@@ -33,6 +33,7 @@ import jd.parser.html.Form;
 public class PostRequest extends Request {
     private ArrayList<RequestVariable> postData;
     private String                     postDataString = null;
+    private String                     contentType    = null;
 
     public PostRequest(final Form form) throws MalformedURLException {
         super(form.getAction(null));
@@ -77,6 +78,9 @@ public class PostRequest extends Request {
         String parameter = postDataString != null ? postDataString : getPostDataString();
         if (parameter != null) {
             if (postDataString == null) parameter = parameter.trim();
+            if (contentType != null) {
+                httpConnection.setRequestProperty("Content-Type", contentType);
+            }
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
             httpConnection.connect();
 
@@ -84,11 +88,15 @@ public class PostRequest extends Request {
             if (parameter != null) {
                 wr.write(parameter);
             }
-            wr.flush();            
+            wr.flush();
             httpConnection.postDataSend();
         } else {
             httpConnection.setRequestProperty("Content-Length", "0");
         }
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
     // @Override

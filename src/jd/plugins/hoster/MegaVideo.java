@@ -56,7 +56,7 @@ public class MegaVideo extends PluginForHost {
     private void antiJDBlock(Browser br) {
         if (br == null) return;
         br.getHeaders().put("User-Agent", agent);
-        br.setAcceptLanguage("en-us,en;q=0.5");
+        br.setAcceptLanguage("en-us,de;q=0.7,en;q=0.3");
         br.setCookie("http://www.megavideo.com", "l", "en");
     }
 
@@ -137,9 +137,17 @@ public class MegaVideo extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String url = null;
+        br.setDebug(true);
+
+        Browser brc = br.cloneBrowser();
+        brc.getPage("http://www.megavideo.com/mcad.php?id=22");
+        /* get original downloadlink */
+        brc = br.cloneBrowser();
+        brc.getPage("http://www.megavideo.com/xml/player_login.php?u=&v=" + getDownloadID(link));
+
         if (br.containsHTML("flashvars.hd = \"1\";")) {
             /* hd link */
-            Browser brc = br.cloneBrowser();
+            brc = br.cloneBrowser();
             brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + getDownloadID(link));
             url = Encoding.urlDecode(brc.getRegex("hd_url=\"(.*?)\"").getMatch(0), true);
         } else {

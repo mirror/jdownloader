@@ -60,6 +60,6 @@ public class CustomWebIpCheck implements IPCheckProvider {
     }
 
     public int getIpCheckInterval() {
-        return 3;
+        return 5;
     }
 }

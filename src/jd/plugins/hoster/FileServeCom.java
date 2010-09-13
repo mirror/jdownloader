@@ -51,8 +51,8 @@ public class FileServeCom extends PluginForHost {
         return "http://www.fileserve.com/terms.php";
     }
 
-    public String FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)";
-    private boolean isFree = false;
+    public String   FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)";
+    private boolean isFree      = false;
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -189,7 +189,7 @@ public class FileServeCom extends PluginForHost {
                 rc.getForm().put("recaptcha_response_field", c);
                 rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
                 br2.submitForm(rc.getForm());
-                if (br2.containsHTML("incorrect-captcha")) {
+                if (br2.containsHTML("incorrect-captcha") || br2.containsHTML("Captcha error")) {
                     br.getPage(downloadLink.getDownloadURL());
                     continue;
                 }
@@ -212,6 +212,7 @@ public class FileServeCom extends PluginForHost {
         br.postPage(downloadLink.getDownloadURL(), "download=normal");
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
+            if (br.containsHTML("Captcha error") || br.containsHTML("incorrect-captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             String wait = br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
             if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
