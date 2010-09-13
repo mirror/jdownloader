@@ -43,6 +43,7 @@ import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
+import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
 import jd.gui.UserIO;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -364,17 +365,21 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
         } catch (final Exception e) {
             this.setCanCheckIP(false);
 
-            throw new IPCheckException(e);
+            throw new InvalidProviderException("UPNP Command Error");
         }
-        final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);
-        if (ipm.find()) { return IP.getInstance(ipm.group(1)); }
+        try {
+            final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);
+            if (ipm.find()) { return IP.getInstance(ipm.group(1)); }
+        } catch (final InvalidIPRangeException e2) {
+            throw new InvalidProviderException(e2);
+        }
         this.setCanCheckIP(false);
 
-        throw new IPCheckException("Could not get IP/No GetExternalIPAddress");
+        throw new InvalidProviderException("Unknown UPNP Response Error");
     }
 
     public int getIpCheckInterval() {
-        return 0;
+        return 1;
     }
 
     public IPCheckProvider getIPCheckProvider() {
@@ -444,7 +449,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
         final URLConnection conn = url.openConnection();
         conn.setDoOutput(true);
         conn.addRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"");
-        conn.addRequestProperty("SoapAction", serviceType + "#" + command);
+        conn.addRequestProperty("SOAPAction", serviceType + "#" + command);
         OutputStreamWriter wr = null;
         BufferedReader rd = null;
         try {

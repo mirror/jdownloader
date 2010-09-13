@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
@@ -141,11 +140,22 @@ public final class Reconnecter implements StateMachineInterface {
         return Reconnecter.INSTANCE;
     }
 
+    /**
+     * can be removed after next stable
+     * 
+     * @param i
+     * @param b
+     * @return
+     */
+    public static boolean waitForNewIP(final int i, final boolean b) {
+        return Reconnecter.getInstance().forceReconnect();
+    }
+
     private ArrayList<DownloadLink>                    disabledLinks;
 
     private final DefaultEventSender<ReconnecterEvent> eventSender;
-
     private final StateMachine                         statemachine;
+
     private final Storage                              storage;
 
     private Reconnecter() {
@@ -249,16 +259,6 @@ public final class Reconnecter implements StateMachineInterface {
     }
 
     /**
-     * if true, the Controller should not start new downloads if a reconnect is
-     * requested
-     * 
-     * @return
-     */
-    public boolean isPriorizeReconnectEnabled() {
-        return SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true);
-    }
-
-    /**
      * cheks if a reconnect is allowed right now.
      * 
      * @return
@@ -266,7 +266,7 @@ public final class Reconnecter implements StateMachineInterface {
     public boolean isReconnectAllowed() {
         boolean ret = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
         ret &= !LinkCheck.getLinkChecker().isRunning();
-        ret &= JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0;
+        ret &= JDUtilities.getController().getForbiddenReconnectDownloadNum() == 0;
         return ret;
     }
 
@@ -278,17 +278,6 @@ public final class Reconnecter implements StateMachineInterface {
     public boolean isReconnectInProgress() {
         return this.statemachine.isState(Reconnecter.RECONNECT_RUNNING);
     }
-
-    // /**
-    // * Returns true, if there is a requested reconnect waiting, and the user
-    // * selected not to start new downloads of reconnects are waiting
-    // *
-    // * @return
-    // */
-    // public boolean isReconnectPrefered() {
-    // return this.statemachine.isState(Reconnecter.RECONNECT_REQUESTED) &&
-    // this.isAutoReconnectEnabled() && this.isPriorizeReconnectEnabled();
-    // }
 
     /**
      * Stops all downloads
@@ -402,16 +391,6 @@ public final class Reconnecter implements StateMachineInterface {
 
         }
         return ret;
-    }
-
-    /**
-     * like {@link #run()}, but blocks not longer then i ms;
-     * 
-     * @param i
-     * @return
-     */
-    public boolean run(final int i) {
-        return false;
     }
 
     /**

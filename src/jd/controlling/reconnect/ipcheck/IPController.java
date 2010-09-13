@@ -4,7 +4,9 @@ import java.util.ArrayList;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.plugins.upnp.InvalidProviderException;
 
 import com.sun.istack.internal.Nullable;
 
@@ -18,9 +20,10 @@ public class IPController {
     /**
      * true, if the current ip has no use. we need a new one
      */
-    private boolean                     invalidated = false;
-    private IPLogEntry                  currentIP;
-    private final ArrayList<IPLogEntry> ipLog       = new ArrayList<IPLogEntry>();
+    private boolean                          invalidated  = false;
+    private IPLogEntry                       currentIP;
+    private final ArrayList<IPLogEntry>      ipLog        = new ArrayList<IPLogEntry>();
+    private final ArrayList<IPCheckProvider> badProviders = new ArrayList<IPCheckProvider>();
 
     private IPController() {
 
@@ -32,12 +35,22 @@ public class IPController {
      * @return
      */
     public IP fetchIP() {
-        IPLogEntry newIP;
-        try {
-            newIP = new IPLogEntry(this.getIPCheckProvider().getIP());
-        } catch (final IPCheckException e) {
-            e.printStackTrace();
-            newIP = new IPLogEntry(null, e);
+        IPLogEntry newIP = null;
+        IPCheckProvider icp = null;
+        while (true) {
+            try {
+                icp = this.getIPCheckProvider();
+                newIP = new IPLogEntry(icp.getIP());
+                break;
+            } catch (final InvalidProviderException e) {
+                // IP check provider is bad.
+                this.badProviders.add(icp);
+
+            } catch (final IPCheckException e) {
+                JDLogger.getLogger().info(e.getMessage());
+                newIP = new IPLogEntry(null, e);
+                break;
+            }
 
         }
         if (this.ipLog.size() > 0) {
@@ -84,18 +97,18 @@ public class IPController {
      * @return
      */
     private IPCheckProvider getIPCheckProvider() {
-        final IPCheckProvider p = ReconnectPluginController.getInstance().getActivePlugin().getIPCheckProvider();
+        IPCheckProvider p = ReconnectPluginController.getInstance().getActivePlugin().getIPCheckProvider();
 
-        if (p == null) {
+        if (p == null || this.badProviders.contains(p)) {
 
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
 
-                return BalancedWebIPCheck.getInstance();
+                p = BalancedWebIPCheck.getInstance();
             } else {
-                return CustomWebIpCheck.getInstance();
+                p = CustomWebIpCheck.getInstance();
             }
         }
-        return null;
+        return p;
     }
 
     /**
@@ -152,8 +165,10 @@ public class IPController {
             if (this.currentIP != before && this.currentIP.getIp() != null) {
 
                 this.invalidated = false;
+
                 break;
             }
+            Thread.sleep(Math.max(250, ipCheckInterval));
 
         }
 

@@ -516,7 +516,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public boolean newDLStartAllowed() {
-        if (this.paused || Reconnecter.getInstance().isReconnectInProgress() || this.aborting || this.aborted || Reconnecter.getInstance().isPriorizeReconnectEnabled()) { return false; }
+        if (this.paused || Reconnecter.getInstance().isReconnectInProgress() || this.aborting || this.aborted || SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && IPController.getInstance().isInvalidated()) { return false; }
         return true;
     }
 

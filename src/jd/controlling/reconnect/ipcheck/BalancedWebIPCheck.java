@@ -43,17 +43,29 @@ public class BalancedWebIPCheck implements IPCheckProvider {
 
     public IP getIP() throws IPCheckException {
         try {
-            this.index = (this.index + 1) % this.services.size();
-            final String service = this.services.get(this.index);
-            /* call website and check for ip */
-            final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
-            if (matcher.find()) {
-                if (matcher.groupCount() > 0) {
+            Exception e = null;
+            for (int i = 0; i < this.services.size(); i++) {
+                try {
+                    this.index = (this.index + 1) % this.services.size();
+                    final String service = this.services.get(this.index);
+                    /* call website and check for ip */
+                    final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
+                    if (matcher.find()) {
+                        if (matcher.groupCount() > 0) {
 
-                return IP.getInstance(matcher.group(1)); }
+                        return IP.getInstance(matcher.group(1)); }
+                    }
+                } catch (final Exception e2) {
+                    e = e2;
+                }
+
             }
 
-            throw new IPCheckException("NO IP found");
+            if (e != null) {
+                throw e;
+            } else {
+                throw new IPCheckException("Could not get IP");
+            }
         } catch (final Exception e) {
             throw new IPCheckException(e);
         }

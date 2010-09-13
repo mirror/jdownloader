@@ -132,7 +132,7 @@ public class Srnnks extends PluginForDecrypt {
             if (UserIO.isOK(ret)) {
                 IPController.getInstance().invalidate();
 
-                if (Reconnecter.getInstance().run(15000)) {
+                if (Reconnecter.waitForNewIP(15000, false)) {
 
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));

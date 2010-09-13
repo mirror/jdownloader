@@ -36,8 +36,9 @@ public class IPLogEntry {
      * @return
      */
     public boolean equalsLog(final IPLogEntry currentIP) {
-        if (this.ip == null && currentIP.getIp() == null) { return this.equalsCause(currentIP); }
+        if (this.ip == null && currentIP.ip == null) { return this.equalsCause(currentIP); }
         if (currentIP.ip == null && this.ip != null) { return false; }
+        if (this.ip == null && currentIP.ip != null) { return false; }
         return this.ip.equals(currentIP.ip);
 
     }
