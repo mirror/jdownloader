@@ -31,6 +31,7 @@ public class IP {
                     if (n1 == 172 && n2 >= 16 && n2 <= 31) return new IP_INVALID().setIP(IPv4);
                     int n3 = Integer.parseInt(parts[2]);
                     int n4 = Integer.parseInt(parts[3]);
+                    /* fritzbox sends 0.0.0.0 while its offline */
                     if (n1 == 0 && n2 == 0 && n3 == 0 && n4 == 0) return new IP_INVALID().setIP(IPv4);
                     if (n1 >= 0 && n1 <= 255 && n2 >= 0 && n2 <= 255 && n3 >= 0 && n3 <= 255 && n4 >= 0 && n4 <= 255) { return new IP().setIP(n1 + "." + n2 + "." + n3 + "." + n4); }
                     return new IP_INVALID().setIP(IPv4);

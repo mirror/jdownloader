@@ -81,8 +81,8 @@ public class HTTPConnection implements URLConnectionAdapter {
     public HTTPConnection(URL url, JDProxy p) {
         httpURL = url;
         proxy = p;
-        requestProperties = new LinkedHashMap<String, String>();
-        headers = new LinkedHashMap<String, List<String>>();
+        requestProperties = new LinkedHashMap<String,String>();
+        headers = new LowerCaseHashMap<List<String>>();
     }
 
     public void connect() throws IOException {
@@ -199,7 +199,7 @@ public class HTTPConnection implements URLConnectionAdapter {
     public InputStream getInputStream() throws IOException {
         connect();
         connectInputStream();
-        if ((getResponseCode() >= 200 && getResponseCode() <= 400) || getResponseCode()==404) {
+        if ((getResponseCode() >= 200 && getResponseCode() <= 400) || getResponseCode() == 404) {
             return inputStream;
         } else {
             throw new IOException(getResponseCode() + " " + getResponseMessage());

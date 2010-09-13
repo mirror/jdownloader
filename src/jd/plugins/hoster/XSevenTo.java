@@ -84,10 +84,13 @@ public class XSevenTo extends PluginForHost {
         String money = br.getRegex("id=\"balance\">([0-9.]+)").getMatch(0);
         if (money != null) ai.setAccountBalance(money);
         String remaining = br.getRegex("class=\"aT aR\">.*?\">(.*?)<").getMatch(0);
+        String trafficNow = br.getRegex("buyTraffic.*?TrafficNow.*?class=\"aT aR\">.*?\">(.*?)<").getMatch(0);
         if (remaining != null && remaining.contains("unlimited")) {
-            /* unlimited acc */
-        } else if (remaining != null) {
-            ai.setTrafficLeft(remaining);
+            ai.setSpecialTraffic(true);
+        } else {
+            long t1 = remaining != null ? Regex.getSize(remaining) : 0;
+            long t2=  trafficNow != null ? Regex.getSize(trafficNow) : 0;
+            ai.setTrafficLeft(t1+t2);
         }
         return ai;
     }

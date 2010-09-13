@@ -495,9 +495,14 @@ public class DirectHTTP extends PluginForHost {
                 br.getHeaders().put(header[0], header[1]);
             }
         }
-        if (downloadLink.getStringProperty("referer", null) != null) {
-            br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
-        }
+        /*
+         * seems like flashgot catches the wrong referer and some
+         * downloads do not work then, we do not set referer as a workaround
+         */
+        // if (downloadLink.getStringProperty("referer", null) != null) {
+        // br.getHeaders().put("Referer",
+        // downloadLink.getStringProperty("referer", null));
+        // }
         if (downloadLink.getStringProperty("cookies", null) != null) {
             br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
         }
