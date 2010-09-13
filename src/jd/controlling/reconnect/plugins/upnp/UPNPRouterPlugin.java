@@ -37,10 +37,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jd.controlling.JDLogger;
-import jd.controlling.reconnect.GetIpException;
 import jd.controlling.reconnect.IP;
-import jd.controlling.reconnect.IPAddress;
-import jd.controlling.reconnect.IP_INVALID;
 import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;

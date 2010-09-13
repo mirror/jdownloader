@@ -35,10 +35,10 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "jdantistandby", interfaceversion = 5, mac = false, linux = false)
 public class JDAntiStandby extends PluginOptional {
     private static final String CONFIG_MODE = "CONFIG_MODE";
-    private String[] MODES_AVAIL;
-    private MenuAction menuAction;
-    private boolean status;
-    private JDAntiStandbyThread asthread = null;
+    private String[]            MODES_AVAIL;
+    private MenuAction          menuAction;
+    private boolean             status;
+    private JDAntiStandbyThread asthread    = null;
 
     public boolean isStatus() {
         return status;
@@ -71,7 +71,7 @@ public class JDAntiStandby extends PluginOptional {
 
         };
         try {
-            switch (OSDetector.getOSID()) {
+            switch (OSDetector.getID()) {
             case OSDetector.OS_WINDOWS_2003:
             case OSDetector.OS_WINDOWS_VISTA:
             case OSDetector.OS_WINDOWS_XP:

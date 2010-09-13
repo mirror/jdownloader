@@ -39,8 +39,6 @@ import jd.utils.locale.JDL;
 
 public final class Reconnecter {
 
-    private static final String NA                    = "na";
-
     /**
      * Addons may set this ley in a messagebox property. the reconnector then
      * checks the ip again after the

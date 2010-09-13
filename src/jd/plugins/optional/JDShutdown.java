@@ -49,14 +49,14 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", id = "shutdown", interfaceversion = 5)
 public class JDShutdown extends PluginOptional {
 
-    private static final int count = 60;
+    private static final int    count                 = 60;
     private static final String CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
-    private static final String CONFIG_MODE = "CONFIG_MODE";
-    private static final String CONFIG_FORCESHUTDOWN = "FORCE";
-    private static Thread shutdown = null;
-    private static boolean shutdownEnabled;
-    private static MenuAction menuAction = null;
-    private static String[] MODES_AVAIL = null;
+    private static final String CONFIG_MODE           = "CONFIG_MODE";
+    private static final String CONFIG_FORCESHUTDOWN  = "FORCE";
+    private static Thread       shutdown              = null;
+    private static boolean      shutdownEnabled;
+    private static MenuAction   menuAction            = null;
+    private static String[]     MODES_AVAIL           = null;
 
     public JDShutdown(PluginWrapper wrapper) {
         super(wrapper);
@@ -135,7 +135,7 @@ public class JDShutdown extends PluginOptional {
         logger.info("shutdown");
         JDController.getInstance().prepareShutdown(false);
         int id = 0;
-        switch (id = OSDetector.getOSID()) {
+        switch (id = OSDetector.getID()) {
         case OSDetector.OS_WINDOWS_2003:
         case OSDetector.OS_WINDOWS_VISTA:
         case OSDetector.OS_WINDOWS_XP:
@@ -241,7 +241,7 @@ public class JDShutdown extends PluginOptional {
     }
 
     private void hibernate() {
-        switch (OSDetector.getOSID()) {
+        switch (OSDetector.getID()) {
         case OSDetector.OS_WINDOWS_2003:
         case OSDetector.OS_WINDOWS_VISTA:
         case OSDetector.OS_WINDOWS_XP:
@@ -291,7 +291,7 @@ public class JDShutdown extends PluginOptional {
     }
 
     private void standby() {
-        switch (OSDetector.getOSID()) {
+        switch (OSDetector.getID()) {
         case OSDetector.OS_WINDOWS_2003:
         case OSDetector.OS_WINDOWS_VISTA:
         case OSDetector.OS_WINDOWS_XP:
