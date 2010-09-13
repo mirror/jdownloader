@@ -124,6 +124,15 @@ public class IPController {
             this.invalidated = false;
 
         }
+
+        final IPLogEntry before = this.getCurrentLog();
+        this.fetchIP();
+
+        if (this.currentIP != before && this.currentIP.getIp() != null) {
+
+            this.invalidated = false;
+
+        }
         return !this.isInvalidated();
     }
 
