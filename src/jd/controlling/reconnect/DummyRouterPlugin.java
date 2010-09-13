@@ -24,16 +24,6 @@ public class DummyRouterPlugin extends RouterPlugin {
     }
 
     @Override
-    protected void performReconnect() throws ReconnectException {
-
-    }
-
-    @Override
-    public IP getExternalIP() {
-        return IP_NA.IPCHECK_UNSUPPORTED;
-    }
-
-    @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 15,wrap 1", "[grow,fill]", "[][grow,fill]"));
         final JTextPane text = new JTextPane();
@@ -67,17 +57,13 @@ public class DummyRouterPlugin extends RouterPlugin {
     }
 
     @Override
-    public boolean isIPCheckEnabled() {
-        return false;
-    }
-
-    @Override
     public boolean isReconnectionEnabled() {
         return false;
     }
 
     @Override
-    public void setCanCheckIP(final boolean b) {
+    protected void performReconnect() throws ReconnectException {
+
     }
 
 }

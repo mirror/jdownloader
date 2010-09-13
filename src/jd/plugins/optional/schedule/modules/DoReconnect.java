@@ -26,12 +26,12 @@ public class DoReconnect implements SchedulerModuleInterface {
 
     private static final long serialVersionUID = 1782904765267434004L;
 
-    public boolean checkParameter(String parameter) {
+    public boolean checkParameter(final String parameter) {
         return true;
     }
 
-    public void execute(String parameter) {
-        Reconnecter.doManualReconnect();
+    public void execute(final String parameter) {
+        Reconnecter.getInstance().forceReconnect();
     }
 
     public String getTranslation() {

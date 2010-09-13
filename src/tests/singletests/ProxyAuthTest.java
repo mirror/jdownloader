@@ -16,16 +16,14 @@
 
 package tests.singletests;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 
-import jd.controlling.reconnect.IPCheck;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.http.Browser;
 import jd.http.JDProxy;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,19 +31,14 @@ import tests.utils.TestUtils;
 
 public class ProxyAuthTest {
 
-    @Before
-    public void setUp() throws Exception {
-        TestUtils.initJD();
-    }
-
     @Test
     public void proxyAuthTest() {
         Browser.init();
         TestUtils.log("init Proxy");
 
-        JDProxy pr = new JDProxy(Proxy.Type.HTTP, TestUtils.getStringProperty("proxy_ip"), TestUtils.getIntegerProperty("proxy_port"));
-        String user = TestUtils.getStringProperty("proxy_user");
-        String pass = TestUtils.getStringProperty("proxy_pass");
+        final JDProxy pr = new JDProxy(Proxy.Type.HTTP, TestUtils.getStringProperty("proxy_ip"), TestUtils.getIntegerProperty("proxy_port"));
+        final String user = TestUtils.getStringProperty("proxy_user");
+        final String pass = TestUtils.getStringProperty("proxy_pass");
 
         if (user != null && user.trim().length() > 0) {
             pr.setUser(user);
@@ -56,22 +49,27 @@ public class ProxyAuthTest {
         // Browser.setGlobalProxy(pr);
 
         try {
-            Browser br = new Browser();
+            final Browser br = new Browser();
             br.setProxy(pr);
             br.getPage("http://freakshare.net/?language=US");
-            String ip = IPCheck.getIPAddress().toString();
-            InetSocketAddress proxyadress = new InetSocketAddress(pr.getHost(), pr.getPort());
-            String proxyip = proxyadress.getAddress().getHostAddress();
+            final String ip = IPController.getInstance().fetchIP().toString();
+            final InetSocketAddress proxyadress = new InetSocketAddress(pr.getHost(), pr.getPort());
+            final String proxyip = proxyadress.getAddress().getHostAddress();
 
-            assertFalse("Coult not connect to proxy", ip.equals("offline"));
+            Assert.assertFalse("Coult not connect to proxy", ip.equals("offline"));
 
             if (ip == null || !ip.equals(proxyip)) {
-                fail("Request did not use the proxy");
+                Assert.fail("Request did not use the proxy");
             }
-        } catch (Exception e) {
-            fail("proxy error: " + e.getLocalizedMessage());
+        } catch (final Exception e) {
+            Assert.fail("proxy error: " + e.getLocalizedMessage());
 
         }
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        TestUtils.initJD();
     }
 
 }

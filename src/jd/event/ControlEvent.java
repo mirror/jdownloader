@@ -25,72 +25,62 @@ import org.appwork.utils.event.DefaultEvent;
  */
 public class ControlEvent extends DefaultEvent {
 
-    private static final long serialVersionUID = 1639354503246054870L;
+    private static final long serialVersionUID                 = 1639354503246054870L;
 
     /**
      * Alle Downloads wurden bearbeitet. Und der download wird angehalten
      */
-    public static final int CONTROL_ALL_DOWNLOADS_FINISHED = 1;
-
-    /**
-     * A Reconnect was requested and will be performed.
-     */
-    public static final int CONTROL_BEFORE_RECONNECT = 2;
-
-    /**
-     * The requested Reconnect was performed.
-     */
-    public static final int CONTROL_AFTER_RECONNECT = 3;
+    public static final int   CONTROL_ALL_DOWNLOADS_FINISHED   = 1;
 
     /**
      * Ein PLugin wird beendet. Source: ist jeweils das PLugin Parameter:
      * Decrypter: decrypted Links Vector
      */
-    public static final int CONTROL_PLUGIN_INACTIVE = 4;
+    public static final int   CONTROL_PLUGIN_INACTIVE          = 4;
 
     /**
      * Ein Plugin fängt an zu arbeiten. Source ist das PLugin selbst Parameter:
      * Decrypter: encryptedLinks
      */
-    public static final int CONTROL_PLUGIN_ACTIVE = 5;
+    public static final int   CONTROL_PLUGIN_ACTIVE            = 5;
 
     /**
      * Wird aufgerufen sobald der Downloadvorgang komplett gestoppt ist
      */
-    public static final int CONTROL_DOWNLOAD_STOP = 6;
+    public static final int   CONTROL_DOWNLOAD_STOP            = 6;
 
     /**
      * Gibt an, dass der Downloadvorgang gestartet wurde
      */
-    public static final int CONTROL_DOWNLOAD_START = 13;
+    public static final int   CONTROL_DOWNLOAD_START           = 13;
 
     /**
      * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird
      * (oder package); soiu7rce: link/packlage parameter:menuitem arraylist
      */
-    public static final int CONTROL_LINKLIST_CONTEXT_MENU = 22;
+    public static final int   CONTROL_LINKLIST_CONTEXT_MENU    = 22;
 
     /**
      * Gibt an dass ein plugin, eine INteraction etc. einen Forschritt gemacht
      * haben. Das entsprechende Event wird aus der ProgressController klasse
      * ausgelöst
      */
-    public static final int CONTROL_ON_PROGRESS = 24;
+    public static final int   CONTROL_ON_PROGRESS              = 24;
 
     /**
      * Wird vom Controller vor dem beeenden des Programms aufgerufen
      */
-    public static final int CONTROL_SYSTEM_EXIT = 26;
+    public static final int   CONTROL_SYSTEM_EXIT              = 26;
 
-    public static final int CONTROL_JDPROPERTY_CHANGED = 27;
+    public static final int   CONTROL_JDPROPERTY_CHANGED       = 27;
 
     /**
      * TODO: After the refactoring of the logger, this controlevent will never
      * be thrown! There is no JDLogHandler anymore, which throws this event!
      */
-    public static final int CONTROL_LOG_OCCURED = 29;
+    public static final int   CONTROL_LOG_OCCURED              = 29;
 
-    public static final int CONTROL_INIT_COMPLETE = 30;
+    public static final int   CONTROL_INIT_COMPLETE            = 30;
 
     /**
      * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt
@@ -98,53 +88,44 @@ public class ControlEvent extends DefaultEvent {
      * entscheiden wie die files weiterverareitet werden sollen. Die files
      * werden als File[] parameter übergeben
      */
-    public static final int CONTROL_ON_FILEOUTPUT = 33;
+    public static final int   CONTROL_ON_FILEOUTPUT            = 33;
 
     /**
      * Sammelt über DataBox.java daten ein
      */
-    public static final int CONTROL_COLLECT_DATA = 34;
+    public static final int   CONTROL_COLLECT_DATA             = 34;
 
     /**
      * prepareShutDown is complete
      */
-    public static final int CONTROL_SYSTEM_SHUTDOWN_PREPARED = 261;
-
-    /**
-     * can be used to write reconnect addons. the call must set
-     * messagebox.setProperty(Reconnecter.VERIFY_IP_AGAIN,true);
-     * 
-     * to force the reconnector to check the ip again. if this ip check
-     * succeeds, the internal reconnect settings are skipped
-     */
-    public static final int CONTROL_RECONNECT_REQUEST = 262;
+    public static final int   CONTROL_SYSTEM_SHUTDOWN_PREPARED = 261;
 
     /**
      * Die ID des Ereignisses
      */
-    private final int controlID;
+    private final int         controlID;
 
     /**
      * Ein optionaler Parameter
      */
-    private final Object parameter;
+    private final Object      parameter;
 
     public ControlEvent(final Object source, final int controlID) {
         this(source, controlID, null);
     }
 
-    public ControlEvent(final Object source, int controlID, final Object parameter) {
+    public ControlEvent(final Object source, final int controlID, final Object parameter) {
         super(source, controlID);
         this.controlID = controlID;
         this.parameter = parameter;
     }
 
     public Object getParameter() {
-        return parameter;
+        return this.parameter;
     }
 
     @Override
     public String toString() {
-        return "[source:" + getCaller() + ", controlID:" + controlID + ", parameter:" + parameter + "]";
+        return "[source:" + this.getCaller() + ", controlID:" + this.controlID + ", parameter:" + this.parameter + "]";
     }
 }

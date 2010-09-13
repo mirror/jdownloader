@@ -29,10 +29,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.controlling.reconnect.IP;
-import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.liveheader.recorder.Gui;
@@ -140,27 +137,33 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
     }
 
     public void controlEvent(final ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_AFTER_RECONNECT && ReconnectPluginController.getInstance().getActivePlugin() == this && !this.getStorage().get("SENT", false)) {
-            final boolean rcOK = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RECONNECT_OKAY, true);
-            final int failCount = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0);
-            if (failCount == 0 && rcOK) {
-                final int count = this.getStorage().get("SUCCESSCOUNT", 0) + 1;
-                this.getStorage().put("SUCCESSCOUNT", count);
-                if (count > 2) {
-                    try {
-                        RouterSender.getInstance().run();
-
-                        this.getStorage().put("SENT", true);
-
-                    } catch (final Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else {
-                this.getStorage().put("SUCCESSCOUNT", 0);
-            }
-
-        }
+        // if (event.getEventID() == ControlEvent.CONTROL_AFTER_RECONNECT &&
+        // ReconnectPluginController.getInstance().getActivePlugin() == this &&
+        // !this.getStorage().get("SENT", false)) {
+        // final boolean rcOK =
+        // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RECONNECT_OKAY,
+        // true);
+        // final int failCount =
+        // JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER,
+        // 0);
+        // if (failCount == 0 && rcOK) {
+        // final int count = this.getStorage().get("SUCCESSCOUNT", 0) + 1;
+        // this.getStorage().put("SUCCESSCOUNT", count);
+        // if (count > 2) {
+        // try {
+        // RouterSender.getInstance().run();
+        //
+        // this.getStorage().put("SENT", true);
+        //
+        // } catch (final Exception e) {
+        // e.printStackTrace();
+        // }
+        // }
+        // } else {
+        // this.getStorage().put("SUCCESSCOUNT", 0);
+        // }
+        //
+        // }
     }
 
     private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw) {
@@ -375,11 +378,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
     }
 
     @Override
-    public IP getExternalIP() {
-        return IP_NA.IPCHECK_UNSUPPORTED;
-    }
-
-    @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 15,wrap 3", "[][][grow,fill]", "[]"));
         this.btnAuto = new JButton("Send Router Settings");
@@ -542,11 +540,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     public boolean hasDetectionWizard() {
         return true;
-    }
-
-    @Override
-    public boolean isIPCheckEnabled() {
-        return false;
     }
 
     @Override
@@ -850,10 +843,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
             // ret = wizard.runRouterRecorder();
         }
         return ret;
-    }
-
-    @Override
-    public void setCanCheckIP(final boolean b) {
     }
 
     public void setPassword(final String pass) {

@@ -6,31 +6,32 @@ import javax.swing.JComponent;
 
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
+import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 
-import com.sun.istack.internal.Nullable;
-
 public abstract class RouterPlugin {
 
-    protected static final Logger LOG           = JDLogger.getLogger();
+    protected static final Logger LOG             = JDLogger.getLogger();
 
     private final Storage         storage;
 
     private long                  lastDuration;
+
+    private IPCheckProvider       ipCheckProvider = null;
     /**
      * Constant that has to be returned by {@link #getExternalIP()} if there is
      * no internet connection
      */
-    public static final String    OFFLINE       = "offline";
+    public static final String    OFFLINE         = "offline";
 
     /**
      * constant that has to be returned by {@link #getExternalIP()} if a ip
      * chekc is temp. not available
      */
-    public static final String    NOT_AVAILABLE = "na";
+    public static final String    NOT_AVAILABLE   = "na";
 
     public RouterPlugin() {
         this.storage = JSonStorage.getPlainStorage(this.getID());
@@ -52,17 +53,6 @@ public abstract class RouterPlugin {
     }
 
     /**
-     * returns the external IP
-     * 
-     * @return {@link #OFFLINE} or {@value #NOT_AVAILABLE} a valid IP the ip
-     *         adress
-     * @throws GetIpException
-     *             if this plugin cannot get a valid IP response
-     */
-    @Nullable
-    public abstract IP getExternalIP();
-
-    /**
      * 
      * @return Config GUI for this plugin
      */
@@ -75,15 +65,8 @@ public abstract class RouterPlugin {
      */
     public abstract String getID();
 
-    /**
-     * Returns the IPCheck interval. Override this method for routerplugins that
-     * check ip locally, and may allow a shorter interval for a faster
-     * reconnection
-     * 
-     * @return
-     */
-    public int getIpCheckInterval() {
-        return 5;
+    public IPCheckProvider getIPCheckProvider() {
+        return this.ipCheckProvider;
     }
 
     /**
@@ -142,14 +125,6 @@ public abstract class RouterPlugin {
     }
 
     /**
-     * returns true, if this router implementation is able to check the external
-     * IP
-     * 
-     * @return
-     */
-    public abstract boolean isIPCheckEnabled();
-
-    /**
      * returns true, if this router implementation is able to perform a
      * reconnect
      * 
@@ -176,7 +151,10 @@ public abstract class RouterPlugin {
         return -1;
     }
 
-    public abstract void setCanCheckIP(boolean b);
+    public IPCheckProvider setIPCheckProvider(final IPCheckProvider p) {
+        return this.ipCheckProvider = p;
+
+    }
 
     @Override
     public String toString() {

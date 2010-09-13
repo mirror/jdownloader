@@ -21,8 +21,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
@@ -35,8 +35,8 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
-import jd.controlling.reconnect.IPCheck;
 import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
@@ -46,11 +46,11 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
@@ -64,18 +64,90 @@ import org.w3c.dom.Element;
 
 public class Serverhandler implements Handler {
 
-    private OptionalPluginWrapper rc = JDUtilities.getOptionalPlugin("remotecontrol");
-    private static Logger logger = JDLogger.getLogger();
+    private final OptionalPluginWrapper rc                          = JDUtilities.getOptionalPlugin("remotecontrol");
+    private static Logger               logger                      = JDLogger.getLogger();
 
-    private static final String LINK_TYPE_OFFLINE = "offline";
-    private static final String LINK_TYPE_AVAIL = "available";
+    private static final String         LINK_TYPE_OFFLINE           = "offline";
+    private static final String         LINK_TYPE_AVAIL             = "available";
 
-    private static final String ERROR_MALFORMED_REQUEST = "JDRemoteControl - Malformed request. Use /help";
-    private static final String ERROR_LINK_GRABBER_RUNNING = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
-    private static final String ERROR_UNKNOWN_RESPONSE_TYPE = "Error: Unknown response type. Please inform us.";
+    private static final String         ERROR_MALFORMED_REQUEST     = "JDRemoteControl - Malformed request. Use /help";
+    private static final String         ERROR_LINK_GRABBER_RUNNING  = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
+    private static final String         ERROR_UNKNOWN_RESPONSE_TYPE = "Error: Unknown response type. Please inform us.";
 
-    public void handle(Request request, Response response) {
-        Document xml = JDUtilities.parseXmlString("<jdownloader></jdownloader>", false);
+    private final DecimalFormat         f                           = new DecimalFormat("#0.00");
+
+    private Element addDownloadLink(final Document xml, final DownloadLink dl) {
+        final Element element = xml.createElement("file");
+        element.setAttribute("file_name", dl.getName());
+        element.setAttribute("file_package", dl.getFilePackage().getName());
+        element.setAttribute("file_percent", this.f.format(dl.getDownloadCurrent() * 100.0 / Math.max(1, dl.getDownloadSize())));
+        element.setAttribute("file_hoster", dl.getHost());
+        element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
+        element.setAttribute("file_speed", dl.getDownloadSpeed() + "");
+        element.setAttribute("file_size", Formatter.formatReadable(dl.getDownloadSize()));
+        element.setAttribute("file_downloaded", Formatter.formatReadable(dl.getDownloadCurrent()));
+        return element;
+    }
+
+    private Element addFilePackage(final Document xml, final FilePackage fp) {
+        final Element element = xml.createElement("package");
+        xml.getFirstChild().appendChild(element);
+        element.setAttribute("package_name", fp.getName());
+        element.setAttribute("package_percent", this.f.format(fp.getPercent()));
+        element.setAttribute("package_linksinprogress", fp.getLinksInProgress() + "");
+        element.setAttribute("package_linkstotal", fp.size() + "");
+        element.setAttribute("package_ETA", Formatter.formatSeconds(fp.getETA()));
+        element.setAttribute("package_speed", Formatter.formatReadable(fp.getTotalDownloadSpeed()));
+        element.setAttribute("package_loaded", Formatter.formatReadable(fp.getTotalKBLoaded()));
+        element.setAttribute("package_size", Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
+        element.setAttribute("package_todo", Formatter.formatReadable(fp.getTotalEstimatedPackageSize() - fp.getTotalKBLoaded()));
+        return element;
+    }
+
+    private Element addGrabberLink(final Document xml, final DownloadLink dl) {
+        final Element element = xml.createElement("file");
+
+        // fetch available status in advance - also updates other stuff like
+        // file size
+        final AvailableStatus status = dl.getAvailableStatus();
+
+        element.setAttribute("file_name", dl.getName());
+        element.setAttribute("file_package", dl.getFilePackage().getName());
+        element.setAttribute("file_hoster", dl.getHost());
+        element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
+        element.setAttribute("file_available", status.toString());
+        element.setAttribute("file_download_url", dl.getDownloadURL().toString());
+        element.setAttribute("file_browser_url", dl.getBrowserUrl().toString());
+        element.setAttribute("file_size", Formatter.formatReadable(dl.getDownloadSize()));
+        return element;
+    }
+
+    private Element addGrabberPackage(final Document xml, final LinkGrabberFilePackage fp) {
+        final Element element = xml.createElement("package");
+        xml.getFirstChild().appendChild(element);
+        element.setAttribute("package_name", fp.getName());
+        element.setAttribute("package_linkstotal", fp.size() + "");
+        return element;
+    }
+
+    public void finish(final Request req, final Response res) {
+        // TODO Auto-generated method stub
+
+    }
+
+    private String[] getHTMLDecoded(final String[] arr) {
+        final int arrLength = arr.length;
+        final String[] retval = new String[arrLength];
+
+        for (int i = 0; i < arrLength; ++i) {
+            retval[i] = Encoding.htmlDecode(arr[i]);
+        }
+
+        return retval;
+    }
+
+    public void handle(final Request request, final Response response) {
+        final Document xml = JDUtilities.parseXmlString("<jdownloader></jdownloader>", false);
 
         response.setReturnType("text/html");
         response.setReturnStatus(Response.OK);
@@ -87,7 +159,7 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().equals("/get/rcversion")) {
             // Get JDRemoteControl version
 
-            response.addContent(rc.getVersion());
+            response.addContent(this.rc.getVersion());
         } else if (request.getRequestUrl().equals("/get/version")) {
             // Get version
 
@@ -102,7 +174,7 @@ public class Serverhandler implements Handler {
                 config = SubConfiguration.getConfig(request.getParameters().get("sub").toUpperCase());
             }
 
-            for (Entry<String, Object> next : config.getProperties().entrySet()) {
+            for (final Entry<String, Object> next : config.getProperties().entrySet()) {
                 response.addContent(next.getKey() + " = " + next.getValue() + "\r\n");
             }
 
@@ -113,12 +185,12 @@ public class Serverhandler implements Handler {
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                 response.addContent("IPCheck disabled");
             } else {
-                response.addContent(IPCheck.getIPAddress());
+                response.addContent(IPController.getInstance().getIP());
             }
         } else if (request.getRequestUrl().equals("/get/randomip")) {
             // Get random-IP
 
-            Random r = new Random();
+            final Random r = new Random();
             response.addContent(r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255));
         } else if (request.getRequestUrl().equals("/get/speed")) {
             // Get current speed
@@ -127,7 +199,7 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().equals("/get/speedlimit")) {
             // Get speed limit
 
-            int value = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            final int value = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
             response.addContent(value);
         } else if (request.getRequestUrl().equals("/get/downloadstatus")) {
             // Get download status
@@ -140,11 +212,11 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("/get/grabber/list")) {
             // Get grabber content as xml
 
-            for (LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
-                Element fp_xml = addGrabberPackage(xml, fp);
+            for (final LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
+                final Element fp_xml = this.addGrabberPackage(xml, fp);
 
-                for (DownloadLink dl : fp.getDownloadLinks()) {
-                    fp_xml.appendChild(addGrabberLink(xml, dl));
+                for (final DownloadLink dl : fp.getDownloadLinks()) {
+                    fp_xml.appendChild(this.addGrabberLink(xml, dl));
                 }
             }
 
@@ -154,7 +226,7 @@ public class Serverhandler implements Handler {
 
             int counter = 0;
 
-            for (LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
+            for (final LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
                 counter += fp.getDownloadLinks().size();
             }
 
@@ -164,28 +236,29 @@ public class Serverhandler implements Handler {
 
             boolean isbusy = false;
 
-            if (LinkGrabberPanel.getLinkGrabber().isRunning())
+            if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                 isbusy = true;
-            else
+            } else {
                 isbusy = false;
+            }
 
             response.addContent(isbusy);
         } else if (request.getRequestUrl().equals("/get/grabber/isset/startafteradding")) {
             // Get whether start after adding option is set or not
 
-            boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true);
+            final boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true);
             response.addContent(value);
         } else if (request.getRequestUrl().equals("/get/grabber/isset/autoadding")) {
             // Get whether auto-adding option is set or not
 
-            boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true);
+            final boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true);
             response.addContent(value);
         } else if (request.getRequestUrl().equals("/get/downloads/all/count")) {
             // Get number of all DLs in DL-list
 
             int counter = 0;
 
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
+            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
                 counter += fp.getDownloadLinkList().size();
             }
 
@@ -195,8 +268,8 @@ public class Serverhandler implements Handler {
 
             int counter = 0;
 
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
+            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                for (final DownloadLink dl : fp.getDownloadLinkList()) {
                     if (dl.getLinkStatus().isPluginActive()) {
                         counter++;
                     }
@@ -209,8 +282,8 @@ public class Serverhandler implements Handler {
 
             int counter = 0;
 
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
+            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                for (final DownloadLink dl : fp.getDownloadLinkList()) {
                     if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         counter++;
                     }
@@ -221,11 +294,11 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().equals("/get/downloads/all/list")) {
             // Get DLList
 
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                Element fp_xml = addFilePackage(xml, fp);
+            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                final Element fp_xml = this.addFilePackage(xml, fp);
 
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
-                    fp_xml.appendChild(addDownloadLink(xml, dl));
+                for (final DownloadLink dl : fp.getDownloadLinkList()) {
+                    fp_xml.appendChild(this.addDownloadLink(xml, dl));
                 }
             }
 
@@ -233,12 +306,12 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().equals("/get/downloads/current/list")) {
             // Get current DLs
 
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                Element fp_xml = addFilePackage(xml, fp);
+            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                final Element fp_xml = this.addFilePackage(xml, fp);
 
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
+                for (final DownloadLink dl : fp.getDownloadLinkList()) {
                     if (dl.getLinkStatus().isPluginActive()) {
-                        fp_xml.appendChild(addDownloadLink(xml, dl));
+                        fp_xml.appendChild(this.addDownloadLink(xml, dl));
                     }
                 }
             }
@@ -247,12 +320,12 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().equals("/get/downloads/finished/list")) {
             // Get finished DLs
 
-            for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                Element fp_xml = addFilePackage(xml, fp);
+            for (final FilePackage fp : JDUtilities.getController().getPackages()) {
+                final Element fp_xml = this.addFilePackage(xml, fp);
 
-                for (DownloadLink dl : fp.getDownloadLinkList()) {
+                for (final DownloadLink dl : fp.getDownloadLinkList()) {
                     if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        fp_xml.appendChild(addDownloadLink(xml, dl));
+                        fp_xml.appendChild(this.addDownloadLink(xml, dl));
                     }
                 }
             }
@@ -261,9 +334,9 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/set/reconnect/(true|false)")) {
             // Set Reconnect enabled
 
-            boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/reconnect/(true|false)").getMatch(0));
+            final boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/reconnect/(true|false)").getMatch(0));
 
-            logger.fine("RemoteControl - Set ReConnect: " + newrc);
+            Serverhandler.logger.fine("RemoteControl - Set ReConnect: " + newrc);
 
             if (newrc != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, newrc);
@@ -274,8 +347,8 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/set/premium/(true|false)")) {
             // Set Use premium
 
-            boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/premium/(true|false)").getMatch(0));
-            logger.fine("RemoteControl - Set Premium: " + newuseprem);
+            final boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/premium/(true|false)").getMatch(0));
+            Serverhandler.logger.fine("RemoteControl - Set Premium: " + newuseprem);
 
             if (newuseprem != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
@@ -284,7 +357,7 @@ public class Serverhandler implements Handler {
 
             response.addContent("PARAM_USE_GLOBAL_PREMIUM=" + newuseprem);
         } else if (request.getRequestUrl().matches("(?is).*/set/downloaddir/general/.+")) {
-            String dir = new Regex(request.getRequestUrl(), ".*/set/downloaddir/general/(.+)").getMatch(0);
+            final String dir = new Regex(request.getRequestUrl(), ".*/set/downloaddir/general/(.+)").getMatch(0);
 
             // TODO: Doesn't seem to work but I really don't know why :-/
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
@@ -294,8 +367,8 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/set/download/limit/[0-9]+")) {
             // Set download limit
 
-            Integer newdllimit = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/set/download/limit/([0-9]+)").getMatch(0));
-            logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
+            final Integer newdllimit = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/set/download/limit/([0-9]+)").getMatch(0));
+            Serverhandler.logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
             SubConfiguration.getConfig("DOWNLOAD").save();
 
@@ -303,16 +376,16 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/set/download/max/[0-9]+")) {
             // Set max. sim. downloads
 
-            Integer newsimdl = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/set/download/max/([0-9]+)").getMatch(0));
-            logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
+            final Integer newsimdl = Integer.parseInt(new Regex(request.getRequestUrl(), ".*/set/download/max/([0-9]+)").getMatch(0));
+            Serverhandler.logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
             SubConfiguration.getConfig("DOWNLOAD").save();
 
             response.addContent("PARAM_DOWNLOAD_MAX_SIMULTAN=" + newsimdl);
         } else if (request.getRequestUrl().matches("(?is).*/set/grabber/startafteradding/(true|false)")) {
-            boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/grabber/startafteradding/(true|false)").getMatch(0));
+            final boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/grabber/startafteradding/(true|false)").getMatch(0));
 
-            logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
+            Serverhandler.logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
 
             if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
                 GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
@@ -321,9 +394,9 @@ public class Serverhandler implements Handler {
 
             response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
         } else if (request.getRequestUrl().matches("(?is).*/set/grabber/autoadding/(true|false)")) {
-            boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/grabber/autoadding/(true|false)").getMatch(0));
+            final boolean value = Boolean.parseBoolean(new Regex(request.getRequestUrl(), ".*/set/grabber/autoadding/(true|false)").getMatch(0));
 
-            logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS_AUTO: " + value);
+            Serverhandler.logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS_AUTO: " + value);
 
             if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true)) {
                 GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, value);
@@ -355,7 +428,7 @@ public class Serverhandler implements Handler {
             // Do Reconnect
 
             response.addContent("Do Reconnect...");
-            Reconnecter.doManualReconnect();
+            Reconnecter.getInstance().forceReconnect();
         } else if (request.getRequestUrl().matches(".*?/action/(force)?update")) {
             // Do Perform webupdate
 
@@ -375,7 +448,7 @@ public class Serverhandler implements Handler {
                 public void run() {
                     try {
                         Thread.sleep(5000);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                         JDLogger.exception(e);
                     }
                     JDUtilities.restartJD(false);
@@ -390,7 +463,7 @@ public class Serverhandler implements Handler {
                 public void run() {
                     try {
                         Thread.sleep(5000);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                         JDLogger.exception(e);
                     }
                     JDUtilities.getController().exit();
@@ -399,18 +472,18 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/action/add/links/.+")) {
             // Add link(s)
 
-            ArrayList<String> links = new ArrayList<String>();
+            final ArrayList<String> links = new ArrayList<String>();
             String link = new Regex(request.getRequestUrl(), ".*/action/add/links/(.+)").getMatch(0);
 
-            for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
+            for (final String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                 links.add(tlink);
             }
 
             if (request.getParameters().size() > 0) {
-                Iterator<String> it = request.getParameters().keySet().iterator();
+                final Iterator<String> it = request.getParameters().keySet().iterator();
 
                 while (it.hasNext()) {
-                    String help = it.next();
+                    final String help = it.next();
 
                     if (!request.getParameter(help).equals("")) {
                         links.add(request.getParameter(help));
@@ -418,10 +491,10 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            StringBuilder ret = new StringBuilder();
-            char tmp[] = new char[] { '"', '\r', '\n' };
+            final StringBuilder ret = new StringBuilder();
+            final char tmp[] = new char[] { '"', '\r', '\n' };
 
-            for (String element : links) {
+            for (final String element : links) {
                 ret.append('\"');
                 ret.append(element.trim());
                 ret.append(tmp);
@@ -440,8 +513,8 @@ public class Serverhandler implements Handler {
             // import dlc
             if (dlcfilestr.matches("http://.*?\\.(dlc|ccf|rsdf)")) {
                 // remote container file
-                String containerFormat = new Regex(dlcfilestr, ".+\\.((dlc|ccf|rsdf))").getMatch(0);
-                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
+                final String containerFormat = new Regex(dlcfilestr, ".+\\.((dlc|ccf|rsdf))").getMatch(0);
+                final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
 
                 try {
                     Browser.download(container, dlcfilestr);
@@ -449,12 +522,12 @@ public class Serverhandler implements Handler {
 
                     try {
                         Thread.sleep(3000);
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         JDLogger.exception(e);
                     }
 
                     container.delete();
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     JDLogger.exception(e);
                 }
             } else {
@@ -471,14 +544,14 @@ public class Serverhandler implements Handler {
             String dlcfilestr = new Regex(request.getRequestUrl(), ".*/action/save/container(/fromgrabber)/?(.+)").getMatch(1);
             dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
-            boolean savefromGrabber = new Regex(request.getRequestUrl(), ".+/fromgrabber/.+").matches();
+            final boolean savefromGrabber = new Regex(request.getRequestUrl(), ".+/fromgrabber/.+").matches();
 
             if (savefromGrabber) {
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                    response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                    response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
                 } else {
-                    ArrayList<LinkGrabberFilePackage> lgPackages = new ArrayList<LinkGrabberFilePackage>();
-                    ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
+                    final ArrayList<LinkGrabberFilePackage> lgPackages = new ArrayList<LinkGrabberFilePackage>();
+                    final ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
 
                     // disable packages, confirm them, save dlc, then delete
                     synchronized (LinkGrabberController.ControllerLock) {
@@ -487,11 +560,13 @@ public class Serverhandler implements Handler {
                         for (int i = 0; i < lgPackages.size(); i++) {
                             DownloadLink dl = null;
 
-                            for (DownloadLink link : lgPackages.get(i).getDownloadLinks()) {
+                            for (final DownloadLink link : lgPackages.get(i).getDownloadLinks()) {
                                 dllinks.add(link); // collecting download
                                 // links
                                 link.setEnabled(false);
-                                if (dl == null) dl = link;
+                                if (dl == null) {
+                                    dl = link;
+                                }
                             }
 
                             LinkGrabberPanel.getLinkGrabber().confirmPackage(lgPackages.get(i), null, i);
@@ -500,7 +575,7 @@ public class Serverhandler implements Handler {
 
                         JDUtilities.getController().saveDLC(new File(dlcfilestr), dllinks);
 
-                        for (FilePackage fp : packages) {
+                        for (final FilePackage fp : packages) {
                             JDUtilities.getDownloadController().removePackage(fp);
                         }
                     }
@@ -514,17 +589,17 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/action/grabber/add/archivepassword/.+/.+")) {
             // Add an archive password to package
 
-            String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/add/archivepassword/(.+)/.+").getMatch(0).split("/"));
-            String password = new Regex(request.getRequestUrl(), ".*/action/grabber/add/archivepassword/.+/(.+)").getMatch(0);
+            final String[] packagenames = this.getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/add/archivepassword/(.+)/.+").getMatch(0).split("/"));
+            final String password = new Regex(request.getRequestUrl(), ".*/action/grabber/add/archivepassword/.+/(.+)").getMatch(0);
 
-            ArrayList<LinkGrabberFilePackage> packages = LinkGrabberController.getInstance().getPackages();
-            ArrayList<LinkGrabberFilePackage> packagesWithPW = new ArrayList<LinkGrabberFilePackage>();
+            final ArrayList<LinkGrabberFilePackage> packages = LinkGrabberController.getInstance().getPackages();
+            final ArrayList<LinkGrabberFilePackage> packagesWithPW = new ArrayList<LinkGrabberFilePackage>();
             boolean isErrorMsg = false;
 
             // TODO: Could make trouble if info panel is opened by hand.
             synchronized (LinkGrabberController.ControllerLock) {
-                outer: for (String packagename : packagenames) {
-                    for (LinkGrabberFilePackage pack : packages) {
+                outer: for (final String packagename : packagenames) {
+                    for (final LinkGrabberFilePackage pack : packages) {
                         if (packagename.equals(pack.getName())) {
                             pack.setPassword(password);
                             packagesWithPW.add(pack);
@@ -544,7 +619,9 @@ public class Serverhandler implements Handler {
                 response.addContent("Added Password '" + password + "' to packages: ");
 
                 for (int i = 0; i < packagesWithPW.size(); i++) {
-                    if (i != 0) response.addContent(", ");
+                    if (i != 0) {
+                        response.addContent(", ");
+                    }
                     response.addContent("'" + packagesWithPW.get(i).getName() + "'");
                 }
             }
@@ -552,29 +629,29 @@ public class Serverhandler implements Handler {
             // Join link grabber packages
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                ArrayList<LinkGrabberFilePackage> srcPackages = new ArrayList<LinkGrabberFilePackage>();
-                String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/grabber/join/(.+)").getMatch(0).split("/"));
+                final ArrayList<LinkGrabberFilePackage> srcPackages = new ArrayList<LinkGrabberFilePackage>();
+                final String[] packagenames = this.getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/grabber/join/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
-                    LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
+                    final LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
 
                     if (destPackage == null) {
                         response.addContent("ERROR: Package '" + packagenames[0] + "' not found!");
                     } else {
                         // iterate packages; add all to tmp package list
                         // that match the given join names
-                        for (LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
-                            for (String src : packagenames) {
-                                if ((pack.getName().equals(src)) && (pack != destPackage)) {
+                        for (final LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
+                            for (final String src : packagenames) {
+                                if (pack.getName().equals(src) && pack != destPackage) {
                                     srcPackages.add(pack);
                                 }
                             }
                         }
 
                         // process src
-                        for (LinkGrabberFilePackage pack : srcPackages) {
+                        for (final LinkGrabberFilePackage pack : srcPackages) {
                             destPackage.addAll(pack.getDownloadLinks());
                             LinkGrabberController.getInstance().removePackage(pack);
                         }
@@ -588,7 +665,9 @@ public class Serverhandler implements Handler {
                             response.addContent("Joined " + srcPackages.size() + " packages into '" + packagenames[0] + "': ");
 
                             for (int i = 0; i < srcPackages.size(); ++i) {
-                                if (i != 0) response.addContent(", ");
+                                if (i != 0) {
+                                    response.addContent(", ");
+                                }
                                 response.addContent("'" + srcPackages.get(i).getName() + "'");
                             }
                         } else {
@@ -601,12 +680,12 @@ public class Serverhandler implements Handler {
             // rename link grabber package
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.+)").getMatch(0).split("/"));
+                final String[] packagenames = this.getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/rename/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
-                    LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
+                    final LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
 
                     if (destPackage == null) {
                         response.addContent("ERROR: Package '" + packagenames[0] + "' not found!");
@@ -622,9 +701,9 @@ public class Serverhandler implements Handler {
             // add all links in linkgrabber list to download list
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
+                final ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     packages.addAll(LinkGrabberController.getInstance().getPackages());
@@ -640,20 +719,20 @@ public class Serverhandler implements Handler {
             // add denoted links in linkgrabber list to download list
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                ArrayList<LinkGrabberFilePackage> addedlist = new ArrayList<LinkGrabberFilePackage>();
-                ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
+                final ArrayList<LinkGrabberFilePackage> addedlist = new ArrayList<LinkGrabberFilePackage>();
+                final ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
 
-                String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/confirm/(.+)").getMatch(0).split("/"));
+                final String[] packagenames = this.getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/confirm/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     packages.addAll(LinkGrabberController.getInstance().getPackages());
 
                     for (int i = 0; i < packages.size(); i++) {
-                        LinkGrabberFilePackage fp = packages.get(i);
+                        final LinkGrabberFilePackage fp = packages.get(i);
 
-                        for (String name : packagenames) {
+                        for (final String name : packagenames) {
                             if (name.equalsIgnoreCase(fp.getName())) {
                                 LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null, i);
                                 addedlist.add(fp);
@@ -664,7 +743,9 @@ public class Serverhandler implements Handler {
                     response.addContent("The following packages are now scheduled for download: ");
 
                     for (int i = 0; i < addedlist.size(); i++) {
-                        if (i != 0) response.addContent(", ");
+                        if (i != 0) {
+                            response.addContent(", ");
+                        }
                         response.addContent("'" + addedlist.get(i).getName() + "'");
                     }
                 }
@@ -674,34 +755,36 @@ public class Serverhandler implements Handler {
             // 'offline', 'available' (in grabber and download list)
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                ArrayList<String> delLinks = new ArrayList<String>();
-                ArrayList<String> delPackages = new ArrayList<String>();
+                final ArrayList<String> delLinks = new ArrayList<String>();
+                final ArrayList<String> delPackages = new ArrayList<String>();
 
-                String[] types = getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/removetype/(.+)").getMatch(0).split("/"));
+                final String[] types = this.getHTMLDecoded(new Regex(request.getRequestUrl(), "(?is).*/action/grabber/removetype/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
-                    ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
+                    final ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
                     packages.addAll(LinkGrabberController.getInstance().getPackages());
 
                     response.addContent("Removing links from grabber of type: ");
 
                     for (int i = 0; i < types.length; ++i) {
-                        if (i != 0) response.addContent(", ");
-                        if (types[i].equals(LINK_TYPE_OFFLINE) || types[i].equals(LINK_TYPE_AVAIL)) {
+                        if (i != 0) {
+                            response.addContent(", ");
+                        }
+                        if (types[i].equals(Serverhandler.LINK_TYPE_OFFLINE) || types[i].equals(Serverhandler.LINK_TYPE_AVAIL)) {
                             response.addContent(types[i]);
                         } else {
                             response.addContent("(unknown type: " + types[i] + ")");
                         }
                     }
 
-                    for (LinkGrabberFilePackage fp : packages) {
-                        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp.getDownloadLinks());
+                    for (final LinkGrabberFilePackage fp : packages) {
+                        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp.getDownloadLinks());
 
-                        for (DownloadLink link : links) {
-                            for (String type : types) {
-                                if ((type.equals(LINK_TYPE_OFFLINE) && link.getAvailableStatus().equals(AvailableStatus.FALSE)) || (type.equals(LINK_TYPE_AVAIL) && link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS))) {
+                        for (final DownloadLink link : links) {
+                            for (final String type : types) {
+                                if (type.equals(Serverhandler.LINK_TYPE_OFFLINE) && link.getAvailableStatus().equals(AvailableStatus.FALSE) || type.equals(Serverhandler.LINK_TYPE_AVAIL) && link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
                                     fp.remove(link);
                                     delLinks.add(link.getDownloadURL());
                                 }
@@ -720,14 +803,14 @@ public class Serverhandler implements Handler {
             // remove all links from grabber
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
+                final ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     packages.addAll(LinkGrabberController.getInstance().getPackages());
 
-                    for (LinkGrabberFilePackage fp : packages) {
+                    for (final LinkGrabberFilePackage fp : packages) {
                         LinkGrabberController.getInstance().removePackage(fp);
                     }
 
@@ -737,21 +820,21 @@ public class Serverhandler implements Handler {
         } else if (request.getRequestUrl().matches("(?is).*/action/grabber/remove/.+")) {
             // remove denoted packages from grabber
 
-            String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/grabber/remove/(.+)").getMatch(0).split("/"));
+            final String[] packagenames = this.getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/grabber/remove/(.+)").getMatch(0).split("/"));
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
-                ArrayList<LinkGrabberFilePackage> removelist = new ArrayList<LinkGrabberFilePackage>();
+                final ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
+                final ArrayList<LinkGrabberFilePackage> removelist = new ArrayList<LinkGrabberFilePackage>();
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     packages.addAll(LinkGrabberController.getInstance().getPackages());
 
                     for (int i = 0; i < packages.size(); i++) {
-                        LinkGrabberFilePackage fp = packages.get(i);
+                        final LinkGrabberFilePackage fp = packages.get(i);
 
-                        for (String name : packagenames) {
+                        for (final String name : packagenames) {
                             if (name.equalsIgnoreCase(fp.getName())) {
                                 LinkGrabberController.getInstance().removePackage(fp);
                                 removelist.add(fp);
@@ -762,7 +845,9 @@ public class Serverhandler implements Handler {
                     response.addContent("The following packages were removed from grabber: ");
 
                     for (int i = 0; i < removelist.size(); i++) {
-                        if (i != 0) response.addContent(", ");
+                        if (i != 0) {
+                            response.addContent(", ");
+                        }
                         response.addContent("'" + removelist.get(i).getName() + "'");
                     }
                 }
@@ -771,30 +856,30 @@ public class Serverhandler implements Handler {
             // move links (index 1 to length-1) into package (index 0)
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
-                response.addContent(ERROR_LINK_GRABBER_RUNNING);
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                Regex reg = new Regex(request.getRequestUrl(), ".*/action/grabber/move/([^/]+)/(.+)");
+                final Regex reg = new Regex(request.getRequestUrl(), ".*/action/grabber/move/([^/]+)/(.+)");
 
                 if (reg.getMatch(0) == null || reg.getMatch(1) == null) {
-                    response.addContent(ERROR_MALFORMED_REQUEST);
+                    response.addContent(Serverhandler.ERROR_MALFORMED_REQUEST);
                     return;
                 }
 
-                String dest_package_name = Encoding.htmlDecode(reg.getMatch(0));
-                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-                for (String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(reg.getMatch(1), false), null)) {
+                final String dest_package_name = Encoding.htmlDecode(reg.getMatch(0));
+                final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+                for (final String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(reg.getMatch(1), false), null)) {
                     links.addAll(new DistributeData(tlink).findLinks());
                 }
 
                 boolean packageWasAvailable = false;
                 int numLinksMoved = 0;
-                int numPackagesDeleted = 0;
+                final int numPackagesDeleted = 0;
 
                 synchronized (LinkGrabberController.ControllerLock) {
 
                     // search package
                     LinkGrabberFilePackage dest_package = null;
-                    for (LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
+                    for (final LinkGrabberFilePackage pack : LinkGrabberController.getInstance().getPackages()) {
                         if (pack.getName().equalsIgnoreCase(dest_package_name)) {
                             dest_package = pack;
                             packageWasAvailable = true;
@@ -808,18 +893,18 @@ public class Serverhandler implements Handler {
                     }
 
                     // move links
-                    List<LinkGrabberFilePackage> availPacks = LinkGrabberController.getInstance().getPackages();
+                    final List<LinkGrabberFilePackage> availPacks = LinkGrabberController.getInstance().getPackages();
                     for (int k = 0; k < availPacks.size(); ++k) {
 
-                        LinkGrabberFilePackage pack = availPacks.get(k);
+                        final LinkGrabberFilePackage pack = availPacks.get(k);
                         for (int i = 0; i < pack.size(); ++i) {
 
                             if (pack == dest_package) {
                                 continue;
                             }
 
-                            DownloadLink packLink = pack.get(i);
-                            for (DownloadLink userLink : links) {
+                            final DownloadLink packLink = pack.get(i);
+                            for (final DownloadLink userLink : links) {
 
                                 if (packLink.compareTo(userLink) == 0) {
                                     pack.remove(i);
@@ -863,7 +948,7 @@ public class Serverhandler implements Handler {
 
             final ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
             final ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
-            final String[] packagenames = getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
+            final String[] packagenames = this.getHTMLDecoded(new Regex(request.getRequestUrl(), ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
 
             packages.addAll(DownloadController.getInstance().getPackages());
 
@@ -922,22 +1007,22 @@ public class Serverhandler implements Handler {
 
                 for (final DownloadLink dl : dls) {
                     dl.getAvailableStatus(); // force update
-                    LinkGrabberFilePackage pack = LinkGrabberController.getInstance().getGeneratedPackage(dl);
+                    final LinkGrabberFilePackage pack = LinkGrabberController.getInstance().getGeneratedPackage(dl);
                     dl.getFilePackage().setName(pack.getName());
-                    element.appendChild(addGrabberLink(xml, dl));
+                    element.appendChild(this.addGrabberLink(xml, dl));
                 }
             }
 
             response.addContent(JDUtilities.createXmlString(xml));
         } else if (request.getRequestUrl().matches("(?is).*/addon/.+")) {
             // search in addons
-            ArrayList<OptionalPluginWrapper> addons = OptionalPluginWrapper.getOptionalWrapper();
+            final ArrayList<OptionalPluginWrapper> addons = OptionalPluginWrapper.getOptionalWrapper();
             Object cmdResponse = null;
 
-            for (OptionalPluginWrapper addon : addons) {
+            for (final OptionalPluginWrapper addon : addons) {
 
                 if (addon != null && addon.isLoaded() && addon.isEnabled()) {
-                    PluginOptional addonIntance = addon.getPlugin();
+                    final PluginOptional addonIntance = addon.getPlugin();
 
                     if (addonIntance instanceof RemoteSupport) {
                         cmdResponse = ((RemoteSupport) addonIntance).handleRemoteCmd(request.getRequestUrl());
@@ -947,87 +1032,17 @@ public class Serverhandler implements Handler {
 
             if (cmdResponse != null) {
                 if (cmdResponse instanceof String) {
-                    response.addContent((String) cmdResponse);
+                    response.addContent(cmdResponse);
                 } else if (cmdResponse instanceof Document) {
                     response.addContent(JDUtilities.createXmlString((Document) cmdResponse));
-                } else
-                    response.addContent(ERROR_UNKNOWN_RESPONSE_TYPE);
-            } else
-                response.addContent(ERROR_MALFORMED_REQUEST);
+                } else {
+                    response.addContent(Serverhandler.ERROR_UNKNOWN_RESPONSE_TYPE);
+                }
+            } else {
+                response.addContent(Serverhandler.ERROR_MALFORMED_REQUEST);
+            }
         } else {
-            response.addContent(ERROR_MALFORMED_REQUEST);
+            response.addContent(Serverhandler.ERROR_MALFORMED_REQUEST);
         }
-    }
-
-    private String[] getHTMLDecoded(final String[] arr) {
-        final int arrLength = arr.length;
-        final String[] retval = new String[arrLength];
-
-        for (int i = 0; i < arrLength; ++i) {
-            retval[i] = Encoding.htmlDecode(arr[i]);
-        }
-
-        return retval;
-    }
-
-    private DecimalFormat f = new DecimalFormat("#0.00");
-
-    private Element addFilePackage(final Document xml, final FilePackage fp) {
-        final Element element = xml.createElement("package");
-        xml.getFirstChild().appendChild(element);
-        element.setAttribute("package_name", fp.getName());
-        element.setAttribute("package_percent", f.format(fp.getPercent()));
-        element.setAttribute("package_linksinprogress", fp.getLinksInProgress() + "");
-        element.setAttribute("package_linkstotal", fp.size() + "");
-        element.setAttribute("package_ETA", Formatter.formatSeconds(fp.getETA()));
-        element.setAttribute("package_speed", Formatter.formatReadable(fp.getTotalDownloadSpeed()));
-        element.setAttribute("package_loaded", Formatter.formatReadable(fp.getTotalKBLoaded()));
-        element.setAttribute("package_size", Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
-        element.setAttribute("package_todo", Formatter.formatReadable(fp.getTotalEstimatedPackageSize() - fp.getTotalKBLoaded()));
-        return element;
-    }
-
-    private Element addDownloadLink(final Document xml, final DownloadLink dl) {
-        final Element element = xml.createElement("file");
-        element.setAttribute("file_name", dl.getName());
-        element.setAttribute("file_package", dl.getFilePackage().getName());
-        element.setAttribute("file_percent", f.format(dl.getDownloadCurrent() * 100.0 / Math.max(1, dl.getDownloadSize())));
-        element.setAttribute("file_hoster", dl.getHost());
-        element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
-        element.setAttribute("file_speed", dl.getDownloadSpeed() + "");
-        element.setAttribute("file_size", Formatter.formatReadable(dl.getDownloadSize()));
-        element.setAttribute("file_downloaded", Formatter.formatReadable(dl.getDownloadCurrent()));
-        return element;
-    }
-
-    private Element addGrabberLink(final Document xml, final DownloadLink dl) {
-        final Element element = xml.createElement("file");
-
-        // fetch available status in advance - also updates other stuff like
-        // file size
-        final AvailableStatus status = dl.getAvailableStatus();
-
-        element.setAttribute("file_name", dl.getName());
-        element.setAttribute("file_package", dl.getFilePackage().getName());
-        element.setAttribute("file_hoster", dl.getHost());
-        element.setAttribute("file_status", dl.getLinkStatus().getStatusString().toString());
-        element.setAttribute("file_available", status.toString());
-        element.setAttribute("file_download_url", dl.getDownloadURL().toString());
-        element.setAttribute("file_browser_url", dl.getBrowserUrl().toString());
-        element.setAttribute("file_size", Formatter.formatReadable(dl.getDownloadSize()));
-        return element;
-    }
-
-    private Element addGrabberPackage(final Document xml, final LinkGrabberFilePackage fp) {
-        final Element element = xml.createElement("package");
-        xml.getFirstChild().appendChild(element);
-        element.setAttribute("package_name", fp.getName());
-        element.setAttribute("package_linkstotal", fp.size() + "");
-        return element;
-    }
-
-    public void finish(Request req, Response res) {
-        // TODO Auto-generated method stub
-
     }
 }

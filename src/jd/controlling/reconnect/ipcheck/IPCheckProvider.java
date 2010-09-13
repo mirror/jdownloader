@@ -14,23 +14,24 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.controlling.reconnect;
+package jd.controlling.reconnect.ipcheck;
 
 public interface IPCheckProvider {
-
-    /**
-     * returns a String with Info about this Provider (eg Website url)
-     * 
-     * @return
-     */
-    public String getInfo();
 
     /**
      * this method should returns current IP as String or throws an exception if
      * an error occured
      * 
      * @return
+     * @throws IPCheckException
      */
-    public IP getIP();
+    public IP getIP() throws IPCheckException;
+
+    /**
+     * returns how often this ip check may be used
+     * 
+     * @return
+     */
+    public int getIpCheckInterval();
 
 }

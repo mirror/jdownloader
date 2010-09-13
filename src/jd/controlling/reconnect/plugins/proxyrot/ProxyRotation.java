@@ -9,13 +9,10 @@ import javax.swing.event.DocumentEvent;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.reconnect.IP;
-import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.http.Browser;
 import jd.http.JDProxy;
-import jd.parser.Regex;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -38,9 +35,54 @@ public class ProxyRotation extends RouterPlugin {
     }
 
     @Override
+    public JComponent getGUI() {
+        // TODO: use table someday
+        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 1", "[grow,fill]", "[][][][][grow,fill]"));
+        p.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.label.proxylist", "ProxyList")));
+        p.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.label.formatexample", "Format examples:")));
+        p.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.label.formatexample.http", "http://user:password@ip:port")), "gapleft 32");
+        p.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.label.formatexample.socks", "socks://user:password@ip:port")), "gapleft 32");
+
+        this.txtList = new JTextPane();
+        p.add(new JScrollPane(this.txtList));
+        new TextComponentChangeListener(this.txtList) {
+            @Override
+            protected void onChanged(final DocumentEvent e) {
+
+                ProxyRotation.this.setProxyList(ProxyRotation.this.txtList.getText());
+
+            }
+
+        };
+
+        this.updateGUI();
+        return p;
+    }
+
+    @Override
+    public String getID() {
+        return "ProxyRotation";
+    }
+
+    @Override
+    public String getName() {
+        return JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.getName", "Proxy Rotation");
+    }
+
+    private String getProxyList() {
+
+        return this.getStorage().get(ProxyRotation.PROXY_LIST, SubConfiguration.getConfig("PROXYROTATION").getStringProperty("PARAM_PROXYLIST", ""));
+    }
+
+    @Override
+    public boolean isReconnectionEnabled() {
+        return true;
+    }
+
+    @Override
     protected void performReconnect() throws ReconnectException {
         try {
-            final String[] lines = Regex.getLines(this.getProxyList());
+            final String[] lines = org.appwork.utils.Regex.getLines(this.getProxyList());
             // get next line in list;
             String next = null;
             int i;
@@ -106,65 +148,6 @@ public class ProxyRotation extends RouterPlugin {
             throw new ReconnectException(e);
 
         }
-    }
-
-    @Override
-    public IP getExternalIP() {
-        return IP_NA.IPCHECK_UNSUPPORTED;
-    }
-
-    @Override
-    public JComponent getGUI() {
-        // TODO: use table someday
-        final JPanel p = new JPanel(new MigLayout("ins 15,wrap 1", "[grow,fill]", "[][][][][grow,fill]"));
-        p.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.label.proxylist", "ProxyList")));
-        p.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.label.formatexample", "Format examples:")));
-        p.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.label.formatexample.http", "http://user:password@ip:port")),"gapleft 32");
-        p.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.label.formatexample.socks", "socks://user:password@ip:port")),"gapleft 32");         
-     
-        this.txtList = new JTextPane();
-        p.add(new JScrollPane(this.txtList));
-        new TextComponentChangeListener(this.txtList) {
-            @Override
-            protected void onChanged(final DocumentEvent e) {
-
-                ProxyRotation.this.setProxyList(ProxyRotation.this.txtList.getText());
-
-            }
-
-        };
-
-        this.updateGUI();
-        return p;
-    }
-
-    @Override
-    public String getID() {
-        return "ProxyRotation";
-    }
-
-    @Override
-    public String getName() {
-        return JDL.L("jd.controlling.reconnect.plugins.proxyRot.ProxyRotation.getName", "Proxy Rotation");
-    }
-
-    private String getProxyList() {
-
-        return this.getStorage().get(ProxyRotation.PROXY_LIST, SubConfiguration.getConfig("PROXYROTATION").getStringProperty("PARAM_PROXYLIST", ""));
-    }
-
-    @Override
-    public boolean isIPCheckEnabled() {
-        return false;
-    }
-
-    @Override
-    public boolean isReconnectionEnabled() {
-        return true;
-    }
-
-    @Override
-    public void setCanCheckIP(final boolean b) {
     }
 
     private void setProxyList(final String list) {

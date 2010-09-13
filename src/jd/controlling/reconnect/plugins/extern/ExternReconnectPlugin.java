@@ -15,13 +15,9 @@ import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
 import jd.controlling.JDLogger;
-import jd.controlling.reconnect.IP;
-import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.gui.swing.components.ComboBrowseFile;
-import jd.nutils.OSDetector;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -63,61 +59,6 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
         }
     }
 
-    @Override
-    protected void performReconnect() throws ReconnectException {
-        final int waitForReturn = this.getWaitForReturn();
-        final String command = this.getCommand();
-        if (command.length() == 0) { throw new ReconnectException("Command Invalid: " + command); }
-
-        final File f = new File(command);
-        if (!f.exists()) { throw new ReconnectException("Command does not exist: " + f.getAbsolutePath());
-
-        }
-
-        final String t = f.getAbsolutePath();
-        final String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
-        if (OSDetector.isWindows() && this.isDummyBatchEnabled()) {
-            /*
-             * for windows we create a temporary batchfile that calls our
-             * external tool and redirect its streams to nul
-             */
-            final File bat = this.getDummyBat();
-            if (bat == null) { throw new ReconnectException("Could not create Dummy Batch");
-
-            }
-            try {
-                final BufferedWriter output = new BufferedWriter(new FileWriter(bat));
-                if (executeIn.contains(" ")) {
-                    output.write("cd \"" + executeIn + "\"\r\n");
-                } else {
-                    output.write("cd " + executeIn + "\r\n");
-                }
-                final String parameter = this.getParameterString();
-                final String[] params = Regex.getLines(parameter);
-                final StringBuilder sb = new StringBuilder(" ");
-                for (final String param : params) {
-                    sb.append(param);
-                    sb.append(" ");
-                }
-                if (executeIn.contains(" ")) {
-                    output.write("\"" + command + "\"" + sb.toString() + " >nul 2>nul");
-                } else {
-                    output.write(command + " " + sb.toString() + ">nul 2>nul");
-                }
-                output.close();
-            } catch (final Exception e) {
-                JDLogger.exception(e);
-                throw new ReconnectException(e);
-
-            }
-            RouterPlugin.LOG.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), new String[0], executeIn, waitForReturn));
-        } else {
-            /* other os, normal handling */
-            final String parameter = this.getParameterString();
-            RouterPlugin.LOG.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
-        }
-    }
-
     /**
      * Returns the path to the tool
      * 
@@ -149,11 +90,6 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
             }
             number++;
         }
-    }
-
-    @Override
-    public IP getExternalIP() {
-        return IP_NA.IPCHECK_UNSUPPORTED;
     }
 
     @Override
@@ -234,17 +170,63 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     }
 
     @Override
-    public boolean isIPCheckEnabled() {
-        return false;
-    }
-
-    @Override
     public boolean isReconnectionEnabled() {
         return true;
     }
 
     @Override
-    public void setCanCheckIP(final boolean b) {
+    protected void performReconnect() throws ReconnectException {
+        final int waitForReturn = this.getWaitForReturn();
+        final String command = this.getCommand();
+        if (command.length() == 0) { throw new ReconnectException("Command Invalid: " + command); }
+
+        final File f = new File(command);
+        if (!f.exists()) { throw new ReconnectException("Command does not exist: " + f.getAbsolutePath());
+
+        }
+
+        final String t = f.getAbsolutePath();
+        final String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
+        if (CrossSystem.isWindows() && this.isDummyBatchEnabled()) {
+            /*
+             * for windows we create a temporary batchfile that calls our
+             * external tool and redirect its streams to nul
+             */
+            final File bat = this.getDummyBat();
+            if (bat == null) { throw new ReconnectException("Could not create Dummy Batch");
+
+            }
+            try {
+                final BufferedWriter output = new BufferedWriter(new FileWriter(bat));
+                if (executeIn.contains(" ")) {
+                    output.write("cd \"" + executeIn + "\"\r\n");
+                } else {
+                    output.write("cd " + executeIn + "\r\n");
+                }
+                final String parameter = this.getParameterString();
+                final String[] params = org.appwork.utils.Regex.getLines(parameter);
+                final StringBuilder sb = new StringBuilder(" ");
+                for (final String param : params) {
+                    sb.append(param);
+                    sb.append(" ");
+                }
+                if (executeIn.contains(" ")) {
+                    output.write("\"" + command + "\"" + sb.toString() + " >nul 2>nul");
+                } else {
+                    output.write(command + " " + sb.toString() + ">nul 2>nul");
+                }
+                output.close();
+            } catch (final Exception e) {
+                JDLogger.exception(e);
+                throw new ReconnectException(e);
+
+            }
+            RouterPlugin.LOG.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), new String[0], executeIn, waitForReturn));
+        } else {
+            /* other os, normal handling */
+            final String parameter = this.getParameterString();
+            RouterPlugin.LOG.finer("Execute Returns: " + JDUtilities.runCommand(command, org.appwork.utils.Regex.getLines(parameter), executeIn, waitForReturn));
+        }
     }
 
     protected void setCommand(final String text) {

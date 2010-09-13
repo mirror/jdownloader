@@ -18,6 +18,8 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.Factory;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -166,7 +168,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
         new Thread() {
             @Override
             public void run() {
-                final IP ip = IPCheck.getIPAddress();
+                final IP ip = IPController.getInstance().getIP();
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         ReconnectPluginConfigGUI.this.lblCurrentIP.setText(ip.toString());
@@ -225,7 +227,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
             @Override
             public void run() {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, 0);
-                if (Reconnecter.doManualReconnect()) {
+                if (Reconnecter.getInstance().forceReconnect()) {
                     if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                         progress.setStatusText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
                     } else {
@@ -245,7 +247,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText("?");
                             } else {
-                                ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPCheck.getIPAddress().toString());
+                                ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
                             }
                             return null;
                         }
@@ -263,7 +265,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText("?");
                             } else {
-                                ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPCheck.getIPAddress().toString());
+                                ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
                             }
                             return null;
                         }

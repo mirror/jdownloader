@@ -11,12 +11,9 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
-import jd.controlling.reconnect.IP;
-import jd.controlling.reconnect.IP_NA;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.gui.swing.components.ComboBrowseFile;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -53,34 +50,6 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
         this.setExecuteIn(this.browse.getText());
     }
 
-    @Override
-    protected void performReconnect() throws ReconnectException {
-        final int waitForReturn = this.getWaitForReturn();
-        final String executeIn = this.getExecuteIn();
-
-        String command = this.getTerminalCommand();
-
-        final String[] cmds = command.split("\\ ");
-        final int cmdsLength1 = cmds.length - 1;
-        command = cmds[0];
-        for (int i = 0; i < cmdsLength1; i++) {
-            cmds[i] = cmds[i + 1];
-        }
-
-        final String batch = this.getBatchText();
-
-        final String[] lines = Regex.getLines(batch);
-        RouterPlugin.LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
-        for (final String element : lines) {
-            cmds[cmdsLength1] = element;
-            /*
-             * if we have multiple lines, wait for each line to finish until
-             * starting the next one
-             */
-            RouterPlugin.LOG.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
-        }
-    }
-
     private String getBatchText() {
         return this.getStorage().get(ExternBatchReconnectPlugin.BATCH_TEXT, JDUtilities.getConfiguration().getStringProperty(ExternBatchReconnectPlugin.BATCH_TEXT, ""));
     }
@@ -88,11 +57,6 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     private String getExecuteIn() {
 
         return this.getStorage().get(ExternBatchReconnectPlugin.EXECUTE_IN, JDUtilities.getConfiguration().getStringProperty("RECONNECT_EXECUTE_FOLDER"));
-    }
-
-    @Override
-    public IP getExternalIP() {
-        return IP_NA.IPCHECK_UNSUPPORTED;
     }
 
     @Override
@@ -162,22 +126,41 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     }
 
     @Override
-    public boolean isIPCheckEnabled() {
-        return false;
+    public boolean isReconnectionEnabled() {
+        return true;
     }
 
     @Override
-    public boolean isReconnectionEnabled() {
-        return true;
+    protected void performReconnect() throws ReconnectException {
+        final int waitForReturn = this.getWaitForReturn();
+        final String executeIn = this.getExecuteIn();
+
+        String command = this.getTerminalCommand();
+
+        final String[] cmds = command.split("\\ ");
+        final int cmdsLength1 = cmds.length - 1;
+        command = cmds[0];
+        for (int i = 0; i < cmdsLength1; i++) {
+            cmds[i] = cmds[i + 1];
+        }
+
+        final String batch = this.getBatchText();
+
+        final String[] lines = org.appwork.utils.Regex.getLines(batch);
+        RouterPlugin.LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
+        for (final String element : lines) {
+            cmds[cmdsLength1] = element;
+            /*
+             * if we have multiple lines, wait for each line to finish until
+             * starting the next one
+             */
+            RouterPlugin.LOG.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
+        }
     }
 
     protected void setBatchText(final String text) {
         this.getStorage().put(ExternBatchReconnectPlugin.BATCH_TEXT, text);
         this.updateGUI();
-    }
-
-    @Override
-    public void setCanCheckIP(final boolean b) {
     }
 
     protected void setCommand(final String text) {

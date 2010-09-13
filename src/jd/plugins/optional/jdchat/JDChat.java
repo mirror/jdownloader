@@ -43,6 +43,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
@@ -54,7 +55,8 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.event.ControlEvent;
+import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ReconnecterEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -64,7 +66,6 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.OptionalPlugin;
@@ -74,589 +75,626 @@ import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.os.CrossSystem;
 import org.schwering.irc.lib.IRCConnection;
 
 @OptionalPlugin(rev = "$Revision$", id = "chat", hasGui = true, interfaceversion = 5)
 public class JDChat extends PluginOptional {
-    private static final long              AWAY_TIMEOUT           = 15 * 60 * 1000;
-    private static String                  CHANNEL                = "#jDownloader";
-    private static final Pattern           CMD_ACTION             = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_CONNECT            = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_DISCONNECT         = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_EXIT               = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_MODE               = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_JOIN               = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_NICK               = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_PM                 = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_SLAP               = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_TOPIC              = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_TRANSLATE          = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern           CMD_VERSION            = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
+    private static final long                AWAY_TIMEOUT           = 15 * 60 * 1000;
+    private static String                    CHANNEL                = "#jDownloader";
+    private static final Pattern             CMD_ACTION             = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_CONNECT            = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_DISCONNECT         = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_EXIT               = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_MODE               = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_JOIN               = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_NICK               = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_PM                 = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_SLAP               = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_TOPIC              = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_TRANSLATE          = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern             CMD_VERSION            = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
 
-    private static final ArrayList<String> COMMANDS               = new ArrayList<String>();
+    private static final ArrayList<String>   COMMANDS               = new ArrayList<String>();
 
-    private static final String            PARAM_HOST             = "PARAM_HOST";
-    private static final String            PARAM_NICK             = "PARAM_NICK";
+    private static final String              PARAM_HOST             = "PARAM_HOST";
+    private static final String              PARAM_NICK             = "PARAM_NICK";
 
-    private static final String            PARAM_PERFORM          = "PARAM_PERFORM";
-    private static final String            PARAM_PORT             = "PARAM_PORT";
-    private static final String            PARAM_USERCOLOR        = "PARAM_USERCOLOR";
-    private static final String            PARAM_USERLISTPOSITION = "PARAM_USERLISTPOSITION";
+    private static final String              PARAM_PERFORM          = "PARAM_PERFORM";
+    private static final String              PARAM_PORT             = "PARAM_PORT";
+    private static final String              PARAM_USERCOLOR        = "PARAM_USERCOLOR";
+    private static final String              PARAM_USERLISTPOSITION = "PARAM_USERLISTPOSITION";
 
-    public static final String             STYLE                  = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
-    public static final String             STYLE_ACTION           = "action";
-    public static final String             STYLE_ERROR            = "error";
-    public static final String             STYLE_HIGHLIGHT        = "highlight";
-    public static final String             STYLE_NOTICE           = "notice";
-    public static final String             STYLE_PM               = "pm";
-    public static final String             STYLE_SELF             = "self";
-    public static final String             STYLE_SYSTEM_MESSAGE   = "system";
-    public static final String             USERLIST_STYLE         = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
-    private static final String            CHANNEL_LNG            = "CHANNEL_LNG3";
-    private JLabel                         top;
+    public static final String               STYLE                  = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
+    public static final String               STYLE_ACTION           = "action";
+    public static final String               STYLE_ERROR            = "error";
+    public static final String               STYLE_HIGHLIGHT        = "highlight";
+    public static final String               STYLE_NOTICE           = "notice";
+    public static final String               STYLE_PM               = "pm";
+    public static final String               STYLE_SELF             = "self";
+    public static final String               STYLE_SYSTEM_MESSAGE   = "system";
+    public static final String               USERLIST_STYLE         = JDIO.readFileToString(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
+    private static final String              CHANNEL_LNG            = "CHANNEL_LNG3";
+    private JLabel                           top;
 
-    private IRCConnection                  conn;
-    private SwitchPanel                    frame;
-    private long                           lastAction;
-    private String                         lastCommand;
-    private boolean                        loggedIn;
-    private ArrayList<User>                NAMES;
-    private String                         nick;
-    private boolean                        nickaway;
-    private int                            nickCount              = 0;
-    private String                         orgNick;
-    private JTextPane                      right;
-    private TreeMap<String, JDChatPMS>     pms                    = new TreeMap<String, JDChatPMS>();
-    private StringBuilder                  sb;
-    private JScrollPane                    scrollPane;
-    private JTextPane                      textArea;
-    private JTextField                     textField;
+    private IRCConnection                    conn;
+    private SwitchPanel                      frame;
+    private long                             lastAction;
+    private String                           lastCommand;
+    private boolean                          loggedIn;
+    private ArrayList<User>                  NAMES;
+    private String                           nick;
+    private boolean                          nickaway;
+    private int                              nickCount              = 0;
+    private String                           orgNick;
+    private JTextPane                        right;
+    private final TreeMap<String, JDChatPMS> pms                    = new TreeMap<String, JDChatPMS>();
+    private StringBuilder                    sb;
+    private JScrollPane                      scrollPane;
+    private JTextPane                        textArea;
+    private JTextField                       textField;
 
-    public TreeMap<String, JDChatPMS> getPms() {
-        return pms;
-    }
+    private JComboBox                        lang;
 
-    private JComboBox        lang;
+    private final SubConfiguration           subConfig;
 
-    private SubConfiguration subConfig;
+    private JDChatView                       view;
 
-    private JDChatView       view;
-    private MenuAction       activateAction;
-    private JTabbedPane      tabbedPane;
-    private JButton          closeTab;
+    private MenuAction                       activateAction;
+    private JTabbedPane                      tabbedPane;
+    private JButton                          closeTab;
 
-    public JDChat(PluginWrapper wrapper) {
+    public JDChat(final PluginWrapper wrapper) {
         super(wrapper);
-        subConfig = SubConfiguration.getConfig("JDCHAT");
+        this.subConfig = SubConfiguration.getConfig("JDCHAT");
 
-        CHANNEL = this.getPluginConfig().getStringProperty("CHANNEL", CHANNEL);
-        COMMANDS.add("/msg ");
-        COMMANDS.add("/topic ");
-        COMMANDS.add("/op ");
-        COMMANDS.add("/deop ");
-        COMMANDS.add("/query ");
-        COMMANDS.add("/nick ");
-        COMMANDS.add("/mode ");
-        COMMANDS.add("/join ");
+        JDChat.CHANNEL = this.getPluginConfig().getStringProperty("CHANNEL", JDChat.CHANNEL);
+        JDChat.COMMANDS.add("/msg ");
+        JDChat.COMMANDS.add("/topic ");
+        JDChat.COMMANDS.add("/op ");
+        JDChat.COMMANDS.add("/deop ");
+        JDChat.COMMANDS.add("/query ");
+        JDChat.COMMANDS.add("/nick ");
+        JDChat.COMMANDS.add("/mode ");
+        JDChat.COMMANDS.add("/join ");
 
-        COMMANDS.add("/translate ");
-        initConfigEntries();
-        COMMANDS.add("/translate artoda ");
-        COMMANDS.add("/translate artode ");
-        COMMANDS.add("/translate artofi ");
-        COMMANDS.add("/translate artofr ");
-        COMMANDS.add("/translate artoel ");
-        COMMANDS.add("/translate artohi ");
-        COMMANDS.add("/translate artoit ");
-        COMMANDS.add("/translate artoja ");
-        COMMANDS.add("/translate artoko ");
-        COMMANDS.add("/translate artohr ");
-        COMMANDS.add("/translate artonl ");
-        COMMANDS.add("/translate artono ");
-        COMMANDS.add("/translate artopl ");
-        COMMANDS.add("/translate artopt ");
-        COMMANDS.add("/translate artoro ");
-        COMMANDS.add("/translate artoru ");
-        COMMANDS.add("/translate artosv ");
-        COMMANDS.add("/translate artoes ");
-        COMMANDS.add("/translate artocs ");
-        COMMANDS.add("/translate artoen ");
-        COMMANDS.add("/translate bgtoar ");
-        COMMANDS.add("/translate bgtoda ");
-        COMMANDS.add("/translate bgtode ");
-        COMMANDS.add("/translate bgtofi ");
-        COMMANDS.add("/translate bgtofr ");
-        COMMANDS.add("/translate bgtoel ");
-        COMMANDS.add("/translate bgtohi ");
-        COMMANDS.add("/translate bgtoit ");
-        COMMANDS.add("/translate bgtoja ");
-        COMMANDS.add("/translate bgtoko ");
-        COMMANDS.add("/translate bgtohr ");
-        COMMANDS.add("/translate bgtonl ");
-        COMMANDS.add("/translate bgtono ");
-        COMMANDS.add("/translate bgtopl ");
-        COMMANDS.add("/translate bgtopt ");
-        COMMANDS.add("/translate bgtoro ");
-        COMMANDS.add("/translate bgtoru ");
-        COMMANDS.add("/translate bgtosv ");
-        COMMANDS.add("/translate bgtoes ");
-        COMMANDS.add("/translate bgtocs ");
-        COMMANDS.add("/translate bgtoen ");
-        COMMANDS.add("/translate datoar ");
-        COMMANDS.add("/translate datobg ");
-        COMMANDS.add("/translate datode ");
-        COMMANDS.add("/translate datofi ");
-        COMMANDS.add("/translate datofr ");
-        COMMANDS.add("/translate datoel ");
-        COMMANDS.add("/translate datohi ");
-        COMMANDS.add("/translate datoit ");
-        COMMANDS.add("/translate datoja ");
-        COMMANDS.add("/translate datoko ");
-        COMMANDS.add("/translate datohr ");
-        COMMANDS.add("/translate datonl ");
-        COMMANDS.add("/translate datono ");
-        COMMANDS.add("/translate datopl ");
-        COMMANDS.add("/translate datopt ");
-        COMMANDS.add("/translate datoro ");
-        COMMANDS.add("/translate datoru ");
-        COMMANDS.add("/translate datosv ");
-        COMMANDS.add("/translate datoes ");
-        COMMANDS.add("/translate datocs ");
-        COMMANDS.add("/translate datoen ");
-        COMMANDS.add("/translate detoar ");
-        COMMANDS.add("/translate detobg ");
-        COMMANDS.add("/translate detoda ");
-        COMMANDS.add("/translate detofi ");
-        COMMANDS.add("/translate detofr ");
-        COMMANDS.add("/translate detoel ");
-        COMMANDS.add("/translate detohi ");
-        COMMANDS.add("/translate detoit ");
-        COMMANDS.add("/translate detoja ");
-        COMMANDS.add("/translate detoko ");
-        COMMANDS.add("/translate detohr ");
-        COMMANDS.add("/translate detonl ");
-        COMMANDS.add("/translate detono ");
-        COMMANDS.add("/translate detopl ");
-        COMMANDS.add("/translate detopt ");
-        COMMANDS.add("/translate detoro ");
-        COMMANDS.add("/translate detoru ");
-        COMMANDS.add("/translate detosv ");
-        COMMANDS.add("/translate detoes ");
-        COMMANDS.add("/translate detocs ");
-        COMMANDS.add("/translate detoen ");
-        COMMANDS.add("/translate fitoar ");
-        COMMANDS.add("/translate fitobg ");
-        COMMANDS.add("/translate fitoda ");
-        COMMANDS.add("/translate fitode ");
-        COMMANDS.add("/translate fitofr ");
-        COMMANDS.add("/translate fitoel ");
-        COMMANDS.add("/translate fitohi ");
-        COMMANDS.add("/translate fitoit ");
-        COMMANDS.add("/translate fitoja ");
-        COMMANDS.add("/translate fitoko ");
-        COMMANDS.add("/translate fitohr ");
-        COMMANDS.add("/translate fitonl ");
-        COMMANDS.add("/translate fitono ");
-        COMMANDS.add("/translate fitopl ");
-        COMMANDS.add("/translate fitopt ");
-        COMMANDS.add("/translate fitoro ");
-        COMMANDS.add("/translate fitoru ");
-        COMMANDS.add("/translate fitosv ");
-        COMMANDS.add("/translate fitoes ");
-        COMMANDS.add("/translate fitocs ");
-        COMMANDS.add("/translate fitoen ");
-        COMMANDS.add("/translate frtoar ");
-        COMMANDS.add("/translate frtobg ");
-        COMMANDS.add("/translate frtoda ");
-        COMMANDS.add("/translate frtode ");
-        COMMANDS.add("/translate frtofi ");
-        COMMANDS.add("/translate frtoel ");
-        COMMANDS.add("/translate frtohi ");
-        COMMANDS.add("/translate frtoit ");
-        COMMANDS.add("/translate frtoja ");
-        COMMANDS.add("/translate frtoko ");
-        COMMANDS.add("/translate frtohr ");
-        COMMANDS.add("/translate frtonl ");
-        COMMANDS.add("/translate frtono ");
-        COMMANDS.add("/translate frtopl ");
-        COMMANDS.add("/translate frtopt ");
-        COMMANDS.add("/translate frtoro ");
-        COMMANDS.add("/translate frtoru ");
-        COMMANDS.add("/translate frtosv ");
-        COMMANDS.add("/translate frtoes ");
-        COMMANDS.add("/translate frtocs ");
-        COMMANDS.add("/translate frtoen ");
-        COMMANDS.add("/translate eltoar ");
-        COMMANDS.add("/translate eltobg ");
-        COMMANDS.add("/translate eltoda ");
-        COMMANDS.add("/translate eltode ");
-        COMMANDS.add("/translate eltofi ");
-        COMMANDS.add("/translate eltofr ");
-        COMMANDS.add("/translate eltohi ");
-        COMMANDS.add("/translate eltoit ");
-        COMMANDS.add("/translate eltoja ");
-        COMMANDS.add("/translate eltoko ");
-        COMMANDS.add("/translate eltohr ");
-        COMMANDS.add("/translate eltonl ");
-        COMMANDS.add("/translate eltono ");
-        COMMANDS.add("/translate eltopl ");
-        COMMANDS.add("/translate eltopt ");
-        COMMANDS.add("/translate eltoro ");
-        COMMANDS.add("/translate eltoru ");
-        COMMANDS.add("/translate eltosv ");
-        COMMANDS.add("/translate eltoes ");
-        COMMANDS.add("/translate eltocs ");
-        COMMANDS.add("/translate eltoen ");
-        COMMANDS.add("/translate hitoar ");
-        COMMANDS.add("/translate hitobg ");
-        COMMANDS.add("/translate hitoda ");
-        COMMANDS.add("/translate hitode ");
-        COMMANDS.add("/translate hitofi ");
-        COMMANDS.add("/translate hitofr ");
-        COMMANDS.add("/translate hitoel ");
-        COMMANDS.add("/translate hitoit ");
-        COMMANDS.add("/translate hitoja ");
-        COMMANDS.add("/translate hitoko ");
-        COMMANDS.add("/translate hitohr ");
-        COMMANDS.add("/translate hitonl ");
-        COMMANDS.add("/translate hitono ");
-        COMMANDS.add("/translate hitopl ");
-        COMMANDS.add("/translate hitopt ");
-        COMMANDS.add("/translate hitoro ");
-        COMMANDS.add("/translate hitoru ");
-        COMMANDS.add("/translate hitosv ");
-        COMMANDS.add("/translate hitoes ");
-        COMMANDS.add("/translate hitocs ");
-        COMMANDS.add("/translate hitoen ");
-        COMMANDS.add("/translate ittoar ");
-        COMMANDS.add("/translate ittobg ");
-        COMMANDS.add("/translate ittoda ");
-        COMMANDS.add("/translate ittode ");
-        COMMANDS.add("/translate ittofi ");
-        COMMANDS.add("/translate ittofr ");
-        COMMANDS.add("/translate ittoel ");
-        COMMANDS.add("/translate ittohi ");
-        COMMANDS.add("/translate ittoja ");
-        COMMANDS.add("/translate ittoko ");
-        COMMANDS.add("/translate ittohr ");
-        COMMANDS.add("/translate ittonl ");
-        COMMANDS.add("/translate ittono ");
-        COMMANDS.add("/translate ittopl ");
-        COMMANDS.add("/translate ittopt ");
-        COMMANDS.add("/translate ittoro ");
-        COMMANDS.add("/translate ittoru ");
-        COMMANDS.add("/translate ittosv ");
-        COMMANDS.add("/translate ittoes ");
-        COMMANDS.add("/translate ittocs ");
-        COMMANDS.add("/translate ittoen ");
-        COMMANDS.add("/translate jatoar ");
-        COMMANDS.add("/translate jatobg ");
-        COMMANDS.add("/translate jatoda ");
-        COMMANDS.add("/translate jatode ");
-        COMMANDS.add("/translate jatofi ");
-        COMMANDS.add("/translate jatofr ");
-        COMMANDS.add("/translate jatoel ");
-        COMMANDS.add("/translate jatohi ");
-        COMMANDS.add("/translate jatoit ");
-        COMMANDS.add("/translate jatoko ");
-        COMMANDS.add("/translate jatohr ");
-        COMMANDS.add("/translate jatonl ");
-        COMMANDS.add("/translate jatono ");
-        COMMANDS.add("/translate jatopl ");
-        COMMANDS.add("/translate jatopt ");
-        COMMANDS.add("/translate jatoro ");
-        COMMANDS.add("/translate jatoru ");
-        COMMANDS.add("/translate jatosv ");
-        COMMANDS.add("/translate jatoes ");
-        COMMANDS.add("/translate jatocs ");
-        COMMANDS.add("/translate jatoen ");
-        COMMANDS.add("/translate kotoar ");
-        COMMANDS.add("/translate kotobg ");
-        COMMANDS.add("/translate kotoda ");
-        COMMANDS.add("/translate kotode ");
-        COMMANDS.add("/translate kotofi ");
-        COMMANDS.add("/translate kotofr ");
-        COMMANDS.add("/translate kotoel ");
-        COMMANDS.add("/translate kotohi ");
-        COMMANDS.add("/translate kotoit ");
-        COMMANDS.add("/translate kotoja ");
-        COMMANDS.add("/translate kotohr ");
-        COMMANDS.add("/translate kotonl ");
-        COMMANDS.add("/translate kotono ");
-        COMMANDS.add("/translate kotopl ");
-        COMMANDS.add("/translate kotopt ");
-        COMMANDS.add("/translate kotoro ");
-        COMMANDS.add("/translate kotoru ");
-        COMMANDS.add("/translate kotosv ");
-        COMMANDS.add("/translate kotoes ");
-        COMMANDS.add("/translate kotocs ");
-        COMMANDS.add("/translate kotoen ");
-        COMMANDS.add("/translate hrtoar ");
-        COMMANDS.add("/translate hrtobg ");
-        COMMANDS.add("/translate hrtoda ");
-        COMMANDS.add("/translate hrtode ");
-        COMMANDS.add("/translate hrtofi ");
-        COMMANDS.add("/translate hrtofr ");
-        COMMANDS.add("/translate hrtoel ");
-        COMMANDS.add("/translate hrtohi ");
-        COMMANDS.add("/translate hrtoit ");
-        COMMANDS.add("/translate hrtoja ");
-        COMMANDS.add("/translate hrtoko ");
-        COMMANDS.add("/translate hrtonl ");
-        COMMANDS.add("/translate hrtono ");
-        COMMANDS.add("/translate hrtopl ");
-        COMMANDS.add("/translate hrtopt ");
-        COMMANDS.add("/translate hrtoro ");
-        COMMANDS.add("/translate hrtoru ");
-        COMMANDS.add("/translate hrtosv ");
-        COMMANDS.add("/translate hrtoes ");
-        COMMANDS.add("/translate hrtocs ");
-        COMMANDS.add("/translate hrtoen ");
-        COMMANDS.add("/translate nltoar ");
-        COMMANDS.add("/translate nltobg ");
-        COMMANDS.add("/translate nltoda ");
-        COMMANDS.add("/translate nltode ");
-        COMMANDS.add("/translate nltofi ");
-        COMMANDS.add("/translate nltofr ");
-        COMMANDS.add("/translate nltoel ");
-        COMMANDS.add("/translate nltohi ");
-        COMMANDS.add("/translate nltoit ");
-        COMMANDS.add("/translate nltoja ");
-        COMMANDS.add("/translate nltoko ");
-        COMMANDS.add("/translate nltohr ");
-        COMMANDS.add("/translate nltono ");
-        COMMANDS.add("/translate nltopl ");
-        COMMANDS.add("/translate nltopt ");
-        COMMANDS.add("/translate nltoro ");
-        COMMANDS.add("/translate nltoru ");
-        COMMANDS.add("/translate nltosv ");
-        COMMANDS.add("/translate nltoes ");
-        COMMANDS.add("/translate nltocs ");
-        COMMANDS.add("/translate nltoen ");
-        COMMANDS.add("/translate notoar ");
-        COMMANDS.add("/translate notobg ");
-        COMMANDS.add("/translate notoda ");
-        COMMANDS.add("/translate notode ");
-        COMMANDS.add("/translate notofi ");
-        COMMANDS.add("/translate notofr ");
-        COMMANDS.add("/translate notoel ");
-        COMMANDS.add("/translate notohi ");
-        COMMANDS.add("/translate notoit ");
-        COMMANDS.add("/translate notoja ");
-        COMMANDS.add("/translate notoko ");
-        COMMANDS.add("/translate notohr ");
-        COMMANDS.add("/translate notonl ");
-        COMMANDS.add("/translate notopl ");
-        COMMANDS.add("/translate notopt ");
-        COMMANDS.add("/translate notoro ");
-        COMMANDS.add("/translate notoru ");
-        COMMANDS.add("/translate notosv ");
-        COMMANDS.add("/translate notoes ");
-        COMMANDS.add("/translate notocs ");
-        COMMANDS.add("/translate notoen ");
-        COMMANDS.add("/translate pltoar ");
-        COMMANDS.add("/translate pltobg ");
-        COMMANDS.add("/translate pltoda ");
-        COMMANDS.add("/translate pltode ");
-        COMMANDS.add("/translate pltofi ");
-        COMMANDS.add("/translate pltofr ");
-        COMMANDS.add("/translate pltoel ");
-        COMMANDS.add("/translate pltohi ");
-        COMMANDS.add("/translate pltoit ");
-        COMMANDS.add("/translate pltoja ");
-        COMMANDS.add("/translate pltoko ");
-        COMMANDS.add("/translate pltohr ");
-        COMMANDS.add("/translate pltonl ");
-        COMMANDS.add("/translate pltono ");
-        COMMANDS.add("/translate pltopt ");
-        COMMANDS.add("/translate pltoro ");
-        COMMANDS.add("/translate pltoru ");
-        COMMANDS.add("/translate pltosv ");
-        COMMANDS.add("/translate pltoes ");
-        COMMANDS.add("/translate pltocs ");
-        COMMANDS.add("/translate pltoen ");
-        COMMANDS.add("/translate pttoar ");
-        COMMANDS.add("/translate pttobg ");
-        COMMANDS.add("/translate pttoda ");
-        COMMANDS.add("/translate pttode ");
-        COMMANDS.add("/translate pttofi ");
-        COMMANDS.add("/translate pttofr ");
-        COMMANDS.add("/translate pttoel ");
-        COMMANDS.add("/translate pttohi ");
-        COMMANDS.add("/translate pttoit ");
-        COMMANDS.add("/translate pttoja ");
-        COMMANDS.add("/translate pttoko ");
-        COMMANDS.add("/translate pttohr ");
-        COMMANDS.add("/translate pttonl ");
-        COMMANDS.add("/translate pttono ");
-        COMMANDS.add("/translate pttopl ");
-        COMMANDS.add("/translate pttoro ");
-        COMMANDS.add("/translate pttoru ");
-        COMMANDS.add("/translate pttosv ");
-        COMMANDS.add("/translate pttoes ");
-        COMMANDS.add("/translate pttocs ");
-        COMMANDS.add("/translate pttoen ");
-        COMMANDS.add("/translate rotoar ");
-        COMMANDS.add("/translate rotobg ");
-        COMMANDS.add("/translate rotoda ");
-        COMMANDS.add("/translate rotode ");
-        COMMANDS.add("/translate rotofi ");
-        COMMANDS.add("/translate rotofr ");
-        COMMANDS.add("/translate rotoel ");
-        COMMANDS.add("/translate rotohi ");
-        COMMANDS.add("/translate rotoit ");
-        COMMANDS.add("/translate rotoja ");
-        COMMANDS.add("/translate rotoko ");
-        COMMANDS.add("/translate rotohr ");
-        COMMANDS.add("/translate rotonl ");
-        COMMANDS.add("/translate rotono ");
-        COMMANDS.add("/translate rotopl ");
-        COMMANDS.add("/translate rotopt ");
-        COMMANDS.add("/translate rotoru ");
-        COMMANDS.add("/translate rotosv ");
-        COMMANDS.add("/translate rotoes ");
-        COMMANDS.add("/translate rotocs ");
-        COMMANDS.add("/translate rotoen ");
-        COMMANDS.add("/translate rutoar ");
-        COMMANDS.add("/translate rutobg ");
-        COMMANDS.add("/translate rutoda ");
-        COMMANDS.add("/translate rutode ");
-        COMMANDS.add("/translate rutofi ");
-        COMMANDS.add("/translate rutofr ");
-        COMMANDS.add("/translate rutoel ");
-        COMMANDS.add("/translate rutohi ");
-        COMMANDS.add("/translate rutoit ");
-        COMMANDS.add("/translate rutoja ");
-        COMMANDS.add("/translate rutoko ");
-        COMMANDS.add("/translate rutohr ");
-        COMMANDS.add("/translate rutonl ");
-        COMMANDS.add("/translate rutono ");
-        COMMANDS.add("/translate rutopl ");
-        COMMANDS.add("/translate rutopt ");
-        COMMANDS.add("/translate rutoro ");
-        COMMANDS.add("/translate rutosv ");
-        COMMANDS.add("/translate rutoes ");
-        COMMANDS.add("/translate rutocs ");
-        COMMANDS.add("/translate rutoen ");
-        COMMANDS.add("/translate svtoar ");
-        COMMANDS.add("/translate svtobg ");
-        COMMANDS.add("/translate svtoda ");
-        COMMANDS.add("/translate svtode ");
-        COMMANDS.add("/translate svtofi ");
-        COMMANDS.add("/translate svtofr ");
-        COMMANDS.add("/translate svtoel ");
-        COMMANDS.add("/translate svtohi ");
-        COMMANDS.add("/translate svtoit ");
-        COMMANDS.add("/translate svtoja ");
-        COMMANDS.add("/translate svtoko ");
-        COMMANDS.add("/translate svtohr ");
-        COMMANDS.add("/translate svtonl ");
-        COMMANDS.add("/translate svtono ");
-        COMMANDS.add("/translate svtopl ");
-        COMMANDS.add("/translate svtopt ");
-        COMMANDS.add("/translate svtoro ");
-        COMMANDS.add("/translate svtoru ");
-        COMMANDS.add("/translate svtoes ");
-        COMMANDS.add("/translate svtocs ");
-        COMMANDS.add("/translate svtoen ");
-        COMMANDS.add("/translate estoar ");
-        COMMANDS.add("/translate estobg ");
-        COMMANDS.add("/translate estoda ");
-        COMMANDS.add("/translate estode ");
-        COMMANDS.add("/translate estofi ");
-        COMMANDS.add("/translate estofr ");
-        COMMANDS.add("/translate estoel ");
-        COMMANDS.add("/translate estohi ");
-        COMMANDS.add("/translate estoit ");
-        COMMANDS.add("/translate estoja ");
-        COMMANDS.add("/translate estoko ");
-        COMMANDS.add("/translate estohr ");
-        COMMANDS.add("/translate estonl ");
-        COMMANDS.add("/translate estono ");
-        COMMANDS.add("/translate estopl ");
-        COMMANDS.add("/translate estopt ");
-        COMMANDS.add("/translate estoro ");
-        COMMANDS.add("/translate estoru ");
-        COMMANDS.add("/translate estosv ");
-        COMMANDS.add("/translate estocs ");
-        COMMANDS.add("/translate estoen ");
-        COMMANDS.add("/translate cstoar ");
-        COMMANDS.add("/translate cstobg ");
-        COMMANDS.add("/translate cstoda ");
-        COMMANDS.add("/translate cstode ");
-        COMMANDS.add("/translate cstofi ");
-        COMMANDS.add("/translate cstofr ");
-        COMMANDS.add("/translate cstoel ");
-        COMMANDS.add("/translate cstohi ");
-        COMMANDS.add("/translate cstoit ");
-        COMMANDS.add("/translate cstoja ");
-        COMMANDS.add("/translate cstoko ");
-        COMMANDS.add("/translate cstohr ");
-        COMMANDS.add("/translate cstonl ");
-        COMMANDS.add("/translate cstono ");
-        COMMANDS.add("/translate cstopl ");
-        COMMANDS.add("/translate cstopt ");
-        COMMANDS.add("/translate cstoro ");
-        COMMANDS.add("/translate cstoru ");
-        COMMANDS.add("/translate cstosv ");
-        COMMANDS.add("/translate cstoes ");
-        COMMANDS.add("/translate cstoen ");
-        COMMANDS.add("/translate entoar ");
-        COMMANDS.add("/translate entobg ");
-        COMMANDS.add("/translate entoda ");
-        COMMANDS.add("/translate entode ");
-        COMMANDS.add("/translate entofi ");
-        COMMANDS.add("/translate entofr ");
-        COMMANDS.add("/translate entoel ");
-        COMMANDS.add("/translate entohi ");
-        COMMANDS.add("/translate entoit ");
-        COMMANDS.add("/translate entoja ");
-        COMMANDS.add("/translate entoko ");
-        COMMANDS.add("/translate entohr ");
-        COMMANDS.add("/translate entonl ");
-        COMMANDS.add("/translate entono ");
-        COMMANDS.add("/translate entopl ");
-        COMMANDS.add("/translate entopt ");
-        COMMANDS.add("/translate entoro ");
-        COMMANDS.add("/translate entoru ");
-        COMMANDS.add("/translate entosv ");
-        COMMANDS.add("/translate entoes ");
-        COMMANDS.add("/translate entocs ");
+        JDChat.COMMANDS.add("/translate ");
+        this.initConfigEntries();
+        JDChat.COMMANDS.add("/translate artoda ");
+        JDChat.COMMANDS.add("/translate artode ");
+        JDChat.COMMANDS.add("/translate artofi ");
+        JDChat.COMMANDS.add("/translate artofr ");
+        JDChat.COMMANDS.add("/translate artoel ");
+        JDChat.COMMANDS.add("/translate artohi ");
+        JDChat.COMMANDS.add("/translate artoit ");
+        JDChat.COMMANDS.add("/translate artoja ");
+        JDChat.COMMANDS.add("/translate artoko ");
+        JDChat.COMMANDS.add("/translate artohr ");
+        JDChat.COMMANDS.add("/translate artonl ");
+        JDChat.COMMANDS.add("/translate artono ");
+        JDChat.COMMANDS.add("/translate artopl ");
+        JDChat.COMMANDS.add("/translate artopt ");
+        JDChat.COMMANDS.add("/translate artoro ");
+        JDChat.COMMANDS.add("/translate artoru ");
+        JDChat.COMMANDS.add("/translate artosv ");
+        JDChat.COMMANDS.add("/translate artoes ");
+        JDChat.COMMANDS.add("/translate artocs ");
+        JDChat.COMMANDS.add("/translate artoen ");
+        JDChat.COMMANDS.add("/translate bgtoar ");
+        JDChat.COMMANDS.add("/translate bgtoda ");
+        JDChat.COMMANDS.add("/translate bgtode ");
+        JDChat.COMMANDS.add("/translate bgtofi ");
+        JDChat.COMMANDS.add("/translate bgtofr ");
+        JDChat.COMMANDS.add("/translate bgtoel ");
+        JDChat.COMMANDS.add("/translate bgtohi ");
+        JDChat.COMMANDS.add("/translate bgtoit ");
+        JDChat.COMMANDS.add("/translate bgtoja ");
+        JDChat.COMMANDS.add("/translate bgtoko ");
+        JDChat.COMMANDS.add("/translate bgtohr ");
+        JDChat.COMMANDS.add("/translate bgtonl ");
+        JDChat.COMMANDS.add("/translate bgtono ");
+        JDChat.COMMANDS.add("/translate bgtopl ");
+        JDChat.COMMANDS.add("/translate bgtopt ");
+        JDChat.COMMANDS.add("/translate bgtoro ");
+        JDChat.COMMANDS.add("/translate bgtoru ");
+        JDChat.COMMANDS.add("/translate bgtosv ");
+        JDChat.COMMANDS.add("/translate bgtoes ");
+        JDChat.COMMANDS.add("/translate bgtocs ");
+        JDChat.COMMANDS.add("/translate bgtoen ");
+        JDChat.COMMANDS.add("/translate datoar ");
+        JDChat.COMMANDS.add("/translate datobg ");
+        JDChat.COMMANDS.add("/translate datode ");
+        JDChat.COMMANDS.add("/translate datofi ");
+        JDChat.COMMANDS.add("/translate datofr ");
+        JDChat.COMMANDS.add("/translate datoel ");
+        JDChat.COMMANDS.add("/translate datohi ");
+        JDChat.COMMANDS.add("/translate datoit ");
+        JDChat.COMMANDS.add("/translate datoja ");
+        JDChat.COMMANDS.add("/translate datoko ");
+        JDChat.COMMANDS.add("/translate datohr ");
+        JDChat.COMMANDS.add("/translate datonl ");
+        JDChat.COMMANDS.add("/translate datono ");
+        JDChat.COMMANDS.add("/translate datopl ");
+        JDChat.COMMANDS.add("/translate datopt ");
+        JDChat.COMMANDS.add("/translate datoro ");
+        JDChat.COMMANDS.add("/translate datoru ");
+        JDChat.COMMANDS.add("/translate datosv ");
+        JDChat.COMMANDS.add("/translate datoes ");
+        JDChat.COMMANDS.add("/translate datocs ");
+        JDChat.COMMANDS.add("/translate datoen ");
+        JDChat.COMMANDS.add("/translate detoar ");
+        JDChat.COMMANDS.add("/translate detobg ");
+        JDChat.COMMANDS.add("/translate detoda ");
+        JDChat.COMMANDS.add("/translate detofi ");
+        JDChat.COMMANDS.add("/translate detofr ");
+        JDChat.COMMANDS.add("/translate detoel ");
+        JDChat.COMMANDS.add("/translate detohi ");
+        JDChat.COMMANDS.add("/translate detoit ");
+        JDChat.COMMANDS.add("/translate detoja ");
+        JDChat.COMMANDS.add("/translate detoko ");
+        JDChat.COMMANDS.add("/translate detohr ");
+        JDChat.COMMANDS.add("/translate detonl ");
+        JDChat.COMMANDS.add("/translate detono ");
+        JDChat.COMMANDS.add("/translate detopl ");
+        JDChat.COMMANDS.add("/translate detopt ");
+        JDChat.COMMANDS.add("/translate detoro ");
+        JDChat.COMMANDS.add("/translate detoru ");
+        JDChat.COMMANDS.add("/translate detosv ");
+        JDChat.COMMANDS.add("/translate detoes ");
+        JDChat.COMMANDS.add("/translate detocs ");
+        JDChat.COMMANDS.add("/translate detoen ");
+        JDChat.COMMANDS.add("/translate fitoar ");
+        JDChat.COMMANDS.add("/translate fitobg ");
+        JDChat.COMMANDS.add("/translate fitoda ");
+        JDChat.COMMANDS.add("/translate fitode ");
+        JDChat.COMMANDS.add("/translate fitofr ");
+        JDChat.COMMANDS.add("/translate fitoel ");
+        JDChat.COMMANDS.add("/translate fitohi ");
+        JDChat.COMMANDS.add("/translate fitoit ");
+        JDChat.COMMANDS.add("/translate fitoja ");
+        JDChat.COMMANDS.add("/translate fitoko ");
+        JDChat.COMMANDS.add("/translate fitohr ");
+        JDChat.COMMANDS.add("/translate fitonl ");
+        JDChat.COMMANDS.add("/translate fitono ");
+        JDChat.COMMANDS.add("/translate fitopl ");
+        JDChat.COMMANDS.add("/translate fitopt ");
+        JDChat.COMMANDS.add("/translate fitoro ");
+        JDChat.COMMANDS.add("/translate fitoru ");
+        JDChat.COMMANDS.add("/translate fitosv ");
+        JDChat.COMMANDS.add("/translate fitoes ");
+        JDChat.COMMANDS.add("/translate fitocs ");
+        JDChat.COMMANDS.add("/translate fitoen ");
+        JDChat.COMMANDS.add("/translate frtoar ");
+        JDChat.COMMANDS.add("/translate frtobg ");
+        JDChat.COMMANDS.add("/translate frtoda ");
+        JDChat.COMMANDS.add("/translate frtode ");
+        JDChat.COMMANDS.add("/translate frtofi ");
+        JDChat.COMMANDS.add("/translate frtoel ");
+        JDChat.COMMANDS.add("/translate frtohi ");
+        JDChat.COMMANDS.add("/translate frtoit ");
+        JDChat.COMMANDS.add("/translate frtoja ");
+        JDChat.COMMANDS.add("/translate frtoko ");
+        JDChat.COMMANDS.add("/translate frtohr ");
+        JDChat.COMMANDS.add("/translate frtonl ");
+        JDChat.COMMANDS.add("/translate frtono ");
+        JDChat.COMMANDS.add("/translate frtopl ");
+        JDChat.COMMANDS.add("/translate frtopt ");
+        JDChat.COMMANDS.add("/translate frtoro ");
+        JDChat.COMMANDS.add("/translate frtoru ");
+        JDChat.COMMANDS.add("/translate frtosv ");
+        JDChat.COMMANDS.add("/translate frtoes ");
+        JDChat.COMMANDS.add("/translate frtocs ");
+        JDChat.COMMANDS.add("/translate frtoen ");
+        JDChat.COMMANDS.add("/translate eltoar ");
+        JDChat.COMMANDS.add("/translate eltobg ");
+        JDChat.COMMANDS.add("/translate eltoda ");
+        JDChat.COMMANDS.add("/translate eltode ");
+        JDChat.COMMANDS.add("/translate eltofi ");
+        JDChat.COMMANDS.add("/translate eltofr ");
+        JDChat.COMMANDS.add("/translate eltohi ");
+        JDChat.COMMANDS.add("/translate eltoit ");
+        JDChat.COMMANDS.add("/translate eltoja ");
+        JDChat.COMMANDS.add("/translate eltoko ");
+        JDChat.COMMANDS.add("/translate eltohr ");
+        JDChat.COMMANDS.add("/translate eltonl ");
+        JDChat.COMMANDS.add("/translate eltono ");
+        JDChat.COMMANDS.add("/translate eltopl ");
+        JDChat.COMMANDS.add("/translate eltopt ");
+        JDChat.COMMANDS.add("/translate eltoro ");
+        JDChat.COMMANDS.add("/translate eltoru ");
+        JDChat.COMMANDS.add("/translate eltosv ");
+        JDChat.COMMANDS.add("/translate eltoes ");
+        JDChat.COMMANDS.add("/translate eltocs ");
+        JDChat.COMMANDS.add("/translate eltoen ");
+        JDChat.COMMANDS.add("/translate hitoar ");
+        JDChat.COMMANDS.add("/translate hitobg ");
+        JDChat.COMMANDS.add("/translate hitoda ");
+        JDChat.COMMANDS.add("/translate hitode ");
+        JDChat.COMMANDS.add("/translate hitofi ");
+        JDChat.COMMANDS.add("/translate hitofr ");
+        JDChat.COMMANDS.add("/translate hitoel ");
+        JDChat.COMMANDS.add("/translate hitoit ");
+        JDChat.COMMANDS.add("/translate hitoja ");
+        JDChat.COMMANDS.add("/translate hitoko ");
+        JDChat.COMMANDS.add("/translate hitohr ");
+        JDChat.COMMANDS.add("/translate hitonl ");
+        JDChat.COMMANDS.add("/translate hitono ");
+        JDChat.COMMANDS.add("/translate hitopl ");
+        JDChat.COMMANDS.add("/translate hitopt ");
+        JDChat.COMMANDS.add("/translate hitoro ");
+        JDChat.COMMANDS.add("/translate hitoru ");
+        JDChat.COMMANDS.add("/translate hitosv ");
+        JDChat.COMMANDS.add("/translate hitoes ");
+        JDChat.COMMANDS.add("/translate hitocs ");
+        JDChat.COMMANDS.add("/translate hitoen ");
+        JDChat.COMMANDS.add("/translate ittoar ");
+        JDChat.COMMANDS.add("/translate ittobg ");
+        JDChat.COMMANDS.add("/translate ittoda ");
+        JDChat.COMMANDS.add("/translate ittode ");
+        JDChat.COMMANDS.add("/translate ittofi ");
+        JDChat.COMMANDS.add("/translate ittofr ");
+        JDChat.COMMANDS.add("/translate ittoel ");
+        JDChat.COMMANDS.add("/translate ittohi ");
+        JDChat.COMMANDS.add("/translate ittoja ");
+        JDChat.COMMANDS.add("/translate ittoko ");
+        JDChat.COMMANDS.add("/translate ittohr ");
+        JDChat.COMMANDS.add("/translate ittonl ");
+        JDChat.COMMANDS.add("/translate ittono ");
+        JDChat.COMMANDS.add("/translate ittopl ");
+        JDChat.COMMANDS.add("/translate ittopt ");
+        JDChat.COMMANDS.add("/translate ittoro ");
+        JDChat.COMMANDS.add("/translate ittoru ");
+        JDChat.COMMANDS.add("/translate ittosv ");
+        JDChat.COMMANDS.add("/translate ittoes ");
+        JDChat.COMMANDS.add("/translate ittocs ");
+        JDChat.COMMANDS.add("/translate ittoen ");
+        JDChat.COMMANDS.add("/translate jatoar ");
+        JDChat.COMMANDS.add("/translate jatobg ");
+        JDChat.COMMANDS.add("/translate jatoda ");
+        JDChat.COMMANDS.add("/translate jatode ");
+        JDChat.COMMANDS.add("/translate jatofi ");
+        JDChat.COMMANDS.add("/translate jatofr ");
+        JDChat.COMMANDS.add("/translate jatoel ");
+        JDChat.COMMANDS.add("/translate jatohi ");
+        JDChat.COMMANDS.add("/translate jatoit ");
+        JDChat.COMMANDS.add("/translate jatoko ");
+        JDChat.COMMANDS.add("/translate jatohr ");
+        JDChat.COMMANDS.add("/translate jatonl ");
+        JDChat.COMMANDS.add("/translate jatono ");
+        JDChat.COMMANDS.add("/translate jatopl ");
+        JDChat.COMMANDS.add("/translate jatopt ");
+        JDChat.COMMANDS.add("/translate jatoro ");
+        JDChat.COMMANDS.add("/translate jatoru ");
+        JDChat.COMMANDS.add("/translate jatosv ");
+        JDChat.COMMANDS.add("/translate jatoes ");
+        JDChat.COMMANDS.add("/translate jatocs ");
+        JDChat.COMMANDS.add("/translate jatoen ");
+        JDChat.COMMANDS.add("/translate kotoar ");
+        JDChat.COMMANDS.add("/translate kotobg ");
+        JDChat.COMMANDS.add("/translate kotoda ");
+        JDChat.COMMANDS.add("/translate kotode ");
+        JDChat.COMMANDS.add("/translate kotofi ");
+        JDChat.COMMANDS.add("/translate kotofr ");
+        JDChat.COMMANDS.add("/translate kotoel ");
+        JDChat.COMMANDS.add("/translate kotohi ");
+        JDChat.COMMANDS.add("/translate kotoit ");
+        JDChat.COMMANDS.add("/translate kotoja ");
+        JDChat.COMMANDS.add("/translate kotohr ");
+        JDChat.COMMANDS.add("/translate kotonl ");
+        JDChat.COMMANDS.add("/translate kotono ");
+        JDChat.COMMANDS.add("/translate kotopl ");
+        JDChat.COMMANDS.add("/translate kotopt ");
+        JDChat.COMMANDS.add("/translate kotoro ");
+        JDChat.COMMANDS.add("/translate kotoru ");
+        JDChat.COMMANDS.add("/translate kotosv ");
+        JDChat.COMMANDS.add("/translate kotoes ");
+        JDChat.COMMANDS.add("/translate kotocs ");
+        JDChat.COMMANDS.add("/translate kotoen ");
+        JDChat.COMMANDS.add("/translate hrtoar ");
+        JDChat.COMMANDS.add("/translate hrtobg ");
+        JDChat.COMMANDS.add("/translate hrtoda ");
+        JDChat.COMMANDS.add("/translate hrtode ");
+        JDChat.COMMANDS.add("/translate hrtofi ");
+        JDChat.COMMANDS.add("/translate hrtofr ");
+        JDChat.COMMANDS.add("/translate hrtoel ");
+        JDChat.COMMANDS.add("/translate hrtohi ");
+        JDChat.COMMANDS.add("/translate hrtoit ");
+        JDChat.COMMANDS.add("/translate hrtoja ");
+        JDChat.COMMANDS.add("/translate hrtoko ");
+        JDChat.COMMANDS.add("/translate hrtonl ");
+        JDChat.COMMANDS.add("/translate hrtono ");
+        JDChat.COMMANDS.add("/translate hrtopl ");
+        JDChat.COMMANDS.add("/translate hrtopt ");
+        JDChat.COMMANDS.add("/translate hrtoro ");
+        JDChat.COMMANDS.add("/translate hrtoru ");
+        JDChat.COMMANDS.add("/translate hrtosv ");
+        JDChat.COMMANDS.add("/translate hrtoes ");
+        JDChat.COMMANDS.add("/translate hrtocs ");
+        JDChat.COMMANDS.add("/translate hrtoen ");
+        JDChat.COMMANDS.add("/translate nltoar ");
+        JDChat.COMMANDS.add("/translate nltobg ");
+        JDChat.COMMANDS.add("/translate nltoda ");
+        JDChat.COMMANDS.add("/translate nltode ");
+        JDChat.COMMANDS.add("/translate nltofi ");
+        JDChat.COMMANDS.add("/translate nltofr ");
+        JDChat.COMMANDS.add("/translate nltoel ");
+        JDChat.COMMANDS.add("/translate nltohi ");
+        JDChat.COMMANDS.add("/translate nltoit ");
+        JDChat.COMMANDS.add("/translate nltoja ");
+        JDChat.COMMANDS.add("/translate nltoko ");
+        JDChat.COMMANDS.add("/translate nltohr ");
+        JDChat.COMMANDS.add("/translate nltono ");
+        JDChat.COMMANDS.add("/translate nltopl ");
+        JDChat.COMMANDS.add("/translate nltopt ");
+        JDChat.COMMANDS.add("/translate nltoro ");
+        JDChat.COMMANDS.add("/translate nltoru ");
+        JDChat.COMMANDS.add("/translate nltosv ");
+        JDChat.COMMANDS.add("/translate nltoes ");
+        JDChat.COMMANDS.add("/translate nltocs ");
+        JDChat.COMMANDS.add("/translate nltoen ");
+        JDChat.COMMANDS.add("/translate notoar ");
+        JDChat.COMMANDS.add("/translate notobg ");
+        JDChat.COMMANDS.add("/translate notoda ");
+        JDChat.COMMANDS.add("/translate notode ");
+        JDChat.COMMANDS.add("/translate notofi ");
+        JDChat.COMMANDS.add("/translate notofr ");
+        JDChat.COMMANDS.add("/translate notoel ");
+        JDChat.COMMANDS.add("/translate notohi ");
+        JDChat.COMMANDS.add("/translate notoit ");
+        JDChat.COMMANDS.add("/translate notoja ");
+        JDChat.COMMANDS.add("/translate notoko ");
+        JDChat.COMMANDS.add("/translate notohr ");
+        JDChat.COMMANDS.add("/translate notonl ");
+        JDChat.COMMANDS.add("/translate notopl ");
+        JDChat.COMMANDS.add("/translate notopt ");
+        JDChat.COMMANDS.add("/translate notoro ");
+        JDChat.COMMANDS.add("/translate notoru ");
+        JDChat.COMMANDS.add("/translate notosv ");
+        JDChat.COMMANDS.add("/translate notoes ");
+        JDChat.COMMANDS.add("/translate notocs ");
+        JDChat.COMMANDS.add("/translate notoen ");
+        JDChat.COMMANDS.add("/translate pltoar ");
+        JDChat.COMMANDS.add("/translate pltobg ");
+        JDChat.COMMANDS.add("/translate pltoda ");
+        JDChat.COMMANDS.add("/translate pltode ");
+        JDChat.COMMANDS.add("/translate pltofi ");
+        JDChat.COMMANDS.add("/translate pltofr ");
+        JDChat.COMMANDS.add("/translate pltoel ");
+        JDChat.COMMANDS.add("/translate pltohi ");
+        JDChat.COMMANDS.add("/translate pltoit ");
+        JDChat.COMMANDS.add("/translate pltoja ");
+        JDChat.COMMANDS.add("/translate pltoko ");
+        JDChat.COMMANDS.add("/translate pltohr ");
+        JDChat.COMMANDS.add("/translate pltonl ");
+        JDChat.COMMANDS.add("/translate pltono ");
+        JDChat.COMMANDS.add("/translate pltopt ");
+        JDChat.COMMANDS.add("/translate pltoro ");
+        JDChat.COMMANDS.add("/translate pltoru ");
+        JDChat.COMMANDS.add("/translate pltosv ");
+        JDChat.COMMANDS.add("/translate pltoes ");
+        JDChat.COMMANDS.add("/translate pltocs ");
+        JDChat.COMMANDS.add("/translate pltoen ");
+        JDChat.COMMANDS.add("/translate pttoar ");
+        JDChat.COMMANDS.add("/translate pttobg ");
+        JDChat.COMMANDS.add("/translate pttoda ");
+        JDChat.COMMANDS.add("/translate pttode ");
+        JDChat.COMMANDS.add("/translate pttofi ");
+        JDChat.COMMANDS.add("/translate pttofr ");
+        JDChat.COMMANDS.add("/translate pttoel ");
+        JDChat.COMMANDS.add("/translate pttohi ");
+        JDChat.COMMANDS.add("/translate pttoit ");
+        JDChat.COMMANDS.add("/translate pttoja ");
+        JDChat.COMMANDS.add("/translate pttoko ");
+        JDChat.COMMANDS.add("/translate pttohr ");
+        JDChat.COMMANDS.add("/translate pttonl ");
+        JDChat.COMMANDS.add("/translate pttono ");
+        JDChat.COMMANDS.add("/translate pttopl ");
+        JDChat.COMMANDS.add("/translate pttoro ");
+        JDChat.COMMANDS.add("/translate pttoru ");
+        JDChat.COMMANDS.add("/translate pttosv ");
+        JDChat.COMMANDS.add("/translate pttoes ");
+        JDChat.COMMANDS.add("/translate pttocs ");
+        JDChat.COMMANDS.add("/translate pttoen ");
+        JDChat.COMMANDS.add("/translate rotoar ");
+        JDChat.COMMANDS.add("/translate rotobg ");
+        JDChat.COMMANDS.add("/translate rotoda ");
+        JDChat.COMMANDS.add("/translate rotode ");
+        JDChat.COMMANDS.add("/translate rotofi ");
+        JDChat.COMMANDS.add("/translate rotofr ");
+        JDChat.COMMANDS.add("/translate rotoel ");
+        JDChat.COMMANDS.add("/translate rotohi ");
+        JDChat.COMMANDS.add("/translate rotoit ");
+        JDChat.COMMANDS.add("/translate rotoja ");
+        JDChat.COMMANDS.add("/translate rotoko ");
+        JDChat.COMMANDS.add("/translate rotohr ");
+        JDChat.COMMANDS.add("/translate rotonl ");
+        JDChat.COMMANDS.add("/translate rotono ");
+        JDChat.COMMANDS.add("/translate rotopl ");
+        JDChat.COMMANDS.add("/translate rotopt ");
+        JDChat.COMMANDS.add("/translate rotoru ");
+        JDChat.COMMANDS.add("/translate rotosv ");
+        JDChat.COMMANDS.add("/translate rotoes ");
+        JDChat.COMMANDS.add("/translate rotocs ");
+        JDChat.COMMANDS.add("/translate rotoen ");
+        JDChat.COMMANDS.add("/translate rutoar ");
+        JDChat.COMMANDS.add("/translate rutobg ");
+        JDChat.COMMANDS.add("/translate rutoda ");
+        JDChat.COMMANDS.add("/translate rutode ");
+        JDChat.COMMANDS.add("/translate rutofi ");
+        JDChat.COMMANDS.add("/translate rutofr ");
+        JDChat.COMMANDS.add("/translate rutoel ");
+        JDChat.COMMANDS.add("/translate rutohi ");
+        JDChat.COMMANDS.add("/translate rutoit ");
+        JDChat.COMMANDS.add("/translate rutoja ");
+        JDChat.COMMANDS.add("/translate rutoko ");
+        JDChat.COMMANDS.add("/translate rutohr ");
+        JDChat.COMMANDS.add("/translate rutonl ");
+        JDChat.COMMANDS.add("/translate rutono ");
+        JDChat.COMMANDS.add("/translate rutopl ");
+        JDChat.COMMANDS.add("/translate rutopt ");
+        JDChat.COMMANDS.add("/translate rutoro ");
+        JDChat.COMMANDS.add("/translate rutosv ");
+        JDChat.COMMANDS.add("/translate rutoes ");
+        JDChat.COMMANDS.add("/translate rutocs ");
+        JDChat.COMMANDS.add("/translate rutoen ");
+        JDChat.COMMANDS.add("/translate svtoar ");
+        JDChat.COMMANDS.add("/translate svtobg ");
+        JDChat.COMMANDS.add("/translate svtoda ");
+        JDChat.COMMANDS.add("/translate svtode ");
+        JDChat.COMMANDS.add("/translate svtofi ");
+        JDChat.COMMANDS.add("/translate svtofr ");
+        JDChat.COMMANDS.add("/translate svtoel ");
+        JDChat.COMMANDS.add("/translate svtohi ");
+        JDChat.COMMANDS.add("/translate svtoit ");
+        JDChat.COMMANDS.add("/translate svtoja ");
+        JDChat.COMMANDS.add("/translate svtoko ");
+        JDChat.COMMANDS.add("/translate svtohr ");
+        JDChat.COMMANDS.add("/translate svtonl ");
+        JDChat.COMMANDS.add("/translate svtono ");
+        JDChat.COMMANDS.add("/translate svtopl ");
+        JDChat.COMMANDS.add("/translate svtopt ");
+        JDChat.COMMANDS.add("/translate svtoro ");
+        JDChat.COMMANDS.add("/translate svtoru ");
+        JDChat.COMMANDS.add("/translate svtoes ");
+        JDChat.COMMANDS.add("/translate svtocs ");
+        JDChat.COMMANDS.add("/translate svtoen ");
+        JDChat.COMMANDS.add("/translate estoar ");
+        JDChat.COMMANDS.add("/translate estobg ");
+        JDChat.COMMANDS.add("/translate estoda ");
+        JDChat.COMMANDS.add("/translate estode ");
+        JDChat.COMMANDS.add("/translate estofi ");
+        JDChat.COMMANDS.add("/translate estofr ");
+        JDChat.COMMANDS.add("/translate estoel ");
+        JDChat.COMMANDS.add("/translate estohi ");
+        JDChat.COMMANDS.add("/translate estoit ");
+        JDChat.COMMANDS.add("/translate estoja ");
+        JDChat.COMMANDS.add("/translate estoko ");
+        JDChat.COMMANDS.add("/translate estohr ");
+        JDChat.COMMANDS.add("/translate estonl ");
+        JDChat.COMMANDS.add("/translate estono ");
+        JDChat.COMMANDS.add("/translate estopl ");
+        JDChat.COMMANDS.add("/translate estopt ");
+        JDChat.COMMANDS.add("/translate estoro ");
+        JDChat.COMMANDS.add("/translate estoru ");
+        JDChat.COMMANDS.add("/translate estosv ");
+        JDChat.COMMANDS.add("/translate estocs ");
+        JDChat.COMMANDS.add("/translate estoen ");
+        JDChat.COMMANDS.add("/translate cstoar ");
+        JDChat.COMMANDS.add("/translate cstobg ");
+        JDChat.COMMANDS.add("/translate cstoda ");
+        JDChat.COMMANDS.add("/translate cstode ");
+        JDChat.COMMANDS.add("/translate cstofi ");
+        JDChat.COMMANDS.add("/translate cstofr ");
+        JDChat.COMMANDS.add("/translate cstoel ");
+        JDChat.COMMANDS.add("/translate cstohi ");
+        JDChat.COMMANDS.add("/translate cstoit ");
+        JDChat.COMMANDS.add("/translate cstoja ");
+        JDChat.COMMANDS.add("/translate cstoko ");
+        JDChat.COMMANDS.add("/translate cstohr ");
+        JDChat.COMMANDS.add("/translate cstonl ");
+        JDChat.COMMANDS.add("/translate cstono ");
+        JDChat.COMMANDS.add("/translate cstopl ");
+        JDChat.COMMANDS.add("/translate cstopt ");
+        JDChat.COMMANDS.add("/translate cstoro ");
+        JDChat.COMMANDS.add("/translate cstoru ");
+        JDChat.COMMANDS.add("/translate cstosv ");
+        JDChat.COMMANDS.add("/translate cstoes ");
+        JDChat.COMMANDS.add("/translate cstoen ");
+        JDChat.COMMANDS.add("/translate entoar ");
+        JDChat.COMMANDS.add("/translate entobg ");
+        JDChat.COMMANDS.add("/translate entoda ");
+        JDChat.COMMANDS.add("/translate entode ");
+        JDChat.COMMANDS.add("/translate entofi ");
+        JDChat.COMMANDS.add("/translate entofr ");
+        JDChat.COMMANDS.add("/translate entoel ");
+        JDChat.COMMANDS.add("/translate entohi ");
+        JDChat.COMMANDS.add("/translate entoit ");
+        JDChat.COMMANDS.add("/translate entoja ");
+        JDChat.COMMANDS.add("/translate entoko ");
+        JDChat.COMMANDS.add("/translate entohr ");
+        JDChat.COMMANDS.add("/translate entonl ");
+        JDChat.COMMANDS.add("/translate entono ");
+        JDChat.COMMANDS.add("/translate entopl ");
+        JDChat.COMMANDS.add("/translate entopt ");
+        JDChat.COMMANDS.add("/translate entoro ");
+        JDChat.COMMANDS.add("/translate entoru ");
+        JDChat.COMMANDS.add("/translate entosv ");
+        JDChat.COMMANDS.add("/translate entoes ");
+        JDChat.COMMANDS.add("/translate entocs ");
+
+        Reconnecter.getInstance().getEventSender().addListener(new DefaultEventListener<ReconnecterEvent>() {
+
+            public void onEvent(final ReconnecterEvent event) {
+                // ignore events if gui is not active
+                if (JDChat.this.textArea == null) { return; }
+                if (event.getEventID() == ReconnecterEvent.AFTER) {
+                    if (SwingGui.getInstance().getMainFrame().isActive() && !JDChat.this.nickaway) {
+                        JDChat.this.initIRC();
+                    } else {
+                        JDChat.this.addToText(null, JDChat.STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
+                    }
+                } else if (event.getEventID() == ReconnecterEvent.BEFORE) {
+                    // sendMessage(CHANNEL, "/me is reconnecting...");
+                    if (JDChat.this.conn != null && JDChat.this.conn.isConnected()) {
+                        JDChat.this.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
+                        JDChat.this.conn.doPart(JDChat.CHANNEL, "reconnecting...");
+                        JDChat.this.conn.close();
+                        JDChat.this.conn = null;
+                    }
+                }
+
+            }
+
+        });
 
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == activateAction) {
-            setGuiEnable(activateAction.isSelected());
+    public void actionPerformed(final ActionEvent e) {
+        if (e.getSource() == this.activateAction) {
+            this.setGuiEnable(this.activateAction.isSelected());
         }
     }
 
-    public void addToText(final User user, String style, String msg) {
-        addToText(user, style, msg, textArea, sb);
+    public void addPMS(final String user2) {
+        final String user = user2.trim();
+        if (user.equals(this.conn.getNick().trim())) { return; }
+        this.pms.put(user.toLowerCase(), new JDChatPMS(user));
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                JDChat.this.tabbedPane.add(user, JDChat.this.pms.get(user.toLowerCase()).getScrollPane());
+                return null;
+            }
+        }.invokeLater();
     }
 
-    public void addToText(final User user, String style, String msg, final JTextPane targetpane, final StringBuilder sb) {
+    public void addToText(final User user, final String style, final String msg) {
+        this.addToText(user, style, msg, this.textArea, this.sb);
+    }
+
+    public void addToText(final User user, String style, final String msg, final JTextPane targetpane, final StringBuilder sb) {
 
         final String msg2 = msg;
-        boolean color = subConfig.getBooleanProperty(PARAM_USERCOLOR, true);
-        Date dt = new Date();
+        final boolean color = this.subConfig.getBooleanProperty(JDChat.PARAM_USERCOLOR, true);
+        final Date dt = new Date();
 
-        SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+        final SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
         sb.append("<!---->");
         sb.append("<li>");
         if (user != null) {
             if (!color) {
-                sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+                sb.append("<span style='" + user.getStyle() + (this.getUser(this.conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
             } else {
-                sb.append("<span style='color:#000000" + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
+                sb.append("<span style='color:#000000" + (this.getUser(this.conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
             }
         } else {
             sb.append("<span class='time'>[" + df.format(dt) + "] </span>");
 
         }
-        if (conn != null && msg.contains(conn.getNick())) {
-            style = STYLE_HIGHLIGHT;
+        if (this.conn != null && msg.contains(this.conn.getNick())) {
+            style = JDChat.STYLE_HIGHLIGHT;
         }
         if (style != null) {
             sb.append("<span class='" + style + "'>" + msg + "</span>");
@@ -669,16 +707,16 @@ public class JDChat extends PluginOptional {
             @Override
             public Object runSave() {
 
-                if (!SwingGui.getInstance().getMainFrame().isActive() && conn != null && msg2.contains(conn.getNick())) {
+                if (!SwingGui.getInstance().getMainFrame().isActive() && JDChat.this.conn != null && msg2.contains(JDChat.this.conn.getNick())) {
                     // JDSounds.PT("sound.gui.selectPackage");
                     SwingGui.getInstance().getMainFrame().toFront();
                 }
 
-                targetpane.setText(STYLE + "<ul>" + sb.toString() + "</ul>");
+                targetpane.setText(JDChat.STYLE + "<ul>" + sb.toString() + "</ul>");
 
-                int max = scrollPane.getVerticalScrollBar().getMaximum();
+                final int max = JDChat.this.scrollPane.getVerticalScrollBar().getMaximum();
 
-                scrollPane.getVerticalScrollBar().setValue(max);
+                JDChat.this.scrollPane.getVerticalScrollBar().setValue(max);
 
                 return null;
             }
@@ -687,75 +725,76 @@ public class JDChat extends PluginOptional {
 
     }
 
-    public void addUser(String name) {
+    public void addUser(final String name) {
         User user;
-        if ((user = getUser(name)) == null) {
-            NAMES.add(new User(name));
+        if ((user = this.getUser(name)) == null) {
+            this.NAMES.add(new User(name));
         } else if (user.rank != new User(name).rank) {
             user.rank = new User(name).rank;
         }
-        updateNamesPanel();
+        this.updateNamesPanel();
     }
 
-    public void addUsers(String[] split) {
+    public void addUsers(final String[] split) {
         User user;
-        for (String name : split) {
+        for (final String name : split) {
 
-            if ((user = getUser(name)) == null) {
-                NAMES.add(new User(name));
+            if ((user = this.getUser(name)) == null) {
+                this.NAMES.add(new User(name));
             } else if (user.rank != new User(name).rank) {
                 user.rank = new User(name).rank;
             }
         }
-        updateNamesPanel();
-    }
-
-    @Override
-    public void onControlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_AFTER_RECONNECT) {
-            if (SwingGui.getInstance().getMainFrame().isActive() && !nickaway) {
-                initIRC();
-            } else {
-                addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
-            }
-        } else if (event.getEventID() == ControlEvent.CONTROL_BEFORE_RECONNECT) {
-            // sendMessage(CHANNEL, "/me is reconnecting...");
-            if (conn != null && conn.isConnected()) {
-                addToText(null, STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
-                conn.doPart(CHANNEL, "reconnecting...");
-                conn.close();
-                conn = null;
-            }
-        }
+        this.updateNamesPanel();
     }
 
     @Override
     public ArrayList<MenuAction> createMenuitems() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+        final ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        menu.add(activateAction);
+        menu.add(this.activateAction);
 
         return menu;
     }
 
-    protected void doAction(String type, String name) {
+    public void delPMS(final String user) {
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                JDChat.this.pms.remove(user.toLowerCase());
+                for (int x = 0; x < JDChat.this.tabbedPane.getComponentCount(); x++) {
+                    if (JDChat.this.tabbedPane.getTitleAt(x).toLowerCase().equals(user.toLowerCase())) {
+                        JDChat.this.tabbedPane.remove(x);
+                        return null;
+                    }
+                }
+                return null;
+            }
+        }.invokeLater();
+
+    }
+
+    protected void doAction(final String type, final String name) {
         if (type.equals("reconnect") && name.equals("reconnect")) {
-            if (conn == null) {
-                initIRC();
+            if (this.conn == null) {
+                this.initIRC();
             }
 
             return;
         }
-        final User usr = getUser(name);
-        if (textField.getText().length() == 0) {
-            if (!pms.containsKey(usr.name.toLowerCase())) addPMS(usr.name);
-            for (int x = 0; x < tabbedPane.getTabCount(); x++) {
-                if (tabbedPane.getTitleAt(x).equals(usr.name)) {
+        final User usr = this.getUser(name);
+        if (this.textField.getText().length() == 0) {
+            if (!this.pms.containsKey(usr.name.toLowerCase())) {
+                this.addPMS(usr.name);
+            }
+            for (int x = 0; x < this.tabbedPane.getTabCount(); x++) {
+                if (this.tabbedPane.getTitleAt(x).equals(usr.name)) {
                     final int t = x;
                     new GuiRunnable<Object>() {
                         @Override
                         public Object runSave() {
-                            tabbedPane.setSelectedIndex(t);
+                            JDChat.this.tabbedPane.setSelectedIndex(t);
                             return null;
                         }
                     }.invokeLater();
@@ -766,7 +805,7 @@ public class JDChat extends PluginOptional {
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
-                    textField.setText(textField.getText().trim() + " " + usr.name + " ");
+                    JDChat.this.textField.setText(JDChat.this.textField.getText().trim() + " " + usr.name + " ");
                     return null;
                 }
             }.invokeLater();
@@ -774,18 +813,23 @@ public class JDChat extends PluginOptional {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                textField.requestFocus();
+                JDChat.this.textField.requestFocus();
                 return null;
             }
         }.invokeLater();
     }
 
+    @Override
+    public String getIconKey() {
+        return "gui.images.chat";
+    }
+
     public String getNick() {
-        return conn.getNick();
+        return this.conn.getNick();
     }
 
     public int getNickCount() {
-        return nickCount;
+        return this.nickCount;
     }
 
     public String getNickname() {
@@ -797,30 +841,36 @@ public class JDChat extends PluginOptional {
         } else {
             loc = loc.toLowerCase();
         }
-        String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
-        nick = subConfig.getStringProperty(PARAM_NICK);
-        if (nick == null || nick.equalsIgnoreCase("")) {
-            nick = UserIO.getInstance().requestInputDialog(JDL.L("plugins.optional.jdchat.enternick", "Your wished nickname?"));
-            if ((nick != null) && (!nick.equalsIgnoreCase(""))) {
-                nick += "[" + loc + "]";
+        final String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
+        this.nick = this.subConfig.getStringProperty(JDChat.PARAM_NICK);
+        if (this.nick == null || this.nick.equalsIgnoreCase("")) {
+            this.nick = UserIO.getInstance().requestInputDialog(JDL.L("plugins.optional.jdchat.enternick", "Your wished nickname?"));
+            if (this.nick != null && !this.nick.equalsIgnoreCase("")) {
+                this.nick += "[" + loc + "]";
             }
-            if (nick != null) nick = nick.trim();
-            subConfig.setProperty(PARAM_NICK, nick);
-            subConfig.save();
+            if (this.nick != null) {
+                this.nick = this.nick.trim();
+            }
+            this.subConfig.setProperty(JDChat.PARAM_NICK, this.nick);
+            this.subConfig.save();
         }
-        if (nick == null) {
-            nick = def;
+        if (this.nick == null) {
+            this.nick = def;
         }
-        nick = nick.trim();
-        if (getNickCount() > 0) {
-            nick += "[" + getNickCount() + "]";
+        this.nick = this.nick.trim();
+        if (this.getNickCount() > 0) {
+            this.nick += "[" + this.getNickCount() + "]";
         }
-        return nick;
+        return this.nick;
     }
 
-    public User getUser(String name) {
-        for (User next : NAMES) {
-            if (next.isUser(name)) return next;
+    public TreeMap<String, JDChatPMS> getPms() {
+        return this.pms;
+    }
+
+    public User getUser(final String name) {
+        for (final User next : this.NAMES) {
+            if (next.isUser(name)) { return next; }
 
         }
         return null;
@@ -828,43 +878,80 @@ public class JDChat extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        NAMES = new ArrayList<User>();
-        sb = new StringBuilder();
+        this.NAMES = new ArrayList<User>();
+        this.sb = new StringBuilder();
 
-        activateAction = new MenuAction("chat", getIconKey());
-        activateAction.setActionListener(this);
-        activateAction.setSelected(false);
+        this.activateAction = new MenuAction("chat", this.getIconKey());
+        this.activateAction.setActionListener(this);
+        this.activateAction.setSelected(false);
 
         return true;
     }
 
+    private void initChannel() {
+
+        final JDLocale id = JDL.getLocale();
+        JDLocale lng = JDL.getInstance("en");
+        if (id.getLanguageCode().equals("es")) {
+            lng = JDL.getInstance("es");
+        } else if (id.getLanguageCode().equals("tr")) {
+            lng = JDL.getInstance("tr");
+        }
+        lng = this.getPluginConfig().getGenericProperty(JDChat.CHANNEL_LNG, lng);
+        String newChannel = null;
+        if (lng.getLanguageCode().equals(JDL.getInstance("es").getLanguageCode())) {
+            newChannel = "#jdownloader[es]";
+        } else if (lng.getLanguageCode().equals(JDL.getInstance("tr").getLanguageCode())) {
+            newChannel = "#jdownloader[tr]";
+        } else {
+            newChannel = "#jdownloader";
+        }
+        if (newChannel.equalsIgnoreCase(JDChat.CHANNEL) && this.isLoggedIn()) {
+            if (this.conn != null && this.conn.isConnected()) {
+                this.addToText(null, JDChat.STYLE_NOTICE, "You are in channel: " + newChannel);
+            }
+            return;
+        }
+        this.NAMES.clear();
+        if (this.conn != null && this.conn.isConnected()) {
+            this.addToText(null, JDChat.STYLE_NOTICE, "Change channel to: " + newChannel);
+        }
+        if (this.conn != null && this.conn.isConnected()) {
+            this.conn.doPart(JDChat.CHANNEL, " --> " + newChannel);
+        }
+        JDChat.CHANNEL = newChannel;
+        if (this.conn != null && this.conn.isConnected()) {
+            this.conn.doJoin(JDChat.CHANNEL, null);
+        }
+    }
+
     private void initConfigEntries() {
-        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDL.L("plugins.optional.jdchat.user", "Nickname")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_USERCOLOR, JDL.L("plugins.optional.jdchat.usercolor", "Only black usernames?")));
-        String[] positions = new String[] { JDL.L("plugins.jdchat.userlistposition_right", "Right"), JDL.L("plugins.jdchat.userlistposition_left", "Left") };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_USERLISTPOSITION, positions, JDL.L("plugins.jdchat.userlistposition", "Userlist position:")).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
+        this.config.setGroup(new ConfigGroup(this.getHost(), this.getIconKey()));
+        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.subConfig, JDChat.PARAM_NICK, JDL.L("plugins.optional.jdchat.user", "Nickname")));
+        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.subConfig, JDChat.PARAM_USERCOLOR, JDL.L("plugins.optional.jdchat.usercolor", "Only black usernames?")));
+        final String[] positions = new String[] { JDL.L("plugins.jdchat.userlistposition_right", "Right"), JDL.L("plugins.jdchat.userlistposition_left", "Left") };
+        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.subConfig, JDChat.PARAM_USERLISTPOSITION, positions, JDL.L("plugins.jdchat.userlistposition", "Userlist position:")).setDefaultValue(0));
+        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this.subConfig, JDChat.PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
     }
 
     @SuppressWarnings("unchecked")
     private void initGUI() {
-        int userlistposition = subConfig.getIntegerProperty(PARAM_USERLISTPOSITION, 0);
-        textArea = new JTextPane();
-        HyperlinkListener hyp = new HyperlinkListener() {
+        final int userlistposition = this.subConfig.getIntegerProperty(JDChat.PARAM_USERLISTPOSITION, 0);
+        this.textArea = new JTextPane();
+        final HyperlinkListener hyp = new HyperlinkListener() {
 
-            public void hyperlinkUpdate(HyperlinkEvent e) {
+            public void hyperlinkUpdate(final HyperlinkEvent e) {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     if (e.getDescription().startsWith("intern")) {
-                        String[][] m = new Regex(e.getDescription() + "?", "intern:([\\w]*?)\\|(.*?)\\?").getMatches();
+                        final String[][] m = new Regex(e.getDescription() + "?", "intern:([\\w]*?)\\|(.*?)\\?").getMatches();
                         if (m.length == 1) {
-                            doAction(m[0][0], m[0][1]);
+                            JDChat.this.doAction(m[0][0], m[0][1]);
                             return;
                         }
                     } else {
                         try {
                             JLink.openURL(e.getURL());
-                        } catch (Exception e1) {
+                        } catch (final Exception e1) {
                             JDLogger.exception(e1);
                         }
                     }
@@ -874,294 +961,295 @@ public class JDChat extends PluginOptional {
 
         };
 
-        right = new JTextPane();
-        right.setContentType("text/html");
-        right.setEditable(false);
-        textArea.addHyperlinkListener(hyp);
-        right.addHyperlinkListener(hyp);
-        scrollPane = new JScrollPane(textArea);
-        tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabbedPane.add("JDChat", scrollPane);
-        tabbedPane.addChangeListener(new ChangeListener() {
+        this.right = new JTextPane();
+        this.right.setContentType("text/html");
+        this.right.setEditable(false);
+        this.textArea.addHyperlinkListener(hyp);
+        this.right.addHyperlinkListener(hyp);
+        this.scrollPane = new JScrollPane(this.textArea);
+        this.tabbedPane = new JTabbedPane(SwingConstants.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
+        this.tabbedPane.add("JDChat", this.scrollPane);
+        this.tabbedPane.addChangeListener(new ChangeListener() {
 
-            public void stateChanged(ChangeEvent e) {
-                tabbedPane.setForegroundAt(tabbedPane.getSelectedIndex(), Color.black);
+            public void stateChanged(final ChangeEvent e) {
+                JDChat.this.tabbedPane.setForegroundAt(JDChat.this.tabbedPane.getSelectedIndex(), Color.black);
             }
 
         });
-        textField = new JTextField();
-        textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
-        textField.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
-        textField.addFocusListener(new FocusListener() {
+        this.textField = new JTextField();
+        this.textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
+        this.textField.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
+        this.textField.addFocusListener(new FocusListener() {
 
-            public void focusGained(FocusEvent e) {
-                tabbedPane.setForegroundAt(tabbedPane.getSelectedIndex(), Color.black);
+            public void focusGained(final FocusEvent e) {
+                JDChat.this.tabbedPane.setForegroundAt(JDChat.this.tabbedPane.getSelectedIndex(), Color.black);
             }
 
-            public void focusLost(FocusEvent e) {
-                tabbedPane.setForegroundAt(tabbedPane.getSelectedIndex(), Color.black);
+            public void focusLost(final FocusEvent e) {
+                JDChat.this.tabbedPane.setForegroundAt(JDChat.this.tabbedPane.getSelectedIndex(), Color.black);
             }
 
         });
-        textField.addKeyListener(new KeyListener() {
+        this.textField.addKeyListener(new KeyListener() {
 
             private int    counter = 0;
             private String last    = null;
 
-            public void keyPressed(KeyEvent e) {
-                int sel = tabbedPane.getSelectedIndex();
-                tabbedPane.setForegroundAt(sel, Color.black);
+            public void keyPressed(final KeyEvent e) {
+                final int sel = JDChat.this.tabbedPane.getSelectedIndex();
+                JDChat.this.tabbedPane.setForegroundAt(sel, Color.black);
             }
 
-            public void keyReleased(KeyEvent e) {
+            public void keyReleased(final KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 
-                    if (textField.getText().length() == 0) return;
-                    if (tabbedPane.getSelectedIndex() == 0 || textField.getText().startsWith("/"))
-                        sendMessage(CHANNEL, textField.getText());
-                    else
-                        sendMessage(CHANNEL, "/msg " + tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()) + " " + textField.getText());
+                    if (JDChat.this.textField.getText().length() == 0) { return; }
+                    if (JDChat.this.tabbedPane.getSelectedIndex() == 0 || JDChat.this.textField.getText().startsWith("/")) {
+                        JDChat.this.sendMessage(JDChat.CHANNEL, JDChat.this.textField.getText());
+                    } else {
+                        JDChat.this.sendMessage(JDChat.CHANNEL, "/msg " + JDChat.this.tabbedPane.getTitleAt(JDChat.this.tabbedPane.getSelectedIndex()) + " " + JDChat.this.textField.getText());
+                    }
 
                 } else if (e.getKeyCode() == KeyEvent.VK_TAB) {
-                    if (textField.getText().length() == 0) {
-                        if (lastCommand != null) {
-                            textField.setText(lastCommand);
-                            textField.requestFocus();
+                    if (JDChat.this.textField.getText().length() == 0) {
+                        if (JDChat.this.lastCommand != null) {
+                            JDChat.this.textField.setText(JDChat.this.lastCommand);
+                            JDChat.this.textField.requestFocus();
                         }
                         return;
                     }
-                    String txt = textField.getText();
-                    if (last != null && txt.toLowerCase().startsWith(last.toLowerCase())) {
-                        txt = last;
+                    String txt = JDChat.this.textField.getText();
+                    if (this.last != null && txt.toLowerCase().startsWith(this.last.toLowerCase())) {
+                        txt = this.last;
                     }
 
-                    String org = txt;
-                    int last = Math.max(0, txt.lastIndexOf(" "));
+                    final String org = txt;
+                    final int last = Math.max(0, txt.lastIndexOf(" "));
                     txt = txt.substring(last).trim();
-                    ArrayList<String> users = new ArrayList<String>();
+                    final ArrayList<String> users = new ArrayList<String>();
 
-                    ArrayList<String> strings = new ArrayList<String>();
-                    strings.addAll(COMMANDS);
-                    for (User user : NAMES) {
+                    final ArrayList<String> strings = new ArrayList<String>();
+                    strings.addAll(JDChat.COMMANDS);
+                    for (final User user : JDChat.this.NAMES) {
                         strings.add(user.name);
                     }
 
-                    for (String user : strings) {
+                    for (final String user : strings) {
                         if (user.length() >= txt.length() && user.toLowerCase().startsWith(txt.toLowerCase())) {
                             users.add(user);
                         }
                     }
-                    if (users.size() == 0) return;
+                    if (users.size() == 0) { return; }
 
-                    counter++;
-                    if (counter > users.size() - 1) {
-                        counter = 0;
+                    this.counter++;
+                    if (this.counter > users.size() - 1) {
+                        this.counter = 0;
                     }
-                    String user = users.get(counter);
+                    final String user = users.get(this.counter);
                     this.last = org;
-                    textField.setText((textField.getText().substring(0, last) + " " + user).trim());
-                    textField.requestFocus();
+                    JDChat.this.textField.setText((JDChat.this.textField.getText().substring(0, last) + " " + user).trim());
+                    JDChat.this.textField.requestFocus();
 
                 } else if (e.getKeyCode() == KeyEvent.VK_UP) {
-                    if (textField.getText().length() == 0) {
-                        if (lastCommand != null) {
-                            textField.setText(lastCommand);
-                            textField.requestFocus();
+                    if (JDChat.this.textField.getText().length() == 0) {
+                        if (JDChat.this.lastCommand != null) {
+                            JDChat.this.textField.setText(JDChat.this.lastCommand);
+                            JDChat.this.textField.requestFocus();
                         }
                         return;
                     }
 
                 } else {
-                    last = null;
+                    this.last = null;
                 }
 
             }
 
-            public void keyTyped(KeyEvent e) {
+            public void keyTyped(final KeyEvent e) {
 
             }
 
         });
-        lang = new JComboBox(new JDLocale[] { JDL.getInstance("en"), JDL.getInstance("de"), JDL.getInstance("es"), JDL.getInstance("tr") });
-        lang.addActionListener(new ActionListener() {
+        this.lang = new JComboBox(new JDLocale[] { JDL.getInstance("en"), JDL.getInstance("de"), JDL.getInstance("es"), JDL.getInstance("tr") });
+        this.lang.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
-                getPluginConfig().setProperty(CHANNEL_LNG, lang.getSelectedItem());
-                getPluginConfig().save();
-                initChannel();
+            public void actionPerformed(final ActionEvent e) {
+                JDChat.this.getPluginConfig().setProperty(JDChat.CHANNEL_LNG, JDChat.this.lang.getSelectedItem());
+                JDChat.this.getPluginConfig().save();
+                JDChat.this.initChannel();
             }
 
         });
-        lang.setSelectedItem(this.getPluginConfig().getProperty(CHANNEL_LNG, JDL.getInstance("en")));
-        textArea.setContentType("text/html");
-        textArea.setEditable(false);
+        this.lang.setSelectedItem(this.getPluginConfig().getProperty(JDChat.CHANNEL_LNG, JDL.getInstance("en")));
+        this.textArea.setContentType("text/html");
+        this.textArea.setEditable(false);
 
-        frame = new SwitchPanel() {
+        this.frame = new SwitchPanel() {
             private static final long serialVersionUID = 2138710083573682339L;
-
-            @Override
-            public void onShow() {
-            }
 
             @Override
             public void onHide() {
             }
+
+            @Override
+            public void onShow() {
+            }
         };
-        frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
-        closeTab = new JButton(JDL.L("jd.plugins.optional.jdchat.closeTab", "Close Tab"));
-        closeTab.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (tabbedPane.getSelectedIndex() > 0) {
-                    delPMS(tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()));
-                } else if (tabbedPane.getSelectedIndex() == 0) {
-                    addToText(null, STYLE_SYSTEM_MESSAGE, "You can't close the main Chat!");
+        this.frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
+        this.closeTab = new JButton(JDL.L("jd.plugins.optional.jdchat.closeTab", "Close Tab"));
+        this.closeTab.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                if (JDChat.this.tabbedPane.getSelectedIndex() > 0) {
+                    JDChat.this.delPMS(JDChat.this.tabbedPane.getTitleAt(JDChat.this.tabbedPane.getSelectedIndex()));
+                } else if (JDChat.this.tabbedPane.getSelectedIndex() == 0) {
+                    JDChat.this.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "You can't close the main Chat!");
                 }
             }
         });
-        JScrollPane scrollPane_userlist = new JScrollPane(right);
+        final JScrollPane scrollPane_userlist = new JScrollPane(this.right);
         switch (userlistposition) {
         case 0:
-            frame.add(tabbedPane, "split 2");
-            frame.add(scrollPane_userlist, "width 180:180:180");
+            this.frame.add(this.tabbedPane, "split 2");
+            this.frame.add(scrollPane_userlist, "width 180:180:180");
             break;
         default:
         case 1:
-            frame.add(scrollPane_userlist, "width 180:180:180 ,split 2");
-            frame.add(tabbedPane);
+            this.frame.add(scrollPane_userlist, "width 180:180:180 ,split 2");
+            this.frame.add(this.tabbedPane);
             break;
         }
 
-        frame.add(textField, "growx, split 3");
-        frame.add(closeTab, "w pref!");
-        frame.add(lang, "w pref!");
-        lastAction = System.currentTimeMillis();
-        MouseMotionListener ml = new MouseMotionListener() {
+        this.frame.add(this.textField, "growx, split 3");
+        this.frame.add(this.closeTab, "w pref!");
+        this.frame.add(this.lang, "w pref!");
+        this.lastAction = System.currentTimeMillis();
+        final MouseMotionListener ml = new MouseMotionListener() {
 
-            public void mouseDragged(MouseEvent e) {
+            public void mouseDragged(final MouseEvent e) {
             }
 
-            public void mouseMoved(MouseEvent e) {
-                lastAction = System.currentTimeMillis();
-                setNickAway(false);
+            public void mouseMoved(final MouseEvent e) {
+                JDChat.this.lastAction = System.currentTimeMillis();
+                JDChat.this.setNickAway(false);
             }
 
         };
-        frame.addMouseMotionListener(ml);
-        textArea.addMouseMotionListener(ml);
-        textField.addMouseMotionListener(ml);
-        right.addMouseMotionListener(ml);
-        frame.setSize(new Dimension(800, 600));
-        frame.setVisible(true);
-        startAwayObserver();
+        this.frame.addMouseMotionListener(ml);
+        this.textArea.addMouseMotionListener(ml);
+        this.textField.addMouseMotionListener(ml);
+        this.right.addMouseMotionListener(ml);
+        this.frame.setSize(new Dimension(800, 600));
+        this.frame.setVisible(true);
+        this.startAwayObserver();
     }
 
     private void initIRC() {
-        NAMES.clear();
-        for (int i = 0; i < 20; i++) {
-            String host = subConfig.getStringProperty(PARAM_HOST, "irc.freenode.net");
-            int port = subConfig.getIntegerProperty(PARAM_PORT, 6667);
-            String pass = null;
-            String nick = getNickname();
-            String user = "jdChatuser";
-            String name = "jdChatuser";
-            Balloon.show("JD Chat", null, "Connecting to JDChat...");
-            addToText(null, STYLE_SYSTEM_MESSAGE, "Connecting to JDChat...");
-            conn = new IRCConnection(host, new int[] { port }, pass, nick, user, name);
-            conn.setTimeout(1000 * 60 * 60);
 
-            conn.addIRCEventListener(new IRCListener(this));
-            conn.setEncoding("UTF-8");
-            conn.setPong(true);
-            conn.setDaemon(false);
-            conn.setColors(false);
+        this.NAMES.clear();
+        for (int i = 0; i < 20; i++) {
+            final String host = this.subConfig.getStringProperty(JDChat.PARAM_HOST, "irc.freenode.net");
+            final int port = this.subConfig.getIntegerProperty(JDChat.PARAM_PORT, 6667);
+            final String pass = null;
+            final String nick = this.getNickname();
+            final String user = "jdChatuser";
+            final String name = "jdChatuser";
+            Balloon.show("JD Chat", null, "Connecting to JDChat...");
+            this.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Connecting to JDChat...");
+            this.conn = new IRCConnection(host, new int[] { port }, pass, nick, user, name);
+            this.conn.setTimeout(1000 * 60 * 60);
+
+            this.conn.addIRCEventListener(new IRCListener(this));
+            this.conn.setEncoding("UTF-8");
+            this.conn.setPong(true);
+            this.conn.setDaemon(false);
+            this.conn.setColors(false);
             try {
-                conn.connect();
+                this.conn.connect();
                 break;
-            } catch (IOException e) {
-                addToText(null, STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
+            } catch (final IOException e) {
+                this.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
                 JDLogger.exception(e);
                 try {
                     Thread.sleep(15000);
-                } catch (InterruptedException e1) {
+                } catch (final InterruptedException e1) {
 
                     JDLogger.exception(e1);
                 }
-                initIRC();
+                this.initIRC();
             }
         }
 
     }
 
-    private void initChannel() {
-
-        JDLocale id = JDL.getLocale();
-        JDLocale lng = JDL.getInstance("en");
-        if (id.getLanguageCode().equals("es")) {
-            lng = JDL.getInstance("es");
-        } else if (id.getLanguageCode().equals("tr")) {
-            lng = JDL.getInstance("tr");
-        }
-        lng = this.getPluginConfig().getGenericProperty(CHANNEL_LNG, lng);
-        String newChannel = null;
-        if (lng.getLanguageCode().equals(JDL.getInstance("es").getLanguageCode())) {
-            newChannel = "#jdownloader[es]";
-        } else if (lng.getLanguageCode().equals(JDL.getInstance("tr").getLanguageCode())) {
-            newChannel = "#jdownloader[tr]";
-        } else {
-            newChannel = "#jdownloader";
-        }
-        if (newChannel.equalsIgnoreCase(CHANNEL) && this.isLoggedIn()) {
-            if (conn != null && conn.isConnected()) addToText(null, STYLE_NOTICE, "You are in channel: " + newChannel);
-            return;
-        }
-        NAMES.clear();
-        if (conn != null && conn.isConnected()) addToText(null, STYLE_NOTICE, "Change channel to: " + newChannel);
-        if (conn != null && conn.isConnected()) conn.doPart(CHANNEL, " --> " + newChannel);
-        CHANNEL = newChannel;
-        if (conn != null && conn.isConnected()) conn.doJoin(CHANNEL, null);
+    public boolean isLoggedIn() {
+        return this.loggedIn;
     }
 
-    public boolean isLoggedIn() {
-        return loggedIn;
+    public void notifyPMS(final String user, final String text2) {
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                for (int x = 0; x < JDChat.this.tabbedPane.getTabCount(); x++) {
+                    if (JDChat.this.tabbedPane.getTitleAt(x).equals(user)) {
+                        final int t = x;
+
+                        String text = text2;
+                        JDChat.this.tabbedPane.setForegroundAt(t, Color.RED);
+                        if (text.length() > 40) {
+                            text = text.substring(0, 40).concat("...");
+                        }
+                        if (!JDChat.this.tabbedPane.getTitleAt(JDChat.this.tabbedPane.getSelectedIndex()).equals(user)) {
+                            Balloon.show("JD Chat", null, JDL.LF("jd.plugins.optional.jdchat.newmessage", "New Message from %s:<hr> %s", user, text));
+                        }
+                        return null;
+                    }
+                }
+                return null;
+            }
+        }.invokeLater();
     }
 
     public void onConnected() {
-        initChannel();
-        setLoggedIn(true);
-        perform();
+        this.initChannel();
+        this.setLoggedIn(true);
+        this.perform();
 
     }
 
     @Override
     public void onExit() {
-        NAMES.clear();
-        pms.clear();
+        this.NAMES.clear();
+        this.pms.clear();
         this.setLoggedIn(false);
         this.updateNamesPanel();
-        if (view != null) SwingGui.getInstance().disposeView(view);
-        view = null;
-        if (conn != null) conn.close();
-        conn = null;
+        if (this.view != null) {
+            SwingGui.getInstance().disposeView(this.view);
+        }
+        this.view = null;
+        if (this.conn != null) {
+            this.conn.close();
+        }
+        this.conn = null;
     }
 
-    public void onMode(char op, char mod, String arg) {
+    public void onMode(final char op, final char mod, final String arg) {
         switch (mod) {
         case 'o':
             if (op == '+') {
-                getUser(arg).rank = User.RANK_OP;
-                updateNamesPanel();
+                this.getUser(arg).rank = User.RANK_OP;
+                this.updateNamesPanel();
             } else {
-                getUser(arg).rank = User.RANK_DEFAULT;
-                updateNamesPanel();
+                this.getUser(arg).rank = User.RANK_DEFAULT;
+                this.updateNamesPanel();
             }
             break;
         case 'v':
             if (op == '+') {
-                getUser(arg).rank = User.RANK_VOICE;
-                updateNamesPanel();
+                this.getUser(arg).rank = User.RANK_VOICE;
+                this.updateNamesPanel();
             } else {
-                getUser(arg).rank = User.RANK_DEFAULT;
-                updateNamesPanel();
+                this.getUser(arg).rank = User.RANK_DEFAULT;
+                this.updateNamesPanel();
             }
             break;
         }
@@ -1169,11 +1257,11 @@ public class JDChat extends PluginOptional {
     }
 
     public void perform() {
-        String[] perform = Regex.getLines(subConfig.getStringProperty(PARAM_PERFORM));
+        final String[] perform = org.appwork.utils.Regex.getLines(this.subConfig.getStringProperty(JDChat.PARAM_PERFORM));
         if (perform == null) { return; }
-        for (String cmd : perform) {
+        for (final String cmd : perform) {
             if (cmd.trim().length() > 0) {
-                sendMessage(CHANNEL, cmd);
+                this.sendMessage(JDChat.CHANNEL, cmd);
             }
         }
     }
@@ -1181,75 +1269,20 @@ public class JDChat extends PluginOptional {
     /**
      * Does modifications to the text before sending it
      */
-    private String prepareToSend(String trim) {
+    private String prepareToSend(final String trim) {
         return trim;
     }
 
     public void reconnect() {
-        initIRC();
+        this.initIRC();
     }
 
-    public void removeUser(String name) {
-        User user = getUser(name);
+    public void removeUser(final String name) {
+        final User user = this.getUser(name);
         if (user != null) {
-            NAMES.remove(user);
+            this.NAMES.remove(user);
         }
-        updateNamesPanel();
-    }
-
-    public void renameUser(String name, String name2) {
-        User user = getUser(name);
-        if (user != null) {
-            user.name = name2;
-        } else {
-            addUser(name2);
-        }
-        updateNamesPanel();
-    }
-
-    public void requestNameList() {
-        resetNamesList();
-        conn.doNames(CHANNEL);
-    }
-
-    public void resetNamesList() {
-        NAMES = new ArrayList<User>();
-        if (getUser(conn.getNick().trim()) == null) {
-            NAMES.add(new User(conn.getNick().trim()));
-        }
-    }
-
-    public void notifyPMS(final String user, final String text2) {
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-                for (int x = 0; x < tabbedPane.getTabCount(); x++) {
-                    if (tabbedPane.getTitleAt(x).equals(user)) {
-                        final int t = x;
-
-                        String text = text2;
-                        tabbedPane.setForegroundAt(t, Color.RED);
-                        if (text.length() > 40) text = text.substring(0, 40).concat("...");
-                        if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals(user)) Balloon.show("JD Chat", null, JDL.LF("jd.plugins.optional.jdchat.newmessage", "New Message from %s:<hr> %s", user, text));
-                        return null;
-                    }
-                }
-                return null;
-            }
-        }.invokeLater();
-    }
-
-    public void addPMS(String user2) {
-        final String user = user2.trim();
-        if (user.equals(conn.getNick().trim())) return;
-        pms.put(user.toLowerCase(), new JDChatPMS(user));
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-                tabbedPane.add(user, pms.get(user.toLowerCase()).getScrollPane());
-                return null;
-            }
-        }.invokeLater();
+        this.updateNamesPanel();
     }
 
     public void renamePMS(final String userOld, final String userNew) {
@@ -1257,54 +1290,58 @@ public class JDChat extends PluginOptional {
 
             @Override
             public Object runSave() {
-                pms.put(userNew.trim().toLowerCase(), pms.get(userOld.trim().toLowerCase()));
-                for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-                    if (tabbedPane.getTitleAt(x).equalsIgnoreCase(userOld)) {
-                        tabbedPane.remove(x);
+                JDChat.this.pms.put(userNew.trim().toLowerCase(), JDChat.this.pms.get(userOld.trim().toLowerCase()));
+                for (int x = 0; x < JDChat.this.tabbedPane.getComponentCount(); x++) {
+                    if (JDChat.this.tabbedPane.getTitleAt(x).equalsIgnoreCase(userOld)) {
+                        JDChat.this.tabbedPane.remove(x);
                         break;
                     }
                 }
-                pms.remove(userOld);
-                tabbedPane.add(userNew.trim(), pms.get(userNew.trim().toLowerCase()).getScrollPane());
+                JDChat.this.pms.remove(userOld);
+                JDChat.this.tabbedPane.add(userNew.trim(), JDChat.this.pms.get(userNew.trim().toLowerCase()).getScrollPane());
                 return null;
             }
         }.invokeLater();
     }
 
-    public void delPMS(final String user) {
-        new GuiRunnable<Object>() {
-
-            @Override
-            public Object runSave() {
-                pms.remove(user.toLowerCase());
-                for (int x = 0; x < tabbedPane.getComponentCount(); x++) {
-                    if (tabbedPane.getTitleAt(x).toLowerCase().equals(user.toLowerCase())) {
-                        tabbedPane.remove(x);
-                        return null;
-                    }
-                }
-                return null;
-            }
-        }.invokeLater();
-
+    public void renameUser(final String name, final String name2) {
+        final User user = this.getUser(name);
+        if (user != null) {
+            user.name = name2;
+        } else {
+            this.addUser(name2);
+        }
+        this.updateNamesPanel();
     }
 
-    protected void sendMessage(String channel2, String text) {
-        lastAction = System.currentTimeMillis();
-        setNickAway(false);
+    public void requestNameList() {
+        this.resetNamesList();
+        this.conn.doNames(JDChat.CHANNEL);
+    }
+
+    public void resetNamesList() {
+        this.NAMES = new ArrayList<User>();
+        if (this.getUser(this.conn.getNick().trim()) == null) {
+            this.NAMES.add(new User(this.conn.getNick().trim()));
+        }
+    }
+
+    protected void sendMessage(final String channel2, final String text) {
+        this.lastAction = System.currentTimeMillis();
+        this.setNickAway(false);
         if (text.startsWith("/")) {
             int end = text.indexOf(" ");
             if (end < 0) {
                 end = text.length();
             }
-            String cmd = text.substring(1, end).trim();
-            String rest = text.substring(end).trim();
-            if (Regex.matches(cmd, CMD_PM)) {
+            final String cmd = text.substring(1, end).trim();
+            final String rest = text.substring(end).trim();
+            if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_PM)) {
                 new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {
-                        textField.setText("");
+                        JDChat.this.textField.setText("");
                         return null;
                     }
                 }.invokeLater();
@@ -1312,190 +1349,193 @@ public class JDChat extends PluginOptional {
                 if (end < 0) {
                     end = rest.length();
                 }
-                if (!pms.containsKey(rest.substring(0, end).trim().toLowerCase())) {
-                    addPMS(rest.substring(0, end).trim());
+                if (!this.pms.containsKey(rest.substring(0, end).trim().toLowerCase())) {
+                    this.addPMS(rest.substring(0, end).trim());
                 }
-                conn.doPrivmsg(rest.substring(0, end).trim(), prepareToSend(rest.substring(end).trim()));
-                lastCommand = "/msg " + rest.substring(0, end).trim() + " ";
-                addToText(getUser(conn.getNick()), STYLE_SELF, Utils.prepareMsg(rest.substring(end).trim()), pms.get(rest.substring(0, end).trim().toLowerCase()).getTextArea(), pms.get(rest.substring(0, end).trim().toLowerCase()).getSb());
-            } else if (Regex.matches(cmd, CMD_SLAP)) {
-                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + " slaps " + rest + " with the whole Javadocs" + new String(new byte[] { 1 }));
-                addToText(null, STYLE_ACTION, conn.getNick() + " slaps " + rest + " with the whole Javadocs");
+                this.conn.doPrivmsg(rest.substring(0, end).trim(), this.prepareToSend(rest.substring(end).trim()));
+                this.lastCommand = "/msg " + rest.substring(0, end).trim() + " ";
+                this.addToText(this.getUser(this.conn.getNick()), JDChat.STYLE_SELF, Utils.prepareMsg(rest.substring(end).trim()), this.pms.get(rest.substring(0, end).trim().toLowerCase()).getTextArea(), this.pms.get(rest.substring(0, end).trim().toLowerCase()).getSb());
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_SLAP)) {
+                this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + " slaps " + rest + " with the whole Javadocs" + new String(new byte[] { 1 }));
+                this.addToText(null, JDChat.STYLE_ACTION, this.conn.getNick() + " slaps " + rest + " with the whole Javadocs");
 
-                lastCommand = "/slap ";
-            } else if (Regex.matches(cmd, CMD_ACTION)) {
-                lastCommand = "/me ";
-                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + prepareToSend(rest.trim()) + new String(new byte[] { 1 }));
-                addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(rest.trim()));
+                this.lastCommand = "/slap ";
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_ACTION)) {
+                this.lastCommand = "/me ";
+                this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + this.prepareToSend(rest.trim()) + new String(new byte[] { 1 }));
+                this.addToText(null, JDChat.STYLE_ACTION, this.conn.getNick() + " " + Utils.prepareMsg(rest.trim()));
 
-            } else if (Regex.matches(cmd, CMD_VERSION)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_VERSION)) {
 
-                String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + OSDetector.getOSString() + " system";
-                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + prepareToSend(msg) + new String(new byte[] { 1 }));
-                addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(msg));
-            } else if (Regex.matches(cmd, CMD_MODE)) {
+                final String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + CrossSystem.getOSString() + " system";
+                this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + this.prepareToSend(msg) + new String(new byte[] { 1 }));
+                this.addToText(null, JDChat.STYLE_ACTION, this.conn.getNick() + " " + Utils.prepareMsg(msg));
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_MODE)) {
                 end = rest.indexOf(" ");
                 if (end < 0) {
                     end = rest.length();
                 }
-                lastCommand = "/mode ";
-                conn.doMode(CHANNEL, rest.trim());
-            } else if (Regex.matches(cmd, CMD_TRANSLATE)) {
+                this.lastCommand = "/mode ";
+                this.conn.doMode(JDChat.CHANNEL, rest.trim());
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_TRANSLATE)) {
                 end = rest.indexOf(" ");
                 if (end < 0) {
                     end = rest.length();
                 }
-                String[] tofrom = rest.substring(0, end).trim().split("to");
+                final String[] tofrom = rest.substring(0, end).trim().split("to");
                 if (tofrom == null || tofrom.length != 2) {
-                    addToText(null, STYLE_ERROR, "Command /translate " + rest.substring(0, end).trim() + " is not available");
+                    this.addToText(null, JDChat.STYLE_ERROR, "Command /translate " + rest.substring(0, end).trim() + " is not available");
                     return;
                 }
                 final String t;
                 t = JDL.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim())).getTranslated();
-                lastCommand = "/translate " + rest.substring(0, end).trim() + " ";
+                this.lastCommand = "/translate " + rest.substring(0, end).trim() + " ";
                 new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {
-                        textField.setText(t);
+                        JDChat.this.textField.setText(t);
                         return null;
                     }
                 }.invokeLater();
-            } else if (Regex.matches(cmd, CMD_TOPIC)) {
-                conn.doTopic(CHANNEL, prepareToSend(rest));
-                lastCommand = "/topic ";
-            } else if (Regex.matches(cmd, CMD_JOIN)) {
-                NAMES.clear();
-                if (conn != null) addToText(null, STYLE_NOTICE, "Change channel to: " + rest);
-                if (conn != null) conn.doPart(CHANNEL, " --> " + rest);
-                CHANNEL = rest;
-                if (conn != null) conn.doJoin(CHANNEL, null);
-
-                lastCommand = "/join " + rest;
-                setLoggedIn(true);
-                perform();
-            } else if (Regex.matches(cmd, CMD_NICK)) {
-                conn.doNick(rest.trim());
-                lastCommand = "/nick ";
-                subConfig.setProperty(PARAM_NICK, rest.trim());
-                subConfig.save();
-
-            } else if (Regex.matches(cmd, CMD_CONNECT)) {
-                if (conn == null || !conn.isConnected()) {
-                    initIRC();
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_TOPIC)) {
+                this.conn.doTopic(JDChat.CHANNEL, this.prepareToSend(rest));
+                this.lastCommand = "/topic ";
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_JOIN)) {
+                this.NAMES.clear();
+                if (this.conn != null) {
+                    this.addToText(null, JDChat.STYLE_NOTICE, "Change channel to: " + rest);
                 }
-            } else if (Regex.matches(cmd, CMD_DISCONNECT)) {
-                if (conn != null && conn.isConnected()) {
-                    conn.close();
+                if (this.conn != null) {
+                    this.conn.doPart(JDChat.CHANNEL, " --> " + rest);
                 }
-            } else if (Regex.matches(cmd, CMD_EXIT)) {
-                setGuiEnable(false);
+                JDChat.CHANNEL = rest;
+                if (this.conn != null) {
+                    this.conn.doJoin(JDChat.CHANNEL, null);
+                }
+
+                this.lastCommand = "/join " + rest;
+                this.setLoggedIn(true);
+                this.perform();
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_NICK)) {
+                this.conn.doNick(rest.trim());
+                this.lastCommand = "/nick ";
+                this.subConfig.setProperty(JDChat.PARAM_NICK, rest.trim());
+                this.subConfig.save();
+
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_CONNECT)) {
+                if (this.conn == null || !this.conn.isConnected()) {
+                    this.initIRC();
+                }
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_DISCONNECT)) {
+                if (this.conn != null && this.conn.isConnected()) {
+                    this.conn.close();
+                }
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_EXIT)) {
+                this.setGuiEnable(false);
             } else {
-                addToText(null, STYLE_ERROR, "Command /" + cmd + " is not available");
+                this.addToText(null, JDChat.STYLE_ERROR, "Command /" + cmd + " is not available");
             }
 
         } else {
-            conn.doPrivmsg(channel2, prepareToSend(text));
-            addToText(getUser(conn.getNick()), STYLE_SELF, Utils.prepareMsg(text));
+            this.conn.doPrivmsg(channel2, this.prepareToSend(text));
+            this.addToText(this.getUser(this.conn.getNick()), JDChat.STYLE_SELF, Utils.prepareMsg(text));
         }
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                textField.setText("");
-                textField.requestFocus();
+                JDChat.this.textField.setText("");
+                JDChat.this.textField.requestFocus();
                 return null;
             }
         }.invokeLater();
     }
 
     @Override
-    public void setGuiEnable(boolean b) {
+    public void setGuiEnable(final boolean b) {
         if (b) {
 
-            if (view == null) {
-                initGUI();
-                view = new JDChatView() {
+            if (this.view == null) {
+                this.initGUI();
+                this.view = new JDChatView() {
 
                     private static final long serialVersionUID = 3966113588850405974L;
 
                     @Override
-                    protected void initMenu(JMenuBar menubar) {
-                        menubar.add(top = new JLabel(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day")));
-                        top.setToolTipText(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.tooltip", "Message of the day"));
+                    protected void initMenu(final JMenuBar menubar) {
+                        menubar.add(JDChat.this.top = new JLabel(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day")));
+                        JDChat.this.top.setToolTipText(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.tooltip", "Message of the day"));
                     }
 
                 };
-                view.getBroadcaster().addListener(new SwitchPanelListener() {
+                this.view.getBroadcaster().addListener(new SwitchPanelListener() {
 
                     @Override
-                    public void onPanelEvent(SwitchPanelEvent event) {
+                    public void onPanelEvent(final SwitchPanelEvent event) {
                         if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
-                            setGuiEnable(false);
+                            JDChat.this.setGuiEnable(false);
                         }
                     }
 
                 });
 
-                view.setContent(frame);
+                this.view.setContent(this.frame);
             }
-            SwingGui.getInstance().setContent(view);
+            SwingGui.getInstance().setContent(this.view);
 
             new Thread() {
                 @Override
                 public void run() {
-                    initIRC();
+                    JDChat.this.initIRC();
                 }
             }.start();
         } else {
 
-            if (frame != null) {
-                SwingGui.getInstance().disposeView(view);
+            if (this.frame != null) {
+                SwingGui.getInstance().disposeView(this.view);
                 this.stopAddon();
             }
         }
-        if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
+        if (this.activateAction != null && this.activateAction.isSelected() != b) {
+            this.activateAction.setSelected(b);
+        }
     }
 
-    @Override
-    public String getIconKey() {
-        return "gui.images.chat";
-    }
-
-    public void setLoggedIn(boolean loggedIn) {
+    public void setLoggedIn(final boolean loggedIn) {
         this.loggedIn = loggedIn;
     }
 
-    public void setNick(String nickname) {
-        if (nickname == null) return;
-        addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
+    public void setNick(final String nickname) {
+        if (nickname == null) { return; }
+        this.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
 
-        conn.doNick(nickname);
+        this.conn.doNick(nickname);
     }
 
-    private void setNickAway(boolean b) {
-        if (nickaway == b) { return; }
-        nickaway = b;
+    private void setNickAway(final boolean b) {
+        if (this.nickaway == b) { return; }
+        this.nickaway = b;
         if (b) {
-            orgNick = conn.getNick();
-            setNick(conn.getNick().substring(0, Math.min(conn.getNick().length(), 11)) + "|away");
+            this.orgNick = this.conn.getNick();
+            this.setNick(this.conn.getNick().substring(0, Math.min(this.conn.getNick().length(), 11)) + "|away");
         } else {
-            setNick(orgNick);
+            this.setNick(this.orgNick);
         }
 
     }
 
-    public void setNickCount(int nickCount) {
+    public void setNickCount(final int nickCount) {
         this.nickCount = nickCount;
     }
 
     public void setTopic(final String msg) {
-        addToText(null, STYLE_SYSTEM_MESSAGE, "<b>Topic is: " + msg + "</b>");
+        this.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "<b>Topic is: " + msg + "</b>");
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
-                top.setText(msg);
+                JDChat.this.top.setText(msg);
                 return null;
             }
 
@@ -1503,18 +1543,18 @@ public class JDChat extends PluginOptional {
     }
 
     private void startAwayObserver() {
-        Thread th = new Thread() {
+        final Thread th = new Thread() {
             @Override
             public void run() {
                 while (true) {
-                    if (System.currentTimeMillis() - lastAction > AWAY_TIMEOUT) {
-                        setNickAway(true);
+                    if (System.currentTimeMillis() - JDChat.this.lastAction > JDChat.AWAY_TIMEOUT) {
+                        JDChat.this.setNickAway(true);
                     } else {
-                        setNickAway(false);
+                        JDChat.this.setNickAway(false);
                     }
                     try {
                         Thread.sleep(10000);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                         JDLogger.exception(e);
                     }
                 }
@@ -1528,30 +1568,32 @@ public class JDChat extends PluginOptional {
 
     public void updateNamesPanel() {
         final StringBuilder sb = new StringBuilder();
-        Collections.sort(NAMES);
-        boolean color = subConfig.getBooleanProperty(PARAM_USERCOLOR, true);
+        Collections.sort(this.NAMES);
+        final boolean color = this.subConfig.getBooleanProperty(JDChat.PARAM_USERCOLOR, true);
         sb.append("<ul>");
-        for (User name : NAMES) {
+        for (final User name : this.NAMES) {
             sb.append("<li>");
             if (!color) {
-                sb.append("<span style='color:#" + name.getColor() + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
+                sb.append("<span style='color:#" + name.getColor() + (name.name.equals(this.conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
             } else {
-                sb.append("<span style='color:#000000" + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
+                sb.append("<span style='color:#000000" + (name.name.equals(this.conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
             }
             sb.append(name.getRank() + name.getNickLink("query"));
             sb.append("</span></li>");
         }
         sb.append("</ul>");
 
-        if (right != null) new GuiRunnable<Object>() {
+        if (this.right != null) {
+            new GuiRunnable<Object>() {
 
-            @Override
-            public Object runSave() {
-                right.setText(USERLIST_STYLE + sb);
-                return null;
-            }
+                @Override
+                public Object runSave() {
+                    JDChat.this.right.setText(JDChat.USERLIST_STYLE + sb);
+                    return null;
+                }
 
-        }.start();
+            }.start();
+        }
     }
 
 }

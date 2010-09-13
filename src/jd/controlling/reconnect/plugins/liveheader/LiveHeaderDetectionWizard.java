@@ -7,6 +7,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import jd.config.Configuration;
+import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.RouterUtils;
 import jd.utils.JDUtilities;
@@ -137,10 +138,14 @@ public class LiveHeaderDetectionWizard {
                 // seconds
                 // anyway
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WAITFORIPCHANGE, 10);
-                if (ReconnectPluginController.getInstance().doReconnect(this.getPlugin())) {
-                    // restore afterwards
+                try {
+                    if (ReconnectPluginController.getInstance().doReconnect(this.getPlugin())) {
+                        // restore afterwards
 
-                    return (int) (System.currentTimeMillis() - start);
+                        return (int) (System.currentTimeMillis() - start);
+                    }
+                } catch (final ReconnectException e) {
+                    e.printStackTrace();
                 }
             } finally {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WAITFORIPCHANGE, waitTimeBefore);

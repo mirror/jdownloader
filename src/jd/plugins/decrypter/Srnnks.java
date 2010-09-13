@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -129,7 +130,9 @@ public class Srnnks extends PluginForDecrypt {
         }
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
-                if (Reconnecter.waitForNewIP(15000, false)) {
+                IPController.getInstance().invalidate();
+
+                if (Reconnecter.getInstance().run(15000)) {
 
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));

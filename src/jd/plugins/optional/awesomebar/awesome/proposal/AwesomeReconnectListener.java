@@ -19,25 +19,29 @@ public class AwesomeReconnectListener implements AwesomeProposalRequestListener 
         TURNOFF, TURNON, RCNOW
     }
 
-    public void performAction(AwesomeAction action) {
+    public List<String> getKeywords() {
+        return Arrays.asList("reconnect");
+    }
+
+    public float getRankingMultiplier() {
+        return 0.95f;
+    }
+
+    public void performAction(final AwesomeAction action) {
         switch ((actionid) action.getProposal().getActionID()) {
         case TURNOFF:
-            if (Reconnecter.isReconnectAllowed()) {
-                Reconnecter.toggleReconnect();
-            }
+            Reconnecter.getInstance().setAutoReconnectEnabled(false);
             break;
         case TURNON:
-            if (!Reconnecter.isReconnectAllowed()) {
-                Reconnecter.toggleReconnect();
-            }
+            Reconnecter.getInstance().setAutoReconnectEnabled(true);
             break;
         case RCNOW:
-            Reconnecter.doManualReconnect();
+            Reconnecter.getInstance().forceReconnect();
             break;
         }
     }
 
-    public void requestProposal(AwesomeProposalRequest request) {
+    public void requestProposal(final AwesomeProposalRequest request) {
         if (request.isParamsEmpty() || request.getParams().startsWith("n")) {
             new AwesomeProposal(this, request, new JLabel("Reconnect now."), actionid.RCNOW, AwesomeUtils.createProposalListElement(this, request.withParams("now")), 0.6f);
 
@@ -49,14 +53,6 @@ public class AwesomeReconnectListener implements AwesomeProposalRequestListener 
                 new AwesomeProposal(this, request, new JLabel("Turn automatic reconnect on"), actionid.TURNON, AwesomeUtils.createProposalListElement(this, request.withParams("on")), 1.0f);
             }
         }
-    }
-
-    public List<String> getKeywords() {
-        return Arrays.asList("reconnect");
-    }
-
-    public float getRankingMultiplier() {
-        return 0.95f;
     }
 
 }

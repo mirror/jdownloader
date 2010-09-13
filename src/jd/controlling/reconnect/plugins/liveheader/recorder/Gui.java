@@ -33,9 +33,8 @@ import javax.swing.WindowConstants;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.reconnect.IP;
-import jd.controlling.reconnect.IPCheck;
 import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -108,8 +107,7 @@ public class Gui extends AbstractDialog<Object> {
                 public void run() {
                     JDRRInfoPopup.this.cancelButton.setEnabled(false);
 
-                    Gui.this.ip_after = IPCheck.getIPAddress();
-                    if (Gui.this.ip_before.changed(Gui.this.ip_after)) {
+                    if (IPController.getInstance().validate()) {
                         if (JDRRInfoPopup.this.reconnect_timer == 0) {
                             /*
                              * Reconnect fand innerhalb des Check-Intervalls
@@ -124,7 +122,7 @@ public class Gui extends AbstractDialog<Object> {
                     } else {
                         JDRRInfoPopup.this.statusicon.setStatus(-1);
                     }
-                    if (Gui.this.ip_before.changed(Gui.this.ip_after)) {
+                    if (IPController.getInstance().validate()) {
                         Gui.this.save();
                     } else {
                         UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
@@ -174,11 +172,11 @@ public class Gui extends AbstractDialog<Object> {
                             Thread.sleep(Gui.CHECK_INTERVAL);
                         } catch (final Exception e) {
                         }
-                        Gui.this.ip_after = IPCheck.getIPAddress();
-                        if (!Gui.this.ip_after.isValid() && JDRRInfoPopup.this.reconnect_timer == 0) {
+
+                        if (!IPController.getInstance().validate() && JDRRInfoPopup.this.reconnect_timer == 0) {
                             JDRRInfoPopup.this.reconnect_timer = System.currentTimeMillis();
                         }
-                        if (Gui.this.ip_before.changed(Gui.this.ip_after)) {
+                        if (IPController.getInstance().validate()) {
                             JDRRInfoPopup.this.statusicon.setStatus(1);
                             if (ReconnectRecorder.running == true) {
                                 JDRRInfoPopup.this.closePopup();
@@ -196,8 +194,7 @@ public class Gui extends AbstractDialog<Object> {
     private JTextField          routerip;
     private JCheckBox           rawmode;
     public boolean              saved              = false;
-    private IP                  ip_before;
-    private IP                  ip_after;
+
     public String               ip                 = null;
     public String               methode            = null;
     public String               user               = null;
@@ -321,7 +318,7 @@ public class Gui extends AbstractDialog<Object> {
                 host = host.replaceAll("http://", "").replaceAll("https://", "");
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, host);
 
-                this.ip_before = IPCheck.getIPAddress();
+                IPController.getInstance().invalidate();
                 ReconnectRecorder.startServer(host, this.rawmode.isSelected());
 
                 try {
