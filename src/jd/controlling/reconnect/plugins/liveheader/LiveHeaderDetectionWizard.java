@@ -26,7 +26,6 @@ public class LiveHeaderDetectionWizard {
     private JTextField txtPass;
 
     private LiveHeaderReconnect getPlugin() {
-        // TODO Auto-generated method stub
         return (LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID);
     }
 
@@ -95,11 +94,6 @@ public class LiveHeaderDetectionWizard {
 
         }
 
-    }
-
-    public int runRouterRecorder() {
-        // TODO Auto-generated method stub
-        return -1;
     }
 
     private int scanOfflineRouters(final String name, final String manufactor) throws InterruptedException {

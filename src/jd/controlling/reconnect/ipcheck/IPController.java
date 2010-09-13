@@ -6,7 +6,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.plugins.upnp.InvalidProviderException;
 
 import com.sun.istack.internal.Nullable;
 

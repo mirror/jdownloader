@@ -21,17 +21,6 @@ public abstract class RouterPlugin {
     private long                  lastDuration;
 
     private IPCheckProvider       ipCheckProvider = null;
-    /**
-     * Constant that has to be returned by {@link #getExternalIP()} if there is
-     * no internet connection
-     */
-    public static final String    OFFLINE         = "offline";
-
-    /**
-     * constant that has to be returned by {@link #getExternalIP()} if a ip
-     * chekc is temp. not available
-     */
-    public static final String    NOT_AVAILABLE   = "na";
 
     public RouterPlugin() {
         this.storage = JSonStorage.getPlainStorage(this.getID());

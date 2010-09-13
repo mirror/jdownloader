@@ -44,6 +44,7 @@ import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
+import jd.controlling.reconnect.ipcheck.InvalidProviderException;
 import jd.gui.UserIO;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

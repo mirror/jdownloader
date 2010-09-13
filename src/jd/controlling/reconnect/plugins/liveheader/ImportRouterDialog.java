@@ -22,9 +22,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -46,9 +44,7 @@ import javax.swing.event.ListSelectionListener;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.io.JDIO;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -56,20 +52,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 
 public class ImportRouterDialog extends AbstractDialog<Integer> {
 
-    private static final long serialVersionUID = 2043825047691368115L;
-
-    @SuppressWarnings("unchecked")
-    public static ArrayList<String[]> getLHScripts() {
-        final File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "router").listFiles();
-        final ArrayList<String[]> ret = new ArrayList<String[]>();
-        for (final File element : list) {
-            if (element.isFile() && element.getName().toLowerCase().matches(".*\\.xml$")) {
-                ret.addAll((Collection<? extends String[]>) JDIO.loadObject(element, true));
-            }
-        }
-
-        return ret;
-    }
+    private static final long         serialVersionUID = 2043825047691368115L;
 
     private final ArrayList<String[]> scripts;
     private JList                     list;

@@ -158,12 +158,12 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
         }
     }
 
-    protected void setBatchText(final String text) {
+    private void setBatchText(final String text) {
         this.getStorage().put(ExternBatchReconnectPlugin.BATCH_TEXT, text);
         this.updateGUI();
     }
 
-    protected void setCommand(final String text) {
+    private void setCommand(final String text) {
         this.getStorage().put(ExternBatchReconnectPlugin.TERMINAL_COMMAND, text);
         this.updateGUI();
     }
@@ -171,7 +171,6 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     private void setExecuteIn(final String text) {
         this.getStorage().put(ExternBatchReconnectPlugin.EXECUTE_IN, text);
         this.updateGUI();
-
     }
 
     private void updateGUI() {
@@ -179,25 +178,22 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
             protected void runInEDT() {
                 try {
                     ExternBatchReconnectPlugin.this.txtCommand.setText(ExternBatchReconnectPlugin.this.getTerminalCommand());
-                } catch (final java.lang.IllegalStateException e) {
+                } catch (final IllegalStateException e) {
                     // throws an java.lang.IllegalStateException if the caller
-
+                    // is a changelistener of this field's document
                 }
                 try {
                     ExternBatchReconnectPlugin.this.txtBatch.setText(ExternBatchReconnectPlugin.this.getBatchText());
-                } catch (final java.lang.IllegalStateException e) {
+                } catch (final IllegalStateException e) {
                     // throws an java.lang.IllegalStateException if the caller
                     // is a changelistener of this field's document
-
                 }
                 try {
                     ExternBatchReconnectPlugin.this.browse.setText(ExternBatchReconnectPlugin.this.getExecuteIn());
-                } catch (final java.lang.IllegalStateException e) {
+                } catch (final IllegalStateException e) {
                     // throws an java.lang.IllegalStateException if the caller
                     // is a changelistener of this field's document
-
                 }
-
             }
 
         };

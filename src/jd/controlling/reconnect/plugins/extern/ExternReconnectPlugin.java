@@ -229,7 +229,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
         }
     }
 
-    protected void setCommand(final String text) {
+    private void setCommand(final String text) {
         this.getStorage().put(ExternReconnectPlugin.COMMAND, text);
         this.updateGUI();
     }
@@ -239,7 +239,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
         this.updateGUI();
     }
 
-    protected void setParameter(final String text) {
+    private void setParameter(final String text) {
         this.getStorage().put(ExternReconnectPlugin.PARAMETER, text);
         this.updateGUI();
     }
@@ -249,25 +249,22 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
             protected void runInEDT() {
                 try {
                     ExternReconnectPlugin.this.browse.setText(ExternReconnectPlugin.this.getCommand());
-                } catch (final java.lang.IllegalStateException e) {
+                } catch (final IllegalStateException e) {
                     // throws an java.lang.IllegalStateException if the caller
-
+                    // is a changelistener of this field's document
                 }
                 try {
                     ExternReconnectPlugin.this.txtParameter.setText(ExternReconnectPlugin.this.getParameterString());
-                } catch (final java.lang.IllegalStateException e) {
+                } catch (final IllegalStateException e) {
                     // throws an java.lang.IllegalStateException if the caller
                     // is a changelistener of this field's document
-
                 }
                 try {
                     ExternReconnectPlugin.this.chbDummyBatch.setSelected(ExternReconnectPlugin.this.isDummyBatchEnabled());
-                } catch (final java.lang.IllegalStateException e) {
+                } catch (final IllegalStateException e) {
                     // throws an java.lang.IllegalStateException if the caller
                     // is a changelistener of this field's document
-
                 }
-
             }
 
         };

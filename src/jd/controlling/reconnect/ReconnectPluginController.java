@@ -21,15 +21,12 @@ import javax.swing.AbstractAction;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.CodeVerifier;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.plugins.batch.ExternBatchReconnectPlugin;
 import jd.controlling.reconnect.plugins.extern.ExternReconnectPlugin;
 import jd.controlling.reconnect.plugins.liveheader.CLRConverter;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -46,7 +43,7 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 
 import com.sun.istack.internal.Nullable;
 
-public class ReconnectPluginController implements ControlListener {
+public class ReconnectPluginController {
     public static final String                     PRO_ACTIVEPLUGIN = "ACTIVEPLUGIN2";
 
     private static final ReconnectPluginController INSTANCE         = new ReconnectPluginController();
@@ -125,11 +122,7 @@ public class ReconnectPluginController implements ControlListener {
     private ReconnectPluginController() {
         this.storage = JSonStorage.getStorage("ReconnectPluginController");
 
-        // only listen to system if autofind has not been used
-        JDController.getInstance().addControlListener(this);
-
         this.scan();
-
     }
 
     public void autoFind() {
@@ -183,9 +176,8 @@ public class ReconnectPluginController implements ControlListener {
                         }
                     }
                 }
-                // if we find a woprking reconnect without any interaction, this
-                // is
-                // great
+                // if we find a working reconnect without any interaction, this
+                // is great
                 if (fastestPlugin != null) {
                     ReconnectPluginController.this.setActivePlugin(fastestPlugin);
                     return;
@@ -217,16 +209,12 @@ public class ReconnectPluginController implements ControlListener {
 
             conDialog.setLeftActions(new AbstractAction(Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.support", "Support")) {
 
-                /**
-                 * 
-                 */
                 private static final long serialVersionUID = 1L;
 
                 public void actionPerformed(final ActionEvent e) {
                     try {
                         CrossSystem.openURL(new URL("http://support.jdownloader.org/index.php?_m=tickets&_a=submit"));
                     } catch (final MalformedURLException e1) {
-                        // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
                 }
@@ -237,95 +225,10 @@ public class ReconnectPluginController implements ControlListener {
         }
     }
 
-    public void controlEvent(final ControlEvent event) {
-
-        // final Configuration configuration = JDUtilities.getConfiguration();
-        // final boolean allowed =
-        // configuration.getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT,
-        // true);
-        // final boolean rcOK =
-        // configuration.getBooleanProperty(Configuration.PARAM_RECONNECT_OKAY,
-        // true);
-        // final int failCount =
-        // configuration.getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER,
-        // 0);
-        // final boolean alreadyTriedAutofind = this.storage.get("AUTOFIND",
-        // false);
-        // switch (event.getEventID()) {
-        // if (UPNPRouterPlugin.this.devices == null ||
-        // UPNPRouterPlugin.this.devices.size() == 0) {
-        // UPNPRouterPlugin.this.devices =
-        // UPNPRouterPlugin.this.scanDevices();
-        // }
-        // if (UPNPRouterPlugin.this.devices.size() > 0) {
-        // final ConfirmDialog cDialog = new
-        // ConfirmDialog(Dialog.LOGIC_COUNTDOWN |
-        // Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
-        // Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.title",
-        // "UPNP Router found"),
-        // Loc.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.message",
-        // "It seems that your reconnection is not setup perfectly. JDownloader found %s UPNPRouter device(s).\r\n\r\nShould JDownloader try to auto-configure your reconnect?",
-        // UPNPRouterPlugin.this.devices.size()), null, null, null);
-        // cDialog.setLeftActions(new
-        // AbstractAction(Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.dialog.morebutton",
-        // " ... read more")) {
-        //
-        // private static final long serialVersionUID = 1L;
-        //
-        // public void actionPerformed(final ActionEvent e) {
-        // try {
-        // OS.launchBrowser("http://board.jdownloader.org/showthread.php?t=16450");
-        // } catch (final IOException e1) {
-        // e1.printStackTrace();
-        // }
-        // }
-        //
-        // });
-        // cDialog.displayDialog();
-        //
-        // if (Dialog.isOK(Dialog.getInstance().showDialog(cDialog))) {
-        // case ControlEvent.CONTROL_INIT_COMPLETE:
-        //
-        // // case: autoreconnect disable due to too many failed
-        // if (!allowed && !rcOK && failCount == 0 && !alreadyTriedAutofind) {
-        // // try to autoconfiger upnp router
-        //
-        // // this.autoFind();
-        // } else if (allowed && failCount > 0 && !alreadyTriedAutofind) {
-        // // reconnect failed
-        // // this.autoFind();
-        // }
-        //
-        // break;
-        //
-        // case ControlEvent.CONTROL_AFTER_RECONNECT:
-        // if (failCount > 0 && !alreadyTriedAutofind) {
-        // // last reconnect failed.
-        // // this.autoFind();
-        // } else if (failCount > 0 && allowed) {
-        // // case not allowed, but tried manually and failed
-        //
-        // // this.autoFind();
-        // }
-        // break;
-        //
-        // }
-
-    }
-
     /**
      * Maps old reconnect panel, to new one. can be removed after 2.*
      * 
      * @return
-     */
-    /*
-     * 
-     * 
-     * public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
-     * 
-     * public static final int LIVEHEADER = 0; public static final int EXTERN =
-     * 1; public static final int BATCH = 2; public static final int CLR = 3;
-     * public static final int PLUGIN = 4;
      */
     private String convertFromOldSystem() {
         final int id = JDUtilities.getConfiguration().getIntegerProperty("RECONNECT_TYPE", 0);
@@ -412,29 +315,6 @@ public class ReconnectPluginController implements ControlListener {
         return active;
     }
 
-    // /**
-    // * Returns the current external IP. Checks the current active plugin, and
-    // * uses IPCHeck class as fallback
-    // *
-    // * @return
-    // */
-    // public IP getExternalIP() {
-    // IP ret = IP_NA.IPCHECK_UNSUPPORTED;
-    // if
-    // (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE,
-    // false)) {
-    // // use own ipcheck if possible
-    // if (this.getActivePlugin().isIPCheckEnabled()) {
-    // ret =
-    // ReconnectPluginController.getInstance().getActivePlugin().getExternalIP();
-    // if (ret.isValid()) { return ret; }
-    // }
-    // ret = IPController.getInstance().fetchIP();
-    // }
-    // // Reconnecter.setCurrentIP(ret);
-    // return ret;
-    // }
-
     /**
      * returns how long the controller has to wait between two ip checks
      * 
@@ -450,10 +330,10 @@ public class ReconnectPluginController implements ControlListener {
         return 0;
     }
 
-    @Nullable
     /**
      * Returns the plugin that has the given ID.
      */
+    @Nullable
     public RouterPlugin getPluginByID(final String activeID) {
         for (final RouterPlugin plg : this.plugins) {
             if (plg.getID().equals(activeID)) { return plg; }
@@ -467,7 +347,6 @@ public class ReconnectPluginController implements ControlListener {
      * @return
      */
     public ArrayList<RouterPlugin> getPlugins() {
-
         return this.plugins;
     }
 
@@ -488,9 +367,7 @@ public class ReconnectPluginController implements ControlListener {
         if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
 
             // use own ipcheck if possible
-            if (this.getActivePlugin().getIPCheckProvider() != null) { return this.getActivePlugin().getWaittimeBeforeFirstIPCheck();
-
-            }
+            if (this.getActivePlugin().getIPCheckProvider() != null) { return this.getActivePlugin().getWaittimeBeforeFirstIPCheck(); }
             return JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_IPCHECKWAITTIME, 5);
 
         }
@@ -560,11 +437,10 @@ public class ReconnectPluginController implements ControlListener {
     /**
      * Sets the active reconnect plugin
      * 
-     * @param id
+     * @param selectedItem
      */
     public void setActivePlugin(final RouterPlugin selectedItem) {
         this.storage.put(ReconnectPluginController.PRO_ACTIVEPLUGIN, selectedItem.getID());
-
     }
 
     /**
@@ -574,6 +450,6 @@ public class ReconnectPluginController implements ControlListener {
      */
     public void setActivePlugin(final String id) {
         this.setActivePlugin(this.getPluginByID(id));
-
     }
+
 }
