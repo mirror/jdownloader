@@ -20,10 +20,13 @@ public class IPController {
     /**
      * true, if the current ip has no use. we need a new one
      */
-    private boolean                          invalidated  = false;
-    private IPLogEntry                       currentIP;
-    private final ArrayList<IPLogEntry>      ipLog        = new ArrayList<IPLogEntry>();
-    private final ArrayList<IPCheckProvider> badProviders = new ArrayList<IPCheckProvider>();
+    private boolean                            invalidated  = false;
+    private IPConnectionState                  latestConnectionState;
+    private final ArrayList<IPConnectionState> ipLog        = new ArrayList<IPConnectionState>();
+    /**
+     * blacklist for not working ip check providers
+     */
+    private final ArrayList<IPCheckProvider>   badProviders = new ArrayList<IPCheckProvider>();
 
     private IPController() {
 
@@ -35,12 +38,12 @@ public class IPController {
      * @return
      */
     public IP fetchIP() {
-        IPLogEntry newIP = null;
+        IPConnectionState newIP = null;
         IPCheckProvider icp = null;
         while (true) {
             try {
                 icp = this.getIPCheckProvider();
-                newIP = new IPLogEntry(icp.getIP());
+                newIP = new IPConnectionState(icp.getExternalIP());
                 break;
             } catch (final InvalidProviderException e) {
                 // IP check provider is bad.
@@ -48,23 +51,23 @@ public class IPController {
 
             } catch (final IPCheckException e) {
                 JDLogger.getLogger().info(e.getMessage());
-                newIP = new IPLogEntry(null, e);
+                newIP = new IPConnectionState(e);
                 break;
             }
 
         }
         if (this.ipLog.size() > 0) {
 
-            final IPLogEntry entry = this.ipLog.get(this.ipLog.size() - 1);
+            final IPConnectionState entry = this.ipLog.get(this.ipLog.size() - 1);
             if (!entry.equalsLog(newIP)) {
                 this.ipLog.add(newIP);
-                this.currentIP = newIP;
+                this.latestConnectionState = newIP;
             }
         } else {
             this.ipLog.add(newIP);
-            this.currentIP = newIP;
+            this.latestConnectionState = newIP;
         }
-        return this.currentIP.getIp();
+        return this.latestConnectionState.getExternalIp();
     }
 
     /**
@@ -72,11 +75,11 @@ public class IPController {
      * 
      * @return
      */
-    private synchronized IPLogEntry getCurrentLog() {
-        if (this.currentIP == null) {
+    private synchronized IPConnectionState getCurrentLog() {
+        if (this.latestConnectionState == null) {
             this.fetchIP();
         }
-        return this.currentIP;
+        return this.latestConnectionState;
     }
 
     /**
@@ -88,7 +91,7 @@ public class IPController {
      */
     @Nullable
     public IP getIP() {
-        return this.getCurrentLog().getIp();
+        return this.getCurrentLog().getExternalIp();
     }
 
     /**
@@ -112,7 +115,10 @@ public class IPController {
     }
 
     /**
-     * Tells the IpController, that the current ip is "BAD". We need a new one
+     * Tells the IpController, that the current ip is "BAD". We need a new one<br>
+     * 
+     * @see #validate()
+     * @see #validate(int, int)
      */
     public void invalidate() {
         this.invalidated = true;
@@ -128,7 +134,11 @@ public class IPController {
     }
 
     /**
-     * gets new ip and validates it.
+     * gets the latest connection state and validates if we have a new ip.<br>
+     * 
+     * @see #validate(int, int) for more details.<br>
+     * 
+     *      This method only does one single Check.
      */
     public boolean validate() {
         if (!this.invalidated) { return true; }
@@ -138,10 +148,10 @@ public class IPController {
 
         }
 
-        final IPLogEntry before = this.getCurrentLog();
+        final IPConnectionState before = this.getCurrentLog();
         this.fetchIP();
 
-        if (this.currentIP != before && this.currentIP.getIp() != null) {
+        if (this.latestConnectionState != before && this.latestConnectionState.getExternalIp() != null) {
 
             this.invalidated = false;
 
@@ -149,8 +159,21 @@ public class IPController {
         return !this.isInvalidated();
     }
 
+    /**
+     * check for max waitForIPTime seconds in an interval of ipCheckInterval if
+     * the ip is valid.<br>
+     * Call {@link #invalidate()} to invalidate the current state. AFterwards a
+     * reconnect can get a new ip.<br>
+     * this method gets the new connectionstate and validates it
+     * 
+     * 
+     * @param waitForIPTime
+     * @param ipCheckInterval
+     * @return
+     * @throws InterruptedException
+     */
     public boolean validate(final int waitForIPTime, final int ipCheckInterval) throws InterruptedException {
-
+        if (!this.invalidated) { return true; }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successfull
@@ -158,15 +181,37 @@ public class IPController {
 
         }
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
-        final IPLogEntry before = this.getCurrentLog();
-
+        final IPConnectionState before = this.getCurrentLog();
+        IPConnectionState offline = null;
         while (System.currentTimeMillis() < endTime) {
             this.fetchIP();
-            if (this.currentIP != before && this.currentIP.getIp() != null) {
+
+            if (!before.equalsLog(this.latestConnectionState) && this.latestConnectionState.getExternalIp() != null) {
 
                 this.invalidated = false;
 
                 break;
+            } else if (offline != null && this.latestConnectionState.isOnline()) {
+                // we have been offline, and online again, but have same ip
+                this.invalidated = true;
+            } else if (!before.equalsLog(this.latestConnectionState) && this.latestConnectionState.getExternalIp() == null) {
+                // errorhandling
+                if (this.latestConnectionState.getCause() != null) {
+                    try {
+                        throw this.latestConnectionState.getCause();
+                    } catch (final ForbiddenIPException e) {
+                        // forbidden IP.. no need to wait
+                        this.invalidated = true;
+                        break;
+
+                    } catch (final Throwable e) {
+                        // nothing
+                    }
+                }
+
+            }
+            if (before.isOnline() && this.latestConnectionState.isOffline()) {
+                offline = this.latestConnectionState;
             }
             Thread.sleep(Math.max(250, ipCheckInterval));
 

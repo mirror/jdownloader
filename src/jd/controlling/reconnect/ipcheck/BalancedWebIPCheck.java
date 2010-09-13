@@ -7,11 +7,21 @@ import java.util.regex.Pattern;
 
 import jd.http.Browser;
 
+/**
+ * balanced IP check uses the jdownloader ip check servers. This type of ip
+ * check is default, and fallback for all reconnect methods
+ * 
+ * @author thomas
+ * 
+ */
 public class BalancedWebIPCheck implements IPCheckProvider {
     public static BalancedWebIPCheck getInstance() {
         return BalancedWebIPCheck.INSTANCE;
     }
 
+    /**
+     * All registered ip check urls
+     */
     private final ArrayList<String>         services;
 
     private final Browser                   br;
@@ -37,11 +47,13 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         this.br.setReadTimeout(15000);
     }
 
-    public String getInfo() {
-        return null;
-    }
-
-    public IP getIP() throws IPCheckException {
+    /**
+     * gets the external IP.
+     * 
+     * @throws IPCheckException
+     *             if there is no valid external IP
+     */
+    public IP getExternalIP() throws IPCheckException {
         try {
             Exception e = null;
             for (int i = 0; i < this.services.size(); i++) {
@@ -71,8 +83,11 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         }
     }
 
+    /**
+     * Returns how often the controller should use this IP Check.
+     */
     public int getIpCheckInterval() {
-        return 0;
+        return 5;
     }
 
 }

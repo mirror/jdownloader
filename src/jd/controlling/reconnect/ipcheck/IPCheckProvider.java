@@ -25,7 +25,7 @@ public interface IPCheckProvider {
      * @return
      * @throws IPCheckException
      */
-    public IP getIP() throws IPCheckException;
+    public IP getExternalIP() throws IPCheckException;
 
     /**
      * returns how often this ip check may be used

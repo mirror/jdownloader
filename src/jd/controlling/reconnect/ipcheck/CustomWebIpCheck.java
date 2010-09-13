@@ -8,6 +8,12 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 
+/**
+ * Allows the user to define his own ip check rules.
+ * 
+ * @author thomas
+ * 
+ */
 public class CustomWebIpCheck implements IPCheckProvider {
 
     private final Browser                 br       = new Browser();
@@ -22,11 +28,13 @@ public class CustomWebIpCheck implements IPCheckProvider {
 
     }
 
-    public String getInfo() {
-        return "Customized IPCheck: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
-    }
-
-    public IP getIP() throws IPCheckException {
+    /**
+     * gets the external IP.
+     * 
+     * @throws IPCheckException
+     *             if there is no valid external IP
+     */
+    public IP getExternalIP() throws IPCheckException {
 
         final String site = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "Please enter Website for IPCheck here");
         final String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Please enter Regex for IPCheck here");

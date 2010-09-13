@@ -358,7 +358,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
         return "SIMPLEUPNP";
     }
 
-    public IP getIP() throws IPCheckException {
+    public IP getExternalIP() throws IPCheckException {
         String ipxml;
         try {
             ipxml = this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "GetExternalIPAddress");
