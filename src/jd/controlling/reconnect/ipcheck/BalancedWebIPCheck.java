@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 
 /**
@@ -55,35 +56,25 @@ public class BalancedWebIPCheck implements IPCheckProvider {
      *             if there is no valid external IP
      */
     public IP getExternalIP() throws IPCheckException {
-        synchronized (LOCK) {
-            try {
+        synchronized (this.LOCK) {
+
+            for (int i = 0; i < this.services.size(); i++) {
                 try {
-                    Exception e = null;
-                    for (int i = 0; i < this.services.size(); i++) {
-                        try {
-                            this.index = (this.index + 1) % this.services.size();
-                            final String service = this.services.get(this.index);
-                            /* call website and check for ip */
-                            final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
-                            if (matcher.find()) {
-                                if (matcher.groupCount() > 0) {
-                                return IP.getInstance(matcher.group(1)); }
-                            }
-                        } catch (final Exception e2) {
-                            e = e2;
-                        }
+                    this.index = (this.index + 1) % this.services.size();
+                    final String service = this.services.get(this.index);
+                    /* call website and check for ip */
+                    final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
+                    if (matcher.find()) {
+                        if (matcher.groupCount() > 0) { return IP.getInstance(matcher.group(1)); }
                     }
-                    if (e != null) {
-                        throw e;
-                    } else {
-                        throw new IPCheckException("Could not get IP");
-                    }
-                } catch (final Exception e) {
-                    throw new IPCheckException(e);
+                } catch (final Throwable e2) {
+                    JDLogger.getLogger().info(e2.getMessage());
+
                 }
-            } finally {
-                Collections.shuffle(this.services);
             }
+
+            throw new OfflineException("All balanced Services failed");
+
         }
     }
 
