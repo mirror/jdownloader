@@ -33,7 +33,7 @@ public class IP {
                 final int n3 = Integer.parseInt(parts[2]);
                 final int n4 = Integer.parseInt(parts[3]);
                 /* fritzbox sends 0.0.0.0 while its offline */
-                if (n1 == 0 && n2 == 0 && n3 == 0 && n4 == 0) { throw new InvalidIPException(ip); }
+                if (n1 == 0 && n2 == 0 && n3 == 0 && n4 == 0) { throw new OfflineException(ip); }
                 if (n1 >= 0 && n1 <= 255 && n2 >= 0 && n2 <= 255 && n3 >= 0 && n3 <= 255 && n4 >= 0 && n4 <= 255) {
 
                     if (!IP.validateIP(ip)) { throw new ForbiddenIPException(ip); }

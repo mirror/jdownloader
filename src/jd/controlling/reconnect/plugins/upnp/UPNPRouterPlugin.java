@@ -67,6 +67,8 @@ import org.xml.sax.SAXException;
 
 public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IPCheckProvider {
 
+    public static final String            ID         = "SIMPLEUPNP";
+
     private static final String           CANCHECKIP = "cancheckip";
 
     private JButton                       find;
@@ -283,6 +285,26 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
     }
 
+    public IP getExternalIP() throws IPCheckException {
+        String ipxml;
+        try {
+            ipxml = this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "GetExternalIPAddress");
+        } catch (final Exception e) {
+            this.setCanCheckIP(false);
+
+            throw new InvalidProviderException("UPNP Command Error");
+        }
+        try {
+            final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);
+            if (ipm.find()) { return IP.getInstance(ipm.group(1)); }
+        } catch (final InvalidIPRangeException e2) {
+            throw new InvalidProviderException(e2);
+        }
+        this.setCanCheckIP(false);
+
+        throw new InvalidProviderException("Unknown UPNP Response Error");
+    }
+
     @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 15,wrap 3", "[][][grow,fill]", "[]"));
@@ -356,27 +378,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
     @Override
     public String getID() {
-        return "SIMPLEUPNP";
-    }
-
-    public IP getExternalIP() throws IPCheckException {
-        String ipxml;
-        try {
-            ipxml = this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "GetExternalIPAddress");
-        } catch (final Exception e) {
-            this.setCanCheckIP(false);
-
-            throw new InvalidProviderException("UPNP Command Error");
-        }
-        try {
-            final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);
-            if (ipm.find()) { return IP.getInstance(ipm.group(1)); }
-        } catch (final InvalidIPRangeException e2) {
-            throw new InvalidProviderException(e2);
-        }
-        this.setCanCheckIP(false);
-
-        throw new InvalidProviderException("Unknown UPNP Response Error");
+        return UPNPRouterPlugin.ID;
     }
 
     public int getIpCheckInterval() {
@@ -474,7 +476,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
     }
 
-    protected ArrayList<UpnpRouterDevice> scanDevices() throws IOException {
+    public ArrayList<UpnpRouterDevice> scanDevices() throws IOException {
         final String msg = "M-SEARCH * HTTP/1.1\r\n" + "HOST: 239.255.255.250:1900\r\n" + "ST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\n" + "MAN: \"ssdp:discover\"\r\n" + "MX: 3\r\n\r\n";
         /*
          * TODO (NOT IMPORTANT) To simplify will not make a request for every
@@ -552,6 +554,8 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                     // ############## friendlyname ##############
                     Element el = null;
                     String friendlyname = null;
+                    String modelname = null;
+                    String manufactor = null;
                     NodeList nodes = document.getElementsByTagName("devicetype");
                     for (int i = 0; i < nodes.getLength(); i++) {
                         if (nodes.item(i).getTextContent().toLowerCase().matches("urn:schemas-upnp-org:device:internetgatewaydevice:1")) {
@@ -564,6 +568,19 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                                     // device.put(UPNPRouterPlugin.FRIENDLYNAME,
                                     // friendlyname);
                                 }
+                                if (nodes2.item(j).getNodeName().matches(UpnpRouterDevice.MODELNAME)) {
+                                    modelname = nodes2.item(j).getTextContent();
+                                    // no sure why we do not use break here
+                                    // device.put(UPNPRouterPlugin.FRIENDLYNAME,
+                                    // friendlyname);
+                                }
+                                if (nodes2.item(j).getNodeName().matches(UpnpRouterDevice.MANUFACTOR)) {
+                                    manufactor = nodes2.item(j).getTextContent();
+                                    // no sure why we do not use break here
+                                    // device.put(UPNPRouterPlugin.FRIENDLYNAME,
+                                    // friendlyname);
+                                }
+
                             }
                         }
                     }
@@ -577,6 +594,8 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                             final UpnpRouterDevice device = new UpnpRouterDevice();
                             device.setUrlBase(urlbase);
                             device.setFriendlyname(friendlyname);
+                            device.setModelname(modelname);
+                            device.setManufactor(manufactor);
                             device.setLocation(location);
                             final String servicetype = nodes.item(i).getTextContent();
                             device.setServiceType(servicetype);

@@ -19,6 +19,8 @@ public class UpnpRouterDevice extends HashMap<String, String> {
      * 
      */
     private static final long  serialVersionUID = 1L;
+    public static final String MODELNAME        = "modelname";
+    public static final String MANUFACTOR       = "manufacturer";
 
     public String getControlURL() {
         return this.get(UpnpRouterDevice.CONTROLURL);
@@ -34,6 +36,14 @@ public class UpnpRouterDevice extends HashMap<String, String> {
 
     public String getLocation() {
         return this.get(UpnpRouterDevice.LOCATION);
+    }
+
+    public String getManufactor() {
+        return this.get(UpnpRouterDevice.MANUFACTOR);
+    }
+
+    public String getModelname() {
+        return this.get(UpnpRouterDevice.MODELNAME);
     }
 
     public String getServiceType() {
@@ -62,6 +72,14 @@ public class UpnpRouterDevice extends HashMap<String, String> {
 
     public void setLocation(final String location) {
         this.put(UpnpRouterDevice.LOCATION, location);
+    }
+
+    public void setManufactor(final String manufactor2) {
+        this.put(UpnpRouterDevice.MANUFACTOR, manufactor2);
+    }
+
+    public void setModelname(final String modelname2) {
+        this.put(UpnpRouterDevice.MODELNAME, modelname2);
     }
 
     public void setServiceType(final String servicyType) {
