@@ -27,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehoster.de" }, urls = { "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait|vid)/[a-z0-9]+" }, flags = { 0 })
 public class ShareHosterDe extends PluginForHost {
@@ -51,7 +52,7 @@ public class ShareHosterDe extends PluginForHost {
         br.getPage(link.getDownloadURL());
         // No filename or size is on the page so just check if there is an
         // error, if not, the file should be online!
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("download_failed") || br.getRedirectLocation().contains("downloadfailed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("download_failed") || br.getRedirectLocation().contains("downloadfailed") || br.getRedirectLocation().contains("premium&vid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("download_failed") || br.getRedirectLocation().contains("downloadfailed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -67,7 +68,17 @@ public class ShareHosterDe extends PluginForHost {
         // Skips the waittime
         Form waitform = br.getFormbyProperty("name", "prepare");
         if (waitform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(false);
+        waitform.setAction(downloadLink.getDownloadURL().replaceAll("/(wait|vid)/", "/dl/"));
         br.submitForm(waitform);
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) {
+                if (br.getRedirectLocation().contains("open=premium&vid")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ShareHosterDe.only4premium", "This link is only available for premium users"));
+                logger.warning("Recognized redirect to:" + br.getRedirectLocation() + " following connection...");
+                br.getPage(br.getRedirectLocation());
+            }
+        }
         // Streaming links don't need any captchas
         String dllink = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"\\)").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://media\\d+\\.sharehoster.com/stream/[a-z0-9]+\\.flv)\"").getMatch(0);
