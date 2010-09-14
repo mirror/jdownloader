@@ -114,7 +114,7 @@ public class UserIO {
     public static final int       ICON_ERROR                     = 2;
     public static final int       ICON_QUESTION                  = 3;
 
-    protected static final UserIO INSTANCE                       = new UserIO();
+    protected static UserIO       INSTANCE                       = new UserIO();    
     private static int            COUNTDOWN_TIME                 = -1;
 
     public static int getCountdownTime() {
@@ -123,6 +123,11 @@ public class UserIO {
 
     public static UserIO getInstance() {
         return UserIO.INSTANCE;
+    }
+
+    public static void setInstance(UserIO userIO) {
+        if (userIO == null) throw new RuntimeException("userIO must not be null");
+        UserIO.INSTANCE = userIO;
     }
 
     /**

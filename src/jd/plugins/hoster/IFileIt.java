@@ -148,12 +148,23 @@ public class IFileIt extends PluginForHost {
         if (type == null) type = "";
         if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        Context cx = ContextFactory.getGlobal().enterContext();
-        Scriptable scope = cx.initStandardObjects();
-        String fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
-        Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-        String finaldownlink = "http://ifile.it/" + Context.toString(result);
-        Context.exit();
+        Context cx = null;
+        String finaldownlink = null;
+        Scriptable scope = null;
+        String fun = null;
+        Object result = null;
+        try {
+            cx = ContextFactory.getGlobal().enterContext();
+            scope = cx.initStandardObjects();
+            fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
+            result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+            finaldownlink = "http://ifile.it/" + Context.toString(result);
+        } finally {
+            if (cx != null) {
+                cx = null;
+                Context.exit();
+            }
+        }
 
         // Br2 is our xml browser now!
         Browser br2 = br.cloneBrowser();
@@ -169,12 +180,18 @@ public class IFileIt extends PluginForHost {
                 String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
                 type = "simple";
                 extra = "&esn=1&" + captchacrap + "=" + Encoding.urlEncode_light(code) + "&" + captchashit;
-                cx = ContextFactory.getGlobal().enterContext();
-                scope = cx.initStandardObjects();
-                fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
-                result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                finaldownlink = "http://ifile.it/" + Context.toString(result);
-                Context.exit();
+                try {
+                    cx = ContextFactory.getGlobal().enterContext();
+                    scope = cx.initStandardObjects();
+                    fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
+                    result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                    finaldownlink = "http://ifile.it/" + Context.toString(result);
+                } finally {
+                    if (cx != null) {
+                        cx = null;
+                        Context.exit();
+                    }
+                }
                 xmlrequest(br2, finaldownlink);
                 if (br2.containsHTML("\"retry\":\"retry\"")) continue;
                 break;
@@ -192,12 +209,19 @@ public class IFileIt extends PluginForHost {
                 String code = getCaptchaCode(captchaAddress, downloadLink);
                 type = "recaptcha";
                 extra = "&recaptcha_response_field=" + Encoding.urlEncode_light(code) + "&recaptcha_challenge_field=" + challenge;
-                cx = ContextFactory.getGlobal().enterContext();
-                scope = cx.initStandardObjects();
-                fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
-                result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                finaldownlink = "http://ifile.it/" + Context.toString(result);
-                Context.exit();
+                try {
+                    cx = ContextFactory.getGlobal().enterContext();
+                    scope = cx.initStandardObjects();
+                    fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
+                    result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                    finaldownlink = "http://ifile.it/" + Context.toString(result);
+                    Context.exit();
+                } finally {
+                    if (cx != null) {
+                        cx = null;
+                        Context.exit();
+                    }
+                }
                 xmlrequest(br2, finaldownlink);
                 if (br2.containsHTML("\"retry\":1")) {
                     xmlrequest(br2, finaldownlink);

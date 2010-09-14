@@ -183,6 +183,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000 || !auto) {
                     // no autocaptcha
                     Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                    if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                     nexturl = getNextUrl(p.x, p.y);
 
                 } else {
@@ -191,6 +192,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                         nexturl = getNextUrl(Integer.parseInt(code[0]), Integer.parseInt(code[1]));
                     } catch (Exception e) {
                         Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                        if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                         nexturl = getNextUrl(p.x, p.y);
                     }
                 }

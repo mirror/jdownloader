@@ -116,18 +116,25 @@ public class LnkCrptWs extends PluginForDecrypt {
         String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
         HashMap<String, String> map = new HashMap<String, String>();
         for (String c : containers) {
-            Context cx = ContextFactory.getGlobal().enterContext();
-            Scriptable scope = cx.initStandardObjects();
-            c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
+            Context cx = null;
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
 
-            Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
+                Scriptable scope = cx.initStandardObjects();
+                c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
 
-            String code = Context.toString(result);
-            // System.out.println(code);
-            String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
-            if (row != null) {
-                map.put(row[1], row[0]);
+                Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
+
+                String code = Context.toString(result);
+                // System.out.println(code);
+                String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
+                if (row != null) {
+                    map.put(row[1], row[0]);
+                }
+            } finally {
+                if (cx != null) Context.exit();
             }
+
         }
 
         File container = null;

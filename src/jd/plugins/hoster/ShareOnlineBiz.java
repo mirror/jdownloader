@@ -310,12 +310,18 @@ public class ShareOnlineBiz extends PluginForHost {
         /* DownloadLink holen, thx @dwd */
         String all = br.getRegex("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(-1);
         String dec = br.getRegex("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(-1);
-        Context cx = ContextFactory.getGlobal().enterContext();
-        Scriptable scope = cx.initStandardObjects();
-        String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
-        Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-        String url = Context.toString(result);
-        Context.exit();
+        Context cx = null;
+        String url = null;
+        try {
+            cx = ContextFactory.getGlobal().enterContext();
+            Scriptable scope = cx.initStandardObjects();
+            String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
+            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+            url = Context.toString(result);
+            Context.exit();
+        } finally {
+            if (cx != null) Context.exit();
+        }
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
         if (br.containsHTML("Server Info: no slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 5 * 60 * 1000l);
 

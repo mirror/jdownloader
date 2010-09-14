@@ -100,13 +100,17 @@ public class CNL extends PluginForDecrypt {
         final byte[] key;
 
         if (jk != null) {
-            final Context cx = ContextFactory.getGlobal().enterContext();
-            final Scriptable scope = cx.initStandardObjects();
-            final String fun = jk + "  f()";
-            final Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+            Context cx = null;
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
+                final Scriptable scope = cx.initStandardObjects();
+                final String fun = jk + "  f()";
+                final Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
 
-            key = JDHexUtils.getByteArray(Context.toString(result));
-            Context.exit();
+                key = JDHexUtils.getByteArray(Context.toString(result));
+            } finally {
+                if (cx != null) Context.exit();
+            }
         } else {
             key = JDHexUtils.getByteArray(k);
         }

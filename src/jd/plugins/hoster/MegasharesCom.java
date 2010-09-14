@@ -140,14 +140,14 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) throws IOException {
         Browser brt = new Browser();
-        String url=link.getDownloadURL();
+        String url = link.getDownloadURL();
         url = url.replaceFirst("http://.*?/", "http://www.megashares.com/");
         brt.getHeaders().put("User-Agent", UserAgent);
         brt.setFollowRedirects(false);
         brt.getPage(url);
         if (brt.getRedirectLocation() != null) {
             link.setUrlDownload(brt.getRedirectLocation());
-        }else{
+        } else {
             link.setUrlDownload(url);
         }
     }
@@ -181,13 +181,34 @@ public class MegasharesCom extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.getHttpConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            /*seems like megashares sends empty page when last download was some secs ago*/
+            /*
+             * seems like megashares sends empty page when last download was
+             * some secs ago
+             */
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            /*maybe we have to fix link*/
+            /* maybe we have to fix link */
             correctDownloadLink(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleErrors(DownloadLink link) throws PluginException {
+        // Sie laden gerade eine datei herunter
+        if (br.containsHTML("You already have the maximum")) {
+            link.getLinkStatus().addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            link.getLinkStatus().setValue(60 * 1000l);
+            return;
+        }
+        String[] dat = br.getRegex("Your download passport will renew.*?in.*?(\\d+).*?:.*?(\\d+).*?:.*?(\\d+)</strong>").getRow(0);
+        if (br.containsHTML("You have reached.*?maximum download limit")) {
+            long wait = Long.parseLong(dat[1]) * 60000l + Long.parseLong(dat[2]) * 1000l;
+            link.getLinkStatus().addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            link.getLinkStatus().setValue(wait);
+            return;
+        }
+        if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"), 10 * 60 * 1000l);
+
     }
 
     @Override
@@ -196,22 +217,8 @@ public class MegasharesCom extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // Password protection
         if (!checkPassword(downloadLink)) { return; }
-
-        // Sie laden gerade eine datei herunter
-        if (br.containsHTML("You already have the maximum")) {
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(60 * 1000l);
-            return;
-        }
-        if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"), 10 * 60 * 1000l);
+        handleErrors(downloadLink);
         // Reconnet/wartezeit check
-        String[] dat = br.getRegex("Your download passport will renew.*?in.*?(\\d+).*?:.*?(\\d+).*?:.*?(\\d+)</strong>").getRow(0);
-        if (br.containsHTML("You have reached.*?maximum download limit")) {
-            long wait = Long.parseLong(dat[1]) * 60000l + Long.parseLong(dat[2]) * 1000l;
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(wait);
-            return;
-        }
 
         // Captchacheck
         if (br.containsHTML("Your Passport needs to be reactivated.")) {
@@ -221,15 +228,10 @@ public class MegasharesCom extends PluginForHost {
 
             String code = getCaptchaCode(captchaAddress, downloadLink);
             String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + System.currentTimeMillis();
-            br.getPage(geturl);
-
-            if (br.containsHTML("You already have the maximum")) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setValue(30 * 1000l);
-                return;
-            }
+            br.getPage(geturl);                        
             requestFileInformation(downloadLink);
             if (!checkPassword(downloadLink)) { return; }
+            handleErrors(downloadLink);
         }
         // Downloadlink
         String url = findDownloadUrl();
@@ -239,12 +241,15 @@ public class MegasharesCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            /*seems like megashares sends empty page when last download was some secs ago*/
+            /*
+             * seems like megashares sends empty page when last download was
+             * some secs ago
+             */
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             if (br.getHttpConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             if (br.getHttpConnection().toString().contains("Get a link card now")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             if (br.getHttpConnection().toString().contains("Your Passport needs to")) throw new PluginException(LinkStatus.ERROR_RETRY);
-            /*maybe we have to fix link*/
+            /* maybe we have to fix link */
             correctDownloadLink(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -278,6 +278,11 @@ public class JDUtilities {
         }
     }
 
+    public static void setJDHomeDirectory(File home) {
+        if (home == null) return;
+        JD_HOME = home;
+    }
+
     public static String getJDTitle() {
         final StringBuilder ret = new StringBuilder("JDownloader");
 

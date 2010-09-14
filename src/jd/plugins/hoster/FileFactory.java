@@ -180,26 +180,30 @@ public class FileFactory extends PluginForHost {
     }
 
     public String getUrl() throws IOException, PluginException {
-
         String url = this.br.getRegex("<div.*?id=\"downloadLink\".*?>.*?<a .*?href=\"(.*?)\".*?\"downloadLinkTarget").getMatch(0);
         if (url == null) {
-            final Context cx = ContextFactory.getGlobal().enterContext();
-            final Scriptable scope = cx.initStandardObjects();
-            final String[] eval = this.br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);
-            if (eval != null) {
-                // first load js
-                Object result = cx.evaluateString(scope, "function g(){return " + eval[1] + "} g();", "<cmd>", 1, null);
-                final String link = "/file" + result + eval[4];
-                this.br.getPage("http://www.filefactory.com" + link);
-                final String[] row = this.br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
-                result = cx.evaluateString(scope, row[1] + row[3] + " ();", "<cmd>", 1, null);
-                if (result.toString().startsWith("http")) {
-                    url = result + "";
+            Context cx = null;
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
+                final Scriptable scope = cx.initStandardObjects();
+                final String[] eval = this.br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);
+                if (eval != null) {
+                    // first load js
+                    Object result = cx.evaluateString(scope, "function g(){return " + eval[1] + "} g();", "<cmd>", 1, null);
+                    final String link = "/file" + result + eval[4];
+                    this.br.getPage("http://www.filefactory.com" + link);
+                    final String[] row = this.br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
+                    result = cx.evaluateString(scope, row[1] + row[3] + " ();", "<cmd>", 1, null);
+                    if (result.toString().startsWith("http")) {
+                        url = result + "";
+                    } else {
+                        url = "http://www.filefactory.com" + result;
+                    }
                 } else {
-                    url = "http://www.filefactory.com" + result;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } finally {
+                if (cx != null) Context.exit();
             }
         }
         return url;

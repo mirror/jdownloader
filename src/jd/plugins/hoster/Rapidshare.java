@@ -474,18 +474,22 @@ public class Rapidshare extends PluginForHost {
             String tt = new Regex(ticketCode, "var tt =(.*?)document\\.getElementById\\(\"dl\"\\)\\.innerHTML").getMatch(0);
 
             String fun = "function f(){ return " + tt + "} f()";
-            Context cx = ContextFactory.getGlobal().enterContext();
-            Scriptable scope = cx.initStandardObjects();
+            Context cx = null;
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
+                Scriptable scope = cx.initStandardObjects();
 
-            // Collect the arguments into a single string.
+                // Collect the arguments into a single string.
 
-            // Now evaluate the string we've colected.
-            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                // Now evaluate the string we've colected.
+                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
 
-            // Convert the result to a string and print it.
-            String code = Context.toString(result);
-            if (tt != null) ticketCode = code;
-            Context.exit();
+                // Convert the result to a string and print it.
+                String code = Context.toString(result);
+                if (tt != null) ticketCode = code;
+            } finally {
+                if (cx != null) Context.exit();
+            }
             if (ticketCode.contains("Leider sind derzeit keine freien Slots ")) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.inuselong", "All free slots in use: try to download again after 2 minutes"));
                 logger.warning("All free slots in use: try to download again after 2 minutes");
@@ -701,7 +705,7 @@ public class Rapidshare extends PluginForHost {
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Exception occurred", e);
             }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime+(1*60*1000l));
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime + (1 * 60 * 1000l));
         }
         reportUnknownError(br, 2);
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dynTranslate(error));

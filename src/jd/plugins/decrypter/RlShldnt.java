@@ -79,34 +79,39 @@ public class RlShldnt extends PluginForDecrypt {
             String all = Encoding.htmlDecode(br.getRegex(Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
             String dec = br.getRegex(Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
             all = all.replaceAll("document\\.writeln\\(s\\);", "");
-            Context cx = ContextFactory.getGlobal().enterContext();
-            Scriptable scope = cx.initStandardObjects();
-            String fun = "function f(){" + all + " \n return unescape(unc('" + dec + "'))} f()";
-            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-            String java_page = Context.toString(result);
-            Context.exit();
+            Context cx = null;
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
+                Scriptable scope = cx.initStandardObjects();
+                String fun = "function f(){" + all + " \n return unescape(unc('" + dec + "'))} f()";
+                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                String java_page = Context.toString(result);
+                Context.exit();
 
-            /* Link zur richtigen Seiten */
-            String page_link = new Regex(java_page, Pattern.compile("src=\"(/content\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String url = "http://www.urlshield.net" + page_link;
+                /* Link zur richtigen Seiten */
+                String page_link = new Regex(java_page, Pattern.compile("src=\"(/content\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                String url = "http://www.urlshield.net" + page_link;
 
-            for (int retry = 1; retry < 5; retry++) {
-                if (br.getRedirectLocation() != null) {
-                    decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-                    break;
+                for (int retry = 1; retry < 5; retry++) {
+                    if (br.getRedirectLocation() != null) {
+                        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+                        break;
+                    }
+
+                    br.getPage(url);
+                    if (br.containsHTML("getkey\\.php\\?id")) {
+                        String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                        form = br.getForm(0);
+
+                        /* CaptchaCode holen */
+                        String captchaCode = getCaptchaCode("http://www.urlshield.net" + captchaurl, param);
+                        form.put("userkey", captchaCode);
+
+                        br.submitForm(form);
+                    }
                 }
-
-                br.getPage(url);
-                if (br.containsHTML("getkey\\.php\\?id")) {
-                    String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    form = br.getForm(0);
-
-                    /* CaptchaCode holen */
-                    String captchaCode = getCaptchaCode("http://www.urlshield.net" + captchaurl, param);
-                    form.put("userkey", captchaCode);
-
-                    br.submitForm(form);
-                }
+            } finally {
+                if (cx != null) Context.exit();
             }
         }
 

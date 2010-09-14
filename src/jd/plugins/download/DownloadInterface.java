@@ -203,6 +203,7 @@ abstract public class DownloadInterface {
                 if (request != null) {
                     String value;
                     for (Entry<String, String> next : request.entrySet()) {
+                        if (next.getValue()==null) continue;
                         value = next.getValue().toString();
                         br.getHeaders().put(next.getKey(), value);
                     }
