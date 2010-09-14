@@ -31,23 +31,22 @@ import jd.controlling.ListController;
  * 
  */
 public class ConfigContainer implements Serializable {
-    public static final int ACTION_REQUEST_SAVE = 0;
     /**
      * serialVersionUID
      */
-    private static final long serialVersionUID = 6583843494325603616L;
+    private static final long            serialVersionUID    = 6583843494325603616L;
     /**
      * ConfigElement ist ein Textfeld
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int TYPE_TEXTFIELD = 0;
+    public static final int              TYPE_TEXTFIELD      = 0;
     /**
      * ConfigElement ist ein Combobox
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
-    public static final int TYPE_COMBOBOX = 1;
+    public static final int              TYPE_COMBOBOX       = 1;
     /**
      * ConfigElement ist ein Button ConfigEntry(int type, ActionListener
      * listener, String label)
@@ -55,89 +54,89 @@ public class ConfigContainer implements Serializable {
      * @see ConfigEntry#ConfigEntry(int, ActionListener, String, String,
      *      ImageIcon)
      */
-    public static final int TYPE_BUTTON = 2;
+    public static final int              TYPE_BUTTON         = 2;
     /**
      * ConfigElement ist eine Checkbox
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int TYPE_CHECKBOX = 3;
+    public static final int              TYPE_CHECKBOX       = 3;
     /**
      * ConfigElement ist ein Label
      * 
      * @see ConfigEntry#ConfigEntry(int, String)
      */
-    public static final int TYPE_LABEL = 4;
+    public static final int              TYPE_LABEL          = 4;
     /**
      * ConfigElement ist ein Radiobutton <br>
      * <b>TODO:</b> Unused for now!
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
-    public static final int TYPE_RADIOFIELD = 5;
+    public static final int              TYPE_RADIOFIELD     = 5;
     /**
      * ConfigElement ist eine Trennlinie
      * 
      * @see ConfigEntry#ConfigEntry(int)
      */
-    public static final int TYPE_SEPARATOR = 6;
+    public static final int              TYPE_SEPARATOR      = 6;
     /**
      * ConfigElement ist ein Browser für eine Datei
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int TYPE_BROWSEFILE = 7;
+    public static final int              TYPE_BROWSEFILE     = 7;
     /**
      * ConfigElement ist eine Zahlenkomponente (Spinner)
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String, int, int,
      *      int)
      */
-    public static final int TYPE_SPINNER = 8;
+    public static final int              TYPE_SPINNER        = 8;
     /**
      * ConfigElement ist ein Browser für ein Verzeichnis
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int TYPE_BROWSEFOLDER = 9;
+    public static final int              TYPE_BROWSEFOLDER   = 9;
     /**
      * ConfigElement ist ein Textbereich
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int TYPE_TEXTAREA = 10;
+    public static final int              TYPE_TEXTAREA       = 10;
     /**
      * ConfigElement ist ein Textbereich
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int TYPE_PASSWORDFIELD = 11;
+    public static final int              TYPE_PASSWORDFIELD  = 11;
 
     /**
      * ConfigElement ist eine Swing-Komponente
      * 
      * @see ConfigEntry#ConfigEntry(int, javax.swing.JComponent, String)
      */
-    public static final int TYPE_COMPONENT = 12;
+    public static final int              TYPE_COMPONENT      = 12;
     /**
      * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller
      * verwaltet wird (siehe PasswordListController und HTAccessController)
      * 
      * @see ConfigEntry#ConfigEntry(int, ListController, String)
      */
-    public static final int TYPE_LISTCONTROLLED = 110;
+    public static final int              TYPE_LISTCONTROLLED = 110;
     /**
      * ConfigElement ist ein Combobox dessen Index (und nicht Text) gespeichert
      * und geladen wird
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
-    public static final int TYPE_COMBOBOX_INDEX = 15;
+    public static final int              TYPE_COMBOBOX_INDEX = 15;
 
     private final ArrayList<ConfigEntry> content;
-    private String title;
-    private ConfigGroup group;
-    private ImageIcon icon;
+    private String                       title;
+    private ConfigGroup                  group;
+    private ImageIcon                    icon;
 
     public ConfigContainer() {
         this.content = new ArrayList<ConfigEntry>();

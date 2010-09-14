@@ -22,7 +22,7 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
-import jd.config.container.JDLabelContainer;
+import jd.gui.swing.components.JDLabelContainer;
 
 /**
  * Cellrenderer für Copmboboxen mit Bildern

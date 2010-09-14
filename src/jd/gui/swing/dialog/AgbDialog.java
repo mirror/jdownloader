@@ -60,20 +60,6 @@ public class AgbDialog extends AbstractDialog<Integer> {
         }
     }
 
-    /**
-     * Zeigt einen Dialog, in dem man die Hoster AGB akzeptieren kann
-     * 
-     * @param plugin
-     *            Hoster-Plugin
-     */
-    public static void showDialog(final PluginForHost plugin) {
-        final AgbDialog dialog = new AgbDialog(plugin);
-        if (JDFlags.hasAllFlags(Dialog.getInstance().showDialog(dialog), UserIO.RETURN_OK) && dialog.isAccepted()) {
-
-            plugin.setAGBChecked(true);
-        }
-    }
-
     private JLink               linkAgb;
 
     private JCheckBox           checkAgbAccepted;
@@ -82,8 +68,8 @@ public class AgbDialog extends AbstractDialog<Integer> {
 
     private AgbDialog(final PluginForHost plugin) {
         super(0, JDL.L("gui.dialogs.agb_tos.title", "Terms of Service are not accepted"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
-        this.plugin = plugin;
 
+        this.plugin = plugin;
     }
 
     @Override

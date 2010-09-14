@@ -228,8 +228,6 @@ public class JDInit {
         }
     }
 
-    private boolean installerVisible = false;
-
     public JDInit() {
     }
 
@@ -377,10 +375,6 @@ public class JDInit {
         }
     }
 
-    public boolean installerWasVisible() {
-        return this.installerVisible;
-    }
-
     public Configuration loadConfiguration() {
         final Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
 
@@ -411,7 +405,6 @@ public class JDInit {
             JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
 
             JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
-            this.installerVisible = true;
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
 
             LookAndFeelController.setUIManager();

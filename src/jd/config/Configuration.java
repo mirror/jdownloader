@@ -77,8 +77,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_HTTPSEND_PASS                    = "HTTPSEND_PASS";
 
-    public static final String PARAM_HTTPSEND_ROUTERNAME              = "PARAM_HTTPSEND_ROUTERNAME";
-
     public static final String PARAM_HTTPSEND_REQUESTS                = "HTTPSEND_REQUESTS";
 
     public static final String PARAM_HTTPSEND_REQUESTS_CLR            = "HTTPSEND_REQUESTS_CLR";
@@ -128,11 +126,6 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG    = "WEBUPDATE_AUTO_SHOW_CHANGELOG";
 
     public static final String NAME                                   = "jdownloaderconfig";
-
-    /**
-     * v4 or v5 socks
-     */
-    public static final String SOCKS_TYPE                             = "SOCKS_TYPE";
 
     public static final String PARAM_IPCHECKWAITTIME                  = "RECONNECT_IPCHECKWAITTIME2";
 

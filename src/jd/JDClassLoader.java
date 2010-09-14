@@ -145,8 +145,9 @@ public class JDClassLoader extends ClassLoader {
                         name = file.getName();
                         if (!absolutePath.endsWith("webupdater.jar") || !absolutePath.endsWith("jdupdate.jar")) {
                             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !this.comp(JDClassLoader.getSig(absolutePath))) {
-//                                JDClassLoader.logger.severe("Not loaded due to sig violation: " + file);
-//                                continue;
+                                // JDClassLoader.logger.severe("Not loaded due to sig violation: "
+                                // + file);
+                                // continue;
                             }
 
                             if (names.contains(name)) {
@@ -178,7 +179,7 @@ public class JDClassLoader extends ClassLoader {
                         if (!absolutePath.endsWith("webupdater.jar") && !absolutePath.endsWith("jdupdate.jar")) {
                             if (!this.comp(JDClassLoader.getSig(absolutePath))) {
                                 JDClassLoader.logger.severe("Not loaded due to sig violation: " + file);
-//                                continue;
+                                // continue;
                             }
                             if (names.contains(name)) {
                                 JDClassLoader.logger.severe("Duplicate Jars found: " + absolutePath);
@@ -212,11 +213,10 @@ public class JDClassLoader extends ClassLoader {
                         name = file.getName();
                         absolutePath = file.getAbsolutePath();
                         if (!absolutePath.endsWith("webupdater.jar") && !absolutePath.endsWith("jdupdate.jar")) {
-                             if (!comp(getSig(files[i].getAbsolutePath()))) {
-                             logger.severe("Not loaded due to sig violation: "
-                             + files[i]);
-                            // continue;
-                             }
+                            if (!comp(getSig(files[i].getAbsolutePath()))) {
+                                logger.severe("Not loaded due to sig violation: " + files[i]);
+                                // continue;
+                            }
                             if (names.contains(name)) {
                                 JDClassLoader.logger.severe("Duplicate Jars found: " + absolutePath);
                             } else {
@@ -255,13 +255,6 @@ public class JDClassLoader extends ClassLoader {
         }
         return true;
         // May be Arrays.equals(S, sig) ?
-    }
-
-    public String findJar(final String name) throws ClassNotFoundException {
-        for (final JarFile element : this.jars) {
-            if (element.getJarEntry(name.replace('.', '/') + ".class") != null) { return element.getName(); }
-        }
-        return null;
     }
 
     @Override
@@ -373,7 +366,7 @@ public class JDClassLoader extends ClassLoader {
                         System.out.println("Loaded class " + name + " from " + element.getName());
                         c = this.defineClass(name, data, 0, data.length, this.getClass().getProtectionDomain());
                         if (c == null) { throw new ClassNotFoundException(name); }
-                    } catch (final java.lang.VerifyError e) {
+                    } catch (final VerifyError e) {
                         JDLogger.exception(e);
                     } catch (final ClassFormatError e) {
                         JDLogger.exception(e);
@@ -406,4 +399,5 @@ public class JDClassLoader extends ClassLoader {
         dis.close();
         return buff;
     }
+
 }

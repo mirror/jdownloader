@@ -31,10 +31,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import javax.swing.ImageIcon;
 
-import jd.config.container.JDLabelContainer;
 import jd.controlling.FavIconController;
 import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
+import jd.gui.swing.components.JDLabelContainer;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.plugins.PluginForHost;
@@ -42,9 +42,9 @@ import jd.plugins.PluginForHost;
 public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer, FavIconRequestor {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
 
-    private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    public static final ReadLock readLock = lock.readLock();
-    public static final WriteLock writeLock = lock.writeLock();
+    private static final ReentrantReadWriteLock       lock         = new ReentrantReadWriteLock();
+    public static final ReadLock                      readLock     = lock.readLock();
+    public static final WriteLock                     writeLock    = lock.writeLock();
 
     static {
         try {
@@ -70,7 +70,7 @@ public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
 
-    private ImageIcon icon = null;
+    private ImageIcon           icon        = null;
 
     public HostPluginWrapper(final String host, final String classNamePrefix, final String className, final String patternSupported, final int flags, final String revision) {
         super(host, classNamePrefix, className, patternSupported, flags, revision);

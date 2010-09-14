@@ -43,9 +43,9 @@ import javax.swing.text.JTextComponent;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.GuiConfigListener;
-import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
 import jd.gui.swing.components.ComboBrowseFile;
+import jd.gui.swing.components.JDLabelContainer;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
 import net.miginfocom.swing.MigLayout;
@@ -64,11 +64,11 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
     /**
      * Die input Komponente
      */
-    private JComponent input;
+    private JComponent        input;
 
-    private JComponent decoration;
+    private JComponent        decoration;
 
-    private Logger logger = JDLogger.getLogger();
+    private Logger            logger           = JDLogger.getLogger();
 
     /**
      * Erstellt einen neuen GUIConfigEntry
