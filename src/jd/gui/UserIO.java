@@ -18,7 +18,6 @@ package jd.gui;
 
 import java.awt.Point;
 import java.io.File;
-import java.io.IOException;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -34,12 +33,7 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.BinaryLogic;
-import org.appwork.utils.swing.EDTHelper;
-import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.TextAreaDialog;
-
-import com.sun.istack.internal.Nullable;
 
 public class UserIO {
 
@@ -103,7 +97,7 @@ public class UserIO {
      */
     public static final int       RETURN_CANCEL                  = 1 << 2;
     /**
-     * don'tz sho again flag ahs been set. the dialog may has been visible. if
+     * don't show again flag has been set. the dialog may has been visible. if
      * RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
      */
     public static final int       RETURN_DONT_SHOW_AGAIN         = 1 << 3;
@@ -128,7 +122,6 @@ public class UserIO {
     }
 
     public static UserIO getInstance() {
-
         return UserIO.INSTANCE;
     }
 
@@ -189,12 +182,9 @@ public class UserIO {
      */
     private int convertFlagToAWDialog(final int flag) {
         int ret = 0;
-
         if (BinaryLogic.containsAll(flag, UserIO.NO_USER_INTERACTION)) {
-            // flag|=
-            // TODO
+            ret |= Dialog.LOGIC_BYPASS;
         }
-
         if (BinaryLogic.containsNone(flag, UserIO.NO_COUNTDOWN)) {
             ret |= Dialog.LOGIC_COUNTDOWN;
         }
@@ -213,7 +203,6 @@ public class UserIO {
         if (BinaryLogic.containsAll(flag, UserIO.STYLE_HTML)) {
             ret |= Dialog.STYLE_HTML;
         }
-
         if (BinaryLogic.containsAll(flag, UserIO.NO_ICON)) {
             ret |= Dialog.STYLE_HIDE_ICON;
         }
@@ -225,7 +214,6 @@ public class UserIO {
         }
         if (BinaryLogic.containsAll(flag, UserIO.STYLE_PASSWORD)) {
             ret |= Dialog.STYLE_PASSWORD;
-
         }
         return ret;
     }
@@ -256,36 +244,11 @@ public class UserIO {
     }
 
     public String requestCaptchaDialog(final int flag, final String host, final ImageIcon icon, final File captchafile, final String suggestion, final String explain) {
-        return new EDTHelper<String>() {
-
-            @Override
-            public String edtRun() {
-                AbstractDialog<String> dialog;
-
-                dialog = new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain);
-                return Dialog.getInstance().showDialog(dialog);
-
-            }
-
-        }.getReturnValue();
-
+        return Dialog.getInstance().showDialog(new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain));
     }
 
     public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {
-
-        return new EDTHelper<Point>() {
-
-            @Override
-            public Point edtRun() {
-                AbstractDialog<Point> dialog;
-
-                dialog = new ClickPositionDialog(0, imagefile, title, explain);
-                return Dialog.getInstance().showDialog(dialog);
-
-            }
-
-        }.getReturnValue();
-
+        return Dialog.getInstance().showDialog(new ClickPositionDialog(0, imagefile, title, explain));
     }
 
     /**
@@ -317,7 +280,6 @@ public class UserIO {
     }
 
     public int requestConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
-
         return this.convertAWAnswer(Dialog.getInstance().showConfirmDialog(this.convertFlagToAWDialog(flag), title, message, icon, okOption, cancelOption));
     }
 
@@ -347,8 +309,7 @@ public class UserIO {
      * @return an array of files or null if the user cancel the dialog
      */
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
-        Dialog instance = Dialog.getInstance();
-        return instance.showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType, null);
+        return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType, null);
     }
 
     /**
@@ -366,7 +327,6 @@ public class UserIO {
     }
 
     public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
-
         return Dialog.getInstance().showInputDialog(this.convertFlagToAWDialog(flag), title, message, defaultMessage, icon, okOption, cancelOption);
     }
 
@@ -379,9 +339,7 @@ public class UserIO {
     }
 
     public void requestMessageDialog(final int flag, final String title, final String message) {
-
         this.requestConfirmDialog(UserIO.NO_CANCEL_OPTION | flag, title, message, this.getIcon(UserIO.ICON_INFO), null, null);
-
     }
 
     public void requestMessageDialog(final String message) {
@@ -401,38 +359,8 @@ public class UserIO {
      * @param def
      * @return
      */
-    @Nullable
     public String requestTextAreaDialog(final String title, final String message, final String def) {
-        return new EDTHelper<String>() {
-
-            @Override
-            public String edtRun() {
-                TextAreaDialog dialog;
-                try {
-                    dialog = new TextAreaDialog(title, message, def);
-
-                    // or is it enough to use edt when it comes up to display
-                    // the
-                    // dialog
-                    return Dialog.getInstance().showDialog(dialog);
-                } catch (final IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                return null;
-            }
-
-        }.getReturnValue();
-
+        return Dialog.getInstance().showTextAreaDialog(title, message, def);
     }
-    //
-    // public String[] requestTwoTextFieldDialog(final String title, final
-    // String messageOne, final String defOne, final String messageTwo, final
-    // String defTwo) {
-    // synchronized (UserIO.INSTANCE) {
-    // return this.showTwoTextFieldDialog(title, messageOne, defOne, messageTwo,
-    // defTwo);
-    // }
-    // }
 
 }
