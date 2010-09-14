@@ -310,7 +310,7 @@ public class ShareOnlineBiz extends PluginForHost {
         /* DownloadLink holen, thx @dwd */
         String all = br.getRegex("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(-1);
         String dec = br.getRegex("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(-1);
-        Context cx = ContextFactory.getGlobal().enter();
+        Context cx = ContextFactory.getGlobal().enterContext();
         Scriptable scope = cx.initStandardObjects();
         String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
@@ -361,12 +361,7 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
-    }
-
-    @Override
     public void resetDownloadlink(DownloadLink link) {
-
     }
 
 }

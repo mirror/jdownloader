@@ -57,9 +57,9 @@ import org.mozilla.javascript.Scriptable;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
 public class ShrLnksBz extends PluginForDecrypt {
 
-    private static String host = "http://share-links.biz";
-    private static long LATEST_OPENED_CNL_TIME = 0;
-    private static HashMap<String, Boolean> CNL_URL_MAP = new HashMap<String, Boolean>();
+    private static String                   host                   = "http://share-links.biz";
+    private static long                     LATEST_OPENED_CNL_TIME = 0;
+    private static HashMap<String, Boolean> CNL_URL_MAP            = new HashMap<String, Boolean>();
 
     public ShrLnksBz(PluginWrapper wrapper) {
         super(wrapper);
@@ -254,7 +254,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                     String frm = br.getRegex("\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0);
                     br.getPage(frm);
 
-                    final Context cx = ContextFactory.getGlobal().enter();
+                    final Context cx = ContextFactory.getGlobal().enterContext();
                     final Scriptable scope = cx.initStandardObjects();
                     final String fun = br.getRegex("eval\\((.*)\\)").getMatch(0);
                     Object result = cx.evaluateString(scope, "function f(){return " + fun + ";} f();", "<cmd>", 1, null);

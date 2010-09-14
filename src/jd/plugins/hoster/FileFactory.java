@@ -183,7 +183,7 @@ public class FileFactory extends PluginForHost {
 
         String url = this.br.getRegex("<div.*?id=\"downloadLink\".*?>.*?<a .*?href=\"(.*?)\".*?\"downloadLinkTarget").getMatch(0);
         if (url == null) {
-            final Context cx = ContextFactory.getGlobal().enter();
+            final Context cx = ContextFactory.getGlobal().enterContext();
             final Scriptable scope = cx.initStandardObjects();
             final String[] eval = this.br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);
             if (eval != null) {
@@ -334,10 +334,6 @@ public class FileFactory extends PluginForHost {
         return "http://www.filefactory.com" + url;
     }
 
-    @Override
-    public void init() {
-    }
-
     private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
@@ -395,10 +391,6 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
     }
 
 }

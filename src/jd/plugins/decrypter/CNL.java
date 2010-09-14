@@ -96,18 +96,11 @@ public class CNL extends PluginForDecrypt {
         return null;
     }
 
-    /**
-     * @param crypted
-     * @param jk
-     * @param k
-     * @param passwords
-     * @param source
-     */
     public static ArrayList<DownloadLink> decrypt(final String crypted, final String jk, final String k, final String password, final String source) {
         final byte[] key;
 
         if (jk != null) {
-            final Context cx = ContextFactory.getGlobal().enter();
+            final Context cx = ContextFactory.getGlobal().enterContext();
             final Scriptable scope = cx.initStandardObjects();
             final String fun = jk + "  f()";
             final Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
@@ -133,4 +126,5 @@ public class CNL extends PluginForDecrypt {
         }
         return links;
     }
+
 }

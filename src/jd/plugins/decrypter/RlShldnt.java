@@ -40,7 +40,6 @@ public class RlShldnt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -80,7 +79,7 @@ public class RlShldnt extends PluginForDecrypt {
             String all = Encoding.htmlDecode(br.getRegex(Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
             String dec = br.getRegex(Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
             all = all.replaceAll("document\\.writeln\\(s\\);", "");
-            Context cx = ContextFactory.getGlobal().enter();
+            Context cx = ContextFactory.getGlobal().enterContext();
             Scriptable scope = cx.initStandardObjects();
             String fun = "function f(){" + all + " \n return unescape(unc('" + dec + "'))} f()";
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
@@ -113,7 +112,5 @@ public class RlShldnt extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

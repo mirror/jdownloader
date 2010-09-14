@@ -474,7 +474,7 @@ public class Rapidshare extends PluginForHost {
             String tt = new Regex(ticketCode, "var tt =(.*?)document\\.getElementById\\(\"dl\"\\)\\.innerHTML").getMatch(0);
 
             String fun = "function f(){ return " + tt + "} f()";
-            Context cx = ContextFactory.getGlobal().enter();
+            Context cx = ContextFactory.getGlobal().enterContext();
             Scriptable scope = cx.initStandardObjects();
 
             // Collect the arguments into a single string.

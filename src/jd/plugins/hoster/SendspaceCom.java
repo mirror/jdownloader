@@ -195,7 +195,7 @@ public class SendspaceCom extends PluginForHost {
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");
         String fun = "function f(){ " + script + " return  utf8_decode(enc(base64ToText('" + dec + "')));} f()";
-        Context cx = ContextFactory.getGlobal().enter();
+        Context cx = ContextFactory.getGlobal().enterContext();
         Scriptable scope = cx.initStandardObjects();
         // Now evaluate the string we've colected.
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
@@ -264,10 +264,6 @@ public class SendspaceCom extends PluginForHost {
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
     }
 
     @Override

@@ -148,7 +148,7 @@ public class IFileIt extends PluginForHost {
         if (type == null) type = "";
         if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        Context cx = ContextFactory.getGlobal().enter();
+        Context cx = ContextFactory.getGlobal().enterContext();
         Scriptable scope = cx.initStandardObjects();
         String fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
@@ -169,7 +169,7 @@ public class IFileIt extends PluginForHost {
                 String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
                 type = "simple";
                 extra = "&esn=1&" + captchacrap + "=" + Encoding.urlEncode_light(code) + "&" + captchashit;
-                cx = ContextFactory.getGlobal().enter();
+                cx = ContextFactory.getGlobal().enterContext();
                 scope = cx.initStandardObjects();
                 fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
                 result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
@@ -192,7 +192,7 @@ public class IFileIt extends PluginForHost {
                 String code = getCaptchaCode(captchaAddress, downloadLink);
                 type = "recaptcha";
                 extra = "&recaptcha_response_field=" + Encoding.urlEncode_light(code) + "&recaptcha_challenge_field=" + challenge;
-                cx = ContextFactory.getGlobal().enter();
+                cx = ContextFactory.getGlobal().enterContext();
                 scope = cx.initStandardObjects();
                 fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
                 result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
@@ -255,11 +255,7 @@ public class IFileIt extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("directLink", null);
-    }
 }

@@ -100,7 +100,7 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
         }
 
         if (addedEntry) this.addSeparator();
-        int entries = 7;
+        int entries = 6;
         int menus = ('z' - 'a') / entries + 1;
         JMenu[] jmenus = new JMenu[menus];
         JMenu num = new JMenu(JDL.LF("jd.gui.swing.menu.HosterMenu", "Hoster %s", "0 - 9"));
