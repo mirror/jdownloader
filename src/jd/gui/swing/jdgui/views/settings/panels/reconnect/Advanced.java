@@ -30,29 +30,29 @@ import jd.utils.locale.JDL;
 
 public class Advanced extends ConfigPanel {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";
-    private static final long serialVersionUID = 3383448498625377495L;
-
-    public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Advanced");
-    }
+    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";
+    private static final long   serialVersionUID = 3383448498625377495L;
 
     public static String getIconKey() {
         return "gui.images.reconnect_settings";
     }
 
+    public static String getTitle() {
+        return JDL.L(Advanced.JDL_PREFIX + "reconnect.advanced.title", "Advanced");
+    }
+
     public Advanced() {
         super();
 
-        init();
+        this.init();
     }
 
     @Override
     protected ConfigContainer setupContainer() {
-        SubConfiguration config = SubConfiguration.getConfig("DOWNLOAD");
+        final SubConfiguration config = SubConfiguration.getConfig("DOWNLOAD");
 
         ConfigEntry ce, cond;
-        ConfigContainer container = new ConfigContainer();
+        final ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.reconnect.shared", "General Reconnect Settings"), "gui.images.reconnect_settings"));
 
@@ -69,20 +69,20 @@ public class Advanced extends ConfigPanel {
             /**
              * assures that the user sees the warning only once
              */
-            private boolean warned = true;
+            private boolean           warned           = true;
 
             /**
              * This method gets called when the user clicks the checkbox. It
              * gets also invoked at startup not only on user IO.
              */
             @Override
-            public void valueChanged(Object newValue) {
+            public void valueChanged(final Object newValue) {
                 // get Current Databasevalue
                 super.valueChanged(newValue);
                 // Only show the warning if the newValue differs from the
                 // database stored one
-                if (newValue == Boolean.TRUE && !warned) {
-                    warned = true;
+                if (newValue == Boolean.TRUE && !this.warned) {
+                    this.warned = true;
                     SwingUtilities.invokeLater(new Runnable() {
 
                         public void run() {
@@ -91,7 +91,7 @@ public class Advanced extends ConfigPanel {
 
                     });
                 } else if (newValue == Boolean.FALSE) {
-                    warned = false;
+                    this.warned = false;
                 }
             }
 
@@ -111,11 +111,9 @@ public class Advanced extends ConfigPanel {
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Allowed IPs")));
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        ce.setEnabledCondidtion(cond, false);
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", JDL.L("gui.config.download.ipcheck.externalinterval2", "External IP Check Interval [min]"), 10, 240, 10));
         ce.setDefaultValue(10);
-        ce.setEnabledCondidtion(cond, false);
 
         return container;
     }

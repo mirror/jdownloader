@@ -166,69 +166,69 @@ public class Srnnks extends PluginForDecrypt {
             // 400);
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             // progress.setStatusText("Lade Downloadseite");
-            progress.setRange(100);
-            synchronized (Srnnks.GLOBAL_LOCK) {
-                Thread.sleep(Srnnks.FW_WAIT);
-                this.br.getPage(parameter.getCryptedUrl());
-            }
-            if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
-
-            if (this.br.containsHTML("<FRAME SRC")) {
-                // progress.setStatusText("Lade Downloadseitenframe");
+            for (int i = 0; i < 5; i++) {
+                progress.setRange(100);
                 synchronized (Srnnks.GLOBAL_LOCK) {
                     Thread.sleep(Srnnks.FW_WAIT);
-                    this.br.getPage(this.br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
+                    this.br.getPage(parameter.getCryptedUrl());
                 }
-            }
-            if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
-            progress.increase(5);
+                if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
 
-            // linkendung kommt auch im action der form vor
-            final String sublink = parameter.getCryptedUrl().substring(parameter.getCryptedUrl().indexOf("org/") + 3);
-
-            // try captcha max 5 times
-
-            progress.setRange(100);
-            progress.setStatus(5);
-
-            // suche wahrscheinlichste form
-            // progress.setStatusText("Suche Captcha Form");
-            Form form = null;
-
-            Form[] forms = this.br.getForms();
-            int bestdist = Integer.MAX_VALUE;
-            for (final Form form1 : forms) {
-                final int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
-                if (dist < bestdist) {
-                    form = form1;
-                    bestdist = dist;
+                if (this.br.containsHTML("<FRAME SRC")) {
+                    // progress.setStatusText("Lade Downloadseitenframe");
+                    synchronized (Srnnks.GLOBAL_LOCK) {
+                        Thread.sleep(Srnnks.FW_WAIT);
+                        this.br.getPage(this.br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
+                    }
                 }
-            }
-            if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
-                /* this form contains captcha image, so it must be valid */
-            } else if (bestdist > 100) {
-                form = null;
-            }
+                if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
+                progress.increase(5);
 
-            if (form == null) { throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!"); }
-            progress.increase(5);
+                // linkendung kommt auch im action der form vor
+                final String sublink = parameter.getCryptedUrl().substring(parameter.getCryptedUrl().indexOf("org/") + 3);
 
-            // das bild in der Form ist das captcha
-            String captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
-            if (captchaLink == null) { throw new Exception("Serienjunkies Captcha konnte nicht gefunden werden!"); }
-            if (!captchaLink.toLowerCase().startsWith("http://")) {
-                captchaLink = "http://" + this.br.getHost() + captchaLink;
-            }
+                // try captcha max 5 times
 
-            final File captcha = this.getLocalCaptchaFile(".png");
-            // captcha laden
-            synchronized (Srnnks.GLOBAL_LOCK) {
-                Thread.sleep(Srnnks.FW_WAIT);
-                final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
-                Browser.download(captcha, urlc);
-            }
+                progress.setRange(100);
+                progress.setStatus(5);
 
-            for (int i = 0; i < 5; i++) {
+                // suche wahrscheinlichste form
+                // progress.setStatusText("Suche Captcha Form");
+                Form form = null;
+
+                Form[] forms = this.br.getForms();
+                int bestdist = Integer.MAX_VALUE;
+                for (final Form form1 : forms) {
+                    final int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
+                    if (dist < bestdist) {
+                        form = form1;
+                        bestdist = dist;
+                    }
+                }
+                if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
+                    /* this form contains captcha image, so it must be valid */
+                } else if (bestdist > 100) {
+                    form = null;
+                }
+
+                if (form == null) { throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!"); }
+                progress.increase(5);
+
+                // das bild in der Form ist das captcha
+                String captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
+                if (captchaLink == null) { throw new Exception("Serienjunkies Captcha konnte nicht gefunden werden!"); }
+                if (!captchaLink.toLowerCase().startsWith("http://")) {
+                    captchaLink = "http://" + this.br.getHost() + captchaLink;
+                }
+
+                final File captcha = this.getLocalCaptchaFile(".png");
+                // captcha laden
+                synchronized (Srnnks.GLOBAL_LOCK) {
+                    Thread.sleep(Srnnks.FW_WAIT);
+                    final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
+                    Browser.download(captcha, urlc);
+                }
+
                 String code;
                 // wenn es ein Einzellink ist soll die Captchaerkennung benutzt
                 // werden

@@ -23,34 +23,73 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-
-import jd.parser.Regex;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OutdatedParser {
 
+    // DO not use Regex class to stay compatible to Restarter.jar
+    public static String[] getLines(final String arg) {
+        if (arg == null) {
+            return new String[] {};
+        } else {
+            final String[] temp = arg.split("[\r\n]{1,2}");
+            final int tempLength = temp.length;
+            final String[] output = new String[tempLength];
+            for (int i = 0; i < tempLength; i++) {
+                output[i] = temp[i].trim();
+            }
+            return output;
+        }
+    }
+
+    private static String getLocalFile(final File file) {
+        if (file == null) { return null; }
+        if (!file.exists()) { return ""; }
+        try {
+            final BufferedReader f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+
+            String line;
+            final StringBuffer ret = new StringBuffer();
+            final String sep = System.getProperty("line.separator");
+            while ((line = f.readLine()) != null) {
+                ret.append(line + sep);
+            }
+            f.close();
+            return ret.toString();
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
     public static boolean parseFile(final File outdated) {
-        String[] remove = Regex.getLines(getLocalFile(outdated));
-        String homedir = outdated.getParent();
+        final String[] remove = OutdatedParser.getLines(OutdatedParser.getLocalFile(outdated));
+        final String homedir = outdated.getParent();
         boolean ret = true;
         File delete;
         File[] deletes;
         if (remove != null) {
-            for (String file : remove) {
-                if (file.length() == 0) continue;
+            for (final String file : remove) {
+                if (file.length() == 0) {
+                    continue;
+                }
                 if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
                     if (file.contains("|")) {
                         final String[] split = file.split("\\|");
                         delete = new File(homedir, split[0]);
-                        if (!delete.exists()) continue;
+                        if (!delete.exists()) {
+                            continue;
+                        }
                         deletes = delete.listFiles(new FileFilter() {
 
-                            public boolean accept(File pathname) {
+                            public boolean accept(final File pathname) {
                                 return pathname.getName().matches(split[1]);
                             }
 
                         });
-                        for (File del : deletes) {
-                            if (removeDirectoryOrFile(del)) {
+                        for (final File del : deletes) {
+                            if (OutdatedParser.removeDirectoryOrFile(del)) {
                                 System.out.println("Removed " + del.getName() + " [" + file + "]");
                             } else {
                                 ret = false;
@@ -59,18 +98,22 @@ public class OutdatedParser {
                         }
                     } else if (file.contains("<NO_HASH>")) {
                         delete = new File(homedir, file.substring(0, file.indexOf("<NO_HASH>")));
-                        if (!delete.exists() || !delete.isDirectory()) continue;
-                        final ArrayList<String> hashes = parseHashList(new File(outdated.getParentFile(), "tmp/hashlist.lst"));
-                        if (hashes == null) continue;
+                        if (!delete.exists() || !delete.isDirectory()) {
+                            continue;
+                        }
+                        final ArrayList<String> hashes = OutdatedParser.parseHashList(new File(outdated.getParentFile(), "tmp/hashlist.lst"));
+                        if (hashes == null) {
+                            continue;
+                        }
                         deletes = delete.listFiles(new FileFilter() {
 
-                            public boolean accept(File pathname) {
+                            public boolean accept(final File pathname) {
                                 return !hashes.contains(pathname.getAbsolutePath().replace(outdated.getParent(), "").replaceAll("\\\\", "/"));
                             }
 
                         });
-                        for (File del : deletes) {
-                            if (removeDirectoryOrFile(del)) {
+                        for (final File del : deletes) {
+                            if (OutdatedParser.removeDirectoryOrFile(del)) {
                                 System.out.println("Removed " + del.getName() + " [" + file + "]");
                             } else {
                                 ret = false;
@@ -79,8 +122,10 @@ public class OutdatedParser {
                         }
                     } else {
                         delete = new File(homedir, file);
-                        if (!delete.exists()) continue;
-                        if (removeDirectoryOrFile(delete)) {
+                        if (!delete.exists()) {
+                            continue;
+                        }
+                        if (OutdatedParser.removeDirectoryOrFile(delete)) {
                             System.out.println("Removed " + file);
                         } else {
                             ret = false;
@@ -93,49 +138,38 @@ public class OutdatedParser {
         return ret;
     }
 
-    private static String getLocalFile(File file) {
-        if (file == null) return null;
-        if (!file.exists()) return "";
-        try {
-            BufferedReader f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
-
-            String line;
-            StringBuffer ret = new StringBuffer();
-            String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                ret.append(line + sep);
-            }
-            f.close();
-            return ret.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    private static boolean removeDirectoryOrFile(File dir) {
-        if (dir.isDirectory()) {
-            String[] children = dir.list();
-            for (String element : children) {
-                boolean success = removeDirectoryOrFile(new File(dir, element));
-                if (!success) return false;
-            }
-        }
-        return dir.delete();
-    }
-
-    private static ArrayList<String> parseHashList(File file) {
+    private static ArrayList<String> parseHashList(final File file) {
         if (!file.exists()) {
             System.out.println("HashList not available");
             return null;
         }
+        /*
+         * Do not use regex to keep Restarter.jar free from appwork utils
+         */
+        final Matcher matcher = Pattern.compile("[\r\n\\;]*([^=]+)=(.*?)\\;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(OutdatedParser.getLocalFile(file));
 
-        String[] matches = new Regex(getLocalFile(file), "[\r\n\\;]*([^=]+)=(.*?)\\;").getColumn(0);
-        ArrayList<String> result = new ArrayList<String>();
-        for (String match : matches) {
+        final ArrayList<String> ar = new ArrayList<String>();
+        while (matcher.find()) {
+            ar.add(matcher.group(1));
+        }
+        final String[] matches = ar.toArray(new String[ar.size()]);
+
+        final ArrayList<String> result = new ArrayList<String>();
+        for (final String match : matches) {
             result.add(match);
         }
         return result;
+    }
+
+    private static boolean removeDirectoryOrFile(final File dir) {
+        if (dir.isDirectory()) {
+            final String[] children = dir.list();
+            for (final String element : children) {
+                final boolean success = OutdatedParser.removeDirectoryOrFile(new File(dir, element));
+                if (!success) { return false; }
+            }
+        }
+        return dir.delete();
     }
 
 }
