@@ -51,10 +51,13 @@ public class TgfServicesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = br.getRegex("<h2>Part Name:</h2></td>[\n\t\r ]+<td><h2>(.*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("id=\"aname\">(.*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ext = br.getRegex("<h2>Bitrate: \\d+, Frequency: \\d+, Mode: (Stereo|Mono), (.*?)</h2>").getMatch(1);
         if (ext != null) filename += "." + ext;
         link.setName(filename.trim());
+        String filesize = br.getRegex("<h2>File size:</h2></td>[\t\n\r ]+<td><h2>(.*?)</h2></td>").getMatch(0);
+        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
