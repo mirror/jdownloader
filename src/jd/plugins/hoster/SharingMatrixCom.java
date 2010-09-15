@@ -116,7 +116,7 @@ public class SharingMatrixCom extends PluginForHost implements ControlListener {
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+        if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             if (link != null) {
                 try {
                     /* replace sharingmatrix link with filesonic link */
