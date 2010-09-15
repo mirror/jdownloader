@@ -193,12 +193,10 @@
 		<jar file="${jd}/tools/tinyupdate.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/Restarter*.class" />
-				<include name="jd/nutils/OutdatedParser*.class" />
-				<include name="jd/nutils/OSDetector*.class" />
+				<include name="jd/nutils/OutdatedParser*.class" />			
 				<include name="jd/nutils/DynByteBuff*.class" />
 				<include name="jd/nutils/Executer*.class" />
-				<include name="jd/nutils/zip/**" />
-				<include name="jd/parser/Regex*.class" />
+				<include name="jd/nutils/zip/**" />				
 			</fileset>
 		</jar>
 		<delete file="${dist}/Manifest.MF" failonerror="false" />

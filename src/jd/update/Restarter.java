@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 import jd.nutils.Executer;
-import jd.nutils.OSDetector;
+
 import jd.nutils.OutdatedParser;
 import jd.nutils.zip.UnZip;
 
@@ -131,7 +131,8 @@ public class Restarter {
             String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
 
             if (RESTART) {
-                if (OSDetector.isMac()) {
+                //Do not use Appwork utils here
+                if (System.getProperty("os.name").toLowerCase().contains("mac")) {
                     Executer exec = new Executer("open");
                     exec.setLogger(logger);
                     exec.addParameters(new String[] { "-n", "jDownloader.app" });
