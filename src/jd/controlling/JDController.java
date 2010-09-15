@@ -72,7 +72,11 @@ public class JDController implements ControlListener {
 
         public void handleEvent(final ControlEvent event) {
             currentListener = null;
-            fireEvent(event);
+            try {
+                fireEvent(event);
+            } catch (Throwable e) {
+                JDLogger.exception(e);
+            }
             try {
                 /*
                  * the last one to call is the JDController itself
