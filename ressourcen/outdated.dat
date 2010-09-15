@@ -398,6 +398,8 @@ jd/plugins/hoster/TwoBackupNet.class
 jd/plugins/hoster/XStreamTo.class
 jd/plugins/hoster/BigFileIn.class
 jd/plugins/hoster/FileRackCom.class
+jd/plugins/hoster/SharecashDotOrg.class
+jd/plugins/hoster/SharecashOrg.class
 jd/captcha/methods/flrck
 jd/dynamics/FallbackBackup$1.class
 jd/dynamics/FallbackBackup.class

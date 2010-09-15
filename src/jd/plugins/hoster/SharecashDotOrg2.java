@@ -29,8 +29,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "http://[\\w\\.]*?sharecash\\.org/download.php\\?(file|id)=\\d+" }, flags = { 0 })
-public class SharecashDotOrg extends PluginForHost {
-    public SharecashDotOrg(PluginWrapper wrapper) {
+public class SharecashDotOrg2 extends PluginForHost {
+    public SharecashDotOrg2(PluginWrapper wrapper) {
         super(wrapper);
     }
 
