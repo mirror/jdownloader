@@ -37,4 +37,8 @@ public class TrafficLog {
         this.timestamp = System.currentTimeMillis();
     }
 
+    @SuppressWarnings("unused")
+    private TrafficLog() {
+    }
+
 }

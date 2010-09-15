@@ -399,3 +399,14 @@ jd/plugins/hoster/XStreamTo.class
 jd/plugins/hoster/BigFileIn.class
 jd/plugins/hoster/FileRackCom.class
 jd/captcha/methods/flrck
+jd/dynamics/FallbackBackup$1.class
+jd/dynamics/FallbackBackup.class
+jd/dynamics/RSUpdateNotifier$1.class
+jd/dynamics/RSUpdateNotifier.class
+jd/dynamics/Survey$1.class
+jd/dynamics/Survey.class
+jd/dynamics/Cinj$SandboxContextFactory$1.class
+jd/dynamics/Cinj$SandboxContextFactory.class
+jd/dynamics/Cinj$SandboxNativeJavaObject.class
+jd/dynamics/Cinj$SandboxWrapFactory.class
+jd/dynamics/Cinj.class

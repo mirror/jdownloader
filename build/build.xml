@@ -261,7 +261,7 @@
 		<buildAddon number="127" package="JDHJMerge" include="hjsplit/**" />
 		<buildAddon number="128" package="JDTray" include="jdtrayicon/**" />
 		<buildAddon number="129" package="ExternInterface" include="interfaces/**" />
-		<buildAddon number="130" package="JDPremium" include="premcol/**" />
+		<buildAddon number="130" package="JDPremium" include="jdpremclient**" />
 		<buildAddon number="131" package="JDGrowl" include="JDGrowlNotification*" />
 		<buildAddon number="132" package="Customizer" include="customizer/**" />
 		<buildAddon number="133" package="AntiShutdown" include="antistandby/**" />

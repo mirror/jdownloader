@@ -57,6 +57,7 @@ import jd.controlling.JDLogger;
 import jd.parser.Regex;
 
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 

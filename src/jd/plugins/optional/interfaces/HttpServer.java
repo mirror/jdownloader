@@ -97,7 +97,7 @@ public class HttpServer extends Thread {
             }
 
         }
-
+        System.out.println("Server Thread died");
         try {
             ssocket.close();
         } catch (IOException e) {
