@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }, flags = { 2 })
 public class MegasharesCom extends PluginForHost {
 
-    private final String        UserAgent = "JD_" + this.getVersion();
+    private final String        UserAgent = "JD_" + "$Revision$";
     private static final Object LOCK      = new Object();
 
     public MegasharesCom(PluginWrapper wrapper) {
@@ -228,7 +228,7 @@ public class MegasharesCom extends PluginForHost {
 
             String code = getCaptchaCode(captchaAddress, downloadLink);
             String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + System.currentTimeMillis();
-            br.getPage(geturl);                        
+            br.getPage(geturl);
             requestFileInformation(downloadLink);
             if (!checkPassword(downloadLink)) { return; }
             handleErrors(downloadLink);
