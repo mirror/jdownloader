@@ -128,4 +128,9 @@ public class ControlEvent extends DefaultEvent {
     public String toString() {
         return "[source:" + this.getCaller() + ", controlID:" + this.controlID + ", parameter:" + this.parameter + "]";
     }
+
+    @Deprecated
+    public int getID() {
+        return super.getEventID();
+    }
 }
