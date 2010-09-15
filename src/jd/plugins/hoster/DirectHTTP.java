@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 /**
  * TODO: Remove after next big update of core to use the public static methods!
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+$)" }, flags = { 0, 0 })
 public class DirectHTTP extends PluginForHost {
 
     public static class Recaptcha {
@@ -158,12 +158,12 @@ public class DirectHTTP extends PluginForHost {
 
     private static final String JDL_PREFIX     = "jd.plugins.hoster.DirectHTTP.";
 
-    public static final String  ENDINGS        = "\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+)";
+    public static final String  ENDINGS        = "\\.(3gp|7zip|7z|abr|ac3|ai|aiff|aif|aifc|au|avi|bin|bz2|cbr|cbz|ccf|cue|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gif|gz|iwd|iso|java|jar|jpg|jpeg|jdeatme|load|mws|mw|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|nfo|oga|ogg|ogv|otrkey|pkg|png|pdf|ppt|pptx|pps|ppz|pot|psd|qt|rmvb|rar|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+$)";
     public static final String  NORESUME       = "nochunkload";
     public static final String  NOCHUNKS       = "nochunk";
     public static final String  FORCE_NORESUME = "forcenochunkload";
-
     public static final String  FORCE_NOCHUNKS = "forcenochunk";
+    public static final String  TRY_ALL        = "tryall";
 
     /**
      * TODO: Remove with next major-update!
@@ -432,7 +432,7 @@ public class DirectHTTP extends PluginForHost {
             }
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
-            if (this.contentType.startsWith("text/html")) {
+            if (this.contentType.startsWith("text/html") && downloadLink.getBooleanProperty(TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
                 this.br.followConnection();
@@ -496,8 +496,8 @@ public class DirectHTTP extends PluginForHost {
             }
         }
         /*
-         * seems like flashgot catches the wrong referer and some
-         * downloads do not work then, we do not set referer as a workaround
+         * seems like flashgot catches the wrong referer and some downloads do
+         * not work then, we do not set referer as a workaround
          */
         // if (downloadLink.getStringProperty("referer", null) != null) {
         // br.getHeaders().put("Referer",
