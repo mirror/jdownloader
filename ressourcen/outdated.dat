@@ -400,12 +400,6 @@ jd/plugins/hoster/BigFileIn.class
 jd/plugins/hoster/FileRackCom.class
 jd/plugins/hoster/SharecashDotOrg.class
 jd/plugins/hoster/SharecashOrg.class
-jd/plugins/hoster/UploadServiceinfo.class
-jd/plugins/hoster/RbaDe.class
-jd/plugins/hoster/FilesTo.class
-jd/plugins/hoster/UploadMachineCom.class
-jd/plugins/hoster/UlozToNet.class
-jd/plugins/hoster/TurkFileCom.class
 jd/captcha/methods/flrck
 jd/dynamics/FallbackBackup$1.class
 jd/dynamics/FallbackBackup.class

@@ -17,9 +17,7 @@
 package jd.controlling;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.ConsoleHandler;
@@ -43,11 +41,11 @@ public final class JDLogger {
     private JDLogger() {
     }
 
-    private static Logger LOGGER = null;
-    public static final String LOGGER_NAME = "JDownloader";
+    private static Logger         LOGGER      = null;
+    public static final String    LOGGER_NAME = "JDownloader";
     private static ConsoleHandler console;
-    private static FileHandler filehandler;
-    private static String logpath;
+    private static FileHandler    filehandler;
+    private static String         logpath;
 
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
@@ -73,9 +71,7 @@ public final class JDLogger {
                 filehandler = new FileHandler(logpath);
                 filehandler.setFormatter(formatter);
                 LOGGER.addHandler(filehandler);
-            } catch (SecurityException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -178,13 +174,11 @@ public final class JDLogger {
             String input;
 
             while ((input = in.readLine()) != null) {
-                sb.append(input + "\n");
+                sb.append(input).append('\n');
             }
 
             in.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

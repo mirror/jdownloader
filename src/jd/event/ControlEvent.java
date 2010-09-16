@@ -74,12 +74,6 @@ public class ControlEvent extends DefaultEvent {
 
     public static final int   CONTROL_JDPROPERTY_CHANGED       = 27;
 
-    /**
-     * TODO: After the refactoring of the logger, this controlevent will never
-     * be thrown! There is no JDLogHandler anymore, which throws this event!
-     */
-    public static final int   CONTROL_LOG_OCCURED              = 29;
-
     public static final int   CONTROL_INIT_COMPLETE            = 30;
 
     /**

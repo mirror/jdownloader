@@ -62,7 +62,7 @@ public class LogView extends ClosableView {
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
                 if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
-                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false);
+                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, true);
                     GUIUtils.getConfig().save();
                     getBroadcaster().removeListener(this);
                     synchronized (LogView.this) {

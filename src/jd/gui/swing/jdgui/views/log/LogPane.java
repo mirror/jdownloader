@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.views.log;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.StringReader;
-import java.util.logging.LogRecord;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -27,14 +26,10 @@ import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 
 import jd.controlling.JDLogger;
-import jd.controlling.LogFormatter;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.encoding.Encoding;
-import jd.utils.JDUtilities;
 import jd.utils.Upload;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -42,7 +37,7 @@ import net.miginfocom.swing.MigLayout;
 /**
  * The panel for the log file.
  */
-public class LogPane extends SwitchPanel implements ActionListener, ControlListener {
+public class LogPane extends SwitchPanel implements ActionListener {
     private static final long   serialVersionUID = -5753733398829409112L;
 
     private static final Object LOCK             = new Object();
@@ -102,28 +97,13 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
     @Override
     public void onShow() {
-        try {
-            JDUtilities.getController().addControlListener(this);
-
-            synchronized (LOCK) {
-                logField.setText(JDLogger.getLog());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private String format(LogRecord lr, LogFormatter formater) {
-        if (lr.getThrown() != null) {
-            return "EXCEPTION   " + formater.format(lr);
-        } else {
-            return formater.format(lr);
+        synchronized (LOCK) {
+            logField.setText(JDLogger.getLog());
         }
     }
 
     @Override
     public void onHide() {
-        JDUtilities.getController().removeControlListener(this);
     }
 
     /**
@@ -149,18 +129,4 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         }
     }
 
-    /**
-     * Tracks if a logging information was thrown and appends it to the logging
-     * textfield.
-     */
-    public void controlEvent(ControlEvent event) {
-        /**
-         * TODO: After the refactoring of the logger, this controlevent will
-         * never be thrown! There is no JDLogHandler anymore, which throws this
-         * event!
-         */
-        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
-            append(format((LogRecord) event.getParameter(), (LogFormatter) JDLogger.getLogger().getHandlers()[0].getFormatter()));
-        }
-    }
 }
