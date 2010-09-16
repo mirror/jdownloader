@@ -130,7 +130,7 @@ public abstract class Request {
 
         final String host = Browser.getHost(httpConnection.getURL());
 
-        for (int i = cookieHeaders.size() - 1; i >= 0; i--) {
+        for (int i = 0; i <cookieHeaders.size(); i++) {
             final String header = cookieHeaders.get(i);
             cookies.add(Cookies.parseCookies(header, host, date));
         }

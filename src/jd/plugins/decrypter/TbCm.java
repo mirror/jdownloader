@@ -491,9 +491,8 @@ public class TbCm extends PluginForDecrypt {
             return true;
         }
 
-        final ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "convert to") + " " + OutType.toString(), 3, null);
         downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "convert to") + " " + OutType.toString());
-        progress.increase(1);
+
         switch (InType) {
         case VIDEOFLV:
             // Inputformat FLV
@@ -501,7 +500,7 @@ public class TbCm extends PluginForDecrypt {
             case AUDIOMP3:
                 LOG.info("Convert FLV to mp3...");
                 new FLV(downloadlink.getFileOutput(), true, true);
-                progress.increase(1);
+
                 // FLV löschen
                 if (!new File(downloadlink.getFileOutput()).delete()) {
                     new File(downloadlink.getFileOutput()).deleteOnExit();
@@ -510,18 +509,16 @@ public class TbCm extends PluginForDecrypt {
                 if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
                     new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
                 }
-                progress.doFinalize();
+
                 return true;
             default:
                 LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
                 downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
-                progress.doFinalize();
                 return false;
             }
         default:
             LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
-            downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
-            progress.doFinalize();
+            downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));            
             return false;
         }
     }

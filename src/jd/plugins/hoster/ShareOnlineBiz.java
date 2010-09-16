@@ -61,8 +61,8 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     public void login(Account account) throws IOException, PluginException {
-        br.setCookie("http://www.share-online.biz", "king_mylang", "en");
-        br.postPage("http://www.share-online.biz/login.php", "act=login&location=service.php&dieseid=&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Log+me+in&folder_autologin=1");
+        br.setCookie("http://www.share-online.biz", "king_mylang", "en");             
+        br.postPage("http://www.share-online.biz/login.php", "act=login&location=index.php&dieseid=&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login&folder_autologin=1");
         String cookie = br.getCookie("http://www.share-online.biz", "king_passhash");
         if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://www.share-online.biz/members.php");
