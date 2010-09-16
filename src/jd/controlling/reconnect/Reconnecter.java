@@ -200,6 +200,7 @@ public final class Reconnecter implements StateMachineInterface {
         }
         final ProgressController progress = new ProgressController(this.toString(), maxretries + 10, "gui.images.reconnect");
         progress.increase(5);
+        IPController.getInstance().invalidate();
         try {
             for (retry = 0; retry < maxretries; retry++) {
                 ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + (retry + 1));
@@ -235,7 +236,7 @@ public final class Reconnecter implements StateMachineInterface {
      * @return
      */
     public boolean forceReconnect() {
-        // this.prepareForReconnect();
+        // this.prepareForReconnect();        
         final boolean ret = this.doReconnect();
 
         return ret;

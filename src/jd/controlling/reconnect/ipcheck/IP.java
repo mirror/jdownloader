@@ -88,7 +88,7 @@ public class IP {
     }
 
     public String toString() {
-        return this.ip;
+        return this.ip!=null?this.ip:"unknown";
     }
 
 }

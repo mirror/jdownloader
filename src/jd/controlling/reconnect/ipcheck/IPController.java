@@ -9,8 +9,12 @@ import jd.controlling.reconnect.ReconnectPluginController;
 
 import com.sun.istack.internal.Nullable;
 
-public class IPController {
-    private static final IPController INSTANCE = new IPController();
+public class IPController extends ArrayList<IPConnectionState> {
+    /**
+     * 
+     */
+    private static final long         serialVersionUID = -6856149094542337379L;
+    private static final IPController INSTANCE         = new IPController();
 
     public static IPController getInstance() {
         return IPController.INSTANCE;
@@ -19,16 +23,16 @@ public class IPController {
     /**
      * true, if the current ip has no use. we need a new one
      */
-    private boolean                            invalidated  = false;
-    private IPConnectionState                  latestConnectionState;
-    private final ArrayList<IPConnectionState> ipLog        = new ArrayList<IPConnectionState>();
+    private boolean                          invalidated  = false;
+    private IPConnectionState                latestConnectionState;
+    private Object                           LOCK         = new Object();
     /**
      * blacklist for not working ip check providers
      */
-    private final ArrayList<IPCheckProvider>   badProviders = new ArrayList<IPCheckProvider>();
+    private final ArrayList<IPCheckProvider> badProviders = new ArrayList<IPCheckProvider>();
+    private IPConnectionState                invalidState = null;
 
     private IPController() {
-
     }
 
     /**
@@ -47,26 +51,58 @@ public class IPController {
             } catch (final InvalidProviderException e) {
                 // IP check provider is bad.
                 this.badProviders.add(icp);
-
             } catch (final IPCheckException e) {
                 JDLogger.getLogger().info(e.getMessage());
                 newIP = new IPConnectionState(e);
                 break;
             }
-
         }
-        if (this.ipLog.size() > 0) {
-
-            final IPConnectionState entry = this.ipLog.get(this.ipLog.size() - 1);
-            if (!entry.equalsLog(newIP)) {
-                this.ipLog.add(newIP);
-                this.latestConnectionState = newIP;
-            }
-        } else {
-            this.ipLog.add(newIP);
-            this.latestConnectionState = newIP;
-        }
+        add(newIP);
         return this.latestConnectionState.getExternalIp();
+    }
+
+    @Override
+    public boolean add(IPConnectionState state) {
+        if (state == null) return false;
+        synchronized (LOCK) {
+            if (this.size() > 0) {
+                final IPConnectionState entry = this.get(this.size() - 1);
+                /* new and current state are equal */
+                if (entry.equalsLog(state)) return false;
+            }
+            /* new IPConnectionState reached */
+            this.latestConnectionState = state;
+            return super.add(state);
+        }
+    }
+
+    public boolean changedIP() {
+        if (invalidState == null || invalidState.isOffline()) return false;
+        /* we dont have any previous states, we cannot check if ip changed */
+        if (this.size() == 0) return false;
+        synchronized (LOCK) {
+            /* fetch current ip */
+            fetchIP();
+            IPConnectionState current = latestConnectionState;
+            /* currently offline = no ip change */
+            if (current.isOffline()) return false;
+            for (int index = this.size() - 1; index >= 0; index--) {
+                if (this.get(index) == invalidState) {
+                    /*
+                     * we reached the element we began with, so check changed IP
+                     * and then stop
+                     */
+                    if (!invalidState.equalsLog(current)) return true;
+                    return false;
+                }
+                /*
+                 * we found a state that was online and had different ip that
+                 * new state, so ip changed
+                 */
+                if (this.get(index).isOnline() && !this.get(index).equalsLog(current)) return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -100,11 +136,8 @@ public class IPController {
      */
     private IPCheckProvider getIPCheckProvider() {
         IPCheckProvider p = ReconnectPluginController.getInstance().getActivePlugin().getIPCheckProvider();
-
         if (p == null || this.badProviders.contains(p)) {
-
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
-
                 p = BalancedWebIPCheck.getInstance();
             } else {
                 p = CustomWebIpCheck.getInstance();
@@ -120,7 +153,9 @@ public class IPController {
      * @see #validate(int, int)
      */
     public void invalidate() {
+        if (this.invalidated == true) return;
         this.invalidated = true;
+        invalidState = this.getCurrentLog();
     }
 
     /**
@@ -143,19 +178,9 @@ public class IPController {
         if (!this.invalidated) { return true; }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             // IP check disabled. each validate request is successfull
-            this.invalidated = false;
-
+            return !(this.invalidated = false);
         }
-
-        final IPConnectionState before = this.getCurrentLog();
-        this.fetchIP();
-
-        if (this.latestConnectionState != before && this.latestConnectionState.getExternalIp() != null) {
-
-            this.invalidated = false;
-
-        }
-        return !this.isInvalidated();
+        return !(this.invalidated = !changedIP());
     }
 
     /**
@@ -176,46 +201,25 @@ public class IPController {
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successfull
-            this.invalidated = false;
-
+            return !(this.invalidated = false);
         }
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
-        final IPConnectionState before = this.getCurrentLog();
-        IPConnectionState offline = null;
         while (System.currentTimeMillis() < endTime) {
-            this.fetchIP();
+            /* ip change detected then we can stop */
+            if (!(this.invalidated = !changedIP())) { return true; }
+            if (this.latestConnectionState.getCause() != null) {
+                try {
+                    throw this.latestConnectionState.getCause();
+                } catch (final ForbiddenIPException e) {
+                    // forbidden IP.. no need to wait
+                    return !(this.invalidated = true);
 
-            if (!before.equalsLog(this.latestConnectionState) && this.latestConnectionState.getExternalIp() != null) {
-
-                this.invalidated = false;
-
-                break;
-            } else if (offline != null && this.latestConnectionState.isOnline()) {
-                // we have been offline, and online again, but have same ip
-                this.invalidated = true;
-            } else if (!before.equalsLog(this.latestConnectionState) && this.latestConnectionState.getExternalIp() == null) {
-                // errorhandling
-                if (this.latestConnectionState.getCause() != null) {
-                    try {
-                        throw this.latestConnectionState.getCause();
-                    } catch (final ForbiddenIPException e) {
-                        // forbidden IP.. no need to wait
-                        this.invalidated = true;
-                        break;
-
-                    } catch (final Throwable e) {
-                        // nothing
-                    }
+                } catch (final Throwable e) {
+                    // nothing
                 }
-
             }
-            if (before.isOnline() && this.latestConnectionState.isOffline()) {
-                offline = this.latestConnectionState;
-            }
-            Thread.sleep(Math.max(250, ipCheckInterval));
-
+            Thread.sleep(Math.min(1, ipCheckInterval) * 1000);
         }
-
         return !this.isInvalidated();
     }
 }

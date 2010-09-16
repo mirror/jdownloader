@@ -244,7 +244,7 @@ public class XSevenTo extends PluginForHost {
                      * website checking
                      */
                     if (id == null) {
-                        dl.getAvailableStatus(this);
+                        dl.isAvailable();
                         continue;
                     }
                     links.add(dl);
@@ -273,7 +273,7 @@ public class XSevenTo extends PluginForHost {
                 }
                 if (index == urls.length) break;
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
         return true;
