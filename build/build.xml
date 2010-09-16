@@ -138,27 +138,29 @@
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 				
-				<include name="jd/controlling/reconnect/plugins/batch/**/*" />
-				<!--
-							<include name="jd/controlling/reconnect/plugins/extern/**" />
-							<include name="jd/controlling/reconnect/plugins/liveheader/**" />
-							<include name="jd/controlling/reconnect/plugins/proxyrot/**" />
-							<include name="jd/controlling/reconnect/plugins/upnp/**" />-->
+				<exclude name="jd/controlling/reconnect/plugins/*/**" />
 				<exclude name="jd/captcha/**" />
-				<!--<exclude name="jd/controlling/reconnect/plugins/*/**" />-->
 				<exclude name="jd/dynamics/**" />
 				<exclude name="jd/gui/**" />
 				<exclude name="jd/http/**" />
 				<exclude name="jd/nutils/**" />
 				<exclude name="jd/plugins/hoster/**" />
-				<include name="jd/plugins/hoster/DirectHTTP*" />
 				<exclude name="jd/plugins/decrypter/**" />
 				<exclude name="jd/plugins/optional/**" />
 				<exclude name="jd/utils/dev/**" />
 				<exclude name="tests/**" />
-			
-					
 			</fileset>
+			
+			<!-- Put all plugins which should included in here -->
+			<fileset dir="${cls}">
+				<include name="jd/controlling/reconnect/plugins/extern/**" />
+				<include name="jd/controlling/reconnect/plugins/liveheader/**" />
+				<include name="jd/controlling/reconnect/plugins/proxyrot/**" />
+				<include name="jd/controlling/reconnect/plugins/upnp/**" />
+
+				<include name="jd/plugins/hoster/DirectHTTP*" />
+			</fileset>
+			
 			<fileset dir="${res}">
 				<include name="*.properties" />
 				<exclude name="jd/captcha/methods" />
@@ -298,13 +300,9 @@
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
-		<!--
-		<buildRecPlugin name="upnp" />
+		
 		<buildRecPlugin name="batch" />
-		<buildRecPlugin name="extern" />
-		<buildRecPlugin name="liveheader" />
-		<buildRecPlugin name="proxyrot" />
-		-->
+		
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
