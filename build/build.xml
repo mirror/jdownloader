@@ -188,6 +188,7 @@
 				<include name="jd/parser/Regex.class" />
 			</fileset>
 			<zipfileset src="${res}/libs/hsqldb.jar" excludes="META-INF/*" />
+			<zipfileset src="../../AppWorkUtils/dist/appworkutils.jar" excludes="META-INF/*" />
 		</jar>
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>

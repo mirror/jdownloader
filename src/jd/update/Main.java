@@ -56,23 +56,25 @@ import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class Main {
 
-    private static int BOTHRESIZE = GridBagConstraints.BOTH;
-    private static Insets INSETS = new Insets(5, 5, 5, 5);
-    private static int NORESIZE = GridBagConstraints.NONE;
-    private static int NORTHWEST = GridBagConstraints.NORTHWEST;
-    private static int REL = GridBagConstraints.RELATIVE;
-    private static int REM = GridBagConstraints.REMAINDER;
+    private static int              BOTHRESIZE  = GridBagConstraints.BOTH;
+    private static Insets           INSETS      = new Insets(5, 5, 5, 5);
+    private static int              NORESIZE    = GridBagConstraints.NONE;
+    private static int              NORTHWEST   = GridBagConstraints.NORTHWEST;
+    private static int              REL         = GridBagConstraints.RELATIVE;
+    private static int              REM         = GridBagConstraints.REMAINDER;
     private static SubConfiguration guiConfig;
-    private static StringBuilder log;
-    private static JFrame frame;
-    private static JTextArea logWindow;
+    private static StringBuilder    log;
+    private static JFrame           frame;
+    private static JTextArea        logWindow;
     public static ArrayList<Server> clonePrefix = new ArrayList<Server>();
-    public static boolean clone = false;
-    private static JProgressBar progressload;
-    private static JTextPane warnings;
-    private static int TICKET_TIME = -1;
-    private static Logger logger;
-    private static boolean RESTORE = false;
+    public static boolean           clone       = false;
+    public static boolean           GUILESS     = false;
+    public static boolean           NORESTART   = false;
+    private static JProgressBar     progressload;
+    private static JTextPane        warnings;
+    private static int              TICKET_TIME = -1;
+    private static Logger           logger;
+    private static boolean          RESTORE     = false;
 
     private static void log(StringBuilder log, String string) {
         if (log != null) log.append(string);
@@ -104,7 +106,11 @@ public class Main {
 
             for (int i = 0; i < args.length; i++) {
                 String p = args[i];
-                if (p.trim().equalsIgnoreCase("-noosfilter")) {
+                if (p.trim().equalsIgnoreCase("-norestart")) {
+                    NORESTART = true;
+                } else if (p.trim().equalsIgnoreCase("-guiless")) {
+                    GUILESS = true;
+                } else if (p.trim().equalsIgnoreCase("-noosfilter")) {
                     OSFilter = false;
 
                 } else if (p.trim().equalsIgnoreCase("-full")) {
@@ -140,7 +146,7 @@ public class Main {
             System.out.println(SubConfiguration.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
             log.append(SubConfiguration.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
 
-            initGUI();
+            if (!GUILESS) initGUI();
 
             try {
                 Browser br = new Browser();
@@ -149,31 +155,33 @@ public class Main {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            if (TICKET_TIME < 0) {
-                warnings.setText("There are currently no free update slots. Please try again later!\r\n\r\nYou can close this Programm now.\r\nWe advise you to download the latest version from http://jdownloader.org/download!");
+            if (!GUILESS) {
+                if (TICKET_TIME < 0) {
+                    warnings.setText("There are currently no free update slots. Please try again later!\r\n\r\nYou can close this Programm now.\r\nWe advise you to download the latest version from http://jdownloader.org/download!");
 
-                if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(frame, "There are currently no free update slots. Please try again later!\r\n Start JDownloader now?")) {
+                    if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(frame, "There are currently no free update slots. Please try again later!\r\n Start JDownloader now?")) {
 
-                } else {
+                    } else {
 
-                    while (true) {
-                        Thread.sleep(10000000);
+                        while (true) {
+                            Thread.sleep(10000000);
+                        }
                     }
-                }
-            } else {
-                warnings.setText("\r\n\r\n\r\n");
-                while (TICKET_TIME > 0) {
-                    Thread.sleep(1000);
-                    warnings.setText("Update starts in " + Formatter.formatSeconds(TICKET_TIME / 1000) + ".\r\n\r\n\r\nIf you do not want to wait, we suggest you to download the latest version from http://jdownloader.org/download!");
+                } else {
+                    warnings.setText("\r\n\r\n\r\n");
+                    while (TICKET_TIME > 0) {
+                        Thread.sleep(1000);
+                        warnings.setText("Update starts in " + Formatter.formatSeconds(TICKET_TIME / 1000) + ".\r\n\r\n\r\nIf you do not want to wait, we suggest you to download the latest version from http://jdownloader.org/download!");
 
-                    TICKET_TIME -= 1000;
+                        TICKET_TIME -= 1000;
 
+                    }
+                    warnings.setText("Update is too slow and takes too much time?\r\n\r\n\r\nDownload latest Version no at http://jdownloader.org/download");
                 }
-                warnings.setText("Update is too slow and takes too much time?\r\n\r\n\r\nDownload latest Version no at http://jdownloader.org/download");
             }
             for (int i = 0; i < args.length; i++) {
                 Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
-                logWindow.setText(log.toString());
+                if (!GUILESS) logWindow.setText(log.toString());
             }
             final WebUpdater updater = new WebUpdater();
             updater.setOSFilter(OSFilter);
@@ -187,15 +195,15 @@ public class Main {
 
                     if (updater.getErrors() > 0) {
 
-                        JOptionPane.showConfirmDialog(frame, "Update Server are too busy.\r\n Please try again later or download update at http://jdownloader.org/download!", "UPDATE WARNINGS", JOptionPane.YES_OPTION, JOptionPane.WARNING_MESSAGE);
+                        if (!GUILESS) JOptionPane.showConfirmDialog(frame, "Update Server are too busy.\r\n Please try again later or download update at http://jdownloader.org/download!", "UPDATE WARNINGS", JOptionPane.YES_OPTION, JOptionPane.WARNING_MESSAGE);
                         Main.log(log, "Abort due to errors ");
 
                         Main.log(log, "Local: " + new File("").getAbsolutePath());
                         Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
 
-                        JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+                        if (!NORESTART) JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
-                        logWindow.setText(log.toString());
+                        if (!GUILESS) logWindow.setText(log.toString());
                         JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
                         System.exit(0);
                         return;
@@ -207,12 +215,12 @@ public class Main {
                         msg1 = msg0;
                         msg0 = event.getMessage();
 
-                        warnings.setText(msg2 + "\r\n" + msg1 + "\r\n" + msg0 + "\r\n               Download latest Version no at http://jdownloader.org/download");
+                        if (!GUILESS) warnings.setText(msg2 + "\r\n" + msg1 + "\r\n" + msg0 + "\r\n               Download latest Version no at http://jdownloader.org/download");
 
                     }
 
                     if (event.getEventID() == WebUpdater.DO_UPDATE_SUCCESS) {
-                        warnings.setText("Update is too slow and takes too much time?\r\n\r\n\r\nDownload latest Version at http://jdownloader.org/download");
+                        if (!GUILESS) warnings.setText("Update is too slow and takes too much time?\r\n\r\n\r\nDownload latest Version at http://jdownloader.org/download");
 
                     }
                     Main.log(log, event.getMessage() + "\r\n");
@@ -221,10 +229,10 @@ public class Main {
 
             });
             Main.log(log, "Current Date:" + new Date() + "\r\n");
-            checkBackup();
+            if (!GUILESS) checkBackup();
             updater.ignorePlugins(false);
 
-            checkUpdateMessage();
+            if (!GUILESS) checkUpdateMessage();
             updater.setLogger(log);
 
             updater.setDownloadProgress(progressload);
@@ -261,7 +269,7 @@ public class Main {
             Main.trace(updater.getLogger().toString());
             Main.trace("End Webupdate");
 
-            logWindow.setText(log.toString());
+            if (!GUILESS) logWindow.setText(log.toString());
             Main.trace(JDUtilities.getResourceFile("updateLog.txt").getAbsoluteFile());
 
             if (JDUtilities.getResourceFile("webcheck.tmp").exists()) {
@@ -271,9 +279,9 @@ public class Main {
 
             Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
             JDUtilities.getDatabaseConnector().shutdownDatabase();
-            JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+            if (!NORESTART) JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
-            logWindow.setText(log.toString());
+            if (!GUILESS) logWindow.setText(log.toString());
             JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
             Main.log(log, "Errors: " + updater.getErrors());
             System.exit(0);
