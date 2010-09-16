@@ -57,7 +57,6 @@ import jd.controlling.JDLogger;
 import jd.parser.Regex;
 
 import org.appwork.utils.event.Eventsender;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
@@ -69,14 +68,14 @@ import org.appwork.utils.speedmeter.AverageSpeedMeter;
  * >http://www.jibble.org/</a>
  */
 public class SimpleFTP {
-    private static final int TIMEOUT = 10 * 1000;
-    private boolean binarymode = false;
-    private static boolean DEBUG = true;
-    private BufferedReader reader = null;
-    private Socket socket = null;
-    private BufferedWriter writer = null;
-    private String dir = "/";
-    private String host;
+    private static final int                   TIMEOUT    = 10 * 1000;
+    private boolean                            binarymode = false;
+    private static boolean                     DEBUG      = true;
+    private BufferedReader                     reader     = null;
+    private Socket                             socket     = null;
+    private BufferedWriter                     writer     = null;
+    private String                             dir        = "/";
+    private String                             host;
     private Eventsender<FtpListener, FtpEvent> broadcaster;
 
     public Eventsender<FtpListener, FtpEvent> getBroadcaster() {
@@ -175,7 +174,7 @@ public class SimpleFTP {
         while ((response = readLine()).startsWith("230") || response.charAt(0) >= '9' || response.charAt(0) <= '0') {
 
         }
-        //        
+        //
         if (!response.startsWith("257 ")) { throw new IOException("PWD COmmand not understood " + response); }
 
         // Response: 257 "/" is the current directory
@@ -374,7 +373,6 @@ public class SimpleFTP {
             this.sendLine("ABOR");
             readLine();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

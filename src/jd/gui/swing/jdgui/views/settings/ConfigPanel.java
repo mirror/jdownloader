@@ -40,15 +40,15 @@ import net.miginfocom.swing.MigLayout;
 
 public abstract class ConfigPanel extends SwitchPanel {
 
-    private static final long serialVersionUID = 3383448498625377495L;
+    private static final long         serialVersionUID = 3383448498625377495L;
 
-    private ArrayList<GUIConfigEntry> entries = new ArrayList<GUIConfigEntry>();
+    private ArrayList<GUIConfigEntry> entries          = new ArrayList<GUIConfigEntry>();
 
-    protected Logger logger = JDLogger.getLogger();
+    protected Logger                  logger           = JDLogger.getLogger();
 
-    protected JPanel panel;
+    protected JPanel                  panel;
 
-    private ConfigGroup currentGroup;
+    private ConfigGroup               currentGroup;
 
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
@@ -63,6 +63,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         }
 
         JScrollPane scroll = new JScrollPane(panel);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBorder(null);
 
         this.add(scroll);

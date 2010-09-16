@@ -38,8 +38,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-/*TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen*/
-
+/**
+ * TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw)
+ * einbauen
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }, flags = { 2 })
 public class MegasharesCom extends PluginForHost {
 
@@ -214,7 +216,6 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         // Password protection
         if (!checkPassword(downloadLink)) { return; }
         handleErrors(downloadLink);
@@ -363,11 +364,6 @@ public class MegasharesCom extends PluginForHost {
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
-
     }
 
     @Override

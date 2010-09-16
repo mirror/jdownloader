@@ -191,6 +191,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     @Override
     protected ConfigContainer setupContainer() {
         table = new ExtTable<HostPluginWrapper>(tablemodel = new InternalTableModel(), "hosterTable");
+        table.setSearchEnabled(true);
         table.addRowHighlighter(new SelectionHighlighter(null, new Color(200, 200, 200, 80)));
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

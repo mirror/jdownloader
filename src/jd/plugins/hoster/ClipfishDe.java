@@ -19,12 +19,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.JDUtilities;
@@ -35,7 +34,6 @@ public class ClipfishDe extends PluginForHost {
 
     public ClipfishDe(final PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -52,9 +50,8 @@ public class ClipfishDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         final LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        URLConnectionAdapter urlConnection;
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL());
-        urlConnection = this.dl.connect();
+        URLConnectionAdapter urlConnection = this.dl.connect();
         if (urlConnection.getLongContentLength() == 0) {
             this.br.followConnection();
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -92,10 +89,6 @@ public class ClipfishDe extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
     }
 
 }
