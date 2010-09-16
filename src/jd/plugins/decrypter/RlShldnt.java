@@ -85,8 +85,7 @@ public class RlShldnt extends PluginForDecrypt {
                 Scriptable scope = cx.initStandardObjects();
                 String fun = "function f(){" + all + " \n return unescape(unc('" + dec + "'))} f()";
                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                String java_page = Context.toString(result);
-                Context.exit();
+                String java_page = Context.toString(result);                
 
                 /* Link zur richtigen Seiten */
                 String page_link = new Regex(java_page, Pattern.compile("src=\"(/content\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);

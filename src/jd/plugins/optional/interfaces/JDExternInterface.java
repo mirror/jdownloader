@@ -103,27 +103,30 @@ public class JDExternInterface extends PluginOptional {
 
         if (jk != null) {
 
-            Context cx = ContextFactory.getGlobal().enterContext();
+            Context cx = null;
             try {
-                cx.setClassShutter(new ClassShutter() {
-                    public boolean visibleToScripts(String className) {
-                        if (className.startsWith("adapter")) {
-                            return true;
-                        } else {
-                            throw new RuntimeException("Security Violation");
+                try {
+                    cx = ContextFactory.getGlobal().enterContext();
+                    cx.setClassShutter(new ClassShutter() {
+                        public boolean visibleToScripts(String className) {
+                            if (className.startsWith("adapter")) {
+                                return true;
+                            } else {
+                                throw new RuntimeException("Security Violation");
+                            }
+
                         }
-
-                    }
-                });
-            } catch (java.lang.SecurityException e) {
-                /* in case classshutter already set */
+                    });
+                } catch (java.lang.SecurityException e) {
+                    /* in case classshutter already set */
+                }
+                Scriptable scope = cx.initStandardObjects();
+                String fun = jk + "  f()";
+                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                key = JDHexUtils.getByteArray(Context.toString(result));
+            } finally {
+                if (cx != null) Context.exit();
             }
-            Scriptable scope = cx.initStandardObjects();
-            String fun = jk + "  f()";
-            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-
-            key = JDHexUtils.getByteArray(Context.toString(result));
-            Context.exit();
 
         } else {
             key = JDHexUtils.getByteArray(k);
@@ -132,7 +135,7 @@ public class JDExternInterface extends PluginOptional {
         String decryted = decrypt(baseDecoded, key).trim();
 
         String passwords[] = Regex.getLines(password);
-        /*links were not encoded, so we dont have to htmlDecode them again*/
+        /* links were not encoded, so we dont have to htmlDecode them again */
         ArrayList<DownloadLink> links = new DistributeData(decryted).findLinks();
         for (DownloadLink link : links)
             link.addSourcePluginPasswords(passwords);
@@ -247,7 +250,7 @@ public class JDExternInterface extends PluginOptional {
 
                     }.waitForEDT();
 
-                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
+                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
                         SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
                         SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
                         SubConfiguration.getConfig("WEBUPDATE").save();
@@ -460,7 +463,7 @@ public class JDExternInterface extends PluginOptional {
                 return;
             }
             app = url != null ? new URL(url).getHost() : app;
-            if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
+            if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
                 JDLogger.getLogger().warning("Denied access.");
                 throw new Exception("User denied access");
             }

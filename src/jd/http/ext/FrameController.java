@@ -51,14 +51,14 @@ import org.w3c.dom.html2.HTMLLinkElement;
 public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement, BrowserFrame {
 
     // private static final String DOM_CONTENT_LOADED = "DOMContentLoaded";
-    private ExtBrowser extBrowser;
-    private HTMLDocumentImpl htmlDocument;
-    private FrameController parentFrameController;
+    private ExtBrowser                                  extBrowser;
+    private HTMLDocumentImpl                            htmlDocument;
+    private FrameController                             parentFrameController;
 
-    private ExtHTMLFrameImpl frame = null;
+    private ExtHTMLFrameImpl                            frame       = null;
     private HashMap<String, ArrayList<JSEventListener>> listenerMap = new HashMap<String, ArrayList<JSEventListener>>();
-    private boolean loaded;
-    private Browser comContext;
+    private boolean                                     loaded;
+    private Browser                                     comContext;
 
     public ExtHTMLFrameImpl getFrame() {
         return frame;
@@ -582,17 +582,18 @@ public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement
 
     public String evalAndReturn(String script) throws ExtBrowserException {
         Scriptable scope = getScriptableScope();
-        Context cx;
+        Context cx = null;
         try {
             cx = Executor.createContext(new URL(this.getDocument().getURL()), extBrowser.getUserAgentContext());
 
             Object result = cx.evaluateString(scope, "function qwertfbkdsiebdfia432hjfd83j(){return " + script + ";} qwertfbkdsiebdfia432hjfd83j();", "<cmd>", 1, null);
             String ret = Context.toString(result);
-            Context.exit();
             return ret;
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             throw new ExtBrowserException(e);
+        } finally {
+            if (cx != null) Context.exit();
         }
     }
 

@@ -8,6 +8,7 @@ import java.io.FileWriter;
 
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -17,6 +18,7 @@ import javax.swing.event.DocumentEvent;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
+import jd.gui.UserIO;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -98,6 +100,8 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
         final JPanel p = new JPanel(new MigLayout("ins 15,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
         this.browse = new ComboBrowseFile(this.getID());
         this.browse.setEditable(true);
+        this.browse.setFileSelectionMode(UserIO.FILES_ONLY);
+        this.browse.setDialogType(JFileChooser.OPEN_DIALOG);
         this.txtParameter = new JTextPane();
         this.chbDummyBatch = new JCheckBox();
 

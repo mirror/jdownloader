@@ -17,10 +17,10 @@ import org.w3c.dom.events.EventListener;
 public class DOMEventListener implements EventListener {
 
     private FrameController owner;
-    private Object node;
-    private String type;
-    private BaseFunction action;
-    private Object useCapture;
+    private Object          node;
+    private String          type;
+    private BaseFunction    action;
+    private Object          useCapture;
 
     public DOMEventListener(FrameController htmlFrameController, Object nodeImpl, String type, BaseFunction listener, Object useCapture2) {
         this.owner = htmlFrameController;
@@ -51,10 +51,11 @@ public class DOMEventListener implements EventListener {
     }
 
     public void handleEvent(Event evt) {
+        Context ctx = null;
         try {
             Document doc = owner.getDocument();
             if (doc == null) { throw new IllegalStateException("Element does not belong to a document."); }
-            Context ctx = null;
+
             if (node instanceof Window) {
 
                 ctx = Executor.createContext(new URL(((Window) node).getDocumentNode().getDocumentURI()), ((Window) node).getUserAgentContext());
@@ -79,7 +80,7 @@ public class DOMEventListener implements EventListener {
             Log.exception(thrown);
 
         } finally {
-            Context.exit();
+            if (ctx != null) Context.exit();
         }
     }
 

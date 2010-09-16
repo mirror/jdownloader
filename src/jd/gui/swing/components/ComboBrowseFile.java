@@ -37,31 +37,41 @@ import net.miginfocom.swing.MigLayout;
 
 public class ComboBrowseFile extends JPanel implements ActionListener {
 
-    public static final int FILES_ONLY = UserIO.FILES_ONLY;
+    public static final int           FILES_ONLY            = UserIO.FILES_ONLY;
 
-    public static final int DIRECTORIES_ONLY = UserIO.DIRECTORIES_ONLY;
+    public static final int           DIRECTORIES_ONLY      = UserIO.DIRECTORIES_ONLY;
 
-    public static final int FILES_AND_DIRECTORIES = UserIO.FILES_AND_DIRECTORIES;
+    public static final int           FILES_AND_DIRECTORIES = UserIO.FILES_AND_DIRECTORIES;
 
-    private static final long serialVersionUID = -3852915099917640687L;
+    private static final long         serialVersionUID      = -3852915099917640687L;
 
-    private Object LOCK = new Object();
+    private Object                    LOCK                  = new Object();
 
-    private ArrayList<ActionListener> listenerList = new ArrayList<ActionListener>();
+    private ArrayList<ActionListener> listenerList          = new ArrayList<ActionListener>();
 
-    private JButton btnBrowse;
+    private JButton                   btnBrowse;
 
-    private JComboBox cmboInput;
+    private JComboBox                 cmboInput;
 
-    private File currentPath;
+    private File                      currentPath;
 
-    private Vector<String> files;
+    private Vector<String>            files;
 
-    private int fileSelectionMode = UserIO.FILES_ONLY;
+    private int                       fileSelectionMode     = UserIO.FILES_ONLY;
 
-    private FileFilter fileFilter;
+    private FileFilter                fileFilter;
 
-    private boolean dispatchingDisabled = false;
+    private boolean                   dispatchingDisabled   = false;
+
+    private Integer                   dialogType            = null;
+
+    public Integer getDialogType() {
+        return dialogType;
+    }
+
+    public void setDialogType(Integer dialogType) {
+        this.dialogType = dialogType;
+    }
 
     public ComboBrowseFile(final String string) {
         final Vector<String> list = SubConfiguration.getConfig("GUI").getGenericProperty(string, new Vector<String>());
@@ -143,7 +153,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     private File getPath() {
-        File[] files = UserIO.getInstance().requestFileChooser(null, null, fileSelectionMode, fileFilter, null, getDirectoryFromTxtInput(), null);
+        File[] files = UserIO.getInstance().requestFileChooser(null, null, fileSelectionMode, fileFilter, null, getDirectoryFromTxtInput(), dialogType);
         if (files == null) return null;
         return files[0];
     }

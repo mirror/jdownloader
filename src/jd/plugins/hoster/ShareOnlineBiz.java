@@ -318,7 +318,6 @@ public class ShareOnlineBiz extends PluginForHost {
             String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
             url = Context.toString(result);
-            Context.exit();
         } finally {
             if (cx != null) Context.exit();
         }

@@ -256,14 +256,19 @@ public class ShrLnksBz extends PluginForDecrypt {
                     String frm = br.getRegex("\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0);
                     br.getPage(frm);
 
-                    final Context cx = ContextFactory.getGlobal().enterContext();
-                    final Scriptable scope = cx.initStandardObjects();
-                    final String fun = br.getRegex("eval\\((.*)\\)").getMatch(0);
-                    Object result = cx.evaluateString(scope, "function f(){return " + fun + ";} f();", "<cmd>", 1, null);
-                    String[] row = new Regex(result + "", "(.*)if\\(parent==window\\).*Main.location.href=(.*?\\))").getRow(0);
-                    Object result2 = cx.evaluateString(scope, row[0] + " " + row[1], "<cmd>", 1, null);
+                    Context cx = null;
+                    Object result2 = null;
+                    try {
+                        cx = ContextFactory.getGlobal().enterContext();
+                        final Scriptable scope = cx.initStandardObjects();
+                        final String fun = br.getRegex("eval\\((.*)\\)").getMatch(0);
+                        Object result = cx.evaluateString(scope, "function f(){return " + fun + ";} f();", "<cmd>", 1, null);
+                        String[] row = new Regex(result + "", "(.*)if\\(parent==window\\).*Main.location.href=(.*?\\))").getRow(0);
+                        result2 = cx.evaluateString(scope, row[0] + " " + row[1], "<cmd>", 1, null);
+                    } finally {
+                        if (cx != null) Context.exit();
+                    }
 
-                    Context.exit();
                     if ((result2 + "").trim().length() != 0) {
 
                         br.setFollowRedirects(false);

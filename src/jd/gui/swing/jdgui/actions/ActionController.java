@@ -571,7 +571,7 @@ public class ActionController {
 
                     @Override
                     public Integer runSave() {
-                        return UserIO.getInstance().requestComboDialog(0, JDL.L(ActionController.JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(ActionController.JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, i, null, JDL.L(ActionController.JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
+                        return UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, JDL.L(ActionController.JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(ActionController.JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, i, null, JDL.L(ActionController.JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
                     }
                 }.getReturnValue();
                 if (selection < 0) { return; }
@@ -626,7 +626,7 @@ public class ActionController {
             @Override
             public void onAction(final ActionEvent e) {
                 if (!this.isSelected()) {
-                    final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+                    final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
                     if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL)) {
                         this.setSelected(true);
                         return;

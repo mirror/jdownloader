@@ -70,7 +70,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
     private final PluginForHost plugin;
 
     private AccountDialog(final PluginForHost plugin) {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L(AccountDialog.JDL_PREFIX + "title", "Add new Account"), null, null, null);
+        super(UserIO.NO_ICON, JDL.L(AccountDialog.JDL_PREFIX + "title", "Add new Account"), null, null, null);
 
         this.plugin = plugin;
     }

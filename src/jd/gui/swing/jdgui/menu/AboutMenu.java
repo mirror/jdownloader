@@ -21,6 +21,7 @@ import javax.swing.JMenu;
 import jd.gui.swing.jdgui.menu.actions.AboutAction;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
 import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
+import jd.gui.swing.jdgui.menu.actions.LogAction;
 import jd.utils.locale.JDL;
 
 public class AboutMenu extends JMenu {
@@ -30,6 +31,7 @@ public class AboutMenu extends JMenu {
     public AboutMenu() {
         super(JDL.L("gui.menu.about", "About"));
 
+        this.add(new LogAction());
         this.addSeparator();
         this.add(new LatestChangesAction());
         this.add(new KnowledgeAction());

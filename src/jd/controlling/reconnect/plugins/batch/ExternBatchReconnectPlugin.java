@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -11,13 +12,16 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
+import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
+import jd.gui.UserIO;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
 
@@ -26,9 +30,9 @@ import org.appwork.utils.swing.TextComponentChangeListener;
  */
 public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionListener {
 
-    private static final String BATCH_TEXT              = "BATCH_TEXT";
+    private static final String BATCH_TEXT              = "BATCH_COMMAND";
 
-    private static final String TERMINAL_COMMAND        = "TERMINAL_COMMAND";
+    private static final String TERMINAL_COMMAND        = "TERMINAL";
 
     private static final String EXECUTE_IN              = "EXECUTE_IN";
 
@@ -51,12 +55,11 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     }
 
     private String getBatchText() {
-        return this.getStorage().get(ExternBatchReconnectPlugin.BATCH_TEXT, JDUtilities.getConfiguration().getStringProperty(ExternBatchReconnectPlugin.BATCH_TEXT, ""));
+        return this.getStorage().get(ExternBatchReconnectPlugin.BATCH_TEXT, SubConfiguration.getConfig("BATCHRECONNECT").getStringProperty("BATCH_TEXT", ""));
     }
 
     private String getExecuteIn() {
-
-        return this.getStorage().get(ExternBatchReconnectPlugin.EXECUTE_IN, JDUtilities.getConfiguration().getStringProperty("RECONNECT_EXECUTE_FOLDER"));
+        return this.getStorage().get(ExternBatchReconnectPlugin.EXECUTE_IN, SubConfiguration.getConfig("BATCHRECONNECT").getStringProperty("RECONNECT_EXECUTE_FOLDER", ""));
     }
 
     @Override
@@ -69,6 +72,8 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
         this.browse = new ComboBrowseFile(this.getID());
         this.browse.setEditable(true);
         this.browse.addActionListener(this);
+        this.browse.setFileSelectionMode(UserIO.DIRECTORIES_ONLY);
+        this.browse.setDialogType(JFileChooser.SAVE_DIALOG);
         p.add(new JLabel(JDL.L("interaction.batchreconnect.terminal", "Interpreter")), "sg left");
         p.add(this.txtCommand);
 
@@ -109,8 +114,11 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     }
 
     private String getTerminalCommand() {
-
-        return this.getStorage().get(ExternBatchReconnectPlugin.TERMINAL_COMMAND, JDUtilities.getConfiguration().getStringProperty("TERMINAL"));
+        if (CrossSystem.isWindows()) {
+            return this.getStorage().get(ExternBatchReconnectPlugin.TERMINAL_COMMAND, SubConfiguration.getConfig("BATCHRECONNECT").getStringProperty("TERMINAL", "cmd /c"));
+        } else {
+            return this.getStorage().get(ExternBatchReconnectPlugin.TERMINAL_COMMAND, SubConfiguration.getConfig("BATCHRECONNECT").getStringProperty("TERMINAL", "/bin/bash"));
+        }
     }
 
     /**
@@ -136,25 +144,26 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
         final String executeIn = this.getExecuteIn();
 
         String command = this.getTerminalCommand();
+        if (command != null) {
+            final String[] cmds = command.split("\\ ");
+            final int cmdsLength1 = cmds.length - 1;
+            command = cmds[0];
+            for (int i = 0; i < cmdsLength1; i++) {
+                cmds[i] = cmds[i + 1];
+            }
 
-        final String[] cmds = command.split("\\ ");
-        final int cmdsLength1 = cmds.length - 1;
-        command = cmds[0];
-        for (int i = 0; i < cmdsLength1; i++) {
-            cmds[i] = cmds[i + 1];
-        }
+            final String batch = this.getBatchText();
 
-        final String batch = this.getBatchText();
-
-        final String[] lines = org.appwork.utils.Regex.getLines(batch);
-        RouterPlugin.LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
-        for (final String element : lines) {
-            cmds[cmdsLength1] = element;
-            /*
-             * if we have multiple lines, wait for each line to finish until
-             * starting the next one
-             */
-            RouterPlugin.LOG.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
+            final String[] lines = org.appwork.utils.Regex.getLines(batch);
+            RouterPlugin.LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
+            for (final String element : lines) {
+                cmds[cmdsLength1] = element;
+                /*
+                 * if we have multiple lines, wait for each line to finish until
+                 * starting the next one
+                 */
+                RouterPlugin.LOG.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
+            }
         }
     }
 
