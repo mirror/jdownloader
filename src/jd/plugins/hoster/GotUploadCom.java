@@ -47,8 +47,10 @@ public class GotUploadCom extends PluginForHost {
         return "http://www.gotupload.com/tos.html";
     }
 
-    public String brbefore = "";
-    private static final String COOKIE_HOST = "http://gotupload.com";
+    private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
+    private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
+    private String              brbefore      = "";
+    private static final String COOKIE_HOST   = "http://gotupload.com";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -56,10 +58,6 @@ public class GotUploadCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains("You have reached the download-limit") && !brbefore.contains("Not valid -> You have reached")) {
-            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-            return AvailableStatus.UNCHECKABLE;
-        }
         if (brbefore.contains("(No such file|No such user exist|File not found)")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -117,7 +115,6 @@ public class GotUploadCom extends PluginForHost {
             br.submitForm(freeform);
             doSomething();
         }
-        checkErrors(downloadLink);
         String md5hash = new Regex(brbefore, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -126,7 +123,10 @@ public class GotUploadCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLForm == null) {
+            checkErrors(downloadLink);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Ticket Time
         String ttt = new Regex(brbefore, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt != null) {
@@ -137,7 +137,7 @@ public class GotUploadCom extends PluginForHost {
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
-        if (brbefore.contains("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {
+        if (brbefore.contains(PASSWORDTEXT0) || brbefore.contains(PASSWORDTEXT1)) {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
@@ -241,17 +241,6 @@ public class GotUploadCom extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 doSomething();
-                checkErrors(downloadLink);
-                if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (brbefore.contains("(<br><b>Passwort:</b>|<br><b>Password:</b>|Wrong password)")) {
-                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                    downloadLink.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                if (brbefore.contains("Wrong captcha")) {
-                    logger.warning("Wrong captcha or wrong password!");
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
                 if (dllink == null) {
                     dllink = new Regex(brbefore, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
@@ -265,6 +254,17 @@ public class GotUploadCom extends PluginForHost {
                 }
             }
             if (dllink == null) {
+                checkErrors(downloadLink);
+                if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                if (brbefore.contains(PASSWORDTEXT0) || brbefore.contains(PASSWORDTEXT1)) {
+                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                    downloadLink.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                if (brbefore.contains("Wrong captcha")) {
+                    logger.warning("Wrong captcha or wrong password!");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

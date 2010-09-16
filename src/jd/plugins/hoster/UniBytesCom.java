@@ -48,9 +48,8 @@ public class UniBytesCom extends PluginForHost {
         br.setCookie("http://www.unibytes.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex theStuff = br.getRegex("You are trying to download file: <span style=\".*?\">(.*?)</span> \\((.*?)\\)</h3>");
-        String filename = theStuff.getMatch(0);
-        String filesize = theStuff.getMatch(1);
+        String filename = br.getRegex("style=\" font-weight: bold; color:#252525;\">(.*?)</span><br/>").getMatch(0);
+        String filesize = br.getRegex("</span><br/>[\n ]+\\((.*?)\\)</h3><p").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(Regex.getSize(filesize));
