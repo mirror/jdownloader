@@ -29,6 +29,7 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.http.Browser;
@@ -193,14 +194,14 @@ public class SingleDownloadController extends Thread {
                 onErrorAGBNotSigned(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
-                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fnf.message", "<b>%s<b><hr>File not found", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+                if (SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fnf.message", "<b>%s<b><hr>File not found", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
                 onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_LINK_IN_PROGRESS:
                 onErrorLinkBlock(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FATAL:
-                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fatalerror.message", "<b>%s<b><hr>Fatal Plugin Error", downloadLink.getHost()));
+                if (SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fatalerror.message", "<b>%s<b><hr>Fatal Plugin Error", downloadLink.getHost()));
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_CAPTCHA:
@@ -217,15 +218,15 @@ public class SingleDownloadController extends Thread {
                 break;
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
                 onErrorChunkloadFailed(downloadLink, currentPlugin);
-                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.failed.message", "<b>%s<b><hr>failed", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+                if (SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.failed.message", "<b>%s<b><hr>failed", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
                 break;
             case LinkStatus.ERROR_PLUGIN_DEFECT:
                 onErrorPluginDefect(downloadLink, currentPlugin);
-                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.plugindefect.message", "<b>%s<b><hr>Plugin defect", downloadLink.getHost()));
+                if (SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.plugindefect.message", "<b>%s<b><hr>Plugin defect", downloadLink.getHost()));
                 break;
             case LinkStatus.ERROR_NO_CONNECTION:
             case LinkStatus.ERROR_TIMEOUT_REACHED:
-                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.connectionlost.message", "<b>%s<b><hr>Connection lost", downloadLink.getHost()));
+                if (SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.connectionlost.message", "<b>%s<b><hr>Connection lost", downloadLink.getHost()));
                 onErrorNoConnection(downloadLink, currentPlugin);
                 break;
             default:
@@ -283,7 +284,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
-        if ((System.currentTimeMillis() - startTime) > 30000) Balloon.showIfHidden(JDL.L("ballon.download.successfull.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDL.LF("ballon.download.successfull.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+        if ((System.currentTimeMillis() - startTime) > 30000 && SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.successfull.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDL.LF("ballon.download.successfull.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
         downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
 
         // set all links to disabled that point to the same file location

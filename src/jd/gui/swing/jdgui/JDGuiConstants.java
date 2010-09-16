@@ -37,5 +37,6 @@ public class JDGuiConstants {
     public static final String PARAM_GENERAL_FONT_SIZE             = "PARAM_GENERAL_FONT_SIZE3";
     public static final String PARAM_GENERAL_FONT_NAME             = "PARAM_GENERAL_FONT_NAME3";
     public static final String PARAM_CONFIG_SHOWN                  = "PARAM_CONFIG_SHOWN";
+    public static final String PARAM_LOGVIEW_SHOWN                 = "PARAM_LOGVIEW_SHOWN";
 
 }
