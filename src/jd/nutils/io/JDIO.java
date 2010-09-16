@@ -439,6 +439,7 @@ public final class JDIO {
      * @param fileSelector
      */
     public static void removeRekursive(final File file, final FileSelector fileSelector) {
+        if(file==null||!file.exists())return;
         for (final File f : file.listFiles()) {
             if (f.isDirectory()) {
                 removeRekursive(f, fileSelector);
