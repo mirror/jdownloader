@@ -57,10 +57,10 @@ public class RatedMenuController extends ArrayList<RatedMenuItem> {
                 }
             }
         }
-        if (this.main.size() > 0 && !this.main.get(this.main.size() - 1).isSeparator()) {
+        if (this.main.size() > 0 && this.main.get(this.main.size() - 1).isSeparator()) {
             this.main.remove(this.main.size() - 1);
         }
-        if (this.sub.size() > 0 && !this.sub.get(this.sub.size() - 1).isSeparator()) {
+        if (this.sub.size() > 0 && this.sub.get(this.sub.size() - 1).isSeparator()) {
             this.sub.remove(this.sub.size() - 1);
         }
 

@@ -29,8 +29,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
-import jd.utils.JDMediaConvert;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)" }, flags = { 0 })
 public class SpiegelDe extends PluginForHost {
@@ -67,7 +68,9 @@ public class SpiegelDe extends PluginForHost {
                     } else {
                         inType = DestinationFormat.VIDEOFLV;
                     }
-                    if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
+                    /* to load the TbCm plugin */
+                    JDUtilities.getPluginForDecrypt("youtube.com");
+                    if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
                         Plugin.logger.severe("Video-Convert failed!");
                     }
 

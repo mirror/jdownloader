@@ -127,7 +127,7 @@ public class RatedMenuItem implements ActionListener {
      * 
      * @param popup
      */
-    public void addToPopup(final JMenu popup) {
+    public void addToPopup(final JMenu popup) {        
         if (this.action != null) {
             if (this.action._action instanceof MenuAction) {
 
@@ -144,7 +144,7 @@ public class RatedMenuItem implements ActionListener {
         }
     }
 
-    public void addToPopup(final JPopupMenu popup) {
+    public void addToPopup(final JPopupMenu popup) {       
         if (this.action != null) {
             if (this.action._action instanceof MenuAction) {
                 popup.add(this.getJMenuItem(((MenuAction) this.action._action)));

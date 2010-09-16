@@ -334,8 +334,8 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
                 popup.add(new SplitHosterAction(sfp));
 
                 final JDTableColumn column = this.getJDTableModel().getJDTableColumn(col);
-                if (column.isSortable(obj)) {
-                    this.getDefaultSortMenuItem().set(column, obj, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
+                if (column.isSortable(sfp)) {
+                    this.getDefaultSortMenuItem().set(column, sfp, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
                     popup.add(this.getDefaultSortMenuItem());
                 }
 

@@ -22,8 +22,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
-import jd.utils.JDMediaConvert;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv" }, flags = { 0 })
 public class MyVideo extends PluginForHost {
@@ -56,8 +57,9 @@ public class MyVideo extends PluginForHost {
             if (downloadLink.getProperty("convertto") != null) {
                 final DestinationFormat convertto = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
                 final DestinationFormat InType = DestinationFormat.VIDEOFLV;
-
-                if (!JDMediaConvert.ConvertFile(downloadLink, InType, convertto)) {
+                /* to load the TbCm plugin */
+                JDUtilities.getPluginForDecrypt("youtube.com");
+                if (!TbCm.ConvertFile(downloadLink, InType, convertto)) {
                     Plugin.logger.severe("Video-Convert failed!");
                 }
             }

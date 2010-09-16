@@ -165,7 +165,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     private RatedMenuController createMenuItems(final Object obj, final int col, final ArrayList<DownloadLink> alllinks, final ArrayList<FilePackage> sfp) {
         final RatedMenuController ret = new RatedMenuController();
 
-        ret.add(new RatedMenuItem(new StopsignAction(alllinks), 10));
+        ret.add(new RatedMenuItem(new StopsignAction(obj), 10));
         ret.add(new RatedMenuItem(new EnableAction(alllinks), 10));
         ret.add(new RatedMenuItem(new DisableAction(alllinks), 10));
         ret.add(new RatedMenuItem(new ForceDownloadAction(alllinks), 10));
@@ -192,8 +192,8 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             ret.add(new RatedMenuItem(new OpenDirectoryAction(new File(((FilePackage) obj).getDownloadDirectory())), 0));
 
             final JDTableColumn column = this.getJDTableModel().getJDTableColumn(col);
-            if (column.isSortable(obj)) {
-                this.getDefaultSortMenuItem().set(column, obj, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + this.getJDTableModel().getColumnName(col) + ")");
+            if (column.isSortable(sfp)) {
+                this.getDefaultSortMenuItem().set(column, sfp, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + this.getJDTableModel().getColumnName(col) + ")");
                 ret.add(new RatedMenuItem("SORTITEM", this.getDefaultSortMenuItem(), 0));
             }
 
@@ -232,9 +232,10 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
                 }
             }
-        }
+        }        
         ret.add(RatedMenuItem.createSeparator());
         ret.add(new RatedMenuItem("PRIORITY", this.createPrioMenu(alllinks), 0));
+        
 
         return ret;
     }

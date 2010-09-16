@@ -22,10 +22,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
-import jd.utils.JDMediaConvert;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
@@ -63,8 +65,9 @@ public class ClipfishDe extends PluginForHost {
             if (downloadLink.getProperty("convertto") != null) {
                 final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
                 final DestinationFormat inType = DestinationFormat.VIDEOFLV;
-
-                if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
+                /* to load the TbCm plugin */
+                JDUtilities.getPluginForDecrypt("youtube.com");
+                if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
                     Plugin.logger.severe("Video-Convert failed!");
                 }
             }

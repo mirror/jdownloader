@@ -16,16 +16,21 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import de.savemytube.flv.FLV;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
@@ -45,6 +50,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.Youtube;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
@@ -468,6 +474,56 @@ public class TbCm extends PluginForDecrypt {
             return false;
         }
         return true;
+    }
+
+    private static final Logger LOG      = JDLogger.getLogger();
+
+    private static final String TEMP_EXT = ".tmp$";
+
+    public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
+        LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
+        if (InType.equals(OutType)) {
+            LOG.info("No Conversion needed, renaming...");
+            final File oldone = new File(downloadlink.getFileOutput());
+            final File newone = new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, OutType.getExtFirst()));
+            downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TEMP_EXT, OutType.getExtFirst()));
+            oldone.renameTo(newone);
+            return true;
+        }
+
+        final ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "convert to") + " " + OutType.toString(), 3, null);
+        downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "convert to") + " " + OutType.toString());
+        progress.increase(1);
+        switch (InType) {
+        case VIDEOFLV:
+            // Inputformat FLV
+            switch (OutType) {
+            case AUDIOMP3:
+                LOG.info("Convert FLV to mp3...");
+                new FLV(downloadlink.getFileOutput(), true, true);
+                progress.increase(1);
+                // FLV löschen
+                if (!new File(downloadlink.getFileOutput()).delete()) {
+                    new File(downloadlink.getFileOutput()).deleteOnExit();
+                }
+                // AVI löschen
+                if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
+                    new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
+                }
+                progress.doFinalize();
+                return true;
+            default:
+                LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+                downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
+                progress.doFinalize();
+                return false;
+            }
+        default:
+            LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+            downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
+            progress.doFinalize();
+            return false;
+        }
     }
 
 }

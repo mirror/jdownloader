@@ -35,7 +35,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
-import jd.utils.JDMediaConvert;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -156,7 +155,7 @@ public class Youtube extends PluginForHost {
             if (convertto.equals(DestinationFormat.VIDEOMP4) || convertto.equals(DestinationFormat.VIDEO3GP)) {
                 InType = convertto;
             }
-            if (!JDMediaConvert.ConvertFile(downloadLink, InType, convertto)) {
+            if (!TbCm.ConvertFile(downloadLink, InType, convertto)) {
                 Plugin.logger.severe("Video-Convert failed!");
             }
         }
