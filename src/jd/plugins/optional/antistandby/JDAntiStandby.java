@@ -32,7 +32,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "jdantistandby", interfaceversion = 5, mac = false, linux = false)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "jdantistandby", interfaceversion = 7, mac = false, linux = false)
 public class JDAntiStandby extends PluginOptional {
     private static final String CONFIG_MODE = "CONFIG_MODE";
     private String[]            MODES_AVAIL;

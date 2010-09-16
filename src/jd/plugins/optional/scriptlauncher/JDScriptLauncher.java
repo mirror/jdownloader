@@ -38,7 +38,7 @@ import org.appwork.utils.Regex;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-@OptionalPlugin(rev = "$Revision$", id = "scriptlauncher", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "scriptlauncher", interfaceversion = 7)
 public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
 
     private static final String scriptdir = "./scripts/";

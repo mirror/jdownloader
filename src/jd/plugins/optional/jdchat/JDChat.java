@@ -79,7 +79,7 @@ import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
 import org.schwering.irc.lib.IRCConnection;
 
-@OptionalPlugin(rev = "$Revision$", id = "chat", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "chat", hasGui = true, interfaceversion = 7)
 public class JDChat extends PluginOptional {
     private static final long                AWAY_TIMEOUT           = 15 * 60 * 1000;
     private static String                    CHANNEL                = "#jDownloader";

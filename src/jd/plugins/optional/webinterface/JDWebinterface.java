@@ -33,7 +33,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "webinterface", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "webinterface", interfaceversion = 7)
 public class JDWebinterface extends PluginOptional {
     static public JDWebinterface instance;
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";

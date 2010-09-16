@@ -135,7 +135,7 @@ class PremShareHost extends HostPluginWrapper {
 
 }
 
-@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 7)
 public class JDPremium extends PluginOptional {
 
     private static final Object                  LOCK                = new Object();

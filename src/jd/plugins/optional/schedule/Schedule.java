@@ -35,7 +35,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
-@OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 7)
 public class Schedule extends PluginOptional {
 
     private ArrayList<Actions>                  actions;

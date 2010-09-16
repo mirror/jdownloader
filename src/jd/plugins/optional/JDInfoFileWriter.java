@@ -43,7 +43,7 @@ import jd.utils.JDTheme;
 import jd.utils.Replacer;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "infofilewriter", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "infofilewriter", interfaceversion = 7)
 public class JDInfoFileWriter extends PluginOptional {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDInfoFileWriter.";

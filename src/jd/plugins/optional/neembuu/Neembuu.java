@@ -45,7 +45,7 @@ import jpfm.JPfmMount;
  * 
  * @author Shashank Tulsyan
  */
-@OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 5, minJVM = 1.7, linux = false, windows = true, mac = false)
+@OptionalPlugin(rev = "$Revision: 11760 $", id = "neembuu", hasGui = true, interfaceversion = 7, minJVM = 1.7, linux = false, windows = true, mac = false)
 public class Neembuu extends PluginOptional {
 
     private static final int CONTEXT_MENU_ID_WATCH_LINK = 1000;

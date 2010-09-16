@@ -49,7 +49,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.Regex;
 
 @SuppressWarnings("unused")
-@OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 7)
 public class JDFolderWatch extends PluginOptional implements FileMonitoringListener, ConfigurationListener, RemoteSupport {
 
     private static final String JDL_PREFIX = "plugins.optional.folderwatch.JDFolderWatch.";

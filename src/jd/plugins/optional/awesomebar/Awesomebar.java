@@ -15,7 +15,7 @@ import jd.plugins.optional.awesomebar.awesome.gui.AwesomeCustomToolbarAction;
 import jd.plugins.optional.awesomebar.awesome.gui.AwesomeProposalPanel;
 import jd.plugins.optional.awesomebar.awesome.gui.AwesomeToolbarPanel;
 
-@OptionalPlugin(rev = "$Revision: 10379 $", id = "addons.awesomebar", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision: 10379 $", id = "addons.awesomebar", hasGui = true, interfaceversion = 7)
 public class Awesomebar extends PluginOptional {
 
     private CustomToolbarAction toolbarAction;

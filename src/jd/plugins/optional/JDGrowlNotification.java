@@ -37,7 +37,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "growl", interfaceversion = 5, windows = false, linux = false)
+@OptionalPlugin(rev = "$Revision$", id = "growl", interfaceversion = 7, windows = false, linux = false)
 public class JDGrowlNotification extends PluginOptional {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDGrowlNotification.";

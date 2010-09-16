@@ -35,7 +35,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "packagecustomizer", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "packagecustomizer", hasGui = true, interfaceversion = 7)
 public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPackagingEvent {
 
     private static final String   JDL_PREFIX        = "jd.plugins.optional.customizer.JDPackageCustomizer.";

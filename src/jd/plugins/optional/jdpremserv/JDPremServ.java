@@ -32,7 +32,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.jdpremserv.gui.JDPremServGui;
 
-@OptionalPlugin(rev = "$Revision: 11760 $", id = "jdpremserv", hasGui = true, interfaceversion = 5, minJVM = 1.6, linux = true, windows = true, mac = true)
+@OptionalPlugin(rev = "$Revision: 11760 $", id = "jdpremserv", hasGui = true, interfaceversion = 7, minJVM = 1.6, linux = true, windows = true, mac = true)
 public class JDPremServ extends PluginOptional {
 
     private MenuAction    activateAction;

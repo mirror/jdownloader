@@ -19,7 +19,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
-@OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 7)
 public class LecturnityDownloader extends PluginOptional {
 
     public final static String PROPERTY_DOWNLOADDIR = "PROPERTY_DOWNLOADDIR";

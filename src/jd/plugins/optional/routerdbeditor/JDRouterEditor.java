@@ -53,7 +53,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-@OptionalPlugin(rev = "$Revision$", id = "routereditor", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "routereditor", hasGui = true, interfaceversion = 7)
 public class JDRouterEditor extends PluginOptional {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDRouterEditor.";

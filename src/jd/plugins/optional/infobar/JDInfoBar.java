@@ -16,7 +16,7 @@ import jd.utils.locale.JDL;
 
 import com.sun.awt.AWTUtilities;
 
-@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "infobar", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "infobar", hasGui = true, interfaceversion = 7)
 public class JDInfoBar extends PluginOptional {
 
     private static final String JDL_PREFIX = "jd.plugins.optional.infobar.";

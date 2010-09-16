@@ -24,7 +24,7 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 
-@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "improvedmacosxdock", interfaceversion = 5, minJVM = 1.6, windows = false, linux = false)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "improvedmacosxdock", interfaceversion = 7, minJVM = 1.6, windows = false, linux = false)
 public class ImrovedMacOSXDock extends PluginOptional {
 
     private MacDockIconChanger updateThread;

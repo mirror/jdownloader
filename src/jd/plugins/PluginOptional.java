@@ -27,32 +27,27 @@ import jd.event.ControlListener;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
-    public PluginOptional(PluginWrapper wrapper) {
-        super(wrapper);
-    }
-
-    public static final int ADDON_INTERFACE_VERSION = 5;
+    public static final int ADDON_INTERFACE_VERSION = 7;
 
     /**
      * is the optional plugin running
      */
     private boolean         running                 = false;
 
-    @Override
-    public OptionalPluginWrapper getWrapper() {
-        return (OptionalPluginWrapper) super.getWrapper();
+    public PluginOptional(final PluginWrapper wrapper) {
+        super(wrapper);
     }
 
-    public final void controlEvent(ControlEvent event) {
-        if (isRunning()) {
-            onControlEvent(event);
+    public final void controlEvent(final ControlEvent event) {
+        if (this.isRunning()) {
+            this.onControlEvent(event);
 
             // Deaktiviert das Plugin beim Beenden
             if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
-                final String id = JDController.requestDelayExit(getWrapper().getID());
+                final String id = JDController.requestDelayExit(this.getWrapper().getID());
                 try {
-                    stopAddon();
-                } catch (Exception e) {
+                    this.stopAddon();
+                } catch (final Exception e) {
                     JDLogger.exception(e);
                 }
                 JDController.releaseDelayExit(id);
@@ -60,72 +55,13 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
         }
     }
 
-    /**
-     * Overwrite this, when your addon should react on ControlEvents
-     */
-    public void onControlEvent(ControlEvent event) {
-    }
-
     @Override
     public String getHost() {
         return this.getWrapper().getHost();
     }
 
-    /**
-     * should be overridden by addons with gui
-     * 
-     * @param b
-     */
-    public void setGuiEnable(boolean b) {
-    }
-
     public String getIconKey() {
         return "gui.images.config.home";
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return null;
-    }
-
-    public abstract boolean initAddon();
-
-    public abstract void onExit();
-
-    public Object interact(String command, Object parameter) {
-        return null;
-    }
-
-    public boolean isRunning() {
-        return running;
-    }
-
-    public boolean startAddon() {
-        if (isRunning()) return true;
-
-        running = initAddon();
-
-        /*
-         * if addon was inited successfully, add it as a ControlListener
-         */
-        if (running) JDController.getInstance().addControlListener(this);
-        return running;
-    }
-
-    public void stopAddon() {
-        if (!isRunning()) return;
-        onExit();
-
-        /*
-         * if addon is running, remove it from the ControlListener list
-         */
-        JDController.getInstance().removeControlListener(this);
-        running = false;
-    }
-
-    @Override
-    public long getVersion() {
-        return getWrapper().getVersion();
     }
 
     /**
@@ -134,6 +70,72 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
      * @return
      */
     public String getID() {
-        return getHost();
+        return this.getHost();
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return null;
+    }
+
+    @Override
+    public long getVersion() {
+        return this.getWrapper().getVersion();
+    }
+
+    @Override
+    public OptionalPluginWrapper getWrapper() {
+        return (OptionalPluginWrapper) super.getWrapper();
+    }
+
+    public abstract boolean initAddon();
+
+    public Object interact(final String command, final Object parameter) {
+        return null;
+    }
+
+    public boolean isRunning() {
+        return this.running;
+    }
+
+    /**
+     * Overwrite this, when your addon should react on ControlEvents
+     */
+    public void onControlEvent(final ControlEvent event) {
+    }
+
+    public abstract void onExit();
+
+    /**
+     * should be overridden by addons with gui
+     * 
+     * @param b
+     */
+    public void setGuiEnable(final boolean b) {
+    }
+
+    public boolean startAddon() {
+        if (this.isRunning()) { return true; }
+
+        this.running = this.initAddon();
+
+        /*
+         * if addon was inited successfully, add it as a ControlListener
+         */
+        if (this.running) {
+            JDController.getInstance().addControlListener(this);
+        }
+        return this.running;
+    }
+
+    public void stopAddon() {
+        if (!this.isRunning()) { return; }
+        this.onExit();
+
+        /*
+         * if addon is running, remove it from the ControlListener list
+         */
+        JDController.getInstance().removeControlListener(this);
+        this.running = false;
     }
 }

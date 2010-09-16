@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
  * @author Greeny
  * @author coalado
  */
-@OptionalPlugin(rev = "$Revision$", id = "langfileditor", hasGui = true, interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "langfileditor", hasGui = true, interfaceversion = 7)
 public class LangFileEditor extends PluginOptional {
 
     private final SingletonPanel lfe;
