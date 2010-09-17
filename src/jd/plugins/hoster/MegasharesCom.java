@@ -197,17 +197,11 @@ public class MegasharesCom extends PluginForHost {
 
     private void handleErrors(DownloadLink link) throws PluginException {
         // Sie laden gerade eine datei herunter
-        if (br.containsHTML("You already have the maximum")) {
-            link.getLinkStatus().addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            link.getLinkStatus().setValue(60 * 1000l);
-            return;
-        }
+        if (br.containsHTML("You already have the maximum")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l); }
         String[] dat = br.getRegex("Your download passport will renew.*?in.*?(\\d+).*?:.*?(\\d+).*?:.*?(\\d+)</strong>").getRow(0);
         if (br.containsHTML("You have reached.*?maximum download limit")) {
             long wait = Long.parseLong(dat[1]) * 60000l + Long.parseLong(dat[2]) * 1000l;
-            link.getLinkStatus().addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            link.getLinkStatus().setValue(wait);
-            return;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
         }
         if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"), 10 * 60 * 1000l);
 
@@ -230,7 +224,7 @@ public class MegasharesCom extends PluginForHost {
             String code = getCaptchaCode(captchaAddress, downloadLink);
             String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + System.currentTimeMillis();
             br.getPage(geturl);
-            requestFileInformation(downloadLink);
+            requestFileInformationInternal(downloadLink);
             if (!checkPassword(downloadLink)) { return; }
             handleErrors(downloadLink);
         }
@@ -313,6 +307,10 @@ public class MegasharesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setDebug(true);
+        return requestFileInformationInternal(downloadLink);
+    }
+
+    private AvailableStatus requestFileInformationInternal(DownloadLink downloadLink) throws IOException, PluginException {        
         br.getHeaders().put("User-Agent", UserAgent);
         loadpage(downloadLink.getDownloadURL());
         /* new filename, size regex */

@@ -214,8 +214,7 @@ public class IFileIt extends PluginForHost {
                     scope = cx.initStandardObjects();
                     fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
                     result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                    finaldownlink = "http://ifile.it/" + Context.toString(result);
-                    Context.exit();
+                    finaldownlink = "http://ifile.it/" + Context.toString(result);                    
                 } finally {
                     if (cx != null) {
                         cx = null;

@@ -48,7 +48,11 @@ public class FotoAlbumEE extends PluginForDecrypt implements ProgressControllerL
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        progress.getBroadcaster().addListener(this);
+        try {
+            progress.getBroadcaster().addListener(this);
+        } catch (Throwable e) {
+            /* stable does not have appwork utils yet */
+        }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> picLinks = new ArrayList<String>();
         br.setFollowRedirects(true);

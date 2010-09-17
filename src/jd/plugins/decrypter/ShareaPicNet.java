@@ -42,7 +42,11 @@ public class ShareaPicNet extends PluginForDecrypt implements ProgressController
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        progress.getBroadcaster().addListener(this);
+        try {
+            progress.getBroadcaster().addListener(this);
+        } catch (Throwable e) {
+            /* stable does not have appwork utils yet */
+        }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         // content links are kinda the same as View and can be handled easily so

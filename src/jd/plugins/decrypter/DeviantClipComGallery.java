@@ -46,7 +46,11 @@ public class DeviantClipComGallery extends PluginForDecrypt implements ProgressC
     public String fpName = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        progress.getBroadcaster().addListener(this);
+        try {
+            progress.getBroadcaster().addListener(this);
+        } catch (Throwable e) {
+            /* stable does not have appwork utils yet */
+        }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);

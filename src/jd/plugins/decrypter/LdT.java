@@ -32,15 +32,19 @@ import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://(beta\\.iload|iload)\\.to/((go/\\d+/merged|go/\\d+)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
 public class LdT extends PluginForDecrypt implements ProgressControllerListener {
-    private boolean abort = false;
-    private String patternSupported_Info = ".*?(beta\\.iload|iload)\\.to/(view|title|release)/.*?/";
+    private boolean abort                 = false;
+    private String  patternSupported_Info = ".*?(beta\\.iload|iload)\\.to/(view|title|release)/.*?/";
 
     public LdT(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        progress.getBroadcaster().addListener(this);
+        try {
+            progress.getBroadcaster().addListener(this);
+        } catch (Throwable e) {
+            /* stable does not have appwork utils yet */
+        }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> alllinks = new ArrayList<String>();
         String parameter = param.toString();

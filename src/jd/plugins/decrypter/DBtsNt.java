@@ -47,7 +47,11 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         decryptedLinks = new ArrayList<DownloadLink>();
-        progress.getBroadcaster().addListener(this);
+        try {
+            progress.getBroadcaster().addListener(this);
+        } catch (Throwable e) {
+            /* stable does not have appwork utils yet */
+        }
         // TODO: beim hinzuf�gen von Events oder Artisten etc. sollte der
         // Linkgrabber gleiche links auch als gleiche Links erkennen
 
