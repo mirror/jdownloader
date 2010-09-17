@@ -101,22 +101,19 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 }
 
             });
-            this.addColumn(new PremiumColumn(JDL.L("gui.column_premium", "Premium"), this));
-            this.addColumn(new ExtIconColumn<HostPluginWrapper>(JDL.L("gui.column_settings", "Settings"), this) {
+            this.addColumn(new ExtCheckColumn<HostPluginWrapper>(JDL.L("gui.column_useplugin", "Use Plugin"), this) {
 
-                private static final long serialVersionUID = 4948749148702891718L;
-
-                private final Icon        icon             = JDTheme.II("gui.images.config.home", 16, 16);
+                private static final long serialVersionUID = 4765934516215953012L;
 
                 @Override
-                public boolean isSortable(HostPluginWrapper obj) {
-                    /* TODO: There is a bug with sorting the column */
-                    return false;
+                protected boolean getBooleanValue(HostPluginWrapper value) {
+                    return value.isEnabled();
                 }
 
                 @Override
-                protected Icon getIcon(HostPluginWrapper value) {
-                    return value.hasConfig() ? icon : null;
+                protected void setBooleanValue(boolean value, HostPluginWrapper object) {
+                    object.setEnabled(value);
+                    PremiumMenu.getInstance().update();
                 }
 
             });
@@ -135,37 +132,45 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 }
 
             });
-            this.addColumn(new TosColumn(JDL.L("gui.column_tos", "TOS"), this));
-            this.addColumn(new ExtCheckColumn<HostPluginWrapper>(JDL.L("gui.column_useplugin", "Use Plugin"), this) {
+            this.addColumn(new PremiumColumn(JDL.L("gui.column_premium", "Premium"), this));
+            this.addColumn(new ExtIconColumn<HostPluginWrapper>(JDL.L("gui.column_settings", "Settings"), this) {
 
-                private static final long serialVersionUID = 4765934516215953012L;
+                private static final long serialVersionUID = 4948749148702891718L;
+
+                private final Icon        icon             = JDTheme.II("gui.images.config.home", 16, 16);
 
                 @Override
-                protected boolean getBooleanValue(HostPluginWrapper value) {
-                    return value.isEnabled();
+                public boolean isSortable(HostPluginWrapper obj) {
+                    /* TODO: There is a bug with sorting the column */
+                    return false;
                 }
 
                 @Override
-                protected void setBooleanValue(boolean value, HostPluginWrapper object) {
-                    object.setEnabled(value);
-                    PremiumMenu.getInstance().update();
+                protected Icon getIcon(HostPluginWrapper value) {
+                    return value.hasConfig() ? icon : null;
+                }
+
+                @Override
+                protected int getMaxWidth() {
+                    return 70;
                 }
 
             });
+            this.addColumn(new TosColumn(JDL.L("gui.column_tos", "TOS"), this));
         }
     }
 
-    private static final long            serialVersionUID = -5219586497809869375L;
+    private static final long                  serialVersionUID = -5219586497809869375L;
 
-    private ArrayList<HostPluginWrapper> pluginsForHost;
+    private final ArrayList<HostPluginWrapper> pluginsForHost;
 
-    private ExtTable<HostPluginWrapper>  table;
+    private ExtTable<HostPluginWrapper>        table;
 
-    private InternalTableModel           tablemodel;
+    private InternalTableModel                 tablemodel;
 
-    private JButton                      btnEdit;
+    private JButton                            btnEdit;
 
-    private JCheckBox                    chkUseAll;
+    private JCheckBox                          chkUseAll;
 
     public ConfigPanelPluginForHost() {
         super();
@@ -180,7 +185,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         if (e.getSource() == chkUseAll) {
             toggleUseAll();
         } else if (e.getSource() == btnEdit) {
-            editEntry(pluginsForHost.get(table.getSelectedRow()));
+            editEntry(table.getExtTableModel().getSelectedObjects().get(0));
         }
     }
 
@@ -198,8 +203,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 if (table.getSelectedRow() < 0) return;
-                HostPluginWrapper hpw = pluginsForHost.get(table.getSelectedRow());
-                btnEdit.setEnabled(hpw.hasConfig());
+                btnEdit.setEnabled(table.getExtTableModel().getSelectedObjects().get(0).hasConfig());
             }
         });
 
@@ -233,7 +237,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
-            HostPluginWrapper hpw = pluginsForHost.get(table.getSelectedRow());
+            HostPluginWrapper hpw = table.getExtTableModel().getSelectedObjects().get(0);
             if (hpw.hasConfig()) {
                 editEntry(hpw);
             }

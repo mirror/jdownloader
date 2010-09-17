@@ -79,4 +79,9 @@ public class PremiumColumn extends ExtIconColumn<HostPluginWrapper> {
         return stringNoAccount;
     }
 
+    @Override
+    protected int getMaxWidth() {
+        return 70;
+    }
+
 }

@@ -26,8 +26,6 @@ public class TosColumn extends ExtColumn<HostPluginWrapper> implements ActionLis
     public TosColumn(String name, ExtTableModel<HostPluginWrapper> table) {
         super(name, table);
 
-        setClickcount(2);
-
         labelRend = new JRendererLabel();
         labelRend.setBorder(null);
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
