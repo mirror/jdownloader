@@ -849,6 +849,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                         public Object runSave() {
 
                             final Gui jd = new Gui(LiveHeaderReconnect.this.getRouterIP());
+                            Dialog.getInstance().showDialog(jd);
                             if (jd.saved) {
                                 LiveHeaderReconnect.this.setRouterIP(jd.ip);
 
