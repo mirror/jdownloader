@@ -1367,6 +1367,7 @@ plugins.hoster.rapidshare.com.preselection = Χρήση προεπιλογής
 plugins.hoster.rapidshare.com.telekom = Χρήση του Εξυπηρετητή Telekom εάν είναι δυνατό
 plugins.hoster.rapidshare.com.waithosterfull = Αναμονή εάν όλες οι δωρεάν θέσεις για χρήστες είναι γεμάτες 
 plugins.hoster.savetv.dontmodifyfilename = Το όνομα του αρχείου μπορεί να αλλάξει (ίσως προκαλέσει προβλήματα)
+plugins.hoster.savetv.preferadfreevideos = Προτίμηση "κομμένων" video (χωρίς διαφημίσεις)
 plugins.hoster.savetv.useoriginalfilename = Διατήρηση του αρχικού ονόματος (ίσως προκαλέσει σφάλματα!)
 plugins.hoster.scribdcom.nodownloadavailable = Η λήψη είναι απενεργοποιημένη για αυτό το αρχείο!
 plugins.hoster.sendspacecom.errors.servererror = Άγνωστο σφάλμα του server
