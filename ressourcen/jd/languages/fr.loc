@@ -1353,6 +1353,7 @@ replacer.available = Dernier fichier complété disponible (Oui, Non)
 replacer.comment = Dernier paquet complété : Commentaire
 replacer.date = Date actuelle
 replacer.downloaddirectory = Dernier paquet complété : Répertoire de téléchargement
+replacer.downloadurl = Dernier fichier complété : URL du téléchargement (uniquement pour les liens)
 replacer.filelist = Dernier paquet complété : Liste de fichier
 replacer.filename = Dernier fichier complété : Nom du fichier
 replacer.filepath = Dernier fichier complété : Chemin du fichier
