@@ -21,7 +21,6 @@ import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.Factory;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
@@ -36,9 +35,6 @@ import org.appwork.utils.swing.EDTRunner;
 
 public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListener, DefaultEventListener<StorageEvent> {
 
-    /**
-     * 
-     */
     private static final long                     serialVersionUID = 1L;
     private static final ReconnectPluginConfigGUI INSTANCE         = new ReconnectPluginConfigGUI();
 
@@ -47,7 +43,6 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
     }
 
     private JComboBox             combobox;
-
     private JButton               btnTest;
     private JLabel                lblDuration;
     private JLabel                lblTime;
@@ -74,8 +69,6 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
             ReconnectPluginController.getInstance().autoFind();
         } else {
             ReconnectPluginController.getInstance().setActivePlugin((RouterPlugin) this.combobox.getSelectedItem());
-            //
-
         }
     }
 
@@ -89,10 +82,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
         this.add(new JLabel(JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginConfigGUI.initGUI.comboboxlabel", "Reconnect Method:")), "split 3,shrinkx,gapleft 37");
         this.add(this.combobox, "growx, pushx");
         this.add(this.autoButton);
-
         this.add(this.scrollPane, "gapleft 37");
-        // this.viewPort.setView(((RouterPlugin)
-        // this.combobox.getSelectedItem()).getGUI());
 
         this.combobox.addActionListener(this);
         this.combobox.setSelectedItem(ReconnectPluginController.getInstance().getActivePlugin());
@@ -131,11 +121,10 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
         this.lblBeforeIP.setEnabled(false);
 
         this.add(p, "gapleft 37");
-
     }
 
     /**
-     * UPdate GUI
+     * Update GUI
      */
     public void onEvent(final StorageEvent event) {
         if (event instanceof StorageValueChangeEvent<?>) {
@@ -145,22 +134,17 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
 
                     @Override
                     protected void runInEDT() {
-                        // ReconnectPluginConfigGUI.this.viewPort.setView(ReconnectPluginController.getInstance().getActivePlugin().getGUI());
                         ReconnectPluginConfigGUI.this.combobox.setSelectedItem(ReconnectPluginController.getInstance().getActivePlugin());
                         ReconnectPluginConfigGUI.this.scrollPane.getViewport().setView(((RouterPlugin) ReconnectPluginConfigGUI.this.combobox.getSelectedItem()).getGUI());
                     }
 
                 };
-
             }
         }
-
     }
 
     @Override
     protected void onHide() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -176,11 +160,9 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                 });
             }
         }.start();
-
     }
 
     private void testReconnect() {
-
         JDLogger.addHeader("Reconnect Testing");
 
         final ProgressController progress = new ProgressController(JDL.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"), 100, "gui.images.reconnect");
@@ -198,17 +180,16 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
             @Override
             public void run() {
                 while (true) {
-                    new GuiRunnable<Object>() {
+                    new EDTRunner() {
 
                         @Override
-                        public Object runSave() {
+                        protected void runInEDT() {
                             ReconnectPluginConfigGUI.this.lblTime.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
                             ReconnectPluginConfigGUI.this.lblTime.setEnabled(true);
                             ReconnectPluginConfigGUI.this.lblDuration.setEnabled(true);
-                            return null;
                         }
 
-                    }.start();
+                    };
                     try {
                         Thread.sleep(1000);
                     } catch (final InterruptedException e) {
@@ -233,32 +214,33 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                     } else {
                         progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
                     }
-                    new GuiRunnable<Object>() {
+                    new EDTRunner() {
 
                         @Override
-                        public Object runSave() {
+                        protected void runInEDT() {
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
                             } else {
                                 ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
                             }
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setIcon(JDTheme.II("gui.images.selected", 32, 32));
+                            ReconnectPluginConfigGUI.this.lblSuccessIcon.setEnabled(true);
                             ReconnectPluginConfigGUI.this.lblStatusMessage.setEnabled(true);
                             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText("?");
                             } else {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
                             }
-                            return null;
                         }
-                    }.start();
+
+                    };
                 } else {
                     progress.setStatusText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                     progress.setColor(Color.RED);
-                    new GuiRunnable<Object>() {
+                    new EDTRunner() {
 
                         @Override
-                        public Object runSave() {
+                        protected void runInEDT() {
                             ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setEnabled(true);
@@ -267,9 +249,9 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                             } else {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
                             }
-                            return null;
                         }
-                    }.start();
+
+                    };
                 }
                 timer.interrupt();
                 progress.setStatus(100);

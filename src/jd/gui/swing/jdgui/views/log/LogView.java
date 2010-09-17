@@ -31,13 +31,13 @@ import jd.utils.locale.JDL;
  * The tab for the log.
  */
 public class LogView extends ClosableView {
-    private static final long serialVersionUID = -4440872942373187410L;
+    private static final long   serialVersionUID = -4440872942373187410L;
 
-    private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.log.";
+    private static final String IDENT_PREFIX     = "jd.gui.swing.jdgui.views.log.";
 
-    private static LogView INSTANCE = null;
+    private static LogView      INSTANCE         = null;
 
-    private LogInfoPanel lip;
+    private LogInfoPanel        lip;
 
     /**
      * Logview Singleton
@@ -62,7 +62,7 @@ public class LogView extends ClosableView {
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
                 if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
-                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, true);
+                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false);
                     GUIUtils.getConfig().save();
                     getBroadcaster().removeListener(this);
                     synchronized (LogView.this) {
