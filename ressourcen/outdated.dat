@@ -357,11 +357,11 @@ jd/captcha/methods/xtrmprtctcm
 jd/captcha/methods/flecruzcm
 jd/captcha/methods/eshr
 jd/plugins/hoster/OneTwoThreeUploadPl.class
-plugins/RouterDBEditor.jar
-plugins/AntiShutdown.jar
-plugins/ExternInterface.jar
-plugins/Customizer.jar
-plugins/schedule.jar
+plugins/JDRouterDBEditor.jar
+plugins/JDAntiShutdown.jar
+plugins/JDExternInterface.jar
+plugins/JDPackageCustomizer.jar
+plugins/JDScheduler.jar
 plugins/JDHTTPLiveHeaderScripter.jar
 plugins/JDFolderWatch.jar
 plugins/RouterSend.jar
