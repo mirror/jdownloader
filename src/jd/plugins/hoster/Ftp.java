@@ -88,25 +88,31 @@ public class Ftp extends PluginForHost {
             String path = Encoding.urlDecode(url.getPath().substring(0, url.getPath().lastIndexOf("/")), false);
             if (path.length() > 0) ftp.cwd(path);
             ftp.bin();
-            ftp.getBroadcaster().addListener(new FtpListener() {
+            try {
+                ftp.getBroadcaster().addListener(new FtpListener() {
 
-                private long before = 0;
-                private long last = 0;
-                private long lastTime = System.currentTimeMillis();
+                    private long before   = 0;
+                    private long last     = 0;
+                    private long lastTime = System.currentTimeMillis();
 
-                public void onDownloadProgress(FtpEvent event) {
-                    downloadLink.setDownloadCurrent(event.getProgress());
-                    if (System.currentTimeMillis() - lastTime > 1000) {
-                        last = event.getProgress();
-                        speed = ((last - before) / (System.currentTimeMillis() - lastTime)) * 1000l;
-                        lastTime = System.currentTimeMillis();
-                        before = last;
-                        downloadLink.requestGuiUpdate();
-                        downloadLink.setChunksProgress(new long[] { last });
+                    public void onDownloadProgress(FtpEvent event) {
+                        downloadLink.setDownloadCurrent(event.getProgress());
+                        if (System.currentTimeMillis() - lastTime > 1000) {
+                            last = event.getProgress();
+                            speed = ((last - before) / (System.currentTimeMillis() - lastTime)) * 1000l;
+                            lastTime = System.currentTimeMillis();
+                            before = last;
+                            downloadLink.requestGuiUpdate();
+                            downloadLink.setChunksProgress(new long[] { last });
+                        }
                     }
-                }
 
-            });
+                });
+            } catch (Throwable e) {
+                /* stable does not have appwork utils */
+                downloadLink.getLinkStatus().setStatusText("ProgressBar not supported");
+                downloadLink.requestGuiUpdate();
+            }
 
             File tmp;
             dl = new RAFDownload(this, downloadLink, null);
