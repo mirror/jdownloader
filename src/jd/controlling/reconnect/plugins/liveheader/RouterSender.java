@@ -1,5 +1,8 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -30,10 +34,12 @@ import jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin;
 import jd.controlling.reconnect.plugins.upnp.UpnpRouterDevice;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
 import org.appwork.utils.Hash;
 import org.appwork.utils.locale.Loc;
 import org.appwork.utils.swing.dialog.ContainerDialog;
@@ -116,8 +122,42 @@ public class RouterSender {
     private JTextField                  txtFirmware;
     private String                      firmware;
     private ArrayList<UpnpRouterDevice> devices;
+    private String                      response;
+    private String                      exception;
+
+    private String                      sslException;
+
+    private String                      sslResponse;
+
+    private int                         sslResponseCode;
+
+    private HashMap<String, String>     sslResponseHeaders;
+
+    private String                      sslTitle;
+
+    private int                         sslPTagsCount;
+
+    private int                         sslFrameTagCount;
+
+    private String                      sslFavIconHash;
+    private final Storage               storage;
 
     private RouterSender() {
+        this.storage = JSonStorage.getPlainStorage("ROUTERSENDER");
+    }
+
+    private Component addHelpButton(final String name, final String tooltip, final String dialog) {
+        final JButton but = new JButton(JDTheme.II("gui.images.help", 20, 20));
+        but.setContentAreaFilled(false);
+        but.setToolTipText(tooltip);
+        but.addActionListener(new ActionListener() {
+
+            public void actionPerformed(final ActionEvent e) {
+                Dialog.getInstance().showMessageDialog(0, name + ":" + tooltip, dialog);
+            }
+
+        });
+        return but;
 
     }
 
@@ -168,25 +208,36 @@ public class RouterSender {
         this.txtPass = new JTextField(this.getPlugin().getPassword());
         this.txtIP = new JTextField(this.getPlugin().getRouterIP());
 
-        final JPanel p = new JPanel(new MigLayout("ins 5,wrap 2", "[][grow,fill]", "[grow,fill]"));
+        final JPanel p = new JPanel(new MigLayout("ins 5,wrap 3", "[][][grow,fill]", "[grow,fill]"));
         p.add(new JLabel("Please enter your router information as far as possible."), "spanx");
         p.add(new JLabel("We will not transfer username or password!"), "spanx");
         p.add(new JLabel("Model Name"));
+        p.add(this.addHelpButton("Model Name", "...is written on your router", "Find the name of your router:\r\n  1. In your router's manual.\r\n  2. Written on your router device.\r\n  3. Or open the router's webinterface"));
         p.add(this.txtName);
 
         p.add(new JLabel("Manufactor"));
+        p.add(this.addHelpButton("Manufactor", "...if this field is empty, look at your router", "Find the manufactor of your router:\r\n  1. In your router's manual.\r\n  2. Written on your router device.\r\n  3. Or open the router's webinterface"));
+
         p.add(this.txtManufactor);
         p.add(new JLabel("Firmware"));
+        p.add(this.addHelpButton("Firmware", "...find it in your router's webinterface", "Find the firmware of your router:\r\nOpen your router's webinterface. You should find the firmware on the page or in the system informations page.\r\nIf you don't find it, just leave this field blank."));
+
         p.add(this.txtFirmware);
         // p.add(new JLabel("Firmware"));
         // p.add(this.txtFirmware);
 
         p.add(new JLabel("Webinterface IP"));
+        p.add(this.addHelpButton("Webinterface IP", "...can be found in the router's manual", "If this field is blank, consult your router's manual to find it's up or its host name.\r\nThe IP or hostname is the name, you have to use to connect to the router webinterface (http://HOSTNAME)"));
+
         p.add(this.txtIP);
 
         p.add(new JLabel("Webinterface User"));
+        p.add(this.addHelpButton("Webinterface User", "...will not be transfered.", "This value will not be sent to us. \r\nWe need this to make sure that your reconnect script does not contain sensitive data."));
+
         p.add(this.txtUser);
         p.add(new JLabel("Webinterface Password"));
+        p.add(this.addHelpButton("Webinterface Password", "...will not be transfered.", "This value will not be sent to us. \r\nWe need this to make sure that your reconnect script does not contain sensitive data."));
+
         p.add(this.txtPass);
         this.txtUser.setText(this.getPlugin().getUser());
         this.txtPass.setText(this.getPlugin().getPassword());
@@ -238,7 +289,36 @@ public class RouterSender {
 
         final Browser br = new Browser();
         try {
-            br.getPage("http://" + this.routerIP);
+            this.sslResponse = br.getPage("https://" + this.routerIP);
+            final URLConnectionAdapter con = br.getHttpConnection();
+            this.sslResponseCode = con.getResponseCode();
+            this.sslResponseHeaders = new HashMap<String, String>();
+            for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
+                for (final String value : next.getValue()) {
+                    this.sslResponseHeaders.put(next.getKey().toLowerCase(), value);
+                }
+            }
+            this.sslTitle = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            this.sslPTagsCount = br.toString().split("<p>").length;
+            this.sslFrameTagCount = br.toString().split("<frame").length;
+            // get favicon and build hash
+            try {
+                final BufferedImage image = FavIconController.getInstance().downloadFavIcon(this.routerIP);
+                final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
+                imageFile.delete();
+                imageFile.deleteOnExit();
+                ImageIO.write(image, "png", imageFile);
+                this.sslFavIconHash = Hash.getMD5(imageFile);
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+
+        } catch (final Throwable e) {
+            this.sslException = e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
+
+        try {
+            this.response = br.getPage("http://" + this.routerIP);
             final URLConnectionAdapter con = br.getHttpConnection();
             this.responseCode = con.getResponseCode();
             this.responseHeaders = new HashMap<String, String>();
@@ -262,8 +342,13 @@ public class RouterSender {
                 e.printStackTrace();
             }
         } catch (final IOException e) {
+            this.exception = e.getClass().getSimpleName() + ": " + e.getMessage();
             e.printStackTrace();
         }
+    }
+
+    public String getException() {
+        return this.exception;
     }
 
     public String getFavIconHash() {
@@ -294,6 +379,10 @@ public class RouterSender {
         return this.pTagsCount;
     }
 
+    public String getResponse() {
+        return this.response;
+    }
+
     public int getResponseCode() {
         return this.responseCode;
     }
@@ -312,6 +401,38 @@ public class RouterSender {
 
     public String getScript() {
         return this.script;
+    }
+
+    public String getSslException() {
+        return this.sslException;
+    }
+
+    public String getSslFavIconHash() {
+        return this.sslFavIconHash;
+    }
+
+    public int getSslFrameTagCount() {
+        return this.sslFrameTagCount;
+    }
+
+    public int getSslPTagsCount() {
+        return this.sslPTagsCount;
+    }
+
+    public String getSslResponse() {
+        return this.sslResponse;
+    }
+
+    public int getSslResponseCode() {
+        return this.sslResponseCode;
+    }
+
+    public HashMap<String, String> getSslResponseHeaders() {
+        return this.sslResponseHeaders;
+    }
+
+    public String getSslTitle() {
+        return this.sslTitle;
     }
 
     public String getTitle() {
@@ -357,7 +478,23 @@ public class RouterSender {
 
     }
 
+    /**
+     * returns true of the user has already been asked to send his script. do
+     * not ask him again
+     * 
+     * @return
+     */
+    public boolean isRequested() {
+        // we use md5 of script. if user changes script, he should be able to
+        // send it again
+        return this.storage.get(Hash.getMD5(this.getPlugin().getScript()), false);
+    }
+
     public void run() throws Exception {
+
+        final Browser br = new Browser();
+        // is services available. throws exception if server is down
+        br.getPage(RouterSender.ROUTER_COL_SERVICE);
         final int ret = Dialog.getInstance().showConfirmDialog(0, "Router Sender", "We need your help to improve our reconnect database.\r\nPlease contribute to the 'JD Project' and send in our reconnect script.\r\nThis wizard will guide you through all required steps.", null, null, null);
 
         if (!Dialog.isOK(ret)) {
@@ -369,7 +506,6 @@ public class RouterSender {
 
         final String dataString = JSonStorage.toString(this);
 
-        final Browser br = new Browser();
         br.forceDebug(true);
         final String data = URLEncoder.encode(dataString, "UTF-8");
         URLDecoder.decode(data.trim(), "UTF-8");
@@ -382,8 +518,16 @@ public class RouterSender {
         }
     }
 
+    public void setException(final String exception) {
+        this.exception = exception;
+    }
+
     public void setFavIconHash(final String favIconHash) {
         this.favIconHash = favIconHash;
+    }
+
+    public void setFirmware(final String firmware) {
+        this.firmware = firmware;
     }
 
     public void setFrameTagCount(final int frameTagCount) {
@@ -400,6 +544,19 @@ public class RouterSender {
 
     public void setpTagsCount(final int pTagsCount) {
         this.pTagsCount = pTagsCount;
+    }
+
+    /**
+     * set this to true if the user has been asked to send his script.
+     * 
+     * @param b
+     */
+    public void setRequested(final boolean b) {
+        this.storage.put(Hash.getMD5(this.getPlugin().getScript()), b);
+    }
+
+    public void setResponse(final String response) {
+        this.response = response;
     }
 
     public void setResponseCode(final int responseCode) {
@@ -420,6 +577,38 @@ public class RouterSender {
 
     public void setScript(final String script) {
         this.script = script;
+    }
+
+    public void setSslException(final String sslException) {
+        this.sslException = sslException;
+    }
+
+    public void setSslFavIconHash(final String sslFavIconHash) {
+        this.sslFavIconHash = sslFavIconHash;
+    }
+
+    public void setSslFrameTagCount(final int sslFrameTagCount) {
+        this.sslFrameTagCount = sslFrameTagCount;
+    }
+
+    public void setSslPTagsCount(final int sslPTagsCount) {
+        this.sslPTagsCount = sslPTagsCount;
+    }
+
+    public void setSslResponse(final String sslResponse) {
+        this.sslResponse = sslResponse;
+    }
+
+    public void setSslResponseCode(final int sslResponseCode) {
+        this.sslResponseCode = sslResponseCode;
+    }
+
+    public void setSslResponseHeaders(final HashMap<String, String> sslResponseHeaders) {
+        this.sslResponseHeaders = sslResponseHeaders;
+    }
+
+    public void setSslTitle(final String sslTitle) {
+        this.sslTitle = sslTitle;
     }
 
     public void setTitle(final String title) {

@@ -25,7 +25,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     private boolean                          invalidated  = false;
     private IPConnectionState                latestConnectionState;
-    private Object                           LOCK         = new Object();
+    private final Object                     LOCK         = new Object();
     /**
      * blacklist for not working ip check providers
      */
@@ -33,6 +33,50 @@ public class IPController extends ArrayList<IPConnectionState> {
     private IPConnectionState                invalidState = null;
 
     private IPController() {
+    }
+
+    @Override
+    public boolean add(final IPConnectionState state) {
+        if (state == null) { return false; }
+        synchronized (this.LOCK) {
+            if (this.size() > 0) {
+                final IPConnectionState entry = this.get(this.size() - 1);
+                /* new and current state are equal */
+                if (entry.equalsLog(state)) { return false; }
+            }
+            /* new IPConnectionState reached */
+            this.latestConnectionState = state;
+            return super.add(state);
+        }
+    }
+
+    public boolean changedIP() {
+        if (this.invalidState == null || this.invalidState.isOffline()) { return false; }
+        /* we dont have any previous states, we cannot check if ip changed */
+        if (this.size() == 0) { return false; }
+        synchronized (this.LOCK) {
+            /* fetch current ip */
+            this.fetchIP();
+            final IPConnectionState current = this.latestConnectionState;
+            /* currently offline = no ip change */
+            if (current.isOffline()) { return false; }
+            for (int index = this.size() - 1; index >= 0; index--) {
+                if (this.get(index) == this.invalidState) {
+                    /*
+                     * we reached the element we began with, so check changed IP
+                     * and then stop
+                     */
+                    if (!this.invalidState.equalsLog(current)) { return true; }
+                    return false;
+                }
+                /*
+                 * we found a state that was online and had different ip that
+                 * new state, so ip changed
+                 */
+                if (this.get(index).isOnline() && !this.get(index).equalsLog(current)) { return true; }
+            }
+        }
+        return false;
     }
 
     /**
@@ -57,56 +101,12 @@ public class IPController extends ArrayList<IPConnectionState> {
                 break;
             }
         }
-        add(newIP);
+        this.add(newIP);
         return this.latestConnectionState.getExternalIp();
     }
 
-    @Override
-    public boolean add(IPConnectionState state) {
-        if (state == null) return false;
-        synchronized (LOCK) {
-            if (this.size() > 0) {
-                final IPConnectionState entry = this.get(this.size() - 1);
-                /* new and current state are equal */
-                if (entry.equalsLog(state)) return false;
-            }
-            /* new IPConnectionState reached */
-            this.latestConnectionState = state;
-            return super.add(state);
-        }
-    }
-
-    public boolean changedIP() {
-        if (invalidState == null || invalidState.isOffline()) return false;
-        /* we dont have any previous states, we cannot check if ip changed */
-        if (this.size() == 0) return false;
-        synchronized (LOCK) {
-            /* fetch current ip */
-            fetchIP();
-            IPConnectionState current = latestConnectionState;
-            /* currently offline = no ip change */
-            if (current.isOffline()) return false;
-            for (int index = this.size() - 1; index >= 0; index--) {
-                if (this.get(index) == invalidState) {
-                    /*
-                     * we reached the element we began with, so check changed IP
-                     * and then stop
-                     */
-                    if (!invalidState.equalsLog(current)) return true;
-                    return false;
-                }
-                /*
-                 * we found a state that was online and had different ip that
-                 * new state, so ip changed
-                 */
-                if (this.get(index).isOnline() && !this.get(index).equalsLog(current)) return true;
-            }
-        }
-        return false;
-    }
-
     /**
-     * returns the latest log ebtry, or fetches the ip to get one
+     * returns the latest log entry, or fetches the ip to get one
      * 
      * @return
      */
@@ -153,9 +153,9 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @see #validate(int, int)
      */
     public void invalidate() {
-        if (this.invalidated == true) return;
+        if (this.invalidated == true) { return; }
         this.invalidated = true;
-        invalidState = this.getCurrentLog();
+        this.invalidState = this.getCurrentLog();
     }
 
     /**
@@ -180,7 +180,7 @@ public class IPController extends ArrayList<IPConnectionState> {
             // IP check disabled. each validate request is successfull
             return !(this.invalidated = false);
         }
-        return !(this.invalidated = !changedIP());
+        return !(this.invalidated = !this.changedIP());
     }
 
     /**
@@ -206,7 +206,7 @@ public class IPController extends ArrayList<IPConnectionState> {
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
         while (System.currentTimeMillis() < endTime) {
             /* ip change detected then we can stop */
-            if (!(this.invalidated = !changedIP())) { return true; }
+            if (!(this.invalidated = !this.changedIP())) { return true; }
             if (this.latestConnectionState.getCause() != null) {
                 try {
                     throw this.latestConnectionState.getCause();
@@ -218,7 +218,7 @@ public class IPController extends ArrayList<IPConnectionState> {
                     // nothing
                 }
             }
-            Thread.sleep(Math.min(1, ipCheckInterval) * 1000);
+            Thread.sleep(Math.max(250, ipCheckInterval * 1000));
         }
         return !this.isInvalidated();
     }

@@ -30,6 +30,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.plugins.liveheader.recorder.Gui;
@@ -49,6 +50,10 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.StorageEvent;
+import org.appwork.storage.StorageValueChangeEvent;
+import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -110,6 +115,40 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
         // only listen to system to autosend script
         JDController.getInstance().addControlListener(this);
+        // Send routerscript if there were 3 successfull recoinnects in a row
+        Reconnecter.getInstance().getStorage().getEventSender().addListener(new DefaultEventListener<StorageEvent>() {
+
+            private boolean dosession = true;
+
+            @SuppressWarnings("unchecked")
+            public void onEvent(final StorageEvent event) {
+                try {
+                    if (this.dosession && !RouterSender.getInstance().isRequested() && event instanceof StorageValueChangeEvent && ((StorageValueChangeEvent<?>) event).getKey().equalsIgnoreCase(Reconnecter.RECONNECT_SUCCESS_COUNTER)) {
+
+                        if (((StorageValueChangeEvent<Long>) event).getNewValue() > 2) {
+                            RouterSender.getInstance().setRequested(true);
+                            new Thread() {
+                                public void run() {
+                                    try {
+                                        RouterSender.getInstance().run();
+
+                                    } catch (final Exception e) {
+                                        e.printStackTrace();
+                                        Dialog.getInstance().showMessageDialog("Sorry, our server is not available right now. Please try it later.");
+                                        RouterSender.getInstance().setRequested(false);
+                                        // do not ask in this session again
+                                        dosession = false;
+                                    }
+                                }
+                            }.start();
+                        }
+                    }
+                } catch (final Throwable e) {
+                    Log.exception(e);
+                }
+            }
+
+        });
 
     }
 
@@ -384,7 +423,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         this.btnAuto.addActionListener(this);
 
         // auto search is not ready yet
-        // this.btnAuto.setEnabled(false);
+        this.btnAuto.setEnabled(false);
         this.btnRecord = new JButton("Record Wizard");
         this.btnRecord.addActionListener(this);
         this.btnFindIP = new JButton("Find Router IP");

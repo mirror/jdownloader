@@ -44,10 +44,10 @@ import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
 
 public final class Reconnecter implements StateMachineInterface {
-    public static final String       RECONNECT_SUCCESS_COUNTER = "RECONNECT_SUCCESS_COUNTER";
-    public static final String       RECONNECT_FAILED_COUNTER  = "RECONNECT_FAILED_COUNTER";
-    private static final State       IDLE                      = new State("IDLE");
-    private static final State       RECONNECT_RUNNING         = new State("RECONNECT_RUNNING");
+    public static final String       RECONNECT_SUCCESS_COUNTER        = "RECONNECT_SUCCESS_COUNTER";
+    public static final String       RECONNECT_FAILED_COUNTER         = "RECONNECT_FAILED_COUNTER";
+    private static final State       IDLE                             = new State("IDLE");
+    private static final State       RECONNECT_RUNNING                = new State("RECONNECT_RUNNING");
     // private static final State RECONNECT_REQUESTED = new
     // State("RECONNECT_REQUESTED");
 
@@ -57,9 +57,11 @@ public final class Reconnecter implements StateMachineInterface {
         Reconnecter.RECONNECT_RUNNING.addChildren(Reconnecter.IDLE);
 
     }
-    private static final Reconnecter INSTANCE                  = new Reconnecter();
+    private static final Reconnecter INSTANCE                         = new Reconnecter();
 
-    private static final Logger      LOG                       = JDLogger.getLogger();
+    private static final Logger      LOG                              = JDLogger.getLogger();
+    public static final String       RECONNECT_FAILED_COUNTER_GLOBAL  = "RECONNECT_FAILED_COUNTER_GLOBAL";
+    public static final String       RECONNECT_SUCCESS_COUNTER_GLOBAL = "RECONNECT_SUCCESS_COUNTER_GLOBAL";
 
     /*
      * TODO: eyxternal IP check if automode is disabled
@@ -226,6 +228,16 @@ public final class Reconnecter implements StateMachineInterface {
         this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.AFTER, ret));
 
         this.statemachine.setStatus(Reconnecter.IDLE);
+        if (!ret) {
+            this.storage.increase(Reconnecter.RECONNECT_FAILED_COUNTER);
+            this.storage.increase(Reconnecter.RECONNECT_FAILED_COUNTER_GLOBAL);
+            this.storage.put(Reconnecter.RECONNECT_SUCCESS_COUNTER, 0);
+
+        } else {
+            this.storage.increase(Reconnecter.RECONNECT_SUCCESS_COUNTER);
+            this.storage.increase(Reconnecter.RECONNECT_SUCCESS_COUNTER_GLOBAL);
+            this.storage.put(Reconnecter.RECONNECT_FAILED_COUNTER, 0);
+        }
         return ret;
     }
 
@@ -236,7 +248,7 @@ public final class Reconnecter implements StateMachineInterface {
      * @return
      */
     public boolean forceReconnect() {
-        // this.prepareForReconnect();        
+        // this.prepareForReconnect();
         final boolean ret = this.doReconnect();
 
         return ret;
@@ -248,6 +260,10 @@ public final class Reconnecter implements StateMachineInterface {
 
     public StateMachine getStateMachine() {
         return this.statemachine;
+    }
+
+    public Storage getStorage() {
+        return this.storage;
     }
 
     /**
@@ -369,8 +385,7 @@ public final class Reconnecter implements StateMachineInterface {
             final ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100, "gui.images.reconnect_warning");
             progress.doFinalize(10000l);
 
-            final long counter = this.storage.increase(Reconnecter.RECONNECT_FAILED_COUNTER);
-            this.storage.put(Reconnecter.RECONNECT_SUCCESS_COUNTER, 0);
+            final long counter = this.storage.get(Reconnecter.RECONNECT_FAILED_COUNTER, 0);
 
             if (counter > 5) {
                 /*
@@ -383,12 +398,6 @@ public final class Reconnecter implements StateMachineInterface {
                 UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.controlling.reconnect.Reconnector.progress.failed2", "Reconnect failed too often! Autoreconnect is disabled! Please check your reconnect Settings!"));
 
             }
-
-        } else {
-            /* reconnect okay, reset fail counter */
-
-            this.storage.put(Reconnecter.RECONNECT_FAILED_COUNTER, 0);
-            this.storage.increase(Reconnecter.RECONNECT_SUCCESS_COUNTER);
 
         }
         return ret;
