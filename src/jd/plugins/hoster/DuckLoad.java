@@ -16,14 +16,9 @@
 
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.Random;
+import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -31,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/\\d+/.+|divx/[a-zA-Z0-9]+\\.html|[a-zA-Z0-9]+\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(divx|play)/[A-Z0-9]+" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
 
     public DuckLoad(PluginWrapper wrapper) {
@@ -45,131 +40,45 @@ public class DuckLoad extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("youload.to/", "duckload.com/"));
+        String theLink = link.getDownloadURL().replace("youload.to/", "duckload.com/");
+        theLink = theLink.replace(".html", "").replace("/divx/", "/play/");
+        if (!theLink.contains("www.")) theLink = theLink.replace("http://", "http://www.");
+        link.setUrlDownload(theLink);
     }
 
-    public String aBrowser = "";
-    private String flnme = "VideoStream" + new Random().nextInt(1000) + ".avi";
+    private static final String MAINPAGE = "http://duckload.com/";
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        boolean stream = false;
-        requestFileInformation(link);
-        br.setDebug(true);
-        haveFun();
-        Form form = br.getForm(0);
-        if (aBrowser.contains("Your downloadticket was booked")) {
-            String capurl = br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?=.*?)\"").getMatch(0);
-            if (capurl == null) capurl = br.getRegex("src='/design/Captcha\\d?(.*?\\.php\\?.*?=.*?)'").getMatch(0);
-            if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            sleep(10 * 1000l, link);
-            capurl = "/design/Captcha2" + capurl;
-            String code = getCaptchaCode(capurl, link);
-            // Check this part first if the plugin is defect!
-            String[] matches = br.getRegex("<input( id=\".*?\" |.*?)name=\"(.*?)\"").getColumn(1);
-            if (matches == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            ArrayList<String> matchList = new ArrayList<String>();
-            for (String match : matches) {
-                if (!matchList.contains(match)) matchList.add(match);
-            }
-            String fileid = new Regex(link.getDownloadURL(), "duckload\\.com/download/(\\d+)/").getMatch(0);
-            String filenamefromlink = new Regex(link.getDownloadURL(), "duckload\\.com/download/.*?/(.+)").getMatch(0);
-            String postlink = "http://duckload.com/index.php?Modul=download&id=" + fileid + "&name=" + filenamefromlink + "&Ajax=true";
-            form = new Form();
-            form.put("_____download.x", "0");
-            form.put("_____download.y", "0");
-            form.setAction(postlink);
-            form.setMethod(MethodType.POST);
-            for (String omg : matchList) {
-                form.put(omg, code);
-            }
-        } else {
-            form = new Form();
-            form.setAction(br.getURL());
-            form.setMethod(MethodType.POST);
-            form.put("server", "1");
-            form.put("sn", "Stream+Starten");
-            stream = true;
-            sleep(2000l, link);
-        }
-        br.submitForm(form);
-        String url = null;
-        if (!stream) {
-            url = br.getRedirectLocation();
-            br.setDebug(true);
-            if (url != null && url.contains("error=wrongCaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        } else {
-            url = br.getRegex("type=\"video/divx\" src=\"(.*?)\"").getMatch(0);
-            if (url == null) url = br.getRegex("\"(http://dl[0-9]+\\.duckload\\.com:[0-9]+/Get/.*?/.*?)\"").getMatch(0);
-            String filename = br.getRegex("Original Filename:</strong></td><td width=.*?>(.*?)</td>").getMatch(0);
-            if (filename != null) link.setFinalFileName(filename);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String md5 = br.getRegex("<strong>MD5 Hash:</strong></td><td width=\"\\d+%\">(.*-?)\\(Upper Case\\)").getMatch(0);
-        if (md5 != null) {
-            md5 = Encoding.htmlDecode(md5);
-            link.setMD5Hash(md5.trim());
-        }
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.getURL().equals("http://www.duckload.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 5 * 60 * 1000l);
-            if (br.toString().trim().equals("no")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (parameter.getDownloadURL().contains("duckload.com")) {
-            br.getPage("http://duckload.com/english.html");
-        } else {
-            br.getPage("http://youload.to/english.html");
-        }
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("(File was not found!|Die angeforderte Datei konnte nicht gefunden werden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Stream Protection")) {
-            /* streaming file */
-            parameter.setName(flnme);
-            String filesize = br.getRegex(">Server \\(#\\d+\\) <i.*?\">\\[(.*?)\\]").getMatch(0);
-            if (filesize != null)
-                parameter.setDownloadSize(Regex.getSize(filesize.trim()));
-            else
-                logger.warning("Filesize regex is broken!");
-            return AvailableStatus.TRUE;
-        }
-        String filename = br.getRegex("You want to download the file \"(.*?)\".*?!<br>").getMatch(0);
-        String filesize = br.getRegex("You want to download the file \".*?\" \\((.*?)\\) !<br>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex(">Server \\(#\\d+\\) (<i)?(<span style=\"font-style:italic;\")?(id=\".*?\")?(>)?\\[(.*?)\\](</spa|</i>)?").getMatch(4);
-        if (filename == null && filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (filename == null) filename = flnme;
-        parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+        br.setCookie(MAINPAGE, "dl_set_lang", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("File not found\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) @ DuckLoad\\.com</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Server doesn't give us the correct name so we set it here
+        link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
     }
 
-    public void haveFun() throws Exception {
-        ArrayList<String> someStuff = new ArrayList<String>();
-        ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("(<!--.*?-->)");
-        regexStuff.add("(type=\"hidden\".*?(name=\".*?\")?.*?value=\".*?\")");
-        regexStuff.add("display:none;\">(.*?)</span>");
-        for (String aRegex : regexStuff) {
-            aBrowser = br.toString();
-            String replaces[] = br.getRegex(aRegex).getColumn(0);
-            if (replaces != null && replaces.length != 0) {
-                for (String dingdang : replaces) {
-                    someStuff.add(dingdang);
-                }
-            }
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String wait = br.getRegex("id=\"number\">(\\d+)</span> seconds").getMatch(0);
+        int waitThis = 10;
+        if (wait != null) waitThis = Integer.parseInt(wait);
+        sleep(waitThis * 1001l, downloadLink);
+        br.postPage(br.getURL(), "secret=&next=true");
+        String dllink = br.getRegex("<param name=\"src\" value=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.getURL() != null && br.getURL().contains("/error/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (String gaMing : someStuff) {
-            aBrowser = aBrowser.replace(gaMing, "");
-        }
+        dl.startDownload();
     }
 
     @Override
@@ -180,10 +89,9 @@ public class DuckLoad extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // They allow 4 connections at all
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return -1;
     }
 
 }

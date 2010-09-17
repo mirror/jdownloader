@@ -64,11 +64,15 @@ public class ShareCx extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         Form dlform0 = br.getForm(0);
-        if (dlform0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlform0 == null) {
+            logger.warning("dlform0 could not be found!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dlform0.put("method_free", "Datei+herunterladen");
         br.submitForm(dlform0);
         String reconTime = br.getRegex("startTimer\\((\\d+)\\)").getMatch(0);
         if (reconTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconTime) * 1001l);
+        if (br.containsHTML("Sie haben Ihr Download-Limit von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         Form dlform1 = br.getForm(0);
         if (dlform1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
@@ -100,10 +104,15 @@ public class ShareCx extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             dlform1.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+        } else {
+            logger.info("Couldn't find a captcha, continuing without captcha...");
         }
         br.submitForm(dlform1);
         String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink equals null, stopping...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -186,6 +195,7 @@ public class ShareCx extends PluginForHost {
     }
 
     public void handleErrors() throws Exception {
+        logger.info("Checking for errors...");
         // This error shows up if you try to download multiple files at the
         // same time
         if (br.containsHTML("<br>oder kaufen Sie sich jetzt einen <a")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);

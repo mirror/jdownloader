@@ -21,9 +21,9 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -48,6 +48,13 @@ public class IFileIt extends PluginForHost {
         this.enablePremium("https://secure.ifile.it/signup");
     }
 
+    /* must be static so all plugins share same lock */
+    private static final Object LOCK           = new Object();
+    private static final String CHALLENGEREGEX = "challenge[ ]+:[ ]+\\'(.*?)\\',";
+    private static final String SERVER         = "server[ ]+:[ ]+\\'(.*?)\\'";
+    private static final String COOKIENAME     = "ifileit_auth";
+    private static final String MAINPAGE       = "http://ifile.it/";
+
     @Override
     public String getAGBLink() {
         return "http://ifile.it/tos";
@@ -55,20 +62,35 @@ public class IFileIt extends PluginForHost {
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", useragent);
-        br.setFollowRedirects(true);
-        br.getPage("https://secure.ifile.it/signin");
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("usernameFld", Encoding.urlEncode(account.getUser()));
-        form.put("passwordFld", Encoding.urlEncode(account.getPass()));
-        br.submitForm(form);
-        br.setFollowRedirects(false);
-        if (!br.containsHTML("you have successfully signed in")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        // This isn't important but with it the login looks more like JD is a
-        // real user^^
-        String human = br.getRegex("refresh\".*?url=(.*?)\"").getMatch(0);
-        if (human != null) br.getPage(human);
+        synchronized (LOCK) {
+            br.setCookie(MAINPAGE, COOKIENAME, this.getPluginConfig().getStringProperty("logincookie", null));
+            br.getHeaders().put("User-Agent", useragent);
+            br.setFollowRedirects(false);
+            Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            DownloadLink loginDownloadLink = new DownloadLink(null, useragent, useragent, useragent, true);
+            boolean alreadyLoggedIn = false;
+            try {
+                br.getPage("https://secure.ifile.it/signin");
+            } catch (BrowserException e) {
+                alreadyLoggedIn = true;
+            }
+            if (!alreadyLoggedIn) {
+                // Manual Re Captcha handling
+                String k = br.getRegex("recaptcha_public.*?=.*?\\'(.*?)\\'").getMatch(0);
+                if (k == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br2.getPage("http://api.recaptcha.net/challenge?k=" + k);
+                String challenge = br2.getRegex(CHALLENGEREGEX).getMatch(0);
+                String server = br2.getRegex(SERVER).getMatch(0);
+                if (challenge == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                String captchaAddress = server + "image?c=" + challenge;
+                String postData = "recaptcha_response_field=" + getCaptchaCode(captchaAddress, loginDownloadLink) + "&recaptcha_challenge_field=" + challenge + "&submitBtn=continue&usernameFld=" + Encoding.urlEncode(account.getUser()) + "&passwordFld=" + Encoding.urlEncode(account.getPass());
+                br.postPage("https://secure.ifile.it/account:process_signin?redirect_after=0", postData);
+                if (br.getCookie(MAINPAGE, COOKIENAME) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            this.getPluginConfig().setProperty("logincookie", br.getCookie(MAINPAGE, COOKIENAME));
+            this.getPluginConfig().save();
+        }
     }
 
     @Override
@@ -199,11 +221,11 @@ public class IFileIt extends PluginForHost {
         } else if (br2.containsHTML("\"captcha\":1")) {
             for (int i = 0; i <= 5; i++) {
                 // Manuel Re Captcha handling
-                String k = br.getRegex("recaptcha_public.*?=.*?'(.*?)'").getMatch(0);
+                String k = br.getRegex("recaptcha_public.*?=.*?\\'(.*?)\\'").getMatch(0);
                 if (k == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br2.getPage("http://api.recaptcha.net/challenge?k=" + k);
-                String challenge = br2.getRegex("challenge[ ]+:[ ]+'(.*?)',").getMatch(0);
-                String server = br2.getRegex("server[ ]+:[ ]+'(.*?)'").getMatch(0);
+                String challenge = br2.getRegex(CHALLENGEREGEX).getMatch(0);
+                String server = br2.getRegex(SERVER).getMatch(0);
                 if (challenge == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 String captchaAddress = server + "image?c=" + challenge;
                 String code = getCaptchaCode(captchaAddress, downloadLink);
@@ -214,7 +236,7 @@ public class IFileIt extends PluginForHost {
                     scope = cx.initStandardObjects();
                     fun = "function f(){ var kIjs09='" + add + "'; var __alias_id='" + downlink + "'; var extra='" + extra + "'; var type='" + type + "'; \nreturn " + url + "} f()";
                     result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                    finaldownlink = "http://ifile.it/" + Context.toString(result);                    
+                    finaldownlink = "http://ifile.it/" + Context.toString(result);
                 } finally {
                     if (cx != null) {
                         cx = null;
