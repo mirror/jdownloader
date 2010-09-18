@@ -106,6 +106,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 private static final long serialVersionUID = 4765934516215953012L;
 
                 @Override
+                public boolean isEditable(HostPluginWrapper obj) {
+                    return true;
+                }
+
+                @Override
                 protected boolean getBooleanValue(HostPluginWrapper value) {
                     return value.isEnabled();
                 }
@@ -120,6 +125,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             this.addColumn(new ExtCheckColumn<HostPluginWrapper>(JDL.L("gui.column_agbchecked", "Accepted"), this) {
 
                 private static final long serialVersionUID = 6843580898685333774L;
+
+                @Override
+                public boolean isEditable(HostPluginWrapper obj) {
+                    return true;
+                }
 
                 @Override
                 protected boolean getBooleanValue(HostPluginWrapper value) {
