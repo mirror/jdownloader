@@ -412,13 +412,12 @@ public class SingleDownloadController extends Thread {
 
                 doit = downloadLink.getFilePackage().getIntegerProperty("DO_WHEN_EXISTS", -1);
 
-                int cd = UserIO.getCountdownTime();
                 try {
                     UserIO.setCountdownTime(10);
                     doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, doit, null, null, null, null);
                     downloadLink.getFilePackage().setProperty("DO_WHEN_EXISTS", doit);
                 } finally {
-                    UserIO.setCountdownTime(cd);
+                    UserIO.setCountdownTime(-1);
                 }
             } else {
                 // ask

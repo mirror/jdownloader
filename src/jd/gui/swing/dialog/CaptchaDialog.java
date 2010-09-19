@@ -61,7 +61,11 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         this.imagefile = imagefile;
         this.defaultValue = defaultValue;
         this.explain = explain;
+    }
 
+    @Override
+    protected void packed() {
+        this.textField.requestFocusInWindow();
     }
 
     @Override

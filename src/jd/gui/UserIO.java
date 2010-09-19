@@ -37,88 +37,104 @@ import org.appwork.utils.swing.dialog.Dialog;
 
 public class UserIO {
 
-    public static final int       FILES_ONLY                     = JFileChooser.FILES_ONLY;
-    public static final int       DIRECTORIES_ONLY               = JFileChooser.DIRECTORIES_ONLY;
-    public static final int       FILES_AND_DIRECTORIES          = JFileChooser.FILES_AND_DIRECTORIES;
-    public static final int       OPEN_DIALOG                    = JFileChooser.OPEN_DIALOG;
-    public static final int       SAVE_DIALOG                    = JFileChooser.SAVE_DIALOG;
+    public static final int FILES_ONLY                     = JFileChooser.FILES_ONLY;
+    public static final int DIRECTORIES_ONLY               = JFileChooser.DIRECTORIES_ONLY;
+    public static final int FILES_AND_DIRECTORIES          = JFileChooser.FILES_AND_DIRECTORIES;
+    public static final int OPEN_DIALOG                    = JFileChooser.OPEN_DIALOG;
+    public static final int SAVE_DIALOG                    = JFileChooser.SAVE_DIALOG;
 
     /**
      * TO not query user. Try to fill automaticly, or return null
      */
-    public static final int       NO_USER_INTERACTION            = 1 << 1;
+    public static final int NO_USER_INTERACTION            = 1 << 1;
     /**
      * do not display a countdown
      */
-    public static final int       NO_COUNTDOWN                   = 1 << 2;
+    public static final int NO_COUNTDOWN                   = 1 << 2;
     /**
      * do not display ok option
      */
-    public static final int       NO_OK_OPTION                   = 1 << 3;
+    public static final int NO_OK_OPTION                   = 1 << 3;
     /**
      * do not display cancel option
      */
-    public static final int       NO_CANCEL_OPTION               = 1 << 4;
+    public static final int NO_CANCEL_OPTION               = 1 << 4;
     /**
      * displays a do not show this question again checkbox
      */
-    public static final int       DONT_SHOW_AGAIN                = 1 << 5;
+    public static final int DONT_SHOW_AGAIN                = 1 << 5;
     /**
      * IF available a large evrsion of the dialog is used
      */
-    public static final int       STYLE_LARGE                    = 1 << 6;
+    public static final int STYLE_LARGE                    = 1 << 6;
     /**
      * Render html
      */
-    public static final int       STYLE_HTML                     = 1 << 7;
+    public static final int STYLE_HTML                     = 1 << 7;
     /**
      * Does not display an icon
      */
-    public static final int       NO_ICON                        = 1 << 8;
+    public static final int NO_ICON                        = 1 << 8;
     /**
      * Cancel option ignores Don't show again checkbox
      */
-    public static final int       DONT_SHOW_AGAIN_IGNORES_CANCEL = 1 << 9;
+    public static final int DONT_SHOW_AGAIN_IGNORES_CANCEL = 1 << 9;
     /**
      * If user selects OK Option, the don't show again option is ignored
      */
-    public static final int       DONT_SHOW_AGAIN_IGNORES_OK     = 1 << 10;
+    public static final int DONT_SHOW_AGAIN_IGNORES_OK     = 1 << 10;
     /**
      * the textfield will be renderer as a passwordfield
      */
-    public static final int       STYLE_PASSWORD                 = 1 << 11;
+    public static final int STYLE_PASSWORD                 = 1 << 11;
 
     /**
      * pressed ok
      */
-    public static final int       RETURN_OK                      = 1 << 1;
+    public static final int RETURN_OK                      = 1 << 1;
     /**
      * pressed cancel
      */
-    public static final int       RETURN_CANCEL                  = 1 << 2;
+    public static final int RETURN_CANCEL                  = 1 << 2;
     /**
      * don't show again flag has been set. the dialog may has been visible. if
      * RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
      */
-    public static final int       RETURN_DONT_SHOW_AGAIN         = 1 << 3;
+    public static final int RETURN_DONT_SHOW_AGAIN         = 1 << 3;
     /**
      * don't show again flag has been set the dialog has not been visible
      */
-    public static final int       RETURN_SKIPPED_BY_DONT_SHOW    = 1 << 4;
+    public static final int RETURN_SKIPPED_BY_DONT_SHOW    = 1 << 4;
     /**
      * Timeout has run out. Returns current settings or default values
      */
-    public static final int       RETURN_COUNTDOWN_TIMEOUT       = 1 << 5;
-    public static final int       ICON_INFO                      = 0;
-    public static final int       ICON_WARNING                   = 1;
-    public static final int       ICON_ERROR                     = 2;
-    public static final int       ICON_QUESTION                  = 3;
+    public static final int RETURN_COUNTDOWN_TIMEOUT       = 1 << 5;
+    public static final int ICON_INFO                      = 0;
+    public static final int ICON_WARNING                   = 1;
+    public static final int ICON_ERROR                     = 2;
+    public static final int ICON_QUESTION                  = 3;
 
-    protected static UserIO       INSTANCE                       = new UserIO();    
-    private static int            COUNTDOWN_TIME                 = -1;
+    protected static UserIO INSTANCE                       = new UserIO();
 
-    public static int getCountdownTime() {
-        return UserIO.COUNTDOWN_TIME > 0 ? UserIO.COUNTDOWN_TIME : Math.max(2, GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
+    private UserIO() {
+        Dialog.getInstance().setCountdownTime(UserIO.getUserCountdownTime());
+    }
+
+    /**
+     * @param countdownTime
+     *            sets the countdown time or resets it to the user-selected
+     *            value, if <code>countdownTime < 0</code>
+     */
+    public static void setCountdownTime(int countdownTime) {
+        if (countdownTime < 0) {
+            Dialog.getInstance().setCountdownTime(UserIO.getUserCountdownTime());
+        } else {
+            Dialog.getInstance().setCountdownTime(countdownTime);
+        }
+    }
+
+    private static int getUserCountdownTime() {
+        return Math.max(2, GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
     }
 
     public static UserIO getInstance() {
@@ -138,15 +154,6 @@ public class UserIO {
      */
     public static boolean isOK(final int answer) {
         return JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK);
-    }
-
-    /**
-     * Sets the countdowntime for this session. does not save!
-     * 
-     * @param time
-     */
-    public static void setCountdownTime(final int time) {
-        UserIO.COUNTDOWN_TIME = time > 0 ? time : -1;
     }
 
     /**

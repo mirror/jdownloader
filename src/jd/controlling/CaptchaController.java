@@ -32,11 +32,11 @@ import jd.gui.UserIO;
 
 public class CaptchaController {
 
-    private final String methodname;
-    private final File captchafile;
-    private final String explain;
-    private final String suggest;
-    private final String host;
+    private final String    methodname;
+    private final File      captchafile;
+    private final String    explain;
+    private final String    suggest;
+    private final String    host;
     private final ImageIcon icon;
 
     public CaptchaController(final String host, final ImageIcon icon, final String method, final File file, final String suggest, final String explain) {
@@ -58,7 +58,7 @@ public class CaptchaController {
     }
 
     public String getCode(final int flag) {
-        if (!hasMethod()) { return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? null : UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, suggest, explain); }
+        if (!hasMethod()) { return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? null : showDialog(flag, suggest); }
 
         final JAntiCaptcha jac = new JAntiCaptcha(methodname);
         try {
@@ -68,7 +68,7 @@ public class CaptchaController {
             String captchaCode = jac.checkCaptcha(captchafile, captcha);
             if (jac.isExtern()) {
                 if ((flag & UserIO.NO_USER_INTERACTION) == 0 && captchaCode == null || captchaCode.trim().length() == 0) {
-                    captchaCode = UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, suggest, explain);
+                    captchaCode = showDialog(flag, suggest);
                 }
                 return captchaCode;
             }
@@ -89,12 +89,19 @@ public class CaptchaController {
             }
 
             if (vp > SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 95)) {
-                return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? captchaCode : UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, captchaCode, explain);
+                return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? captchaCode : showDialog(flag, captchaCode);
             } else {
                 return captchaCode;
             }
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String showDialog(int flag, String def) {
+        UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
+        String ret = UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, def, explain);
+        UserIO.setCountdownTime(-1);
+        return ret;
     }
 }
