@@ -28,6 +28,7 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -228,7 +229,12 @@ public class Srnnks extends PluginForDecrypt {
                     final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
                     Browser.download(captcha, urlc);
                 }
-
+                if ("7ebca510a6a18c1e8f6e8d98c3118874".equals(JDHash.getMD5(captcha))) {
+                    // dummy captcha without content.. wait before reloading
+                    JDLogger.getLogger().warning("Dummy Captcha. wait 3 seconds");
+                    Thread.sleep(3000);
+                    continue;
+                }
                 String code;
                 // wenn es ein Einzellink ist soll die Captchaerkennung benutzt
                 // werden
@@ -237,9 +243,12 @@ public class Srnnks extends PluginForDecrypt {
                 } else {
                     code = this.getCaptchaCode(captcha, parameter);
                 }
-                if (code == null || code.length() != 3) {
+
+                if (code == null) { return ret; }
+                if (code.length() != 3) {
                     progress.setStatusText("Captcha code falsch");
                     progress.setStatus(30);
+                    Thread.sleep(1100);
                     continue;
                 }
                 progress.increase(5);
