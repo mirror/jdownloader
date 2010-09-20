@@ -51,7 +51,8 @@ public class RGhostRu extends PluginForHost {
         String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
         if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
         String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5.trim());
         String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);

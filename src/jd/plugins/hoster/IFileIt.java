@@ -49,11 +49,13 @@ public class IFileIt extends PluginForHost {
     }
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK           = new Object();
-    private static final String CHALLENGEREGEX = "challenge[ ]+:[ ]+\\'(.*?)\\',";
-    private static final String SERVER         = "server[ ]+:[ ]+\\'(.*?)\\'";
-    private static final String COOKIENAME     = "ifileit_auth";
-    private static final String MAINPAGE       = "http://ifile.it/";
+    private static final Object LOCK                = new Object();
+    private static final String CHALLENGEREGEX      = "challenge[ ]+:[ ]+\\'(.*?)\\',";
+    private static final String SERVER              = "server[ ]+:[ ]+\\'(.*?)\\'";
+    private static final String RECAPTCHPUBLICREGEX = "recaptcha_public.*?=.*?\\'(.*?)\\'";
+    private static final String RECAPTCHAIMAGEPART  = "image?c=";
+    private static final String COOKIENAME          = "ifileit_auth";
+    private static final String MAINPAGE            = "http://ifile.it/";
 
     @Override
     public String getAGBLink() {
@@ -77,13 +79,13 @@ public class IFileIt extends PluginForHost {
             }
             if (!alreadyLoggedIn) {
                 // Manual Re Captcha handling
-                String k = br.getRegex("recaptcha_public.*?=.*?\\'(.*?)\\'").getMatch(0);
+                String k = br.getRegex(RECAPTCHPUBLICREGEX).getMatch(0);
                 if (k == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br2.getPage("http://api.recaptcha.net/challenge?k=" + k);
                 String challenge = br2.getRegex(CHALLENGEREGEX).getMatch(0);
                 String server = br2.getRegex(SERVER).getMatch(0);
                 if (challenge == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String captchaAddress = server + "image?c=" + challenge;
+                String captchaAddress = server + RECAPTCHAIMAGEPART + challenge;
                 String postData = "recaptcha_response_field=" + getCaptchaCode(captchaAddress, loginDownloadLink) + "&recaptcha_challenge_field=" + challenge + "&submitBtn=continue&usernameFld=" + Encoding.urlEncode(account.getUser()) + "&passwordFld=" + Encoding.urlEncode(account.getPass());
                 br.postPage("https://secure.ifile.it/account:process_signin?redirect_after=0", postData);
                 if (br.getCookie(MAINPAGE, COOKIENAME) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -221,13 +223,13 @@ public class IFileIt extends PluginForHost {
         } else if (br2.containsHTML("\"captcha\":1")) {
             for (int i = 0; i <= 5; i++) {
                 // Manuel Re Captcha handling
-                String k = br.getRegex("recaptcha_public.*?=.*?\\'(.*?)\\'").getMatch(0);
+                String k = br.getRegex(RECAPTCHPUBLICREGEX).getMatch(0);
                 if (k == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br2.getPage("http://api.recaptcha.net/challenge?k=" + k);
                 String challenge = br2.getRegex(CHALLENGEREGEX).getMatch(0);
                 String server = br2.getRegex(SERVER).getMatch(0);
                 if (challenge == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String captchaAddress = server + "image?c=" + challenge;
+                String captchaAddress = server + RECAPTCHAIMAGEPART + challenge;
                 String code = getCaptchaCode(captchaAddress, downloadLink);
                 type = "recaptcha";
                 extra = "&recaptcha_response_field=" + Encoding.urlEncode_light(code) + "&recaptcha_challenge_field=" + challenge;
