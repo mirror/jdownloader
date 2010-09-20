@@ -30,6 +30,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.RouterUtils;
@@ -123,7 +124,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
             @SuppressWarnings("unchecked")
             public void onEvent(final StorageEvent event) {
                 try {
-                    if (this.dosession && !RouterSender.getInstance().isRequested() && event instanceof StorageValueChangeEvent && ((StorageValueChangeEvent<?>) event).getKey().equalsIgnoreCase(Reconnecter.RECONNECT_SUCCESS_COUNTER)) {
+                    if (ReconnectPluginController.getInstance().getActivePlugin() instanceof LiveHeaderReconnect && this.dosession && !RouterSender.getInstance().isRequested() && event instanceof StorageValueChangeEvent && ((StorageValueChangeEvent<?>) event).getKey().equalsIgnoreCase(Reconnecter.RECONNECT_SUCCESS_COUNTER)) {
 
                         if (((StorageValueChangeEvent<Long>) event).getNewValue() > 2) {
                             RouterSender.getInstance().setRequested(true);
@@ -134,7 +135,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
                                     } catch (final Exception e) {
                                         e.printStackTrace();
-                                        Dialog.getInstance().showMessageDialog("Sorry, our server is not available right now. Please try it later.");
+                                        Dialog.getInstance().showErrorDialog(e.getMessage());
                                         RouterSender.getInstance().setRequested(false);
                                         // do not ask in this session again
                                         dosession = false;
@@ -161,7 +162,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                         RouterSender.getInstance().run();
 
                     } catch (final Exception e) {
-                        e.printStackTrace();
+                        Dialog.getInstance().showErrorDialog(e.getMessage());
                     }
                 }
             }.start();
@@ -423,7 +424,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         this.btnAuto.addActionListener(this);
 
         // auto search is not ready yet
-        this.btnAuto.setEnabled(false);
+        // this.btnAuto.setEnabled(false);
         this.btnRecord = new JButton("Record Wizard");
         this.btnRecord.addActionListener(this);
         this.btnFindIP = new JButton("Find Router IP");
