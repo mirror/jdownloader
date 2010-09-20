@@ -97,7 +97,7 @@ public class DirectHTTP extends PluginForHost {
             this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
             this.server = this.rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
             if (this.challenge == null || this.server == null) {
-                JDLogger.getLogger().severe("Recaptcha Module fails: " + this.br.getHttpConnection());
+                JDLogger.getLogger().severe("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.captchaAddress = this.server + "image?c=" + this.challenge;

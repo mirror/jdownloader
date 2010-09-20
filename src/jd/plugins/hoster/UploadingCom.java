@@ -35,10 +35,10 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
-    private static int simultanpremium = 1;
-    private static final Object PREMLOCK = new Object();
-    private String userAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
-    private boolean free = false;
+    private static int          simultanpremium = 1;
+    private static final Object PREMLOCK        = new Object();
+    private String              userAgent       = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+    private boolean             free            = false;
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -154,9 +154,11 @@ public class UploadingCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 1000l * 60 * 30);
         }
         if (!dl.getConnection().isContentDisposition()) {
-            String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
             br.followConnection();
+            String error = dl.getConnection().getRequest().getCookies().get("error").getValue();
+            if (error == null) error = br.getCookie("http://uploading.com/", "error");
             if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
+            if (error != null && error.contains("reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 1000l);
             logger.warning("dl isn't ContentDisposition, plugin must be broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
