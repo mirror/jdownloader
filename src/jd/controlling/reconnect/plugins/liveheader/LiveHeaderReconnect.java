@@ -424,7 +424,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         this.btnAuto.addActionListener(this);
 
         // auto search is not ready yet
-        // this.btnAuto.setEnabled(false);
+        this.btnAuto.setEnabled(false);
         this.btnRecord = new JButton("Record Wizard");
         this.btnRecord.addActionListener(this);
         this.btnFindIP = new JButton("Find Router IP");
