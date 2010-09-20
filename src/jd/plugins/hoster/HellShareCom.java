@@ -179,8 +179,9 @@ public class HellShareCom extends PluginForHost {
         if (br.containsHTML("Current load 100%")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), 15 * 60 * 1000l);
         } else {
+            if (br.containsHTML("You have exceeded today´s free download limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             br.setCustomCharset("utf-8");
-            String freePage = br.getURL().replace("hellshare.com/serialy/", "hellshare.com/").replace("/pop/", "/") + "/free";
+            String freePage = br.getURL().replace("hellshare.com/serialy/", "hellshare.com/").replace("/pop/", "/").replace("filmy/", "") + "/free";
             br.getPage(freePage);
             if (br.containsHTML("The server is under the maximum load")) {
                 logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));

@@ -41,13 +41,13 @@ public class IFolderFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("Запрашиваемая вами папка не существует или у вас нет прав для просмотра данной папки") || !br.containsHTML("\"<a href=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Запрашиваемая вами папка не существует или у вас нет прав для просмотра данной папки")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("Название: <b>(.*?)</b>").getMatch(0);
         // Get the links of the first page
         String collectedlinks1[] = getLinks();
         if (collectedlinks1 == null || collectedlinks1.length == 0) return null;
         for (String dl : collectedlinks1) {
-            decryptedLinks.add(createDownloadlink("http://ifolder.ru" + dl));
+            decryptedLinks.add(createDownloadlink("http://ifolder.ru/" + dl));
         }
         // Find pages if there is more than one page
         String[] pages = br.getRegex("page(=\\d+\">\\d+)</a>").getColumn(0);
@@ -73,7 +73,7 @@ public class IFolderFolder extends PluginForDecrypt {
     }
 
     public String[] getLinks() throws NumberFormatException, DecrypterException, IOException {
-        String[] links = br.getRegex("<a href=(/\\d+)>").getColumn(0);
+        String[] links = br.getRegex("\\&#8470;(\\d+) <a href=").getColumn(0);
         return links;
     }
 }
