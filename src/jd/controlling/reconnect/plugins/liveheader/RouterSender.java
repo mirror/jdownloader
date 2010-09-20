@@ -290,14 +290,8 @@ public class RouterSender {
         final Browser br = new Browser();
         try {
             this.sslResponse = br.getPage("https://" + this.routerIP);
-            final URLConnectionAdapter con = br.getHttpConnection();
-            this.sslResponseCode = con.getResponseCode();
-            this.sslResponseHeaders = new HashMap<String, String>();
-            for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
-                for (final String value : next.getValue()) {
-                    this.sslResponseHeaders.put(next.getKey().toLowerCase(), value);
-                }
-            }
+          
+     
             this.sslTitle = br.getRegex("<title>(.*?)</title>").getMatch(0);
             this.sslPTagsCount = br.toString().split("<p>").length;
             this.sslFrameTagCount = br.toString().split("<frame").length;
@@ -314,19 +308,25 @@ public class RouterSender {
             }
 
         } catch (final Throwable e) {
+            
+            
             this.sslException = e.getClass().getSimpleName() + ": " + e.getMessage();
         }
+        
+         URLConnectionAdapter con = br.getHttpConnection();
+        if(con!=null){
+        this.sslResponseCode = con.getResponseCode();
+        this.sslResponseHeaders = new HashMap<String, String>();
+        
+        for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
+            for (final String value : next.getValue()) {
+                this.sslResponseHeaders.put(next.getKey().toLowerCase(), value);
+            }
+        }}
 
         try {
             this.response = br.getPage("http://" + this.routerIP);
-            final URLConnectionAdapter con = br.getHttpConnection();
-            this.responseCode = con.getResponseCode();
-            this.responseHeaders = new HashMap<String, String>();
-            for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
-                for (final String value : next.getValue()) {
-                    this.responseHeaders.put(next.getKey().toLowerCase(), value);
-                }
-            }
+            
             this.title = br.getRegex("<title>(.*?)</title>").getMatch(0);
             this.pTagsCount = br.toString().split("<p>").length;
             this.frameTagCount = br.toString().split("<frame").length;
@@ -345,6 +345,17 @@ public class RouterSender {
             this.exception = e.getClass().getSimpleName() + ": " + e.getMessage();
             e.printStackTrace();
         }
+        
+        con = br.getHttpConnection();
+        if(con!=null){
+        this.responseCode = con.getResponseCode();
+        this.responseHeaders = new HashMap<String, String>();
+        for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
+            for (final String value : next.getValue()) {
+                this.responseHeaders.put(next.getKey().toLowerCase(), value);
+            }
+        }}
+        
     }
 
     public String getException() {
