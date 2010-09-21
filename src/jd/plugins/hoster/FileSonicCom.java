@@ -39,11 +39,11 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.(com|net)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
-    private static final Object LOCK = new Object();
+    private static final Object                  LOCK        = new Object();
     private static final HashMap<String, String> freecookies = new HashMap<String, String>();
-    private static String thisUrl = null;
-    private static String nextUrl = null;
-    private static String nextPass = null;
+    private static String                        thisUrl     = null;
+    private static String                        nextUrl     = null;
+    private static String                        nextPass    = null;
 
     public FileSonicCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -89,7 +89,7 @@ public class FileSonicCom extends PluginForHost {
                 try {
                     br.getPage("http://www.filesonic.com/");
                     XMLRequest(br, "http://www.filesonic.com/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                } catch (Exception e) {                    
+                } catch (Exception e) {
                 }
                 br.setFollowRedirects(false);
                 String premCookie = br.getCookie("http://www.filesonic.com", "role");
@@ -99,7 +99,9 @@ public class FileSonicCom extends PluginForHost {
                         ai = new AccountInfo();
                         account.setAccountInfo(ai);
                     }
+                    ai.setStatus(null);
                     account.setProperty("cookies", null);
+                    if (br.containsHTML("You must be logged in") && br.containsHTML("If you don")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     if (br.containsHTML("User Does Not Exist With")) {
                         ai.setStatus("User Does Not Exist With This Email Address");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

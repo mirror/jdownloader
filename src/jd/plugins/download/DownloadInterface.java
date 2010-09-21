@@ -203,7 +203,7 @@ abstract public class DownloadInterface {
                 if (request != null) {
                     String value;
                     for (Entry<String, String> next : request.entrySet()) {
-                        if (next.getValue()==null) continue;
+                        if (next.getValue() == null) continue;
                         value = next.getValue().toString();
                         br.getHeaders().put(next.getKey(), value);
                     }
@@ -517,6 +517,12 @@ abstract public class DownloadInterface {
 
                 } else if (startByte > 0) {
                     connection = copyConnection(connection);
+                    // workaround fuer fertigen endchunk
+                    if (startByte >= fileSize && fileSize > 0) {
+                        downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                        logger.finer("Is no error. Last chunk is just already finished");
+                        return;
+                    }
                     if (connection == null) {
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
                         if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));

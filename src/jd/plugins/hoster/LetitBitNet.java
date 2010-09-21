@@ -127,6 +127,7 @@ public class LetitBitNet extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String dlUrl = null;
         requestFileInformation(downloadLink);
+        br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
             /* normal account with only a password */
             logger.info("Premium with pw only");
@@ -244,7 +245,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String getUrl() {
-        String url = br.getRegex("(http://[^/;(images) ]*?/download.*?/[^/; ]+?)(\"|').*?(http://[^/; ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(2);
+        String url = br.getRegex("(http://[^/;(images) ]*?/download.*?/[^/; ]+?)(\"|')[^(Download Master)]*?(http://[^/; ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(2);
         if (url == null) {
             url = br.getRegex("(http://[^/;(images) ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(0);
             if (url == null) url = br.getRegex("\"(http://[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}/download\\d+/[^; ]*?)\"").getMatch(0);

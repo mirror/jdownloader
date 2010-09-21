@@ -43,9 +43,9 @@ public class X7ToFldr extends PluginForDecrypt {
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("(<i>doesn't contain any files</i>|<i>enthält keine Daten</i>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] links = br.getRegex(";margin:0\"><a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(.*?/inList/.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(.*?)/inList").getColumn(1);
         if (links == null || links.length == 0) return null;
-        for (String finallink : links)
+        for (String finallink : links)            
             decryptedLinks.add(createDownloadlink("http://x7.to/" + finallink));
 
         return decryptedLinks;
