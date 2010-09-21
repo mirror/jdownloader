@@ -44,6 +44,7 @@ public class U115Com extends PluginForHost {
 
     private static final String UNDERMAINTENANCEURL  = "http://u.115.com/weihu.html";
     private static final String UNDERMAINTENANCETEXT = "The servers are under maintenance";
+    private static final String NOFREESLOTS          = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -82,6 +83,7 @@ public class U115Com extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(link);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
+        if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
         String dllink = findLink();
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");

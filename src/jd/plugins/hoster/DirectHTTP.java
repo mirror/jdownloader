@@ -116,6 +116,7 @@ public class DirectHTTP extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
+                if (this.id == null || this.id.equals("")) id = br.getRegex("\\?k=([A-Za-z0-9%]+)\"").getMatch(0);
                 if (this.id == null || this.id.equals("")) {
                     Plugin.logger.warning("reCaptcha ID couldn't be found...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

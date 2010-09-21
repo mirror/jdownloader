@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(divx|play)/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/((divx|play)/[A-Z0-9]+|download/.+)" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
 
     public DuckLoad(PluginWrapper wrapper) {
@@ -53,25 +53,39 @@ public class DuckLoad extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "dl_set_lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File not found\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(File not found\\.|download\\.notfound)") || !br.containsHTML("stream_wait_table_bottom")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) @ DuckLoad\\.com</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Server doesn't give us the correct name so we set it here
-        link.setFinalFileName(filename.trim());
+        if (filename != null) link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String wait = br.getRegex("id=\"number\">(\\d+)</span> seconds").getMatch(0);
-        int waitThis = 10;
-        if (wait != null) waitThis = Integer.parseInt(wait);
+        int waitThis = 20;
+        if (!downloadLink.getDownloadURL().contains("/download/")) {
+            waitThis = 10;
+            String wait = br.getRegex("id=\"number\">(\\d+)</span> seconds").getMatch(0);
+            if (wait != null) waitThis = Integer.parseInt(wait);
+        }
         sleep(waitThis * 1001l, downloadLink);
         br.postPage(br.getURL(), "secret=&next=true");
         String dllink = br.getRegex("<param name=\"src\" value=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
+            if (dllink == null) {
+                String part1 = br.getRegex("\\'ident=(.*?)\\&\\';").getMatch(0);
+                String part2 = br.getRegex("\\'token=(.*?)\\&\\';").getMatch(0);
+                String part3 = br.getRegex("\\'filename=(.*?)\\&\\';").getMatch(0);
+                if (part1 == null || part2 == null || part3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = "http://www.duckload.com/api/as2/link/" + part1 + "/" + part2 + "/" + part3;
+                int secondWait = 10;
+                String secondWaitRegexed = br.getRegex("\\'timetowait=(\\d+)\\&\\'").getMatch(0);
+                if (secondWaitRegexed != null) secondWait = Integer.parseInt(secondWaitRegexed);
+                sleep(secondWait * 1001l, downloadLink);
+            }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

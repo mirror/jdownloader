@@ -45,6 +45,7 @@ public class MegaUpWs extends PluginForHost {
     public MegaUpWs(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.setStartIntervall(30000l);
     }
 
     // XfileSharingProBasic Version 1.7, modified login cookie handling, changed
@@ -54,10 +55,10 @@ public class MegaUpWs extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public String brbefore = "";
+    public String               brbefore     = "";
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST = "http://megaup.ws";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST  = "http://megaup.ws";
+    public boolean              nopremium    = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -112,8 +113,8 @@ public class MegaUpWs extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
-        boolean resumable = true;
-        int maxchunks = 0;
+        boolean resumable = false;
+        int maxchunks = 1;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
@@ -152,7 +153,7 @@ public class MegaUpWs extends PluginForHost {
             password = true;
             logger.info("The downloadlink seems to be password protected.");
         }
-
+        String dllink = null;
         /* Captcha START */
         if (brbefore.contains(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -193,7 +194,7 @@ public class MegaUpWs extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (brbefore.contains("api.recaptcha.net")) {
+        } else if (brbefore.contains("api.recaptcha.net") || brbefore.contains("google.com/recaptcha/api/")) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
@@ -210,6 +211,7 @@ public class MegaUpWs extends PluginForHost {
             recaptcha = true;
             rc.setCode(c);
             logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+            dllink = br.getRedirectLocation();
         }
         /* Captcha END */
 
@@ -223,17 +225,34 @@ public class MegaUpWs extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            logger.info("followed connection...");
-            doSomething();
-            checkErrors(downloadLink, true, passCode);
-            String dllink = getDllink();
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            boolean error = false;
+            try {
+                if (dl.getConnection().getContentType().contains("html")) error = true;
+            } catch (Exception e) {
+                error = true;
             }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            if (error) {
+                br.followConnection();
+                logger.info("followed connection...");
+                doSomething();
+                checkErrors(downloadLink, true, passCode);
+                dllink = getDllink();
+                if (dl.getConnection().getResponseCode() == 302 && dllink == null) dllink = br.getURL();
+                if (dllink == null) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                logger.info("Final downloadlink = " + dllink + " starting the download...");
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    checkServerErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");

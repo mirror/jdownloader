@@ -47,7 +47,7 @@ public class XFileSharingProBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.9.2
+    // XfileSharingProBasic Version 1.9.3
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
@@ -114,6 +114,7 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
+        String dllink = null;
         String passCode = null;
         Form[] allForms = br.getForms();
         if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -194,7 +195,7 @@ public class XFileSharingProBasic extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (BRBEFORE.contains("api.recaptcha.net")) {
+        } else if (BRBEFORE.contains("api.recaptcha.net") || BRBEFORE.contains("google.com/recaptcha/api/")) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
@@ -211,6 +212,7 @@ public class XFileSharingProBasic extends PluginForHost {
             recaptcha = true;
             rc.setCode(c);
             logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+            dllink = br.getRedirectLocation();
         }
         /* Captcha END */
 
@@ -224,30 +226,32 @@ public class XFileSharingProBasic extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
-        boolean error = false;
-        try {
-            if (dl.getConnection().getContentType().contains("html")) error = true;
-        } catch (Exception e) {
-            error = true;
-        }
-        if (error) {
-            br.followConnection();
-            logger.info("followed connection...");
-            doSomething();
-            checkErrors(downloadLink, true, passCode);
-            String dllink = getDllink();
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            boolean error = false;
+            try {
+                if (dl.getConnection().getContentType().contains("html")) error = true;
+            } catch (Exception e) {
+                error = true;
             }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
+            if (error) {
                 br.followConnection();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("followed connection...");
+                doSomething();
+                checkErrors(downloadLink, true, passCode);
+                dllink = getDllink();
             }
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            checkServerErrors();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
