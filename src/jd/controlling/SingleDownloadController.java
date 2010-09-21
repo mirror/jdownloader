@@ -367,13 +367,13 @@ public class SingleDownloadController extends Thread {
                 plugin.sleep(Math.max((int) downloadLink.getLinkStatus().getValue(), 2000), downloadLink);
             } catch (PluginException e) {
                 downloadLink.getLinkStatus().setStatusText(null);
-                DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+                if (SwingGui.getInstance() != null)  DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
                 return;
             }
         } else {
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null)  DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin) {
@@ -392,7 +392,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorFatal(DownloadLink downloadLink, PluginForHost currentPlugin) {
-        downloadLink.requestGuiUpdate();
+        if (SwingGui.getInstance() != null)  downloadLink.requestGuiUpdate();
     }
 
     private void onErrorFileExists(DownloadLink downloadLink, PluginForHost plugin) {
@@ -462,7 +462,7 @@ public class SingleDownloadController extends Thread {
                 status.setErrorMessage(JDL.L("controller.status.fileexists.overwritefailed", "Failed to overwrite") + downloadLink.getFileOutput());
             }
         }
-        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null)  DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     /**
@@ -543,7 +543,7 @@ public class SingleDownloadController extends Thread {
             status.resetWaitTime();
             downloadLink.setEnabled(false);
         }
-        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null)  DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     private void onErrorHostTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
@@ -556,7 +556,7 @@ public class SingleDownloadController extends Thread {
         logger.warning("Error occurred: Download from this host is currently not possible: Please wait " + milliSeconds + " ms for a retry");
         status.setWaitTime(milliSeconds);
         DownloadWatchDog.getInstance().setTempUnavailWaittime(plugin.getHost(), milliSeconds);
-        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null)  DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     /**
@@ -577,7 +577,7 @@ public class SingleDownloadController extends Thread {
         }
         status.setWaitTime(milliSeconds);
         DownloadWatchDog.getInstance().setIPBlockWaittime(plugin.getHost(), milliSeconds);
-        DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
+        if (SwingGui.getInstance() != null)  DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
     /*
