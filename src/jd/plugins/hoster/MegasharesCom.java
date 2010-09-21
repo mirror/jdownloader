@@ -140,18 +140,18 @@ public class MegasharesCom extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws IOException {
-        Browser brt = new Browser();
+    public void correctDownloadLink(DownloadLink link) throws IOException {        
         String url = link.getDownloadURL();
-        url = url.replaceFirst("http://.*?/", "http://www.megashares.com/");
-        brt.getHeaders().put("User-Agent", UserAgent);
-        brt.setFollowRedirects(false);
-        brt.getPage(url);
-        if (brt.getRedirectLocation() != null) {
-            link.setUrlDownload(brt.getRedirectLocation());
+        String id = null;
+        if (url.contains("/dl/")) {
+            id = new Regex(url, "/dl/([a-zA-Z0-9]+)").getMatch(0);
         } else {
-            link.setUrlDownload(url);
+            id = new Regex(url, "\\?d[0-9]{2}=([0-9a-zA-Z]+)").getMatch(0);
         }
+        if (id != null) {
+            url = "http://d01.megashares.com/?d01=" + id;
+        }
+        link.setUrlDownload(url);
     }
 
     private String findDownloadUrl() {
@@ -310,7 +310,7 @@ public class MegasharesCom extends PluginForHost {
         return requestFileInformationInternal(downloadLink);
     }
 
-    private AvailableStatus requestFileInformationInternal(DownloadLink downloadLink) throws IOException, PluginException {        
+    private AvailableStatus requestFileInformationInternal(DownloadLink downloadLink) throws IOException, PluginException {
         br.getHeaders().put("User-Agent", UserAgent);
         loadpage(downloadLink.getDownloadURL());
         /* new filename, size regex */
