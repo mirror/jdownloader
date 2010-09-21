@@ -116,7 +116,7 @@ public class UserIO {
 
     protected static UserIO INSTANCE                       = new UserIO();
 
-    private UserIO() {
+    public UserIO() {
         Dialog.getInstance().setCountdownTime(UserIO.getUserCountdownTime());
     }
 
