@@ -264,6 +264,7 @@ public class HotFileCom extends PluginForHost {
     public void loginWebsite(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         synchronized (LOCK) {
+            br.setDebug(true);
             br.getHeaders().put("User-Agent", ua);
             br.setCookie("http://hotfile.com", "lang", "en");
             Object ret = account.getProperty("cookies", null);

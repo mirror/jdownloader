@@ -267,6 +267,7 @@ public class Netloadin extends PluginForHost {
 
     private void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
+        // br.setDebug(true);
         workAroundTimeOut(br);
         br.getPage("http://netload.in/index.php?lang=de");
         br.getPage("http://netload.in/index.php");
@@ -298,7 +299,23 @@ public class Netloadin extends PluginForHost {
             ai.setExpired(true);
             return ai;
         }
-        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
+        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0);
+        if (validUntil == null) {
+            account.setValid(true);
+            account.setTempDisabled(true);
+            ai.setStatus("Temp Server Error, will retry later");
+            /* only for debugging */
+            try {
+                logger.finest(br.getRequest().getHttpConnection() + "");
+            } catch (Throwable e) {
+            }
+            try {
+                logger.finest(br + "");
+            } catch (Throwable e) {
+            }
+            return ai;
+        }
+        validUntil = validUntil.trim();
         String days = new Regex(validUntil, "([\\d]+) ?Tage").getMatch(0);
         String hours = new Regex(validUntil, "([\\d]+) ?Stunde").getMatch(0);
         long res = 0;
