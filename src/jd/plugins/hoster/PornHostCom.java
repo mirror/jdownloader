@@ -80,8 +80,8 @@ public class PornHostCom extends PluginForHost {
                 dllink = br.getRegex("\"http://dl[0-9]+\\.pornhost\\.com/files/.*?/.*?/.*?/.*?/.*?/.*?\\..*?\"").getMatch(0);
             }
         } else {
-            dllink = br.getRegex("width: 894px; height: 675px\">.*?<img src=\"(.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://file[0-9]+\\.pornhost\\.com/[0-9]+/.*?\"").getMatch(0);
+            dllink = br.getRegex("style=\"width: 499px; height: 372px\">[\t\n\r ]+<img src=\"(http.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://file[0-9]+\\.pornhost\\.com/[0-9]+/.*?)\"").getMatch(0);
         }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

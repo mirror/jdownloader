@@ -47,9 +47,9 @@ public class EnteruploadCom extends PluginForHost {
 
     // XfileSharingProBasic Version 1.6 only doFree, dllink regexes changed
     private static final String COOKIE_HOST = "http://enterupload.com";
-    private static final String FREETEXT = "title=\"Premium\">Premium<";
+    private static final String FREETEXT    = "title=\"Premium\">Premium<";
     private static final String PREMIUMTEXT = "Premium-Account expire";
-    public boolean nopremium = false;
+    public boolean              nopremium   = false;
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -406,8 +406,8 @@ public class EnteruploadCom extends PluginForHost {
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
         if (filename == null) filename = br.getRegex("name=\"fname\" value=\"(.*?)\"").getMatch(0);
-        String filesize = br.getRegex("</font>.*?\\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("<span>File size:  (.*?)</span>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;

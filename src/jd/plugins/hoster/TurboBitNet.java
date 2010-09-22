@@ -66,7 +66,7 @@ public class TurboBitNet extends PluginForHost {
         // Little errorhandling in case there we're on the wrong page!
         if (!br.getURL().equals(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден. Возможно он был удален\\.<br|<h1>File was not found|It could possibly be deleted\\.</h1>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileName = br.getRegex("Скачать файл(.*?)\\. Скачать бесплатно").getMatch(0);
+        String fileName = br.getRegex("<title>[ \t\r\n]+(Download|Datei downloaden) (.*?)\\. Free download without registration from TurboBit\\.net").getMatch(1);
         if (fileName == null) {
             fileName = br.getRegex("<span class='file-icon.*?'>(.*?)</span>").getMatch(0);
         }

@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadz.tk" }, urls = { "http://[\\w\\.]*?uploadz\\.tk/index\\.php/files/get/[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadz.tk" }, urls = { "http://[\\w\\.]*?uploadz\\.tk/index\\.php/files/get/[a-zA-Z0-9-]+" }, flags = { 0 })
 public class UploadzTk extends PluginForHost {
 
     public UploadzTk(PluginWrapper wrapper) {
