@@ -258,6 +258,10 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorLinkBlock(DownloadLink downloadLink, PluginForHost currentPlugin) {
+        if (handler != null) {
+            /* special handler is used */
+            if (handler.handleDownloadLink(downloadLink, account)) return;
+        }
         LinkStatus status = downloadLink.getLinkStatus();
         if (status.hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
             onErrorFileExists(downloadLink, currentPlugin);
@@ -265,7 +269,6 @@ public class SingleDownloadController extends Thread {
             status.resetWaitTime();
             downloadLink.setEnabled(false);
         }
-
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
