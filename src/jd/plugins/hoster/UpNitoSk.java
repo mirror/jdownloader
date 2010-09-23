@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -49,6 +48,8 @@ public class UpNitoSk extends PluginForHost {
         String fileId = new Regex(link.getDownloadURL(), "upnito\\.sk/subor/([a-z0-9]+)\\.html").getMatch(0);
         if (fileId != null) link.setUrlDownload("http://www.upnito.sk/download.php?dwToken=" + fileId);
     }
+
+    private static final String DL2REGEX = "name=\"dl2\" value=\"(.*?)\"";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -79,9 +80,11 @@ public class UpNitoSk extends PluginForHost {
         boolean stillInDevelopment = true;
         if (stillInDevelopment) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "The free version of this plugin is still in development!!");
         if (br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        Form freeform = br.getFormbyProperty("name", "gdl");
         String verifytext = br.getRegex("id=\"verifytext\" value=\"(.*?)\"").getMatch(0);
-        if (freeform == null || verifytext == null) {
+        String sid = br.getRegex("name=\"sid\" id=\"sid\" value=\"(.*?)\"").getMatch(0);
+        String authToken = br.getRegex("name=\"auth_token\" id=\"auth_token\" value=\"(.*?)\"").getMatch(0);
+        String dl2 = br.getRegex(DL2REGEX).getMatch(0);
+        if (verifytext == null || sid == null || authToken == null || dl2 == null) {
             logger.warning("Error, verifytext equals " + verifytext + ", also the gdl-form could be null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -89,7 +92,6 @@ public class UpNitoSk extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         br2.getPage("http://dl2.upnito.sk/getwait.php?dwToken=" + thisDamnToken);
         String gwt_validate = br2.toString().trim();
-        freeform.put("gwt_validate", Encoding.urlEncode(gwt_validate));
         int sleepTime = 600;
         String ttt = br2.getRegex("(\\d+);").getMatch(0);
         if (ttt != null) {
@@ -98,22 +100,14 @@ public class UpNitoSk extends PluginForHost {
             logger.warning("Sleeptime regex seems to be broken. This could cause errors...");
         }
         sleep(sleepTime * 1001l, downloadLink);
-        freeform.put("verifytext", Encoding.urlEncode(verifytext));
-        br.submitForm(freeform);
-        freeform = br.getFormbyProperty("name", "gdl_form");
-        if (freeform == null) {
-            logger.warning("freeform2 equals null!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        freeform.put("gwt_validate", gwt_validate);
-        verifytext = br.getRegex("id=\"verifytext\" value=\"(.*?)\"").getMatch(0);
-        if (verifytext == null) {
-            logger.warning("verifytext2 equals null!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        freeform.put("verifytext", Encoding.urlEncode(verifytext));
+        String postData = "verifytext=" + Encoding.urlEncode(verifytext) + "&sid=" + Encoding.urlEncode(sid) + "&auth_token=" + Encoding.urlEncode(authToken) + "&dl2=DL22222222222222&gwt_validate=" + Encoding.urlEncode(gwt_validate);
+        String postPage = downloadLink.getDownloadURL();
+        br.postPage(postPage, postData.replace("DL22222222222222", Encoding.urlEncode(dl2)) + "&userinput=&validated=yes&tahaj=Stiahnu%9D");
+        // 2nd form
+        dl2 = br.getRegex(DL2REGEX).getMatch(0);
+        if (dl2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(5 * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, freeform, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postPage, postData.replace("DL22222222222222", Encoding.urlEncode(dl2)), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
