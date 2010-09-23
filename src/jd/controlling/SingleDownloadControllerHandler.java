@@ -6,7 +6,7 @@ import jd.plugins.DownloadLink;
 public abstract interface SingleDownloadControllerHandler {
 
     /**
-     * returns false if SingleDownloadController should proceed with this Link
+     * returns false if SingleDownloadController should proceed with handling this Link after plugin is done
      * 
      * @param link
      * @return

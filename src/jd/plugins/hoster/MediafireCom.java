@@ -43,7 +43,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.locale.Loc;
+
 import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
 import org.lobobrowser.html.style.AbstractCSS2Properties;
@@ -86,7 +86,7 @@ public class MediafireCom extends PluginForHost {
                     password = this.plg.getPluginConfig().getStringProperty("pass", null);
 
                 } else {
-                    password = Plugin.getUserInput(Loc.LF("PasswordSolver.askdialog", "Downloadpassword for %s/%s", this.plg.getHost(), this.dlink.getName()), this.dlink);
+                    password = Plugin.getUserInput(JDL.LF("PasswordSolver.askdialog", "Downloadpassword for %s/%s", this.plg.getHost(), this.dlink.getName()), this.dlink);
 
                 }
                 if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong")); }

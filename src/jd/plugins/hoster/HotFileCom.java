@@ -119,6 +119,7 @@ public class HotFileCom extends PluginForHost {
             }
             String validUntil[] = br.getRegex("Premium until.*?>(.*?)<.*?>(\\d+:\\d+:\\d+)").getRow(0);
             if (validUntil == null || validUntil[0] == null || validUntil[1] == null) {
+                logger.severe("HotFileDebug: " + br.toString());
                 account.setProperty("cookies", null);
                 account.setValid(false);
             } else {
@@ -140,7 +141,8 @@ public class HotFileCom extends PluginForHost {
         }
         if (getPluginConfig().getBooleanProperty(TRY_IWL_BYPASS, false)) return fetchAccountInfoWebsite(account);
         HashMap<String, String> info = callAPI(null, "getuserinfo", account, null);
-        String rawAnswer = info.get("httpresponse").trim();
+        String rawAnswer = info.get("httpresponse");
+        logger.severe("HotFileDebug: " + rawAnswer);
         if (rawAnswer != null && rawAnswer.startsWith(".too many failed")) {
             /* fallback to normal website */
             logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
@@ -182,6 +184,7 @@ public class HotFileCom extends PluginForHost {
         params.put("link", Encoding.urlEncode(downloadLink.getDownloadURL() + "\n\r"));
         params.put("alllinks", "1");
         HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params);
+        logger.severe("HotFileDebug: " + info.get("httpresponse"));
         if (info.get("httpresponse").contains("file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (info.get("httpresponse").contains("premium required")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         String finalUrls = info.get("httpresponse").trim();
@@ -257,7 +260,7 @@ public class HotFileCom extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br.submitForm(form);
         br.getHeaders().put("Content-Type", null);
-        br.getHeaders().put("Accept-Encoding","gzip");
+        br.getHeaders().put("Accept-Encoding", "gzip");
     }
 
     @SuppressWarnings("unchecked")
