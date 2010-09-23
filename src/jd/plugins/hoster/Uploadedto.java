@@ -224,9 +224,8 @@ public class Uploadedto extends PluginForHost {
             logger.info("Direct Downloads active");
         }
 
-        br.setDebug(true);
-        /* set to 1 at the moment, cause more cause server errors */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
+            
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
 
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
@@ -295,7 +294,7 @@ public class Uploadedto extends PluginForHost {
                     }
                 }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            } 
         }
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());

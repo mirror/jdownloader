@@ -250,7 +250,7 @@ public class Browser {
     private static int                      TIMEOUT_READ     = 30000;
     private static int                      TIMEOUT_CONNECT  = 30000;
 
-    private URL                             currentURL;
+    private URL                             currentURL       = null;
 
     private boolean                         doRedirects      = false;
 
@@ -1120,6 +1120,54 @@ public class Browser {
         br.debug = debug;
         br.proxy = proxy;
         return br;
+    }
+
+    /**
+     * resets browser to default values
+     */
+    public void reset() {
+        currentURL = null;
+        request = null;
+        setCustomCharset(null);
+        doRedirects = false;
+        cookies = new HashMap<String, Cookies>();
+        connectTimeout = -1;
+        readTimeout = -1;
+        headers = null;
+        limit = 1 * 1024 * 1024;
+        proxy = null;
+        debug = false;
+        requestIntervalLimitMap = null;
+        requestTimeMap = null;
+        cookiesExclusive = true;
+        acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
+    }
+
+    /**
+     * creates new Browser instance and forwards usefull variables(eg proxy)
+     * current Request will NOT be forwarded
+     * 
+     * @return
+     */
+    public Browser getNewBrowser() {
+        Browser br = new Browser();
+        br.requestIntervalLimitMap = this.requestIntervalLimitMap;
+        br.requestTimeMap = this.requestTimeMap;
+        br.acceptLanguage = acceptLanguage;
+        br.connectTimeout = connectTimeout;
+        br.setCustomCharset(this.customCharset);
+        br.limit = limit;
+        br.readTimeout = readTimeout;
+        br.cookies = cookies;
+        br.cookiesExclusive = cookiesExclusive;
+        br.debug = debug;
+        br.proxy = proxy;
+        return br;
+    }
+
+    public static Browser getNewBrowser(Browser source) {
+        if (source == null) return new Browser();
+        return source.getNewBrowser();
     }
 
     public Form[] getForms(final String downloadURL) throws IOException {

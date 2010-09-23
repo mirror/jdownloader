@@ -98,7 +98,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         if (handleJDPremServ(link)) return;
         link.getTransferStatus().usePremium(false);
         proxyused = false;
-        plugin.clean();
+        br.reset();
         plugin.handleFree(link);
     }
 
@@ -106,6 +106,12 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     public void setBrowser(Browser br) {
         this.br = br;
         if (plugin != null) plugin.setBrowser(br);
+    }
+
+    @Override
+    public Browser getBrowser() {
+        if (plugin != null) return plugin.getBrowser();
+        return this.br;
     }
 
     @Override
@@ -131,7 +137,6 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         proxyused = true;
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br = new Browser();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         br.setDebug(true);
@@ -273,11 +278,18 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 resetAvailablePremium();
                 return ac;
             }
-            br = new Browser();
             br.setConnectTimeout(60 * 1000);
             br.setReadTimeout(60 * 1000);
+            String page = null;
             try {
                 br.getPage(jdpremServer);
+                Form form = new Form();
+                form.setAction("/?info=1");
+                form.setMethod(MethodType.GET);
+                form.put("username", Encoding.urlEncode(account.getUser()));
+                form.put("password", Encoding.urlEncode(account.getPass()));
+                page = br.submitForm(form);
+                if ("unknown HTTP response".equalsIgnoreCase(br.getHttpConnection().getResponseMessage())) throw new Exception("JDPrem not online!");
             } catch (Exception e) {
                 account.setTempDisabled(true);
                 account.setValid(true);
@@ -289,12 +301,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 return ac;
             }
             /* user info */
-            Form form = new Form();
-            form.setAction("/?info=1");
-            form.setMethod(MethodType.GET);
-            form.put("username", Encoding.urlEncode(account.getUser()));
-            form.put("password", Encoding.urlEncode(account.getPass()));            
-            String page = br.submitForm(form);
+
             if (page.contains("OK: USER")) {
                 /* parse available premium hosts */
                 String supportedHosts = new Regex(page, "HOSTS:(.+)").getMatch(0);
@@ -335,7 +342,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
             if (handleJDPremServ(downloadLink)) return;
             proxyused = false;
         }
-        plugin.clean();
+        br.reset();
         plugin.handlePremium(downloadLink, account);
     }
 
@@ -347,7 +354,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 String jdpremServer = JDPremium.getJDPremServer();
                 try {
                     if (jdpremServer == null || jdpremServer.length() == 0) return;
-                    br = new Browser();
+                    Browser br = Browser.getNewBrowser(this.br);
                     /* lower timeout is okay here */
                     br.setConnectTimeout(5000);
                     br.getPage(jdpremServer);
@@ -436,12 +443,6 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     public int getTimegapBetweenConnections() {
         if (plugin != null) return plugin.getTimegapBetweenConnections();
         return super.getTimegapBetweenConnections();
-    }
-
-    @Override
-    public void setDownloadInterface(DownloadInterface dl2) {
-        this.dl = dl2;
-        if (plugin != null) plugin.setDownloadInterface(dl2);
     }
 
     @Override

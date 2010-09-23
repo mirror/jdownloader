@@ -635,9 +635,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         return br;
     }
 
-    public void setDownloadInterface(DownloadInterface dl2) {
-        this.dl = dl2;
-    }
+
 
     /**
      * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden

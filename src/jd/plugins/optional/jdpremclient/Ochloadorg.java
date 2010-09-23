@@ -94,7 +94,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         if (handleOchLoad(link)) return;
         link.getTransferStatus().usePremium(false);
         proxyused = false;
-        plugin.clean();
+        br.reset();
         plugin.handleFree(link);
     }
 
@@ -102,6 +102,12 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     public void setBrowser(Browser br) {
         this.br = br;
         if (plugin != null) plugin.setBrowser(br);
+    }
+    
+    @Override
+    public Browser getBrowser() {
+        if (plugin != null) return plugin.getBrowser();
+        return this.br;
     }
 
     @Override
@@ -135,8 +141,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             requestFileInformation(link);
             if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String login = Encoding.Base64Encode(acc.getUser());
-            String pw = Encoding.Base64Encode(acc.getPass());
-            br = new Browser();
+            String pw = Encoding.Base64Encode(acc.getPass());            
             br.setConnectTimeout(90 * 1000);
             br.setReadTimeout(90 * 1000);
             br.setDebug(true);
@@ -208,8 +213,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
             String restartReq = enabled == false ? "(Restart required)" : "";
-            AccountInfo ac = new AccountInfo();
-            br = new Browser();
+            AccountInfo ac = new AccountInfo();            
             br.setConnectTimeout(60 * 1000);
             br.setReadTimeout(60 * 1000);
             br.setDebug(true);
@@ -273,7 +277,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             if (handleOchLoad(downloadLink)) return;
             proxyused = false;
         }
-        plugin.clean();
+        br.reset();
         plugin.handlePremium(downloadLink, account);
     }
 
@@ -360,11 +364,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         return super.getTimegapBetweenConnections();
     }
 
-    @Override
-    public void setDownloadInterface(DownloadInterface dl2) {
-        this.dl = dl2;
-        if (plugin != null) plugin.setDownloadInterface(dl2);
-    }
+
 
     @Override
     public boolean rewriteHost(DownloadLink link) {

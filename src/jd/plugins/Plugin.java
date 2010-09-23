@@ -277,15 +277,8 @@ public abstract class Plugin implements ActionListener {
         return false;
     }
 
-    public void clean() {
-        JDProxy pr = null;
-        if (this.br != null) {
-            pr = this.br.getProxy();
-            this.br = new Browser();
-            if (pr != null) {
-                this.br.setProxy(pr);
-            }
-        }
+    public void clean() {        
+        br = null;
     }
 
     /**
