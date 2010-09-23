@@ -31,7 +31,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -195,15 +194,15 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
         } else if (e.getSource() == this.mnuAdopt || e.getSource() == this.mnuContextAdopt) {
 
-            for (final int row : this.getSelectedRows()) {
-                this.data.get(row).setLanguage(this.data.get(row).getSource());
+            for (final KeyInfo ki : this.getSelectedRows()) {
+                ki.setLanguage(ki.getSource());
             }
             this.dataChanged();
 
         } else if (e.getSource() == this.mnuClear || e.getSource() == this.mnuContextClear) {
 
-            for (final int row : this.getSelectedRows()) {
-                this.data.get(row).setLanguage("");
+            for (final KeyInfo ki : this.getSelectedRows()) {
+                ki.setLanguage("");
             }
             this.dataChanged();
 
@@ -349,15 +348,11 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     }
 
     private void deleteSelectedKeys() {
-        final int[] rows = this.getSelectedRows();
-        Arrays.sort(rows);
+        final int sel = this.table.getSelectedRow();
 
-        final int len = rows.length - 1;
-        for (int i = len; i >= 0; --i) {
-            final String temp = this.data.remove(rows[i]).getKey();
-            this.data.remove(temp);
-        }
-        final int newRow = Math.min(rows[len] - len, this.tableModel.getRowCount() - 1);
+        this.data.removeAll(getSelectedRows());
+
+        final int newRow = Math.min(sel, this.tableModel.getRowCount() - 1);
         this.table.getSelectionModel().setSelectionInterval(newRow, newRow);
 
         this.dataChanged();
@@ -367,15 +362,8 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         return this.data;
     }
 
-    private int[] getSelectedRows() {
-        final int[] rows = this.table.getSelectedRows();
-        final int[] ret = new int[rows.length];
-
-        for (int i = 0; i < rows.length; ++i) {
-            ret[i] = this.table.convertRowIndexToModel(rows[i]);
-        }
-        Arrays.sort(ret);
-        return ret;
+    private ArrayList<KeyInfo> getSelectedRows() {
+        return this.table.getExtTableModel().getSelectedObjects();
     }
 
     private void getSourceEntries() {

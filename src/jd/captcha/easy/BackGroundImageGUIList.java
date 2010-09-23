@@ -72,7 +72,7 @@ public class BackGroundImageGUIList implements ActionListener {
                 final ImageComponent ic = new ImageComponent(bgio.getImage(manager.methode));
                 tmpPanel.add(ic, BorderLayout.WEST);
 
-                final JButton edit = new JButton(JDL.L("plugins.optional.httpliveheaderscripter.gui.menu.edit", "Edit"));
+                final JButton edit = new JButton(JDL.L("jd.plugins.optional.schedule.maingui.edit", "Edit"));
                 final JButton del = new JButton(JDL.L("gui.component.textarea.context.delete", "Delete"));
 
                 edit.addActionListener(new ActionListener() {
