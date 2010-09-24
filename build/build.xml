@@ -132,12 +132,12 @@
 			<attribute name="Created-By" value="JD-Team and AppWork UG" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
-			<attribute name="Class-Path" value="${class-path} plugins/JDPackageCustomizer.jar plugins/JDScheduler.jar" />
+			<attribute name="Class-Path" value="${class-path} plugins/Customizer.jar plugins/JDScheduler.jar" />
 		</manifest>
 		<jar file="${jd}/JDownloader.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
-				
+
 				<exclude name="jd/controlling/reconnect/plugins/*/**" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="jd/dynamics/**" />
@@ -150,7 +150,7 @@
 				<exclude name="jd/utils/dev/**" />
 				<exclude name="tests/**" />
 			</fileset>
-			
+
 			<!-- Put all plugins which should included in here -->
 			<fileset dir="${cls}">
 				<include name="jd/controlling/reconnect/plugins/extern/**" />
@@ -160,7 +160,7 @@
 
 				<include name="jd/plugins/hoster/DirectHTTP*" />
 			</fileset>
-			
+
 			<fileset dir="${res}">
 				<include name="*.properties" />
 				<exclude name="jd/captcha/methods" />
@@ -205,10 +205,10 @@
 		<jar file="${jd}/tools/tinyupdate.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/Restarter*.class" />
-				<include name="jd/nutils/OutdatedParser*.class" />			
+				<include name="jd/nutils/OutdatedParser*.class" />
 				<include name="jd/nutils/DynByteBuff*.class" />
 				<include name="jd/nutils/Executer*.class" />
-				<include name="jd/nutils/zip/**" />				
+				<include name="jd/nutils/zip/**" />
 			</fileset>
 		</jar>
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
@@ -300,9 +300,9 @@
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
-		
+
 		<buildRecPlugin name="batch" />
-		
+
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
