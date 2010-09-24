@@ -116,13 +116,14 @@ public class XFileSharingProBasic extends PluginForHost {
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
         String dllink = null;
         String passCode = null;
-        Form[] allForms = br.getForms();
-        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form freeform = null;
-        for (Form singleForm : allForms) {
-            if (singleForm.containsHTML("download1")) {
-                freeform = singleForm;
-                break;
+        Form[] allForms = br.getForms();
+        if (allForms != null && allForms.length != 0) {
+            for (Form singleForm : allForms) {
+                if (singleForm.containsHTML("download1")) {
+                    freeform = singleForm;
+                    break;
+                }
             }
         }
         if (freeform != null) {

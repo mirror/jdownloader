@@ -74,6 +74,7 @@ public class MegaShareVn extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html") && !new Regex(dllink, ".+html?$").matches()) {
             /* buggy server sends html content if filename ends on html */
             br.followConnection();
+            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

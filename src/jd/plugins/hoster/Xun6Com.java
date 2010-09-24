@@ -55,8 +55,11 @@ public class Xun6Com extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("error") || br.getURL().contains("FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("odd\"><th.*?/th><td>(.*?)</td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("http://xun6\\.com/file/.*?/(.*?)\\.html").getMatch(0);
+        String filename = br.getRegex("<title>訊6 - 下載 (.*?) 文件  - 賺錢,生意,").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("odd\"><th.*?/th><td>(.*?)</td>").getMatch(0);
+            if (filename == null) filename = br.getRegex("http://xun6\\.com/file/.*?/(.*?)\\.html").getMatch(0);
+        }
         String filesize = br.getRegex("odd\"><th.*?/th><t.*?/td></tr>.*?<tr><th.*?/th><td>(.*?)</td></tr>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
@@ -69,8 +72,8 @@ public class Xun6Com extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         Form captchaform = br.getFormbyProperty("name", "myform");
-        String captchaurl = br.getRegex("\"(http://xun6\\.com/captcha.*?)\"").getMatch(0);
-        if (captchaurl == null) captchaurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.xun6\\.com/captcha.*?)\"").getMatch(0);
+        String captchaurl = br.getRegex("id=\"dynimg\" src=\"(http://.*?)\"").getMatch(0);
+        if (captchaurl == null) captchaurl = br.getRegex("\"(http://(www\\.)?xun6\\.net/captcha\\.php\\?rand=\\d+\\&key=[a-z0-9]+)\"").getMatch(0);
         if (captchaurl == null || captchaform == null) {
             logger.warning("Captchaform or captchaurl is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -121,7 +124,7 @@ public class Xun6Com extends PluginForHost {
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001, downloadLink);
         }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Download got Max Thread! Please Purchase Premium for Continue Downloads")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);

@@ -19,8 +19,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,24 +33,34 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|motherlesspictures\\.com/[a-zA-Z0-9/.]+|motherlessvideos\\.com/[a-zA-Z0-9/.]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|premiummotherlesspictures\\.com/[a-zA-Z0-9/.]+|premiummotherlessvideos\\.com/[a-zA-Z0-9/.]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
 
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2500l);
+        this.enablePremium("http://motherless.com/register");
     }
 
     public String getAGBLink() {
         return "http://motherless.com/terms";
     }
 
+    private static final String SUBSCRIBEFAILED     = "Failed to subscribe";
+    private static final String ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
+
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("motherlesspictures", "motherless"));
-        link.setUrlDownload(link.getDownloadURL().replace("motherlessvideos", "motherless"));
+        String theLink = link.getDownloadURL();
+        theLink = theLink.replace("premium", "").replace("motherlesspictures", "motherless").replace("motherlessvideos", "motherless");
+        link.setUrlDownload(theLink);
     }
 
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
+        if (parameter.getStringProperty("kind") != null) {
+            logger.info(ONLY4REGISTEREDTEXT);
+            parameter.getLinkStatus().setStatusText("This " + parameter.getStringProperty("kind") + " link can only be downloaded by registered users");
+            return AvailableStatus.UNCHECKABLE;
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = br.openGetConnection(parameter.getDownloadURL());
@@ -58,9 +72,13 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public void handleFree(DownloadLink link) throws Exception {
-        if (!link.getDownloadURL().contains("/img/") && !link.getDownloadURL().contains("/dev"))
+        if (link.getStringProperty("kind") != null) {
+            logger.info(ONLY4REGISTEREDTEXT);
+            throw new PluginException(LinkStatus.ERROR_FATAL, ONLY4REGISTEREDTEXT);
+        }
+        if (!link.getDownloadURL().contains("/img/") && !link.getDownloadURL().contains("/dev")) {
             requestFileInformation(link);
-        else {
+        } else {
             // Access the page first to make the finallink valid
             String fileid = new Regex(link.getDownloadURL(), "/img/([A-Z0-9]+)").getMatch(0);
             if (fileid != null)
@@ -78,7 +96,104 @@ public class MotherLessCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (link.getFinalFileName() == null) dl.setFilenameFix(true);
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://motherless.com/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=1&__remember_me=0");
+        if (br.getCookie("http://motherless.com/", "motherless_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        String kind = link.getStringProperty("kind");
+        if (kind != null) {
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML("<h1>Subscribers Only</h1>")) {
+                String profileToSubscribe = br.getRegex("You can subscribe to the member from their <a href=\"(http://motherless\\.com/member/[a-zA-Z0-9]+)\">profile</a>").getMatch(0);
+                if (profileToSubscribe == null) throw new PluginException(LinkStatus.ERROR_FATAL, SUBSCRIBEFAILED);
+                br.getPage(profileToSubscribe + "/subscribe?");
+                if (!br.containsHTML("<p>You are now subscribed to member")) throw new PluginException(LinkStatus.ERROR_FATAL, SUBSCRIBEFAILED);
+                br.getPage(link.getDownloadURL());
+            }
+            // Here we use the code of the decrypter to find the urls.
+            // If this part changes in the decrypter or here we have to update
+            // both plugins!!
+            if (kind.equals("picture")) {
+                String finallink = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
+                    if (finallink == null) {
+                        finallink = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
+                    }
+                }
+                if (finallink == null) {
+                    logger.warning("Failed to find the picture-downloadlink!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                link.setUrlDownload(finallink);
+                link.setProperty("kind", Property.NULL);
+            } else {
+                String filelink = br.getRegex("var __file_url = \\'([^']*)\\';").getMatch(0);
+                if (filelink == null) {
+                    logger.warning("Failed to find the videolink #1");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String matches = br.getRegex("s1.addParam\\(\\'flashvars\\',\\'file=([^)]*)").getMatch(0);
+                if (matches == null) {
+                    logger.info("File should be offline!");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                filelink = rot13(filelink);
+                String finallink = matches.replaceAll("\\'(.*?)__file_url(.*?)\\'", filelink).replaceAll("&image=[^&]*", "").replaceAll("(&mute=.+)", "");
+                Regex regexName = new Regex(matches, ".*&link=[^&]*/([^&]*)'");
+                String finalName = regexName.getMatch(0);
+                link.setFinalFileName(finalName + ".flv");
+                link.setUrlDownload(finallink);
+                link.setProperty("kind", Property.NULL);
+            }
+        }
+        handleFree(link);
+
+    }
+
+    private String rot13(String s) {
+        String output = "";
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c >= 'a' && c <= 'm')
+                c += 13;
+            else if (c >= 'n' && c <= 'z')
+                c -= 13;
+            else if (c >= 'A' && c <= 'M')
+                c += 13;
+            else if (c >= 'A' && c <= 'Z') c -= 13;
+            output += c;
+        }
+        return output;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     public int getMaxSimultanFreeDownloadNum() {

@@ -42,11 +42,22 @@ public class MotherLessCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter.toString());
         if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("The member uploaded this image for subscribers only")) {
+            DownloadLink dl = createDownloadlink(parameter.toString().replace("motherless", "premiummotherlesspictures"));
+            dl.setProperty("kind", "picture");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        } else if (br.containsHTML("The member uploaded this video for subscribers only")) {
+            DownloadLink dl = createDownloadlink(parameter.toString().replace("motherless", "premiummotherlessvideos"));
+            dl.setProperty("kind", "video");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         if (br.containsHTML("player.swf")) {
             String parm = parameter.toString();
-            String filelink = br.getRegex("var __file_url = '([^']*)';").getMatch(0);
+            String filelink = br.getRegex("var __file_url = \\'([^']*)\\';").getMatch(0);
             if (filelink == null) return null;
-            String matches = br.getRegex("s1.addParam\\('flashvars','file=([^)]*)").getMatch(0);
+            String matches = br.getRegex("s1.addParam\\(\\'flashvars\\',\\'file=([^)]*)").getMatch(0);
             if (matches == null) {
                 matches = br.getRegex("(Not Available)").getMatch(0);
                 if (matches == null) return null;
@@ -55,7 +66,7 @@ public class MotherLessCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             filelink = rot13(filelink);
-            String downloadlink = matches.replaceAll("'(.*?)__file_url(.*?)'", filelink).replaceAll("&image=[^&]*", "").replaceAll("&link=[^&]*", "&start=0&id=player&client=FLASH%20WIN%2010,1,53,64&version=4.1.60");
+            String downloadlink = matches.replaceAll("\\'(.*?)__file_url(.*?)\\'", filelink).replaceAll("&image=[^&]*", "").replaceAll("(&mute=.+)", "");
             DownloadLink dlink = createDownloadlink(downloadlink.replace("motherless", "motherlessvideos"));
             dlink.setBrowserUrl(parm);
             Regex regexName = new Regex(matches, ".*&link=[^&]*/([^&]*)'");
@@ -92,7 +103,7 @@ public class MotherLessCom extends PluginForDecrypt {
         } else {
             String finallink = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("full_sized.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
+                finallink = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
                 if (finallink == null) {
                     finallink = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
                 }
