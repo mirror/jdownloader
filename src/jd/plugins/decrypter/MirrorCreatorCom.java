@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "http://[\\w\\.]*?mirrorcreator\\.com/files/[0-9A-Z]{8}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "http://[\\w\\.]*?(mirrorcreator\\.com/files|mir\\.cr)/[0-9A-Z]{8}" }, flags = { 0 })
 public class MirrorCreatorCom extends PluginForDecrypt {
 
     public MirrorCreatorCom(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         // Tohse links need a "/" at the end to be valid
         if (!param.getCryptedUrl().endsWith("/")) param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
-        String parameter = param.toString();
+        String parameter = param.toString().replace("mir.cr/", "mirrorcreator.com/files/").replaceAll("(http://|www\\.)", "http://www.");
         String host = new Regex(parameter, "(.+)/files").getMatch(0);
         String id = new Regex(parameter, "files/([0-9A-Z]+)").getMatch(0);
         // This should never happen but in case a dev changes the plugin without
@@ -70,7 +70,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 br.getPage(host + singlelink);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-                if (dllink==null) dllink=br.getRegex("Please <a href=\"(http.*?)\"").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("Please <a href=\"(http.*?)\"").getMatch(0);
             } else {
                 // Handling for already regexed final-links
                 dllink = singlelink;
