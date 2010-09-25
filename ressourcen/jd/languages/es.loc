@@ -1,3 +1,4 @@
+action.customize.addsetting.ask = Ingrese un nombre para la nueva configuración:
 action.customize.removesetting.ask = Eliminar cuentas seleccionadas de JDownloader? (%s)
 action.premiumview.removeacc.accs = %s cuenta/s
 action.premiumview.removeacc.ask = Eliminar seleccionadas
@@ -5,7 +6,7 @@ addons.jdshutdown.statusmessage.disabled = JDownloader ya NO apagará su sistema
 addons.jdshutdown.statusmessage.enabled = JDownloader apagará su sistema cuando todas las descargas hayan finalizado!
 ballon.download.connectionlost.message = <b>%s<b><hr>Conexión perdida
 ballon.download.error.title = Error
-ballon.download.failed.message = <b>%s<b><hr>ha fallado.
+ballon.download.failed.message = <b>%s<b><hr>La descarga ha fallado
 ballon.download.fatalerror.message = <b>%s<b><hr>Error de Plugin
 ballon.download.finished.started = Descarga iniciada
 ballon.download.finished.stopped = Descarga detenida
@@ -329,7 +330,7 @@ gui.fileinfopanel.packagetab.lbl.name = Nombre del paquete
 gui.fileinfopanel.packagetab.lbl.password = Contraseña
 gui.fileinfopanel.packagetab.lbl.password2 = Contraseña del archivo (auto)
 gui.fileinfopanel.packagetab.lbl.saveto = Guardar en
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Tiene una version de Java desactualizada o incorrecta, por favor descarga la ultima version de Sun Java. Iniciar JDownloader ahora?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Tiene una version de Java desactualizada, por favor descargue la ultima version de Java RE. Iniciar JDownloader ahora?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.newerjavaavailable.msg = Aunque JDownloader podria funcionar en tu version de Java, recomendamos instalar la ultima disponible para asegurar la estabilidad, velocidad y el funcionamiento correcto en general. \r\n\r\nVisita http://jdownloader.org/download
 gui.javacheck.newerjavaavailable.title = Tiene una version antigua de Java: %s
 gui.javacheck.title = Version no valida de Java
@@ -841,7 +842,7 @@ interaction.externreconnect.dummybat = Usar ejecutable alternativo para Windows
 interaction.externreconnect.parameter = Parámetro (un parámetro por línea)
 interaction.shutdown.dialog.msg.closejd = <h2><font color="red">JDownloader se cerrará!</font></h2>
 interaction.shutdown.dialog.msg.hibernate = <h2><font color="red">Atencion! El sistema se pondrá en modo de Hibernación!</font></h2>
-interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Atencion! El sistema será Apagado!</font></h2>
+interaction.shutdown.dialog.msg.shutdown = <h2><font color="red">Atencion! El sistema será apagado!</font></h2>
 interaction.shutdown.dialog.msg.standby = <h2><font color="red">Atencion! El sistema se pondrá en el modo Suspender!</font></h2>
 interaction.shutdown.dialog.title.closejd = Cerrar JDownloader?
 interaction.shutdown.dialog.title.hibernate = Hibernar?
@@ -1379,7 +1380,6 @@ plugins.hoster.sendspacepl.only4premium = Solo disponible para usuarios Premium
 plugins.hoster.sharebaseto.errors.maintenance = Trabajos de mantenimiento en progreso
 plugins.hoster.sharebaseto.errors.toomanyusers = Demasiados usuarios
 plugins.hoster.sharecashdotnet.only4premium = Solo disponible para usuarios Premium
-plugins.hoster.sharehosterde.only4premium = Solo disponible para usuarios Premium
 plugins.hoster.sharenownet.errors.servererror = Error del servidor
 plugins.hoster.shareonlinebiz.errors.servernotavailable = Servidor temporalmente no disponible
 plugins.hoster.shareonlinebiz.errors.servernotavailable3 = No hay slots gratuitos disponibles
@@ -1420,7 +1420,6 @@ plugins.optional.folderwatch.view.title = Historial del Observador de Carpetas
 plugins.optional.folderwatch.view.tooltip = Muestra todos los contenedores encontrados por el Observador de Carpetas
 plugins.optional.hjsplit.filefilter = HJSplit - fragmento inicial .001
 plugins.optional.hjsplit.merged = %s: %s MiBs unidos
-plugins.optional.httpliveheaderscripter.gui.menu.edit = Editar
 plugins.optional.infofilewriter.content = Contenido:
 plugins.optional.infofilewriter.contentdefault = Comentario: %LAST_FINISHED_PACKAGE.COMMENT%\r\nContraseña: %LAST_FINISHED_PACKAGE.PASSWORD%\r\nAuto Contraseña: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\r\nArchivos: %LAST_FINISHED_PACKAGE.FILELIST%\r\nFinalizado: %SYSTEM.DATE% a %SYSTEM.TIME%
 plugins.optional.infofilewriter.filename = Nombre del archivo:
