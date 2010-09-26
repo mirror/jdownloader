@@ -73,11 +73,9 @@ public class UploadSpacePl extends PluginForHost {
         captchaForm.setAction(br.getURL());
         for (int i = 0; i <= 5; i++) {
             String hash = br.getRegex("name=\"hash\" value=\"(.*?)\"").getMatch(0);
-            String code1 = br.getRegex("name=\"code1\" value=\"(.*?)\"").getMatch(0);
             String id = br.getRegex("\\?k=(.*?)\"").getMatch(0);
-            if (hash == null || code1 == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (hash == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaForm.put("hash", hash);
-            captchaForm.put("code1", code1);
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setForm(captchaForm);

@@ -42,6 +42,8 @@ public class MsCreNt extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String DOMAIN = "musicore.net";
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -116,9 +118,9 @@ public class MsCreNt extends PluginForDecrypt {
                 if (br.getCookie("http://musicore.net/", "pass_hash") == null || br.getCookie("http://musicore.net/", "pass_hash").equals("0") || br.getCookie("http://musicore.net/", "member_id") == null || br.getCookie("http://musicore.net/", "member_id").equals("0")) {
                     this.getPluginConfig().setProperty("user", Property.NULL);
                     this.getPluginConfig().setProperty("pass", Property.NULL);
-                    username = UserIO.getInstance().requestInputDialog("Enter Loginname for musicore.net :");
+                    username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
                     if (username == null) return false;
-                    password = UserIO.getInstance().requestInputDialog("Enter password for musicore.net :");
+                    password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
                     if (password == null) return false;
                     br.postPage("http://musicore.net/forums/index.php?app=core&module=global&section=login&do=process", "referer=" + Encoding.urlEncode(url) + "&username=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&rememberMe=1");
                     if (!br.getURL().equals(url)) br.getPage(url);
