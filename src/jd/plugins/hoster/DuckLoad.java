@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/((divx|play)/[A-Z0-9]+|download/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/\\d+/.+|(divx|play)/[A-Z0-9\\.-]+|[a-zA-Z0-9\\.]+)" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
 
     public DuckLoad(PluginWrapper wrapper) {
@@ -39,27 +39,26 @@ public class DuckLoad extends PluginForHost {
         return "http://duckload.com/impressum.html";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        String theLink = link.getDownloadURL().replace("youload.to/", "duckload.com/");
-        theLink = theLink.replace(".html", "").replace("/divx/", "/play/");
-        if (!theLink.contains("www.")) theLink = theLink.replace("http://", "http://www.");
-        link.setUrlDownload(theLink);
-    }
-
     private static final String MAINPAGE = "http://duckload.com/";
-
+     
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "dl_set_lang", "en");
         br.getPage(link.getDownloadURL());
+        //correctDownloadLink
+        while (br.getRequest().getHttpConnection().getResponseCode() != 200){
+            link.setUrlDownload(br.getRequest().getResponseHeader("Location"));
+            br.getPage(link.getDownloadURL());
+        }
         if (br.containsHTML("(File not found\\.|download\\.notfound)") || !br.containsHTML("stream_wait_table_bottom")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) @ DuckLoad\\.com</title>").getMatch(0);
+        if (filename == null) filename = link.getName();
         // Server doesn't give us the correct name so we set it here
-        if (filename != null) link.setFinalFileName(filename.trim());
+        link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -74,14 +73,23 @@ public class DuckLoad extends PluginForHost {
         String dllink = br.getRegex("<param name=\"src\" value=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
-            if (dllink == null) {
+            //swf-Download
+            if ((dllink == null) && br.containsHTML("duckloadplayer\\.swf")) {
+                String dl_id = br.getRegex("stream\\.toFav\\(\\'(.*?)\\'\\);\">").getMatch(0);
+                dllink = "http://flash.duckload.com/video/video_api.php?id=" + dl_id;
+                br.getPage(dllink);
+                String part1 = br.getRegex("ident\":\\ \"(.*?)\",").getMatch(0);
+                String part2 = br.getRegex("link\":\\ \"(.*?)\"").getMatch(0).replace("\\/", "/");
+                dllink = "http://dl" + part1 + ".duckload.com" + part2;
+                if (part1 == null || part2 == null) dllink = null;
+            }
+            else {
                 String part1 = br.getRegex("\\'ident=(.*?)\\&\\';").getMatch(0);
                 String part2 = br.getRegex("\\'token=(.*?)\\&\\';").getMatch(0);
                 String part3 = br.getRegex("\\'filename=(.*?)\\&\\';").getMatch(0);
                 if (part1 == null || part2 == null || part3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 dllink = "http://www.duckload.com/api/as2/link/" + part1 + "/" + part2 + "/" + part3;
-                int secondWait = 10;
-                String secondWaitRegexed = br.getRegex("\\'timetowait=(\\d+)\\&\\'").getMatch(0);
+                int secondWait = 10;String secondWaitRegexed = br.getRegex("\\'timetowait=(\\d+)\\&\\'").getMatch(0);
                 if (secondWaitRegexed != null) secondWait = Integer.parseInt(secondWaitRegexed);
                 sleep(secondWait * 1001l, downloadLink);
             }
@@ -89,7 +97,7 @@ public class DuckLoad extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL() != null && br.getURL().contains("/error/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.getURL() != null && br.getURL().contains("/error/") || br.containsHTML("ErrorCode: e983")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
