@@ -1,18 +1,18 @@
-//jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2010  JD-Team support@jdownloader.org
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -32,6 +32,8 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fufox.com" }, urls = { "http://[\\w\\.]*?fufox\\.com/\\?d=[A-Za-z0-9]+" }, flags = { 0 })
 public class FuFoxCom extends PluginForHost {
 
+    private static final String CAPTCHATEXT = "code\\.php";
+
     public FuFoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,8 +42,6 @@ public class FuFoxCom extends PluginForHost {
     public String getAGBLink() {
         return "http://www.fufox.com/cgu.html";
     }
-
-    private static final String CAPTCHATEXT = "code\\.php";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -71,7 +71,6 @@ public class FuFoxCom extends PluginForHost {
         if (name == null || password == null || filename == null || ip == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime can be skipped here
         String dllink = "ftp://" + name + ":" + password + "@" + ip + "/" + filename;
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(dllink, downloadLink);
         } catch (InterruptedIOException e) {
@@ -80,8 +79,9 @@ public class FuFoxCom extends PluginForHost {
         } catch (IOException e) {
             if (e.toString().contains("maximum number of clients")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            } else
+            } else {
                 throw e;
+            }
         }
     }
 

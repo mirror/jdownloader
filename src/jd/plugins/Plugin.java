@@ -38,7 +38,6 @@ import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
-import jd.http.JDProxy;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -277,7 +276,7 @@ public abstract class Plugin implements ActionListener {
         return false;
     }
 
-    public void clean() {        
+    public void clean() {
         br = null;
     }
 

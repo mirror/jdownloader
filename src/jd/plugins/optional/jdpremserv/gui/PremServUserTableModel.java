@@ -12,6 +12,7 @@ import org.appwork.utils.event.BasicEvent;
 import org.appwork.utils.event.BasicListener;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.table.ExtTableModel;
+import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 
 public class PremServUserTableModel extends ExtTableModel<PremServUser> {
@@ -88,13 +89,17 @@ public class PremServUserTableModel extends ExtTableModel<PremServUser> {
 
         });
 
-        this.addColumn(new ExtTextColumn<PremServUser>("Enabled", this) {
+        this.addColumn(new ExtCheckColumn<PremServUser>("Enabled", this) {
 
             private static final long serialVersionUID = -3601520285751677052L;
 
             @Override
-            protected String getStringValue(PremServUser value) {
-                return value.isEnabled() ? "YES" : "NO";
+            protected boolean getBooleanValue(PremServUser value) {
+                return value.isEnabled();
+            }
+
+            @Override
+            protected void setBooleanValue(boolean value, PremServUser object) {
             }
 
         });

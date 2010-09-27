@@ -13,11 +13,10 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
@@ -103,7 +102,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         this.br = br;
         if (plugin != null) plugin.setBrowser(br);
     }
-    
+
     @Override
     public Browser getBrowser() {
         if (plugin != null) return plugin.getBrowser();
@@ -141,7 +140,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             requestFileInformation(link);
             if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String login = Encoding.Base64Encode(acc.getUser());
-            String pw = Encoding.Base64Encode(acc.getPass());            
+            String pw = Encoding.Base64Encode(acc.getPass());
             br.setConnectTimeout(90 * 1000);
             br.setReadTimeout(90 * 1000);
             br.setDebug(true);
@@ -213,7 +212,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
             String restartReq = enabled == false ? "(Restart required)" : "";
-            AccountInfo ac = new AccountInfo();            
+            AccountInfo ac = new AccountInfo();
             br.setConnectTimeout(60 * 1000);
             br.setReadTimeout(60 * 1000);
             br.setDebug(true);
@@ -363,8 +362,6 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         if (plugin != null) return plugin.getTimegapBetweenConnections();
         return super.getTimegapBetweenConnections();
     }
-
-
 
     @Override
     public boolean rewriteHost(DownloadLink link) {
