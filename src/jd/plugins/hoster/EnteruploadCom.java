@@ -187,7 +187,7 @@ public class EnteruploadCom extends PluginForHost {
                 DLForm.put("password", passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
             }
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
         if (!(dl.getConnection().isContentDisposition())) {
