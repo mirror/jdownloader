@@ -42,14 +42,14 @@ public class ShareHosterDe extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("sharehoster\\.(com|net|de)", "sharehoster.com").replaceAll("/(dl|vid)/", "/wait/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("sharehoster\\.(com|net|de)", "sharehoster.com").replace("/dl/", "/wait/"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getDownloadURL().replace("/vid/", "/wait/"));
         // No filename or size is on the page so just check if there is an
         // error, if not, the file should be online!
         if (br.getRedirectLocation() != null) {
@@ -65,18 +65,32 @@ public class ShareHosterDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String fileID = new Regex(downloadLink.getDownloadURL(), "/wait/(.+)").getMatch(0);
+        String fileID = new Regex(downloadLink.getDownloadURL(), "/(wait|vid)/(.+)").getMatch(1);
         br.setFollowRedirects(true);
         String waitCode = br.getRegex("name=\"wait\" value=\"(.*?)\"").getMatch(0);
         if (waitCode == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String postData = "continue=Fortfahren&file=" + fileID + "&wait=" + waitCode;
-        String postPage = downloadLink.getDownloadURL().replaceAll("/(wait|vid)/", "/dl/");
+        if (downloadLink.getDownloadURL().contains("/vid/")) postData += "&open=show_wait";
+        String postPage = downloadLink.getDownloadURL().replace("/wait/", "/dl/");
+        if (downloadLink.getDownloadURL().contains("/vid/")) postPage = downloadLink.getDownloadURL();
         br.setFollowRedirects(false);
         br.postPage(postPage, postData);
-        br.getPage("http://www.sharehoster.com/?open=download_prepare&file=" + fileID);
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getRedirectLocation().contains("/vid/"))
+            br.getPage(br.getRedirectLocation());
+        else
+            br.getPage("http://www.sharehoster.com/?open=download_prepare&file=" + fileID);
         // Streaming links don't need any captchas
         String dllink = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"\\)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://media\\d+\\.sharehoster.com/stream/[a-z0-9]+\\.flv)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://media\\d+\\.sharehoster.com/stream/[a-z0-9]+\\.flv)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("type=\"hidden\" name=\"stream\" value=\"(http://.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(http://media\\d+\\.sharehoster\\.com/video/[a-z0-9/]+\\.avi)\"").getMatch(0);
+                }
+            }
+        }
         if (dllink == null) {
             for (int i = 0; i <= 5; i++) {
                 br.setFollowRedirects(false);
