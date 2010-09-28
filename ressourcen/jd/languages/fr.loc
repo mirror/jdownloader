@@ -391,7 +391,7 @@ gui.installer.kikin.ok = Continuer
 gui.installer.kikin.title = Installer Kikin
 gui.installer.kikin.tooltip = Veuiller lire et accepter les conditions
 gui.installer.kikin.whatis3 = <b>kikin utilise votre historique de navigation pour vous donner un contenu personnalisé à partir de sites que vous aimez.  <a href="http://jdownloader.org/kikin">more...</a></b>
-gui.javacheck.html = <div style='width:534px;height;200px'><h2>Vous n'avez pas la bonne version de Java. Utiliser la version originale de Sun. Démarrer JDownloader tant bien même?<table width='100%%'><tr><th colspan='2'>Votre version de Java:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>Vous n'avez pas la bonne version de Java. La version originale de Sun est vivement conseillée. Démarrer JDownloader malgré tout ?<table width='100%%'><tr><th colspan='2'>Votre version de Java:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.newerjavaavailable.msg = Bien que JDownloader s'exécute avec votre version de java, nous vous conseillons d'installer les dernières mises à jour de java. \r\nJDownloader sera plus stable, plus rapide et plus efficace. \r\n\r\nVisit http://jdownloader.org/download.
 gui.javacheck.newerjavaavailable.title = Version de Java dépassée. Trouvé : %s !
 gui.javacheck.title = Mauvaise version de Java
@@ -1388,7 +1388,7 @@ plugin.optional.scheduler.add.once = Une fois seulement
 plugin.optional.scheduler.add.problem.badparameter = Paramètre incorrect
 plugin.optional.scheduler.add.problem.emptyname = Le nom est vide
 plugin.optional.scheduler.add.problem.nochanges = Aucun changement effectué
-plugin.optional.scheduler.add.problem.pastdate = L'heure d'exécurion est passée
+plugin.optional.scheduler.add.problem.pastdate = L'heure d'exécution est passée
 plugin.optional.scheduler.add.problem.zerorepeat = L'heure de reprise est à zéro
 plugin.optional.scheduler.add.repeats = Reprises
 plugin.optional.scheduler.add.save = Enregistrer
