@@ -1342,7 +1342,7 @@ jd.utils.webupdate.dopluginupdate.message = Des plugins ont été mis à jour.\r
 jd.utils.webupdate.dopluginupdate.title = Redémarrage recommandé
 jd.utils.webupdate.doupdatecheck.noupdates = Pas de mises à jour disponibles
 jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s  Mise(s) à jour disponible. Installez maintenant ?</font>
-jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s  Mise(s) à jour disponible. Installez maintenant ?</font></font>
+jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s Mise(s) à jour disponibles. Installer maintenant ?</font>
 jd.utils.webupdate.progresscontroller.text = Mise à jour en cours
 jd.utils.webupdate.whatchangedlink = <hr/><a href='http://jdownloader.org/latestchanges'>Ce qui a changé ?</a>
 linkgrabber.onlinestatus.offline = Hors ligne
