@@ -1018,6 +1018,7 @@ jd.plugins.hoster.directhttp.username = Nome utente (autorizzazione base) per %s
 jd.plugins.hoster.filebaseto.serversideerror = Errore server. Riprovare più tardi
 jd.plugins.hoster.lastfm.requestfileinformation.nodownload = Non scaricabile
 jd.plugins.optional.antistandby.jdantistandby = JDAntistandby
+jd.plugins.optional.antistandby.jdantistandby.description = Impedisce al computer di andare in Stand By o in modo Sleep per mantenere i download attivi.
 jd.plugins.optional.awesomebar.awesomebar = Barra di prova
 jd.plugins.optional.awesomebar.awesomebar.description = (Addon sviluppatori epr il momento)
 jd.plugins.optional.awesomebar.panel.description = Questa è una prova
