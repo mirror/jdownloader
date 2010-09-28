@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|premiummotherlesspictures\\.com/[a-zA-Z0-9/.]+|premiummotherlessvideos\\.com/[a-zA-Z0-9/.]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures\\.com/[a-zA-Z0-9/.]+|(premium)?motherlessvideos\\.com/[a-zA-Z0-9/.]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
 
     public MotherLessCom(PluginWrapper wrapper) {

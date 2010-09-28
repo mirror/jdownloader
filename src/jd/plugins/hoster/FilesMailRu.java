@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?(wge4zu4rjfsdehehztiuxw/.*?/[a-z0-9]+|indirectwge4zu4rjfsdehehztiuxw/[A-Z0-9]{6})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?\\.(wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}/[a-z0-9]+|indirectwge4zu4rjfsdehehztiuxw/[A-Z0-9]{6})" }, flags = { 0 })
 public class FilesMailRu extends PluginForHost {
 
     public FilesMailRu(PluginWrapper wrapper) {
@@ -41,14 +41,14 @@ public class FilesMailRu extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Rename the decrypted links to make them work
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(wge4zu4rjfsdehehztiuxw|indirectwge4zu4rjfsdehehztiuxw)", "files.mail.ru"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(wge4zu4rjfsdehehztiuxw|indirectwge4zu4rjfsdehehztiuxw)", "files.mail.ru").replace("_", "-"));
     }
 
-    public boolean iHaveToWait = false;
-    private static final String DLLINKREGEX = "\"(http://[a-z0-9]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+    public boolean              iHaveToWait  = false;
+    private static final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
     private static final String UNAVAILABLE1 = ">В обработке<";
     private static final String UNAVAILABLE2 = ">In process<";
-    private static final String INFOREGEX = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {

@@ -253,9 +253,9 @@ public class XFileSharingProBasic extends PluginForHost {
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (passCode != null) {
-                downloadLink.setProperty("pass", passCode);
-            }
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }

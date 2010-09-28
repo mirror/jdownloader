@@ -76,7 +76,7 @@ public class QuickLoadTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

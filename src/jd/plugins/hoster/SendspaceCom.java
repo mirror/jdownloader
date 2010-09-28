@@ -41,7 +41,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "http://[\\w\\.]*?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" }, flags = { 2 })
 public class SendspaceCom extends PluginForHost {
 
     public SendspaceCom(PluginWrapper wrapper) {
@@ -126,115 +126,147 @@ public class SendspaceCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String url = downloadLink.getDownloadURL();
-        br.getPage(url);
-        if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
-        if (!br.containsHTML("the file you requested is not available")) {
-            String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);
-            if (infos != null) {
-                downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
-                downloadLink.setDownloadSize(Regex.getSize(infos[1].trim().replaceAll(",", "\\.")));
+        if (!url.contains("/pro/dl/")) {
+            br.getPage(url);
+            if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
+            if (!br.containsHTML("the file you requested is not available")) {
+                String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);
+                if (infos != null) {
+                    downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
+                    downloadLink.setDownloadSize(Regex.getSize(infos[1].trim().replaceAll(",", "\\.")));
+                    return AvailableStatus.TRUE;
+                } else
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(url);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                downloadLink.setDownloadSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        // Do we have to submit a form to enter the "free download area" for the
-        // file ?
-        if (br.getForm(1) != null) br.submitForm(br.getForm(1));
-        if (br.containsHTML("You have reached your daily download limit")) {
-            int minutes = 0, hours = 0;
-            String tmphrs = br.getRegex("again in.*?(\\d+)h:.*?m or").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = br.getRegex("again in.*?h:(\\d+)m or").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-            int waittime = ((3600 * hours) + (60 * minutes) + 1) * 1000;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-        }
-        // Password protected links handling
-        String passCode = null;
-        if (br.containsHTML("name=\"filepassword\"")) {
-            logger.info("This link seems to be püassword protected...");
-            for (int i = 0; i < 2; i++) {
-                Form pwform = br.getFormbyKey("filepassword");
-                if (pwform == null) pwform = br.getForm(0);
-                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                pwform.put("filepassword", passCode);
-                br.submitForm(pwform);
-                if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) {
-                    continue;
-                }
-                break;
+        if (!downloadLink.getDownloadURL().contains("/pro/dl/")) {
+            // Do we have to submit a form to enter the "free download area" for
+            // the
+            // file ?
+            if (br.getForm(1) != null) br.submitForm(br.getForm(1));
+            if (br.containsHTML("You have reached your daily download limit")) {
+                int minutes = 0, hours = 0;
+                String tmphrs = br.getRegex("again in.*?(\\d+)h:.*?m or").getMatch(0);
+                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                String tmpmin = br.getRegex("again in.*?h:(\\d+)m or").getMatch(0);
+                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                int waittime = ((3600 * hours) + (60 * minutes) + 1) * 1000;
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
-            if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password");
-        }
-        /* bypass captcha with retry ;) */
-        if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
-        handleErrors(false);
-        /* Link holen */
-        String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (script == null) {
-            logger.info("script equals null");
-            br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
-            script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            // Password protected links handling
+            String passCode = null;
+            if (br.containsHTML("name=\"filepassword\"")) {
+                logger.info("This link seems to be püassword protected...");
+                for (int i = 0; i < 2; i++) {
+                    Form pwform = br.getFormbyKey("filepassword");
+                    if (pwform == null) pwform = br.getForm(0);
+                    if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (downloadLink.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", downloadLink);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = downloadLink.getStringProperty("pass", null);
+                    }
+                    pwform.put("filepassword", passCode);
+                    br.submitForm(pwform);
+                    if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) {
+                        continue;
+                    }
+                    break;
+                }
+                if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password");
+            }
+            /* bypass captcha with retry ;) */
+            if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
+            handleErrors(false);
+            /* Link holen */
+            String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (script == null) {
-                logger.warning("script still equals null, stopping...");
+                logger.info("script equals null");
+                br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
+                script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(function .*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                if (script == null) {
+                    logger.warning("script still equals null, stopping...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");
+            String fun = "function f(){ " + script + " return  utf8_decode(enc(base64ToText('" + dec + "')));} f()";
+            Context cx = null;
+            String linkurl = null;
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
+                Scriptable scope = cx.initStandardObjects();
+                // Now evaluate the string we've colected.
+                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                // Convert the result to a string and print it.
+                linkurl = Context.toString(result);
+            } finally {
+                if (cx != null) Context.exit();
+            }
+            if (linkurl == null) {
+                logger.warning("linkurl equals null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        script += new Browser().getPage("http://www.sendspace.com/jsc/download.js");
-        String fun = "function f(){ " + script + " return  utf8_decode(enc(base64ToText('" + dec + "')));} f()";
-        Context cx = null;
-        String linkurl = null;
-        try {
-            cx = ContextFactory.getGlobal().enterContext();
-            Scriptable scope = cx.initStandardObjects();
-            // Now evaluate the string we've colected.
-            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-            // Convert the result to a string and print it.
-            linkurl = Context.toString(result);
-        } finally {
-            if (cx != null) Context.exit();
-        }
-        if (linkurl == null) {
-            logger.warning("linkurl equals null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        linkurl = new Regex(linkurl, "href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) {
-            logger.warning("linkurl2 equals null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
-        /* Datei herunterladen */
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
-        URLConnectionAdapter con = dl.getConnection();
-        if (con.getURL().toExternalForm().contains("?e=") || con.getContentType().contains("html")) {
-            br.followConnection();
-            handleErrors(true);
-        }
-        if (con.getResponseCode() == 416) {
-            // HTTP/1.1 416 Requested Range Not Satisfiable
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
-        }
-        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            linkurl = new Regex(linkurl, "href=\"(.*?)\"").getMatch(0);
+            if (linkurl == null) {
+                logger.warning("linkurl2 equals null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
+            }
+            /* Datei herunterladen */
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
+            URLConnectionAdapter con = dl.getConnection();
+            if (con.getURL().toExternalForm().contains("?e=") || con.getContentType().contains("html")) {
+                br.followConnection();
+                handleErrors(true);
+            }
+            if (con.getResponseCode() == 416) {
+                // HTTP/1.1 416 Requested Range Not Satisfiable
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+            }
+            if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+            URLConnectionAdapter con = dl.getConnection();
+            if (con.getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
