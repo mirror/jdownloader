@@ -442,6 +442,7 @@ public class Rapidshare extends PluginForHost {
             if ("File not found.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, error);
             } else if ("No traffic left.".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if ("You need RapidPro to download more files from your IP address.".equals(error)) {
 
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
