@@ -139,7 +139,7 @@ public class FileSonicCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         String downloadUrl = null;
         String passCode = null;
-
+        passCode = null;
         this.br.setCookiesExclusive(false);
 
         this.br.forceDebug(true);
@@ -149,6 +149,8 @@ public class FileSonicCom extends PluginForHost {
 
         final String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
         this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
+        this.br.getRequest().setHtmlCode(this.br.getRequest().getHtmlCode().replaceAll("<\\!\\-\\-.*?\\-\\-\\>", ""));
+
         if (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>Cancel Download</a>")) {
             Plugin.logger.info("Cancel running filesonic downloads");
             this.br.getPage("http://www.filesonic.com/file/" + id + "?cancelDownload=1&start=1");
