@@ -42,7 +42,7 @@ public class FilesMailRu extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Rename the decrypted links to make them work
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(wge4zu4rjfsdehehztiuxw|indirectwge4zu4rjfsdehehztiuxw)", "files.mail.ru").replace("_", "-"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(wge4zu4rjfsdehehztiuxw|indirectwge4zu4rjfsdehehztiuxw)", "files.mail.ru"));
     }
 
     public boolean              iHaveToWait  = false;
@@ -104,6 +104,7 @@ public class FilesMailRu extends PluginForHost {
                             logger.warning("Critical error occured: The final downloadlink couldn't be found in the available check!");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
+                        directlink = fixLink(directlink);
                         downloadLink.setUrlDownload(directlink);
                         // If the previous direct link was wrong we have to set
                         // a new one (code above) and wait about 10 secs
@@ -155,6 +156,7 @@ public class FilesMailRu extends PluginForHost {
                 logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            finallink = fixLink(finallink);
             downloadLink.setUrlDownload(finallink);
             con.disconnect();
         } else {
@@ -177,6 +179,12 @@ public class FilesMailRu extends PluginForHost {
         if (ttt != null) tt = Integer.parseInt(ttt);
         logger.info("Waiting " + tt + " seconds...");
         sleep(tt * 1001, downloadLink);
+    }
+
+    private String fixLink(String dllink) {
+        logger.info("Correcting link...");
+        dllink = dllink.replace("content3-n", "content3");
+        return dllink;
     }
 
     @Override

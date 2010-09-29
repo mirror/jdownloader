@@ -67,7 +67,7 @@ public class FlsMailRu extends PluginForDecrypt {
             if (directlink == null || filename == null) return null;
             String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
 
-            DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", REPLACE).replace("-", "_"));
+            DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", REPLACE).replace("content3-n", "content3"));
             finallink.getLinkStatus().setStatusText(statusText);
             // Maybe that helps id jd gets the english version of the site!
             if (filesize != null) {
