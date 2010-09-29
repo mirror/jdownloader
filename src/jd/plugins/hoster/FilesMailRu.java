@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -53,6 +54,7 @@ public class FilesMailRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(true);
         if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
             logger.warning("final filename and folderID are bot null for unknown reasons!");

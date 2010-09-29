@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://[\\w\\.]*?nk\\.pl/profile/\\d+/gallery(/\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://[\\w\\.]*?nk\\.pl/profile/\\d+/gallery(/album/\\d+|\\d+)" }, flags = { 0 })
 public class NkPlGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -69,7 +69,7 @@ public class NkPlGallery extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             } else {
                 br.setFollowRedirects(true);
-                String allLinks[] = br.getRegex("\"((/profile/\\d+)?/gallery/\\d+(/\\d+)?)\"").getColumn(0);
+                String allLinks[] = br.getRegex("\"((/profile/\\d+)?/gallery/(\\d+|album/\\d+/\\d+))\"").getColumn(0);
                 if (allLinks == null || allLinks.length == 0) return null;
                 progress.setRange(allLinks.length);
                 for (String singleLink : allLinks) {

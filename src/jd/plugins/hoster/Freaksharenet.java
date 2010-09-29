@@ -37,19 +37,19 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.(net|com)/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
 public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(100l);
-        this.enablePremium("http://freakshare.net/shop.html");
+        this.enablePremium("http://freakshare.com/shop.html");
         setConfigElements();
     }
 
-    private boolean NOPREMIUM = false;
-    private static final String WAIT1 = "WAIT1";
-    private int MAXPREMDLS = -1;
+    private boolean             NOPREMIUM  = false;
+    private static final String WAIT1      = "WAIT1";
+    private int                 MAXPREMDLS = -1;
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.Freaksharenet.waitInsteadOfReconnect", "Wait 10 minutes instead of reconnecting")).setDefaultValue(true);
@@ -58,7 +58,11 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://freakshare.net/?x=faq";
+        return "http://freakshare.com/?x=faq";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("freakshare.net", "freakshare.com"));
     }
 
     public void login(Account account) throws IOException, PluginException {
@@ -68,10 +72,10 @@ public class Freaksharenet extends PluginForHost {
         /*
          * set english language in phpsession because we have no cookie for that
          */
-        br.getPage("http://freakshare.net/?language=US");
-        br.postPage("http://freakshare.net/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-        if (br.getCookie("http://freakshare.net", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://freakshare.net/");
+        br.getPage("http://freakshare.com/?language=US");
+        br.postPage("http://freakshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+        if (br.getCookie("http://freakshare.com", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://freakshare.com/");
         if (!br.containsHTML("<td><b>Member \\(free\\)</b></td>") && !br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) {
             logger.info("JD couldn't find out the membership of this account!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -150,7 +154,7 @@ public class Freaksharenet extends PluginForHost {
         /*
          * set english language in phpsession
          */
-        br.getPage("http://freakshare.net/?language=US");
+        br.getPage("http://freakshare.com/?language=US");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         if (br.containsHTML("(Sorry but this File is not avaible|Sorry, this Download doesnt exist anymore)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

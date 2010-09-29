@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -47,6 +48,7 @@ public class FlsMailRu extends PluginForDecrypt {
         // At the moment jd gets the russian version of the site. Errorhandling
         // also works for English but filesize handling doesn't so if this
         // plugin get's broken that's on of the first things to check
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         // Errorhandling for offline folders
         if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));

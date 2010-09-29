@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -45,11 +47,11 @@ public class SflnkgNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
-    private static String CAPTCHAREGEX1 = "\"(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?sid=[a-z0-9]+)\"";
-    private static String CAPTCHAREGEX2 = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
-    private static String CAPTCHATEXT3 = "fancycaptcha\\.css\"";
-    private static String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
+    private static final String RECAPTCHATEXT         = "api\\.recaptcha\\.net";
+    private static String       CAPTCHAREGEX1         = "\"(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?sid=[a-z0-9]+)\"";
+    private static String       CAPTCHAREGEX2         = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
+    private static String       CAPTCHATEXT3          = "fancycaptcha\\.css\"";
+    private static String       PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -113,18 +115,30 @@ public class SflnkgNt extends PluginForDecrypt {
             decryptedLinks = new ArrayList<DownloadLink>();
             // Webprotection decryption
             String[] links = br.getRegex("class=\"linked\">(http://safelinking\\.net/d/.*?)</a>").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\"(http://safelinking\\.net/d/[a-z0-9]+)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("class=\"linked\">(http://.*?)</a>").getColumn(0);
+            if (links == null || links.length == 0) {
+                String allLinks = br.getRegex("class=\"link-box\" id=\"direct-links\" >(.*?<a href=\".*?)</div>").getMatch(0);
+                if (allLinks != null) links = new Regex(allLinks, "<a href=\"(.*?)\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("\"(http://safelinking\\.net/d/[a-z0-9]+)\"").getColumn(0);
+                    if (links == null || links.length == 0) {
+                        links = br.getRegex("class=\"linked\">(http://.*?)</a>").getColumn(0);
+                    }
+                }
+            }
             if (links == null || links.length == 0) return null;
             progress.setRange(links.length);
             for (String link : links) {
-                br.getPage(link);
-                String finallink = br.getRedirectLocation();
-                if (finallink == null) {
-                    logger.warning("Decrypter broken, decryption stopped at link: " + link);
-                    return null;
+                if (!link.contains("safelinking.net/")) {
+                    decryptedLinks.add(createDownloadlink(link));
+                } else {
+                    br.getPage(link);
+                    String finallink = br.getRedirectLocation();
+                    if (finallink == null) {
+                        logger.warning("Decrypter broken, decryption stopped at link: " + link);
+                        return null;
+                    }
+                    if (!parameter.equals(finallink)) decryptedLinks.add(createDownloadlink(finallink));
                 }
-                if (!parameter.equals(finallink)) decryptedLinks.add(createDownloadlink(finallink));
                 progress.increase(1);
             }
         } else {
