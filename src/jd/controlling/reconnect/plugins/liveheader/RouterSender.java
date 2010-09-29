@@ -506,6 +506,8 @@ public class RouterSender {
         final Browser br = new Browser();
         // is services available. throws exception if server is down
         br.getPage(RouterSender.ROUTER_COL_SERVICE);
+
+        if (br.getRequest().getHttpConnection().getResponseCode() != 200) { throw new Exception("Service is currently not available. Please try again later"); }
         final int ret = Dialog.getInstance().showConfirmDialog(0, "Router Sender", "We need your help to improve our reconnect database.\r\nPlease contribute to the 'JD Project' and send in our reconnect script.\r\nThis wizard will guide you through all required steps.", null, null, null);
 
         if (!Dialog.isOK(ret)) {
@@ -521,6 +523,7 @@ public class RouterSender {
         final String data = URLEncoder.encode(dataString, "UTF-8");
         URLDecoder.decode(data.trim(), "UTF-8");
         br.postPage(RouterSender.ROUTER_COL_SERVICE, "action=add&data=" + data);
+        if (br.getRequest().getHttpConnection().getResponseCode() != 200) { throw new Exception("Service is currently not available. Please try again later"); }
         if (br.getRegex(".*?exists.*?").matches()) {
             Dialog.getInstance().showMessageDialog("We noticed, that your script already exists in our database.\r\nThanks anyway.");
 
