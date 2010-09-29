@@ -441,6 +441,10 @@ public class Rapidshare extends PluginForHost {
             if (ipwait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l); }
             if ("File not found.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, error);
+            } else if ("No traffic left.".equals(error)) {
+            } else if ("You need RapidPro to download more files from your IP address.".equals(error)) {
+
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             } else {
                 JDLogger.getLogger().fine(br.toString());
                 throw new PluginException(LinkStatus.ERROR_FATAL, error);
@@ -466,7 +470,7 @@ public class Rapidshare extends PluginForHost {
 
             final RSLink link = RSLink.parse(downloadLink.getDownloadURL());
 
-            this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName(), null);
+            this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName(), null);
             this.handleErrors(this.br);
             // RS URL wird aufgerufen
             // this.br.getPage(link);
@@ -476,7 +480,7 @@ public class Rapidshare extends PluginForHost {
 
             this.sleep(Long.parseLong(wait) * 1000l, downloadLink);
 
-            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&fileid=" + link.getId() + "&filename=" + link.getName();
+            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName();
 
             Plugin.logger.finest("Direct-Download: Server-Selection not available!");
             Request request = this.br.createGetRequest(directurl);
@@ -580,11 +584,11 @@ public class Rapidshare extends PluginForHost {
             this.br.setAcceptLanguage(Plugin.ACCEPT_LANGUAGE);
             final RSLink link = RSLink.parse(downloadLink.getDownloadURL());
 
-            this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie"), account);
+            this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie"), account);
             this.handleErrors(this.br);
             final String host = this.br.getRegex("DL:(.*?),0,0,0").getMatch(0);
 
-            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
+            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie");
 
             Plugin.logger.finest("Direct-Download: Server-Selection not available!");
             request = this.br.createGetRequest(directurl);
@@ -621,7 +625,8 @@ public class Rapidshare extends PluginForHost {
                 // Download
                 this.dl = new RAFDownload(this, downloadLink, request);
                 this.dl.setResume(true);
-                this.dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+                // do not use more than 10 chunks
+                this.dl.setChunkNum(Math.max(10, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)));
                 urlConnection = this.dl.connect(this.br);
             }
             /*
@@ -648,6 +653,11 @@ public class Rapidshare extends PluginForHost {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 this.selectedServer = null;
                 this.accName = null;
+                // rs api does not return 416 error for bad ranges
+                if ((JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + "null").equals(downloadLink.getLinkStatus().getErrorMessage())) {
+                    downloadLink.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "Too many Chunks");
+                }
             }
             if (account == Rapidshare.dummyAccount) {
                 downloadLink.getLinkStatus().setStatusText(JDL.LF("plugins.host.rapidshare.loadedvia", "Loaded via %s", "DirectDownload"));
