@@ -34,12 +34,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 /**
@@ -104,24 +104,51 @@ public class DirectHTTP extends PluginForHost {
         }
 
         public void parse() throws IOException, PluginException {
-            final Form[] forms = this.br.getForms();
-            this.form = null;
-            for (final Form f : forms) {
-                if (f.getInputField("recaptcha_challenge_field") != null) {
-                    this.form = f;
-                    break;
+
+            if (this.br.containsHTML("Recaptcha\\.create\\(\".*?\"\\,\\s*\".*?\"\\,.*?\\)")) {
+                this.id = this.br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+                final String div = this.br.getRegex("Recaptcha\\.create\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getMatch(1);
+
+                // find form that contains the found div id
+                if (div == null || this.id == null) {
+                    Plugin.logger.warning("reCaptcha ID or div couldn't be found...");
+
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            }
-            if (this.form == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                for (final Form f : this.br.getForms()) {
+                    if (f.containsHTML("id\\s*?=\\s*?\"" + div + "\"")) {
+                        this.form = f;
+                        break;
+                    }
+                }
+                if (this.form == null) {
+                    Plugin.logger.warning("reCaptcha form couldn't be found...");
+
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+
             } else {
-                this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
-                if (this.id == null || this.id.equals("")) id = br.getRegex("\\?k=([A-Za-z0-9%]+)\"").getMatch(0);
-                if (this.id == null || this.id.equals("")) {
-                    Plugin.logger.warning("reCaptcha ID couldn't be found...");
+                final Form[] forms = this.br.getForms();
+                this.form = null;
+                for (final Form f : forms) {
+                    if (f.getInputField("recaptcha_challenge_field") != null) {
+                        this.form = f;
+                        break;
+                    }
+                }
+                if (this.form == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    this.id = this.id.replace("&amp;error=1", "");
+                    this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
+                    if (this.id == null || this.id.equals("")) {
+                        this.id = this.br.getRegex("\\?k=([A-Za-z0-9%]+)\"").getMatch(0);
+                    }
+                    if (this.id == null || this.id.equals("")) {
+                        Plugin.logger.warning("reCaptcha ID couldn't be found...");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        this.id = this.id.replace("&amp;error=1", "");
+                    }
                 }
             }
         }
@@ -433,7 +460,7 @@ public class DirectHTTP extends PluginForHost {
             }
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
-            if (this.contentType.startsWith("text/html") && downloadLink.getBooleanProperty(TRY_ALL, false) == false) {
+            if (this.contentType.startsWith("text/html") && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
                 this.br.followConnection();
