@@ -69,7 +69,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtRowHighlighter;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
-import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNInfo;
 
 public class LFEGui extends SwitchPanel implements ActionListener {
@@ -102,8 +101,8 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     private JPopupMenu                    mnuContextPopup;
     private JMenuItem                     mnuContextAdopt, mnuContextClear, mnuContextDelete;
 
-    private final HashMap<String, String> languageKeysFormFile     = new HashMap<String, String>();
-    private final HashMap<String, String> languageENKeysFormFile   = new HashMap<String, String>();
+    private final HashMap<String, String> languageKeysFromFile     = new HashMap<String, String>();
+    private final HashMap<String, String> languageENKeysFromFile   = new HashMap<String, String>();
     private final ArrayList<KeyInfo>      data                     = new ArrayList<KeyInfo>();
     private String                        lngKey                   = null;
     private boolean                       changed                  = false;
@@ -184,7 +183,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                     return;
                 }
             }
-            this.data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], this.languageENKeysFormFile.get(result[0].toLowerCase())));
+            this.data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], this.languageENKeysFromFile.get(result[0].toLowerCase())));
             this.tableModel.refreshData();
             this.updateKeyChart();
 
@@ -326,7 +325,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
             svn.dispose();
             return true;
-        } catch (final SVNException e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
         return false;
@@ -509,23 +508,24 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     }
 
     private void initLocaleData() {
+        parseLanguageFile(this.languageFile, this.languageKeysFromFile);
+        parseLanguageFile(new File(this.dirLanguages, "en.loc"), this.languageENKeysFromFile);
 
-        this.parseLanguageFile(this.languageFile, this.languageKeysFormFile);
-        this.parseLanguageFile(new File(this.dirLanguages, "en.loc"), this.languageENKeysFormFile);
         this.data.clear();
         if (this.languageFile != null) {
             this.lngKey = this.languageFile.getName().substring(0, this.languageFile.getName().length() - 4);
             this.lngKey = JDGeoCode.parseLanguageCode(this.lngKey)[0];
         }
+
         String value, key;
         KeyInfo keyInfo;
         for (final LngEntry entry : this.sourceParser.getEntries()) {
             key = entry.getKey();
-            keyInfo = new KeyInfo(key, entry.getValue(), this.languageKeysFormFile.remove(key), this.languageENKeysFormFile.get(key));
+            keyInfo = new KeyInfo(key, entry.getValue(), this.languageKeysFromFile.remove(key), this.languageENKeysFromFile.get(key));
             this.data.add(keyInfo);
         }
 
-        for (final Entry<String, String> entry : this.languageKeysFormFile.entrySet()) {
+        for (final Entry<String, String> entry : this.languageKeysFromFile.entrySet()) {
             key = entry.getKey();
             value = null;
 
@@ -535,7 +535,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 }
             }
 
-            this.data.add(new KeyInfo(key, value, entry.getValue(), this.languageENKeysFormFile.get(key)));
+            this.data.add(new KeyInfo(key, value, entry.getValue(), this.languageENKeysFromFile.get(key)));
         }
 
         Collections.sort(this.data);
@@ -635,7 +635,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     public void onShow() {
     }
 
-    private void parseLanguageFile(final File file, final HashMap<String, String> data) {
+    public static void parseLanguageFile(final File file, final HashMap<String, String> data) {
         data.clear();
 
         if (file == null || !file.exists()) {
@@ -814,11 +814,8 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         final ProgressController progress = new ProgressController(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait"), "gui.splash.languages");
         progress.setIndeterminate(true);
         try {
-            Subversion svn = null;
-            Subversion svnLanguageDir;
-
-            svn = new Subversion(LFEGui.SOURCE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
-            svnLanguageDir = new Subversion(LFEGui.LANGUAGE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
+            Subversion svn = new Subversion(LFEGui.SOURCE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
+            Subversion svnLanguageDir = new Subversion(LFEGui.LANGUAGE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
 
             // HEAD = svn.latestRevision();
             svn.getBroadcaster().addListener(new MessageListener() {
@@ -829,7 +826,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
             });
             try {
-                svnLanguageDir.revert(this.dirWorkingCopy);
+                svn.revert(this.dirWorkingCopy);
             } catch (final Exception e) {
                 JDLogger.exception(e);
             }
@@ -856,7 +853,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             svn.dispose();
             progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
             progress.doFinalize(2 * 1000l);
-        } catch (final SVNException e) {
+        } catch (final Exception e) {
             JDLogger.exception(e);
             progress.setColor(Color.RED);
             progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating.error", "Updating SVN: Error!"));
