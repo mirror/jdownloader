@@ -281,7 +281,9 @@ public class FileSonicCom extends PluginForHost {
                 final Form form = this.br.getForm(0);
                 form.put("password", Encoding.urlEncode(passCode));
                 /* second downloadtry with password */
-                this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, form, true, 0);
+                
+                //1 chunk because of bug #2478  http://svn.jdownloader.org/issues/2478
+                this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, form, true, 1);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
