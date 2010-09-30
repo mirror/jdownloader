@@ -26,8 +26,6 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import de.savemytube.flv.FLV;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
@@ -51,6 +49,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.Youtube;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
@@ -95,6 +94,53 @@ public class TbCm extends PluginForDecrypt {
     static public final Pattern                 YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
     HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
+
+    private static final Logger                 LOG                 = JDLogger.getLogger();
+
+    private static final String                 TEMP_EXT            = ".tmp$";
+
+    public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
+        TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
+        if (InType.equals(OutType)) {
+            TbCm.LOG.info("No Conversion needed, renaming...");
+            final File oldone = new File(downloadlink.getFileOutput());
+            final File newone = new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, OutType.getExtFirst()));
+            downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TbCm.TEMP_EXT, OutType.getExtFirst()));
+            oldone.renameTo(newone);
+            return true;
+        }
+
+        downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "convert to") + " " + OutType.toString());
+
+        switch (InType) {
+        case VIDEOFLV:
+            // Inputformat FLV
+            switch (OutType) {
+            case AUDIOMP3:
+                TbCm.LOG.info("Convert FLV to mp3...");
+                new FLV(downloadlink.getFileOutput(), true, true);
+
+                // FLV löschen
+                if (!new File(downloadlink.getFileOutput()).delete()) {
+                    new File(downloadlink.getFileOutput()).deleteOnExit();
+                }
+                // AVI löschen
+                if (!new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, ".avi")).delete()) {
+                    new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, ".avi")).deleteOnExit();
+                }
+
+                return true;
+            default:
+                TbCm.LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+                downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
+                return false;
+            }
+        default:
+            TbCm.LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+            downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
+            return false;
+        }
+    }
 
     public TbCm(final PluginWrapper wrapper) {
         super(wrapper);
@@ -158,6 +204,7 @@ public class TbCm extends PluginForDecrypt {
                         Plugin.logger.info(debug);
                     }
                     final DownloadLink thislink = this.createDownloadlink(info[1]);
+                    thislink.setProperty("ALLOW_DUPE", true);
                     thislink.setBrowserUrl(info[2]);
                     thislink.setFinalFileName(info[0]);
                     thislink.setSourcePluginComment("Convert to " + DestinationFormat.valueOf(info[3]).getText());
@@ -309,6 +356,7 @@ public class TbCm extends PluginForDecrypt {
                     filePackage.setName("YouTube " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
                     for (final Info info : next.getValue()) {
                         final DownloadLink thislink = this.createDownloadlink(info.link.replaceFirst("http", "httpJDYoutube"));
+                        thislink.setProperty("ALLOW_DUPE", true);
                         filePackage.add(thislink);
                         thislink.setBrowserUrl(parameter);
                         thislink.setFinalFileName(YT_FILENAME + info.desc + convertTo.getExtFirst());
@@ -474,53 +522,6 @@ public class TbCm extends PluginForDecrypt {
             return false;
         }
         return true;
-    }
-
-    private static final Logger LOG      = JDLogger.getLogger();
-
-    private static final String TEMP_EXT = ".tmp$";
-
-    public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
-        LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
-        if (InType.equals(OutType)) {
-            LOG.info("No Conversion needed, renaming...");
-            final File oldone = new File(downloadlink.getFileOutput());
-            final File newone = new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, OutType.getExtFirst()));
-            downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TEMP_EXT, OutType.getExtFirst()));
-            oldone.renameTo(newone);
-            return true;
-        }
-
-        downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "convert to") + " " + OutType.toString());
-
-        switch (InType) {
-        case VIDEOFLV:
-            // Inputformat FLV
-            switch (OutType) {
-            case AUDIOMP3:
-                LOG.info("Convert FLV to mp3...");
-                new FLV(downloadlink.getFileOutput(), true, true);
-
-                // FLV löschen
-                if (!new File(downloadlink.getFileOutput()).delete()) {
-                    new File(downloadlink.getFileOutput()).deleteOnExit();
-                }
-                // AVI löschen
-                if (!new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).delete()) {
-                    new File(downloadlink.getFileOutput().replaceAll(TEMP_EXT, ".avi")).deleteOnExit();
-                }
-
-                return true;
-            default:
-                LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
-                downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
-                return false;
-            }
-        default:
-            LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
-            downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));            
-            return false;
-        }
     }
 
 }
