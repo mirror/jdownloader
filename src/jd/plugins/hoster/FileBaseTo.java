@@ -53,6 +53,8 @@ public class FileBaseTo extends PluginForHost {
         return "http://filebase.to/tos/";
     }
 
+    private static final String DIRECTLINKREGEX = "=\"(http://[0-9]+\\..*?/download/ticket.*?)\"";
+
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://filebase.to", "fb_language", "de");
@@ -133,7 +135,10 @@ public class FileBaseTo extends PluginForHost {
         downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
         if (br.containsHTML("eider\\s+nicht\\s+gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex("<b>Downloading: </b>.*? <b>\\((.*?)\\)</b><br").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>(.*?)</strong></center>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>(.*?)</strong></center>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("<h1><b>Download: </b>.*? <b>\\((.*?)\\)</b>").getMatch(0);
+        }
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
 
@@ -142,24 +147,24 @@ public class FileBaseTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form forms = null;
-        String directLink = br.getRegex("=\"(http://[0-9]+\\..*?/download/ticket.*?)\"").getMatch(0);
+        String directLink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
         if (directLink == null) {
             String uidValue = br.getRegex("id=\"uid\" value=\"(.*?)\"").getMatch(0);
             if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            Browser br2 = br.cloneBrowser();
-            br2.getPage("http://filebase.to/js/dl_s_code.js");
-            // Ticket Time
-            String ttt = br2.getRegex("var secs =.*?(\\d+);").getMatch(0);
-            int tt = 10;
-            if (ttt != null) {
-                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-                tt = Integer.parseInt(ttt);
-            }
-            // Add some waittime to prevent errors
-            tt = tt + 10;
-            sleep(tt * 1001, downloadLink);
-            br.postPage(br.getURL(), "uid=" + uidValue);
-            directLink = br.getRegex("=\"(http://[0-9]+\\..*?/download/ticket.*?)\"").getMatch(0);
+            br.postPage(br.getURL(), "dl_free3=Normal+Download&uid=" + uidValue);
+            uidValue = br.getRegex("id=\"uid\" name=\"uid\" value=\"(.*?)\"").getMatch(0);
+            if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // // Ticket Time is skippable atm.
+            // String ttt = br.getRegex("var sec = (\\d+);").getMatch(0);
+            // int tt = 10;
+            // if (ttt != null) {
+            // logger.info("Waittime detected, waiting " + ttt.trim() +
+            // " seconds from now on...");
+            // tt = Integer.parseInt(ttt);
+            // }
+            // sleep(tt * 1001, downloadLink);
+            br.postPage(br.getURL(), "submit=Download&captcha=ok&uid=" + uidValue + "&filetype=file");
+            directLink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
         }
         if (directLink != null) {
             dl = BrowserAdapter.openDownload(br, downloadLink, directLink);

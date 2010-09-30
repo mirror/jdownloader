@@ -55,7 +55,7 @@ public class Zippysharecom extends PluginForHost {
             }
             String u = getURL();
             con = br.openGetConnection(u);
-            downloadLink.setName(getFileNameFromHeader(con));
+            downloadLink.setName(Encoding.urlDecode(getFileNameFromHeader(con), false));
             return AvailableStatus.TRUE;
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -65,7 +65,7 @@ public class Zippysharecom extends PluginForHost {
     }
 
     private String getURL() {
-        return Encoding.urlDecode(br.getRegex("var pong = \\'(http[^']+)\\'").getMatch(0), true).replace("serwus", "zippyshare");
+        return Encoding.urlDecode(br.getRegex("var foken = \\'(http[^']+)\\'").getMatch(0), true).replace("google", "zippyshare");
 
     }
 

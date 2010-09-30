@@ -110,13 +110,16 @@ public class FourSharedCom extends PluginForHost {
                     }
                 }
             }
-            String filename = br.getRegex(Pattern.compile("<title>4shared.com.*?download(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            if (filename == null) filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
-
-            String size = br.getRegex(Pattern.compile("<b>Size:</b></td>.*?<.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            if (filename == null || size == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("The file link that you requested is not valid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
+                if (filename == null) filename = br.getRegex("<title>(.*?) - 4shared\\.com - online file sharing and storage - download</title>").getMatch(0);
+            }
+            String size = br.getRegex("<b>Size:</b></td>[\t\n\r ]+<td class=\"finforight lgraybox\" style=\"border-top:1px #dddddd solid\">(.*?)</td>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
+            if (size != null) downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
             return AvailableStatus.TRUE;
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
