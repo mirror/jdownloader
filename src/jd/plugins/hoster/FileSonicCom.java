@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
@@ -42,7 +43,8 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.(com|net)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
-    private static final Object LOCK = new Object();
+    private static final Object LOCK               = new Object();
+    private static long         LAST_FREE_DOWNLOAD = 0l;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -143,19 +145,26 @@ public class FileSonicCom extends PluginForHost {
         this.br.setCookiesExclusive(false);
 
         this.br.forceDebug(true);
-
+        // we have to enter captcha before we get ip_blocked_state
+        // we do this timeing check to avoid this
+        final long waited = System.currentTimeMillis() - FileSonicCom.LAST_FREE_DOWNLOAD;
+        if (FileSonicCom.LAST_FREE_DOWNLOAD > 0 && waited < 300000) {
+            FileSonicCom.LAST_FREE_DOWNLOAD = 0;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 600000 - waited);
+        }
         this.requestFileInformation(downloadLink);
         passCode = null;
 
         final String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
         this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
-        this.br.getRequest().setHtmlCode(this.br.getRequest().getHtmlCode().replaceAll("<\\!\\-\\-.*?\\-\\-\\>", ""));
+        this.removeComments();
 
-        if (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>Cancel Download</a>")) {
+        if (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>")) {
             Plugin.logger.info("Cancel running filesonic downloads");
             this.br.getPage("http://www.filesonic.com/file/" + id + "?cancelDownload=1&start=1");
             // this.br.postPage("http://www.filesonic.com/file/" + id +
             // "?start=1", "");
+            this.removeComments();
         }
         this.br.setFollowRedirects(true);
         // download is ready already
@@ -209,6 +218,10 @@ public class FileSonicCom extends PluginForHost {
 
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
                 this.sleep(Long.parseLong(countDownDelay) * 1001, downloadLink);
+                this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
+                this.removeComments();
+                downloadUrl = this.br.getRegex("<p><a href=\"(http://.*?\\.filesonic.com.*?)\"><span>Start download now!</span></a></p>").getMatch(0);
+                if (downloadUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             }
         }
 
@@ -227,6 +240,7 @@ public class FileSonicCom extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         this.dl.startDownload();
+        FileSonicCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
     }
 
     @Override
@@ -343,6 +357,10 @@ public class FileSonicCom extends PluginForHost {
                 this.br.setFollowRedirects(false);
             }
         }
+    }
+
+    private void removeComments() throws CharacterCodingException {
+        this.br.getRequest().setHtmlCode(this.br.getRequest().getHtmlCode().replaceAll("<\\!\\-\\-.*?\\-\\-\\>", ""));
     }
 
     @Override
