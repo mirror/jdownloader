@@ -17,7 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -48,6 +54,9 @@ public class BadongoCom extends PluginForHost {
     public String getAGBLink() {
         return "http://www.badongo.com/toc/";
     }
+    
+    private static final String FILETEMPLATE = "http://www.badongo.com/ajax/prototype/ajax_api_filetemplate.php";
+    private static final String JAVASCRIPT = "eval(.*?)\n|\r|\rb";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -151,119 +160,101 @@ public class BadongoCom extends PluginForHost {
         String link = null;
         String realURL = downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com");
         requestFileInformation(downloadLink);
-        if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
-            /* Get CaptchaCode */
-            br.getPage(realURL + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
-            Form form = br.getForm(0);
-            String cid = br.getRegex("cid=(\\d+)").getMatch(0);
-            String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
-            form.setAction(br.getRegex("action=.\"(.+?).\"").getMatch(0));
-            form.put("user_code", code);
-            form.put("cap_id", br.getRegex("cap_id.\"\\svalue=.\"(\\d+).\"").getMatch(0));
-            form.put("cap_secret", br.getRegex("cap_secret.\"\\svalue=.\"([a-z0-9]+).\"").getMatch(0));
-            br.submitForm(form);
-            /* Errorhandling */
-            if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            handleErrors(br);
-            /* Waittime */
-            String ttt = br.getRegex("var check_n = (\\d+)").getMatch(0);
-            int tt = 60;
-            if (ttt != null) {
-                logger.info("Waittime found by rexes is " + ttt + " seconds.");
-                tt = Integer.parseInt(ttt);
-            }
-            sleep(tt * 1001, downloadLink);
-            /* File or Video Link */
-            String fileOrVid = "";
-            if (realURL.contains("file/"))
-                fileOrVid = "getFileLink";
-            else
-                fileOrVid = "getVidLink";
-            br.getPage(realURL + "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
-            link = br.getRegex("doDownload\\(.'(.*?).'").getMatch(0);
-            if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(link + "/ifr?pr=1&zenc=");
-            handleErrors(br);
-            br.getPage(link + "/loc?pr=1");
-            if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
-            if (!dl.getConnection().isContentDisposition()) {
-                /*
-                 * +"" due to refaktor compatibilities. old <ref10000 returns
-                 * String. else Request INstance
-                 */
-                br.loadConnection(dl.getConnection());
-                dl.getConnection().disconnect();
-                handleErrors(br);
-            }
-            dl.startDownload();
-        } else {
-            boolean pluginBroken = true;
-            if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            /* Single File */
-            Browser ajax = br.cloneBrowser();
-            ajax.setCookiesExclusive(true);
-            ajax.setFollowRedirects(false);
-            /* Get CaptchaCode */
+        Browser ajax = br.cloneBrowser();
+        ajax.setCookiesExclusive(true);
+        ajax.setFollowRedirects(false);
+        /* Get CaptchaCode */
+        String action = null;
+        String postData = null;
+        String fileID = null;
+        String filetype = null;
+        String filepart = "";
+        do {
             ajax.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + System.currentTimeMillis());
             String cid = ajax.getRegex("cid=(\\d+)").getMatch(0);
-            String fileID = new Regex(realURL, "(file|vid)/(\\d+)/").getMatch(1);
+            fileID = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(1);
+            filetype = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(0);
+            filepart = new Regex(realURL, "/([a-z]+)$").getMatch(0);
             String capSecret = ajax.getRegex("cap_secret value=(.*?)>").getMatch(0);
-            String action = ajax.getRegex("post action=\\\"(.*?)\\\"").getMatch(0);
+            action = ajax.getRegex("action=\\\\\"(.*?)\\\\\"").getMatch(0);
             if (cid == null || fileID == null || capSecret == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
-            String postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
+            postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
+            ajax.setHeader("Referer", realURL);
             ajax.postPage(action, postData);
-            /* Errorhandling */
-            if (ajax.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            ajax.getPage(ajax.getRedirectLocation());
+        } while (ajax.getRequest().getHttpConnection().getResponseCode() != 200);
+        if ( filepart == null) filepart = "";
+        ArrayList<String> packedJS = new ArrayList<String>();
+        /* packed Javascript in ArrayList */
+        packedJS.add(ajax.getRegex(JAVASCRIPT).getMatch(0, 2));
+        packedJS.add(ajax.getRegex(JAVASCRIPT).getMatch(0, 7));
+        /* String an unpackJS(String) schicken und geregextes Array zurück bekommen */
+        String[] plainJS = unpackJS(packedJS.get(0));           
+        /* DOWNLOAD:INIT */
+        postData = "id=" + fileID + "&type=" + filetype + "&ext=" + filepart + "&f=download:init&z=" + plainJS[1] + "&h=" + plainJS[2];
+        ajax.setHeader("Referer", action);       
+        /* DOWNLOAD:CHECK#1 */
+        ajax.postPage(FILETEMPLATE, postData);
+        plainJS = unpackJS(ajax.getRegex(JAVASCRIPT).getMatch(0));            
+        postData = "id=" + plainJS[4] + "&type=" + plainJS[5] + "&ext=" + plainJS[6] + "&f=download:check" + "&z=" + plainJS[1] + "&h=" + plainJS[2] + "&t=" + plainJS[3];
+        /* Timer */
+        int waitThis = 59;
+        String wait = plainJS[7].toString().replaceAll("\\D", "");
+        if (wait != null) waitThis = Integer.parseInt(wait);
+        sleep(waitThis * 1001l, downloadLink);            
+        /* DOWNLOAD:CHECK#2 + additional waittime */
+        do {
+            ajax.postPage(FILETEMPLATE, postData);
+            plainJS = unpackJS(ajax.getRegex(JAVASCRIPT).getMatch(0));
+            if (plainJS[0] != null && plainJS[0].contains("check_n")) {
+                wait = plainJS[0].replaceAll("\\D", "");
+                if (wait != null) waitThis = Integer.parseInt(wait);
+                sleep(waitThis * 1001l, downloadLink, "Waiting for host: ");
+              }
+        } while (plainJS[0] != null);            
+        /* File or Video Link */
+        String fileOrVid = "";
+        if (realURL.contains("file/"))
+            fileOrVid = "getFileLink";
+        else
+            fileOrVid = "getVidLink";
+        /* Next Request. Response part of dl-Link */
+        String pathData = "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=0&rsargs[]=yellow&rsargs[]="
+                          + plainJS[1] + "&rsargs[]=" + plainJS[2] + "&rsargs[]=" + plainJS[3] + "&rsargs[]=" + plainJS[5] + "&rsargs[]="
+                          + plainJS[4] + "&rsargs[]=" + filepart;
+        ajax.getPage(action + pathData).trim();
+        plainJS = unpackJS(packedJS.get(1));
+        link = ajax.getRegex("doDownload\\(.'(.*?).'\\)").getMatch(0);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* Click Downloadbutton. Next Request. Response new packed JS */
+        ajax.getPage(link + plainJS[4] + "?zenc=");
+        handleErrors(ajax);
+        packedJS.add(ajax.getRegex(JAVASCRIPT).getMatch(0, 4));
+        plainJS = unpackJS(packedJS.get(2));
+        /* Testfix */
+        if (plainJS[1] == null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l);
+        /* Next Request. Response Finallink as redirect */
+        ajax.getPage("http://www.badongo.com" + plainJS[1]); 
+        dl = BrowserAdapter.openDownload(ajax, downloadLink, ajax.getRedirectLocation(), true, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            String page = ajax.loadConnection(dl.getConnection()) + "";// +""
+                                                                       // due
+                                                                       // to
+                                                                       // refaktor
+                                                                       // compatibilities.
+                                                                       // old
+                                                                       // <ref10000
+                                                                       // returns
+                                                                       // String.
+                                                                       // else
+                                                                       // Request
+                                                                       // INstance
+            ajax.getRequest().setHtmlCode(page);
+            dl.getConnection().disconnect();
             handleErrors(ajax);
-            // Ab hier gibts packed java script, die aktuelle Wartezeit steht
-            // auch im JS d.h. da sollte sie geregexed werden und unten
-            // entsprechend lange gewartet werden
-            /* Waittime */
-            sleep(45500, downloadLink);
-            /* File or Video Link */
-            String fileOrVid = "";
-            if (realURL.contains("file/"))
-                fileOrVid = "getFileLink";
-            else
-                fileOrVid = "getVidLink";
-            /* Possibly wait for host */
-            for (int i = 0; i <= 20; i++) {
-                ajax.getPage(realURL + "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
-                if (!ajax.containsHTML("WAITING"))
-                    break;
-                else if (i == 20) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                sleep(1000, downloadLink, "Waiting for host");
-            }
-            link = ajax.getRegex("doDownload\\(.'(.*?).'\\)").getMatch(0);
-            if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            ajax.getPage((link + "/ifr?pr=1&zenc=").replace("/1/", "/0/"));
-            handleErrors(ajax);
-            ajax.getPage((link + "/loc?pr=1").replace("/1/", "/0/"));
-
-            dl = BrowserAdapter.openDownload(ajax, downloadLink, ajax.getRedirectLocation(), true, 1);
-            if (!dl.getConnection().isContentDisposition()) {
-                String page = ajax.loadConnection(dl.getConnection()) + "";// +""
-                                                                           // due
-                                                                           // to
-                                                                           // refaktor
-                                                                           // compatibilities.
-                                                                           // old
-                                                                           // <ref10000
-                                                                           // returns
-                                                                           // String.
-                                                                           // else
-                                                                           // Request
-                                                                           // INstance
-                ajax.getRequest().setHtmlCode(page);
-                dl.getConnection().disconnect();
-                handleErrors(ajax);
-            }
-            dl.startDownload();
         }
-    }
+        dl.startDownload();
+    }          
 
     private void handleErrors(Browser br) throws PluginException {
         if (br.containsHTML("Gratis Mitglied Wartezeit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l);
@@ -309,6 +300,34 @@ public class BadongoCom extends PluginForHost {
         ai.setStatus("Account ok");
         account.setValid(true);
         return ai;
+    }
+    
+    public String[] unpackJS(String fun) throws Exception {
+        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngine engine = manager.getEngineByName("javascript");
+        Object result = new Object();
+        try {
+            result = engine.eval(fun);
+        } catch(ScriptException e) {
+            e.printStackTrace();
+        }
+        String[] row = new String[10];
+        int z = 0;
+        String unpacked = result.toString();
+        unpacked = unpacked.replaceAll("\n|\t| ", "");
+        if (unpacked.length() <= 20 && unpacked.contains("check_n")) {
+            row[0] = unpacked;
+            return row;
+            }
+        int a = unpacked.lastIndexOf("{" );
+        unpacked = unpacked.substring(a + 1, unpacked.length());
+        Pattern pattern = Pattern.compile("(:|=)'(.*?)'|'check_n'.*?\"(\\d+)\"|\".(.*?)\""); 
+        Matcher matcher = pattern.matcher(unpacked); 
+        while (matcher.find()){             
+            z+=1;
+            row[z] = matcher.group().toString().replaceAll("'|:|=|\"", "").trim();
+        }
+        return row;
     }
 
     @Override

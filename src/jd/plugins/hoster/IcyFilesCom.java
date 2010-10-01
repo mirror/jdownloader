@@ -54,7 +54,6 @@ public class IcyFilesCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        // br.setDebug(true);
         requestFileInformation(downloadLink);
         String regexedwaittime = br.getRegex("class=\"counter\">(\\d+)</div>").getMatch(0);
         int waitThis = 30;

@@ -50,7 +50,7 @@ public class BdngCm extends PluginForDecrypt {
         parameter = parameter.replaceFirst("badongo\\.com", "badongo.viajd");
         if (!br.containsHTML("Diese Datei wurde gesplittet")) {
             /* For single video links */
-            if (!parameter.endsWith("/1")) parameter = parameter + "/1";
+            //if (!parameter.endsWith("/1")) parameter = parameter + "/1";
             /* For audio files */
             if (parameter.contains("audio/")) parameter = parameter.replace("audio/", "file/");
             DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter));
