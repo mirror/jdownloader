@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://[\\w\\.]*?vip-file\\.com/download/[\\w\\.]+/(.*?)\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://[\\w\\.]*?vip-file\\.com/download(lib)?/.*?/.*?\\.html" }, flags = { 2 })
 public class Vipfilecom extends PluginForHost {
 
     public Vipfilecom(PluginWrapper wrapper) {

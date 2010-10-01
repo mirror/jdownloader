@@ -129,6 +129,8 @@ public class LetitBitNet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
+            // Get to the premium zone
+            br.postPage(downloadLink.getDownloadURL(), "if_not_ru=1");
             /* normal account with only a password */
             logger.info("Premium with pw only");
             Form premiumform = null;

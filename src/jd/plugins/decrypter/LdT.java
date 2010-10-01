@@ -52,14 +52,15 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
+            System.out.print(br.toString());
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            String hosterlinks[] = br.getRegex("<a rel=\"nofollow\" href=\"(/go/\\d+-.*?/)\"").getColumn(0);
-            String streamlinks[] = br.getRegex("class=\"stream_link\" href=\"(/go/\\d+.*?)\"").getColumn(0);
+            String hosterlinks[] = br.getRegex("href=\"(/go/\\d+-.*?/)\"").getColumn(0);
+            String streamlinks[] = br.getRegex("\"(/go/\\d+-[a-z0-9\\.-]+/streaming/.*?)\"").getColumn(0);
             if ((hosterlinks == null || hosterlinks.length == 0) && (streamlinks == null || streamlinks.length == 0)) return null;
             if (hosterlinks != null && hosterlinks.length != 0) {
                 logger.info("Found " + hosterlinks.length + " hosterlinks, decrypting now...");
                 for (String hosterlink : hosterlinks) {
-                    alllinks.add(hosterlink);
+                    if (!hosterlink.contains("/streaming/")) alllinks.add(hosterlink);
                 }
             }
             if (streamlinks != null && streamlinks.length != 0) {

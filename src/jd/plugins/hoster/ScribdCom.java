@@ -43,7 +43,7 @@ public class ScribdCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String formats = "formats";
+    private static final String   formats = "formats";
 
     /** The list of server values displayed to the user */
     private static final String[] allFormats;
@@ -116,7 +116,10 @@ public class ScribdCom extends PluginForHost {
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         xmlbrowser.postPage("http://www.scribd.com/word/toolbar_download", "id=" + fileId + "&show_container=true&secret_password=nil");
         // Check if the selected format is available
-        if (!xmlbrowser.containsHTML("value=\"" + fileExt + "\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "The selected format is not available for this file!");
+        if (!xmlbrowser.containsHTML("value=\"" + fileExt + "\"")) {
+            if (xmlbrowser.containsHTML("premium: true")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.errors.nofreedownloadlink", "Download is only available for premium users!"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, "The selected format is not available for this file!");
+        }
         String dllink = "http://www.scribd.com/document_downloads/" + fileId + "?secret_password=&extension=" + fileExt;
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
