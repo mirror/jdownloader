@@ -170,6 +170,9 @@ public class SaveTv extends PluginForHost {
             } else {
                 extendedLogin("http://free.save.tv", FREEPOSTPAGE, Encoding.urlEncode(aa.getUser()), Encoding.urlEncode(aa.getPass()));
             }
+            boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
+            boolean dontModifyFilename = getPluginConfig().getBooleanProperty(NORANDOMNUMBERS);
+            boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
             for (DownloadLink dl : urls) {
                 String addedlink = dl.getDownloadURL();
                 if (acctype != null) {
@@ -192,9 +195,6 @@ public class SaveTv extends PluginForHost {
                                 filename = filename.replace(unneededSpace, " ");
                             }
                         }
-                        boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
-                        boolean dontModifyFilename = getPluginConfig().getBooleanProperty(NORANDOMNUMBERS);
-                        boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
                         if (preferAdsFree && br.containsHTML(ADSFREEAVAILABLE))
                             dl.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", ADSFREEAVAILABLETEXT));
                         else if (preferAdsFree && !br.containsHTML(ADSFREEAVAILABLE)) dl.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailable", ADSFREEANOTVAILABLETEXT));

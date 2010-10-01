@@ -119,7 +119,7 @@ public class FilesMailRu extends PluginForHost {
                         }
                         filesize = filesize.replace("Г", "G");
                         filesize = filesize.replace("М", "M");
-                        filesize = filesize.replace("к", "k");
+                        filesize = filesize.replaceAll("(к|К)", "k");
                         filesize = filesize.replaceAll("(Б|б)", "");
                         filesize = filesize + "b";
                         downloadLink.setFinalFileName(filename);
