@@ -1353,6 +1353,7 @@ plugins.hoster.savetv.adsfreenotavailable = ADSFREEANOTVAILABLETEXT
 plugins.hoster.savetv.dontmodifyfilename = Lascia il nome file inalterato (può causare problemi)
 plugins.hoster.savetv.preferadfreevideos = Preferibilmente video tagliati (video senza pubblicità)
 plugins.hoster.savetv.useoriginalfilename = Nome file originale (visibile solo durante il download) 
+plugins.hoster.scribdcom.errors.nofreedownloadlink = -
 plugins.hoster.scribdcom.nodownloadavailable = Il download è disabilitato per questo file!
 plugins.hoster.sendspacecom.errors.servererror = Errore sconosciuto del server
 plugins.hoster.sendspacecom.errors.serverfull = Capacità di servizio gratuito completo
