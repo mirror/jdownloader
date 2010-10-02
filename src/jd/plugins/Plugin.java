@@ -185,8 +185,8 @@ public abstract class Plugin implements ActionListener {
      * @return Filename aus dem header (content disposition) extrahiert
      */
     public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
-        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename") < 0) { return Plugin.getFileNameFromURL(urlConnection.getURL()); }
-        return Plugin.getFileNameFromDispositionHeader(urlConnection.getHeaderField("content-disposition"));
+        if (urlConnection.getHeaderField("Content-Disposition") == null || urlConnection.getHeaderField("Content-Disposition").indexOf("filename") < 0) { return Plugin.getFileNameFromURL(urlConnection.getURL()); }
+        return Plugin.getFileNameFromDispositionHeader(urlConnection.getHeaderField("Content-Disposition"));
     }
 
     public static String getFileNameFromURL(final URL url) {

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.plugins.BrowserAdapter;
@@ -63,6 +64,7 @@ public class DuckLoad extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.setDebug(true);
         int waitThis = 20;
         if (!downloadLink.getDownloadURL().contains("/download/")) {
             waitThis = 10;
@@ -74,7 +76,7 @@ public class DuckLoad extends PluginForHost {
         String dllink = br.getRegex("<param name=\"src\" value=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
-            //swf-Download
+            /* swf-Download */
             if ((dllink == null) && br.containsHTML("duckloadplayer\\.swf")) {
                 String dl_id = br.getRegex("stream\\.toFav\\(\\'(.*?)\\'\\);\">").getMatch(0);
                 dllink = "http://flash.duckload.com/video/video_api.php?id=" + dl_id;
@@ -89,6 +91,16 @@ public class DuckLoad extends PluginForHost {
                 String part2 = br.getRegex("\\'token=(.*?)\\&\\';").getMatch(0);
                 String part3 = br.getRegex("\\'filename=(.*?)\\&\\';").getMatch(0);
                 if (part1 == null || part2 == null || part3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* Prevents ErrorCode: e983 */
+                Random rndCookie = new Random();
+                int rndX = rndCookie.nextInt(999999999-100000000)+100000000;
+                int rndY = rndCookie.nextInt(99999999-10000000)+10000000;
+                long ts = System.currentTimeMillis();
+                br.setCookie(MAINPAGE, "__utma", rndY + "." + rndX + "." +ts+ "." + ts + "." + ts + ".1");
+                br.setCookie(MAINPAGE, "__utmb", rndY + ".7.10." + ts);
+                br.setCookie(MAINPAGE, "__utmc", "" + rndY + "");
+                br.setCookie(MAINPAGE, "__utmz", rndY + "." + ts + ".1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)");
+                /* ErrorCode: e983 Handling End */
                 dllink = "http://www.duckload.com/api/as2/link/" + part1 + "/" + part2 + "/" + part3;
                 int secondWait = 10;String secondWaitRegexed = br.getRegex("\\'timetowait=(\\d+)\\&\\'").getMatch(0);
                 if (secondWaitRegexed != null) secondWait = Integer.parseInt(secondWaitRegexed);
