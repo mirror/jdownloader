@@ -44,11 +44,12 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
     private static final UploadedtoLinkObserver LINK_OBSERVER = new UploadedtoLinkObserver();
+    private static final String                 RECAPTCHA     = "/recaptcha/";
 
     static class UploadedtoLinkObserver extends Thread {
 
         private ArrayList<DownloadLink> list;
-        private Object lock = new Object();
+        private Object                  lock = new Object();
 
         public UploadedtoLinkObserver() {
             super("UploadedCRCObserver");
@@ -227,7 +228,6 @@ public class Uploadedto extends PluginForHost {
             logger.info("Direct Downloads active");
         }
 
-            
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
 
         dl.setFileSizeVerified(true);
@@ -297,7 +297,7 @@ public class Uploadedto extends PluginForHost {
                     }
                 }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } 
+            }
         }
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
@@ -387,6 +387,7 @@ public class Uploadedto extends PluginForHost {
         Form form = br.getFormbyProperty("name", "download_form");
         if (form == null && br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadedto.errors.serverproblem", "Server problem"), 10 * 60 * 1000l);
         if (form != null) {
+            if (!br.containsHTML(RECAPTCHA)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             /* Wartezeit */
@@ -394,13 +395,12 @@ public class Uploadedto extends PluginForHost {
             String wait = br.getRegex("var secs = (\\d+)").getMatch(0);
             if (wait != null) waitThis = Integer.parseInt(wait);
             sleep(waitThis * 1001l, downloadLink);
-            do {
-                rc.parse();
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                rc.setCode(c);
-            } while (br.getRequest().getResponseHeader("Location") == null);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.setCode(c);
+            if (br.containsHTML("/recaptcha/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         } else {
             String dlLink = br.getRedirectLocation();

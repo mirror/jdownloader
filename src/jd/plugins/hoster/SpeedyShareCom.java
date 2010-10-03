@@ -29,6 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://[\\w\\.]*?speedyshare\\.com/files/[0-9]+/.+" }, flags = { 0 })
 public class SpeedyShareCom extends PluginForHost {
@@ -42,6 +43,9 @@ public class SpeedyShareCom extends PluginForHost {
     public String getAGBLink() {
         return "http://www.speedyshare.com/terms.php";
     }
+
+    private static final String PREMIUMONLY     = ">This paraticular file can only be downloaded after you purchase";
+    private static final String PREMIUMONLYTEXT = "Only downloadable for premium users";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
@@ -57,6 +61,8 @@ public class SpeedyShareCom extends PluginForHost {
             downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
         else
             logger.warning("Filesizeregex for speedyshare.com is broken!");
+        if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
+
         return AvailableStatus.TRUE;
     }
 
@@ -69,6 +75,7 @@ public class SpeedyShareCom extends PluginForHost {
             long waittime = 1000l * 60 * Long.parseLong(wait[0]) + 1000 * Long.parseLong(wait[1]);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
+        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
         /* Link holen */
         String linkpart0 = new Regex(downloadLink.getDownloadURL(), "(speedyshare\\.com/files/[0-9]+/)").getMatch(0);
         String linkpart1 = new Regex(downloadLink.getDownloadURL(), "speedyshare\\.com/files/[0-9]+/(.+)").getMatch(0);
