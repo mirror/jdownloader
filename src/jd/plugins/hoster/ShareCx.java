@@ -110,6 +110,8 @@ public class ShareCx extends PluginForHost {
         br.submitForm(dlform1);
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
+            String waittime = br.getRegex("startTimer\\((\\d+)\\);").getMatch(0);
+            if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
             logger.warning("dllink equals null, stopping...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -17,9 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -28,51 +28,55 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.gw.kz" }, urls = { "http://[\\w\\.]*?files\\.(gw|gameworld)\\.kz/[a-z0-9]+\\.html" }, flags = { 0 })
-public class FilesGwKz extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/files/[a-z0-9]{8}/.*?\\.html" }, flags = { 0 })
+public class BitShareCom extends PluginForHost {
 
-    public FilesGwKz(PluginWrapper wrapper) {
+    public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://files.gw.kz/";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("gameworld.", "gw."));
+        return "http://bitshare.com/terms-of-service.html";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.setCookie("http://files.gw.kz", "gw_lang", "en");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Запрашиваемый вами файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"span-d_name bold px14 p_l_3px\" title=\"(.*?)\"").getMatch(0);
-        String filesize = br.getRegex("<b>Size: </b>(.*?)</span>").getMatch(0);
+        if (br.containsHTML(">We are sorry, but the request file could not be found in our database")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex nameAndSize = br.getRegex("<h1>Downloading (.*?) - ([0-9\\.]+ [A-Za-z]+)</h1>");
+        String filename = nameAndSize.getMatch(0);
+        String filesize = nameAndSize.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(Regex.getSize(filesize.replace("yte", "")));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String fid = br.getRegex("\\&fid=(\\d+)\\&").getMatch(0);
-        if (!br.containsHTML("captcha\\.src") || fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        boolean failed = true;
-        for (int i = 0; i <= 3; i++) {
-            br.postPage("http://files.gw.kz/index.php", "check=captcha&fid=" + fid + "&captcha=" + getCaptchaCode("http://files.gw.kz/captcha.php?rand=" + new Random().nextInt(1000), downloadLink));
-            if (br.containsHTML("button_pass")) continue;
-            failed = false;
-            break;
+        if (br.containsHTML("You reached your hourly traffic limit")) {
+            String wait = br.getRegex("id=\"blocktimecounter\">(\\d+) Seconds</span>").getMatch(0);
+            if (wait == null) wait = br.getRegex("var blocktime = (\\d+);").getMatch(0);
+            if (wait != null)
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
+            else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br.getRegex("style=\"display: block; font-size:18px;color:#000000;font-weight:bold;\"><a href=\"(http://.*?)\">Download").getMatch(0);
+        String fileID = new Regex(downloadLink.getDownloadURL(), "bitshare\\.com/files/([a-z0-9]{8})/").getMatch(0);
+        String tempID = br.getRegex("var ajaxdl = \"(.*?)\";").getMatch(0);
+        if (fileID == null || tempID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://bitshare.com/files-ajax/" + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
+        String rgexedWait = br.getRegex("file:(\\d+):").getMatch(0);
+        int wait = 45;
+        if (rgexedWait != null) wait = Integer.parseInt(rgexedWait);
+        sleep(wait * 1001l, downloadLink);
+        br.postPage("http://bitshare.com/files-ajax/" + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
+        String dllink = br.getRegex("SUCCESS#(http://.+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -88,7 +92,7 @@ public class FilesGwKz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     @Override

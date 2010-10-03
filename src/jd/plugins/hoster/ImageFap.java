@@ -121,13 +121,10 @@ public class ImageFap extends PluginForHost {
         if (gallery_name != null) {
             gallery_name = gallery_name.trim();
         }
-        String imagelink = br.getRegex("name=\"mainPhoto\" onclick=\"OnPhotoClick\\(\\);\" src=\"(.*?)\"").getMatch(0);
+        String imagelink = br.getRegex("\"(http://pic-e\\.imagefap\\.com/images/full/\\d+/\\d+/\\d+.*?)\"").getMatch(0);
         if (imagelink == null) {
-            imagelink = br.getRegex("\"(http://pic-e\\.imagefap\\.com/images/full/\\d+/\\d+/\\d+.*?)\"").getMatch(0);
-            if (imagelink == null) {
-                String returnID = new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (returnID != null) imagelink = DecryptLink(returnID);
-            }
+            String returnID = new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (returnID != null) imagelink = DecryptLink(returnID);
         }
         if (imagelink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (gallery_name != null) downloadLink.addSubdirectory(gallery_name);

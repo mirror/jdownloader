@@ -40,7 +40,8 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         // Tohse links need a "/" at the end to be valid
         if (!param.getCryptedUrl().endsWith("/")) param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
-        String parameter = param.toString().replace("mir.cr/", "mirrorcreator.com/files/").replaceAll("(http://|www\\.)", "http://www.");
+        String parameter = param.toString().replace("mir.cr/", "mirrorcreator.com/files/").replaceAll("(http://|www\\.)", "");
+        parameter = "http://www." + parameter;
         String host = new Regex(parameter, "(.+)/files").getMatch(0);
         String id = new Regex(parameter, "files/([0-9A-Z]+)").getMatch(0);
         // This should never happen but in case a dev changes the plugin without
