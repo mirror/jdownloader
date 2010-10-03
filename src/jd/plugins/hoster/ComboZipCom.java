@@ -37,13 +37,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "combozip.com" }, urls = { "http://[\\w\\.]*?combozip\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "combozip.com" }, urls = { "http://[\\w\\.]*?combozip\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class ComboZipCom extends PluginForHost {
 
     public ComboZipCom(PluginWrapper wrapper) {
         super(wrapper);
         // To avoid entering 2 captchas and then getting a waittime
         this.setStartIntervall(60 * 1000l);
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // XfileSharingProBasic Version 1.6, added a filesize regex
@@ -53,8 +54,8 @@ public class ComboZipCom extends PluginForHost {
     }
 
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST = "http://combozip.com";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST  = "http://combozip.com";
+    public boolean              nopremium    = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -216,7 +217,7 @@ public class ComboZipCom extends PluginForHost {
             if (password) {
                 passCode = handlePassword(passCode, DLForm, downloadLink);
             }
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
         boolean error = false;
@@ -250,7 +251,7 @@ public class ComboZipCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -388,7 +389,7 @@ public class ComboZipCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
