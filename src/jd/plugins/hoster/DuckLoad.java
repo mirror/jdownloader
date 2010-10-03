@@ -96,7 +96,7 @@ public class DuckLoad extends PluginForHost {
                 int rndX = rndCookie.nextInt(999999999-100000000)+100000000;
                 int rndY = rndCookie.nextInt(99999999-10000000)+10000000;
                 long ts = System.currentTimeMillis();
-                br.setCookie(MAINPAGE, "__utma", rndY + "." + rndX + "." +ts+ "." + ts + "." + ts + ".1");
+                br.setCookie(MAINPAGE, "__utma", rndY + "." + rndX + "." + ts + "." + ts + "." + ts + ".1");
                 br.setCookie(MAINPAGE, "__utmb", rndY + ".7.10." + ts);
                 br.setCookie(MAINPAGE, "__utmc", "" + rndY + "");
                 br.setCookie(MAINPAGE, "__utmz", rndY + "." + ts + ".1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)");

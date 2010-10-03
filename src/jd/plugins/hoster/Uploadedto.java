@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -30,12 +31,14 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?)" }, flags = { 2 })
@@ -384,9 +387,21 @@ public class Uploadedto extends PluginForHost {
         Form form = br.getFormbyProperty("name", "download_form");
         if (form == null && br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadedto.errors.serverproblem", "Server problem"), 10 * 60 * 1000l);
         if (form != null) {
-            form.put("download_submit", "Download");
-            // sleep(10000l, downloadLink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            /* Wartezeit */
+            int waitThis = 30;
+            String wait = br.getRegex("var secs = (\\d+)").getMatch(0);
+            if (wait != null) waitThis = Integer.parseInt(wait);
+            sleep(waitThis * 1001l, downloadLink);
+            do {
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
+            } while (br.getRequest().getResponseHeader("Location") == null);
+            dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         } else {
             String dlLink = br.getRedirectLocation();
             if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

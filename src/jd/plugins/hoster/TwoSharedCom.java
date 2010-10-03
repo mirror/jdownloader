@@ -70,7 +70,6 @@ public class TwoSharedCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
         Form pwform = br.getForm(0);
         if (pwform != null) {
             String passCode;
@@ -88,7 +87,10 @@ public class TwoSharedCom extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
         }
-        String link = br.getRegex(Pattern.compile("function startDownload.*?window.location = \"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String link = br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        br.getPage("http://www.2shared.com" + link);
+        if (!br.getRequest().getHttpConnection().getContentType().contains("text")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link = br.toString();
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (dl.getConnection().getContentType().contains("text")) {
