@@ -55,7 +55,7 @@ public class ComboZipCom extends PluginForHost {
 
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST  = "http://combozip.com";
-    public boolean              nopremium    = false;
+    public boolean              NOPREMIUM    = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -301,7 +301,7 @@ public class ComboZipCom extends PluginForHost {
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML("Premium-Account expire") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire")) nopremium = true;
+        if (!br.containsHTML("Premium-Account expire")) NOPREMIUM = true;
     }
 
     @Override
@@ -327,12 +327,12 @@ public class ComboZipCom extends PluginForHost {
         }
         account.setValid(true);
         String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (availabletraffic != null) {
+        if (availabletraffic != null && !availabletraffic.contains("unlimited") && !availabletraffic.equals(" Mb")) {
             ai.setTrafficLeft(Regex.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (!nopremium) {
+        if (!NOPREMIUM) {
             String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
@@ -357,7 +357,7 @@ public class ComboZipCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (nopremium) {
+        if (NOPREMIUM) {
             doFree(link);
         } else {
             String dllink = br.getRedirectLocation();
