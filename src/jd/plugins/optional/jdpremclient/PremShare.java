@@ -16,6 +16,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -450,4 +451,9 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         return false;
     }
 
+    @Override
+    public void setDownloadInterface(DownloadInterface dl) {
+        this.dl = dl;
+        if (plugin != null) plugin.setDownloadInterface(dl);
+    }
 }

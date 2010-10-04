@@ -84,7 +84,7 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (FileSonicCom.LOCK) {
-            AccountInfo ai = new AccountInfo();
+            AccountInfo ai = new AccountInfo();            
             try {
                 this.login(account, true);
             } catch (final PluginException e) {
@@ -98,6 +98,7 @@ public class FileSonicCom extends PluginForHost {
                 }
                 return ai;
             }
+
             if (account.getAccountInfo() != null) {
                 ai = account.getAccountInfo();
             }

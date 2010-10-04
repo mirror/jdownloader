@@ -167,6 +167,10 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         super.clean();
     }
 
+    public void setDownloadInterface(DownloadInterface dl) {
+        this.dl = dl;
+    }
+
     protected void setBrowserExclusive() {
         if (br == null) return;
         br.setCookiesExclusive(true);
@@ -466,12 +470,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             try {
                 transferStatus.usePremium(true);
                 handlePremium(downloadLink, account);
-                if (dl != null && dl.getConnection() != null) {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (Exception e) {
-                    }
-                }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
                 if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
@@ -479,6 +477,14 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
                     blockAccount = true;
                 }
+            } finally {
+                if (dl != null && dl.getConnection() != null) {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (Exception e) {
+                    }
+                }
+                dl = null;
             }
 
             final long traffic = Math.max(0, downloadLink.getDownloadCurrent() - before);
@@ -533,16 +539,18 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             /* without account */
             try {
                 handleFree(downloadLink);
+            } catch (PluginException e) {
+                e.fillLinkStatus(downloadLink.getLinkStatus());
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
+                logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
+            } finally {
                 if (dl != null && dl.getConnection() != null) {
                     try {
                         dl.getConnection().disconnect();
                     } catch (Exception e) {
                     }
                 }
-            } catch (PluginException e) {
-                e.fillLinkStatus(downloadLink.getLinkStatus());
-                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
-                logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
+                dl = null;
             }
         }
         return;
@@ -634,8 +642,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     public Browser getBrowser() {
         return br;
     }
-
-
 
     /**
      * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden

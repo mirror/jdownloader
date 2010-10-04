@@ -44,6 +44,8 @@ public class BrowserAdapter {
 
             }
         }
+        PluginForHost plugin = downloadLink.getLivePlugin();
+        if (plugin != null) plugin.setDownloadInterface(dl);
         return dl;
     }
 
@@ -68,6 +70,8 @@ public class BrowserAdapter {
                 if (maxRedirects <= 0) { throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop"); }
             }
         }
+        PluginForHost plugin = downloadLink.getLivePlugin();
+        if (plugin != null) plugin.setDownloadInterface(dl);
         return dl;
     }
 
@@ -92,6 +96,8 @@ public class BrowserAdapter {
                 if (maxRedirects <= 0) { throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop"); }
             }
         }
+        PluginForHost plugin = downloadLink.getLivePlugin();
+        if (plugin != null) plugin.setDownloadInterface(dl);
         return dl;
     }
 
@@ -117,6 +123,8 @@ public class BrowserAdapter {
 
             }
         }
+        PluginForHost plugin = downloadLink.getLivePlugin();
+        if (plugin != null) plugin.setDownloadInterface(dl);
         return dl;
     }
 
@@ -142,6 +150,8 @@ public class BrowserAdapter {
 
             }
         }
+        PluginForHost plugin = downloadLink.getLivePlugin();
+        if (plugin != null) plugin.setDownloadInterface(dl);
         return dl;
     }
 
@@ -166,6 +176,8 @@ public class BrowserAdapter {
                 if (maxRedirects <= 0) { throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop"); }
             }
         }
+        PluginForHost plugin = downloadLink.getLivePlugin();
+        if (plugin != null) plugin.setDownloadInterface(dl);
         return dl;
     }
 }

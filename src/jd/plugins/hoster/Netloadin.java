@@ -316,7 +316,7 @@ public class Netloadin extends PluginForHost {
             return ai;
         }
         validUntil = validUntil.trim();
-        String days = new Regex(validUntil, "([\\d]+) ?Tage").getMatch(0);
+        String days = new Regex(validUntil, "([\\d]+) ?Tage?").getMatch(0);
         String hours = new Regex(validUntil, "([\\d]+) ?Stunde").getMatch(0);
         long res = 0;
         if (days != null) res += Long.parseLong(days.trim()) * 24 * 60 * 60 * 1000;

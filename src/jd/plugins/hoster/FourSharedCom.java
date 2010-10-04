@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -34,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //http://www.4shared.com/file/<FILEID[a-70-9]>/<FILENAME>.html
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     public FourSharedCom(PluginWrapper wrapper) {
@@ -79,9 +80,9 @@ public class FourSharedCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         try {
             this.setBrowserExclusive();
-            br.getHeaders().put("4langcookie", "en");
+            br.setCookie("4shared.com","4langcookie", "en");
             br.setFollowRedirects(true);
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(downloadLink.getDownloadURL());            
             // need password?
             if (br.containsHTML("enter a password to access")) {
                 Form form = br.getFormbyProperty("name", "theForm");
@@ -116,7 +117,7 @@ public class FourSharedCom extends PluginForHost {
                 filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
                 if (filename == null) filename = br.getRegex("<title>(.*?) - 4shared\\.com - online file sharing and storage - download</title>").getMatch(0);
             }
-            String size = br.getRegex("<b>Size:</b></td>[\t\n\r ]+<td class=\"finforight lgraybox\" style=\"border-top:1px #dddddd solid\">(.*?)</td>").getMatch(0);
+            String size = br.getRegex("<b>Size:</b></td>.*?<td class=\"finforight lgraybox\".*?>(.*?)</td>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setName(filename.trim());
             if (size != null) downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
@@ -222,7 +223,24 @@ public class FourSharedCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/(get|audio|video)", "red.com/file").replace("account/", ""));
-    }
+        if (link.getDownloadURL().contains(".com/download")) {
+            try {
+                Browser br = new Browser();
+                br.getPage(link.getDownloadURL());
+                String newLink = br.getRedirectLocation();
+                if (newLink != null) {
+                    String tmp = new Regex(newLink, "(.*?)(\\?|$)").getMatch(0);
+                    if (tmp != null) {
+                        link.setUrlDownload(tmp);
+                    } else {
+                        link.setUrlDownload(newLink);
+                    }
+                }
+            } catch (Throwable e) {
+            }
+        } else {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/(get|audio|video)", "red.com/file").replace("account/", ""));
+        }
 
+    }
 }

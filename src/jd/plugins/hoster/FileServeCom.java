@@ -159,8 +159,7 @@ public class FileServeCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (br.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users"));
-        if (br.containsHTML(">Your download link has expired\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link expired, contact fileserve support", 30 * 60 * 1000l);
+        handleErrors();
         String fileId = br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         br.setFollowRedirects(false);
         String captchaJSPage = br.getRegex("\"(/landing/.*?/download_captcha\\.js)\"").getMatch(0);
@@ -212,9 +211,8 @@ public class FileServeCom extends PluginForHost {
         br.postPage(downloadLink.getDownloadURL(), "download=normal");
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            if (br.containsHTML("Captcha error") || br.containsHTML("incorrect-captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            String wait = br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
-            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
+            handleErrors();
+
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -301,6 +299,9 @@ public class FileServeCom extends PluginForHost {
     }
 
     private void handleErrors() throws PluginException {
+        if (br.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users"));
+        if (br.containsHTML(">Your download link has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link expired, contact fileserve support", 10 * 60 * 1000l);
+        if (br.containsHTML("Captcha error") || br.containsHTML("incorrect-captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String wait = br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
         if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
         if (br.containsHTML("landing-406.php")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);

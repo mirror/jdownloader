@@ -43,6 +43,7 @@ public class NetUploadedCom extends PluginForHost {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+    
 
     // XfileSharingProBasic Version 1.9.2
     @Override

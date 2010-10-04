@@ -863,10 +863,15 @@ public class Rapidshare extends PluginForHost {
             final String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             final HashMap<String, String> data = this.getMap(matches);
             long autoTraffic = 0;
+            long rapids = Long.parseLong(data.get("rapids"));
+            boolean notenoughrapids = false;
             if (data.get("autorefill").equals("1")) {
-                autoTraffic = 5000000000l * (Long.parseLong(data.get("rapids")) / 14);
+                if (rapids > 280) {
+                    autoTraffic = 10000000000l * (rapids / 280);
+                } else {
+                    notenoughrapids = true;
+                }
             }
-
             ai.setTrafficLeft(Long.parseLong(data.get("tskb")) * 1000l + autoTraffic);
             /* account infos */
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
@@ -880,10 +885,9 @@ public class Rapidshare extends PluginForHost {
                 nextBill = Long.parseLong(billedUntilTime) - Long.parseLong(serverTimeString);
                 if (nextBill <= 0) {
                     ai.setStatus("No RapidPro");
-
                 } else {
                     final String left = Formatter.formatSeconds(nextBill, false);
-                    ai.setStatus("Valid for " + left);
+                    ai.setStatus((notenoughrapids ? "(Not enough rapids for autorefill)" : "") + "Valid for " + left);
                 }
             }
         } catch (final Exception e) {
