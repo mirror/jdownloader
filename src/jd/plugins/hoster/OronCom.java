@@ -52,8 +52,8 @@ public class OronCom extends PluginForHost {
         return "http://oron.com/tos.html";
     }
 
-    public boolean nopremium = false;
-    private static final String COOKIE_HOST = "http://oron.com";
+    public boolean              nopremium          = false;
+    private static final String COOKIE_HOST        = "http://oron.com";
     private static final String ONLY4PREMIUMERROR0 = "The file status can only be queried by Premium Users";
     private static final String ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
 
@@ -288,7 +288,11 @@ public class OronCom extends PluginForHost {
         }
         String dllink = br.getRegex("height=\"[0-9]+\"><a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
