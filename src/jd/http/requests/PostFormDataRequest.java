@@ -25,6 +25,9 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
+import org.appwork.utils.net.CountingOutputStream;
+import org.appwork.utils.net.NullOutputStream;
+
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -38,10 +41,9 @@ import jd.http.URLConnectionAdapter.METHOD;
  */
 public class PostFormDataRequest extends Request {
 
-    private String boundary;
+    private String              boundary;
     private ArrayList<FormData> formDatas;
-    private OutputStream output;
-    private String encodeType = "multipart/form-data";
+    private String              encodeType = "multipart/form-data";
 
     public String getEncodeType() {
         return encodeType;
@@ -55,33 +57,38 @@ public class PostFormDataRequest extends Request {
         super(Browser.correctURL(url));
         generateBoundary();
         this.formDatas = new ArrayList<FormData>();
-
     }
 
-    // @Override
-    public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
-        output = httpConnection.getOutputStream();
-
-        for (int i = 0; i < this.formDatas.size(); i++) {
-            write(formDatas.get(i));
-
+    /**
+     * send the postData of the Request. in case httpConnection is null, it
+     * outputs the data to a NullOutputStream
+     */
+    public long postRequest(URLConnectionAdapter httpConnection) throws IOException {
+        CountingOutputStream output = null;
+        if (httpConnection != null && httpConnection.getOutputStream() != null) {
+            output = new CountingOutputStream(httpConnection.getOutputStream());
+        } else {
+            output = new CountingOutputStream(new NullOutputStream());
         }
-        OutputStreamWriter writer = new OutputStreamWriter(output);
-        writer.write(this.boundary);
-        writer.write("--\r\n");
-        writer.flush();
-
-        if (output != null) {
-            output.flush();            
+        try {
+            for (int i = 0; i < this.formDatas.size(); i++) {
+                write(formDatas.get(i), output);
+            }
+            OutputStreamWriter writer = new OutputStreamWriter(output);
+            writer.write(this.boundary);
+            writer.write("--\r\n");
+            writer.flush();
+            output.flush();
+        } finally {
+            if (httpConnection != null) httpConnection.postDataSend();
         }
-        httpConnection.postDataSend();
+        return output.bytesWritten();
     }
 
-    private void write(FormData formData) throws IOException {
+    private void write(FormData formData, OutputStream output) throws IOException {
         OutputStreamWriter writer = new OutputStreamWriter(output);
         writer.write(this.boundary);
         writer.write("\r\n");
-        BufferedOutputStream outputByteWriter;
         switch (formData.getType()) {
         case VARIABLE:
             writer.write("Content-Disposition: form-data; name=\"" + formData.getName() + "\"");
@@ -92,71 +99,59 @@ public class PostFormDataRequest extends Request {
             writer.write("Content-Disposition: form-data; name=\"" + formData.getName() + "\"; filename=\"" + formData.getValue() + "\"");
             writer.write("\r\nContent-Type: " + formData.getDataType() + "\r\n\r\n");
             writer.flush();
-            outputByteWriter = new BufferedOutputStream(output);
-            outputByteWriter.write(formData.getData(), 0, formData.getData().length);
-
+            output.write(formData.getData(), 0, formData.getData().length);
+            output.flush();
             writer.write("\r\n");
             writer.flush();
-            outputByteWriter.flush();
-
             break;
         case FILE:
             writer.write("Content-Disposition: form-data; name=\"" + formData.getName() + "\"; filename=\"" + formData.getValue() + "\"");
             writer.write("\r\nContent-Type: " + formData.getDataType() + "\r\n\r\n");
             writer.flush();
             byte[] b = new byte[1024];
-            InputStream in;
-            in = new FileInputStream(formData.getFile());
-            outputByteWriter = new BufferedOutputStream(output);
-            int n;
-            while ((n = in.read(b)) > -1) {
-                outputByteWriter.write(b, 0, n);
+            InputStream in = null;
+            try {
+                in = new FileInputStream(formData.getFile());
+                int n;
+                while ((n = in.read(b)) > -1) {
+                    output.write(b, 0, n);
+                }
+                output.flush();
+                writer.write("\r\n");
+                writer.flush();
+            } finally {
+                if (in != null) in.close();
             }
-            outputByteWriter.flush();
-            in.close();
-
-            writer.write("\r\n");
-            writer.flush();
-
             break;
         }
-
         writer.flush();
-
+        output.flush();
     }
 
-    // @Override
     public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod(METHOD.POST);
         httpConnection.setRequestProperty("Content-Type", encodeType + "; boundary=" + boundary.substring(2));
-
+        httpConnection.setRequestProperty("Content-Length", this.postRequest(null) + "");
     }
 
     private void generateBoundary() {
         long range = (999999999999999l - 100000000000000l);
         long rand = (long) (Math.random() * range) + 100000000000000l;
         boundary = "---------------------" + rand;
-
-        // boundary="-----------------------------41184676334";
-
     }
 
     public void addFormData(FormData fd) {
         this.formDatas.add(fd);
-
     }
 
     public String getPostDataString() {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < this.formDatas.size(); i++) {
             write(formDatas.get(i), sb);
-
         }
         sb.append(this.boundary);
         sb.append("--\r\n");
-
         return sb + "";
-
     }
 
     private void write(FormData formData, StringBuffer sb) {
@@ -171,19 +166,15 @@ public class PostFormDataRequest extends Request {
         case DATA:
             sb.append("Content-Disposition: form-data; name=\"" + formData.getName() + "\"; filename=\"" + formData.getValue() + "\"");
             sb.append("\r\nContent-Type: " + formData.getDataType() + "\r\n\r\n");
-
             sb.append("[....." + formData.getData().length + " Byte DATA....]\r\n");
-
             break;
         case FILE:
             sb.append("Content-Disposition: form-data; name=\"" + formData.getName() + "\"; filename=\"" + formData.getValue() + "\"");
             sb.append("\r\nContent-Type: " + formData.getDataType() + "\r\n\r\n");
-
             sb.append("[....." + formData.getFile().length() + " FileByte DATA....]");
             sb.append("\r\n");
             break;
         }
-
     }
 
 }

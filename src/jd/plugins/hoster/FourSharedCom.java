@@ -80,9 +80,9 @@ public class FourSharedCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         try {
             this.setBrowserExclusive();
-            br.setCookie("4shared.com","4langcookie", "en");
+            br.setCookie("4shared.com", "4langcookie", "en");
             br.setFollowRedirects(true);
-            br.getPage(downloadLink.getDownloadURL());            
+            br.getPage(downloadLink.getDownloadURL());
             // need password?
             if (br.containsHTML("enter a password to access")) {
                 Form form = br.getFormbyProperty("name", "theForm");
@@ -119,7 +119,7 @@ public class FourSharedCom extends PluginForHost {
             }
             String size = br.getRegex("<b>Size:</b></td>.*?<td class=\"finforight lgraybox\".*?>(.*?)</td>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setName(filename.trim());
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
             if (size != null) downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
             return AvailableStatus.TRUE;
         } catch (Exception e) {

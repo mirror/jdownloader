@@ -987,9 +987,8 @@ public class Browser {
             requ = new Request(con) {
 
                 @Override
-                public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
-                    // TODO Auto-generated method stub
-
+                public long postRequest(URLConnectionAdapter httpConnection) throws IOException {
+                    return 0;
                 }
 
                 @Override

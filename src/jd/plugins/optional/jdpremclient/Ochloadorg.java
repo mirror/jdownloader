@@ -160,12 +160,16 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                     }
                     if (++conTry > 4) { return false; }
                 }
+                this.sleep(15 * 1000l, link, "Error, wait and retry");
             }
             if (!dl.getConnection().isContentDisposition()) {
                 /* unknown error */
                 br.followConnection();
                 logger.severe("OchLoad: error!");
                 logger.severe(br.toString());
+                String error = Encoding.urlEncode(br.toString());
+                /* post error message to api */
+                br.postPage("http://www.ochload.org/?apiv2&method=reportError", "hoster=" + link.getHost() + "&error=" + error);
                 synchronized (LOCK) {
                     premiumHosts.remove(link.getHost());
                 }
@@ -233,6 +237,10 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 }
                 ac.setStatus("OchLoad Server Error, temp disabled" + restartReq);
                 return ac;
+            }
+            try {
+                br.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(account.getUser()));
+            } catch (Exception e) {
             }
             boolean isPremium = page.startsWith("1");
             if (!isPremium) {

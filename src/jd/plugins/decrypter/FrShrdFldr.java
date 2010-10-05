@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/dir/\\w+/\\w+/?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/dir/[\\w\\._-]+/[\\w\\._-]+/?" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     public FrShrdFldr(final PluginWrapper wrapper) {

@@ -373,7 +373,7 @@ public abstract class Request {
         }
     }
 
-    public abstract void postRequest(URLConnectionAdapter httpConnection) throws IOException;
+    public abstract long postRequest(URLConnectionAdapter httpConnection) throws IOException;
 
     abstract public void preRequest(URLConnectionAdapter httpConnection) throws IOException;
 
@@ -491,7 +491,8 @@ public abstract class Request {
     public Request toHeadRequest() throws MalformedURLException {
         final Request ret = new Request(this.getUrl() + "") {
             // @Override
-            public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
+            public long postRequest(URLConnectionAdapter httpConnection) throws IOException {
+                return 0;
             }
 
             // @Override

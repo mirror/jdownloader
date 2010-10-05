@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
+import org.appwork.utils.net.CountingOutputStream;
+import org.appwork.utils.net.NullOutputStream;
+
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -37,7 +40,6 @@ public class PostRequest extends Request {
 
     public PostRequest(final Form form) throws MalformedURLException {
         super(form.getAction(null));
-
         postData = new ArrayList<RequestVariable>();
     }
 
@@ -46,13 +48,9 @@ public class PostRequest extends Request {
         postData = new ArrayList<RequestVariable>();
     }
 
-    // public Request toHeadRequest() throws MalformedURLException {
-
     public String getPostDataString() {
         if (postData.isEmpty()) { return postDataString; }
-
         final StringBuilder buffer = new StringBuilder();
-
         for (final RequestVariable rv : postData) {
             if (rv.getKey() != null) {
                 buffer.append("&");
@@ -73,35 +71,47 @@ public class PostRequest extends Request {
         this.postDataString = post;
     }
 
-    // @Override
-    public void postRequest(final URLConnectionAdapter httpConnection) throws IOException {
-        String parameter = postDataString != null ? postDataString : getPostDataString();
-        if (parameter != null) {
-            if (postDataString == null) parameter = parameter.trim();
-            if (contentType != null) {
-                httpConnection.setRequestProperty("Content-Type", contentType);
-            }
-            httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
-            httpConnection.connect();
-
-            final OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
-            if (parameter != null) {
-                wr.write(parameter);
-            }
-            wr.flush();
-            httpConnection.postDataSend();
+    /**
+     * send the postData of the Request. in case httpConnection is null, it
+     * outputs the data to a NullOutputStream
+     */
+    public long postRequest(final URLConnectionAdapter httpConnection) throws IOException {
+        CountingOutputStream output = null;
+        if (httpConnection != null && httpConnection.getOutputStream() != null) {
+            output = new CountingOutputStream(httpConnection.getOutputStream());
         } else {
-            httpConnection.setRequestProperty("Content-Length", "0");
+            output = new CountingOutputStream(new NullOutputStream());
         }
+        String parameter = postDataString != null ? postDataString : getPostDataString();
+        try {
+            if (parameter != null) {
+                if (postDataString == null) parameter = parameter.trim();
+                final OutputStreamWriter wr = new OutputStreamWriter(output);
+                if (parameter != null) {
+                    wr.write(parameter);
+                }
+                wr.flush();
+                output.flush();
+            }
+        } finally {
+            if (httpConnection != null) httpConnection.postDataSend();
+        }
+        return output.bytesWritten();
     }
 
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
 
-    // @Override
     public void preRequest(final URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod(METHOD.POST);
+        if (contentType != null) httpConnection.setRequestProperty("Content-Type", contentType);
+        String parameter = postDataString != null ? postDataString : getPostDataString();
+        if (parameter != null) {
+            httpConnection.setRequestProperty("Content-Length", this.postRequest(null) + "");
+        } else {
+            httpConnection.setRequestProperty("Content-Length", "0");
+        }
     }
 
     public void addVariable(final String key, final String value) {
@@ -110,11 +120,9 @@ public class PostRequest extends Request {
 
     public static ArrayList<RequestVariable> variableMaptoArray(final LinkedHashMap<String, String> post) {
         final ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
-
         for (final Entry<String, String> entry : post.entrySet()) {
             ret.add(new RequestVariable(entry.getKey(), entry.getValue()));
         }
-
         return ret;
     }
 
