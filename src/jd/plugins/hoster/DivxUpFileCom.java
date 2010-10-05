@@ -53,11 +53,11 @@ public class DivxUpFileCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private String brbefore = "";
+    private String              brbefore      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://divxupfile.com";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST   = "http://divxupfile.com";
+    public boolean              nopremium     = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -196,7 +196,7 @@ public class DivxUpFileCom extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (brbefore.contains("api.recaptcha.net")) {
+        } else if (brbefore.contains("api.recaptcha.net") || brbefore.contains("google.com/recaptcha/api/")) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom

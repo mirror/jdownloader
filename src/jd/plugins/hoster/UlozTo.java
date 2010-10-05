@@ -65,17 +65,22 @@ public class UlozTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (downloadLink.getDownloadURL().matches(".*?bagruj\\.cz/[a-z0-9]{12}.*?") && br.getRedirectLocation() != null) {
             downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(br.getRedirectLocation());
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
+        if (continuePage != null) {
+            downloadLink.setUrlDownload(continuePage);
+            br.getPage(downloadLink.getDownloadURL());
         }
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
-        if (br.containsHTML("multipart/form-data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(Pattern.compile("0px;color:#000\"><b>(.*?)</b>")).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("Velikost souboru je <b>(.*?)</b> <br />")).getMatch(0);
-        if (filesize == null) filesize = br.getRegex(Pattern.compile("Veľkosť súboru je <b>(.*?)</b> <br />")).getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(multipart/form-data|Chybka 404 - požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(Pattern.compile("\\&t=(.*?)\"")).getMatch(0);
+        if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("style=\"top:-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
 
         return AvailableStatus.TRUE;
     }
@@ -84,8 +89,10 @@ public class UlozTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = null;
+        boolean failed = true;
         for (int i = 0; i <= 5; i++) {
-            String captchaUrl = br.getRegex(Pattern.compile("<img id=\"captcha\" name=\"captcha\" width=\"175\" height=\"70\" src=\"(.*?)\" alt=\"img\">")).getMatch(0);
+            String captchaUrl = br.getRegex(Pattern.compile("style=\"width:175px; height:70px;\" width=\"175\" height=\"70\" src=\"(http://.*?)\"")).getMatch(0);
+            if (captchaUrl == null) captchaUrl = br.getRegex(Pattern.compile("\"(http://img\\.uloz\\.to/captcha/\\d+\\.png)\"")).getMatch(0);
             Form captchaForm = br.getFormbyProperty("name", "dwn");
             if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchaUrl, downloadLink);
@@ -93,13 +100,14 @@ public class UlozTo extends PluginForHost {
             br.submitForm(captchaForm);
             dllink = br.getRedirectLocation();
             if (dllink != null && dllink.contains("no#cpt")) {
-                br.getPage(br.getRedirectLocation());
+                br.getPage(downloadLink.getDownloadURL());
                 continue;
             }
+            failed = false;
             break;
         }
-        if (dllink != null && dllink.contains("no#cpt")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }

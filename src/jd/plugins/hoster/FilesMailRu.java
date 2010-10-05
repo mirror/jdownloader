@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?\\.(wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}/[a-z0-9]+|indirectwge4zu4rjfsdehehztiuxw/[A-Z0-9]{6})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}(/[a-z0-9]+)?" }, flags = { 0 })
 public class FilesMailRu extends PluginForHost {
 
     public FilesMailRu(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class FilesMailRu extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Rename the decrypted links to make them work
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(wge4zu4rjfsdehehztiuxw|indirectwge4zu4rjfsdehehztiuxw)", "files.mail.ru"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
     }
 
     public boolean              iHaveToWait  = false;
@@ -161,8 +161,11 @@ public class FilesMailRu extends PluginForHost {
             con.disconnect();
         } else {
             logger.info("dllink seems to be okay (checked in handleFree)");
+            logger.info("dllink = " + downloadLink.getDownloadURL());
         }
+        logger.info("Starting download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        logger.info("Checking for downloaderrors...");
         if ((dl.getConnection().getContentType().contains("html"))) {
             logger.warning("The finallink doesn't seem to be a file, following connection...");
             logger.warning("finallink = " + downloadLink.getDownloadURL());

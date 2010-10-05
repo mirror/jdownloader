@@ -40,7 +40,7 @@ public class FlsMailRu extends PluginForDecrypt {
     private static final String UNAVAILABLE1 = ">В обработке<";
     private static final String UNAVAILABLE2 = ">In process<";
     private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
-    private static String       REPLACE      = "wge4zu4rjfsdehehztiuxw";
+    private static String       LINKREPLACE  = "wge4zu4rjfsdehehztiuxw";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -55,20 +55,18 @@ public class FlsMailRu extends PluginForDecrypt {
         String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
         if (linkinformation == null || linkinformation.length == 0) return null;
         for (String info : linkinformation) {
-            String statusText = "";
+            String statusText = null;
             String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
             if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
                 directlink = parameter;
-                REPLACE = "indirect" + REPLACE;
                 statusText = JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload");
             }
             String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
             if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
             if (directlink == null || filename == null) return null;
             String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
-
-            DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", REPLACE).replace("content3-n", "content3"));
-            finallink.getLinkStatus().setStatusText(statusText);
+            DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", LINKREPLACE).replace("content3-n", "content3"));
+            if (statusText != null) finallink.getLinkStatus().setStatusText(statusText);
             // Maybe that helps id jd gets the english version of the site!
             if (filesize != null) {
                 if (!filesize.contains("MB")) {

@@ -91,6 +91,14 @@ public class ShareRapidCz extends PluginForHost {
         if (expires != null) {
             ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
         }
+        String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
+        if (maxSimultanDownloads != null) {
+            try {
+                account.setMaxSimultanDownloads(Integer.parseInt(maxSimultanDownloads));
+            } catch (Throwable e) {
+                /* not available in 0.9xxx */
+            }
+        }
         ai.setStatus("Premium User" + trafficleft);
         account.setValid(true);
         return ai;
