@@ -75,6 +75,8 @@ public class XFilesKz extends PluginForHost {
             logger.warning("Dllink equals null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // Because the plugin is still untested we might need some loggers
+        logger.info("Finallink = " + dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("This doesn't seem to be a file...");
