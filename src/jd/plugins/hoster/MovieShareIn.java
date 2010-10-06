@@ -23,7 +23,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -60,7 +59,6 @@ public class MovieShareIn extends PluginForHost {
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static final String COOKIE_HOST   = "http://sharejunky.com";
-    private static final String ADPAGE        = "http://www.sharejunky.com/adserver/adsense";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -115,8 +113,6 @@ public class MovieShareIn extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        Browser br2 = br.cloneBrowser();
-        br2.getPage(ADPAGE);
         String passCode = null;
         boolean resumable = true;
         int maxchunks = 0;
