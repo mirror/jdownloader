@@ -400,7 +400,7 @@ public class Uploadedto extends PluginForHost {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
             rc.setCode(c);
-            if (br.containsHTML("/recaptcha/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(RECAPTCHA)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         } else {
             String dlLink = br.getRedirectLocation();

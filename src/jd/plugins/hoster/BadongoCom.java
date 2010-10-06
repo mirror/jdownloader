@@ -157,37 +157,31 @@ public class BadongoCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        String link = null;
-        String action = null;
-        String postData = null;
-        String fileID = null;
-        String filetype = null;
-        String filepart = "";
         String realURL = downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com");
         requestFileInformation(downloadLink);
         br.setCookiesExclusive(true);
         br.setFollowRedirects(false);
         /* Get CaptchaCode */
-        do {
-            br.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + System.currentTimeMillis());
-            String cid = br.getRegex("cid=(\\d+)").getMatch(0);
-            fileID = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(1);
-            filetype = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(0);
-            filepart = new Regex(realURL, "/([a-z]+)$").getMatch(0);
-            String capSecret = br.getRegex("cap_secret value=(.*?)>").getMatch(0);
-            action = br.getRegex("action=\\\\\"(.*?)\\\\\"").getMatch(0);
-            if (cid == null || fileID == null || capSecret == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
-            postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
-            br.setHeader("Referer", realURL);
-            br.postPage(action, postData);
-        } while (br.getRequest().getHttpConnection().getResponseCode() != 200);
+        br.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + System.currentTimeMillis());
+        String cid = br.getRegex("cid=(\\d+)").getMatch(0);
+        String fileID = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(1);
+        String filetype = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(0);
+        String filepart = new Regex(realURL, "/([a-z]+)$").getMatch(0);
+        String capSecret = br.getRegex("cap_secret value=(.*?)>").getMatch(0);
+        String action = br.getRegex("action=\\\\\"(.*?)\\\\\"").getMatch(0);
+        if (cid == null || fileID == null || capSecret == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
+        String postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
+        br.setHeader("Referer", realURL);
+        br.postPage(action, postData);
+        if (br.getRequest().getHttpConnection().getResponseCode() != 200) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if ( filepart == null) filepart = "";
         ArrayList<String> packedJS = new ArrayList<String>();
         /* packed JS in ArrayList */
         packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 2));
         packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 7));
-        String[] plainJS = unpackJS(packedJS.get(0));           
+        if (packedJS.get(1) == null) packedJS.set(1, "{:'#':'#':'#':'" + br.getRegex("dlUrl \\+ \"(.*?)\"").getMatch(0, 1) + "'");
+        String[] plainJS = unpackJS(packedJS.get(0));
         /* DOWNLOAD:INIT */
         postData = "id=" + fileID + "&type=" + filetype + "&ext=" + filepart + "&f=download:init&z=" + plainJS[1] + "&h=" + plainJS[2];
         br.setHeader("Referer", action);       
@@ -222,12 +216,13 @@ public class BadongoCom extends PluginForHost {
                           + plainJS[4] + "&rsargs[]=" + filepart;
         br.getPage(action + pathData).trim();
         plainJS = unpackJS(packedJS.get(1));
-        link = br.getRegex("doDownload\\(.'(.*?).'\\)").getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String link = br.getRegex("doDownload\\(.'(.*?).'\\)").getMatch(0);
+        if (link == null || packedJS.get(1) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* Click button. Next Request. Response new packed JS */
         br.getPage(link + plainJS[4] + "?zenc=");
         handleErrors(br);
         packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 4));
+        if (packedJS.get(2) == null) packedJS.set(2, "{:'" + br.getRegex("window\\.location\\.href = '(.*?)\\?pr=").getMatch(0) + "?pr='");
         plainJS = unpackJS(packedJS.get(2));
         /* Test */
         if (plainJS[1] == null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l);
@@ -301,27 +296,36 @@ public class BadongoCom extends PluginForHost {
     }
     
     public String[] unpackJS(String fun) throws Exception {
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("javascript");
         Object result = new Object();
-        try {
-            result = engine.eval(fun);
-        } catch(ScriptException e) {
-            e.printStackTrace();
+        if (fun == null) fun = "nodata";
+        if (fun.contains("%[0-9A-F]{2}")) {
+            ScriptEngineManager manager = new ScriptEngineManager();
+            ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                result = engine.eval(fun);
+            } catch(ScriptException e) {
+                e.printStackTrace();
+            }
+        } else {
+            result = br.getRegex("window.getFileLinkInitOpt =(.*?)\n|\r\rb").getMatch(0, 1);
+            if (result == null && br.containsHTML("getFileLinkInitOpt")) result = br.toString();
+            if (result == null && br.containsHTML("check_n")) result = br.toString();
+            if (result == null) result = "nodata";
+            if (!fun.contains("data")) result = fun;
         }
         String[] row = new String[10];
         int z = 0;
         String unpacked = result.toString();
-        unpacked = unpacked.replaceAll("\n|\t| ", "");
+        unpacked = unpacked.replaceAll("\n|\r|\rb|\t| ", "");
         if (unpacked.length() <= 20 && unpacked.contains("check_n")) {
             row[0] = unpacked;
             return row;
             }
         int a = unpacked.lastIndexOf("{" );
         unpacked = unpacked.substring(a + 1, unpacked.length());
-        Pattern pattern = Pattern.compile("(:|=)'(.*?)'|'check_n'.*?\"(\\d+)\"|\".(.*?)\""); 
-        Matcher matcher = pattern.matcher(unpacked); 
-        while (matcher.find()){             
+        Pattern pattern = Pattern.compile("(:|=)'(.*?)'|'check_n'.*?\"(\\d+)\"|\".(.*?)\"");
+        Matcher matcher = pattern.matcher(unpacked);
+        while (matcher.find()){
             z+=1;
             row[z] = matcher.group().toString().replaceAll("'|:|=|\"", "").trim();
         }
