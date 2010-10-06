@@ -23,6 +23,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -55,11 +56,11 @@ public class MovieShareIn extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("movieshare.in", "sharejunky.com"));
     }
 
-    public String               BRBEFORE      = "";
+    private String              BRBEFORE      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static final String COOKIE_HOST   = "http://sharejunky.com";
-    public boolean              nopremium     = false;
+    private static final String ADPAGE        = "http://www.sharejunky.com/adserver/adsense";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -114,6 +115,8 @@ public class MovieShareIn extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        Browser br2 = br.cloneBrowser();
+        br2.getPage(ADPAGE);
         String passCode = null;
         boolean resumable = true;
         int maxchunks = 0;
@@ -301,7 +304,7 @@ public class MovieShareIn extends PluginForHost {
             // >You have to wait <font color=red>4 minutes
             String tmphrs = new Regex(BRBEFORE, "Y>You have to wait <font.*?(\\d+) hour(s)?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = new Regex(BRBEFORE, ">You have to wait <font.*?(\\d+) minute").getMatch(0);
+            String tmpmin = new Regex(BRBEFORE, ">You have to wait (<font.*?)?(\\d+) minute").getMatch(1);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
             String tmpsec = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
@@ -353,12 +356,17 @@ public class MovieShareIn extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(BRBEFORE, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(BRBEFORE, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                dllink = new Regex(BRBEFORE, "<font face=\"Tahoma, Verdana\" size=\"5\">\\&nbsp;<a href=\"(http.*?)\"").getMatch(0);
                 if (dllink == null) {
                     dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = new Regex(BRBEFORE, "<font face=\"Calibri, Verdana\" size=\"\\d+\">\\&nbsp;<a href=\"(http://.*?)\"").getMatch(0);
-                        if (dllink == null) dllink = new Regex(BRBEFORE, "addParam\\(\\\\\\'flashvars\\\\\\',\\\\\\'file=(http://.*?)\\\\\\'\\)").getMatch(0);
+                        if (dllink == null) {
+                            dllink = new Regex(BRBEFORE, "addParam\\(\\\\\\'flashvars\\\\\\',\\\\\\'file=(http://.*?)\\\\\\'\\)").getMatch(0);
+                            if (dllink == null) {
+                                dllink = new Regex(BRBEFORE, "\"(http://[a-z0-9]+\\.sharejunky\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                            }
+                        }
                     }
                 }
             }

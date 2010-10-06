@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+|pictures/\\d+/.{1})" }, flags = { 0 })
 public class MgfpCm extends PluginForDecrypt {
 
     public MgfpCm(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class MgfpCm extends PluginForDecrypt {
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
         if (!parameter.contains("view=2")) parameter += "&view=2";
         br.getPage(parameter);
-        String links[] = br.getRegex("image\\.php\\?id=(.*?)\">").getColumn(0);
+        String links[] = br.getRegex("<a name=\"\\d+\" href=\"/image\\.php\\?id=(\\d+)\\&").getColumn(0);
         if (links == null || links.length == 0) return null;
         double counter = 0.001;
         for (String element : links) {
@@ -50,5 +50,4 @@ public class MgfpCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

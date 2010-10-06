@@ -82,6 +82,12 @@ public class ImageFap extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         try {
             br.getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() != null) {
+                if (!br.getRedirectLocation().contains("/photo/")) br.getPage(br.getRedirectLocation());
+                logger.info("Setting new downloadUrl: " + br.getRedirectLocation());
+                downloadLink.setUrlDownload(br.getRedirectLocation());
+                br.getPage(downloadLink.getDownloadURL());
+            }
             String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String gallery_name = new Regex(br, Pattern.compile("<a href=\"gallery\\.php\\?gid=\\d+\"><font face=verdana size=3>(.*?)uploaded", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String uploader_name = new Regex(br, Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -125,6 +131,9 @@ public class ImageFap extends PluginForHost {
         if (imagelink == null) {
             String returnID = new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (returnID != null) imagelink = DecryptLink(returnID);
+            if (imagelink == null) {
+                imagelink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(http://.*?)\"").getMatch(0);
+            }
         }
         if (imagelink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (gallery_name != null) downloadLink.addSubdirectory(gallery_name);
