@@ -1344,6 +1344,7 @@ plugins.hoster.przeklejpl.errors.nofreedownloadlink = No hay slots gratuitos dis
 plugins.hoster.quicksharecz.alreadyloading = Esta IP ya está descargando
 plugins.hoster.quicksharecz.nofreeslots = No hay slots gratuitos disponibles
 plugins.hoster.rapidshare.com.https = Usar la solucion alternativa HTTPS para el bloqueo del ISP
+plugins.hoster.rapidshare.com.ssl = Usar comunicacion segura con SSL (se cobrará doble tráfico Premium)
 plugins.hoster.rapidshare.com.waithosterfull = Esperar si no hay slots gratuitos disponibles
 plugins.hoster.savetv.adsfreeavailable = Disponible sin comerciales
 plugins.hoster.savetv.adsfreenotavailable = No disponible sin comerciales
