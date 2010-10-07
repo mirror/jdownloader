@@ -101,6 +101,8 @@ public class Rapidshare extends PluginForHost {
 
     private static final String                       WAIT_HOSTERFULL         = "WAIT_HOSTERFULL";
 
+    private static final String                       SSL_CONNECTION          = "SSL_CONNECTION";
+
     private static final String                       HTTPS_WORKAROUND        = "HTTPS_WORKAROUND";
 
     private static final Object                       LOCK                    = new Object();
@@ -537,6 +539,9 @@ public class Rapidshare extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.workAroundTimeOut(this.br);
 
+        boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
+        String prtotcol = (ssl) ? "https" : "http";
+
         /* TODO: remove me after 0.9xx public */
         if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) {
             downloadLink.setMD5Hash(null);
@@ -585,11 +590,11 @@ public class Rapidshare extends PluginForHost {
             this.br.setAcceptLanguage(Plugin.ACCEPT_LANGUAGE);
             final RSLink link = RSLink.parse(downloadLink.getDownloadURL());
 
-            this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie"), account);
+            this.queryAPI(this.br, prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie"), account);
             this.handleErrors(this.br);
             final String host = this.br.getRegex("DL:(.*?),0,0,0").getMatch(0);
 
-            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie");
+            final String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie");
 
             Plugin.logger.finest("Direct-Download: Server-Selection not available!");
             request = this.br.createGetRequest(directurl);
@@ -690,6 +695,9 @@ public class Rapidshare extends PluginForHost {
             br.setCookiesExclusive(true);
             br.clearCookies(this.getHost());
 
+            boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
+            String prtotcol = (ssl) ? "https" : "http";
+
             /*
              * we can use cookie login if user does not want to get asked before
              * package upgrade. we dont need live traffic stats here
@@ -719,14 +727,14 @@ public class Rapidshare extends PluginForHost {
             if (cookieLogin && cookies != null && cookies.get("enc") != null && cookies.get("enc").length() != 0) {
                 Plugin.logger.finer("Cookie Login");
                 for (final Entry<String, String> cookie : cookies.entrySet()) {
-                    br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
+                    br.setCookie(prtotcol + "://rapidshare.com", cookie.getKey(), cookie.getValue());
                 }
                 return br;
             } else {
                 account.setProperty(Rapidshare.COOKIEPROP, null);
             }
 
-            final String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+            final String req = prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             this.queryAPI(br, req, account);
             final String error = br.getRegex("ERROR:(.*)").getMatch(0);
             if (error != null) {
@@ -783,7 +791,7 @@ public class Rapidshare extends PluginForHost {
         }
         this.workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         br.forceDebug(true);
-        if (account != null && this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND, false)) {
+        if (account != null && this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND, false) || this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false)) {
             req = req.replaceFirst("http:", "https:");
         }
         try {
@@ -833,6 +841,7 @@ public class Rapidshare extends PluginForHost {
      * Erzeugt den Configcontainer für die Gui
      */
     private void setConfigElements() {
+        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl", "Use Secure Communication over SSL (Double traffic will be charged)")).setDefaultValue(false));
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.HTTPS_WORKAROUND, JDL.L("plugins.hoster.rapidshare.com.https", "Use HTTPS workaround for ISP Block")).setDefaultValue(false));
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));
@@ -865,7 +874,7 @@ public class Rapidshare extends PluginForHost {
             long autoTraffic = 0;
             long rapids = Long.parseLong(data.get("rapids"));
             boolean notenoughrapids = false;
-            if (data.get("autorefill").equals("1")) {
+            if ("1".equals(data.get("autorefill"))) {
                 if (rapids > 280) {
                     autoTraffic = 10000000000l * (rapids / 280);
                 } else {
@@ -889,6 +898,11 @@ public class Rapidshare extends PluginForHost {
                     final String left = Formatter.formatSeconds(nextBill, false);
                     ai.setStatus((notenoughrapids ? "(Not enough rapids for autorefill)" : "") + "Valid for " + left);
                 }
+            }
+            if ("1".equals(data.get("onlyssldls"))) {
+                this.getPluginConfig().setProperty(Rapidshare.SSL_CONNECTION, true);
+            } else {
+                this.getPluginConfig().setProperty(Rapidshare.SSL_CONNECTION, false);
             }
         } catch (final Exception e) {
             Plugin.logger.severe("RS-API change detected, please inform support!");

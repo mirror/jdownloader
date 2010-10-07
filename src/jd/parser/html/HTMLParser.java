@@ -218,8 +218,13 @@ public class HTMLParser {
                 /* lets check if tag contains links */
                 String[] result = getHttpLinksIntern(nexttag, url);
                 if (result.length == 0) {
-                    /* no links, lets replace it with nothing */
-                    data = data.replaceFirst("(?s)<.*?>", "");
+                    if (nexttag.startsWith("/div")) {
+                        /*<div>, insert newline here*/
+                        data = data.replaceFirst("(?s)<.*?>", "\r\n");
+                    } else {
+                        /* no links, lets replace it with nothing */
+                        data = data.replaceFirst("(?s)<.*?>", "");
+                    }
                 } else {
                     /* lets replace the tag with the links */
                     data = data.replaceFirst("(?s)<.*?>", ArrayToString(result));
@@ -312,7 +317,7 @@ public class HTMLParser {
 
         final class Httppattern {
             public Pattern p;
-            public int group;
+            public int     group;
 
             public Httppattern(Pattern p, int group) {
                 this.p = p;

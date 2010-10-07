@@ -169,7 +169,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 logger.severe(br.toString());
                 String error = Encoding.urlEncode(br.toString());
                 /* post error message to api */
-                br.postPage("http://www.ochload.org/?apiv2&method=reportError", "hoster=" + link.getHost() + "&error=" + error);
+                br.postPage("http://www.ochload.org/?apiv2&method=reportError", "hoster=" + link.getHost() + "&error=" + error + "&nick=" + Encoding.urlEncode(acc.getUser()));
                 synchronized (LOCK) {
                     premiumHosts.remove(link.getHost());
                 }
@@ -238,10 +238,6 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 ac.setStatus("OchLoad Server Error, temp disabled" + restartReq);
                 return ac;
             }
-            try {
-                br.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(account.getUser()));
-            } catch (Exception e) {
-            }
             boolean isPremium = page.startsWith("1");
             if (!isPremium) {
                 account.setValid(false);
@@ -249,6 +245,10 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 ac.setStatus("Account invalid");
                 resetAvailablePremium();
             } else {
+                try {
+                    br.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(account.getUser()));
+                } catch (Exception e) {
+                }
                 String infos[] = new Regex(page, "(.*?):(.*?):(.+)").getRow(0);
                 ac.setValidUntil(Long.parseLong(infos[2]) * 1000);
                 boolean megaupload = "1".equalsIgnoreCase(infos[1]);

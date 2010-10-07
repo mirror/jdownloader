@@ -39,7 +39,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netload.in" }, urls = { "http://[\\w\\.]*?netload\\.in/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netload.in" }, urls = { "http://[\\w\\.]*?netload\\.in/[^(http://)].+" }, flags = { 2 })
 public class Netloadin extends PluginForHost {
     static private final String  AGB_LINK            = "http://netload.in/index.php?id=13";
 
@@ -159,6 +159,7 @@ public class Netloadin extends PluginForHost {
 
             String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
             sleep(20000, downloadLink);
+            logger.info("used serverurl: " + finalURL);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL);
             dl.startDownload();
         } catch (IOException e) {
@@ -351,77 +352,87 @@ public class Netloadin extends PluginForHost {
             resume = false;
             chunks = 1;
         }
+        String url = null;
+        workAroundTimeOut(br);
         br.openGetConnection(downloadLink.getDownloadURL());
         Request con;
-        if (br.getRedirectLocation() == null) {
-            Thread.sleep(1000);
-            br.followConnection();
-            checkPassword(downloadLink);
-            handleErrors(downloadLink);
-            if (br.containsHTML("We occurred an unexpected error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            String url = br.getRedirectLocation();
-            if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
+        try {
+            if (br.getRedirectLocation() == null) {
+                Thread.sleep(1000);
+                br.followConnection();
+                checkPassword(downloadLink);
+                handleErrors(downloadLink);
+                if (br.containsHTML("We occurred an unexpected error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+                url = br.getRedirectLocation();
+                if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
 
-            con = br.createRequest(url);
-            try {
-                /* remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                con.setConnectTimeout(30000);
-                con.setReadTimeout(60000);
-            } catch (Throwable e) {
-            }
-            /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
-            dl = RAFDownload.download(downloadLink, con, resume, chunks);
-            // dl.headFake(null);
-            dl.setFirstChunkRangeless(true);
-            URLConnectionAdapter connection = dl.connect(br);
-            for (int i = 0; i < 10 && (!connection.isOK()); i++) {
+                con = br.createRequest(url);
                 try {
-                    con = br.createRequest(url);
+                    /* remove next major update */
+                    /* workaround for broken timeout in 0.9xx public */
+                    con.setConnectTimeout(30000);
+                    con.setReadTimeout(60000);
+                } catch (Throwable e) {
+                }
+                /**
+                 * TODO: Umbauen auf
+                 * jd.plugins.BrowserAdapter.openDownload(br,...)
+                 **/
+                dl = RAFDownload.download(downloadLink, con, resume, chunks);
+                // dl.headFake(null);
+                dl.setFirstChunkRangeless(true);
+                URLConnectionAdapter connection = dl.connect(br);
+                for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                     try {
-                        /* remove next major update */
-                        /* workaround for broken timeout in 0.9xx public */
-                        con.setConnectTimeout(30000);
-                        con.setReadTimeout(60000);
-                    } catch (Throwable e) {
-                    }
-                    dl = RAFDownload.download(downloadLink, con, resume, chunks);
-                    connection = dl.connect(br);
-                } catch (Exception e) {
-                    try {
-                        Thread.sleep(150);
-                    } catch (InterruptedException e2) {
+                        con = br.createRequest(url);
+                        try {
+                            /* remove next major update */
+                            /* workaround for broken timeout in 0.9xx public */
+                            con.setConnectTimeout(30000);
+                            con.setReadTimeout(60000);
+                        } catch (Throwable e) {
+                        }
+                        dl = RAFDownload.download(downloadLink, con, resume, chunks);
+                        connection = dl.connect(br);
+                    } catch (Exception e) {
+                        try {
+                            Thread.sleep(150);
+                        } catch (InterruptedException e2) {
+                        }
                     }
                 }
+            } else {
+                url = br.getRedirectLocation();
+                con = br.createGetRequest(null);
+                try {
+                    /* remove next major update */
+                    /* workaround for broken timeout in 0.9xx public */
+                    con.setConnectTimeout(30000);
+                    con.setReadTimeout(60000);
+                } catch (Throwable e) {
+                }
+                dl = RAFDownload.download(downloadLink, con, resume, chunks);
+                // dl.headFake(null);
+                dl.setFirstChunkRangeless(true);
+                dl.connect(br);
             }
-        } else {
-            con = br.createGetRequest(null);
-            try {
-                /* remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                con.setConnectTimeout(30000);
-                con.setReadTimeout(60000);
-            } catch (Throwable e) {
+            if (!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206 && dl.getConnection().getResponseCode() != 416) {
+                // Serverfehler
+                if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.netloadin.errors.couldnotfollow", "Server: could not follow the link"));
+                checkPassword(downloadLink);
+                handleErrors(downloadLink);
             }
-            dl = RAFDownload.download(downloadLink, con, resume, chunks);
-            // dl.headFake(null);
-            dl.setFirstChunkRangeless(true);
-            dl.connect(br);
-        }
-        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206 && dl.getConnection().getResponseCode() != 416) {
-            // Serverfehler
-            if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.netloadin.errors.couldnotfollow", "Server: could not follow the link"));
-            checkPassword(downloadLink);
-            handleErrors(downloadLink);
-        }
-        if (!dl.startDownload()) {
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
-                logger.severe("Workaround for Netload Server-Problem! Setting Resume to false and Chunks to 1!");
-                downloadLink.setProperty("nochunk", true);
-                downloadLink.setChunksProgress(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (!dl.startDownload()) {
+                if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
+                    logger.severe("Workaround for Netload Server-Problem! Setting Resume to false and Chunks to 1!");
+                    downloadLink.setProperty("nochunk", true);
+                    downloadLink.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
+        } finally {
+            logger.info("used serverurl: " + url);
         }
     }
 
