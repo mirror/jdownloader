@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://[\\w\\.]*?xvideos\\.com/video[0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://[\\w\\.]*?xvideos\\.com/video[0-9]+" }, flags = { 0 })
 public class XvideosCom extends PluginForHost {
 
     public XvideosCom(PluginWrapper wrapper) {
@@ -42,6 +42,11 @@ public class XvideosCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            logger.info("Setting new downloadlink: " + br.getRedirectLocation());
+            parameter.setUrlDownload(br.getRedirectLocation());
+            br.getPage(parameter.getDownloadURL());
+        }
         if (br.containsHTML("This video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)- XVIDEOS.COM</title>").getMatch(0);

@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -51,42 +50,24 @@ public class MegaRapidEu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(link.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setName(getFileNameFromHeader(con));
-                DIRECT = true;
-                return AvailableStatus.TRUE;
-            } else {
-                br.followConnection();
-                if (br.getRedirectLocation() != null) {
-                    link.setUrlDownload(br.getRedirectLocation());
-                    br.getPage(link.getDownloadURL());
-                    if (br.containsHTML("Please click here to continue")) {
-                        String continuePage = br.getRegex("<p><a href=\"(.*?)\"").getMatch(0);
-                        if (continuePage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        br.getPage(continuePage);
-                    }
-                    if (br.getRedirectLocation() == null) {
-                        String filename = new Regex(link.getDownloadURL(), "captcha\\&file=\\d+/(.+)\\&s=").getMatch(0);
-                        if (filename == null) filename = new Regex(link.getDownloadURL(), "megarapid\\.eu/files/\\d+/(.+)").getMatch(0);
-                        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        link.setName(filename.trim());
-                    } else {
-                        DIRECTLINK = br.getRedirectLocation();
-                    }
-                    return AvailableStatus.TRUE;
-                }
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+        br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setUrlDownload(br.getRedirectLocation());
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Please click here to continue")) {
+            String continuePage = br.getRegex("<p><a href=\"(.*?)\"").getMatch(0);
+            if (continuePage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(continuePage);
         }
+        if (br.getRedirectLocation() == null) {
+            String filename = new Regex(link.getDownloadURL(), "captcha\\&file=\\d+/(.+)\\&s=").getMatch(0);
+            if (filename == null) filename = new Regex(link.getDownloadURL(), "megarapid\\.eu/files/\\d+/(.+)").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setName(filename.trim());
+        } else {
+            DIRECTLINK = br.getRedirectLocation();
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
