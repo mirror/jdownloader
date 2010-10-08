@@ -84,7 +84,7 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (FileSonicCom.LOCK) {
-            AccountInfo ai = new AccountInfo();            
+            AccountInfo ai = new AccountInfo();
             try {
                 this.login(account, true);
             } catch (final PluginException e) {
@@ -240,6 +240,7 @@ public class FileSonicCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
+        this.dl.setFilenameFix(true);
         this.dl.startDownload();
         FileSonicCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
     }
@@ -282,8 +283,9 @@ public class FileSonicCom extends PluginForHost {
                 final Form form = this.br.getForm(0);
                 form.put("password", Encoding.urlEncode(passCode));
                 /* second downloadtry with password */
-                
-                //1 chunk because of bug #2478  http://svn.jdownloader.org/issues/2478
+
+                // 1 chunk because of bug #2478
+                // http://svn.jdownloader.org/issues/2478
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, form, true, 1);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
