@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://[\\w\\.]*?4fastfile\\.com/([a-z-]+/)?abv-fs/\\d+-\\d+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://[\\w\\.]*?4fastfile\\.com(/[a-z]+)?/abv-fs/\\d+-\\d+(/\\d+-\\d+)?/.+" }, flags = { 2 })
 public class FourFastFileCom extends PluginForHost {
 
     public FourFastFileCom(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class FourFastFileCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         String languageText = new Regex(link.getDownloadURL(), "4fastfile\\.com/([a-z-]+/)").getMatch(0);
-        if (languageText != null && !languageText.equals("abv-fs")) link.setUrlDownload(link.getDownloadURL().replace(languageText, ""));
+        if (languageText != null && !languageText.equals("abv-fs/")) link.setUrlDownload(link.getDownloadURL().replace(languageText, ""));
     }
 
     @Override
@@ -65,11 +65,13 @@ public class FourFastFileCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        br.setDebug(true);
         requestFileInformation(downloadLink);
         Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        sleep(60 * 1000l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 0);
+        String waitfbid = dlform.getRegex("form_build_id\" id=\"(.*?)\"").getMatch(0);
+        dlform.put("waitfbid", waitfbid);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

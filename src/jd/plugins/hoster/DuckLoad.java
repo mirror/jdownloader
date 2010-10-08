@@ -46,7 +46,6 @@ public class DuckLoad extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setDebug(true);
         br.setCookie(MAINPAGE, "dl_set_lang", "en");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -61,7 +60,6 @@ public class DuckLoad extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setDebug(true);
         int waitThis = 20;
         if (!downloadLink.getDownloadURL().contains("/download/")) {
             waitThis = 10;

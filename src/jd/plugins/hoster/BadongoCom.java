@@ -93,9 +93,7 @@ public class BadongoCom extends PluginForHost {
         }
         String filesize = br.getRegex(Pattern.compile("<div class=\"ffileinfo\">Ansichten.*?\\| Dateig.*?:(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String filename = br.getRegex("<div class=\"finfo\">(.*?)</div>").getMatch(0);
-
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("single")) {
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -176,18 +174,18 @@ public class BadongoCom extends PluginForHost {
         br.postPage(action, postData);
         if (br.getRequest().getHttpConnection().getResponseCode() != 200) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if ( filepart == null) filepart = "";
-        ArrayList<String> packedJS = new ArrayList<String>();
         /* packed JS in ArrayList */
+        ArrayList<String> packedJS = new ArrayList<String>();
         packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 2));
         packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 7));
         if (packedJS.get(1) == null) packedJS.set(1, "{:'#':'#':'#':'" + br.getRegex("dlUrl \\+ \"(.*?)\"").getMatch(0, 1) + "'");
         String[] plainJS = unpackJS(packedJS.get(0));
         /* DOWNLOAD:INIT */
         postData = "id=" + fileID + "&type=" + filetype + "&ext=" + filepart + "&f=download:init&z=" + plainJS[1] + "&h=" + plainJS[2];
-        br.setHeader("Referer", action);       
-        /* DOWNLOAD:CHECK#1 */
+        br.setHeader("Referer", action);
         br.postPage(FILETEMPLATE, postData);
-        plainJS = unpackJS(br.getRegex(JAVASCRIPT).getMatch(0));            
+        /* DOWNLOAD:CHECK#1 */
+        plainJS = unpackJS(br.getRegex(JAVASCRIPT).getMatch(0));
         postData = "id=" + plainJS[4] + "&type=" + plainJS[5] + "&ext=" + plainJS[6] + "&f=download:check" + "&z=" + plainJS[1] + "&h=" + plainJS[2] + "&t=" + plainJS[3];
         /* Timer */
         int waitThis = 59;

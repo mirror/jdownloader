@@ -331,11 +331,9 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         br.setCookie("http://uploaded.to/", "lang", "de");
-        br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink);
