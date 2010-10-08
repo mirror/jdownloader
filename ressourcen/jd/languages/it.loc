@@ -1347,6 +1347,7 @@ plugins.hoster.przeklejpl.errors.nofreedownloadlink = NESSUN MESSAGGIO GRATUITO
 plugins.hoster.quicksharecz.alreadyloading = Questo IP sta già effettuando un download
 plugins.hoster.quicksharecz.nofreeslots = Nessuno slot gratuito disponibile
 plugins.hoster.rapidshare.com.https = USA trucco HTTPS per il blocco dell'ISP
+plugins.hoster.rapidshare.com.ssl = -
 plugins.hoster.rapidshare.com.waithosterfull = Attendere se tutti gli slot gratuiti sono occupati
 plugins.hoster.savetv.adsfreeavailable = ADSFREEAVAILABLETEXT
 plugins.hoster.savetv.adsfreenotavailable = ADSFREEANOTVAILABLETEXT
