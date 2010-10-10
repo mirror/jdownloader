@@ -53,14 +53,18 @@ public class SaveTv extends PluginForHost {
     private static final String ADSFREEANOTVAILABLETEXT = "Videos ohne Werbung werden bevorzugt, dieses ist aber nur mit Werbung verfügbar";
     private static final String FREEPOSTPAGE            = "https://www.save.tv/STV/M/Index.cfm?sk=freesave";
     private static final String PREMIUMPOSTPAGE         = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
+    private static final String PREFERH264MOBILE        = "";
+    private static final String PREFERH264MOBILETEXT    = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NORANDOMNUMBERS, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Keine Zufallszahlen an Dateinamen anhängen (kann Probleme verursachen)")).setDefaultValue(false);
         ConfigEntry cond2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false);
         ConfigEntry cond3 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Geschnittene Videos (Videos ohne Werbung) bevorzugen")).setDefaultValue(false);
+        ConfigEntry cond4 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false);
         config.addEntry(cond);
         config.addEntry(cond2);
         config.addEntry(cond3);
+        config.addEntry(cond4);
     }
 
     @Override
@@ -134,12 +138,15 @@ public class SaveTv extends PluginForHost {
         // On their page this step is made by java script but leaving some vars
         // out, it still works :D
         boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
+        boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
         String downloadWithoutAds = "false";
+        String preferMobileVideos = "c0-param1=number:0";
+        if (preferMobileVids) preferMobileVideos = "c0-param1=number:1";
         if (preferAdsFree) downloadWithoutAds = "true";
-        String postThat = "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + new Regex(addedlink, "TelecastID=(\\d+)").getMatch(0) + "&c0-param1=number:0&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&";
+        String postThat = "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + new Regex(addedlink, "TelecastID=(\\d+)").getMatch(0) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&";
         br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", postThat);
-        String dllink = br.getRegex("\\[ 'OK','(http://.*?)\\',\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("'(http://.*?/\\?m=dl)'").getMatch(0);
+        String dllink = br.getRegex("\\[ \\'OK\\',\\'(http://.*?)\\',\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(http://.*?/\\?m=dl)\\'").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (dllink) is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -173,6 +180,7 @@ public class SaveTv extends PluginForHost {
             boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
             boolean dontModifyFilename = getPluginConfig().getBooleanProperty(NORANDOMNUMBERS);
             boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
+            boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
             for (DownloadLink dl : urls) {
                 String addedlink = dl.getDownloadURL();
                 if (acctype != null) {
@@ -201,6 +209,9 @@ public class SaveTv extends PluginForHost {
                         if (!dontModifyFilename || useOriginalFilename) filename = filename + new Random().nextInt(1000);
                         dl.setName(filename + ".avi");
                         dl.setAvailable(true);
+                        String filesize = br.getRegex("title=\"H\\.264 High Quality\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive-detail-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
+                        if (preferMobileVids) filesize = br.getRegex("title=\"H\\.264 Mobile\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive-detail-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
+                        if (filesize != null) dl.setDownloadSize(Regex.getSize(filesize));
                     } else {
                         dl.setAvailable(false);
                     }

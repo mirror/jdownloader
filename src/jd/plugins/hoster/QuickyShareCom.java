@@ -55,7 +55,7 @@ public class QuickyShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<th>Filename:</th>[\n\r\t ]+<td>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<th>Filesize:</th>[\n\r\t ]+<td>(.*?) - <em>").getMatch(0);
+        String filesize = br.getRegex("<th>Filesize:</th>[\n\r\t ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(Regex.getSize(filesize));

@@ -73,7 +73,11 @@ public class BitShareCom extends PluginForHost {
         br.postPage("http://bitshare.com/files-ajax/" + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
         String rgexedWait = br.getRegex("file:(\\d+):").getMatch(0);
         int wait = 45;
-        if (rgexedWait != null) wait = Integer.parseInt(rgexedWait);
+        if (rgexedWait != null) {
+            wait = Integer.parseInt(rgexedWait);
+            logger.info("Waittime-Regex worked, regexed waittime = " + wait);
+        }
+        wait += 3;
         sleep(wait * 1001l, downloadLink);
         br.postPage("http://bitshare.com/files-ajax/" + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
         String dllink = br.getRegex("SUCCESS#(http://.+)").getMatch(0);

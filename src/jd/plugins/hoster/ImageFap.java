@@ -88,26 +88,32 @@ public class ImageFap extends PluginForHost {
                 downloadLink.setUrlDownload(br.getRedirectLocation());
                 br.getPage(downloadLink.getDownloadURL());
             }
-            String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            String gallery_name = new Regex(br, Pattern.compile("<a href=\"gallery\\.php\\?gid=\\d+\"><font face=verdana size=3>(.*?)uploaded", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            String uploader_name = new Regex(br, Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor=\\'#FCFFE0\\'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            String galleryName = downloadLink.getStringProperty("galleryname");
+            if (galleryName == null) {
+                galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
+                if (galleryName == null) {
+                    galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
+                    if (galleryName == null) galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
+                }
+            }
             String orderid = downloadLink.getStringProperty("orderid");
             if (orderid == null)
                 orderid = "";
             else
                 orderid += "_";
-            if (gallery_name != null) {
-                gallery_name = gallery_name.trim();
+            if (galleryName != null) {
+                galleryName = galleryName.trim();
             }
             if (picture_name != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(uploader_name);
-                if (gallery_name != null) {
-                    downloadLink.setFinalFileName(orderid + gallery_name + " + " + picture_name);
+                if (galleryName != null) {
+                    downloadLink.setFinalFileName(orderid + galleryName + " - " + picture_name);
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(galleryName);
+                    downloadLink.setFilePackage(fp);
                 } else {
                     downloadLink.setFinalFileName(orderid + picture_name);
                 }
-                downloadLink.setFilePackage(fp);
                 return AvailableStatus.TRUE;
             }
         } catch (Exception e) {
