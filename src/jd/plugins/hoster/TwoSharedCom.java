@@ -1,4 +1,4 @@
-//    jDownloader - Downloadmanager
+//    jDownloader - Downloadmanager\\n"n"
 //    Copyright (C) 2008  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -88,10 +88,17 @@ public class TwoSharedCom extends PluginForHost {
             }
         }
         String link = br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String l2surl = new Regex(link, "id=(.*?$)").getMatch(0);
+        link = new Regex(link,"^(.*?id=)").getMatch(0);
+        System.out.println(l2surl.charAt(0)%2 + " : " + l2surl.charAt(0));
+        if (l2surl.charAt(0) % 2 == 1) {
+            link = link + l2surl.charAt(0) + l2surl.substring(17, l2surl.length());
+        } else {
+            link = link + l2surl.substring(0,15) + l2surl.charAt(l2surl.length() - 1);
+        }
         br.getPage("http://www.2shared.com" + link);
-        if (!br.getRequest().getHttpConnection().getContentType().contains("text")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link = br.toString();
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.containsHTML("http.*?")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
