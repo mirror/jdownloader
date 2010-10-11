@@ -54,8 +54,10 @@ public class MgfpCm extends PluginForDecrypt {
         if (thisID != null) {
             br.getPage("http://www.imagefap.com/pictures/" + thisID + "/bla?pgid=&gid=" + thisID + "&page=0&view=0");
             String[] allpages = br.getRegex("<a class=link3 href=\"\\?pgid=\\&amp;gid=\\d+\\&amp;page=(\\d+)\\&amp;").getColumn(0);
-            for (String pageText : allpages) {
-                if (Integer.parseInt(pageText) > pages) pages = Integer.parseInt(pageText);
+            if (allpages != null && allpages.length != 0) {
+                for (String pageText : allpages) {
+                    if (Integer.parseInt(pageText) > pages) pages = Integer.parseInt(pageText);
+                }
             }
             if (pages > 1) logger.info("Found " + (pages + 1) + " pages, starting to decrypt...");
         }

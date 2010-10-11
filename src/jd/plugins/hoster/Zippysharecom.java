@@ -65,7 +65,7 @@ public class Zippysharecom extends PluginForHost {
     }
 
     private String getURL() {
-        return Encoding.urlDecode(br.getRegex("var pong = \\'(http[^']+)\\'").getMatch(0), true).replace("konaworld", "zippyshare").replace("cxc", "www");
+        return Encoding.urlDecode(br.getRegex("var (pong|foken) = \\'(http[^']+)\\'").getMatch(1), true).replace("konaworld", "zippyshare").replace("cxc", "www").replace("google", "zippyshare");
 
     }
 

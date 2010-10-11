@@ -39,7 +39,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/download.php\\?id\\=[\\w]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
@@ -56,12 +56,12 @@ public class ShareOnlineBiz extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws Exception {
         // We do not have to change anything here, the regexp also works for
         // egoshare links!
-        String id = new Regex(link.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
+        String id = new Regex(link.getDownloadURL(), "(id\\=|/dl/)([a-zA-Z0-9]+)").getMatch(1);
         link.setUrlDownload("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
     }
 
     public void login(Account account) throws IOException, PluginException {
-        br.setCookie("http://www.share-online.biz", "king_mylang", "en");             
+        br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.postPage("http://www.share-online.biz/login.php", "act=login&location=index.php&dieseid=&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login&folder_autologin=1");
         String cookie = br.getCookie("http://www.share-online.biz", "king_passhash");
         if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

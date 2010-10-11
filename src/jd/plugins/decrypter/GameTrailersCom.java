@@ -59,7 +59,7 @@ public class GameTrailersCom extends PluginForDecrypt {
             if (finallink != null) {
                 // If we got the wrong link it's a long way to get the real
                 // link!
-                if (finallink.matches("(http://trailers-ll\\.gametrailers\\.com/gt_vault/\\.flv|http://trailers\\.gametrailers\\.com/gt_vault/\\.flv)")) {
+                if (finallink.matches(".*?\\.gametrailers\\.com/gt_vault/\\.flv")) {
                     String configPage = br.getRegex("var config_url = \"(.*?)\"").getMatch(0);
                     if (configPage == null) return null;
                     br.getPage("http://www.gametrailers.com" + Encoding.htmlDecode(configPage));
