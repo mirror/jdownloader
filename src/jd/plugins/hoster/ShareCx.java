@@ -74,7 +74,10 @@ public class ShareCx extends PluginForHost {
         if (reconTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconTime) * 1001l);
         if (br.containsHTML("Sie haben Ihr Download-Limit von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         Form dlform1 = br.getForm(0);
-        if (dlform1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlform1 == null) {
+            logger.warning("dlform1 is null, stopping...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Ticket Time
         String ttt = new Regex(br.toString(), "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = new Regex(br.toString(), "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
@@ -117,6 +120,7 @@ public class ShareCx extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.info("The dllink doesn't seem to be a file, following connection...");
             br.followConnection();
             handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

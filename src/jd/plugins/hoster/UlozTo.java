@@ -66,6 +66,9 @@ public class UlozTo extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(".*?bagruj\\.cz/[a-z0-9]{12}.*?") && br.getRedirectLocation() != null) {
             downloadLink.setUrlDownload(br.getRedirectLocation());
             br.getPage(downloadLink.getDownloadURL());
+        } else if (br.getRedirectLocation() != null) {
+            logger.info("Getting redirect-page");
+            br.getPage(br.getRedirectLocation());
         }
         String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
         if (continuePage != null) {
@@ -78,6 +81,7 @@ public class UlozTo extends PluginForHost {
         String filename = br.getRegex(Pattern.compile("\\&t=(.*?)\"")).getMatch(0);
         if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("style=\"top:-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
+        if (filesize == null) filesize = br.getRegex("class=\"info_velikost\" style=\"top:-55px;\"><div>(.*?)</div></div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));

@@ -81,7 +81,7 @@ public class CZShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     private void login(Account account) throws Exception {
@@ -219,6 +219,7 @@ public class CZShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Soubor nenalezen")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("souboru:</strong></span>\\s<span[^>]*><strong>(.*?)</strong>").getMatch(0));
