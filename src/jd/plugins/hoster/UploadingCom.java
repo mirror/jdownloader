@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 public class UploadingCom extends PluginForHost {
     private static int          simultanpremium  = 1;
     private static final Object PREMLOCK         = new Object();
-    private String              premiumUserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+//    private String              premiumUserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
     private String              userAgent        = RandomUserAgent.generate();
     private boolean             free             = false;
     private static final String FILEIDREGEX      = "name=\"file_id\" value=\"(.*?)\"";
@@ -67,7 +67,7 @@ public class UploadingCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", premiumUserAgent);
+        br.getHeaders().put("User-Agent", userAgent);
         br.setCookie("http://www.uploading.com/", "lang", "1");
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
