@@ -193,7 +193,6 @@ public class UploadingCom extends PluginForHost {
         }
         logger.info("Submitting form");
         br.postPage(link.getDownloadURL(), "action=second_page&file_id=" + fileID + "&code=" + code);
-        System.out.print(br.toString());
         checkErrors();
         String redirect = getDownloadUrl(link, fileID, code);
         br.setFollowRedirects(false);
