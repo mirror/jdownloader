@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -35,10 +36,13 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
-    private static int          simultanpremium = 1;
-    private static final Object PREMLOCK        = new Object();
-    private String              userAgent       = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
-    private boolean             free            = false;
+    private static int          simultanpremium  = 1;
+    private static final Object PREMLOCK         = new Object();
+    private String              premiumUserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+    private String              userAgent        = RandomUserAgent.generate();
+    private boolean             free             = false;
+    private static final String FILEIDREGEX      = "name=\"file_id\" value=\"(.*?)\"";
+    private static final String CODEREGEX        = "uploading\\.com/files/get/(.+)";
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,7 +67,7 @@ public class UploadingCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", userAgent);
+        br.getHeaders().put("User-Agent", premiumUserAgent);
         br.setCookie("http://www.uploading.com/", "lang", "1");
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
@@ -124,7 +128,13 @@ public class UploadingCom extends PluginForHost {
             handleFree0(link);
             return;
         }
-        String redirect = getDownloadUrl(link);
+        String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
+        String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
+        if (fileID == null || code == null) {
+            logger.warning("The first form equals null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String redirect = getDownloadUrl(link, fileID, code);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);
         handleDownloadErrors();
@@ -170,20 +180,22 @@ public class UploadingCom extends PluginForHost {
 
     public void handleFree0(DownloadLink link) throws Exception {
         checkErrors();
-        Form form = br.getFormbyProperty("id", "downloadform");
+        String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
+        String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
+        if (fileID == null || code == null) {
+            logger.warning("The first form equals null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             return;
         }
-        if (form == null) {
-            logger.warning("The first form equals null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         logger.info("Submitting form");
-        br.submitForm(form);
+        br.postPage(link.getDownloadURL(), "action=second_page&file_id=" + fileID + "&code=" + code);
+        System.out.print(br.toString());
         checkErrors();
-        String redirect = getDownloadUrl(link);
+        String redirect = getDownloadUrl(link, fileID, code);
         br.setFollowRedirects(false);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
@@ -289,8 +301,9 @@ public class UploadingCom extends PluginForHost {
         handleFree0(downloadLink);
     }
 
-    public String getDownloadUrl(DownloadLink downloadLink) throws Exception {
+    public String getDownloadUrl(DownloadLink downloadLink, String fileID, String code) throws Exception {
         String timead = br.getRegex("timead_counter\">(\\d+)<").getMatch(0);
+        if (timead == null) timead = br.getRegex("start_timer\\((\\d+)\\)").getMatch(0);
         if (timead != null) {
             Form form = br.getForm(0);
             sleep(Integer.parseInt(timead) * 1000l, downloadLink);
@@ -302,17 +315,12 @@ public class UploadingCom extends PluginForHost {
             return varLink;
         }
         br.setFollowRedirects(false);
-        String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
-        if (fileID == null) fileID = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
-        String code = br.getRegex("code: \"(.*?)\"").getMatch(0);
-        if (code == null) code = br.getRegex("name=\"code\" value=\"(.*?)\"").getMatch(0);
-        if (fileID == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String starttimer = br.getRegex("start_timer\\((\\d+)\\);").getMatch(0);
         String redirect = null;
         if (starttimer != null) {
             sleep((Long.parseLong(starttimer) + 2) * 1000l, downloadLink);
         }
-        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&code=" + code + "&action=get_link&pass=");
+        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&code=" + code + "&action=get_link&pass=undefined");
         redirect = br.getRegex("link\": \"(http.*?)\"").getMatch(0);
         if (redirect != null) {
             redirect = redirect.replaceAll("\\\\/", "/");
