@@ -158,6 +158,14 @@ public class FileSonicCom extends PluginForHost {
 
         final String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
         this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
+        if (br.containsHTML("The file that you're trying to download is larger than")) {
+            String size = br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
+            if (size != null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only premium users can download files larger than " + size.trim() + ".");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users!");
+            }
+        }
         this.removeComments();
 
         if (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>")) {
@@ -222,10 +230,9 @@ public class FileSonicCom extends PluginForHost {
                 this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
                 this.removeComments();
                 downloadUrl = this.br.getRegex("<p><a href=\"(http://.*?\\.filesonic.com.*?)\"><span>Start download now!</span></a></p>").getMatch(0);
-                if (downloadUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             }
         }
-
+        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)

@@ -52,7 +52,7 @@ public class BanaShareCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public String brbefore = "";
+    public String               brbefore    = "";
     private static final String COOKIE_HOST = "http://banashare.com";
 
     @Override
@@ -78,20 +78,20 @@ public class BanaShareCom extends PluginForHost {
                     filename = new Regex(brbefore, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                     if (filename == null) {
                         filename = new Regex(brbefore, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = new Regex(brbefore, "<div id=\"file_name\">(.*?)</div>").getMatch(0);
+                        }
                     }
                 }
             }
         }
-        String filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
-            filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            filesize = new Regex(brbefore, "</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(brbefore, "</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
+                filesize = new Regex(brbefore, "href=\"http://banashare\\.com/[a-z0-9]{12}/" + filename + "\\.html\">" + filename + " - (.*?)</a>").getMatch(0);
             }
-        }
-        if (filename == null) {
-            logger.warning("The filename equals null, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim());
