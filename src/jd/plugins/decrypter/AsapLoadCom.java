@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -34,12 +35,25 @@ public class AsapLoadCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String PASSWORDPROTECTED = "<b>File is protected with password</b>";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("<h1>File not found</h1>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(PASSWORDPROTECTED)) {
+            String fileID = new Regex(parameter, "asapload\\.com/info\\?id=(\\d+)").getMatch(0);
+            if (fileID == null) return null;
+            for (int i = 0; i <= 3; i++) {
+                String passCode = getUserInput(null, param);
+                br.postPage(parameter, "id=" + fileID + "&upload_password=" + passCode);
+                if (br.containsHTML(PASSWORDPROTECTED)) continue;
+                break;
+            }
+            if (br.containsHTML(PASSWORDPROTECTED)) throw new DecrypterException(DecrypterException.PASSWORD);
+        }
         String[] allLinks = br.getRegex("\"(http://asapload\\.com/download\\?id=\\d+)\"").getColumn(0);
         if (allLinks == null || allLinks.length == 0) return null;
         progress.setRange(allLinks.length);
