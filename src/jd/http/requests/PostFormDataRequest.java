@@ -16,7 +16,6 @@
 
 package jd.http.requests;
 
-import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,19 +24,18 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-import org.appwork.utils.net.CountingOutputStream;
-import org.appwork.utils.net.NullOutputStream;
-
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.URLConnectionAdapter.METHOD;
 
+import org.appwork.utils.net.CountingOutputStream;
+import org.appwork.utils.net.NullOutputStream;
+
 /**
- * Extending the Request calss, this class is able to to HTML Formdata Posts.
+ * Extending the Request class, this class is able to to HTML Formdata Posts.
  * 
  * @author coalado
- * 
  */
 public class PostFormDataRequest extends Request {
 
@@ -151,7 +149,7 @@ public class PostFormDataRequest extends Request {
         }
         sb.append(this.boundary);
         sb.append("--\r\n");
-        return sb + "";
+        return sb.toString();
     }
 
     private void write(FormData formData, StringBuffer sb) {
@@ -159,20 +157,19 @@ public class PostFormDataRequest extends Request {
         sb.append("\r\n");
         switch (formData.getType()) {
         case VARIABLE:
-            sb.append("Content-Disposition: form-data; name=\"" + formData.getName() + "\"");
+            sb.append("Content-Disposition: form-data; name=\"").append(formData.getName()).append("\"");
             sb.append("\r\n\r\n");
-            sb.append(formData.getValue() + "\r\n");
+            sb.append(formData.getValue()).append("\r\n");
             break;
         case DATA:
-            sb.append("Content-Disposition: form-data; name=\"" + formData.getName() + "\"; filename=\"" + formData.getValue() + "\"");
-            sb.append("\r\nContent-Type: " + formData.getDataType() + "\r\n\r\n");
-            sb.append("[....." + formData.getData().length + " Byte DATA....]\r\n");
+            sb.append("Content-Disposition: form-data; name=\"").append(formData.getName()).append("\"; filename=\"").append(formData.getValue()).append("\"");
+            sb.append("\r\nContent-Type: ").append(formData.getDataType());
+            sb.append("\r\n\r\n[.....").append(formData.getData().length).append(" Byte DATA....]\r\n");
             break;
         case FILE:
-            sb.append("Content-Disposition: form-data; name=\"" + formData.getName() + "\"; filename=\"" + formData.getValue() + "\"");
-            sb.append("\r\nContent-Type: " + formData.getDataType() + "\r\n\r\n");
-            sb.append("[....." + formData.getFile().length() + " FileByte DATA....]");
-            sb.append("\r\n");
+            sb.append("Content-Disposition: form-data; name=\"").append(formData.getName()).append("\"; filename=\"").append(formData.getValue()).append("\"");
+            sb.append("\r\nContent-Type: ").append(formData.getDataType());
+            sb.append("\r\n\r\n[.....").append(formData.getFile().length()).append(" FileByte DATA....]\r\n");
             break;
         }
     }

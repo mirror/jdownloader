@@ -73,22 +73,19 @@ public class CleanupLanguageFiles {
         }
 
         System.out.println(languageFile.getName() + ":");
-        System.out.println("Old:     " + languageKeys.size());
         System.out.println("Correct: " + data.size());
-        if (data.size() < srcParser.getEntries().size() / 3) {
-            System.out.println("This language file is really outdated. Maybe delete it?");
-        }
 
         if (languageKeys.isEmpty()) return;
 
-        Collections.sort(data);
-
+        System.out.println("Old:     " + languageKeys.size());
+        System.out.println("Remove old keys!");
         saveLanguageFile(languageFile, data);
     }
 
     private void saveLanguageFile(final File file, final ArrayList<KeyInfo> data) {
         final StringBuilder sb = new StringBuilder();
 
+        Collections.sort(data);
         for (final KeyInfo entry : data) {
             sb.append(entry.toString()).append('\n');
         }

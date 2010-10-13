@@ -1,6 +1,4 @@
-package jd.http;
-
-/*
+/**
  * The contents of this file are subject to the "END USER LICENSE AGREEMENT FOR F5
  * Software Development Kit for iControl"; you may not use this file except in
  * compliance with the License. The License is included in the iControl
@@ -28,11 +26,14 @@ package jd.http;
  * If you do not delete the provisions above, a recipient may use your
  * version of this file under either the License or the GPL.
  */
+package jd.http;
+
 import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivilegedAction;
+import java.security.Provider;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 
@@ -41,18 +42,14 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactorySpi;
 import javax.net.ssl.X509TrustManager;
 
-public final class XTrustProvider extends java.security.Provider {
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -4201108498101335796L;
-    /**
-     * 
-     */
-    private static String oldalgo = null;
-    private final static String NAME = "XTrustJSSE";
-    private final static String INFO = "XTrust JSSE Provider (implements trust factory with truststore validation disabled)";
-    private final static double VERSION = 1.0D;
+public final class XTrustProvider extends Provider {
+
+    private static final long   serialVersionUID = -4201108498101335796L;
+
+    private static String       oldalgo          = null;
+    private final static String NAME             = "XTrustJSSE";
+    private final static String INFO             = "XTrust JSSE Provider (implements trust factory with truststore validation disabled)";
+    private final static double VERSION          = 1.0D;
 
     public XTrustProvider() {
         super(NAME, VERSION, INFO);
@@ -110,4 +107,5 @@ public final class XTrustProvider extends java.security.Provider {
             } };
         }
     }
+
 }

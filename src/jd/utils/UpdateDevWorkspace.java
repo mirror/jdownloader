@@ -23,20 +23,19 @@ import jd.event.MessageListener;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.wc.SVNRevision;
-
 public class UpdateDevWorkspace {
 
-    private static void updateSVN(final String svnadr, final String path) throws SVNException {
-        final Subversion svn = new Subversion(svnadr);
+    private static void updateSVN(final String svnUrl, final String path) throws Exception {
+        final Subversion svn = new Subversion(svnUrl);
 
-        final File dir = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), path);
+        final File dir = JDUtilities.getResourceFile(path);
+
         try {
             svn.cleanUp(dir, true);
-        } catch (SVNException e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
+
         svn.getBroadcaster().addListener(new MessageListener() {
 
             public void onMessage(MessageEvent event) {
@@ -46,24 +45,32 @@ public class UpdateDevWorkspace {
         });
 
         try {
-            svn.update(dir, SVNRevision.HEAD);
+            svn.update(dir, null);
             svn.revert(dir);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
             JDIO.removeDirectoryOrFile(dir);
-            svn.update(dir, SVNRevision.HEAD);
+            svn.update(dir, null);
         }
     }
 
     public static void main(String[] args) {
+        System.out.println("Update resources at " + JDUtilities.getResourceFile(""));
+
         try {
-            System.out.println("Update ressources at " + JDUtilities.getJDHomeDirectoryFromEnvironment());
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/libs/", "libs");
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        try {
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/", "jd");
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        try {
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/", "tools");
-        } catch (SVNException e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
     }
-
 }

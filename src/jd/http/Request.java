@@ -502,7 +502,7 @@ public abstract class Request {
         };
         ret.connectTimeout = this.connectTimeout;
         ret.cookies = new Cookies(this.getCookies());
-        ret.headers = (RequestHeader) this.getHeaders().clone();
+        ret.headers = this.getHeaders().clone();
         ret.setProxy(proxy);
         ret.readTime = this.readTimeout;
         ret.httpConnection = this.httpConnection;
