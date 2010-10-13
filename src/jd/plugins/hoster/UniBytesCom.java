@@ -49,8 +49,14 @@ public class UniBytesCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("style=\" font-weight: bold; color:#252525;\">(.*?)</span><br/>").getMatch(0);
-        String filesize = br.getRegex("</span><br/>[\n ]+\\((.*?)\\)</h3><p").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex("\\(([0-9\\.]+ [A-Za-z]+)\\)</h3><p").getMatch(0);
+        if (filename == null || filesize == null) {
+            // Leave this in
+            logger.warning("Filename = " + filename);
+            logger.warning("Filesize = " + filesize);
+            logger.warning(br.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -59,8 +65,9 @@ public class UniBytesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String addedLink = downloadLink.getDownloadURL();
         br.setFollowRedirects(false);
-        br.postPage(downloadLink.getDownloadURL(), "step=timer&referer=&ad=");
+        br.postPage(addedLink, "step=timer&referer=&ad=");
         if (br.containsHTML("showNotUniqueIP\\(\\);")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads");
         int iwait = 60;
         String regexedTime = br.getRegex("id=\"slowRest\">(\\d+)</").getMatch(0);
@@ -70,14 +77,23 @@ public class UniBytesCom extends PluginForHost {
         if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
         if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
         String s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
-        if (s == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (s == null) {
+            logger.warning("s1 equals null!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         sleep(iwait * 1001l, downloadLink);
-        br.postPage(downloadLink.getDownloadURL(), "step=last&s=" + s + "&referer=");
+        br.postPage(downloadLink.getDownloadURL(), "step=next&s=" + s + "&referer=" + addedLink);
+        s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
+        if (s == null) {
+            logger.warning("s2 equals null!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + s + "&referer=" + addedLink);
         if (br.containsHTML(CAPTCHATEXT)) {
             logger.info("Captcha found");
             for (int i = 0; i <= 5; i++) {
                 String code = getCaptchaCode("http://www.unibytes.com/captcha.jpg", downloadLink);
-                String post = "s=" + s + "&referer=&step=last&captcha=" + code;
+                String post = "s=" + s + "&referer=" + addedLink + "&step=last&captcha=" + code;
                 br.postPage(downloadLink.getDownloadURL(), post);
                 if (!br.containsHTML(CAPTCHATEXT)) break;
             }
@@ -87,7 +103,10 @@ public class UniBytesCom extends PluginForHost {
         }
         String dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("style=\"width: 650px; margin: 40px auto; text-align: center; font-size: 2em;\"><a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink equals null!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

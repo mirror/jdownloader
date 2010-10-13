@@ -48,7 +48,7 @@ public class Vipfilecom extends PluginForHost {
         return "http://vip-file.com/tmpl/terms.php";
     }
 
-    public static String freelinkregex = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
+    public static final String FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
@@ -56,14 +56,14 @@ public class Vipfilecom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadURL);
-        if (br.containsHTML("This file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(This file not found|\">File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
         if (fileSize == null) fileSize = br.getRegex("<p>Size of file: <span>(.*?)</span>").getMatch(0);
         String fileName = br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
-        if (fileSize == null || fileName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (fileSize == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setDownloadSize(Regex.getSize(fileSize));
         downloadLink.setName(fileName);
-        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(freelinkregex, Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX, Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
             return AvailableStatus.TRUE;
@@ -77,7 +77,7 @@ public class Vipfilecom extends PluginForHost {
         /* DownloadLink holen, 2x der Location folgen */
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
-        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(freelinkregex, Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX, Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
         br.setDebug(true);
         /* SpeedHack */
