@@ -1350,6 +1350,7 @@ plugins.hoster.savetv.adsfreeavailable = Disponible sin comerciales
 plugins.hoster.savetv.adsfreenotavailable = No disponible sin comerciales
 plugins.hoster.savetv.dontmodifyfilename = No modificar el nombre original (podria causar problemas)
 plugins.hoster.savetv.preferadfreevideos = Preferir videos sin comerciales
+plugins.hoster.savetv.preferh264mobilevideos = Preferir formato de video h264 para mobiles
 plugins.hoster.savetv.useoriginalfilename = Usar nombre original (podria causar problemas!)
 plugins.hoster.scribdcom.errors.nofreedownloadlink = Solo disponible para usuarios Premium
 plugins.hoster.scribdcom.nodownloadavailable = La descarga esta deshabilitada para este archivo!
