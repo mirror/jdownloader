@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlshare.ro" }, urls = { "http://[\\w\\.]*?girlshare\\.ro/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlshare.ro" }, urls = { "http://[\\w\\.]*?girlshare\\.ro/[0-9\\.]+" }, flags = { 0 })
 public class GirlShareRo extends PluginForHost {
 
     public GirlShareRo(PluginWrapper wrapper) {
@@ -59,8 +59,10 @@ public class GirlShareRo extends PluginForHost {
         requestFileInformation(downloadLink);
         Form dlform = br.getForm(0);
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlform.remove(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (!br.getURL().contains("girlshare.ro")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1001l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

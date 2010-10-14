@@ -152,6 +152,7 @@ public class FileBaseTo extends PluginForHost {
             String uidValue = br.getRegex("id=\"uid\" value=\"(.*?)\"").getMatch(0);
             if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.postPage(br.getURL(), "dl_free3=Normal+Download&uid=" + uidValue);
+            if (br.containsHTML("lädt bereits ein Datei runter\\. Warten Sie bitte, bis der Download abgeschlossen ist")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
             uidValue = br.getRegex("id=\"uid\" name=\"uid\" value=\"(.*?)\"").getMatch(0);
             if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // // Ticket Time is skippable atm.
@@ -189,7 +190,7 @@ public class FileBaseTo extends PluginForHost {
                 // if captcha error after loop
                 if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            forms = br.getForm(1);
+            forms = br.getForm(0);
             if (forms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = BrowserAdapter.openDownload(br, downloadLink, forms);
         }

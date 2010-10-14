@@ -94,10 +94,18 @@ public class Vipfilecom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("pass", Encoding.urlEncode(account.getPass()));
-        br.submitForm(form);
+        Form[] allForms = br.getForms();
+        if(allForms == null || allForms.length == 0)throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Form premiumform = null;
+        for(Form singleForm:allForms){
+            if(singleForm.containsHTML("pass")){
+                premiumform = singleForm;
+                break;
+            }
+        }
+        if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        premiumform.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(premiumform);
         // Try to find the remaining traffic
         String trafficLeft = br.getRegex("You can download another: (.*?) with current password").getMatch(0);
         if (trafficLeft != null) {
