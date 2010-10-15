@@ -99,6 +99,7 @@ public class MultiShareCz extends PluginForHost {
         if (trafficleft == null) trafficleft = br.getRegex("class=\"big\"><strong>Kredit:(.*?)</strong>").getMatch(0);
         if (trafficleft != null) {
             trafficleft = trafficleft.replace("&nbsp;", "");
+            trafficleft = trafficleft.replace(" ", "");
             ai.setTrafficLeft(Regex.getSize(trafficleft));
         }
         String hostedFiles = br.getRegex("Počet nahraných souborů:</span>.*?<strong>(\\d+)</strong>").getMatch(0);

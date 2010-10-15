@@ -175,11 +175,18 @@ public class JDPremium extends PluginOptional {
                 /* init our new plugins */
                 premShareHosts.put("jdownloader.org", "PremShare");
                 premShareHosts.put("ochload.org", "Ochloadorg");
+                premShareHosts.put("multishare.cz", "MultiShare");
                 int replaceIndex = 0;
                 for (String key : premShareHosts.keySet()) {
                     /* init replacePlugin */
                     try {
-                        new PremShareHost(key, premShareHosts.get(key), "NEVERUSETHISREGEX" + replaceIndex++ + ":\\)", 2);
+                        /*
+                         * we do not need a seperate multishare.cz plugin, as we
+                         * already have a normal plugin for it
+                         */
+                        if (key.equalsIgnoreCase("multishare.cz")) continue;
+                        /* the premshareplugins never can be disabled */
+                        new PremShareHost(key, premShareHosts.get(key), "NEVERUSETHISREGEX" + key + replaceIndex++ + ":\\)", 2 + PluginWrapper.ALWAYS_ENABLED);
                     } catch (Throwable e) {
                     }
                 }
@@ -191,10 +198,16 @@ public class JDPremium extends PluginOptional {
                 for (String key : premShareHosts.keySet()) {
                     if (AccountController.getInstance().hasAccounts(key)) {
                         for (HostPluginWrapper plugin : all) {
+                            /* we do not replace youtube */
                             if (plugin.getHost().contains("youtube")) continue;
-                            if (plugin.getHost().contains("DIRECTHTTP")) continue;
-                            /* do not replace our new plugins ;) */
-                            if (premShareHosts.containsKey(plugin.getHost())) continue;
+                            /* and no DIRECTHTTP */
+                            if (plugin.getHost().contains("DIRECTHTTP") || plugin.getHost().contains("http links")) continue;
+                            /* and no ftp */
+                            if (plugin.getHost().contains("ftp")) continue;
+                            /* do not replace the premshare plugins ;) */
+                            if (premShareHosts.containsKey(plugin.getHost()) && plugin.getPattern().pattern().startsWith("NEVERUSETHISREGEX" + plugin.getHost())) {
+                                continue;
+                            }
                             replaceHosterPlugin(plugin.getHost(), premShareHosts.get(key));
                         }
                         PluginForHost ret = JDUtilities.getPluginForHost(key);

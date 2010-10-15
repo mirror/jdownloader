@@ -13,6 +13,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.TransferStatus;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.LinkStatus;
@@ -88,14 +89,53 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     }
 
     @Override
+    public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (plugin == null) {
+            super.handle(downloadLink, account);
+            return;
+        }
+        proxyused = false;
+        /* copied from PluginForHost */
+        final TransferStatus transferStatus = downloadLink.getTransferStatus();
+        transferStatus.usePremium(false);
+        transferStatus.setResumeSupport(false);
+        try {
+            while (waitForNextStartAllowed(downloadLink)) {
+            }
+        } catch (InterruptedException e) {
+            return;
+        }
+        putLastTimeStarted(System.currentTimeMillis());
+        if (!isAGBChecked()) {
+            logger.severe("AGB not signed : " + this.getWrapper().getID());
+            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
+            return;
+        }
+        /* try ochload.org first */
+        if (account == null) {
+            if (handleOchLoad(downloadLink)) return;
+        } else if (!JDPremium.preferLocalAccounts()) {
+            if (handleOchLoad(downloadLink)) return;
+        }
+        /* failed, now try normal */
+        proxyused = false;
+        plugin.handle(downloadLink, account);
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        if (handleOchLoad(link)) return;
-        link.getTransferStatus().usePremium(false);
-        proxyused = false;
         br.reset();
         plugin.handleFree(link);
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        if (plugin == null) return;
+        proxyused = false;
+        br.reset();
+        plugin.handlePremium(downloadLink, account);
     }
 
     @Override
@@ -216,7 +256,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
-            String restartReq = enabled == false ? "(Restart required)" : "";
+            String restartReq = enabled == false ? "(Restart required) " : "";
             AccountInfo ac = new AccountInfo();
             br.setConnectTimeout(60 * 1000);
             br.setReadTimeout(60 * 1000);
@@ -267,26 +307,14 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 }
                 account.setValid(true);
                 if (premiumHosts.size() == 0) {
-                    ac.setStatus("Account valid: 0 Hosts via OCHLoad.org available" + restartReq);
+                    ac.setStatus(restartReq + "Account valid: 0 Hosts via OCHLoad.org available");
                 } else {
-                    ac.setStatus("Account valid: " + premiumHosts.size() + " Hosts via OCHLoad.org available" + restartReq);
+                    ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via OCHLoad.org available");
                 }
             }
             return ac;
         } else
             return plugin.fetchAccountInfo(account);
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (plugin == null) return;
-        proxyused = false;
-        if (!JDPremium.preferLocalAccounts()) {
-            if (handleOchLoad(downloadLink)) return;
-            proxyused = false;
-        }
-        br.reset();
-        plugin.handlePremium(downloadLink, account);
     }
 
     @Override

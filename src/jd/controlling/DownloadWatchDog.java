@@ -763,6 +763,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     LinkStatus linkStatus;
                     boolean hasInProgressLinks;
                     boolean hasTempDisabledLinks;
+                    boolean waitingNewIP;
                     DownloadWatchDog.this.aborted = false;
                     DownloadWatchDog.this.aborting = false;
                     int stopCounter = 5;
@@ -771,6 +772,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
                         hasInProgressLinks = false;
                         hasTempDisabledLinks = false;
+                        waitingNewIP = false;
 
                         /* so we can work on a list without threading errors */
                         fps.clear();
@@ -837,6 +839,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                                      * plugins that allow resume
                                                      * and parallel downloads
                                                      */
+                                                    waitingNewIP=true;
                                                     IPController.getInstance().invalidate();
                                                 }
                                                 updates.add(link);
@@ -863,6 +866,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                                  * plugins that allow resume and
                                                  * parallel downloads
                                                  */
+                                                waitingNewIP=true;
                                                 IPController.getInstance().invalidate();
                                             }
                                             updates.add(link);
@@ -882,7 +886,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                             }
                             /* request a reconnect if allowed and needed */
                             Reconnecter.getInstance().run();
-
                             if (updates.size() > 0) {
                                 /* fire gui updates */
                                 DownloadController.getInstance().fireDownloadLinkUpdate(updates);
@@ -898,7 +901,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                  * no new download got started, check what
                                  * happened and what to do next
                                  */
-                                if (!hasTempDisabledLinks && !hasInProgressLinks && !IPController.getInstance().isInvalidated() && DownloadWatchDog.this.getNextDownloadLink() == null && DownloadWatchDog.this.activeDownloads == 0) {
+                                if (!hasTempDisabledLinks && !hasInProgressLinks && !waitingNewIP && DownloadWatchDog.this.getNextDownloadLink() == null && DownloadWatchDog.this.activeDownloads == 0) {
                                     /*
                                      * no tempdisabled, no in progress, no
                                      * reconnect and no next download waiting

@@ -348,7 +348,9 @@ public class JDUtilities {
         try {
             HostPluginWrapper.readLock.lock();
             for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-                if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) return pHost.getPlugin();
+                if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))){
+                    return pHost.getPlugin();
+                }
             }
         } finally {
             HostPluginWrapper.readLock.unlock();
