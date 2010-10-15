@@ -109,17 +109,17 @@ public class LnkCrptWs extends PluginForDecrypt {
                             String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
                             File file = this.getLocalCaptchaFile();
                             br.cloneBrowser().getDownload(file, url);
-                            progress.setInitials(String.valueOf(max_attempts - attempts));
-                            Point p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws", capDescription);
+                            //progress.setInitials(String.valueOf(max_attempts - attempts));
+                            Point p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
                             captcha.put("x", p.x + "");
                             captcha.put("y", p.y + "");
                             br.submitForm(captcha);
-                            if (!br.containsHTML("CaptX|ColorX|TextX") && br.containsHTML("eval") || br.getForms() != null) valid = true;
+                            if (!br.containsHTML("CaptX|ColorX|TextX") && br.containsHTML("eval")) valid = true;
                         }
                     }
                 }
             }
-            progress.setInitials("LC");
+            //progress.setInitials("LC");
         }
         if (!valid) throw new DecrypterException(DecrypterException.CAPTCHA);
         // Look for containers

@@ -86,9 +86,9 @@ public class DuckLoad extends PluginForHost {
                 String[] dl_id = br.getRequest().getUrl().getPath().split("/");
                 String appendLink = "undefined&showTopBar=undefined";
                 dllink = "http://flash.duckload.com/video/video_api.php?id=" + dl_id[dl_id.length - 1] + "&cookie=";
-                String referer = dllink.replace("video_api.php", "duckloadplayer.swf");
-                br.setHeader("Referer", referer);
-                br.setHeader("x-flash-version", "10,1,85,3");
+//                String referer = dllink.replace("video_api.php", "duckloadplayer.swf");
+//                br.setHeader("Referer", referer);
+//                br.setHeader("x-flash-version", "10,1,85,3");
                 br.getPage( dllink + appendLink);
                 String part1 = br.getRegex("ident\":\\ \"(.*?)\",").getMatch(0);
                 String part2 = br.getRegex("link\":\\ \"(.*?)\"").getMatch(0).replace("\\/", "/");
