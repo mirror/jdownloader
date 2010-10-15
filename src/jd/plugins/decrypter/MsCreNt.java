@@ -24,6 +24,7 @@ import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -68,6 +69,8 @@ public class MsCreNt extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             } else {
+                String topicID = new Regex(parameter, "topic/(\\d+)").getMatch(0);
+                if (topicID == null) return null;
                 String fpName = br.getRegex("<title>(.*?)- musiCore Forums</title>").getMatch(0);
                 if (fpName == null) {
                     fpName = br.getRegex("<h1>musiCore Forums:(.*?)- musiCore Forums").getMatch(0);
@@ -75,8 +78,12 @@ public class MsCreNt extends PluginForDecrypt {
                         fpName = br.getRegex("class='main_topic_title'>(.*?)<span class=").getMatch(0);
                     }
                 }
-                String redirectlinks[] = br.getRegex("'(http://r\\.musicore\\.net/\\?id=.*?url=.*?)'").getColumn(0);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getPage("http://musicore.net/ajax/release.php?id=" + topicID);
+                String redirectlinks[] = br.getRegex("(\\'|\")(http://r\\.musicore\\.net/\\?id=.*?url=.*?)(\\'|\")").getColumn(1);
                 if (redirectlinks == null || redirectlinks.length == 0) return null;
+                br.getPage("http://musicore.net/ajax/ftp.php?id=" + topicID);
+                String ftpLinks[] = br.getRegex("\"(ftp://\\d+:[a-z0-9]+@ftp\\.musicore\\.ru/.*?)\"").getColumn(0);
                 progress.setRange(redirectlinks.length);
                 for (String redirectlink : redirectlinks) {
                     redirectlink = redirectlink.replace("amp;", "");
@@ -90,6 +97,11 @@ public class MsCreNt extends PluginForDecrypt {
                     }
                     decryptedLinks.add(createDownloadlink(finallink));
                     progress.increase(1);
+                }
+                if (ftpLinks != null && ftpLinks.length != 0) {
+                    for (String ftpLink : ftpLinks) {
+                        decryptedLinks.add(createDownloadlink(ftpLink));
+                    }
                 }
                 if (fpName != null) {
                     FilePackage fp = FilePackage.getInstance();
