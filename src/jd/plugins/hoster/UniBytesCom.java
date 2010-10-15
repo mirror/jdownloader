@@ -39,7 +39,8 @@ public class UniBytesCom extends PluginForHost {
         return "http://www.unibytes.com/page/terms";
     }
 
-    private static final String CAPTCHATEXT = "captcha\\.jpg";
+    private static final String CAPTCHATEXT      = "captcha\\.jpg";
+    private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -48,6 +49,7 @@ public class UniBytesCom extends PluginForHost {
         br.setCookie("http://www.unibytes.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("style=\" font-weight: bold; color:#252525;\">(.*?)</span><br/>").getMatch(0);
         String filesize = br.getRegex("\\(([0-9\\.]+ [A-Za-z]+)\\)</h3><p").getMatch(0);
         if (filename == null || filesize == null) {
@@ -65,6 +67,7 @@ public class UniBytesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
         String addedLink = downloadLink.getDownloadURL();
         br.setFollowRedirects(false);
         br.postPage(addedLink, "step=timer&referer=&ad=");
@@ -110,6 +113,7 @@ public class UniBytesCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

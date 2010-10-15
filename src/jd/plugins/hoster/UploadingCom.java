@@ -36,13 +36,14 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
-    private static int          simultanpremium  = 1;
-    private static final Object PREMLOCK         = new Object();
-//    private String              premiumUserAgent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
-    private String              userAgent        = RandomUserAgent.generate();
-    private boolean             free             = false;
-    private static final String FILEIDREGEX      = "name=\"file_id\" value=\"(.*?)\"";
-    private static final String CODEREGEX        = "uploading\\.com/files/get/(.+)";
+    private static int          simultanpremium = 1;
+    private static final Object PREMLOCK        = new Object();
+    // private String otherUseragent =
+    // "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+    private String              userAgent       = RandomUserAgent.generate();
+    private boolean             free            = false;
+    private static final String FILEIDREGEX     = "name=\"file_id\" value=\"(.*?)\"";
+    private static final String CODEREGEX       = "uploading\\.com/files/get/(.+)";
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,6 +54,10 @@ public class UploadingCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://uploading.com/terms/";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get"));
     }
 
     public boolean isPremium() throws IOException {
@@ -179,6 +184,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink link) throws Exception {
+        if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get"));
         checkErrors();
         String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
         String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
@@ -238,7 +244,7 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report
+                     * append fake filename , because api will not report
                      * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
@@ -293,7 +299,7 @@ public class UploadingCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
