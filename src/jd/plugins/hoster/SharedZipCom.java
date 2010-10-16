@@ -48,7 +48,7 @@ public class SharedZipCom extends PluginForHost {
         return "http://www.sharedzip.com/tos.html";
     }
 
-    private String brbefore = "";
+    private String              brbefore    = "";
     private static final String COOKIE_HOST = "http://sharedzip.com";
 
     public void login(Account account) throws IOException, PluginException {
@@ -118,12 +118,9 @@ public class SharedZipCom extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(brbefore, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(brbefore, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                    filename = new Regex(brbefore, "\">Filename:</th>[\t\n\r ]+<th width=\"569\" scope=\"co2\" align=\"left\" style=\"font-family:\\'Trebuchet MS\\'; font-size:20px; color:#ff9129; padding-left:3px;\">(.*?)</th>").getMatch(0);
                     if (filename == null) {
-                        filename = new Regex(brbefore, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(brbefore, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                        }
+                        filename = new Regex(brbefore, "<b>Filename:</b></td><td nowrap>(.*?)</td></tr>").getMatch(0);
                     }
                 }
             }

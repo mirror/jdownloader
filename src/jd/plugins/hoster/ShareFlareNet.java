@@ -51,6 +51,7 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://shareflare.net", "lang", "en");
         br.getPage(link.getDownloadURL());

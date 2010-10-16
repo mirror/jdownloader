@@ -35,7 +35,7 @@ public class ImageFap extends PluginForHost {
 
     public ImageFap(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(500l);
+        // this.setStartIntervall(500l);
     }
 
     @Override
@@ -94,28 +94,32 @@ public class ImageFap extends PluginForHost {
                 galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
                 if (galleryName == null) {
                     galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
-                    if (galleryName == null) galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
+                    if (galleryName == null) galleryName = br.getRegex("<td bgcolor=\\'#FCFFE0\\'><a href=\"/gallery\\.php\\?gid=\\d+\">(.*?)</a></td>").getMatch(0);
+                }
+            }
+            String authorsName = downloadLink.getStringProperty("authorsname");
+            if (authorsName == null) {
+                authorsName = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
+                if (authorsName == null) {
+                    authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
+                    if (authorsName == null) {
+                        authorsName = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
+                    }
                 }
             }
             String orderid = downloadLink.getStringProperty("orderid");
-            if (orderid == null)
-                orderid = "";
-            else
-                orderid += "_";
-            if (galleryName != null) {
-                galleryName = galleryName.trim();
+            if (authorsName == null || galleryName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            galleryName = galleryName.trim();
+            authorsName = authorsName.trim();
+            if (orderid != null) {
+                downloadLink.setFinalFileName(authorsName + " - " + galleryName + " - " + orderid + " - " + picture_name);
+            } else {
+                downloadLink.setFinalFileName(authorsName + " - " + galleryName + " - " + picture_name);
             }
-            if (picture_name != null) {
-                if (galleryName != null) {
-                    downloadLink.setFinalFileName(orderid + galleryName + " - " + picture_name);
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName(galleryName);
-                    downloadLink.setFilePackage(fp);
-                } else {
-                    downloadLink.setFinalFileName(orderid + picture_name);
-                }
-                return AvailableStatus.TRUE;
-            }
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(authorsName + " - " + galleryName);
+            downloadLink.setFilePackage(fp);
+            return AvailableStatus.TRUE;
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
@@ -123,6 +127,7 @@ public class ImageFap extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         String pfilename = downloadLink.getName();
         br.getPage(downloadLink.getDownloadURL());
@@ -157,7 +162,7 @@ public class ImageFap extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return -1;
     }
 
     public void reset() {

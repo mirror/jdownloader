@@ -76,7 +76,16 @@ public class FileServeCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setDebug(true);
-        br.getPage("http://fileserve.com/");
+        br.getPage("http://fileserve.com/login.php");
+        if (!br.containsHTML("This service is temporarily not available for your service area")) {
+            AccountInfo acInfo = new AccountInfo();
+            acInfo.setStatus("Your country is blocked by fileserve!");
+            account.setAccountInfo(acInfo);
+            // Show the user for 20 seconds that the account is blocked, the
+            // deactivate it
+            Thread.sleep(20 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         /* username and pass are limited to 20 chars */
         String username = account.getUser();
         String password = account.getPass();
