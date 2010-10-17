@@ -77,7 +77,7 @@ public class FileServeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         br.getPage("http://fileserve.com/login.php");
-        if (!br.containsHTML("This service is temporarily not available for your service area")) {
+        if (br.containsHTML("This service is temporarily not available for your service area")) {
             AccountInfo acInfo = new AccountInfo();
             acInfo.setStatus("Your country is blocked by fileserve!");
             account.setAccountInfo(acInfo);

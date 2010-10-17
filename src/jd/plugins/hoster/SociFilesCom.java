@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "socifiles.com" }, urls = { "http://[\\w\\.]*?socifiles\\.com/d/[0-9a-z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "socifiles.com" }, urls = { "http://(www\\.)?socifiles\\.com/d/[0-9a-z]+" }, flags = { 0 })
 public class SociFilesCom extends PluginForHost {
 
     public SociFilesCom(PluginWrapper wrapper) {
