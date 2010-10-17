@@ -1316,6 +1316,7 @@ plugins.hoster.gigasizecom.errors.alreadyloading = No se puede comprobar, ya se 
 plugins.hoster.hellsharecom.error.404 = Temporalmente no disponible
 plugins.hoster.hellsharecom.error.currentloadis100percent = La carga actual del servidor es del 100%
 plugins.hoster.hellsharecom.error.serveruntermaximumload = No hay slots gratuitos disponibles
+plugins.hoster.hitfilenet.only4premium = Solo disponible para usuarios Premium
 plugins.hoster.hotfilecom.setunlimitedconnectionsforpremium = Permitir mas de 5 conexiones por archivo premium (puede causar errores!)
 plugins.hoster.hotfilecom.tryiwlbypass = Intentar bypass con la lista de filtrado IWL
 plugins.hoster.httplinks.errors.basicauthneeded = Autorización básica necesaria
