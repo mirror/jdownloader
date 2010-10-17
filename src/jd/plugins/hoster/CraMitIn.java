@@ -40,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://[\\w\\.]*?(cramit\\.in|cramitin\\.net)/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://[\\w\\.]*?(cramit\\.in|cramitin\\.(net|eu))/[a-z0-9]{12}" }, flags = { 2 })
 public class CraMitIn extends PluginForHost {
 
     public CraMitIn(PluginWrapper wrapper) {
@@ -57,12 +57,12 @@ public class CraMitIn extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public String brbefore = "";
+    public String               brbefore    = "";
     private static final String COOKIE_HOST = "http://cramit.in";
-    public boolean nopremium = false;
+    public boolean              nopremium   = false;
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("cramitin.net", "cramit.in"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("cramitin\\.(net|eu)", "cramit.in"));
     }
 
     @Override
@@ -426,7 +426,7 @@ public class CraMitIn extends PluginForHost {
             if (error == true) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                if (br.containsHTML("File Not Found")|| br.containsHTML("404 Not Found")) {
+                if (br.containsHTML("File Not Found") || br.containsHTML("404 Not Found")) {
                     logger.warning("Server says link offline, please recheck that!");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }

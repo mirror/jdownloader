@@ -20,7 +20,10 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,11 +32,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megarapid.eu" }, urls = { "(http://[\\w\\.]*?megarapid\\.eu/files/\\d+/.+)|(http://[\\w\\.]*?megarapid\\.eu/\\?e=403\\&m=captcha\\&file=\\d+/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megarapid.eu" }, urls = { "(http://[\\w\\.]*?megarapid\\.eu/files/\\d+/.+)|(http://[\\w\\.]*?megarapid\\.eu/\\?e=403\\&m=captcha\\&file=\\d+/.+)" }, flags = { 2 })
 public class MegaRapidEu extends PluginForHost {
 
     public MegaRapidEu(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium();
     }
 
     @Override
@@ -43,16 +47,14 @@ public class MegaRapidEu extends PluginForHost {
         return "http://megarapid.eu/";
     }
 
-    private boolean DIRECT     = false;
-    public String   DIRECTLINK = null;
+    private boolean             DIRECT     = false;
+    public String               DIRECTLINK = null;
+    private static final String MAINPAGE   = "http://www.megarapid.eu";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setUrlDownload(br.getRedirectLocation());
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Please click here to continue")) {
             String continuePage = br.getRegex("<p><a href=\"(.*?)\"").getMatch(0);
@@ -61,7 +63,10 @@ public class MegaRapidEu extends PluginForHost {
         }
         if (br.getRedirectLocation() == null) {
             String filename = new Regex(link.getDownloadURL(), "captcha\\&file=\\d+/(.+)\\&s=").getMatch(0);
-            if (filename == null) filename = new Regex(link.getDownloadURL(), "megarapid\\.eu/files/\\d+/(.+)").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(link.getDownloadURL(), "megarapid\\.eu/files/\\d+/(.+)").getMatch(0);
+                if (filename == null) filename = new Regex(link.getDownloadURL(), "\\?fileId=\\d+\\&fileName=(.+)").getMatch(0);
+            }
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setName(filename.trim());
         } else {
@@ -133,6 +138,69 @@ public class MegaRapidEu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getHeaders().put("Referer", "");
+        br.setCustomCharset("utf-8");
+        br.getPage(MAINPAGE);
+        br.postPage("http://www.megarapid.eu/?do=login", "presenter=Stahuj&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie(MAINPAGE, "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        String availabletraffic = br.getRegex("<p>Kredity: <strong>([0-9,]+)</strong>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(Regex.getSize(availabletraffic.replace(",", ".") + "GB"));
+        } else {
+            account.setValid(false);
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        // Tested with a "megarapid.eu/files/" link
+        br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
+        String dllink = br.getRegex("<p><a href=\"(http://.*?)\">").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink);
+        br.getPage(dllink);
+        dllink = br.getRegex("<p><a href=\"(http://.*?)\">").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink);
+        br.getPage(dllink);
+        dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
