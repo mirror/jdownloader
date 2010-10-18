@@ -154,7 +154,6 @@ public class BadongoCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        /* Nochmals das File überprüfen */
         String realURL = downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com");
         requestFileInformation(downloadLink);
         br.setCookiesExclusive(true);
@@ -170,7 +169,7 @@ public class BadongoCom extends PluginForHost {
         if (cid == null || fileID == null || capSecret == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
         String postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
-        br.setHeader("Referer", realURL);
+        br.getHeaders().put("Referer", realURL);
         br.postPage(action, postData);
         if (br.getRequest().getHttpConnection().getResponseCode() != 200) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if ( filepart == null) filepart = "";
@@ -182,7 +181,7 @@ public class BadongoCom extends PluginForHost {
         String[] plainJS = unpackJS(packedJS.get(0));
         /* DOWNLOAD:INIT */
         postData = "id=" + fileID + "&type=" + filetype + "&ext=" + filepart + "&f=download:init&z=" + plainJS[1] + "&h=" + plainJS[2];
-        br.setHeader("Referer", action);
+        br.getHeaders().put("Referer", action);
         br.postPage(FILETEMPLATE, postData);
         /* DOWNLOAD:CHECK#1 */
         plainJS = unpackJS(br.getRegex(JAVASCRIPT).getMatch(0));
@@ -245,7 +244,7 @@ public class BadongoCom extends PluginForHost {
             handleErrors(br);
         }
         dl.startDownload();
-    }          
+    }
 
     private void handleErrors(Browser br) throws PluginException {
         if (br.containsHTML("Gratis Mitglied Wartezeit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l);

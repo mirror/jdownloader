@@ -68,7 +68,6 @@ public class TwoSharedCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         Form pwform = br.getForm(0);
         if (pwform != null) {
@@ -95,13 +94,14 @@ public class TwoSharedCom extends PluginForHost {
         } else {
             link = link + l2surl.substring(0,14) + l2surl.charAt(l2surl.length() - 2) + l2surl.charAt(l2surl.length() - 1);
         }
-        br.getPage("http://www.2shared.com" + link);
-        link = br.toString();
-        if (!br.containsHTML("http.*?")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link = br.getPage("http://www.2shared.com" + link).trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
-        if (br.containsHTML("File download limit has been exceeded")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached"), 10 * 60 * 1000l);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getURL().getQuery().contains("MAX_IP")) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached"), 10 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

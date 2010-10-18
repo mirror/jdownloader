@@ -41,7 +41,6 @@ public class BdngCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.setCookiesExclusive(true);
         br.clearCookies(host);
         br.setCookie("http://www.badongo.com", "badongoL", "de");
@@ -84,8 +83,6 @@ public class BdngCm extends PluginForDecrypt {
                 progress.increase(1);
             }
         }
-
         return decryptedLinks;
     }
-
 }
