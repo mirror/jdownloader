@@ -20,8 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -36,7 +34,7 @@ public class ZyvNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String CRYPTEDLINK = ".*?download\\.php.*?id=[0-9]+";
+    private static final String CAPTCHATEXT = "/captcha/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -45,56 +43,42 @@ public class ZyvNt extends PluginForDecrypt {
         br.getPage(parameter);
         /* Error handling */
         if (br.getRedirectLocation() != null) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String cryptedlink = null;
-        String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
-        for (String link : lol) {
-            if (link.matches(CRYPTEDLINK)) {
-                cryptedlink = link;
+        String cryptedlink = br.getRegex("\"(/download\\.php\\?ass=.*?\\&id=\\d+)\"").getMatch(0);
+        if (cryptedlink == null) return null;
+        cryptedlink = "http://www.zaycev.net" + cryptedlink;
+        br.getPage(cryptedlink);
+        if (br.containsHTML(CAPTCHATEXT)) {
+            for (int i = 0; i <= 5; i++) {
+                // Captcha handling
+                String captchaID = getCaptchaID();
+                if (captchaID == null) return null;
+                String code = getCaptchaCode("http://www.zaycev.net/captcha/" + captchaID + "/", param);
+                String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
+                br.getPage(captchapage);
+                if (br.containsHTML(CAPTCHATEXT)) continue;
                 break;
             }
+            if (br.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
+        } else {
+            String code = br.getRegex("<label>Ваш IP</label><span class=\"readonly\">[0-9\\.]+</span></div><input value=\"(.*?)\"").getMatch(0);
+            String captchaID = getCaptchaID();
+            if (code == null || captchaID == null) return null;
+            String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
+            br.getPage(captchapage);
         }
-        if (cryptedlink == null) return null;
-        br.getPage(cryptedlink);
-        String ass = null;
-        for (int i = 0; i <= 5; i++) {
-            // Captcha handling
-            String captchaurl = null;
-            String captchapart = br.getRegex("\"(/captcha\\.php\\?id=[a-z0-9]+)\"").getMatch(0);
-            if (captchapart != null) {
-                captchaurl = "http://www.zaycev.net" + captchapart;
-            } else {
-                captchapart = br.getRegex("captcha_id\" value=\"([a-z0-9]+)\"").getMatch(0);
-                if (captchapart != null) captchaurl = "http://www.zaycev.net/captcha.php?id=" + captchapart;
-            }
-            String id = br.getRegex("name=\"id\" value=\"(.*?)\"").getMatch(0);
-            ass = br.getRegex("name=\"ass\" value=\"(.*?)\"").getMatch(0);
-            String phpssid = br.getCookie("http://www.zaycev.net", "PHPSESSID");
-            String captchaid = new Regex(captchapart, "id=([a-z0-9]+)").getMatch(0);
-            if (phpssid == null || captchaid == null || captchaurl == null || ass == null || id == null) return null;
-            ass = ass.replace("amp;", "");
-            String ass2 = ass.replace("amp;", "").replace(" ", "+");
-            String code = getCaptchaCode(captchaurl, param);
-            br.getPage("http://www.zaycev.net/download.php?PHPSESSID=" + phpssid + "&id=" + id + "&ass=" + ass2 + "&captcha_id=" + captchaid + "&text_check=" + code + "&ok=Ñêà÷àòü");
-            if (br.containsHTML("вы ввели не верный код")) continue;
-            break;
-        }
-        if (br.containsHTML("вы ввели не верный код")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String finallink = br.getRegex("Refresh Content=\"2;URL=(http.*?)\"").getMatch(0);
+        String finallink = br.getRegex("http-equiv=\"Content-Type\"/><meta content=\"\\d+; URL=(http.*?)\"").getMatch(0);
         if (finallink == null) {
-            finallink = br.getRegex("нажмите на эту <a href=\"(http.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("(http://dl\\.zaycev\\.net/[a-z0-9]+/[0-9]+/[0-9]+/.*?)\"").getMatch(0);
-            }
+            finallink = br.getRegex("то нажмите на эту <a href=\\'(http.*?)\\'").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[a-z0-9-]+/\\d+/\\d+/.*?)\"").getMatch(0);
         }
         if (finallink == null) return null;
-        // The replace fixes a problem with the filename
-        String replace = new Regex(finallink, "dl\\.zaycev\\.net/[a-z0-9]+/[0-9]+/[0-9]+/([\\w\\.%-]+)").getMatch(0);
-        if (replace != null) {
-            finallink = finallink.replace(replace, ass);
-        } else {
-            logger.warning("Replace regex is defect!");
-        }
         decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         return decryptedLinks;
+    }
+
+    private String getCaptchaID() {
+        String captchaID = br.getRegex("name=\"id\" type=\"hidden\"/><input value=\"(\\d+)\"").getMatch(0);
+        if (captchaID == null) captchaID = br.getRegex("\"/captcha/(\\d+)").getMatch(0);
+        return captchaID;
     }
 }

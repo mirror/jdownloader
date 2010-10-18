@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xun6.com" }, urls = { "http://[\\w\\.]*?xun6\\.com/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xun6.com" }, urls = { "http://[\\w\\.]*?xun6\\.(com|net)/file/[a-z0-9]+" }, flags = { 0 })
 public class Xun6Com extends PluginForHost {
 
     public Xun6Com(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class Xun6Com extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         // Links with "www." don't work so we gotta change the link before
         // accessing it
-        link.setUrlDownload(link.getDownloadURL().replaceAll("www\\.", ""));
+        link.setUrlDownload(link.getDownloadURL().replace("www.", "").replace("xun6.com", "xun6.net"));
     }
 
     @Override

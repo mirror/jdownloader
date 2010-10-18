@@ -186,7 +186,7 @@ public class LoadFilesIn extends PluginForHost {
                 String code = getCaptchaCode(captchaurl, downloadLink);
                 DLForm.put("code", code);
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-            } else if (br.containsHTML("api.recaptcha.net") && !br.containsHTML("api\\.recaptcha\\.net.*?<Textarea.*?<input type=\"submit\" value.*?</Form>")) {
+            } else if (br.containsHTML("api.recaptcha.net") || br.containsHTML("google.com/recaptcha/api/")) {
                 // Some hosters also got commentfields with captchas, therefore
                 // is
                 // the !br.contains...check Exampleplugin:
