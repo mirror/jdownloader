@@ -1280,6 +1280,7 @@ plugins.host.megaupload.ports = Usar este puerto:
 plugins.host.megaupload.waitforstart = Esperando para comenzar...
 plugins.host.rapidshare.loadedvia = Cargado via %s
 plugins.host.scribdcom.formats = Descargar en formato:
+plugins.host.softpediacom.servers = Usar este servidor:
 plugins.host.uploadilcom.nofreeslotsavailable = No hay slots gratuitos disponibles
 plugins.hoster.2sharedcom.errors.sessionlimit = Límite de sesión alcanzado
 plugins.hoster.2sharedcom.errors.wrongcaptcha = Captcha incorrecto
