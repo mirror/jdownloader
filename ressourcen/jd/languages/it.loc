@@ -1282,6 +1282,7 @@ plugins.host.megaupload.ports = Usa la porta:
 plugins.host.megaupload.waitforstart = In attesa dell'avvio...
 plugins.host.rapidshare.loadedvia = Caricato tramite %s
 plugins.host.scribdcom.formats = Scarica i file in questo formato:
+plugins.host.softpediacom.servers = Usa questo server:
 plugins.host.uploadilcom.nofreeslotsavailable = Nessuno slot gratuito disponibile per questo file
 plugins.hoster.2sharedcom.errors.sessionlimit = Raggiunto il limite della sessione
 plugins.hoster.2sharedcom.errors.wrongcaptcha = CAPTCHA errato
@@ -1318,6 +1319,7 @@ plugins.hoster.gigasizecom.errors.alreadyloading = Verifica impossibile: file gi
 plugins.hoster.hellsharecom.error.404 = Errore server 404. Il file potrebbe non essere disponibile per la vostra nazione!
 plugins.hoster.hellsharecom.error.currentloadis100percent = Carico attuale server 100%
 plugins.hoster.hellsharecom.error.serveruntermaximumload = Il server è a carico massimo
+plugins.hoster.hitfilenet.only4premium = Disponibile solo per utenti Premium
 plugins.hoster.hotfilecom.setunlimitedconnectionsforpremium = Permetti più di 5 connessioni per file per Premium (massimo predefinito = 5).L'abilitazione può causare errori.
 plugins.hoster.hotfilecom.tryiwlbypass = Provare elenco bypass filtro IWL
 plugins.hoster.httplinks.errors.basicauthneeded = Autorizzazione necessaria
