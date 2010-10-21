@@ -84,20 +84,12 @@ public class LlpszNt extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            String decryptedlink = br.getRegex("addVariable\\('file'.*?(http.*?)'\\)").getMatch(0);
-            if (decryptedlink == null) decryptedlink = br.getRegex("width='28px' align='right'><a href=\"(.*?)\"").getMatch(0);
-            if (decryptedlink == null) return null;
-            if (decryptedlink.equals("")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            decryptedlink = Encoding.urlDecode((decryptedlink), true);
-            br.getPage(decryptedlink);
-            String finallink = br.getRedirectLocation();
-            if (finallink != null && finallink.contains("wrzuta.pl/sr")) {
-                br.getPage(finallink);
-                finallink = br.getRedirectLocation();
-            }
-            if (br.containsHTML("Nie odnaleziono pliku")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            String finallink = br.getRegex("<param name=\"zrodlo\" value=\"(.*?)\">").getMatch(0);
             if (finallink == null) return null;
-            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            if (finallink.equals("")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            finallink = Encoding.urlDecode((finallink), true);
+            if (finallink == null) return null;
+            decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
     }

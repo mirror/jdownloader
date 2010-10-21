@@ -70,6 +70,7 @@ public class MegaShareVn extends PluginForHost {
         br.getPage("http://share.megaplus.vn/getlink.php");
         String dllink = br.toString();
         if (dllink == null || !dllink.startsWith("http://") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html") && !new Regex(dllink, ".+html?$").matches()) {
             /* buggy server sends html content if filename ends on html */
