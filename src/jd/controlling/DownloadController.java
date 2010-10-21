@@ -25,8 +25,6 @@ import java.util.logging.Logger;
 
 import javax.swing.Timer;
 
-import org.appwork.utils.event.Eventsender;
-
 import jd.Main;
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;
@@ -38,8 +36,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.event.Eventsender;
+
 class DownloadControllerBroadcaster extends Eventsender<DownloadControllerListener, DownloadControllerEvent> {
 
+    @Override
     protected void fireEvent(final DownloadControllerListener listener, final DownloadControllerEvent event) {
         listener.onDownloadControllerEvent(event);
     }
@@ -117,7 +118,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     /**
      * Async-Save, Linkliste wird verzögert gespeichert
      */
-    private Timer asyncSaveIntervalTimer;
+    private final Timer asyncSaveIntervalTimer;
 
     private boolean saveinprogress;
 
@@ -153,7 +154,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     private void initDownloadLinks() {
         try {
             packages = loadDownloadLinks();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             packages = null;
         }
         if (packages == null) {
@@ -175,7 +176,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         for (final FilePackage filePackage : packages) {
             filePackage.addListener(this);
             filePackage.update_linksDisabled();
-            for (DownloadLink downloadLink : filePackage.getDownloadLinkList()) {
+            for (final DownloadLink downloadLink : filePackage.getDownloadLinkList()) {
                 downloadLink.getBroadcaster().addListener(filePackage);
             }
         }
@@ -198,6 +199,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     public void saveDownloadLinksSync() {
         if (saveinprogress) return;
         new Thread() {
+            @Override
             public void run() {
                 this.setName("DownloadController: Saving");
                 saveDownloadLinksSyncnonThread();
@@ -267,7 +269,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         try {
                             pluginForHost = null;
                             pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
-                        } catch (Exception e) {
+                        } catch (final Exception e) {
                             JDLogger.exception(e);
                         }
                         // Gibt es einen Names für ein Containerformat,
@@ -279,19 +281,19 @@ public class DownloadController implements FilePackageListener, DownloadControll
                                     localLink.setEnabled(false);
                                 }
                             }
-                        } catch (NullPointerException e) {
+                        } catch (final NullPointerException e) {
                             JDLogger.exception(e);
                         }
-                        if (pluginForHost == null) {                            
+                        if (pluginForHost == null) {
                             try {
                                 pluginForHost = JDUtilities.replacePluginForHost(localLink);
-                            } catch (Throwable e) {
+                            } catch (final Throwable e) {
                                 JDLogger.exception(e);
                             }
                             if (pluginForHost != null) {
                                 logger.info("plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
                             } else {
-                                logger.severe("could not find plugin "+localLink.getHost()+" for " + localLink.getName());
+                                logger.severe("could not find plugin " + localLink.getHost() + " for " + localLink.getName());
                             }
                         }
                         if (pluginForHost != null) {
@@ -357,7 +359,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                     }
                     boolean newadded = false;
                     if (packages.contains(fp)) {
-                        int posa = this.indexOf(fp);
+                        final int posa = this.indexOf(fp);
                         if (posa < index) {
                             index -= ++repos;
                         }
@@ -495,13 +497,13 @@ public class DownloadController implements FilePackageListener, DownloadControll
     }
 
     @SuppressWarnings("unchecked")
-    public void move(Object src2, Object dst, final byte mode) {
+    public void move(final Object src2, final Object dst, final byte mode) {
         boolean type = false; /* false=downloadLink,true=filepackage */
         Object src = null;
         FilePackage fp = null;
         if (src2 instanceof ArrayList<?>) {
             if (((ArrayList<?>) src2).isEmpty()) return;
-            Object check = ((ArrayList<?>) src2).get(0);
+            final Object check = ((ArrayList<?>) src2).get(0);
             if (check == null) {
                 logger.warning("Null src, cannot move!");
                 return;
@@ -622,11 +624,12 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         case MOVE_UP: {
                             int curpos = 0;
                             for (final DownloadLink item : (ArrayList<DownloadLink>) src) {
-                                curpos = item.getFilePackage().indexOf(item);
-                                item.getFilePackage().add(curpos - 1, item, 0);
+                                final FilePackage filePackage = item.getFilePackage();
+                                curpos = filePackage.indexOf(item);
+                                filePackage.add(curpos - 1, item, 0);
                                 if (curpos == 0) {
-                                    curpos = indexOf(item.getFilePackage());
-                                    addPackageAt(item.getFilePackage(), curpos - 1, 0);
+                                    curpos = indexOf(filePackage);
+                                    addPackageAt(filePackage, curpos - 1, 0);
                                 }
                             }
                         }
@@ -635,11 +638,13 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             int curpos = 0;
                             final ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) src);
                             for (int i = links.size() - 1; i >= 0; i--) {
-                                curpos = links.get(i).getFilePackage().indexOf(links.get(i));
-                                links.get(i).getFilePackage().add(curpos + 2, links.get(i), 0);
-                                if (curpos == links.get(i).getFilePackage().size() - 1) {
-                                    curpos = indexOf(links.get(i).getFilePackage());
-                                    addPackageAt(links.get(i).getFilePackage(), curpos + 2, 0);
+                                final DownloadLink link = links.get(i);
+                                final FilePackage filePackage = link.getFilePackage();
+                                curpos = filePackage.indexOf(link);
+                                filePackage.add(curpos + 2, link, 0);
+                                if (curpos == filePackage.size() - 1) {
+                                    curpos = indexOf(filePackage);
+                                    addPackageAt(filePackage, curpos + 2, 0);
                                 }
                             }
                         }
@@ -647,20 +652,22 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         case MOVE_TOP: {
                             final ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
                             for (final ArrayList<DownloadLink> links : split) {
-                                if (links.get(0).getFilePackage().indexOf(links.get(0)) == 0) {
-                                    addPackageAt(links.get(0).getFilePackage(), 0, 0);
+                                final FilePackage filePackage = links.get(0).getFilePackage();
+                                if (filePackage.indexOf(links.get(0)) == 0) {
+                                    addPackageAt(filePackage, 0, 0);
                                 }
-                                links.get(0).getFilePackage().addLinksAt(links, 0);
+                                filePackage.addLinksAt(links, 0);
                             }
                         }
                             return;
                         case MOVE_BOTTOM: {
                             final ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
                             for (final ArrayList<DownloadLink> links : split) {
-                                if (links.get(0).getFilePackage().indexOf(links.get(links.size() - 1)) == links.get(0).getFilePackage().size() - 1) {
-                                    addPackageAt(links.get(0).getFilePackage(), size() + 1, 0);
+                                final FilePackage filePackage = links.get(0).getFilePackage();
+                                if (filePackage.indexOf(links.get(links.size() - 1)) == filePackage.size() - 1) {
+                                    addPackageAt(filePackage, size() + 1, 0);
                                 }
-                                links.get(0).getFilePackage().addLinksAt(links, links.get(0).getFilePackage().size() + 1);
+                                filePackage.addLinksAt(links, filePackage.size() + 1);
                             }
                         }
                             return;
