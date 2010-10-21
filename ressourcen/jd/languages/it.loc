@@ -1308,7 +1308,6 @@ plugins.hoster.filernet.errors.nofreeslots = Tutti gli slot gratuiti sono occupa
 plugins.hoster.fileservecom.errors.only4premium = Questo file è disponibile solo per utenti Premium
 plugins.hoster.fileshareinua.errors.temporaryunavailable = Questo file è temporaneamente non disponibile
 plugins.hoster.filesmailru.inprocess = Il file è ancora in invio
-plugins.hoster.filesmonstercom.maintenance = Manutenzione
 plugins.hoster.filesmonstercom.noslotwaittime = Nessun tempo(i) d'attesa per questo(i) slot
 plugins.hoster.filesmonstercom.only4premium = Scaricabile solo con account Premium
 plugins.hoster.filesmonstercom.temporaryunavailable = Downlaod non disponibile in questo momento
