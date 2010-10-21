@@ -49,11 +49,11 @@ public class FileStabCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private String brbefore = "";
-    private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
-    private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://filestab.com";
-    public boolean nopremium = false;
+    private String              brbefore       = "";
+    private static final String PASSWORDTEXT0  = "<br><b>Password:</b> <input";
+    private static final String PASSWORDTEXT1  = "<br><b>Passwort:</b> <input";
+    private static final String COOKIE_HOST    = "http://filestab.com";
+    public boolean              nopremium      = false;
     private static final String RECAPTCHATEXT2 = "google.com/recaptcha/api/challenge";
 
     @Override
@@ -63,7 +63,7 @@ public class FileStabCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<")) {
+        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<") || brbefore.contains("Sorry, this file has been removed")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

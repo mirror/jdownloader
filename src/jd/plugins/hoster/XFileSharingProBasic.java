@@ -47,7 +47,7 @@ public class XFileSharingProBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 1.9.4
+    // XfileSharingProBasic Version 2.0.0.0
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
@@ -113,7 +113,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
+    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean loggedIn) throws Exception, PluginException {
         String dllink = null;
         String passCode = null;
         Form freeform = null;
@@ -131,7 +131,7 @@ public class XFileSharingProBasic extends PluginForHost {
             br.submitForm(freeform);
             doSomething();
         }
-        checkErrors(downloadLink, false, passCode);
+        checkErrors(downloadLink, false, passCode, loggedIn);
         String md5hash = new Regex(BRBEFORE, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -239,7 +239,7 @@ public class XFileSharingProBasic extends PluginForHost {
             br.followConnection();
             logger.info("followed connection...");
             doSomething();
-            checkErrors(downloadLink, true, passCode);
+            checkErrors(downloadLink, true, passCode, loggedIn);
             dllink = getDllink();
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -263,7 +263,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0);
+        doFree(downloadLink, true, 0, false);
     }
 
     @Override
@@ -341,7 +341,7 @@ public class XFileSharingProBasic extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (NOPREMIUM) {
-            doFree(link, true, 0);
+            doFree(link, true, 0, true);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
@@ -355,7 +355,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 doSomething();
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    checkErrors(link, true, passCode);
+                    checkErrors(link, true, passCode, false);
                     dllink = getDllink();
                 }
             }
@@ -421,7 +421,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
-    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
+    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode, boolean loggedIn) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (BRBEFORE.contains("<br><b>Password:</b> <input") || BRBEFORE.contains("<br><b>Passwort:</b> <input") || BRBEFORE.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
@@ -435,6 +435,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         // Some waittimes...
         if (BRBEFORE.contains("You have to wait")) {
+            if (loggedIn) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
@@ -452,6 +453,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
         }
         if (BRBEFORE.contains("You have reached the download-limit")) {
+            if (loggedIn) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             String tmphrs = new Regex(BRBEFORE, "\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(BRBEFORE, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             String tmpsec = new Regex(BRBEFORE, "\\s+(\\d+)\\s+seconds?").getMatch(0);
@@ -469,7 +471,10 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
-        if (BRBEFORE.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        if (BRBEFORE.contains("You're using all download slots for IP")) {
+            if (loggedIn) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
         if (BRBEFORE.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
         if (BRBEFORE.contains(" can download files up to ") || BRBEFORE.contains("Upgrade your account to download bigger files") || BRBEFORE.contains("This file reached max downloads") || BRBEFORE.contains(">Upgrade your account to download larger files")) {

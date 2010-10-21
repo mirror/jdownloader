@@ -125,9 +125,8 @@ public class UlozTo extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        br.getPage("http://uloz.to/");
-        br.postPage("http://uloz.to/login/", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&pamatovat=1&prihlasit=P%C5%99ihl%C3%A1sit");
-        if (br.getCookie("http://uloz.to/", "uloz-to-prihlasen") == null || br.getCookie("http://uloz.to/", "login_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://www.uloz.to/?do=authForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&trvale=on&login=P%C5%99ihl%C3%A1sit");
+        if (br.getCookie("http://uloz.to/", "autologin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -139,9 +138,11 @@ public class UlozTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String trafficleft = br.getRegex("Váš kredit : <b><span title=\"Pozor, zmena jednotek:([0-9 ]+KB)").getMatch(0);
+        br.getPage("http://www.uloz.to/nastaveni/");
+        String trafficleft = br.getRegex("<td>Kredit:</td><td style=\"text-align: right; font-weight: bold;\">(.*?)</td></tr>").getMatch(0);
+        if (trafficleft == null) trafficleft = br.getRegex("class=\"credit\"><a href=\"/kredit/\" class=\"coins\" title=\"(.*?) = ").getMatch(0);
         if (trafficleft != null) {
-            ai.setTrafficLeft(Regex.getSize(trafficleft.replace(" ", "")));
+            ai.setTrafficLeft(Regex.getSize(trafficleft));
         }
         ai.setStatus("Premium User");
         account.setValid(true);
@@ -152,8 +153,10 @@ public class UlozTo extends PluginForHost {
         requestFileInformation(parameter);
         login(account);
         br.getPage(parameter.getDownloadURL());
-        String dllink = br.getRegex("<a name=\"VIP\"></a>.*?<table width=\"90%\" cellspacing=\"5\" cellpadding=\"5\" border=\"0\" style=\"border:1px solid black;margin-left:-10px\">.*?<td><a href=\"(http.*?)\"").getMatch(0);
+        String dllink = br.getRegex("\\(\\'/downloadsvip/\\'\\);\" style=\"margin: 26px 0pt 0pt 82px; float: none; color: #6D0D4C;\" href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dla\\d+\\.uloz\\.to/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

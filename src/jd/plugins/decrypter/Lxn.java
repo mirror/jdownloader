@@ -16,15 +16,23 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lix.in" }, urls = { "http://[\\w\\.]*?lix\\.in/[-]{0,1}[\\w]{6,10}" }, flags = { 0 })
 public class Lxn extends PluginForDecrypt {
@@ -83,22 +91,73 @@ public class Lxn extends PluginForDecrypt {
                 if (link != null) {
                     decryptedLinks.add(createDownloadlink(link));
                 } else {
+                    // Try to download the DLC first, continue if that doesn't
+                    // work
+                    ArrayList<DownloadLink> dlclinks = new ArrayList<DownloadLink>();
+                    dlclinks = loadcontainer(parameter);
+                    if (dlclinks != null && dlclinks.size() != 0) return dlclinks;
                     /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
                     Form[] forms = br.getForms();
+                    if (forms == null || forms.length == 0) {
+                        logger.warning("Could not find forms");
+                        return null;
+                    }
+                    int counter = 1;
+                    int failcounter = 0;
+                    progress.setRange(forms.length);
                     for (Form element : forms) {
                         if (element.containsHTML("Download")) continue;
-                        br.submitForm(element);
+                        element.put("submit", "Link+" + counter);
+                        try {
+                            br.submitForm(element);
+                        } catch (Exception e) {
+                            logger.warning("Failed on ID " + counter);
+                            failcounter++;
+                            continue;
+                        }
                         /* EinzelLink gefunden */
                         link = br.getRegex("<iframe.*?src=\"(.+?)\"").getMatch(0);
-                        if (link == null) return null;
-                        decryptedLinks.add(createDownloadlink(link));
+                        if (link == null) {
+                            logger.warning("Could not find the link in the iframe!");
+                            return null;
+                        }
+                        decryptedLinks.add(createDownloadlink(link.trim()));
+                        counter++;
+                        progress.increase(1);
                     }
+                    logger.info("Finished with " + failcounter + "failed links");
                 }
             }
         }
         return decryptedLinks;
     }
 
-    // @Override
+    private ArrayList<DownloadLink> loadcontainer(String theLink) throws IOException, PluginException {
+        ArrayList<DownloadLink> decryptedLinks = null;
+        Browser brc = br.cloneBrowser();
+        String id = new Regex(theLink, "lix\\.in/(.+)").getMatch(0);
+        theLink = Encoding.htmlDecode(theLink);
+        File file = null;
+        URLConnectionAdapter con = br.openPostConnection("http://lix.in/download/", "submit=Download+DLC&id=" + id);
+        if (con.getResponseCode() == 200) {
+            file = JDUtilities.getResourceFile("tmp/lixin/" + theLink.replaceAll("(:|/)", "") + ".dlc");
+            if (file == null) return null;
+            file.deleteOnExit();
+            brc.downloadConnection(file, con);
+            if (file != null && file.exists() && file.length() > 100) {
+                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+            }
+        } else {
+            con.disconnect();
+            return null;
+        }
+
+        if (file != null && file.exists() && file.length() > 100) {
+            if (decryptedLinks.size() > 0) return decryptedLinks;
+        } else {
+            return null;
+        }
+        return null;
+    }
 
 }

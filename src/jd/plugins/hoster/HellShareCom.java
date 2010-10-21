@@ -45,6 +45,8 @@ public class HellShareCom extends PluginForHost {
         return "http://www.en.hellshare.com/terms";
     }
 
+    private static final String LIMITREACHED = "(You have exceeded today´s free download limit|<strong>Dnešní limit free downloadů jsi vyčerpal\\.</strong>)";
+
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         String numbers = new Regex(link.getDownloadURL(), "hellshare\\.com/(\\d+)").getMatch(0);
@@ -134,7 +136,8 @@ public class HellShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        /* to prefer english page */
+        /* to prefer english page UPDATE: English does not work anymore */
+        br.setCustomCharset("utf-8");
         br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -166,56 +169,53 @@ public class HellShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String changetoeng = br.getRegex("xml:lang=\"en\" href=\"(http://.*?)\"").getMatch(0);
-        if (changetoeng == null) {
+        if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        String changetocz = br.getRegex("lang=\"cz\" xml:lang=\"cz\" href=\"(http://download\\.cz\\.hellshare\\.com/.*?/\\d+)\"").getMatch(0);
+        if (changetocz == null) {
             // Do NOT throw an exeption here as this part isn't that important
             // but it's bad that the plugin breaks just because of this regex
             logger.warning("Language couldn't be changed. This will probably cause trouble...");
         } else {
-            br.getPage(changetoeng);
+            br.getPage(changetocz);
             if (br.containsHTML("No htmlCode read")) br.getPage(downloadLink.getDownloadURL());
         }
         br.setDebug(true);
-        if (br.containsHTML("Current load 100%")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), 15 * 60 * 1000l);
-        } else {
-            if (br.containsHTML("You have exceeded today´s free download limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            br.setCustomCharset("utf-8");
-            String freePage = br.getURL().replace("hellshare.com/serialy/", "hellshare.com/").replace("/pop/", "/").replace("filmy/", "") + "/free";
-            br.getPage(freePage);
+        if (br.containsHTML("Current load 100%")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), 15 * 60 * 1000l); }
+        if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        String freePage = br.getURL().replace("hellshare.com/serialy/", "hellshare.com/").replace("/pop/", "/").replace("filmy/", "") + "/free";
+        br.getPage(freePage);
+        if (br.containsHTML("The server is under the maximum load")) {
+            logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("You are exceeding the limitations on this download")) {
+            logger.info("You are exceeding the limitations on this download");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String fileId = new Regex(downloadLink.getDownloadURL(), "/(\\d+)$").getMatch(0);
+        Form form = br.getForm(0);
+        if (form == null || fileId == null || !br.containsHTML("antispam\\.php\\?sv=FreeDown:")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String captcha = "http://www.en.hellshare.com/antispam.php?sv=FreeDown:" + fileId;
+        String code = getCaptchaCode(captcha, downloadLink);
+        form.put("captcha", Encoding.urlEncode(code));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            if (br.getURL().contains("errno=404")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.HellShareCom.error.404", "404 Server error. File might not be available for your country!"));
+            if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("The server is under the maximum load")) {
                 logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
             }
+            if (br.containsHTML("(Incorrectly copied code from the image|Opište barevný kód z obrázku)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("You are exceeding the limitations on this download")) {
                 logger.info("You are exceeding the limitations on this download");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             }
-            if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String fileId = new Regex(downloadLink.getDownloadURL(), "/(\\d+)$").getMatch(0);
-            Form form = br.getForm(0);
-            if (form == null || fileId == null || !br.containsHTML("antispam\\.php\\?sv=FreeDown:")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String captcha = "http://www.en.hellshare.com/antispam.php?sv=FreeDown:" + fileId;
-            String code = getCaptchaCode(captcha, downloadLink);
-            form.put("captcha", Encoding.urlEncode(code));
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
-            if (!(dl.getConnection().isContentDisposition())) {
-                br.followConnection();
-                if (br.getURL().contains("errno=404")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.HellShareCom.error.404", "404 Server error. File might not be available for your country!"));
-                if (br.containsHTML("<h1>File not found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                if (br.containsHTML("The server is under the maximum load")) {
-                    logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
-                }
-                if (br.containsHTML("(Incorrectly copied code from the image|Opište barevný kód z obrázku)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                if (br.containsHTML("You are exceeding the limitations on this download")) {
-                    logger.info("You are exceeding the limitations on this download");
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.startDownload();
     }
 
     @Override

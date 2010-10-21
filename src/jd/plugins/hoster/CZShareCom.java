@@ -86,11 +86,12 @@ public class CZShareCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         // this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         // br.clearCookies("czshare.com");
         br.getPage("http://czshare.com/prihlasit.php");
         Form login = br.getForm(0);
-        login.put("jmeno", Encoding.urlEncode(account.getUser()));
+        login.put("jmeno2", Encoding.urlEncode(account.getUser()));
         login.put("heslo", Encoding.urlEncode(account.getPass()));
         login.put("trvale", "0");
         br.submitForm(login);
@@ -114,11 +115,9 @@ public class CZShareCom extends PluginForHost {
         }
         String trafficleft = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>(.*?)</td>").getMatch(0);
         String expires = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>.*?<td>(.*?)</td>").getMatch(0);
-        if (expires != null) ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
+        if (expires != null && !expires.equals("neomezená")) ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
         if (trafficleft != null) ai.setTrafficLeft(trafficleft);
         account.setValid(true);
-        // Logout
-        // br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
         return ai;
     }
 

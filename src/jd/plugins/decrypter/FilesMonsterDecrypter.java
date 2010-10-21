@@ -70,12 +70,12 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 finalOne.setAvailable(true);
                 finalOne.setProperty("origfilename", filename);
                 finalOne.setProperty("origsize", filesize);
+                finalOne.setProperty("mainlink", parameter);
                 decryptedLinks.add(finalOne);
-                thebigone.setProperty("PREMIUMONLY", "true");
             }
         }
+        thebigone.setProperty("PREMIUMONLY", "true");
         decryptedLinks.add(thebigone);
-
         return decryptedLinks;
     }
 

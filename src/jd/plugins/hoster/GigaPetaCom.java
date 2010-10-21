@@ -45,7 +45,7 @@ public class GigaPetaCom extends PluginForHost {
     }
 
     private static int simultanpremium = 1;
-    public boolean nopremium = false;
+    public boolean     nopremium       = false;
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -77,7 +77,7 @@ public class GigaPetaCom extends PluginForHost {
             if (br.getRedirectLocation() != null) break;
         }
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("All threads for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));

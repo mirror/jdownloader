@@ -44,18 +44,18 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
+    static private final String FILE_NOT_FOUND           = "Dieser File existiert nicht";
 
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-    public String DLLINKREGEX = "download_url\".*?<form action=\"(.*?)\"";
-    public String DLLINKREGEX2 = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    public String               DLLINKREGEX              = "download_url\".*?<form action=\"(.*?)\"";
+    public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private Pattern             FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
 
-    private Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
+    private Pattern             FILE_INFO_SIZE           = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
 
-    private static final Object PREMLOCK = new Object();
+    private static final Object PREMLOCK                 = new Object();
 
-    private static int simultanpremium = 1;
+    private static int          simultanpremium          = 1;
 
     public DepositFiles(PluginWrapper wrapper) {
         super(wrapper);
