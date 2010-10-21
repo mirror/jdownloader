@@ -4,7 +4,7 @@ import jd.nutils.Formatter;
 
 public class GarbageController implements Runnable {
 
-    private static GarbageController INSTANCE = new GarbageController();
+    private static final GarbageController INSTANCE = new GarbageController();
 
     private static long GCTimeout = 10 * 60 * 1000;
     private static long GCFactor = 30 * 1000;
@@ -44,16 +44,16 @@ public class GarbageController implements Runnable {
                 }
                 try {
                     Thread.sleep(10000);
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
                     e.printStackTrace();
                 }
                 nextGC -= 10000;
                 if (nextGC <= 0) {
-                    long before = Runtime.getRuntime().totalMemory();
+                    final long before = Runtime.getRuntime().totalMemory();
                     Runtime.getRuntime().gc();
                     Runtime.getRuntime().runFinalization();
                     Runtime.getRuntime().gc();
-                    long now = Runtime.getRuntime().totalMemory();
+                    final long now = Runtime.getRuntime().totalMemory();
                     JDLogger.getLogger().info("GCed: before: " + Formatter.formatReadable(before) + " now: " + Formatter.formatReadable(now) + " freed: " + Formatter.formatReadable(Math.max(0, before - now)));
                     synchronized (this) {
                         nextGC = GCTimeout;

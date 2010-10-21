@@ -32,7 +32,7 @@ public class HTACCESSController implements ActionListener, ListController {
     private transient HashMap<String, String[]> LIST;
     private transient static HTACCESSController INSTANCE = null;
 
-    private Timer asyncSaveIntervalTimer;
+    private final Timer asyncSaveIntervalTimer;
 
     private boolean saveinprogress;
 
@@ -143,6 +143,7 @@ public class HTACCESSController implements ActionListener, ListController {
     public void saveAsync() {
         if (saveinprogress) return;
         new Thread() {
+            @Override
             public void run() {
                 this.setName("PasswordList: Saving");
                 saveinprogress = true;
@@ -153,7 +154,7 @@ public class HTACCESSController implements ActionListener, ListController {
     }
 
     public void saveSync() {
-        String id = JDController.requestDelayExit("htaccesscontroller");
+        final String id = JDController.requestDelayExit("htaccesscontroller");
         synchronized (LIST) {
             CONFIG.setProperty("LIST", LIST);
             CONFIG.save();
@@ -161,8 +162,8 @@ public class HTACCESSController implements ActionListener, ListController {
         JDController.releaseDelayExit(id);
     }
 
-    public void actionPerformed(final ActionEvent arg0) {
-        if (arg0.getSource() == asyncSaveIntervalTimer) {
+    public void actionPerformed(final ActionEvent event) {
+        if (event.getSource() == asyncSaveIntervalTimer) {
             saveAsync();
         }
     }

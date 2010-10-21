@@ -16,10 +16,9 @@
 
 package jd.controlling;
 
-import org.appwork.utils.event.DefaultEvent;
-
-
 import jd.plugins.Account;
+
+import org.appwork.utils.event.DefaultEvent;
 
 public class AccountControllerEvent extends DefaultEvent {
 

@@ -31,13 +31,13 @@ public class CodeVerifier {
         TRUSTED;
     }
 
-    private final Storage             storage;
-    private final Browser             br;
+    private final Storage storage;
+    private final Browser br;
 
     private static final CodeVerifier INSTANCE = new CodeVerifier();
 
     public static CodeVerifier getInstance() {
-        return CodeVerifier.INSTANCE;
+        return INSTANCE;
     }
 
     private CodeVerifier() {
@@ -63,8 +63,8 @@ public class CodeVerifier {
     }
 
     public boolean isJarAllowed(final File file) throws NoSuchAlgorithmException, IOException {
-        if(true)return true;
-        
+        if (true) return true;
+
         final String hash = Hash.getMD5(file);
         if (hash == null) { return false; }
 

@@ -28,7 +28,7 @@ public class ByteBufferController {
 
     public final static String MAXBUFFERSIZE = "MAX_BUFFER_SIZE_V3";
 
-    private static ByteBufferController INSTANCE = new ByteBufferController();
+    private static final ByteBufferController INSTANCE = new ByteBufferController();
 
     private final Comparator<ByteBufferEntry> bytebuffercomp = new Comparator<ByteBufferEntry>() {
         public int compare(final ByteBufferEntry a, final ByteBufferEntry b) {
@@ -57,11 +57,12 @@ public class ByteBufferController {
     private ByteBufferController() {
         bufferpool = new ArrayList<ByteBufferEntry>();
         new Thread("ByteBuffer debugger") {
+            @Override
             public void run() {
                 while (true) {
                     try {
                         sleep(1000 * 60 * 10);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                         break;
                     }
                     ByteBufferController.getInstance().printDebug();

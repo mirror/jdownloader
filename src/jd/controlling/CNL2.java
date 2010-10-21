@@ -66,7 +66,7 @@ public final class CNL2 {
             for (final DecryptPluginWrapper plg : DecryptPluginWrapper.getDecryptWrapper()) {
                 if ((plg.getFlags() & PluginWrapper.CNL_2) > 0) {
                     if (plg.canHandle(text)) {
-                        String links[] = HTMLParser.getHttpLinks(text, null);
+                        final String links[] = HTMLParser.getHttpLinks(text, null);
                         if (links.length == 1) {
                             /* only single links should open in browser */
                             if (text.contains("?")) {
@@ -80,7 +80,7 @@ public final class CNL2 {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
         }
         return false;
     }
@@ -98,7 +98,7 @@ public final class CNL2 {
             cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new String(cipher.doFinal(b));
-        } catch (Exception e) {
+        } catch (final Exception e) {
             JDLogger.exception(e);
         }
         return null;

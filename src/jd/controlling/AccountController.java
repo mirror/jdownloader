@@ -27,8 +27,6 @@ import java.util.TreeMap;
 
 import javax.swing.Timer;
 
-import org.appwork.utils.event.Eventsender;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.swing.components.Balloon;
@@ -40,38 +38,40 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.event.Eventsender;
+
 public class AccountController extends SubConfiguration implements ActionListener, AccountControllerListener {
 
-    private static final long                                              serialVersionUID           = -7560087582989096645L;
+    private static final long serialVersionUID = -7560087582989096645L;
 
-    public static final String                                             PROPERTY_ACCOUNT_SELECTION = "ACCOUNT_SELECTION";
+    public static final String PROPERTY_ACCOUNT_SELECTION = "ACCOUNT_SELECTION";
 
-    private static TreeMap<String, ArrayList<Account>>                     hosteraccounts             = null;
+    private static TreeMap<String, ArrayList<Account>> hosteraccounts = null;
 
-    private static TreeMap<String, ArrayList<Account>>                     blockedAccounts            = new TreeMap<String, ArrayList<Account>>();
+    private static TreeMap<String, ArrayList<Account>> blockedAccounts = new TreeMap<String, ArrayList<Account>>();
 
-    private static AccountController                                       INSTANCE                   = new AccountController();
+    private static AccountController INSTANCE = new AccountController();
 
-    private Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster                = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
+    private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                          @Override
-                                                                                                          protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                              listener.onAccountControllerEvent(event);
-                                                                                                          }
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
 
-                                                                                                      };
+    };
 
-    private final Timer                                                    asyncSaveIntervalTimer;
+    private final Timer asyncSaveIntervalTimer;
 
-    private boolean                                                        saveinprogress             = false;
+    private boolean saveinprogress = false;
 
-    private long                                                           lastballoon                = 0;
+    private long lastballoon = 0;
 
-    private long                                                           waittimeAccountInfoUpdate  = 15 * 60 * 1000l;
+    private long waittimeAccountInfoUpdate = 15 * 60 * 1000l;
 
-    private static final long                                              BALLOON_INTERVAL           = 30 * 60 * 1000l;
+    private static final long BALLOON_INTERVAL = 30 * 60 * 1000l;
 
-    public static final Object                                             ACCOUNT_LOCK               = new Object();
+    public static final Object ACCOUNT_LOCK = new Object();
 
     public long getUpdateTime() {
         return waittimeAccountInfoUpdate;
@@ -82,28 +82,21 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     private static final Comparator<Account> COMPARE_MOST_TRAFFIC_LEFT = new Comparator<Account>() {
-                                                                           public int compare(final Account o1, final Account o2) {
-                                                                               final AccountInfo ai1 = o1.getAccountInfo();
-                                                                               final AccountInfo ai2 = o2.getAccountInfo();
-                                                                               long t1 = ai1 == null ? 0 : ai1.getTrafficLeft();
-                                                                               long t2 = ai2 == null ? 0 : ai2.getTrafficLeft();
-                                                                               if (t1 < 0) t1 = Long.MAX_VALUE;
-                                                                               if (t2 < 0) t2 = Long.MAX_VALUE;
-                                                                               if (t1 == t2) return 0;
-                                                                               /*
-                                                                                * reverse
-                                                                                * order
-                                                                                * ,
-                                                                                * we
-                                                                                * want
-                                                                                * biggest
-                                                                                * on
-                                                                                * top
-                                                                                */
-                                                                               if (t1 < t2) return 1;
-                                                                               return -1;
-                                                                           }
-                                                                       };
+        public int compare(final Account o1, final Account o2) {
+            final AccountInfo ai1 = o1.getAccountInfo();
+            final AccountInfo ai2 = o2.getAccountInfo();
+            long t1 = ai1 == null ? 0 : ai1.getTrafficLeft();
+            long t2 = ai2 == null ? 0 : ai2.getTrafficLeft();
+            if (t1 < 0) t1 = Long.MAX_VALUE;
+            if (t2 < 0) t2 = Long.MAX_VALUE;
+            if (t1 == t2) return 0;
+            /*
+             * reverse order , we want biggest on top
+             */
+            if (t1 < t2) return 1;
+            return -1;
+        }
+    };
 
     private AccountController() {
         super("AccountController");
@@ -113,11 +106,11 @@ public class AccountController extends SubConfiguration implements ActionListene
         asyncSaveIntervalTimer.setRepeats(false);
         hosteraccounts = loadAccounts();
         final Collection<ArrayList<Account>> accsc = hosteraccounts.values();
-        for (ArrayList<Account> accs:accsc){
-            for (Account acc : accs) {
+        for (final ArrayList<Account> accs : accsc) {
+            for (final Account acc : accs) {
                 acc.setAccountController(this);
             }
-        }        
+        }
         broadcaster.addListener(this);
     }
 
@@ -188,9 +181,9 @@ public class AccountController extends SubConfiguration implements ActionListene
             } else {
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             logger.severe("AccountUpdate: " + host + " failed!");
-        } catch (Exception e) {
+        } catch (final Exception e) {
             logger.severe("AccountUpdate: " + host + " failed!");
             JDLogger.exception(e);
             account.setAccountInfo(null);
@@ -208,7 +201,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         if (account == null) return null;
         if (account.getHoster() != null) { return account.getHoster(); }
         synchronized (hosteraccounts) {
-            for (String host : hosteraccounts.keySet()) {
+            for (final String host : hosteraccounts.keySet()) {
                 if (hosteraccounts.get(host).contains(account)) {
                     account.setHoster(host);
                     return host;
@@ -254,7 +247,7 @@ public class AccountController extends SubConfiguration implements ActionListene
     public void addAccountBlocked(final Account account) {
         synchronized (blockedAccounts) {
             if (isAccountBlocked(account)) return;
-            String host = this.getHosterName(account);
+            final String host = this.getHosterName(account);
             ArrayList<Account> ar = blockedAccounts.get(host);
             if (ar == null) {
                 ar = new ArrayList<Account>();
@@ -267,8 +260,8 @@ public class AccountController extends SubConfiguration implements ActionListene
     public void removeAccountBlocked(final Account account) {
         synchronized (blockedAccounts) {
             if (!isAccountBlocked(account)) return;
-            String host = this.getHosterName(account);
-            ArrayList<Account> ar = blockedAccounts.get(host);
+            final String host = this.getHosterName(account);
+            final ArrayList<Account> ar = blockedAccounts.get(host);
             if (ar != null) ar.remove(account);
         }
     }
@@ -284,7 +277,7 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public ArrayList<Account> getAllAccounts(final String host) {
-        ArrayList<Account> ret = new ArrayList<Account>();
+        final ArrayList<Account> ret = new ArrayList<Account>();
         if (host == null) return ret;
         synchronized (hosteraccounts) {
             if (hosteraccounts.containsKey(host)) {
@@ -299,7 +292,7 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public boolean hasAccounts(final String host) {
         synchronized (hosteraccounts) {
-            ArrayList<Account> ret = hosteraccounts.get(host);
+            final ArrayList<Account> ret = hosteraccounts.get(host);
             if (ret != null && ret.size() > 0) return true;
         }
         return false;
@@ -454,9 +447,9 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public boolean hasValidAccount(final String host) {
         synchronized (hosteraccounts) {
-            ArrayList<Account> ret = hosteraccounts.get(host);
+            final ArrayList<Account> ret = hosteraccounts.get(host);
             if (ret != null) {
-                for (Account next : ret) {
+                for (final Account next : ret) {
                     if (!next.isTempDisabled() && next.isEnabled() && next.isValid()) { return true; }
                 }
             }
@@ -471,9 +464,10 @@ public class AccountController extends SubConfiguration implements ActionListene
             if (getBooleanProperty(PROPERTY_ACCOUNT_SELECTION, true)) {
                 Collections.sort(accounts, COMPARE_MOST_TRAFFIC_LEFT);
             }
-            final int accountsSize = accounts.size();
-            for (int i = 0; i < accountsSize; i++) {
-                final Account next = accounts.get(i);
+            // final int accountsSize = accounts.size();
+            // for (int i = 0; i < accountsSize; i++) {
+            // final Account next = accounts.get(i);
+            for (final Account next : accounts) {
                 if (!next.isTempDisabled() && next.isEnabled() && next.isValid() && !isAccountBlocked(next)) {
                     ret = next;
                     break;

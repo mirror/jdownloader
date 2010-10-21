@@ -25,7 +25,6 @@ import java.io.File;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.StringTokenizer;
 
 import jd.Main;
@@ -49,10 +48,9 @@ public class ClipboardHandler extends Thread implements ControlListener {
             INSTANCE = new ClipboardHandler();
         }
         return INSTANCE;
-
     }
 
-    private Clipboard clipboard;
+    private final Clipboard clipboard;
 
     private boolean enabled = false;
 
@@ -62,8 +60,8 @@ public class ClipboardHandler extends Thread implements ControlListener {
     private DataFlavor urlFlavor = null;
 
     private DataFlavor uriListFlavor = null;
-    private DataFlavor fileListFlavor = DataFlavor.javaFileListFlavor;
-    private DataFlavor stringFlavor = DataFlavor.stringFlavor;
+    private final DataFlavor fileListFlavor = DataFlavor.javaFileListFlavor;
+    private final DataFlavor stringFlavor = DataFlavor.stringFlavor;
     private DataFlavor htmlFlavor = null;
 
     private Transferable cur = null;
@@ -87,13 +85,13 @@ public class ClipboardHandler extends Thread implements ControlListener {
     private void initDataFlavors() {
         try {
             urlFlavor = new DataFlavor("application/x-java-url; class=java.net.URL");
-        } catch (Exception e) {
+        } catch (final Exception e) {
             JDLogger.exception(e);
             JDLogger.getLogger().info("urlFlavor not supported");
         }
         try {
             uriListFlavor = new DataFlavor("text/uri-list; class=java.lang.String");
-        } catch (Exception e) {
+        } catch (final Exception e) {
             JDLogger.exception(e);
             JDLogger.getLogger().info("uriListFlavor not supported");
         }
@@ -122,7 +120,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
     }
 
-    public DataFlavor getBestFlavor(Transferable trans) {
+    public DataFlavor getBestFlavor(final Transferable trans) {
         if (trans.isDataFlavorSupported(fileListFlavor)) return fileListFlavor;
         if (urlFlavor != null && trans.isDataFlavorSupported(urlFlavor)) return urlFlavor;
         if (uriListFlavor != null && trans.isDataFlavorSupported(uriListFlavor)) return uriListFlavor;
@@ -154,6 +152,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
         return null;
     }
 
+    @Override
     public void run() {
         while (true) {
             synchronized (this) {
@@ -161,7 +160,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                 while (waitFlag) {
                     try {
                         wait();
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         return;
                     }
                 }
@@ -182,6 +181,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                 while (izer.hasMoreTokens()) {
                                     /* linux adds file:// */
                                     final URI fi = new URI(izer.nextToken());
+                                    // is it better than File f = new File(fi)?
                                     final File f = new File(fi.getPath());
                                     if (f.exists()) {
                                         if (DistributeData.hasContainerPluginFor(fi.getPath())) {
@@ -227,12 +227,12 @@ public class ClipboardHandler extends Thread implements ControlListener {
                             }
                         }
                     }
-                } catch (Exception e2) {
+                } catch (final Exception e2) {
                     // JDLogger.exception(e2);
                 }
                 try {
                     Thread.sleep(750);
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
                 }
             }
         }
@@ -264,10 +264,20 @@ public class ClipboardHandler extends Thread implements ControlListener {
                              * those files we have Plugins for
                              */
                             final List<File> list = (List<File>) cur.getTransferData(fileListFlavor);
-                            final ListIterator<File> it = list.listIterator();
+                            // final ListIterator<File> it =
+                            // list.listIterator();
+                            // final StringBuilder sb = new StringBuilder("");
+                            // while (it.hasNext()) {
+                            // final File f = it.next();
+                            // if
+                            // (DistributeData.hasContainerPluginFor(f.toString()))
+                            // {
+                            // sb.append(f.toString());
+                            // sb.append("\r\n");
+                            // }
+                            // }
                             final StringBuilder sb = new StringBuilder("");
-                            while (it.hasNext()) {
-                                final File f = it.next();
+                            for (final File f : list) {
                                 if (DistributeData.hasContainerPluginFor(f.toString())) {
                                     sb.append(f.toString());
                                     sb.append("\r\n");
@@ -318,7 +328,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                         currentString = new String(html);
                                     }
                                 }
-                            } catch (Exception e) {
+                            } catch (final Exception e) {
                                 // JDLogger.exception(e);
                                 /* fallback */
                                 if (cur.isDataFlavorSupported(stringFlavor)) {
@@ -329,14 +339,14 @@ public class ClipboardHandler extends Thread implements ControlListener {
                         }
                     }
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 // JDLogger.exception(e);
             }
             return what;
         }
     }
 
-    public void setTempDisabled(boolean v) {
+    public void setTempDisabled(final boolean v) {
         this.tempdisabled = v;
         synchronized (this) {
             if (waitFlag) {
@@ -351,7 +361,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
      * 
      * @param enabled
      */
-    public boolean setEnabled(boolean enabled2) {
+    public boolean setEnabled(final boolean enabled2) {
         if (enabled == enabled2) return false;
         if (enabled2) {
             JDLogger.getLogger().info("ClipBoard Observation enabled");
@@ -359,8 +369,9 @@ public class ClipboardHandler extends Thread implements ControlListener {
             JDLogger.getLogger().info("ClipBoard Observation disabled");
         }
         enabled = enabled2;
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled2);
-        JDUtilities.getConfiguration().save();
+        final Configuration configuration = JDUtilities.getConfiguration();
+        configuration.setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled2);
+        configuration.save();
         synchronized (this) {
             if (waitFlag) {
                 waitFlag = false;

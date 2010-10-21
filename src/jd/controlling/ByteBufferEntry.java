@@ -60,8 +60,9 @@ public class ByteBufferEntry {
 
     protected ByteBufferEntry getbytebufferentry(final int size) {
         unused = false;
-        this.size = size;
-        clear();
+        // this.size = size;
+        // clear();
+        clear(size);
         return this;
     }
 
