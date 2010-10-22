@@ -179,40 +179,7 @@ public class FileSonicCom extends PluginForHost {
         // download is ready already
         downloadUrl = this.br.getRegex("<p><a href=\"(http://.*?\\.filesonic.com.*?)\"><span>Start download now!</span></a></p>").getMatch(0);
         if (downloadUrl == null) {
-            if (this.br.containsHTML("Recaptcha\\.create")) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
-                rc.parse();
-                // rc = rc;
-                rc.load();
-                final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-                final String code = this.getCaptchaCode(cf, downloadLink);
-                rc.setCode(code);
-                if (this.br.containsHTML("Recaptcha\\.create")) {
-
-                    // captcha wrong; fs does not return any error message.
-                    // just shows the captcha dialog again
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            }
-            // this.br = this.br;
-            // this.br.getPage("http://www.filesonic.com/download-free/" +
-            // id);
             this.errorHandling(downloadLink);
-            if (this.br.containsHTML("This file is password protected")) {
-                /* password handling */
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(null, downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                final Form form = this.br.getForm(0);
-                form.put("password", Encoding.urlEncode(passCode));
-                this.br.submitForm(form);
-
-            }
-
             // downloadUrl =
             // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
             // if (downloadUrl == null) { throw new
@@ -229,8 +196,37 @@ public class FileSonicCom extends PluginForHost {
                 this.sleep(Long.parseLong(countDownDelay) * 1001, downloadLink);
                 this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
                 this.removeComments();
-                downloadUrl = this.br.getRegex("<p><a href=\"(http://.*?\\.filesonic.com.*?)\"><span>Start download now!</span></a></p>").getMatch(0);
             }
+            if (this.br.containsHTML("Recaptcha\\.create")) {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+                rc.parse();
+                // rc = rc;
+                rc.load();
+                final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
+                final String code = this.getCaptchaCode(cf, downloadLink);
+                rc.setCode(code);
+                if (this.br.containsHTML("Recaptcha\\.create")) {
+
+                    // captcha wrong; fs does not return any error message.
+                    // just shows the captcha dialog again
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
+            if (this.br.containsHTML("This file is password protected")) {
+                /* password handling */
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                final Form form = this.br.getForm(0);
+                form.put("password", Encoding.urlEncode(passCode));
+                this.br.submitForm(form);
+
+            }
+            downloadUrl = this.br.getRegex("<p><a href=\"(http://.*?\\.filesonic.com.*?)\"><span>Start download now!</span></a></p>").getMatch(0);
         }
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /*
