@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.cx" }, urls = { "http://[\\w\\.]*?share\\.cx/files/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.cx" }, urls = { "http://[\\w\\.]*?share\\.cx/(files/)?\\d+" }, flags = { 2 })
 public class ShareCx extends PluginForHost {
 
     public ShareCx(PluginWrapper wrapper) {
