@@ -42,6 +42,8 @@ public class UgotFileCom extends PluginForHost {
         this.enablePremium("http://ugotfile.com/user/register");
     }
 
+    private static final String ERROR404 = "(title>404 Not Found</title>|<h1>Not Found</h1>)";
+
     @Override
     public String getAGBLink() {
         return "http://ugotfile.com/doc/terms/";
@@ -111,6 +113,7 @@ public class UgotFileCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML(ERROR404)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.UhotFileCom.errors.404", "Server error 404"));
         // Errorhandling for links that are only downloadable by premium users
         if (br.containsHTML(ONLYPREMIUM)) {
             String defaultblock = "400";

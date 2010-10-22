@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="rapidlibrary.com" author="DwD" services="rapidlibrary.com"/>
+<method name="rapidlibrary.com" author="DwD" services="rapidlibrary.com;abmp3.com;beemp3.com"/>
 <format type="png" letterNum="3" />
 </jDownloader>

@@ -78,7 +78,7 @@ public class UploadingCom extends PluginForHost {
         br.setCookie("http://www.uploading.com/", "setlang", "en");
         br.setCookie("http://www.uploading.com/", "_lang", "en");
         br.getPage("http://www.uploading.com/");
-        br.postPage("http://uploading.com/general/login_form/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
+        br.postPage("http://uploading.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
         if (br.getCookie("http://www.uploading.com/", "remembered_user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         /* change language to english */
         br.postPage("http://uploading.com/general/select_language/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "language=1");
@@ -133,13 +133,13 @@ public class UploadingCom extends PluginForHost {
             handleFree0(link);
             return;
         }
-        String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
+
         String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
-        if (fileID == null || code == null) {
+        if (code == null) {
             logger.warning("The first form equals null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String redirect = getDownloadUrl(link, fileID, code);
+        String redirect = getDownloadUrl(link, null, code);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);
         handleDownloadErrors();
@@ -325,8 +325,13 @@ public class UploadingCom extends PluginForHost {
         if (starttimer != null) {
             sleep((Long.parseLong(starttimer) + 2) * 1000l, downloadLink);
         }
-        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&code=" + code + "&action=get_link&pass=undefined");
-        redirect = br.getRegex("link\": \"(http.*?)\"").getMatch(0);
+        if (fileID != null) {
+            fileID = "&file_id=" + fileID;
+        } else {
+            fileID = "";
+        }
+        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "code=" + code + "&action=get_link&pass=undefined" + fileID);
+        redirect = br.getRegex("link\":( )?\"(http.*?)\"").getMatch(1);
         if (redirect != null) {
             redirect = redirect.replaceAll("\\\\/", "/");
         } else {

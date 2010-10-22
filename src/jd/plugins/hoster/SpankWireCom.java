@@ -59,7 +59,7 @@ public class SpankWireCom extends PluginForHost {
                 filename = br.getRegex("<meta name=\"Description\" content=\"(.*?)\"").getMatch(0);
             }
         }
-        String lookup = "http://static.spankwire.com/controls/usercontrols/players/v3" + matches;
+        String lookup = "http://cdn1.static.spankwire.com/Controls/UserControls/Players/v3" + matches;
         br.getPage(lookup);
         dllink = Encoding.htmlDecode(br.getRegex("url>(.*?)<").getMatch(0));
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

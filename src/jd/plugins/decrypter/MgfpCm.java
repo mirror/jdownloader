@@ -39,10 +39,21 @@ public class MgfpCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
         String parameter = param.toString();
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
         if (!parameter.contains("view=2")) parameter += "&view=2";
         br.getPage(parameter);
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().contains("/pictures/")) {
+                parameter = br.getRedirectLocation();
+                logger.info("New parameter is set: " + parameter);
+                br.getPage(parameter);
+            } else {
+                logger.warning("Getting unknown redirect page");
+                br.getPage(br.getRedirectLocation());
+            }
+        }
         // First find all the information we need (name of the gallery, name of
         // the galleries author)
         String galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
