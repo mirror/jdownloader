@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -87,12 +88,13 @@ public class TwoSharedCom extends PluginForHost {
             }
         }
         String link = br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        int viw = Calendar.DAY_OF_WEEK;
         String l2surl = new Regex(link, "id=(.*?$)").getMatch(0);
         link = new Regex(link,"^(.*?id=)").getMatch(0);
         if (l2surl.charAt(0) % 2 == 1) {
-            link = link + l2surl.charAt(0) + l2surl.charAt(1) + l2surl.substring(18, l2surl.length());
+            link = link + l2surl.substring(0, viw) + l2surl.substring(16 + viw);
         } else {
-            link = link + l2surl.substring(0,14) + l2surl.charAt(l2surl.length() - 2) + l2surl.charAt(l2surl.length() - 1);
+            link = link + l2surl.substring(0, 16 - viw) + l2surl.substring(l2surl.length() - viw);
         }
         link = br.getPage("http://www.2shared.com" + link).trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
