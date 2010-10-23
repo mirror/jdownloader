@@ -95,10 +95,10 @@ public class Vipfilecom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         Form[] allForms = br.getForms();
-        if(allForms == null || allForms.length == 0)throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form premiumform = null;
-        for(Form singleForm:allForms){
-            if(singleForm.containsHTML("pass")){
+        for (Form singleForm : allForms) {
+            if (singleForm.containsHTML("pass")) {
                 premiumform = singleForm;
                 break;
             }
@@ -115,8 +115,13 @@ public class Vipfilecom extends PluginForHost {
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
         }
-        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Ваша ссылка для скачивания:<br><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(1));
-        if (url == null) url = br.getRegex("(http://[0-9]+\\.[0-9]+\\.[0-9]+\\..*?/downloadp[0-9]+/.*?)'>").getMatch(0);
+        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Your link to file download\" href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (url == null) {
+            url = br.getRegex("Mirror to file download\" href=\"(http://[0-9\\.]+/.*?)\"").getMatch(0);
+            if (url == null) {
+                url = br.getRegex("\"(http://[0-9\\.]+/downloadp\\d+/.*?/vip-file\\.com/[0-9\\.]+/.*?)\"").getMatch(0);
+            }
+        }
         if (url == null && br.containsHTML("(Wrong password|>This password expired<)")) {
             logger.info("Downloadpassword seems to be wrong, disabeling account now!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

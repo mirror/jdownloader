@@ -86,7 +86,7 @@ public class BitShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Remove new line
-        dllink = dllink.replace("%0D%0A", "");
+        dllink = dllink.trim();
         logger.info("Fixed dllink...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
