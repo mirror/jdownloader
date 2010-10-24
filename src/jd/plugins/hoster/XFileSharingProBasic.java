@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://[\\w\\.]*?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://(www\\.)?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
 
     public XFileSharingProBasic(PluginWrapper wrapper) {

@@ -180,7 +180,7 @@ public class OronCom extends PluginForHost {
             // " starting the download...");
             // Hoster allows up to 10 Chunks but then you can only start one
             // download...
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -15);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }

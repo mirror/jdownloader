@@ -57,8 +57,8 @@ public class MidUploadCom extends PluginForHost {
     }
 
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST = "http://www.midupload.com";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST  = "http://www.midupload.com";
+    public boolean              nopremium    = false;
 
     public void doFree(DownloadLink link) throws Exception {
         if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode");
@@ -132,9 +132,13 @@ public class MidUploadCom extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        String dllink = null;
-        dllink = br.getRegex(Pattern.compile("<br>.*<a href=\"(.*?)\"><img src=\"http://www\\.midupload\\.com/images/download-button\\.gif\" border=\"0\">", Pattern.DOTALL)).getMatch(0);
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = br.getRegex(Pattern.compile("<br>.*<a href=\"(.*?)\"><img src=\"http://www\\.midupload\\.com/images/download-button\\.gif\" border=\"0\">", Pattern.DOTALL)).getMatch(0);
+            if (dllink == null) dllink = br.getRegex("Location: (http://.+)").getMatch(0);
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
