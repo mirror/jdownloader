@@ -138,9 +138,9 @@ public class Lxn extends PluginForDecrypt {
         String id = new Regex(theLink, "lix\\.in/(.+)").getMatch(0);
         theLink = Encoding.htmlDecode(theLink);
         File file = null;
-        URLConnectionAdapter con = br.openPostConnection("http://lix.in/download/", "submit=Download+DLC&id=" + id);
+        URLConnectionAdapter con = brc.openPostConnection("http://lix.in/download/", "submit=Download+DLC&id=" + id);
         if (con.getResponseCode() == 200) {
-            file = JDUtilities.getResourceFile("tmp/lixin/" + theLink.replaceAll("(:|/)", "") + ".dlc");
+            file = JDUtilities.getResourceFile("tmp/lixin/" + theLink.replaceAll("(:|/|=|\\?)", "") + ".dlc");
             if (file == null) return null;
             file.deleteOnExit();
             brc.downloadConnection(file, con);
