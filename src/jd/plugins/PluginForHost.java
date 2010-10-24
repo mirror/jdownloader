@@ -251,13 +251,11 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     c++;
                     if (getAccountwithoutUsername()) {
                         if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        account = new MenuAction();
-                        account.setTitle(i++ + ". " + JDL.L(JDL_PREFIX + "account", "Account"));
+                        account = new MenuAction(i++ + ". " + JDL.L(JDL_PREFIX + "account", "Account"));
                         account.setType(Types.CONTAINER);
                     } else {
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                        account = new MenuAction();
-                        account.setTitle(i++ + ". " + a.getUser());
+                        account = new MenuAction(i++ + ". " + a.getUser());
                         account.setType(Types.CONTAINER);
                     }
                     m = AccountMenuItemSyncer.getInstance().get(a);

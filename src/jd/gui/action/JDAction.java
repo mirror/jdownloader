@@ -39,10 +39,10 @@ import jd.utils.JDTheme;
  */
 public abstract class JDAction extends AbstractAction {
 
-    private static final long serialVersionUID = -2332356042161170120L;
-    public static final String IMAGE_KEY = "IMAGE_KEY";
-    private ActionListener actionListener;
-    private int actionID = -1;
+    private static final long  serialVersionUID = -2332356042161170120L;
+    public static final String IMAGE_KEY        = "IMAGE_KEY";
+    private ActionListener     actionListener;
+    private int                actionID         = -1;
 
     public void setActionID(final int actionID) {
         this.actionID = actionID;
@@ -238,29 +238,6 @@ public abstract class JDAction extends AbstractAction {
      */
     public void setSelected(final boolean selected) {
         putValue(SELECTED_KEY, selected);
-    }
-
-    /**
-     * Sets the actions title
-     * 
-     * @param title
-     * @return
-     */
-    public JDAction setTitle(final String title) {
-        putValue(NAME, title);
-        return this;
-    }
-
-    /**
-     * Sets the ac tions icon
-     * 
-     * @param ii
-     * @return
-     */
-    public JDAction setIcon(final ImageIcon ii) {
-        putValue(SMALL_ICON, ii);
-        return this;
-
     }
 
     /**

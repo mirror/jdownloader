@@ -17,13 +17,9 @@
 package jd.gui.swing.jdgui.actions;
 
 import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-
-import javax.swing.Action;
 
 import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
@@ -317,19 +313,11 @@ public class ActionController {
 
         };
 
-        new ToolBarAction("toolbar.quickconfig.clipboardoberserver", "gui.images.clipboard_enabled") {
+        new ToolBarAction("toolbar.quickconfig.clipboardoberserver", "gui.images.clipboard") {
             private static final long serialVersionUID = -6442494647304101403L;
 
             @Override
             public void initAction() {
-                this.addPropertyChangeListener(new PropertyChangeListener() {
-                    public void propertyChange(final PropertyChangeEvent evt) {
-                        if (evt.getPropertyName() == Action.SELECTED_KEY) {
-                            setIcon((Boolean) evt.getNewValue() ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
-                        }
-                    }
-                });
-
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
                     @Override
                     public void onPropertyChanged(final Property source, final String key) {
@@ -341,9 +329,7 @@ public class ActionController {
             @Override
             public void initDefaults() {
                 this.setType(ToolBarAction.Types.TOGGLE);
-                final boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
-                this.setSelected(b);
-                this.setIcon(b ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
+                this.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
             }
 
             @Override
@@ -352,19 +338,11 @@ public class ActionController {
             }
         };
 
-        new ToolBarAction("toolbar.quickconfig.reconnecttoggle", "gui.images.reconnect_disabled") {
+        new ToolBarAction("toolbar.quickconfig.reconnecttoggle", "gui.images.reconnect") {
             private static final long serialVersionUID = -2942320816429047941L;
 
             @Override
             public void initAction() {
-                this.addPropertyChangeListener(new PropertyChangeListener() {
-                    public void propertyChange(final PropertyChangeEvent evt) {
-                        if (evt.getPropertyName() == Action.SELECTED_KEY) {
-                            setIcon((Boolean) evt.getNewValue() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
-                        }
-                    }
-                });
-
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_ALLOW_RECONNECT) {
                     @Override
                     public void onPropertyChanged(final Property source, final String key) {
@@ -376,9 +354,7 @@ public class ActionController {
             @Override
             public void initDefaults() {
                 this.setType(ToolBarAction.Types.TOGGLE);
-                final boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-                this.setSelected(b);
-                this.setIcon(b ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
+                this.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
             }
 
             @Override
@@ -404,18 +380,11 @@ public class ActionController {
 
         };
 
-        new ThreadedAction("toolbar.control.stopmark", "gui.images.stopmark.disabled") {
+        new ThreadedAction("toolbar.control.stopmark", "gui.images.config.eventmanager") {
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
             protected void initAction() {
-                this.addPropertyChangeListener(new PropertyChangeListener() {
-                    public void propertyChange(final PropertyChangeEvent evt) {
-                        if (evt.getPropertyName() == Action.SELECTED_KEY) {
-                            setIcon((Boolean) evt.getNewValue() ? "gui.images.stopmark.enabled" : "gui.images.stopmark.disabled");
-                        }
-                    }
-                });
                 JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     @Override
                     public void controlIDEvent(final ControlEvent event) {
@@ -595,24 +564,15 @@ public class ActionController {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ConfigPanelAddons.class);
             }
         };
-        new ToolBarAction("premiumMenu.toggle", "gui.images.premium_enabled") {
+        new ToolBarAction("premiumMenu.toggle", "gui.images.config.tip") {
 
             private static final long serialVersionUID = 4276436625882302179L;
 
             @Override
             public void initDefaults() {
                 this.setType(ToolBarAction.Types.TOGGLE);
-                final boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
-                this.setSelected(b);
-                this.setIcon(b ? "gui.images.premium_enabled" : "gui.images.premium_disabled");
+                this.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
 
-                this.addPropertyChangeListener(new PropertyChangeListener() {
-                    public void propertyChange(final PropertyChangeEvent evt) {
-                        if (evt.getPropertyName() == Action.SELECTED_KEY) {
-                            setIcon((Boolean) evt.getNewValue() ? "gui.images.premium_enabled" : "gui.images.premium_disabled");
-                        }
-                    }
-                });
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
                     @Override
                     public void onPropertyChanged(final Property source, final String key) {

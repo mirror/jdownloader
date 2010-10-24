@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 public class AddonsMenu extends JMenu {
 
     private static final long serialVersionUID = 1019851981865519325L;
-    private static AddonsMenu INSTANCE = null;
+    private static AddonsMenu INSTANCE         = null;
 
     private AddonsMenu() {
         super(JDL.L("gui.menu.addons", "Addons"));
@@ -71,8 +71,7 @@ public class AddonsMenu extends JMenu {
                         itemsPress.add(c);
                     }
                 } else {
-                    MenuAction m = new MenuAction(plg.getID(), plg.getPlugin().getIconKey());
-                    m.setTitle(plg.getHost());
+                    MenuAction m = new MenuAction(plg.getID(), plg.getHost(), plg.getPlugin().getIconKey());
                     m.setItems(mis);
 
                     JMenuItem mi = m.toJMenuItem();

@@ -16,6 +16,7 @@
 
 package jd.utils;
 
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -24,6 +25,8 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import jd.controlling.JDLogger;
 import jd.nutils.JDImage;
@@ -31,6 +34,7 @@ import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import net.miginfocom.swing.MigLayout;
 
 public final class JDTheme {
 
@@ -40,15 +44,15 @@ public final class JDTheme {
     private JDTheme() {
     }
 
-    private static HashMap<String, String> data      = new HashMap<String, String>();
+    private static final Logger                         LOG                  = JDLogger.getLogger();
 
-    private static HashMap<String, String> defaultData;
+    private static final String                         THEME_DIR            = "jd/themes/";
 
-    private static final Logger            LOG       = JDLogger.getLogger();
+    private static String                               currentTheme;
 
-    private static final String             THEME_DIR = "jd/themes/";
+    private static HashMap<String, String>              data                 = new HashMap<String, String>();
 
-    private static String                  currentTheme;
+    private static final HashMap<String, BufferedImage> BUFFERED_IMAGE_CACHE = new HashMap<String, BufferedImage>();
 
     public static ArrayList<String> getThemeIDs() {
         final File dir = JDUtilities.getResourceFile(THEME_DIR);
@@ -64,7 +68,7 @@ public final class JDTheme {
     }
 
     public static String getThemeValue(final String key, String def) {
-        if (data == null || defaultData == null) {
+        if (data == null) {
             LOG.severe("Use setTheme() first!");
             setTheme("default");
         }
@@ -72,10 +76,6 @@ public final class JDTheme {
         if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
         LOG.warning("Key not found: " + key + " (" + def + ")");
 
-        if (defaultData.containsKey(key)) {
-            def = Encoding.UTF8Decode(defaultData.get(key));
-            LOG.finest("Use default Value: " + def);
-        }
         if (def == null) {
             def = key;
         }
@@ -178,34 +178,6 @@ public final class JDTheme {
                 data.put(key, value);
             }
         }
-        if (themeID.equals("default")) {
-            defaultData = data;
-        }
-        if (defaultData == null) {
-            defaultData = new HashMap<String, String>();
-            file = JDUtilities.getResourceFile(THEME_DIR + "default.icl");
-
-            if (!file.exists()) {
-                LOG.severe("Theme default not installed");
-                return;
-            }
-            data = new HashMap<String, String>();
-            str = JDIO.readFileToString(file);
-            lines = Regex.getLines(str);
-            for (String element : lines) {
-                final int split = element.indexOf("=");
-                if (split <= 0 || element.charAt(0) == '#') {
-                    continue;
-                }
-                final String key = element.substring(0, split).trim();
-                final String value = element.substring(split + 1).trim();
-                if (data.containsKey(key)) {
-                    LOG.finer("Dupe found: " + key);
-                } else {
-                    data.put(key, value);
-                }
-            }
-        }
     }
 
     /**
@@ -226,6 +198,50 @@ public final class JDTheme {
      */
     public static String V(final String key, final String def) {
         return JDTheme.getThemeValue(key, def);
+    }
+
+    public static void main(String[] args) {
+        JDTheme.setTheme("default");
+
+        JFrame f = new JFrame("Tester");
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setLayout(new MigLayout("ins 0"));
+
+        f.add(new JLabel(getCheckBoxImage("gui.images.logout", true, 32, 32)));
+        f.add(new JLabel(getCheckBoxImage("gui.images.logout", false, 32, 32)));
+
+        f.add(new JLabel(getCheckBoxImage("gui.images.logout", true, 16, 16)));
+        f.add(new JLabel(getCheckBoxImage("gui.images.logout", false, 16, 16)));
+
+        f.pack();
+        f.setResizable(false);
+
+        f.setVisible(true);
+    }
+
+    public static ImageIcon getCheckBoxImage(final String string, final boolean selected, final int width, final int height) {
+        if (string != null) {
+            try {
+                final String key = string + "_" + selected + "_" + width + "_" + height;
+                BufferedImage ret = BUFFERED_IMAGE_CACHE.get(key);
+                if (ret == null) {
+                    final BufferedImage img = JDImage.getImage(V(string));
+                    final BufferedImage checkBox = JDImage.getImage(V(selected ? "gui.images.checkbox.selected" : "gui.images.checkbox.unselected"));
+
+                    ret = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                    Graphics2D g = (Graphics2D) ret.getGraphics();
+                    g.drawImage(img, 0, 0, null);
+                    g.drawImage(checkBox, 0, ret.getHeight() - checkBox.getHeight(), null);
+
+                    BUFFERED_IMAGE_CACHE.put(key, ret);
+                }
+                return new ImageIcon(JDImage.getScaledImage(ret, width, height));
+            } catch (Exception e) {
+                LOG.severe("Could not find image: " + string);
+                JDLogger.exception(e);
+            }
+        }
+        return null;
     }
 
 }

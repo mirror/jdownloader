@@ -36,12 +36,22 @@ public class MenuAction extends ToolBarAction {
         super();
     }
 
-    public MenuAction(final String name, final int id) {
-        super(name, id);
+    public MenuAction(final String name) {
+        super();
+        this.putValue(NAME, name);
     }
 
-    public MenuAction(final String name, final String icon) {
-        super(name, icon);
+    public MenuAction(final String menukey, final int id) {
+        super(menukey, id);
+    }
+
+    public MenuAction(final String menukey, final String icon) {
+        super(menukey, icon);
+    }
+
+    public MenuAction(final String menukey, final String name, final String icon) {
+        super(menukey, icon);
+        this.putValue(NAME, name);
     }
 
     public MenuAction(final Types type) {

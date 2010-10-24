@@ -64,7 +64,6 @@ public class FileBrellaCom extends PluginForHost {
         if (!br.containsHTML(CAPTCHATEXT) || fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         for (int i = 0; i <= 3; i++) {
             String postLink = "http://www.filebrella.com/xml/captchaSubmit.php?code=" + getCaptchaCode("http://www.filebrella.com/images/verification.php", downloadLink) + "&fid=" + fileID + "&reqID=%6s" + 100000 + new Random().nextInt(900000);
-            ;
             br.postPage(postLink, "");
             if (br.containsHTML(CAPTCHAFAILED)) continue;
             break;

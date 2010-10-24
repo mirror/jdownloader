@@ -22,6 +22,7 @@ import javax.swing.AbstractAction;
 
 import jd.gui.action.JDAction;
 import jd.gui.swing.GuiRunnable;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -35,12 +36,12 @@ public abstract class ToolBarAction extends JDAction {
         TOGGLE, NORMAL, SEPARATOR, CONTAINER
     }
 
-    private static final long serialVersionUID = -7856598906795360922L;
+    private static final long  serialVersionUID = -7856598906795360922L;
 
-    public static final String ID = "ID";
+    public static final String ID               = "ID";
 
-    private boolean inited = false;
-    private Types type = Types.NORMAL;
+    private boolean            inited           = false;
+    private Types              type             = Types.NORMAL;
 
     public void setType(Types type) {
         if (type == Types.TOGGLE && getValue(SELECTED_KEY) == null) {
@@ -81,8 +82,9 @@ public abstract class ToolBarAction extends JDAction {
     }
 
     public final void actionPerformed(ActionEvent e) {
-        if (this.type == Types.TOGGLE && JDUtilities.getJavaVersion() < 1.6) {
-            this.setSelected(!this.isSelected());
+        if (this.type == Types.TOGGLE) {
+            updateIcon();
+            if (JDUtilities.getJavaVersion() < 1.6) this.setSelected(!this.isSelected());
         }
         if (getActionListener() == null) {
             onAction(e);
@@ -107,6 +109,24 @@ public abstract class ToolBarAction extends JDAction {
     private void setSelectedInternal(boolean selected) {
         super.setSelected(selected);
         setType(Types.TOGGLE);
+        updateIcon();
+    }
+
+    private void updateIcon() {
+        putValue(AbstractAction.SMALL_ICON, JDTheme.getCheckBoxImage((String) getValue(IMAGE_KEY), isSelected(), 16, 16));
+        putValue(AbstractAction.LARGE_ICON_KEY, JDTheme.getCheckBoxImage((String) getValue(IMAGE_KEY), isSelected(), 24, 24));
+    }
+
+    @Override
+    public void setIcon(String key) {
+        if (this.getType() == Types.TOGGLE) {
+            if (key.length() >= 3) {
+                putValue(IMAGE_KEY, key);
+                updateIcon();
+            }
+        } else {
+            super.setIcon(key);
+        }
     }
 
     /**
