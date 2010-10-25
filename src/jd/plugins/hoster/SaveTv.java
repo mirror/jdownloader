@@ -45,26 +45,22 @@ public class SaveTv extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String NORANDOMNUMBERS         = "";
-    private static final String USEORIGINALFILENAME     = "";
-    private static final String PREFERADSFREE           = "";
+    private static final String NORANDOMNUMBERS         = "NORANDOMNUMBERS";
+    private static final String USEORIGINALFILENAME     = "USEORIGINALFILENAME";
+    private static final String PREFERADSFREE           = "PREFERADSFREE";
     private static final String ADSFREEAVAILABLE        = "for=\"archive-layer-adfree\">Schnittliste vor dem Download / Streaming anwenden<";
     private static final String ADSFREEAVAILABLETEXT    = "Video ist ohne Werbung verfügbar";
     private static final String ADSFREEANOTVAILABLETEXT = "Videos ohne Werbung werden bevorzugt, dieses ist aber nur mit Werbung verfügbar";
     private static final String FREEPOSTPAGE            = "https://www.save.tv/STV/M/Index.cfm?sk=freesave";
     private static final String PREMIUMPOSTPAGE         = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
-    private static final String PREFERH264MOBILE        = "";
+    private static final String PREFERH264MOBILE        = "PREFERH264MOBILE";
     private static final String PREFERH264MOBILETEXT    = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
 
     private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NORANDOMNUMBERS, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Keine Zufallszahlen an Dateinamen anhängen (kann Probleme verursachen)")).setDefaultValue(false);
-        ConfigEntry cond2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false);
-        ConfigEntry cond3 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Geschnittene Videos (Videos ohne Werbung) bevorzugen")).setDefaultValue(false);
-        ConfigEntry cond4 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false);
-        config.addEntry(cond);
-        config.addEntry(cond2);
-        config.addEntry(cond3);
-        config.addEntry(cond4);
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.NORANDOMNUMBERS, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Keine Zufallszahlen an Dateinamen anhängen (kann Probleme verursachen)")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Geschnittene Videos (Videos ohne Werbung) bevorzugen")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false));
     }
 
     @Override
