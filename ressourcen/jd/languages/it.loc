@@ -1374,6 +1374,7 @@ plugins.hoster.tabnetua.only4resteredusers = Questo file è scaricabile solo da 
 plugins.hoster.tnaflixcom.selectformat = Pereferire MP4 se disponibile
 plugins.hoster.tube8com.setting.prefervideosformobilephones = VIdeo preferiti per cellulari (formato 3gp)
 plugins.hoster.u115com.undermaintenance = Temporaneamente indisponibile
+plugins.hoster.uhotfilecom.errors.404 = Errore server
 plugins.hoster.uhotfilecom.errors.only4premium = Solo gli utenti premium possono scaricare files più grandi di %sMB
 plugins.hoster.uploadedto.errors.indirectlinkerror = Errore di link indiretto
 plugins.hoster.uploadedto.errors.notpremium = L'account è gratuito
