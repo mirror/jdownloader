@@ -100,12 +100,17 @@ public class UploadingCom extends PluginForHost {
             return ai;
         }
         account.setValid(true);
+        ai.setStatus("Premium Membership");
         String validUntil = br.getRegex("Valid Until:(.*?)<").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
         } else {
             /* fallback */
             ai.setValidUntil(br.getCookies("http://www.uploading.com/").get("remembered_user").getExpireDate());
+        }
+        String balance=br.getRegex("Balance: <b>\\$([0-9\\.]+)+<").getMatch(0);
+        if (balance!=null){
+            ai.setAccountBalance(balance);
         }
         return ai;
     }

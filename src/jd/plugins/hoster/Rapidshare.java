@@ -50,7 +50,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-//http://rapidshare.com/
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/(files/\\d+/.+|\\#\\!download\\|\\d+\\|\\d+\\|.+?\\|\\d+)" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
 
@@ -470,8 +469,13 @@ public class Rapidshare extends PluginForHost {
 
             this.br.setAcceptLanguage(Plugin.ACCEPT_LANGUAGE);
             this.br.setFollowRedirects(false);
-
-            final RSLink link = RSLink.parse(downloadLink.getDownloadURL());
+            RSLink link = null;
+            try {
+                link = RSLink.parse(downloadLink.getDownloadURL());
+            } catch (NumberFormatException e) {
+                /* invalid link format */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
 
             this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName(), null);
             this.handleErrors(this.br);
@@ -588,7 +592,13 @@ public class Rapidshare extends PluginForHost {
 
             this.br.setFollowRedirects(false);
             this.br.setAcceptLanguage(Plugin.ACCEPT_LANGUAGE);
-            final RSLink link = RSLink.parse(downloadLink.getDownloadURL());
+            RSLink link = null;
+            try {
+                link = RSLink.parse(downloadLink.getDownloadURL());
+            } catch (NumberFormatException e) {
+                /* invalid link format */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
 
             this.queryAPI(this.br, prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie"), account);
             this.handleErrors(this.br);
@@ -820,10 +830,12 @@ public class Rapidshare extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else {
+            if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return downloadLink.getAvailableStatus();
     }

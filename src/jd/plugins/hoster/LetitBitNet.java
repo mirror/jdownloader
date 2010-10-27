@@ -105,6 +105,9 @@ public class LetitBitNet extends PluginForHost {
             filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("class=\"first\">File:: <span>(.*?)</span></li>").getMatch(0);
+                if (filename==null){
+                    filename=br.getRegex("title>(.*?) download for free").getMatch(0);
+                }
             }
         }
         String filesize = br.getRegex("name=\"sssize\" value=\"(\\d+)\"").getMatch(0);
@@ -114,7 +117,10 @@ public class LetitBitNet extends PluginForHost {
                 filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
             }
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            if (br.containsHTML("Request file.*?Deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Their names often differ from other file hosting services. I noticed
         // that when in the filenames from other hosting services there are
         // "-"'s, letitbit uses "_"'s so let's correct this here ;)
@@ -178,6 +184,7 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+
         String url = null;
         Form down = null;
         Form[] allforms = br.getForms();

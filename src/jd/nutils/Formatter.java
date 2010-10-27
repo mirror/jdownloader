@@ -158,6 +158,7 @@ public class Formatter {
         }
     }
 
+    /* TODO: use correct timezone or make it customizable by user */
     /**
      * Returns a string containing an HTTP-formatted date.
      * 

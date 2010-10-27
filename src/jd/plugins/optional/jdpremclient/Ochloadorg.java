@@ -209,7 +209,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 logger.severe(br.toString());
                 String error = Encoding.urlEncode(br.toString());
                 /* post error message to api */
-                br.postPage("http://www.ochload.org/?apiv2&method=reportError", "hoster=" + link.getHost() + "&error=" + error + "&nick=" + Encoding.urlEncode(acc.getUser()));
+                br.postPage("http://www.ochload.org/?apiv2&method=reportError", "hoster=" + link.getHost() + "&error=" + error + "&nick=" + Encoding.urlEncode(acc.getUser())+"&link="+Encoding.urlEncode(link.getDownloadURL()));
                 synchronized (LOCK) {
                     premiumHosts.remove(link.getHost());
                 }

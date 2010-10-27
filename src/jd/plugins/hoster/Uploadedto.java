@@ -216,9 +216,10 @@ public class Uploadedto extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             logger.info("InDirect Downloads active");
             Form form = br.getFormBySubmitvalue("Download");
-            URLConnectionAdapter con = br.openFormConnection(form);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.openFormConnection(form);
             if (br.getRedirectLocation() == null) {
-                con.disconnect();
+                br.followConnection();
                 logger.severe("Endlink not found");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.uploadedto.errors.indirectlinkerror", "Indirect link error"));

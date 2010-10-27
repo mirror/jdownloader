@@ -147,8 +147,13 @@ public class FileServeCom extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getResponseCode()==404){
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
+                if (dl.getConnection().getLongContentLength()==0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 handleErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -225,6 +230,10 @@ public class FileServeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getResponseCode()==404){
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleErrors();

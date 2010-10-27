@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -42,6 +43,9 @@ import org.mozilla.javascript.Scriptable;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
+    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS = new HashMap<Account, HashMap<String, String>>();
+    private final static Object                                    LOCK         = new Object();
+
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.share-online.biz/service.php?p=31353834353B4A44616363");
@@ -60,7 +64,7 @@ public class ShareOnlineBiz extends PluginForHost {
         link.setUrlDownload("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
     }
 
-    public void login(Account account) throws IOException, PluginException {
+    public void loginWebsite(Account account) throws IOException, PluginException {
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.postPage("http://www.share-online.biz/login.php", "act=login&location=index.php&dieseid=&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login&folder_autologin=1");
         String cookie = br.getCookie("http://www.share-online.biz", "king_passhash");
@@ -68,6 +72,43 @@ public class ShareOnlineBiz extends PluginForHost {
         br.getPage("http://www.share-online.biz/members.php");
         String expired = br.getRegex(Pattern.compile("<b>Expired\\?</b></td>.*?<td align=\"left\">(.*?)<a", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (expired == null || !expired.trim().equalsIgnoreCase("no")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws IOException, PluginException {
+        synchronized (LOCK) {
+            HashMap<String, String> infos = ACCOUNTINFOS.get(account);
+            if (infos == null || forceLogin) {
+                String page = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=userDetails");
+                infos = getInfos(page);
+                ACCOUNTINFOS.put(account, infos);
+            }
+            /* check dl cookie, must be available for premium accounts */
+            final String dlCookie = infos.get("dl");
+            if ("not_available".equalsIgnoreCase(dlCookie)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            /*
+             * check expire date, expire >0 (normal handling) expire<0 (never
+             * expire)
+             */
+            final Long validUntil = Long.parseLong(infos.get("expire_date"));
+            if (validUntil > 0 && System.currentTimeMillis() / 1000 > validUntil) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            return infos;
+        }
+    }
+
+    /* parse the response from api into an hashmap */
+    private HashMap<String, String> getInfos(String response) throws PluginException {
+        if (response == null || response.length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String infos[] = Regex.getLines(response);
+        HashMap<String, String> ret = new HashMap<String, String>();
+        for (String info : infos) {
+            String data[] = info.split("=");
+            if (data.length == 2) {
+                ret.put(data[0], data[1]);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        return ret;
     }
 
     private boolean isPremium() throws IOException {
@@ -83,8 +124,32 @@ public class ShareOnlineBiz extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
+        /* use api first */
         try {
-            login(account);
+            HashMap<String, String> infos = loginAPI(account, true);
+            /*evaluate expire date*/
+            final Long validUntil = Long.parseLong(infos.get("expire_date"));
+            if (validUntil > 0) {
+                ai.setValidUntil(validUntil * 1000);
+            } else {
+                ai.setValidUntil(-1);
+            }
+            if (infos.containsKey("points")) ai.setPremiumPoints(Long.parseLong(infos.get("points")));
+            if (infos.containsKey("money")) ai.setAccountBalance(infos.get("money"));
+            /*set account type*/
+            ai.setStatus(infos.get("group"));
+            return ai;
+        } catch (PluginException e) {
+            /* catch all except account invalid errors */
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.setValid(false);
+                return ai;
+            }
+        } catch (Exception e) {
+        }
+        /* fallback to normal website login */
+        try {
+            loginWebsite(account);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -200,7 +265,7 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
-        login(account);
+        loginWebsite(account);
         if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
 
         String startURL = parameter.getDownloadURL();

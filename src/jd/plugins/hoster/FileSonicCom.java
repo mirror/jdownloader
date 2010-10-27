@@ -19,7 +19,9 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -51,6 +53,7 @@ public class FileSonicCom extends PluginForHost {
         this.enablePremium("http://www.filesonic.com/premium");
     }
 
+    /* converts id and filename */
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* convert sharingmatrix to filesonic that set english language */
@@ -59,6 +62,15 @@ public class FileSonicCom extends PluginForHost {
             id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
         }
         link.setUrlDownload("http://www.filesonic.com/file/" + id);
+    }
+
+    /* returns only the id, needed for filecheck */
+    private String getID(final DownloadLink link) {
+        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
+        if (id == null) {
+            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
+        }
+        return id;
     }
 
     private void errorHandling(final DownloadLink downloadLink) throws PluginException {
@@ -415,5 +427,51 @@ public class FileSonicCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage(url, post);
         br.getHeaders().put("X-Requested-With", null);
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("redirect=%2Fdashboard&links=");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    if (c > 0) sb.append("%0D%0A");
+                    sb.append(dl.getDownloadURL());
+                    c++;
+                }
+                sb.append("&controls%5Bsubmit%5D=");
+                br.postPage("http://www.filesonic.com/link-checker", sb.toString());
+                for (DownloadLink dllink : links) {
+                    String id = getID(dllink);
+                    String hit[] = br.getRegex("source\">.*?<span>.*?filesonic.com/file/" + id + ".*?fileName\">.*?<span>(.*?)<.*?fileSize\">.*?<span>(.*?)<").getRow(0);
+                    if (hit != null && hit.length == 2 && hit[1].length() > 2) {
+                        dllink.setFinalFileName(hit[0].trim());
+                        dllink.setDownloadSize(Regex.getSize(hit[1]));
+                        dllink.setAvailable(true);
+                    } else {
+                        dllink.setAvailable(false);
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 }

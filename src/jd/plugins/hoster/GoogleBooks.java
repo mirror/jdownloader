@@ -52,7 +52,8 @@ public class GoogleBooks extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setDebug(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());   
         br.getPage(link.getDownloadURL());
         // logger.info(br.toString());
         if (br.containsHTML("src=\"/googlebooks/restricted_logo.gif\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);

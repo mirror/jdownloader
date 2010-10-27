@@ -18,6 +18,8 @@ package jd.utils;
 
 import java.io.File;
 
+import org.appwork.utils.Application;
+
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.nutils.io.JDIO;
@@ -28,8 +30,8 @@ public class UpdateDevWorkspace {
     private static void updateSVN(final String svnUrl, final String path) throws Exception {
         final Subversion svn = new Subversion(svnUrl);
 
-        final File dir = JDUtilities.getResourceFile(path);
-
+        final File dir = Application.getRessource(path);
+        if (!dir.exists()) dir.mkdirs();
         try {
             svn.cleanUp(dir, true);
         } catch (final Exception e) {
@@ -55,7 +57,9 @@ public class UpdateDevWorkspace {
     }
 
     public static void main(String[] args) {
-        System.out.println("Update resources at " + JDUtilities.getResourceFile(""));
+        /*this sets correct homedirectory*/
+        JDUtilities.getJDHomeDirectoryFromEnvironment();
+        System.out.println("Update resources at " +  Application.getRessource(""));
 
         try {
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/libs/", "libs");

@@ -69,7 +69,6 @@ public class RouterUtils {
     private static InetAddress            ADDRESS_CACHE;
 
     static {
-
         RouterUtils.HOST_NAMES.add("fritz.fonwlan.box");
         RouterUtils.HOST_NAMES.add("speedport.ip");
         RouterUtils.HOST_NAMES.add("fritz.box");
@@ -150,7 +149,6 @@ public class RouterUtils {
         RouterUtils.HOST_NAMES.add("192.168.0.99");
         RouterUtils.HOST_NAMES.add("172.16.0.1");
         RouterUtils.HOST_NAMES.add("192.168.4.1");
-
     }
 
     /**
