@@ -33,6 +33,8 @@ import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -42,36 +44,36 @@ import org.appwork.utils.event.Eventsender;
 
 public class AccountController extends SubConfiguration implements ActionListener, AccountControllerListener {
 
-    private static final long serialVersionUID = -7560087582989096645L;
+    private static final long                                                    serialVersionUID           = -7560087582989096645L;
 
-    public static final String PROPERTY_ACCOUNT_SELECTION = "ACCOUNT_SELECTION";
+    public static final String                                                   PROPERTY_ACCOUNT_SELECTION = "ACCOUNT_SELECTION";
 
-    private static TreeMap<String, ArrayList<Account>> hosteraccounts = null;
+    private static TreeMap<String, ArrayList<Account>>                           hosteraccounts             = null;
 
-    private static TreeMap<String, ArrayList<Account>> blockedAccounts = new TreeMap<String, ArrayList<Account>>();
+    private static TreeMap<String, ArrayList<Account>>                           blockedAccounts            = new TreeMap<String, ArrayList<Account>>();
 
-    private static AccountController INSTANCE = new AccountController();
+    private static AccountController                                             INSTANCE                   = new AccountController();
 
-    private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
+    private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster                = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
+                                                                                                                @Override
+                                                                                                                protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                                    listener.onAccountControllerEvent(event);
+                                                                                                                }
 
-    };
+                                                                                                            };
 
-    private final Timer asyncSaveIntervalTimer;
+    private final Timer                                                          asyncSaveIntervalTimer;
 
-    private boolean saveinprogress = false;
+    private boolean                                                              saveinprogress             = false;
 
-    private long lastballoon = 0;
+    private long                                                                 lastballoon                = 0;
 
-    private long waittimeAccountInfoUpdate = 15 * 60 * 1000l;
+    private long                                                                 waittimeAccountInfoUpdate  = 15 * 60 * 1000l;
 
-    private static final long BALLOON_INTERVAL = 30 * 60 * 1000l;
+    private static final long                                                    BALLOON_INTERVAL           = 30 * 60 * 1000l;
 
-    public static final Object ACCOUNT_LOCK = new Object();
+    public static final Object                                                   ACCOUNT_LOCK               = new Object();
 
     public long getUpdateTime() {
         return waittimeAccountInfoUpdate;
@@ -82,21 +84,28 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     private static final Comparator<Account> COMPARE_MOST_TRAFFIC_LEFT = new Comparator<Account>() {
-        public int compare(final Account o1, final Account o2) {
-            final AccountInfo ai1 = o1.getAccountInfo();
-            final AccountInfo ai2 = o2.getAccountInfo();
-            long t1 = ai1 == null ? 0 : ai1.getTrafficLeft();
-            long t2 = ai2 == null ? 0 : ai2.getTrafficLeft();
-            if (t1 < 0) t1 = Long.MAX_VALUE;
-            if (t2 < 0) t2 = Long.MAX_VALUE;
-            if (t1 == t2) return 0;
-            /*
-             * reverse order , we want biggest on top
-             */
-            if (t1 < t2) return 1;
-            return -1;
-        }
-    };
+                                                                           public int compare(final Account o1, final Account o2) {
+                                                                               final AccountInfo ai1 = o1.getAccountInfo();
+                                                                               final AccountInfo ai2 = o2.getAccountInfo();
+                                                                               long t1 = ai1 == null ? 0 : ai1.getTrafficLeft();
+                                                                               long t2 = ai2 == null ? 0 : ai2.getTrafficLeft();
+                                                                               if (t1 < 0) t1 = Long.MAX_VALUE;
+                                                                               if (t2 < 0) t2 = Long.MAX_VALUE;
+                                                                               if (t1 == t2) return 0;
+                                                                               /*
+                                                                                * reverse
+                                                                                * order
+                                                                                * ,
+                                                                                * we
+                                                                                * want
+                                                                                * biggest
+                                                                                * on
+                                                                                * top
+                                                                                */
+                                                                               if (t1 < t2) return 1;
+                                                                               return -1;
+                                                                           }
+                                                                       };
 
     private AccountController() {
         super("AccountController");
@@ -184,6 +193,28 @@ public class AccountController extends SubConfiguration implements ActionListene
         } catch (final IOException e) {
             logger.severe("AccountUpdate: " + host + " failed!");
         } catch (final Exception e) {
+            if (e instanceof PluginException) {
+                PluginException pe = (PluginException) e;
+                ai=account.getAccountInfo();
+                if (ai==null){
+                    ai=new AccountInfo();
+                    account.setAccountInfo(ai);                            
+                }
+                if ((pe.getLinkStatus() == LinkStatus.ERROR_PREMIUM)) {
+                    if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
+                        logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");                                         
+                        account.setTempDisabled(true);
+                        account.getAccountInfo().setTrafficLeft(0);
+                        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
+                        return ai;
+                    } else if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
+                        account.setEnabled(false);
+                        logger.severe("Premium Account " + account.getUser() + ": expired:");
+                        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
+                        return ai;
+                    }
+                }
+            }
             logger.severe("AccountUpdate: " + host + " failed!");
             JDLogger.exception(e);
             account.setAccountInfo(null);

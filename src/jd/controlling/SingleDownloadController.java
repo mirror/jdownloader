@@ -251,7 +251,7 @@ public class SingleDownloadController extends Thread {
                     retry(downloadLink, currentPlugin);
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.severe("Error in Plugin Version: " + downloadLink.getLivePlugin().getVersion());
             JDLogger.exception(e);
         }
@@ -533,6 +533,10 @@ public class SingleDownloadController extends Thread {
     }
 
     /**
+     * TODO: needs max retry here, best would be that plugin know how often
+     * retry was done and then can react differently on try x
+     */
+    /**
      * Wird aufgerufen wenn ein Link kurzzeitig nicht verfügbar ist. ER wird
      * deaktiviert und kann zu einem späteren zeitpunkt wieder aktiviert werden
      * 
@@ -558,6 +562,10 @@ public class SingleDownloadController extends Thread {
         } else {
             status.resetWaitTime();
             downloadLink.setEnabled(false);
+        }
+        if (status.getValue() >= 0) {
+            /* plugin can evaluate retrycount and act differently then */
+            downloadLink.getLinkStatus().setRetryCount(downloadLink.getLinkStatus().getRetryCount() + 1);
         }
         if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }

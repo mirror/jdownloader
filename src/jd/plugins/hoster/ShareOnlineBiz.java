@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -79,11 +80,12 @@ public class ShareOnlineBiz extends PluginForHost {
             HashMap<String, String> infos = ACCOUNTINFOS.get(account);
             if (infos == null || forceLogin) {
                 String page = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=userDetails");
-                infos = getInfos(page);
+                infos = getInfos(page, "=");
                 ACCOUNTINFOS.put(account, infos);
             }
             /* check dl cookie, must be available for premium accounts */
             final String dlCookie = infos.get("dl");
+            if (dlCookie == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if ("not_available".equalsIgnoreCase(dlCookie)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             /*
              * check expire date, expire >0 (normal handling) expire<0 (never
@@ -96,14 +98,14 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     /* parse the response from api into an hashmap */
-    private HashMap<String, String> getInfos(String response) throws PluginException {
+    private HashMap<String, String> getInfos(String response, String seperator) throws PluginException {
         if (response == null || response.length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String infos[] = Regex.getLines(response);
         HashMap<String, String> ret = new HashMap<String, String>();
         for (String info : infos) {
-            String data[] = info.split("=");
+            String data[] = info.split(seperator);
             if (data.length == 2) {
-                ret.put(data[0], data[1]);
+                ret.put(data[0].trim(), data[1].trim());
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -127,8 +129,9 @@ public class ShareOnlineBiz extends PluginForHost {
         /* use api first */
         try {
             HashMap<String, String> infos = loginAPI(account, true);
-            /*evaluate expire date*/
+            /* evaluate expire date */
             final Long validUntil = Long.parseLong(infos.get("expire_date"));
+            account.setValid(true);
             if (validUntil > 0) {
                 ai.setValidUntil(validUntil * 1000);
             } else {
@@ -136,7 +139,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             if (infos.containsKey("points")) ai.setPremiumPoints(Long.parseLong(infos.get("points")));
             if (infos.containsKey("money")) ai.setAccountBalance(infos.get("money"));
-            /*set account type*/
+            /* set account type */
             ai.setStatus(infos.get("group"));
             return ai;
         } catch (PluginException e) {
@@ -264,6 +267,54 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        /* try api first */
+        boolean useAPI = false;
+        try {
+            this.setBrowserExclusive();
+            final HashMap<String, String> infos = loginAPI(account, false);
+            final String linkID = getID(parameter);
+            br.setCookie("http://www.share-online.biz", "dl", infos.get("dl"));
+            final String response = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=download&lid=" + linkID);
+            final HashMap<String, String> dlInfos = getInfos(response, ": ");
+            final String filename = dlInfos.get("NAME");
+            final String size = dlInfos.get("SIZE");
+            final String status = dlInfos.get("STATUS");
+            parameter.setMD5Hash(dlInfos.get("MD5"));
+            if (!"online".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (size != null) parameter.setDownloadSize(Long.parseLong(size));
+            if (filename != null) parameter.setFinalFileName(filename);
+            final String dlURL = dlInfos.get("URL");
+            if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.setFollowRedirects(true);
+            /* Datei herunterladen */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, 1);
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /*signal to use API for download*/
+            useAPI = true;
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) throw e;
+            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) throw e;
+            if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                logger.severe(br.toString());
+            } else {
+                logger.severe(e.getErrorMessage());
+            }
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+        } finally {
+            /* remove downloadCookie */
+            Cookie dlCookie = br.getCookies("http://www.share-online.biz").get("dl");
+            if (dlCookie != null) br.getCookies("http://www.share-online.biz").remove(dlCookie);
+        }
+        if (useAPI) {
+            /*let us use API to download the file*/
+            dl.startDownload();
+            return;
+        }
+        /* fallback to website download */
         requestFileInformation(parameter);
         loginWebsite(account);
         if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
