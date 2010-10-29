@@ -17,8 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.regex.Pattern;
+
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -47,6 +51,8 @@ public class TwoSharedCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/audio/", "/file/"));
         link.setUrlDownload(link.getDownloadURL().replace("/video/", "/file/"));
     }
+    
+    private static final String MAINPAGE = "http://www.2shared.com";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
@@ -88,15 +94,13 @@ public class TwoSharedCom extends PluginForHost {
             }
         }
         String link = br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        int viw = Calendar.DAY_OF_WEEK;
-        String l2surl = new Regex(link, "id=(.*?$)").getMatch(0);
-        link = new Regex(link,"^(.*?id=)").getMatch(0);
-        if (l2surl.charAt(0) % 2 == 1) {
-            link = link + l2surl.substring(0, viw) + l2surl.substring(16 + viw);
-        } else {
-            link = link + l2surl.substring(0, 16 - viw) + l2surl.substring(l2surl.length() - viw);
-        }
-        link = br.getPage("http://www.2shared.com" + link).trim();
+        /* charalgo now works dynamically */
+        String jsquery = br.getPage(MAINPAGE + br.getRegex("src=\"(.*?)\"").getMatch(0, 1));
+        String charalgo = new Regex(jsquery, "var viw(.*)l2surl;\\}").getMatch(-1).replaceAll("M\\.url", "M");
+        if (link == null || jsquery == null || charalgo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String result = decrypt(charalgo, link);
+        if (result != null) link = result;
+        link = br.getPage(MAINPAGE + link).trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getURL().getQuery().contains("MAX_IP")) {
@@ -106,6 +110,20 @@ public class TwoSharedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+    
+    public String decrypt(String fun, String value) throws Exception {
+        Object result = new Object();
+        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngine engine = manager.getEngineByName("javascript");
+        Invocable inv = (Invocable) engine;
+        try {
+            engine.eval("function charalgo(M){" + fun + "return (M);}");
+            result = inv.invokeFunction("charalgo", value);
+        } catch (ScriptException e) {
+            e.printStackTrace();
+        }
+        return (String) result;
     }
 
     @Override
@@ -124,5 +142,4 @@ public class TwoSharedCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

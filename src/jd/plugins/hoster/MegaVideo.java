@@ -61,7 +61,8 @@ public class MegaVideo extends PluginForHost {
     }
 
     public String getDownloadID(DownloadLink link) throws MalformedURLException {
-        HashMap<String, String> p = Request.parseQuery(link.getDownloadURL());
+        String url = link.getDownloadURL().replace("/v/", "/?v=");
+        HashMap<String, String> p = Request.parseQuery(url);
         String ret = p.get("v");
         if (ret == null) {
             try {
@@ -73,13 +74,13 @@ public class MegaVideo extends PluginForHost {
             }
         }
         if (ret == null) ret = "";
+        if (ret.length() > 8) {ret = ret.substring(0, 8 );}
         return ret.toUpperCase();
     }
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replace("/v/", "/?v="));
-        link.setUrlDownload("http://www.megavideo.com/?v=" + getDownloadID(link));
+        link.setUrlDownload("http://www.megavideo.com/v/" + getDownloadID(link));
     }
 
     public void login(Account account) throws IOException, PluginException {
@@ -116,7 +117,6 @@ public class MegaVideo extends PluginForHost {
         Browser brc = br.cloneBrowser();
         /* get original downloadlink */
         brc.getPage("http://www.megavideo.com/xml/player_login.php?u=" + br.getCookie("http://www.megavideo.com", "user") + "&v=" + getDownloadID(downloadLink));
-
         String url = Encoding.urlDecode(brc.getRegex("downloadurl=\"(.*?)\"").getMatch(0), true);
         if (url == null) {
             logger.info("Could not download original file, try to download normal one!");
@@ -127,9 +127,7 @@ public class MegaVideo extends PluginForHost {
             String cpName = url.substring(url.lastIndexOf("/") + 1);
             downloadLink.setFinalFileName(name.endsWith("." + JDIO.getFileExtension(cpName)) ? name : name + "." + JDIO.getFileExtension(cpName));
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-
             dl.startDownload();
-
         }
     }
 
@@ -137,30 +135,24 @@ public class MegaVideo extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String url = null;
-        br.setDebug(true);
-
+        String ID = getDownloadID(link);
         Browser brc = br.cloneBrowser();
-        brc.getPage("http://www.megavideo.com/mcad.php?id=22");
-        /* get original downloadlink */
-        brc = br.cloneBrowser();
-        brc.getPage("http://www.megavideo.com/xml/player_login.php?u=&v=" + getDownloadID(link));
-
-        if (br.containsHTML("flashvars.hd = \"1\";")) {
+        brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + ID);
+        if (brc.containsHTML("hd=\"1\"")) {
             /* hd link */
-            brc = br.cloneBrowser();
-            brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + getDownloadID(link));
             url = Encoding.urlDecode(brc.getRegex("hd_url=\"(.*?)\"").getMatch(0), true);
         } else {
             /* normal link */
-            String s = br.getRegex("flashvars.s = \"(\\d+)\";").getMatch(0);
-            String un = br.getRegex("flashvars.un = \"(.*?)\";").getMatch(0);
-            String k1 = br.getRegex("flashvars.k1 = \"(\\d+)\";").getMatch(0);
-            String k2 = br.getRegex("flashvars.k2 = \"(\\d+)\";").getMatch(0);
+            String s = brc.getRegex("s=\"(\\d+)\"").getMatch(0);
+            String un = brc.getRegex("un=\"(.*?)\"").getMatch(0);
+            String k1 = brc.getRegex("k1=\"(\\d+)\"").getMatch(0);
+            String k2 = brc.getRegex("k2=\"(\\d+)\"").getMatch(0);
             if (s == null || un == null || k1 == null || k2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             url = "http://www" + s + ".megavideo.com/files/" + decrypt(un, Integer.parseInt(k1), Integer.parseInt(k2)) + "/";
         }
-        link.setName(link.getName() + ".flv");
-
+        if (!link.getName().endsWith("." + JDIO.getFileExtension(link.getName()))) {
+            link.setName(link.getName() + ".flv");
+        }    
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
         if (dl.getConnection().getContentLength() == -1) {
@@ -195,14 +187,14 @@ public class MegaVideo extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unavailable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String name = Encoding.htmlDecode(br.getRegex("flashvars.title = \"(.*?)\";").getMatch(0));
-
+        Browser brc = br.cloneBrowser();
+        brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + getDownloadID(parameter));
+        String name = Encoding.htmlDecode(brc.getRegex("title=\"(.*?)\"").getMatch(0));
         if (name != null) {
             if (name.length() < 2) name = null;
         }
-
         if (name == null) {
-            name = Encoding.htmlDecode(br.getRegex("flashvars.description = \"(.*?)\";").getMatch(0));
+            name = Encoding.htmlDecode(br.getRegex("description=\"(.*?)\"").getMatch(0));
         }
         if (name != null) {
             if (name.length() < 2) name = null;
@@ -210,15 +202,12 @@ public class MegaVideo extends PluginForHost {
         if (name == null) {
             name = "MegaVideoClip_" + System.currentTimeMillis();
         }
-
-        if (br.containsHTML("flashvars.hd = \"1\";")) {
-            name = name + " (HD)";
-        } else {
-            Browser brc = br.cloneBrowser();
-            brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + getDownloadID(parameter));
-            String size = brc.getRegex("size=\"(\\d+)\"").getMatch(0);
-            if (size != null) parameter.setDownloadSize(Long.parseLong(size));
+        if (brc.containsHTML("hd=\"1\"")) {
+            name = name + " (HD)";           
         }
+        if (brc.containsHTML("error=\"1\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String size = brc.getRegex("size=\"(\\d+)\"").getMatch(0);
+        if (size != null) parameter.setDownloadSize(Long.parseLong(size));
         parameter.setName(Encoding.htmlDecode(name.trim()));
         return AvailableStatus.TRUE;
     }
@@ -232,8 +221,7 @@ public class MegaVideo extends PluginForHost {
     }
 
     /*
-     * decrypts the crypted link from megavideo flashvars.un = input
-     * flashvars.k1 = k1 flashvars.k2 =k2
+     * decrypts the crypted link from megavideo un = input
      */
     private String decrypt(String input, int k1, int k2) {
         LinkedList<Integer> req1 = new LinkedList<Integer>();
@@ -430,5 +418,4 @@ public class MegaVideo extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
 }
