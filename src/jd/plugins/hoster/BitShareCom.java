@@ -16,20 +16,27 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/files/[a-z0-9]{8}/.*?\\.html" }, flags = { 0 })
 public class BitShareCom extends PluginForHost {
+
+    private static final String RECAPTCHA = "/recaptcha/";
+    private static final String JSONHOST  = "http://bitshare.com/files-ajax/";
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,12 +73,14 @@ public class BitShareCom extends PluginForHost {
             else
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
+        if (!br.containsHTML(RECAPTCHA)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String fileID = new Regex(downloadLink.getDownloadURL(), "bitshare\\.com/files/([a-z0-9]{8})/").getMatch(0);
         String tempID = br.getRegex("var ajaxdl = \"(.*?)\";").getMatch(0);
         if (fileID == null || tempID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://bitshare.com/files-ajax/" + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
-        String rgexedWait = br.getRegex("file:(\\d+):").getMatch(0);
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
+        String rgexedWait = br2.getRegex("file:(\\d+):").getMatch(0);
         int wait = 45;
         if (rgexedWait != null) {
             wait = Integer.parseInt(rgexedWait);
@@ -79,8 +88,36 @@ public class BitShareCom extends PluginForHost {
         }
         wait += 3;
         sleep(wait * 1001l, downloadLink);
-        br.postPage("http://bitshare.com/files-ajax/" + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
-        String dllink = br.getRegex("SUCCESS#(http://.+)").getMatch(0);
+        if (br.containsHTML(RECAPTCHA)) {
+            Boolean failed = true;
+            for (int i = 0; i <= 3; i++) {
+                String id = br.getRegex("http://api.recaptcha.net/challenge\\?k=(.*?)\"").getMatch(0).trim();
+                Form reCaptchaForm = new Form();
+                reCaptchaForm.setMethod(Form.MethodType.POST);
+                reCaptchaForm.setAction(JSONHOST + fileID + "/request.html");
+                reCaptchaForm.put("request", "validateCaptcha");
+                reCaptchaForm.put("ajaxid", tempID);
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setForm(reCaptchaForm);
+                rc.setId(id);
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.getForm().put("recaptcha_response_field", c);
+                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+                br2.submitForm(rc.getForm());
+                if (br2.containsHTML("ERROR:incorrect-captcha")) {
+                    br.getPage(downloadLink.getDownloadURL());
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
+        String dllink = br2.getRegex("SUCCESS#(http://.+)").getMatch(0);
         if (dllink == null) {
             logger.warning("The dllink couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

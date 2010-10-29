@@ -38,6 +38,8 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://[\\w\\.]*?2shared\\.com/(audio|file|video)/.*?/[a-zA-Z0-9._]+" }, flags = { 0 })
 public class TwoSharedCom extends PluginForHost {
 
+    private static final String MAINPAGE = "http://www.2shared.com";
+
     public TwoSharedCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,8 +54,6 @@ public class TwoSharedCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/video/", "/file/"));
     }
     
-    private static final String MAINPAGE = "http://www.2shared.com";
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);

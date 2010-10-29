@@ -37,6 +37,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://channel\\.pandora\\.tv/channel/video\\.ptv?.+" }, flags = { 0 })
 public class PandoraTV extends PluginForHost {
 
+    private static final String MAINPAGE = "http://www.pandora.tv";
+    private static final String DLPAGE   = "http://trans-idx.pandora.tv/flvorgx.pandora.tv";
+
     public PandoraTV(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,9 +48,6 @@ public class PandoraTV extends PluginForHost {
     public String getAGBLink() {
         return "http://info.pandora.tv/?m=service_use_1";
     }
-
-    private static final String MAINPAGE = "http://www.pandora.tv";
-    private static final String DLPAGE   = "http://trans-idx.pandora.tv/flvorgx.pandora.tv";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {

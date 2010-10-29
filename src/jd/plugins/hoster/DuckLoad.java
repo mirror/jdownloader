@@ -102,7 +102,7 @@ public class DuckLoad extends PluginForHost {
                 sleep(secondWait * 1001l, downloadLink);
             }
         }
-        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
+        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.getURL() != null && br.getURL().contains("/error/") || br.containsHTML("ErrorCode: e983")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
