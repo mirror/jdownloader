@@ -93,15 +93,8 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
-            try {
-                requestFileInformation(downloadLink);
-            } catch (PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    websiteFileCheck(downloadLink);
-                } else {
-                    throw e;
-                }
-            }
+            workAroundTimeOut(br);
+            requestFileInformation(downloadLink);
             br.setDebug(true);
             LinkStatus linkStatus = downloadLink.getLinkStatus();
             this.setBrowserExclusive();
@@ -335,15 +328,7 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         workAroundTimeOut(br);
-        try {
-            requestFileInformation(downloadLink);
-        } catch (PluginException e) {
-            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                websiteFileCheck(downloadLink);
-            } else {
-                throw e;
-            }
-        }
+        requestFileInformation(downloadLink);
         login(account);
         isExpired(account);
         boolean resume = true;
@@ -536,12 +521,21 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        DownloadLink urls[] = new DownloadLink[1];
-        urls[0] = downloadLink;
-        checkLinks(urls);
-        if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
-        if (downloadLink.isAvailable()) return AvailableStatus.TRUE;
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        try {
+            DownloadLink urls[] = new DownloadLink[1];
+            urls[0] = downloadLink;
+            checkLinks(urls);
+            if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
+            if (downloadLink.isAvailable()) return AvailableStatus.TRUE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (PluginException e) {
+            /* workaround for buggy api */
+            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                return websiteFileCheck(downloadLink);
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override

@@ -58,7 +58,7 @@ public class FileSignatures {
     }
 
     private static final Signature SIG_TXT = new Signature("TXTfile", null, "Plaintext", ".*\\.(txt|doc|nfo|html|htm|xml)");
-    private static Signature[] SIGNATURES;
+    private static Signature[]     SIGNATURES;
 
     /**
      * Gibt alle verfügbaren signaturen zurück
@@ -72,7 +72,9 @@ public class FileSignatures {
         int i = 0;
         for (String e : m) {
             String[] entry = e.split(":::");
-            if (entry.length >= 4) {
+            if (entry.length >= 5) {
+                SIGNATURES[i++] = new Signature(entry[0], entry[1], entry[2], entry[3], entry[4]);
+            } else if (entry.length >= 4) {
                 SIGNATURES[i++] = new Signature(entry[0], entry[1], entry[2], entry[3]);
             } else {
                 System.err.println("Signature " + e + " invalid!");
@@ -89,13 +91,10 @@ public class FileSignatures {
      */
     public static Signature getSignature(String sig) {
         Signature[] db = getSignatureList();
-
         for (Signature entry : db) {
-            if (entry.matches(sig)) return entry;
+            if (entry != null && entry.matches(sig)) return entry;
         }
-
         return checkTxt(sig);
-
     }
 
     /**

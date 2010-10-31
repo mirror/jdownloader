@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
@@ -152,12 +151,12 @@ public class LetitBitNet extends PluginForHost {
             if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             premiumform.put("pass", Encoding.urlEncode(account.getPass()));
             br.submitForm(premiumform);
-            dlUrl = getUrl();
+            dlUrl = getUrl(account);
         } else {
             /* account login */
             login(account);
             br.getPage(downloadLink.getDownloadURL());
-            dlUrl = getUrl();
+            dlUrl = getUrl(account);
             if (dlUrl == null) {
                 logger.info("Premium with indirectDL, enabling directDL first");
                 br.postPage("http://premium.letitbit.net/ajax.php?action=setddlstate", "state=2");
@@ -227,7 +226,7 @@ public class LetitBitNet extends PluginForHost {
             br.getPage(nextpage);
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
-            url = getUrl();
+            url = getUrl(null);
         }
         if (url == null || url.equals("")) {
             logger.warning("url couldn't be found!");
@@ -253,13 +252,12 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getUrl() throws IOException {
+    private String getUrl(Account account) throws IOException {
         // This information can only be found before each download so lets set
         // it here
         String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
         String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
         if (expireDate != null || points != null) {
-            Account aa = AccountController.getInstance().getValidAccount(this);
             AccountInfo accInfo = new AccountInfo();
             // 1 point = 1 GB
             if (points != null) accInfo.setTrafficLeft(Regex.getSize(points.trim() + "GB"));
@@ -269,7 +267,7 @@ public class LetitBitNet extends PluginForHost {
                 expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
                 accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
             }
-            aa.setAccountInfo(accInfo);
+            account.setAccountInfo(accInfo);
         }
         String iFrame = br.getRegex("<iframe src=\"(/sms/.*?)\"").getMatch(0);
         if (iFrame == null) iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=[0-9_]+\\&emergency_mode=)\"").getMatch(0);

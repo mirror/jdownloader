@@ -456,6 +456,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        /*fix http://rapidshare.com/files/3717252076/The.Shawshank.Redemption.1994.BluRay.1080p.x264.DTS-WiKi.part13.rar*/
         this.accName = "FreeUser";
         if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) {
             downloadLink.setMD5Hash(null);

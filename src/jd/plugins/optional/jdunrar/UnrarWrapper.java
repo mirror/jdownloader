@@ -18,6 +18,7 @@ package jd.plugins.optional.jdunrar;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,85 +51,85 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     /**
      * User stopped the process
      */
-    public static final int EXIT_CODE_USER_BREAK = 255;
+    public static final int          EXIT_CODE_USER_BREAK     = 255;
     /**
      * Create file error
      */
-    public static final int EXIT_CODE_CREATE_ERROR = 9;
+    public static final int          EXIT_CODE_CREATE_ERROR   = 9;
     /**
      * Not enough memory for operation
      */
-    public static final int EXIT_CODE_MEMORY_ERROR = 8;
+    public static final int          EXIT_CODE_MEMORY_ERROR   = 8;
     /**
      * Command line option error
      */
-    public static final int EXIT_CODE_USER_ERROR = 7;
+    public static final int          EXIT_CODE_USER_ERROR     = 7;
 
     /**
      * Open file error
      */
-    public static final int EXIT_CODE_OPEN_ERROR = 6;
+    public static final int          EXIT_CODE_OPEN_ERROR     = 6;
     /**
      * Write to disk error
      */
-    public static final int EXIT_CODE_WRITE_ERROR = 5;
+    public static final int          EXIT_CODE_WRITE_ERROR    = 5;
     /**
      * Attempt to modify an archive previously locked by the 'k' command
      */
-    public static final int EXIT_CODE_LOCKED_ARCHIVE = 4;
+    public static final int          EXIT_CODE_LOCKED_ARCHIVE = 4;
     /**
      * A CRC error occurred when unpacking
      */
-    public static final int EXIT_CODE_CRC_ERROR = 3;
+    public static final int          EXIT_CODE_CRC_ERROR      = 3;
     /**
      * A fatal error occurred
      */
-    public static final int EXIT_CODE_FATAL_ERROR = 2;
+    public static final int          EXIT_CODE_FATAL_ERROR    = 2;
     /**
      * Non fatal error(s) occurred
      * 
      */
-    public static final int EXIT_CODE_WARNING = 1;
+    public static final int          EXIT_CODE_WARNING        = 1;
     /**
      * Successful operation
      */
-    public static final int EXIT_CODE_SUCCESS = 0;
+    public static final int          EXIT_CODE_SUCCESS        = 0;
 
-    private static final boolean DEBUG = true;
-    private ArrayList<UnrarListener> listener = new ArrayList<UnrarListener>();
-    private DownloadLink link;
-    private String unrarCommand;
-    private ArrayList<String> passwordList;
-    private File file;
-    private int statusid;
-    private String password;
-    private boolean isProtected = false;
-    private ArrayList<ArchivFile> files;
+    private static final boolean     DEBUG                    = true;
+    private ArrayList<UnrarListener> listener                 = new ArrayList<UnrarListener>();
+    private DownloadLink             link;
+    private String                   unrarCommand;
+    private ArrayList<String>        passwordList;
+    private File                     file;
+    private int                      statusid;
+    private String                   password;
+    private boolean                  isProtected              = false;
+    private ArrayList<ArchivFile>    files;
 
-    private boolean overwriteFiles = false;
+    private boolean                  overwriteFiles           = false;
 
-    private long totalSize;
-    private ArchivFile currentlyWorkingOn;
+    private long                     totalSize;
+    private ArchivFile               currentlyWorkingOn;
 
     public void setCurrentlyWorkingOn(ArchivFile currentlyWorkingOn) {
         this.currentlyWorkingOn = currentlyWorkingOn;
     }
 
-    private int currentVolume = 1;
-    private long startTime;
-    private SubConfiguration config = null;
-    private long speed = 10000000;
-    private boolean exactProgress = false;
-    private int volumeNum = 1;
-    private Exception exception;
-    private File extractTo;
-    private boolean removeAfterExtraction;
+    private int                currentVolume = 1;
+    private long               startTime;
+    private SubConfiguration   config        = null;
+    private long               speed         = 10000000;
+    private boolean            exactProgress = false;
+    private int                volumeNum     = 1;
+    private Exception          exception;
+    private File               extractTo;
+    private boolean            removeAfterExtraction;
 
-    private ArrayList<String> archiveParts;
-    private int crackProgress;
-    private int exitCode;
-    private boolean gotInterrupted;
-    private Logger logger;
+    private ArrayList<String>  archiveParts;
+    private int                crackProgress;
+    private int                exitCode;
+    private boolean            gotInterrupted;
+    private Logger             logger;
     private ProgressController progressController;
 
     public UnrarWrapper(DownloadLink link) {
@@ -212,30 +213,23 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     fireEvent(JDUnrarConstants.WRAPPER_CRACK_PASSWORD);
 
                     if (this.isProtected && this.password == null) {
-                        crackPassword();
+                        crackPassword(false);
                         if (password == null) {
                             fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
                             if (password != null) {
                                 this.passwordList.clear();
                                 passwordList.add(password);
                                 password = null;
-                                crackPassword();
+                                crackPassword(true);
                             }
-                            if (password != null) {
-                                fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
-                            }
-
-                        } else {
-                            fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
-
                         }
 
-                        if (password == null) {
-
+                        if (password != null) {
+                            fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
+                        } else {
                             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                             return;
                         }
-
                     } else {
                         fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
                     }
@@ -437,7 +431,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         return true;
     }
 
-    private void crackPassword() {
+    private void crackPassword(boolean useUnsureHits) {
         ArchivFile smallestFile = null;
         ArchivFile biggestFile = null;
         this.crackProgress = 0;
@@ -458,6 +452,15 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     biggestFile = f;
                 }
             }
+        }
+        final int maximumCheckSize = 2097152;
+        final int minimumCheckSize;
+        /* set max minimumCheckSize for signature checks */
+        if (new Regex(biggestFile.getFilepath(), ".+\\.iso").matches()) {
+            /* for iso images we need more data for signature check */
+            minimumCheckSize = 37000;
+        } else {
+            minimumCheckSize = 50;
         }
 
         // File fileFile = new File(this.file.getParentFile(),
@@ -489,7 +492,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         //        
         // fileFile.deleteOnExit();
 
-        if (smallestFile.getSize() < 2097152) {
+        if (smallestFile.getSize() < maximumCheckSize) {
             int c = 0;
 
             for (String pass : this.passwordList) {
@@ -533,92 +536,118 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     this.password = pass;
                     crackProgress = 100;
                     fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-
                     return;
                 } else {
                     continue;
                 }
             }
         } else {
+            final HashMap<String, Signature> unsurePasswords = new HashMap<String, Signature>();
             int c = 0;
             for (String pass : this.passwordList) {
                 crackProgress = ((c++) * 100) / passwordList.size();
+                for (int passTry = 0; passTry < 2; passTry++) {
+                    final int abortAfter;
+                    if (passTry == 0) {
+                        abortAfter = minimumCheckSize;
+                    } else {
+                        abortAfter = minimumCheckSize * 3;
+                    }
+                    fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
+                    Executer exec = new Executer(unrarCommand);
+                    exec.setDebug(DEBUG);
+                    exec.addParameter("p");
+                    // exec.addParameter("-p");
+                    exec.addParameter("-sm" + (biggestFile.getSize() - 1));
 
-                fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-                Executer exec = new Executer(unrarCommand);
-                exec.setDebug(DEBUG);
-                exec.addParameter("p");
-                // exec.addParameter("-p");
-                exec.addParameter("-sm" + (biggestFile.getSize() - 1));
+                    exec.addParameter("-c-");
+                    exec.addParameter("-ierr");
+                    exec.addParameter(this.file.getName());
+                    exec.setRunin(this.file.getParentFile().getAbsolutePath());
+                    exec.setWaitTimeout(-1);
+                    exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
+                    exec.addProcessListener(new ProcessListener() {
 
-                exec.addParameter("-c-");
-                exec.addParameter("-ierr");
-                exec.addParameter(this.file.getName());
-                exec.setRunin(this.file.getParentFile().getAbsolutePath());
-                exec.setWaitTimeout(-1);
-                exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
-                final int abortAfter;
-                if (new Regex(biggestFile.getFilepath(), ".+\\.iso").matches()) {
-                    /* for iso images we need more data */
-                    abortAfter = 37000;
-                } else {
-                    abortAfter = 50;
-                }
-                exec.addProcessListener(new ProcessListener() {
+                        public void onBufferChanged(final Executer exec, DynByteBuffer buffer, int latestNum) {
+                            if (buffer.position() >= abortAfter) {
+                                System.out.println("loaded enough.... interrupt");
+                                exec.interrupt();
 
-                    public void onBufferChanged(final Executer exec, DynByteBuffer buffer, int latestNum) {
-                        if (buffer.position() >= abortAfter) {
-                            System.out.println("loaded enough.... interrupt");
-                            exec.interrupt();
+                            }
+                        }
 
+                        public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
+                        }
+
+                    }, Executer.LISTENER_STDSTREAM);
+                    exec.start();
+                    // Wartet bis der process fertig ist,oder bis er abgebrochen
+                    // wurde
+                    exec.waitTimeout();
+                    String res = exec.getErrorStream();
+                    if (new Regex(res, "(CRC failed|Total errors: )").matches() || res.contains("the file header is corrupt")) {
+                        break;
+                    }
+
+                    StringBuilder sigger = new StringBuilder();
+                    DynByteBuffer buff = exec.getInputStreamBuffer();
+                    buff.flip();
+                    for (int i = 0; i < buff.limit(); i++) {
+                        byte f = buff.get();
+                        String s = Integer.toHexString(f);
+                        s = (s.length() < 2 ? "0" + s : s);
+                        s = s.substring(s.length() - 2);
+                        sigger.append(s);
+                    }
+                    String sig = sigger.toString();
+                    // logger.finest(exec.getInputStreamBuffer() + " : " + sig);
+                    if (sig.trim().length() < 8) break;
+                    Signature signature = FileSignatures.getSignature(sig);
+
+                    if (signature != null) {
+                        int o = 1;
+                        if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(smallestFile.getFilepath()).matches()) {
+                            // signatur und extension passen
+                            if (passTry == 0) {
+                                /*
+                                 * we run again with more bytes to extract to
+                                 * check if pw is really correct
+                                 */
+                                continue;
+                            }
+                            /* valid signature and matching file signature found */
+                            this.password = pass;
+                            crackProgress = 100;
+                            fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
+                            /* stop finding pw for extraction */
+                            return;
+                        } else if (useUnsureHits && signature.getExtensionUnsure() != null && signature.getExtensionUnsure().matcher(smallestFile.getFilepath()).matches()) {
+                            /*
+                             * valid signature found but unsure about the file
+                             * extension, continue to find a signature with
+                             * matching file extension
+                             */
+                            if (passTry == 0) {
+                                /*
+                                 * we run again with more bytes to extract to
+                                 * check if pw is really correct
+                                 */
+                                continue;
+                            }
+                            /*
+                             * valid signature found, but still unsure about
+                             * file extensions, continue search
+                             */
+                            unsurePasswords.put(pass, signature);
+                            break;
                         }
                     }
-
-                    public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
-                    }
-
-                }, Executer.LISTENER_STDSTREAM);
-                exec.start();
-                // Wartet bis der process fertig ist,oder bis er abgebrochen
-                // wurde
-                exec.waitTimeout();
-                String res = exec.getErrorStream();
-                if (new Regex(res, "(CRC failed|Total errors: )").matches() || res.contains("the file header is corrupt")) {
-                    continue;
+                    break;
                 }
-
-                StringBuilder sigger = new StringBuilder();
-                DynByteBuffer buff = exec.getInputStreamBuffer();
-                buff.flip();
-                for (int i = 0; i < buff.limit(); i++) {
-                    byte f = buff.get();
-                    String s = Integer.toHexString(f);
-                    s = (s.length() < 2 ? "0" + s : s);
-                    s = s.substring(s.length() - 2);
-                    sigger.append(s);
-                }
-                String sig = sigger.toString();
-                // logger.finest(exec.getInputStreamBuffer() + " : " + sig);
-                if (sig.trim().length() < 8) continue;
-                Signature signature = FileSignatures.getSignature(sig);
-
-                if (signature != null) {
-                    if (signature.getExtension().matcher(smallestFile.getFilepath()).matches()) {
-                        // signatur und extension passen
-                        this.password = pass;
-                        crackProgress = 100;
-                        fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-                        return;
-                    }
-                }
-
             }
-
         }
-
         crackProgress = 100;
         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-
     }
 
     public int getCrackProgress() {

@@ -150,6 +150,10 @@ public class SingleDownloadController extends Thread {
                         throw e;
                     }
                 }
+            } catch (PluginException e) {               
+                e.fillLinkStatus(downloadLink.getLinkStatus());
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
+                logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
             } catch (UnknownHostException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.nointernetconn", "No Internet connection?"));

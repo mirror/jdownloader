@@ -56,17 +56,19 @@ import jd.plugins.PluginProgress;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Files;
+
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "unrar", interfaceversion = 7)
 public class JDUnrar extends PluginOptional implements UnrarListener, ActionListener {
 
     private static final String DUMMY_HOSTER = "dum.my";
 
-    private MenuAction menuAction = null;
+    private MenuAction          menuAction   = null;
 
     /**
      * Wird als reihe für anstehende extractjobs verwendet
      */
-    private Jobber queue;
+    private Jobber              queue;
 
     public JDUnrar(PluginWrapper wrapper) {
         super(wrapper);
@@ -259,20 +261,22 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
         if (type == JDUnrarConstants.MULTIPART_START_PART) {
             filename = new Regex(link.getFileOutput(), "(?i)(.*)\\.pa?r?t?\\.?[0-9]+.rar$").getMatch(0);
             String partid = new Regex(link.getFileOutput(), "(?i)(.*)\\.(pa?r?t?\\.?)[0-9]+.rar$").getMatch(1);
-            if ((file = new File(filename + "." + partid + "1.rar")).exists()) {
-            } else if ((file = new File(filename + "." + partid + "01.rar")).exists()) {
-            } else if ((file = new File(filename + "." + partid + "001.rar")).exists()) {
-            } else if ((file = new File(filename + "." + partid + "0001.rar")).exists()) {
-            } else if ((file = new File(filename + "." + partid + "000.rar")).exists()) {
+            if ((file = Files.getExistingFile(new File(filename + "." + partid + "1.rar"), false)) != null) {
+            } else if ((file = Files.getExistingFile(new File(filename + "." + partid + "01.rar"), false)) != null) {
+            } else if ((file = Files.getExistingFile(new File(filename + "." + partid + "001.rar"), false)) != null) {
+            } else if ((file = Files.getExistingFile(new File(filename + "." + partid + "0001.rar"), false)) != null) {
+            } else if ((file = Files.getExistingFile(new File(filename + "." + partid + "000.rar"), false)) != null) {
             } else {
                 return null;
             }
         } else if (type == JDUnrarConstants.MULTIPART_START_PART_V2) {
             filename = new Regex(link.getFileOutput(), "(?i)(.*)\\.r(\\d+|ar)$").getMatch(0);
-            if (!(file = new File(filename + ".rar")).exists()) { return null; }
+            if ((file = Files.getExistingFile(new File(filename + ".rar"), false)) == null) return null;
         }
 
         DownloadLink dlink = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
+        /* in case the file has error_alreadyexists only */
+        if (dlink == null) dlink = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.ERROR_ALREADYEXISTS);
         if (dlink == null) {
             /* in case link is already removed */
             /* we create new package with settings of link that calles jdunrar */

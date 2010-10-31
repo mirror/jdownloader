@@ -20,18 +20,27 @@ import java.util.regex.Pattern;
 
 public class Signature {
 
-    private String id;
+    private String  id;
 
     private Pattern signatur;
 
-    private String desc;
+    private String  desc;
 
-    private Pattern extension;
+    private Pattern extensionSure;
+    private Pattern extensionUnsure;
 
     public Signature(String id, String signaturPattern, String desc, String ext) {
         this.id = id;
         this.signatur = signaturPattern != null ? Pattern.compile(signaturPattern, Pattern.CASE_INSENSITIVE) : null;
-        this.extension = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
+        this.extensionSure = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
+        this.desc = desc;
+    }
+
+    public Signature(String id, String signaturPattern, String desc, String ext, String unsureext) {
+        this.id = id;
+        this.signatur = signaturPattern != null ? Pattern.compile(signaturPattern, Pattern.CASE_INSENSITIVE) : null;
+        this.extensionSure = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
+        this.extensionUnsure = ext != null ? Pattern.compile(unsureext, Pattern.CASE_INSENSITIVE) : null;
         this.desc = desc;
     }
 
@@ -39,8 +48,12 @@ public class Signature {
         return desc;
     }
 
-    public Pattern getExtension() {
-        return extension;
+    public Pattern getExtensionSure() {
+        return extensionSure;
+    }
+
+    public Pattern getExtensionUnsure() {
+        return extensionUnsure;
     }
 
     public String getId() {
@@ -59,8 +72,12 @@ public class Signature {
         this.desc = desc;
     }
 
-    public void setExtension(Pattern extension) {
-        this.extension = extension;
+    public void setExtensionSure(Pattern extension) {
+        this.extensionSure = extension;
+    }
+
+    public void setExtensionUnSure(Pattern extension) {
+        this.extensionUnsure = extension;
     }
 
     public void setId(String id) {

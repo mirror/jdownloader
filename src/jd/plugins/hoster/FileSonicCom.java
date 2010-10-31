@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -302,6 +301,8 @@ public class FileSonicCom extends PluginForHost {
                 // 1 chunk because of bug #2478
                 // http://svn.jdownloader.org/issues/2478
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, form, true, 1);
+            } else if (this.br.containsHTML("You can not access this page directly")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 1000l * 10);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

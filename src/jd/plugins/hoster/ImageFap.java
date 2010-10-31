@@ -23,6 +23,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -78,7 +79,7 @@ public class ImageFap extends PluginForHost {
         return "http://imagefap.com/faq.php";
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) {
@@ -115,14 +116,32 @@ public class ImageFap extends PluginForHost {
             } else {
                 downloadLink.setFinalFileName(authorsName + " - " + galleryName + " - " + picture_name);
             }
-            // FilePackage fp = FilePackage.getInstance();
-            // fp.setName(authorsName + " - " + galleryName);
-            // downloadLink.setFilePackage(fp);
+            /* only set filepackage if not set yet */
+            try {
+                if (downloadLink.isDefaultFilePackage()) {
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(authorsName + " - " + galleryName);
+                    downloadLink.setFilePackage(fp);
+                }
+            } catch (Throwable e) {
+                /*
+                 * does not work in stable 0.9580, can be removed with next
+                 * major update
+                 */
+                try {
+                    if (downloadLink.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                        FilePackage fp = FilePackage.getInstance();
+                        fp.setName(authorsName + " - " + galleryName);
+                        downloadLink.setFilePackage(fp);
+                    }
+                } catch (Throwable e2) {
+                }
+            }
             return AvailableStatus.TRUE;
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
