@@ -23,7 +23,6 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -116,9 +115,9 @@ public class ImageFap extends PluginForHost {
             } else {
                 downloadLink.setFinalFileName(authorsName + " - " + galleryName + " - " + picture_name);
             }
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(authorsName + " - " + galleryName);
-            downloadLink.setFilePackage(fp);
+            // FilePackage fp = FilePackage.getInstance();
+            // fp.setName(authorsName + " - " + galleryName);
+            // downloadLink.setFilePackage(fp);
             return AvailableStatus.TRUE;
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);

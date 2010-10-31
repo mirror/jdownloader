@@ -154,7 +154,7 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000);
         if (br.containsHTML("Soubor byl chybně nahrán na server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000);
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
-        if (dllink == null && br.containsHTML("Stahování je přístupné pouze přihlášeným uživatelům")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+        if (dllink == null && br.containsHTML("(Stahování je přístupné pouze přihlášeným uživatelům|class=\"error_div\"><strong>Stahov)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Please contact the support jdownloader.org");
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);

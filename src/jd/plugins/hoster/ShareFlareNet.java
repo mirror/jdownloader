@@ -76,7 +76,10 @@ public class ShareFlareNet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         Form dlform = br.getFormbyProperty("id", "dvifree");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlform == null) {
+            logger.warning("dlform is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.submitForm(dlform);
         String linkframe = null;
         for (int i = 0; i <= 3; i++) {
@@ -90,7 +93,10 @@ public class ShareFlareNet extends PluginForHost {
                     if (capid != null) captchaUrl = "http://letitbit.net/cap.php?jpg=" + capid + ".jpg";
                 }
             }
-            if (captchaform == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaform == null || captchaUrl == null) {
+                logger.warning("captchaform or captchaUrl is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaform.put("cap", code);
             br.submitForm(captchaform);
@@ -116,9 +122,13 @@ public class ShareFlareNet extends PluginForHost {
         br.getPage(NEXTPAGE);
         String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/download[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("the dllink doesn't seem to be a file, following the connection...");
             br.followConnection();
             if (br.containsHTML("title>Error</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

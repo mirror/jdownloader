@@ -131,6 +131,8 @@ public class FileServeCom extends PluginForHost {
             ai.setStatus("Registered (free) User");
         else
             ai.setStatus("Premium User");
+        String expires = br.getRegex("<h4>Premium Until</h4></th> <td><h5>(.*?) EST</h5>").getMatch(0);
+        if(expires != null)ai.setValidUntil(Regex.getMilliSeconds(expires, "dd MMMM yyyy", null));
         account.setValid(true);
         return ai;
     }
@@ -147,13 +149,13 @@ public class FileServeCom extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getResponseCode()==404){
+            if (dl.getConnection().getResponseCode() == 404) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (dl.getConnection().getLongContentLength()==0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 handleErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -230,7 +232,7 @@ public class FileServeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getResponseCode()==404){
+        if (dl.getConnection().getResponseCode() == 404) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

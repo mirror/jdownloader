@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -54,10 +55,24 @@ public class SourceForgeNet extends PluginForDecrypt {
             }
             if (link == null) return null;
             br.setFollowRedirects(false);
-            br.getPage(link);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) return null;
+            br.getPage(Encoding.htmlDecode(link));
+            String finallink = null;
+            boolean failed = true;
+            for (int i = 0; i <= 5; i++) {
+                br.getPage(Encoding.htmlDecode(link));
+                finallink = br.getRedirectLocation();
+                if (finallink == null) return null;
+                con = br.openGetConnection(finallink);
+                if (con.getContentType().contains("html")) {
+                    logger.info("finallink is no file, continuing...");
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) logger.warning("The finallink is no file!!");
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            con.disconnect();
         } else {
             con.disconnect();
             decryptedLinks.add(createDownloadlink("directhttp://" + parameter));

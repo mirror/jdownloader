@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
@@ -105,8 +106,8 @@ public class LetitBitNet extends PluginForHost {
             filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("class=\"first\">File:: <span>(.*?)</span></li>").getMatch(0);
-                if (filename==null){
-                    filename=br.getRegex("title>(.*?) download for free").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("title>(.*?) download for free").getMatch(0);
                 }
             }
         }
@@ -166,7 +167,6 @@ public class LetitBitNet extends PluginForHost {
             }
         }
         /* because there can be another link to a downlodmanager first */
-
         if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         /* we have to wait little because server too buggy */
         sleep(5000, downloadLink);
@@ -253,7 +253,27 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getUrl() {
+    private String getUrl() throws IOException {
+        // This information can only be found before each download so lets set
+        // it here
+        String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
+        String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
+        if (expireDate != null || points != null) {
+            Account aa = AccountController.getInstance().getValidAccount(this);
+            AccountInfo accInfo = new AccountInfo();
+            // 1 point = 1 GB
+            if (points != null) accInfo.setTrafficLeft(Regex.getSize(points.trim() + "GB"));
+            if (expireDate != null) {
+                accInfo.setValidUntil(Regex.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
+            } else {
+                expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
+                accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
+            }
+            aa.setAccountInfo(accInfo);
+        }
+        String iFrame = br.getRegex("<iframe src=\"(/sms/.*?)\"").getMatch(0);
+        if (iFrame == null) iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=[0-9_]+\\&emergency_mode=)\"").getMatch(0);
+        if (iFrame != null) br.getPage("http://letitbit.net" + iFrame);
         String url = br.getRegex("(http://[^/;(images) ]*?/download.*?/[^/; ]+?)(\"|')[^(Download Master)]*?(http://[^/; ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(2);
         if (url == null) {
             url = br.getRegex("(http://[^/;(images) ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(0);
