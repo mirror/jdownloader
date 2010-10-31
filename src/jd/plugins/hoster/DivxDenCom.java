@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://[\\w\\.]*?divxden\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://[\\w\\.]*?(divxden|vidxden)\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class DivxDenCom extends PluginForHost {
 
     public DivxDenCom(PluginWrapper wrapper) {
@@ -42,10 +42,14 @@ public class DivxDenCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private String brbefore = "";
-    private static final String COOKIE_HOST = "http://divxden.com";
-    public boolean nopremium = false;
+    private String              brbefore      = "";
+    private static final String COOKIE_HOST   = "http://vidxden.com";
+    public boolean              nopremium     = false;
     private static final String INMAINTENANCE = ">This server is in maintenance mode, please try again later.<";
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("divxden.com", "vidxden.com"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
