@@ -35,7 +35,7 @@ public class EmpFlixCom extends PluginForHost {
         super(wrapper);
     }
 
-    private String dllink = null;
+    private String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -50,9 +50,9 @@ public class EmpFlixCom extends PluginForHost {
         if (br.containsHTML("This video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?), Free Streaming Porn</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"leftSideView\">.*?<div class=\"line\">.*?<h2>(.*?)</h2>").getMatch(0);
-        dllink = br.getRegex("class=\"linkRight\">.*?<span class=\"icon iconDownload\"><img src=\"images/blank\\.gif\"></span>.*?<a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://cdn\\.empflix\\.com/empdl/.*?/.*?key=[a-z0-9]+)\"").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = br.getRegex("class=\"linkRight\">.*?<span class=\"icon iconDownload\"><img src=\"images/blank\\.gif\"></span>.*?<a href=\"(http.*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\.empflix\\.com/empdl/.*?/.*?key=[a-z0-9]+)\"").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
         Browser br2 = br.cloneBrowser();
@@ -60,7 +60,7 @@ public class EmpFlixCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html"))
                 downloadLink.setDownloadSize(con.getLongContentLength());
             else
@@ -77,7 +77,7 @@ public class EmpFlixCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
