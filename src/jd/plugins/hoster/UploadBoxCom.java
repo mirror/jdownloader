@@ -164,7 +164,10 @@ public class UploadBoxCom extends PluginForHost {
             }
         }
         br.setDebug(true);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

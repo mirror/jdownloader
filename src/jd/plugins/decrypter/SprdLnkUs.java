@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -42,20 +43,37 @@ public class SprdLnkUs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
+        if (br.containsHTML("loading\\.gif\\' alt=\\'Lade\\'")) {
+            logger.info("Sleeping...");
+            sleep(3 * 1000l, param);
+            br.getPage(parameter);
+        }
         if (br.containsHTML("Dir fehlt die Berechtigung für diesen Link")) {
             logger.warning("The link " + parameter + " is blocked through a referer protection and can't be accessed!");
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
         if (br.containsHTML(">Dieser Link exestiert nicht")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        Regex theData = br.getRegex("secToW\\('(\\d+)', '([a-z0-9]+)', '(.*?)', '(\\d+)'\\);");
-        String waittime = theData.getMatch(0);
-        String linkid = theData.getMatch(1);
-        String passwordOrNot = theData.getMatch(2);
-        String captchaOrNot = theData.getMatch(3);
-        if (waittime == null || linkid == null || passwordOrNot == null || captchaOrNot == null) return null;
-        handleCaptchaAndPassword(linkid, passwordOrNot, captchaOrNot, param);
-        String finallink = br.getRegex("location\\.href='(.*?)';").getMatch(0);
+        String finallink = null;
+        if (br.containsHTML("/> Du wirst weitergeleitet in:")) {
+            logger.info("Found Weiterleitungslink");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            String theID = new Regex(parameter, "spreadlink\\.us/([a-z0-9]+)").getMatch(0);
+            if (theID == null) return null;
+            br.getPage("http://spreadlink.us/index.php?request=datei&datei=weiterleitung&link=" + theID + "&action=1");
+        } else {
+            logger.info("Found captcha- or passwordlink");
+            System.out.print(br.toString());
+            Regex theData = br.getRegex("secToW\\('(\\d+)', '([a-z0-9]+)', '(.*?)', '(\\d+)'\\);");
+            String waittime = theData.getMatch(0);
+            String linkid = theData.getMatch(1);
+            String passwordOrNot = theData.getMatch(2);
+            String captchaOrNot = theData.getMatch(3);
+            if (waittime == null || linkid == null || passwordOrNot == null || captchaOrNot == null) return null;
+            handleCaptchaAndPassword(linkid, passwordOrNot, captchaOrNot, param);
+        }
+        finallink = br.getRegex("location\\.href='(.*?)';").getMatch(0);
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));
 

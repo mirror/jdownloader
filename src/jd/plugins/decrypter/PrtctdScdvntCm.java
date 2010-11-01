@@ -48,14 +48,15 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://protected.socadvnet.com/index.php")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        if (!br.containsHTML("plugin/cp\\.swf")) return null;
+//        if (!br.containsHTML("plugin/cp\\.swf")) return null;
         br.postPage("http://protected.socadvnet.com/allinks.php", "LinkName=" + postvar);
         String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:eopp)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) return null;
         int linkCounter = linksCount.length;
         for (int i = 0; i <= 3; i++) {
             String equals = getCaptchaCode("http://protected.socadvnet.com/plugin/cppp.php", param);
-            br.postPage("http://protected.socadvnet.com/cpcode.php", "res_code=" + equals);
+            br.postPage("http://protected.socadvnet.com/colde.php", "res_code=" + equals);
+            System.out.print(br.toString());
             if (!br.toString().trim().equals("1") && !br.toString().trim().equals("0")) {
                 logger.warning("Error in doing the maths for link: " + parameter);
                 return null;

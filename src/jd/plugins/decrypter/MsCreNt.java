@@ -33,7 +33,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://[\\w\\.]*?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|\\?id=.*?\\&url=[a-zA-Z0-9=+/\\-]+)" }, flags = { 0 })
+//                                                                                                                                                           http://r.musicore.net/url.php?id=Mjc3OTA3&url=1RUS/4AmMgdbEyXRHmrtkxdanY/l0seIFbgVB/vt6hyqWHNAYNukIUe7kDjXyej+FaUKdTonRXhttwwVgcj/CUuAmZw+1zePRUKEnzrWuO1XjXjQEOci+XxMjMUeG1y9
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://[\\w\\.]*?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|\\?id=.*?\\&url=[a-zA-Z0-9=+/\\-]+|url\\.php\\?id=\\w+\\&url=[A-Za-z0-9/\\+]+)" }, flags = { 0 })
 public class MsCreNt extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -49,7 +50,7 @@ public class MsCreNt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        parameter = parameter.replace("amp;", "");
+        parameter = Encoding.htmlDecode(parameter);
         br.setCookiesExclusive(true);
         synchronized (LOCK) {
             if (!getUserLogin(parameter)) return null;
@@ -60,7 +61,7 @@ public class MsCreNt extends PluginForDecrypt {
                 if (br.containsHTML("(An error occurred|We're sorry for the inconvenience)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
                 String finallink = br.getRedirectLocation();
                 if (finallink == null) {
-                    logger.warning("finallink from the following link had to be regexes and could not be found by the direct redirect: " + parameter);
+                    logger.warning("finallink from the following link had to be regexed and could not be found by the direct redirect: " + parameter);
                     finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
                 }
                 if (finallink == null) {
