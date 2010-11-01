@@ -57,6 +57,16 @@ public class IfolderRu extends PluginForHost {
         this.setBrowserExclusive();
         prepareBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            String fileID = new Regex(downloadLink.getDownloadURL(), "ifolder\\.ru/(.+)").getMatch(0);
+            if (!br.getRedirectLocation().contains(fileID)) {
+                logger.warning("The redirect location doesn't contain the fileID, stopping...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Setting new downloadUrl...");
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            br.getPage(downloadLink.getDownloadURL());
+        }
         if (br.containsHTML("<p>Файл номер <b>\\d+</b> удален !!!</p>") || br.containsHTML("<p>Файл номер <b>\\d+</b> не найден !!!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("Название:.*?<b>(.*?)</b>").getMatch(0);
