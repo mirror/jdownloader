@@ -65,7 +65,7 @@ public class SprdLnkUs extends PluginForDecrypt {
         } else {
             logger.info("Found captcha- or passwordlink");
             System.out.print(br.toString());
-            Regex theData = br.getRegex("secToW\\('(\\d+)', '([a-z0-9]+)', '(.*?)', '(\\d+)'\\);");
+            Regex theData = br.getRegex("secToW\\(\\'(\\d+)\\', \\'([a-z0-9]+)\\', \\'(.*?)\\', \\'(\\d+)\\'\\);");
             String waittime = theData.getMatch(0);
             String linkid = theData.getMatch(1);
             String passwordOrNot = theData.getMatch(2);

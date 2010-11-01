@@ -33,7 +33,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-//                                                                                                                                                           http://r.musicore.net/url.php?id=Mjc3OTA3&url=1RUS/4AmMgdbEyXRHmrtkxdanY/l0seIFbgVB/vt6hyqWHNAYNukIUe7kDjXyej+FaUKdTonRXhttwwVgcj/CUuAmZw+1zePRUKEnzrWuO1XjXjQEOci+XxMjMUeG1y9
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://[\\w\\.]*?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|\\?id=.*?\\&url=[a-zA-Z0-9=+/\\-]+|url\\.php\\?id=\\w+\\&url=[A-Za-z0-9/\\+]+)" }, flags = { 0 })
 public class MsCreNt extends PluginForDecrypt {
 
