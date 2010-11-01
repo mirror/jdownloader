@@ -188,7 +188,9 @@ public class FileSonicCom extends PluginForHost {
         }
         this.br.setFollowRedirects(true);
         // download is ready already
-        downloadUrl = this.br.getRegex("<p><a href=\"(http://.*?\\.filesonic.com.*?)\"><span>Start download now!</span></a></p>").getMatch(0);
+        String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.com[^<]*?)\"><span>Start download now!</span></a></p>";
+
+        downloadUrl = this.br.getRegex(re).getMatch(0);
         if (downloadUrl == null) {
             this.errorHandling(downloadLink);
             // downloadUrl =
@@ -237,7 +239,7 @@ public class FileSonicCom extends PluginForHost {
                 this.br.submitForm(form);
 
             }
-            downloadUrl = this.br.getRegex("<p><a href=\"(http://.*?\\.filesonic.com.*?)\"><span>Start download now!</span></a></p>").getMatch(0);
+            downloadUrl = this.br.getRegex(re).getMatch(0);
         }
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /*
