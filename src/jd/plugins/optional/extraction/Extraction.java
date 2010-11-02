@@ -236,6 +236,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         
         archive.setActive(true);
 
+        controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
         queue.add(controller);
         queue.start();
 
@@ -544,6 +545,10 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         }
 
         switch (id) {
+        case ExtractionConstants.WRAPPER_STARTED:
+            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));
+            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
+            break;
         case ExtractionConstants.INVALID_BINARY:
             logger.severe("Invalid unrar binary!");
             this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_UNRARCOMMAND, null);
@@ -603,7 +608,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         case ExtractionConstants.WRAPPER_PASSWORT_CRACKING:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
             if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
-                controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getCrackProgress(), 100, Color.GREEN.darker()));
+                controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getCrackProgress(), controller.getPasswordList().size(), Color.GREEN.darker()));
             } else {
                 controller.getArchiv().getFirstDownloadLink().getPluginProgress().setCurrent(controller.getCrackProgress());
             }
@@ -721,6 +726,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         ProgressController pc = controller.getProgressController();
         // int min;
         switch (id) {
+        case ExtractionConstants.WRAPPER_STARTED:
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));
+            break;
         case ExtractionConstants.INVALID_BINARY:
             logger.severe("Invalid unrar binary!");
             this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_UNRARCOMMAND, null);
@@ -752,7 +760,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             break;
         case ExtractionConstants.WRAPPER_PASSWORT_CRACKING:
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
-            pc.setRange(100);
+            pc.setRange(controller.getPasswordList().size());
             pc.setStatus(controller.getCrackProgress());
             break;
         case ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE:

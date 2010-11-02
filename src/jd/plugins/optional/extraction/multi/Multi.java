@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.optional.extraction.Archive;
+import jd.plugins.optional.extraction.ExtractionConstants;
 import jd.plugins.optional.extraction.ExtractionController;
 import jd.plugins.optional.extraction.ExtractionControllerConstants;
 import jd.plugins.optional.extraction.IExtraction;
@@ -126,6 +127,9 @@ public class Multi implements IExtraction {
     public void crackPassword() {
         for(String pw : con.getPasswordList()) {
             if(pw == null) continue;
+            
+            con.fireEvent(ExtractionConstants.WRAPPER_PASSWORT_CRACKING);
+            crack++;
             
             try {
                 if(archive.getType() == Archive.SINGLE_FILE) {

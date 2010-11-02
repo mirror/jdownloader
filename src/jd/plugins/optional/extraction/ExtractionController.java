@@ -114,7 +114,6 @@ public class ExtractionController extends Thread implements JDRunnable {
     @Override
     public void run() {
         try {
-            fireEvent(ExtractionConstants.WRAPPER_STARTED);
             fireEvent(ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE);
             if (extractor.prepare()) {
                 if(!checkSize()) {
