@@ -45,13 +45,24 @@ public class VideoWeedCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("name=\"title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("videoweed\\.com/file/[a-z0-9]+\\&title=(.*?)\\+-\\+VideoWeed\\.com\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("videoweed\\.com/file/[a-z0-9]+\\&title=(.*?)\\+-\\+VideoWeed\\.com\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<td><strong>Title: </strong>(.*?)</td>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<td width=\"580\">[\t\n\r ]+<div class=\"div_titlu\">(.*?) - <a").getMatch(0);
+                }
+            }
+        }
         dllink = br.getRegex("s1\\.addVariable\\(\"file\",\"(.*?)\"\\);").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?videoweed\\.com/stream/.*?\\.flv)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(www\\.)?videoweed\\.com/stream/.*?\\.flv)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?n\\d+\\.epornik\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"").getMatch(0);
+        }
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");

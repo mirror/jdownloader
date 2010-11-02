@@ -38,7 +38,8 @@ public class NovaUpMovcom extends PluginForHost {
         return "http://novamov.com/terms.html";
     }
 
-    private String VIDEOREGEX = "\"file\",\"(.*?)\"";
+    private static final String VIDEOREGEX  = "flashvars\\.file=\"(http.*?)\"";
+    private static final String VIDEOREGEX2 = "\"(http://s\\d+\\.novamov\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"";
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
@@ -50,6 +51,7 @@ public class NovaUpMovcom extends PluginForHost {
         // Handling für Videolinks
         if (link.getDownloadURL().contains("video")) {
             dllink = br.getRegex(VIDEOREGEX).getMatch(0);
+            if (dllink == null) dllink = br.getRegex(VIDEOREGEX2).getMatch(0);
         } else {
             // handling für "nicht"-video Links
             dllink = br.getRegex("class= \"click_download\"><a href=\"(http://.*?)\"").getMatch(0);
@@ -74,6 +76,7 @@ public class NovaUpMovcom extends PluginForHost {
         // onlinecheck für Videolinks
         if (parameter.getDownloadURL().contains("video")) {
             String dllink = br.getRegex(VIDEOREGEX).getMatch(0);
+            if (dllink == null) dllink = br.getRegex(VIDEOREGEX2).getMatch(0);
             String filename = br.getRegex("<h3>(.*?)</h3").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);

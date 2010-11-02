@@ -41,7 +41,8 @@ public class ShareFlareNet extends PluginForHost {
         enablePremium("http://shareflare.net/page/premium.php");
     }
 
-    private static final String NEXTPAGE = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
+    private static final String NEXTPAGE      = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
+    private static final String LINKFRAMEPART = "tmpl/tmpl_frame_top\\.php\\?link=";
 
     @Override
     public String getAGBLink() {
@@ -74,6 +75,7 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         br.setFollowRedirects(false);
         Form dlform = br.getFormbyProperty("id", "dvifree");
         if (dlform == null) {
@@ -81,18 +83,10 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(dlform);
-        String linkframe = null;
         for (int i = 0; i <= 3; i++) {
             br.setFollowRedirects(false);
             Form captchaform = br.getFormbyProperty("id", "dvifree");
-            String captchaUrl = br.getRegex("<div class=\"cont c2\" align=\"center\">.*?<img src='(http.*?)'").getMatch(0);
-            if (captchaUrl == null) {
-                captchaUrl = br.getRegex("('|\")(http://letitbit\\.net/cap\\.php\\?jpg=.*?\\.jpg)('|\")").getMatch(1);
-                if (captchaUrl == null) {
-                    String capid = br.getRegex("name=\"(uid2|uid)\" value=\"(.*?)\"").getMatch(1);
-                    if (capid != null) captchaUrl = "http://letitbit.net/cap.php?jpg=" + capid + ".jpg";
-                }
-            }
+            String captchaUrl = getCaptchaUrl();
             if (captchaform == null || captchaUrl == null) {
                 logger.warning("captchaform or captchaUrl is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -100,17 +94,14 @@ public class ShareFlareNet extends PluginForHost {
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaform.put("cap", code);
             br.submitForm(captchaform);
-            linkframe = br.getRegex("<frame src=\"(.*?)\"").getMatch(0);
-            if (linkframe == null) linkframe = br.getRegex("\"(http://s[0-9]+\\.shareflare\\.net/tmpl/tmpl_frame_top\\.php\\?link=)\"").getMatch(0);
-            if (linkframe == null) {
-                // Get back to the previous page
-                br.submitForm(dlform);
-                continue;
+            if (getCaptchaUrl() != null) continue;
+            if (!br.containsHTML(LINKFRAMEPART)) {
+                logger.warning("Browser doesn't contain the LINKFRAMEPART string, stopping...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             break;
         }
-        if (linkframe == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        br.getPage(linkframe);
+        if (getCaptchaUrl() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(NEXTPAGE);
         String wait = br.getRegex("y =.*?(\\d+);").getMatch(0);
         int tt = 60;
@@ -164,6 +155,18 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getCaptchaUrl() {
+        String captchaUrl = br.getRegex("<div class=\"cont c2\" align=\"center\">.*?<img src=\\'(http.*?)\\'").getMatch(0);
+        if (captchaUrl == null) {
+            captchaUrl = br.getRegex("('|\")(http://letitbit\\.net/cap\\.php\\?jpg=.*?\\.jpg)('|\")").getMatch(1);
+            if (captchaUrl == null) {
+                String capid = br.getRegex("name=\"(uid2|uid)\" value=\"(.*?)\"").getMatch(1);
+                if (capid != null) captchaUrl = "http://letitbit.net/cap.php?jpg=" + capid + ".jpg";
+            }
+        }
+        return captchaUrl;
     }
 
     @Override

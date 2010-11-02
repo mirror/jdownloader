@@ -59,6 +59,7 @@ public class SoundcloudCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim().replace("&amp; ", "");
         String type = br.getRegex("title=\"Uploaded format\">(.*?)<").getMatch(0);
+        if (type == null) type = br.getRegex("class=\"file-type\">(.*?)</span>").getMatch(0);
         if (type == null) type = "mp3";
         filename += "." + type;
         if (!br.containsHTML("class=\"download pl-button\"")) {
