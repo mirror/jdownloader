@@ -81,5 +81,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/trident.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.8.2.jar" sourcepath="ressourcen/code-ressourcen/junit-4.8.2-src.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding-AllPlatforms.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

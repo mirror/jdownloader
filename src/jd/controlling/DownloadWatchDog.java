@@ -663,23 +663,19 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             if (entry instanceof DownloadLink) {
                 stopMark.setSelected(true);
                 stopMark.setEnabled(true);
-                stopMark.setIcon("gui.images.stopmark.enabled");
                 stopMark.setToolTipText(JDL.LF(DownloadWatchDog.JDL_PREFIX + "stopmark.downloadlink", "Stopmark is set on Downloadlink: %s", ((DownloadLink) entry).getName()));
                 DownloadController.getInstance().fireDownloadLinkUpdate(entry);
             } else if (entry instanceof FilePackage) {
                 stopMark.setSelected(true);
                 stopMark.setEnabled(true);
-                stopMark.setIcon("gui.images.stopmark.enabled");
                 stopMark.setToolTipText(JDL.LF(DownloadWatchDog.JDL_PREFIX + "stopmark.filepackage", "Stopmark is set on Filepackage: %s", ((FilePackage) entry).getName()));
                 DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) entry).get(0));
             } else if (entry == DownloadWatchDog.hiddenstopMark) {
                 stopMark.setSelected(true);
                 stopMark.setEnabled(true);
-                stopMark.setIcon("gui.images.stopmark.enabled");
                 stopMark.setToolTipText(JDL.L(DownloadWatchDog.JDL_PREFIX + "stopmark.set", "Stopmark is still set!"));
             } else if (entry == DownloadWatchDog.nostopMark) {
                 stopMark.setSelected(false);
-                stopMark.setIcon("gui.images.stopmark.disabled");
                 stopMark.setToolTipText(JDL.L("jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
             }
         }
@@ -839,7 +835,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                                      * plugins that allow resume
                                                      * and parallel downloads
                                                      */
-                                                    waitingNewIP=true;
+                                                    waitingNewIP = true;
                                                     IPController.getInstance().invalidate();
                                                 }
                                                 updates.add(link);
@@ -866,7 +862,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                                  * plugins that allow resume and
                                                  * parallel downloads
                                                  */
-                                                waitingNewIP=true;
+                                                waitingNewIP = true;
                                                 IPController.getInstance().invalidate();
                                             }
                                             updates.add(link);
