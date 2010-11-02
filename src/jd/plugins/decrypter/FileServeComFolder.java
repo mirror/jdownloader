@@ -39,7 +39,7 @@ public class FileServeComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">Total file size: 0 Bytes<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(>Total file size: 0 Bytes<|Fileserve - 404 - Page not found|<h4>The file or page you tried to access is no longer accessible)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<h1>Viewing public folder (.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("\"(/file/[a-zA-Z0-9]+)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
