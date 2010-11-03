@@ -36,6 +36,7 @@ SetCompressor lzma
 !define VERSION2 1.0.0.0
 
 # Just don't edit below this line.
+InstallDir "$PROGRAMFILES\${APPNAME_SHORT}" #Necessary for correct append behaviour on user selection
 !define INSTDIR_USER "$PROFILE\${APPNAME_SHORT}"
 !define INSTDIR_ADMIN "$PROGRAMFILES\${APPNAME_SHORT}"
 !define REGKEY "Software\${APPNAME_SHORT}"
@@ -50,7 +51,7 @@ SetCompressor lzma
 # Java Check
 !define JRE_VERSION "1.6"
 !define JRE_SILENT 0
-!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=39502"
+!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=42746"
 
 # Included files
 !AddPluginDir plugins
@@ -70,7 +71,8 @@ Var ADMINATINSTALL
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE ${LICENSE}
 #!insertmacro MUI_PAGE_COMPONENTS
-!insertmacro MUI_PAGE_DIRECTORY
+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE dirLeave
+!insertmacro MUI_PAGE_DIRECTORY 
 !insertmacro CUSTOM_PAGE_JREINFO
 !insertmacro ADVERTISING_PAGE  
 !insertmacro MUI_PAGE_INSTFILES

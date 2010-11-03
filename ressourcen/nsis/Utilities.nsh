@@ -82,8 +82,57 @@ done${UNSECTION_ID}:
         ${EndIf}
     ${EndIf}
     UninstDirFound:
+    !insertmacro evilDirCheck 
+    
 !macroend
 ###
+
+!macro evilDirCheck
+    #According to http://nsis.sourceforge.net/Validating_$INSTDIR_before_uninstall
+    #Check a huge bunch of NSIS variables, also.
+    StrCpy $R0 $INSTDIR ""
+    StrCmp $R0 $APPDATA evilDirCheck_bad
+    StrCmp $R0 $COMMONFILES evilDirCheck_bad
+    StrCmp $R0 $COMMONFILES32 evilDirCheck_bad
+    StrCmp $R0 $COMMONFILES64 evilDirCheck_bad
+    StrCmp $R0 $DESKTOP evilDirCheck_bad
+    StrCmp $R0 $DOCUMENTS evilDirCheck_bad
+    StrCmp $R0 $LOCALAPPDATA evilDirCheck_bad
+    StrCmp $R0 $MUSIC evilDirCheck_bad
+    StrCmp $R0 $PICTURES evilDirCheck_bad
+    StrCmp $R0 $PROFILE evilDirCheck_bad
+    StrCmp $R0 $PROGRAMFILES evilDirCheck_bad
+    StrCmp $R0 $PROGRAMFILES32 evilDirCheck_bad
+    StrCmp $R0 $PROGRAMFILES64 evilDirCheck_bad
+    StrCmp $R0 $SYSDIR evilDirCheck_bad
+    StrCmp $R0 $VIDEOS evilDirCheck_bad    
+    StrCmp $R0 $WINDIR evilDirCheck_bad   
+    StrCmp $R0 "" evilDirCheck_bad
+    StrCpy $R0 $INSTDIR "" -2
+    StrCmp $R0 ":\" evilDirCheck_bad
+    StrCpy $R0 $INSTDIR "" -14
+    StrCmp $R0 "\Program Files" evilDirCheck_bad
+    StrCpy $R0 $INSTDIR "" -8
+    StrCmp $R0 "\Windows" evilDirCheck_bad
+    StrCpy $R0 $INSTDIR "" -6
+    StrCmp $R0 "\WinNT" evilDirCheck_bad
+    StrCpy $R0 $INSTDIR "" -9
+    StrCmp $R0 "\system32" evilDirCheck_bad
+    StrCpy $R0 $INSTDIR "" -8
+    StrCmp $R0 "\Desktop" evilDirCheck_bad
+    StrCpy $R0 $INSTDIR "" -22
+    StrCmp $R0 "\Documents and Settings" evilDirCheck_bad
+    StrCpy $R0 $INSTDIR "" -13
+    StrCmp $R0 "\My Documents" evilDirCheck_bad evilDirCheck_done
+    evilDirCheck_bad:
+      MessageBox MB_OK|MB_ICONSTOP "Install path invalid!"
+      Abort
+    evilDirCheck_done:
+!macroend
+
+Function dirLeave
+    !insertmacro evilDirCheck
+FunctionEnd
 
 ###This function removes a dir recursively except one of its subdirs
 Function un.RmButOne
