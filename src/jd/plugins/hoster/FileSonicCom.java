@@ -75,11 +75,11 @@ public class FileSonicCom extends PluginForHost {
     private void errorHandling(final DownloadLink downloadLink) throws PluginException {
         if (this.br.containsHTML("Free user can not download files")) {
             //
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Free user can not download files over 400MB");
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.largefree", "Free user can not download files over 400MB"));
         }
         if (this.br.containsHTML("Download session in progress")) {
             //
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.inprogress", "Download session in progress"), 10 * 60 * 1000l);
         }
         if (this.br.containsHTML("This file is password protected")) {
             downloadLink.setProperty("pass", null);
@@ -88,7 +88,7 @@ public class FileSonicCom extends PluginForHost {
         if (this.br.containsHTML("An Error Occurred")) {
 
             //
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 20 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesonic.servererror", "Server error"), 20 * 60 * 1000l);
         }
     }
 
@@ -172,20 +172,28 @@ public class FileSonicCom extends PluginForHost {
         if (br.containsHTML("The file that you're trying to download is larger than")) {
             String size = br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
             if (size != null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only premium users can download files larger than " + size.trim() + ".");
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.filesonic.onlypremiumsize",
+                        "Only premium users can download files larger than %s.", size.trim()));
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.onlypremium",
+                        "Only downloadable for premium users!"));
             }
         }
         this.removeComments();
-
-        if (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>")) {
+        if (br.containsHTML("Free users may only download 1 file at a time"))
+        {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,
+                    JDL.L("plugins.hoster.filesonic.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l);
+        }
+        
+        /* Cancel seem no longer usable
+           if (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>")) {
             Plugin.logger.info("Cancel running filesonic downloads");
             this.br.getPage("http://www.filesonic.com/file/" + id + "?cancelDownload=1&start=1");
             // this.br.postPage("http://www.filesonic.com/file/" + id +
             // "?start=1", "");
             this.removeComments();
-        }
+        }*/
         this.br.setFollowRedirects(true);
         // download is ready already
         String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.com[^<]*?)\"><span>Start download now!</span></a></p>";
