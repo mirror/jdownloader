@@ -31,6 +31,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/\\d+/.+|(divx|play)/[A-Z0-9\\.-]+|[a-zA-Z0-9\\.]+)" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
 
+    private static final String MAINPAGE = "http://duckload.com/";
+
     public DuckLoad(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(3000l);
@@ -41,8 +43,6 @@ public class DuckLoad extends PluginForHost {
         return "http://duckload.com/impressum.html";
     }
 
-    private static final String MAINPAGE = "http://duckload.com/";
-     
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -56,7 +56,7 @@ public class DuckLoad extends PluginForHost {
         link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -106,6 +106,7 @@ public class DuckLoad extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.getURL() != null && br.getURL().contains("/error/") || br.containsHTML("ErrorCode: e983")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.getRequest().getUrl().toString().contentEquals("http://" + br.getHost() + "/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Redirect error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -121,7 +122,6 @@ public class DuckLoad extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
-
 }
