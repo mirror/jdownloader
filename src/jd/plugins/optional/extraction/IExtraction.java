@@ -30,9 +30,12 @@ public interface IExtraction {
     public Archive buildDummyArchive(String file);
     
     /**
-     * Starts the password cracking.
+     * Checks a single password if the archive is encrypted with it.
+     * 
+     * @param password The password.
+     * @return True if the password is correct.
      */
-    public void crackPassword();
+    public boolean findPassword(String password);
     
     /**
      * Starts the extraction of an {@link Archive}.

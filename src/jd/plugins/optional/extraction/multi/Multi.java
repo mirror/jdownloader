@@ -124,55 +124,53 @@ public class Multi implements IExtraction {
         return buildArchive(link);
     }
 
-    public void crackPassword() {
-        for(String pw : con.getPasswordList()) {
-            if(pw == null) continue;
+    public boolean findPassword(String password) {
+        crack++;
+        con.fireEvent(ExtractionConstants.WRAPPER_PASSWORT_CRACKING);
+        
+        try {
+            if(archive.getType() == Archive.SINGLE_FILE) {
+                inArchive = SevenZip.openInArchive(null, new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r")), password);
+            } else if(archive.getType() == Archive.MULTI) {
+                MultiOpener multiopener = new MultiOpener(password);
+                inArchive = SevenZip.openInArchive(null, new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener));
+            } else if(archive.getType() == Archive.MULTI_RAR) {
+                RarOpener raropener = new RarOpener(password);
+                IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());
+                inArchive = SevenZip.openInArchive(null, inStream, raropener);
+            } 
             
-            con.fireEvent(ExtractionConstants.WRAPPER_PASSWORT_CRACKING);
-            crack++;
-            
-            try {
-                if(archive.getType() == Archive.SINGLE_FILE) {
-                    inArchive = SevenZip.openInArchive(null, new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r")), pw);
-                } else if(archive.getType() == Archive.MULTI) {
-                    MultiOpener multiopener = new MultiOpener();
-                    inArchive = SevenZip.openInArchive(null, new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener));
-                } else if(archive.getType() == Archive.MULTI_RAR) {
-                    RarOpener raropener = new RarOpener();
-                    IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());
-                    inArchive = SevenZip.openInArchive(null, inStream, raropener);
-                } 
-                
-                long size = 0;
-                final BooleanHelper passwordfound = new BooleanHelper();
-                for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
-                    size += item.getSize();
-                    if(!passwordfound.getBoolean()) {
-                        try {
-                            item.extractSlow(new ISequentialOutStream() {
-                                public int write(byte[] data) throws SevenZipException {
-                                    passwordfound.found();
-                                    return 0;
-                                }
-                            }, pw);
-                        } catch (SevenZipException e) {
-                            //An error will be thrown if the write method returns 0.
-                            //It's not a problem, because it only signals the a password was accepted.
-                        }
+            long size = 0;
+            final BooleanHelper passwordfound = new BooleanHelper();
+            for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
+                size += item.getSize();
+                if(!passwordfound.getBoolean()) {
+                    try {
+                        item.extractSlow(new ISequentialOutStream() {
+                            public int write(byte[] data) throws SevenZipException {
+                                passwordfound.found();
+                                return 0;
+                            }
+                        }, password);
+                    } catch (SevenZipException e) {
+                        //An error will be thrown if the write method returns 0.
+                        //It's not a problem, because it only signals the a password was accepted.
                     }
                 }
-                
-                if(!passwordfound.getBoolean()) continue;
-                
-                archive.setSize(size);
-                
-                archive.setPassword(pw);
-                return;
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (SevenZipException e) {
-                e.printStackTrace();
             }
+            
+            if(!passwordfound.getBoolean()) return false;
+            
+            archive.setSize(size);
+            
+            archive.setPassword(password);
+            return true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        } catch (SevenZipException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 

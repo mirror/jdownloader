@@ -26,6 +26,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.nutils.jobber.JDRunnable;
 import jd.plugins.DownloadLink;
+import jd.plugins.optional.jdunrar.JDUnrarConstants;
 import jd.utils.locale.JDL;
 
 /**
@@ -124,13 +125,23 @@ public class ExtractionController extends Thread implements JDRunnable {
                 if (archive.isProtected() && archive.getPassword().equals("")) {
                     fireEvent(ExtractionConstants.WRAPPER_CRACK_PASSWORD);
 
-                    extractor.crackPassword();
-                    if (archive.getPassword().equals("")) {
-                        fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
-                        return;
-                    } else {
-                        fireEvent(ExtractionConstants.WRAPPER_PASSWORD_FOUND);
+                    for(String password : passwordList) {
+                        if(password == null || password.equals("")) continue;
+                        
+                        if(extractor.findPassword(password)) {
+                            break;
+                        }
                     }
+                    if (archive.getPassword().equals("")) {
+                        fireEvent(ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
+                        
+                        if(!extractor.findPassword(archive.getPassword())) {
+                            fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                            return;
+                        }
+                    }
+                    
+                    fireEvent(ExtractionConstants.WRAPPER_PASSWORD_FOUND);
                 }
                 fireEvent(ExtractionConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS);
                 

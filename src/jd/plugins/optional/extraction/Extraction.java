@@ -449,7 +449,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
     @Override
     public boolean initAddon() {
-        if (menuAction == null) menuAction = new MenuAction("optional.extraction.menu.extract.singlefils", "gui.images.addons.unrar") {
+        if (menuAction == null) menuAction = new MenuAction("optional.extraction.menu.extract.singlefiles", "gui.images.addons.unrar") {
             private static final long serialVersionUID = -7569522709162921624L;
 
             @Override
@@ -477,7 +477,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     public String getDescription() {
                         return JDL.L("plugins.optional.extraction.filefilter", "All supported formats");
                     }
-
                 };
 
                 File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, null, ff, true, null, null);
