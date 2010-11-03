@@ -1214,7 +1214,6 @@ plugins.hoster.fileflyercom.errors.only4premium = Only available for premium use
 plugins.hoster.filehosterru.errors.hostertemporaryunavailable = This hoster is temporary not available!
 plugins.hoster.filernet.errors.nofreeslots = No free slots available, retry later
 plugins.hoster.filesmailru.inprocess = File still being uploaded
-plugins.hoster.filesmonstercom.maintenance = Maintenance
 plugins.hoster.filesmonstercom.noslotwaittime = Wait if no free slots are available (sec)
 plugins.hoster.freaksharenet.waitinsteadofreconnect = Wait 10 minutes instead of reconnecting
 plugins.hoster.fsxhu.waiting = %s users in queue, 
