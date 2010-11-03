@@ -156,6 +156,8 @@ public class UploadBoxCom extends PluginForHost {
         form.put("enter", code);
         br.submitForm(form);
         if (br.containsHTML("read the code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String wait = br.getRegex("Please use premium account or wait (\\d+) minutes to unblock your ip").getMatch(0);
+        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 60 * 1001l);
         String dllink = br.getRegex("id=\"file_download\".*?src=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("If downloading hasn't started.*?<a href=\"(.*?)\"").getMatch(0);
