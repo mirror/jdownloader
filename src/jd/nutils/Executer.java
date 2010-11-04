@@ -163,6 +163,15 @@ public class Executer extends Thread implements Runnable {
                 // e.printStackTrace();
             } finally {
                 System.out.println("END");
+                /* close streams for good */
+                try {
+                    this.reader.close();
+                } catch (Throwable e) {
+                }
+                try {
+                    this.stream.close();
+                } catch (Throwable e) {
+                }
             }
         }
 
@@ -431,6 +440,12 @@ public class Executer extends Thread implements Runnable {
                 this.gotInterrupted = true;
             } catch (final Exception e) {
                 e.printStackTrace();
+            } finally {
+                /* close outputstream for good */
+                try {
+                    this.outputStream.close();
+                } catch (Throwable e) {
+                }
             }
 
             if (this.logger != null) {

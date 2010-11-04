@@ -130,6 +130,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                 public void run() throws Exception {
                     try {
                         final ArrayList<UpnpRouterDevice> devices = UPNPRouterPlugin.this.scanDevices();
+                        if (devices.size() == 0) return;
                         if (Thread.currentThread().isInterrupted()) { return; }
                         final int ret = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"),
 

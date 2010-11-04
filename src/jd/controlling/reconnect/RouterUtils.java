@@ -228,12 +228,17 @@ public class RouterUtils {
      * @return
      */
     public static boolean checkPort(final String host, final int port) {
-        Socket sock;
+        Socket sock = null;
         try {
             sock = new Socket(host, port);
             sock.setSoTimeout(200);
             return true;
         } catch (final Exception e) {
+        } finally {
+            try {
+                sock.close();
+            } catch (Throwable e) {
+            }
         }
         return false;
     }
@@ -326,12 +331,10 @@ public class RouterUtils {
      * @return
      */
     public static InetAddress getIPFromRouteCommand() {
-
         if (new File("/sbin/route").exists()) {
             try {
-
                 if (OSDetector.isMac()) {
-
+                    /* TODO: needs to get checked by a mac user */
                     final Executer exec = new Executer("/sbin/route");
                     exec.addParameters(new String[] { "-n", "get", "default" });
                     exec.setRunin("/");
@@ -356,8 +359,12 @@ public class RouterUtils {
 
                     }
                 } else {
+                    /*
+                     * we use route command to find gateway routes and test them
+                     * for port 80,443
+                     */
                     final Executer exec = new Executer("/sbin/route");
-                    exec.addParameters(new String[] { "-n", "get", "default" });
+                    exec.addParameters(new String[] { "-n" });
                     exec.setRunin("/");
                     exec.setWaitTimeout(1000);
                     exec.start();
@@ -365,16 +372,17 @@ public class RouterUtils {
                     String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
                     routingt = routingt.replaceFirst(".*\n.*", "");
 
-                    final Pattern pattern = Pattern.compile(".{16}(.{16}).*", Pattern.CASE_INSENSITIVE);
+                    final Pattern pattern = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+.*?(\\d+\\.\\d+\\.\\d+\\.\\d+).*?G", Pattern.CASE_INSENSITIVE);
                     final Matcher matcher = pattern.matcher(routingt);
                     while (matcher.find()) {
                         final String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
                                 final InetAddress ia = InetAddress.getByName(hostname);
-                                if (ia.isReachable(1500)) {
-                                    if (RouterUtils.checkPort(hostname, 80)) { return ia; }
-                                }
+                                /* first we try to connect to http */
+                                if (RouterUtils.checkPort(hostname, 80)) { return ia; }
+                                /* then lets try https */
+                                if (RouterUtils.checkPort(hostname, 443)) { return ia; }
                             } catch (final Exception e) {
                                 JDLogger.exception(e);
                             }
@@ -384,7 +392,6 @@ public class RouterUtils {
                 }
             } catch (final Exception e) {
             }
-
         }
         return null;
     }
