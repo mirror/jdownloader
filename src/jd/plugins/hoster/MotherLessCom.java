@@ -152,7 +152,8 @@ public class MotherLessCom extends PluginForHost {
                 link.setUrlDownload(finallink);
                 link.setProperty("kind", Property.NULL);
             } else {
-                String filelink = br.getRegex("var __file_url = \\'([^']*)\\';").getMatch(0);
+                String filelink = br.getRegex("s1\\.addParam\\(\\'flashvars\\',\\'file=(http://.*?\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
+                if (filelink == null) filelink = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
                 if (filelink == null) {
                     logger.warning("Failed to find the videolink #1");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

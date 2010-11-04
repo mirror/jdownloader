@@ -153,8 +153,8 @@ public class FilesMonsterCom extends PluginForHost {
                 if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String filesize = br.getRegex("File size: <span class=\"em\">(.*?)</span>").getMatch(0);
-            String filename = br.getRegex("File name: <span class=\"em\">(.*?)</span>").getMatch(0);
+            String filesize = br.getRegex("\">File size:</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
+            String filename = br.getRegex("\">File name:</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setName(Encoding.htmlDecode(filename.trim()));
             if (filesize != null) {
@@ -273,7 +273,7 @@ public class FilesMonsterCom extends PluginForHost {
         String findOtherLinks = br.getRegex("reserve_ticket\\(\\'(/dl/rft/.*?)\\'\\)").getMatch(0);
         if (findOtherLinks == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://filesmonster.com" + findOtherLinks);
-        String regexToFindANewTemporaryLinkInfo = "\\{(\"dlcode\":\"[A-Za-z0-9_.-]+\",\"name\":\"" + originalfilename + ")\",\"size\":\\d+,\"cutted_name\":\".{38}\"\\}";
+        String regexToFindANewTemporaryLinkInfo = "\\{(\"dlcode\":\"[A-Za-z0-9_.-]+\",\"name\":\"" + originalfilename + ")\",\"size\":\\d+,\"cutted_name\":\"[A-Za-z0-9_\\. %-]+\"\\}";
         String tempLinkInfo = br.getRegex(regexToFindANewTemporaryLinkInfo).getMatch(0);
         if (tempLinkInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String temporaryLink = new Regex(tempLinkInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);

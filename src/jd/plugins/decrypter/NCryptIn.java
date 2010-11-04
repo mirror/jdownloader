@@ -103,39 +103,38 @@ public class NCryptIn extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<h1>(.*?)<img").getMatch(0);
         // Container handling
-        String containerID = br.getRegex("/container/(rsdf|dlc|ccf)/([a-z0-9]+)\\.").getMatch(1);
-        if (containerID != null) {
-            ArrayList<DownloadLink> containerLinks = new ArrayList<DownloadLink>();
-            if (br.containsHTML("\\.dlc")) {
-                containerLinks = loadcontainer("dlc/" + containerID + ".dlc");
-            } else if (br.containsHTML("\\.rsdf")) {
-                containerLinks = loadcontainer("rsdf/" + containerID + ".rsdf");
-            } else if (br.containsHTML("\\.ccf")) {
-                containerLinks = loadcontainer("ccf/" + containerID + ".ccf");
-            }
-            if (containerLinks != null) {
-                if (fpName != null) {
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName(fpName.trim());
-                    fp.addLinks(containerLinks);
+        String[] containerIDs = br.getRegex("/container/(rsdf|dlc|ccf)/([a-z0-9]+)\\.").getColumn(1);
+        if (containerIDs != null && containerIDs.length != 0) {
+            for (String containerID : containerIDs) {
+                ArrayList<DownloadLink> containerLinks = new ArrayList<DownloadLink>();
+                if (br.containsHTML("\\.dlc")) {
+                    containerLinks = loadcontainer("dlc/" + containerID + ".dlc");
+                } else if (br.containsHTML("\\.rsdf")) {
+                    containerLinks = loadcontainer("rsdf/" + containerID + ".rsdf");
+                } else if (br.containsHTML("\\.ccf")) {
+                    containerLinks = loadcontainer("ccf/" + containerID + ".ccf");
                 }
-                return containerLinks;
+                if (containerLinks != null) {
+                    for (DownloadLink containerLink : containerLinks)
+                        decryptedLinks.add(containerLink);
+                }
             }
-        } else {
-            logger.info("ContainerID is null, trying webdecryption...");
         }
-        // Webprotection decryption
-        br.setFollowRedirects(false);
-        String[] links = br.getRegex("\\'(http://ncrypt\\.in/link-.*?=)\\'").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String singleLink : links) {
-            singleLink = singleLink.replace("link-", "frame-");
-            br.getPage(singleLink);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) return null;
-            decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            // Webprotection decryption
+            logger.info("ContainerID is null, trying webdecryption...");
+            br.setFollowRedirects(false);
+            String[] links = br.getRegex("\\'(http://ncrypt\\.in/link-.*?=)\\'").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            progress.setRange(links.length);
+            for (String singleLink : links) {
+                singleLink = singleLink.replace("link-", "frame-");
+                br.getPage(singleLink);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) return null;
+                decryptedLinks.add(createDownloadlink(finallink));
+                progress.increase(1);
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -156,7 +155,7 @@ public class NCryptIn extends PluginForDecrypt {
         String theID = theLink;
         theLink = "http://ncrypt.in/container/" + theLink;
         File file = null;
-        URLConnectionAdapter con = br.openGetConnection(theLink);
+        URLConnectionAdapter con = brc.openGetConnection(theLink);
         if (con.getResponseCode() == 200) {
             file = JDUtilities.getResourceFile("tmp/ncryptin/" + theLink.replaceAll("(:|/)", "") + theID);
             if (file == null) return null;
