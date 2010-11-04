@@ -192,7 +192,8 @@ public class FileSonicCom extends PluginForHost {
             this.br.getPage("http://www.filesonic.com/file/" + id + "?cancelDownload=1&start=1");
             // this.br.postPage("http://www.filesonic.com/file/" + id +
             // "?start=1", "");
-            this.removeComments();
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+            //this.removeComments();
         }*/
         this.br.setFollowRedirects(true);
         // download is ready already

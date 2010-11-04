@@ -36,7 +36,7 @@ public class FourFastFileCom extends PluginForHost {
 
     public FourFastFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://4fastfile.com/pl/user/login");
+        this.enablePremium("http://4fastfile.com/premium");
     }
 
     public void correctDownloadLink(DownloadLink link) {

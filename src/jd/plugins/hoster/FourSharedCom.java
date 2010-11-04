@@ -118,6 +118,7 @@ public class FourSharedCom extends PluginForHost {
                 if (filename == null) filename = br.getRegex("<title>(.*?) - 4shared\\.com - online file sharing and storage - download</title>").getMatch(0);
             }
             String size = br.getRegex("<td class=\"finforight lgraybox\" style=\"border-top:1px #dddddd solid\">([0-9,]+ [a-zA-Z]+)</td>").getMatch(0);
+            if (size==null) size=br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setName(Encoding.htmlDecode(filename.trim()));
             if (size != null) downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
