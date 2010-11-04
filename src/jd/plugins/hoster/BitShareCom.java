@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/files/[a-z0-9]{8}/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/files/[a-z0-9]{8}/(.*?\\.html)?" }, flags = { 0 })
 public class BitShareCom extends PluginForHost {
 
     private static final String RECAPTCHA = "/recaptcha/";
@@ -88,10 +88,16 @@ public class BitShareCom extends PluginForHost {
         }
         wait += 3;
         sleep(wait * 1001l, downloadLink);
-        if (br.containsHTML(RECAPTCHA)) {
+        String id = br.getRegex("http://api\\.recaptcha\\.net/challenge\\?k=(.*?)\"").getMatch(0);
+        if (id != null) {
             Boolean failed = true;
             for (int i = 0; i <= 3; i++) {
-                String id = br.getRegex("http://api.recaptcha.net/challenge\\?k=(.*?)\"").getMatch(0).trim();
+                id = br.getRegex("http://api\\.recaptcha\\.net/challenge\\?k=(.*?)\"").getMatch(0);
+                if (id == null) {
+                    logger.warning("id is null...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                id = id.trim();
                 Form reCaptchaForm = new Form();
                 reCaptchaForm.setMethod(Form.MethodType.POST);
                 reCaptchaForm.setAction(JSONHOST + fileID + "/request.html");

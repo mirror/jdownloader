@@ -50,11 +50,11 @@ public class LooMboCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private String brbefore = "";
+    private String              brbefore      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://loombo.com";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST   = "http://loombo.com";
+    public boolean              nopremium     = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -285,8 +285,11 @@ public class LooMboCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String crypted = new Regex(brbefore, "p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-                        if (crypted != null) dllink = decodeDownloadLink(crypted);
+                        dllink = new Regex(brbefore, "s1\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                        if (dllink == null) {
+                            String crypted = new Regex(brbefore, "p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
+                            if (crypted != null) dllink = decodeDownloadLink(crypted);
+                        }
                     }
                 }
             }
