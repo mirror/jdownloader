@@ -66,29 +66,31 @@ public class ShareHosterDe extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String fileID = new Regex(downloadLink.getDownloadURL(), "/(wait|vid)/(.+)").getMatch(1);
+        String dllink = null;
         br.setFollowRedirects(true);
         String waitCode = br.getRegex("name=\"wait\" value=\"(.*?)\"").getMatch(0);
         if (waitCode == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String postData = "continue=Fortfahren&file=" + fileID + "&wait=" + waitCode;
         if (downloadLink.getDownloadURL().contains("/vid/")) postData += "&open=show_wait";
-        String postPage = downloadLink.getDownloadURL().replace("/wait/", "/dl/");
-        if (downloadLink.getDownloadURL().contains("/vid/")) postPage = downloadLink.getDownloadURL();
+        String postPage = br.getRegex("<form id=\"prepare\" name=\"prepare\" method=\"post\" action=\"(http://.*?)\"").getMatch(0);
+        if (postPage == null) {
+            postPage = downloadLink.getDownloadURL().replace("/wait/", "/dl/");
+            if (downloadLink.getDownloadURL().contains("/vid/")) postPage = downloadLink.getDownloadURL();
+        }
+        if (postPage.contains("/vid/")) downloadLink.setUrlDownload(postPage);
         br.setFollowRedirects(false);
         br.postPage(postPage, postData);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.getRedirectLocation().contains("/vid/"))
+        if (br.getRedirectLocation().contains("/vid/")) {
             br.getPage(br.getRedirectLocation());
-        else
+        } else {
             br.getPage("http://www.sharehoster.com/?open=download_prepare&file=" + fileID);
-        // Streaming links don't need any captchas
-        String dllink = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"\\)").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(http://media\\d+\\.sharehoster.com/stream/[a-z0-9]+\\.flv)\"").getMatch(0);
+        }
+        if (downloadLink.getDownloadURL().contains("/vid/")) {
+            br.getPage("http://www.sharehoster.com/flowplayer/config.php?movie=" + fileID);
+            dllink = br.getRegex("\\'url\\': \\'(?!http://www\\.sharehoster\\.com/design/images)(http://.*?)\\'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("type=\"hidden\" name=\"stream\" value=\"(http://.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("\"(http://media\\d+\\.sharehoster\\.com/video/[a-z0-9/]+\\.avi)\"").getMatch(0);
-                }
+                dllink = br.getRegex("\\'(http://upload\\d+\\.sharehoster\\.com/video/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\\'").getMatch(0);
             }
         }
         if (dllink == null) {

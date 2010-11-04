@@ -19,8 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -66,15 +66,22 @@ public class FullShareNet extends PluginForHost {
         requestFileInformation(downloadLink);
         String ttt = br.getRegex("Das Video wurde angefordert. Bitte warten Sie.*?(\\d+).*?Sekunden").getMatch(0);
         if (ttt != null) {
-            Form dlform = br.getForm(0);
-            if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String code = br.getRegex("name=\"code\" value=\"(.*?)\"").getMatch(0);
+            if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             int tt = Integer.parseInt(ttt);
             sleep(tt * 1001l, downloadLink);
-            br.submitForm(dlform);
+            br.postPage(downloadLink.getDownloadURL(), "code=" + Encoding.urlEncode_light(code));
         }
         String dllink = br.getRegex("\"src\" value=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink is null!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

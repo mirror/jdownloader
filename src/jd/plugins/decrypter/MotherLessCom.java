@@ -106,9 +106,16 @@ public class MotherLessCom extends PluginForDecrypt {
                 finallink = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
                 if (finallink == null) {
                     finallink = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        finallink = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
+                        if (finallink == null) {
+                            finallink = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
+                        }
+                    }
                 }
             }
             if (finallink == null) return null;
+            finallink = finallink.replace("motherlessmedia", "motherless");
             DownloadLink fina = createDownloadlink(finallink.replace("motherless", "motherlesspictures"));
             decryptedLinks.add(fina);
         }
