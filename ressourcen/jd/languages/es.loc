@@ -1,7 +1,7 @@
 action.customize.addsetting.ask = Ingrese un nombre para la nueva configuración:
 action.customize.removesetting.ask = Eliminar cuentas seleccionadas de JDownloader? (%s)
 action.premiumview.removeacc.accs = %s cuenta/s
-action.premiumview.removeacc.ask = Eliminar seleccionadas
+action.premiumview.removeacc.ask = Eliminar cuentas seleccionadas?
 addons.jdshutdown.statusmessage.disabled = JDownloader ya NO apagará su sistema.
 addons.jdshutdown.statusmessage.enabled = JDownloader apagará su sistema cuando todas las descargas hayan finalizado!
 ballon.download.connectionlost.message = <b>%s<b><hr>Conexión perdida
@@ -810,7 +810,7 @@ gui.textcomponent.context.selectall = Seleccionar todo
 gui.textcomponent.context.selectall.acc = Ctrl+A
 gui.tooltip.statusbar.max_chunks = Maximo de conexiones por archivo
 gui.tooltip.statusbar.simultan_downloads = Maximo de descargas simultáneas
-gui.tooltip.statusbar.speedlimiter = Limite de velocidad para JD (KiB/s) [0 = sin límite]
+gui.tooltip.statusbar.speedlimiter = Limite de velocidad de JDownloader (KiB/s) [0 = sin límite]
 gui.tooltips.linkgrabber.autostart = Los enlaces se agregan automaticamente y comienza la descarga
 gui.tooltips.linkgrabber.startlinksafteradd = Inicia las descargas automaticamente despues de agregar algun enlace
 gui.tooltips.linkgrabber.toporbottom = Los enlaces se agregaran siempre al inicio de la lista de Descargas, en vez de al final
