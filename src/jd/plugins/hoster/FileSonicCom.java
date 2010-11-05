@@ -52,6 +52,58 @@ public class FileSonicCom extends PluginForHost {
         this.enablePremium("http://www.filesonic.com/premium");
     }
 
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("redirect=%2Fdashboard&links=");
+                int c = 0;
+                for (final DownloadLink dl : links) {
+                    if (c > 0) {
+                        sb.append("%0D%0A");
+                    }
+                    sb.append(dl.getDownloadURL());
+                    c++;
+                }
+                sb.append("&controls%5Bsubmit%5D=");
+                br.postPage("http://www.filesonic.com/link-checker", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String id = this.getID(dllink);
+                    final String hit[] = br.getRegex("source\">.*?<span>.*?filesonic.com/file/" + id + ".*?fileName\">.*?<span>(.*?)<.*?fileSize\">.*?<span>(.*?)<").getRow(0);
+                    if (hit != null && hit.length == 2 && hit[1].length() > 2) {
+                        dllink.setFinalFileName(hit[0].trim());
+                        dllink.setDownloadSize(Regex.getSize(hit[1]));
+                        dllink.setAvailable(true);
+                    } else {
+                        dllink.setAvailable(false);
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
     /* converts id and filename */
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -61,15 +113,6 @@ public class FileSonicCom extends PluginForHost {
             id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
         }
         link.setUrlDownload("http://www.filesonic.com/file/" + id);
-    }
-
-    /* returns only the id, needed for filecheck */
-    private String getID(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
-        if (id == null) {
-            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
-        }
-        return id;
     }
 
     private void errorHandling(final DownloadLink downloadLink) throws PluginException {
@@ -134,6 +177,15 @@ public class FileSonicCom extends PluginForHost {
         return "http://www.filesonic.com/contact-us";
     }
 
+    /* returns only the id, needed for filecheck */
+    private String getID(final DownloadLink link) {
+        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
+        if (id == null) {
+            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
+        }
+        return id;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
@@ -169,35 +221,30 @@ public class FileSonicCom extends PluginForHost {
 
         final String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
         this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
-        if (br.containsHTML("The file that you're trying to download is larger than")) {
-            String size = br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
+        if (this.br.containsHTML("The file that you're trying to download is larger than")) {
+            final String size = this.br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
             if (size != null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.filesonic.onlypremiumsize",
-                        "Only premium users can download files larger than %s.", size.trim()));
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.filesonic.onlypremiumsize", "Only premium users can download files larger than %s.", size.trim()));
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.onlypremium",
-                        "Only downloadable for premium users!"));
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.onlypremium", "Only downloadable for premium users!"));
             }
         }
         this.removeComments();
-        if (br.containsHTML("Free users may only download 1 file at a time"))
-        {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,
-                    JDL.L("plugins.hoster.filesonic.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l);
-        }
-        
-        /* Cancel seem no longer usable
-           if (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>")) {
-            Plugin.logger.info("Cancel running filesonic downloads");
-            this.br.getPage("http://www.filesonic.com/file/" + id + "?cancelDownload=1&start=1");
-            // this.br.postPage("http://www.filesonic.com/file/" + id +
-            // "?start=1", "");
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-            //this.removeComments();
-        }*/
+        if (this.br.containsHTML("Free users may only download 1 file at a time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l); }
+
+        /*
+         * Cancel seem no longer usable if
+         * (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>")) {
+         * Plugin.logger.info("Cancel running filesonic downloads");
+         * this.br.getPage("http://www.filesonic.com/file/" + id +
+         * "?cancelDownload=1&start=1"); //
+         * this.br.postPage("http://www.filesonic.com/file/" + id + //
+         * "?start=1", ""); throw new PluginException(LinkStatus.ERROR_RETRY);
+         * //this.removeComments(); }
+         */
         this.br.setFollowRedirects(true);
         // download is ready already
-        String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.com[^<]*?)\"><span>Start download now!</span></a></p>";
+        final String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.com[^<]*?)\"><span>Start download now!</span></a></p>";
 
         downloadUrl = this.br.getRegex(re).getMatch(0);
         if (downloadUrl == null) {
@@ -206,6 +253,9 @@ public class FileSonicCom extends PluginForHost {
             // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
             // if (downloadUrl == null) { throw new
             // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (this.br.containsHTML("This file is available for premium users only.")) {
+
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Premium only file. Buy Premium Account"); }
             final String countDownDelay = this.br.getRegex("countDownDelay = (\\d+)").getMatch(0);
             if (countDownDelay != null) {
                 /*
@@ -250,7 +300,7 @@ public class FileSonicCom extends PluginForHost {
             }
             downloadUrl = this.br.getRegex(re).getMatch(0);
         }
-        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)
@@ -439,51 +489,5 @@ public class FileSonicCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage(url, post);
         br.getHeaders().put("X-Requested-With", null);
-    }
-
-    @Override
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            Browser br = new Browser();
-            br.setCookiesExclusive(true);
-            StringBuilder sb = new StringBuilder();
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 80 links at once */
-                    if (index == urls.length || links.size() > 80) break;
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("redirect=%2Fdashboard&links=");
-                int c = 0;
-                for (DownloadLink dl : links) {
-                    if (c > 0) sb.append("%0D%0A");
-                    sb.append(dl.getDownloadURL());
-                    c++;
-                }
-                sb.append("&controls%5Bsubmit%5D=");
-                br.postPage("http://www.filesonic.com/link-checker", sb.toString());
-                for (DownloadLink dllink : links) {
-                    String id = getID(dllink);
-                    String hit[] = br.getRegex("source\">.*?<span>.*?filesonic.com/file/" + id + ".*?fileName\">.*?<span>(.*?)<.*?fileSize\">.*?<span>(.*?)<").getRow(0);
-                    if (hit != null && hit.length == 2 && hit[1].length() > 2) {
-                        dllink.setFinalFileName(hit[0].trim());
-                        dllink.setDownloadSize(Regex.getSize(hit[1]));
-                        dllink.setAvailable(true);
-                    } else {
-                        dllink.setAvailable(false);
-                    }
-                }
-                if (index == urls.length) break;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
     }
 }
