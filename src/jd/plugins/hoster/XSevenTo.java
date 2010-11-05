@@ -48,16 +48,23 @@ public class XSevenTo extends PluginForHost {
         return "http://x7.to/legal";
     }
 
+    public static final Object LOCK = new Object();
+
     public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage("http://x7.to");
-        br.postPage("http://x7.to/james/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://x7.to/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://x7.to/my");
-        if (!br.containsHTML("id=\"status\" value=\"premium\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        /* have to call this in order so set language */
-        br.getPage("http://x7.to/lang/en");
-        br.getPage("http://x7.to/my");
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            br.getPage("http://x7.to");
+            br.postPage("http://x7.to/james/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+            if (br.getCookie("http://x7.to/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            br.getPage("http://x7.to/my");
+            if (!br.containsHTML("id=\"status\" value=\"premium\"")) {
+                this.getPluginConfig().setProperty("freeaccount", "yesss ;)");
+                this.getPluginConfig().save();
+            }
+            /* have to call this in order so set language */
+            br.getPage("http://x7.to/lang/en");
+            br.getPage("http://x7.to/my");
+        }
     }
 
     @Override
@@ -70,13 +77,23 @@ public class XSevenTo extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        String validUntil = br.getRegex("Premium member until (.*?)\"").getMatch(0);
-        if (validUntil != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
-        } else {
-            if (!br.containsHTML("img/sym/crown.png")) {
-                ai.setExpired(true);
+        if (this.getPluginConfig().getStringProperty("freeaccount") == null) {
+            String validUntil = br.getRegex("Premium member until (.*?)\"").getMatch(0);
+            if (validUntil != null) {
+                ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
+            } else {
+                if (!br.containsHTML("img/sym/crown.png")) {
+                    ai.setExpired(true);
+                }
             }
+            ai.setStatus("Premium User");
+        } else {
+            try {
+                account.setMaxSimultanDownloads(1);
+            } catch (Exception e) {
+
+            }
+            ai.setStatus("Registered (free) User");
         }
         String points = br.getRegex("upoints\".*?>([0-9.]*?)<").getMatch(0);
         if (points != null) {
@@ -87,7 +104,7 @@ public class XSevenTo extends PluginForHost {
         if (money != null) ai.setAccountBalance(money);
         String remaining = br.getRegex("class=\"aT aR\">.*?\">(.*?)<").getMatch(0);
         String trafficNow = br.getRegex("buyTraffic.*?TrafficNow.*?class=\"aT aR\">.*?\">(.*?)<").getMatch(0);
-        if (remaining != null && remaining.contains("unlimited")) {
+        if (remaining != null && (remaining.contains("unlimited") || remaining.equals(""))) {
             ai.setSpecialTraffic(true);
         } else {
             long t1 = remaining != null ? Regex.getSize(remaining) : 0;
@@ -101,29 +118,33 @@ public class XSevenTo extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        br.setFollowRedirects(false);
-        String dllink = null;
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            dllink = br.getRedirectLocation();
-        } else {
+        if (this.getPluginConfig().getStringProperty("freeaccount") == null) {
+            br.setFollowRedirects(false);
+            String dllink = null;
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() != null) {
+                dllink = br.getRedirectLocation();
+            } else {
 
-            if (br.containsHTML("img/elem/trafficexh_de.png")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                if (br.containsHTML("img/elem/trafficexh_de.png")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
 
-            dllink = br.getRegex("<b>Download</b>.*?href=\"(http://stor.*?)\"").getMatch(0);
-            if (dllink == null && br.containsHTML("<b>Stream</b>")) {
-                /* its a streamdownload */
-                dllink = br.getRegex("window\\.location\\.href='(http://stor.*?)'").getMatch(0);
+                dllink = br.getRegex("<b>Download</b>.*?href=\"(http://stor.*?)\"").getMatch(0);
+                if (dllink == null && br.containsHTML("<b>Stream</b>")) {
+                    /* its a streamdownload */
+                    dllink = br.getRegex("window\\.location\\.href='(http://stor.*?)'").getMatch(0);
+                }
+
             }
-
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            doFree(downloadLink);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -172,6 +193,10 @@ public class XSevenTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception {
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.getContentType().contains("html")) {
             br.followConnection();
@@ -282,6 +307,13 @@ public class XSevenTo extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        int maxpremium = -1;
+        if (this.getPluginConfig().getStringProperty("freeaccount") != null) maxpremium = 1;
+        return maxpremium;
     }
 
     @Override

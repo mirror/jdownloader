@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://[\\w\\.]*?file2upload\\.(net|com)/folder/[A-Z|0-9]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://(www\\.)?file2upload\\.(net|com)/folder/[A-Z|0-9]+/" }, flags = { 0 })
 public class Fl2pldNtFldr extends PluginForDecrypt {
 
     public Fl2pldNtFldr(PluginWrapper wrapper) {
