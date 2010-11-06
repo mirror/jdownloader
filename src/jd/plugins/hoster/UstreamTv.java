@@ -20,12 +20,8 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 
-import flex.messaging.io.amf.ASObject;
-import flex.messaging.io.amf.client.AMFConnection;
-import flex.messaging.io.amf.client.exceptions.ClientStatusException;
-import flex.messaging.io.amf.client.exceptions.ServerStatusException;
-
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
@@ -34,11 +30,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import flex.messaging.io.amf.ASObject;
+import flex.messaging.io.amf.client.AMFConnection;
 
 @HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://www.ustream.tv/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class UstreamTv extends PluginForHost {
 
-    public UstreamTv(PluginWrapper wrapper) {
+    public UstreamTv(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -48,48 +46,37 @@ public class UstreamTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("VideoTitle\">(.*?)<").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (downloadLink.getDownloadURL().contains("highlight")) {
-            downloadLink.setName(filename.trim() + ".mp4");
-        } else {
-            downloadLink.setName(filename.trim() + ".flv");
-        }      
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        this.requestFileInformation(downloadLink);
         /* Setup Gateway */
-        String url = "http://216.52.240.138/gateway.php";
+        final String url = "http://216.52.240.138/gateway.php";
         /* Generate Parameter */
-        Date rpin = new Date();
-        String pageUrl = downloadLink.getDownloadURL();
-        String videoId = new Regex(pageUrl, "recorded/(\\d+)").getMatch(0);
-        HashMap<String, String> parameter = new HashMap<String, String>();
+        final Date rpin = new Date();
+        final String pageUrl = downloadLink.getDownloadURL();
+        final String videoId = new Regex(pageUrl, "recorded/(\\d+)").getMatch(0);
+        final HashMap<String, String> parameter = new HashMap<String, String>();
         parameter.put("brandId", "1");
         parameter.put("videoId", videoId);
         parameter.put("rpin", "rpin.0." + rpin.getTime());
         parameter.put("autoplay", "");
         parameter.put("pageUrl", pageUrl);
         /* ActionMessageFormat */
-        ASObject result = new ASObject();
-        AMFConnection amfConnection = new AMFConnection();
+        ASObject result;
+        final AMFConnection amfConnection = new AMFConnection();
         try {
             amfConnection.connect(url);
             amfConnection.addHttpRequestHeader("Content-type", "application/x-amf");
             amfConnection.addHttpRequestHeader("Referer", "http://cdn1.ustream.tv/swf/4/viewer.rsl.465.swf?");
             amfConnection.addHttpRequestHeader("x-flash-version", "10,1,85,3");
             result = (ASObject) amfConnection.call("Viewer.getVideo", parameter);
-        } catch (ClientStatusException cse) {
-           System.out.println(cse);
-        } catch (ServerStatusException sse) {
-           System.out.println(sse);
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         amfConnection.close();
         int chunk = 0;
@@ -100,17 +87,29 @@ public class UstreamTv extends PluginForHost {
         } else {
             dllink = result.get("flv").toString();
         }
-        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunk);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        this.dl = BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, chunk);
+        if (this.dl.getConnection().getContentType().contains("html")) {
+            this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        this.dl.startDownload();
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        this.br.getPage(downloadLink.getDownloadURL());
+        String filename = this.br.getRegex("VideoTitle\">(.*?)<").getMatch(0);
+        if (filename == null) {
+            filename = this.br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
+        }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (downloadLink.getDownloadURL().contains("highlight")) {
+            downloadLink.setName(filename.trim() + ".mp4");
+        } else {
+            downloadLink.setName(filename.trim() + ".flv");
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -118,10 +117,10 @@ public class UstreamTv extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }
