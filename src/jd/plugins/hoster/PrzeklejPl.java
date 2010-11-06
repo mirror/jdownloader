@@ -57,7 +57,7 @@ public class PrzeklejPl extends PluginForHost {
     }
 
     private static final String REGISTEREDONLY = "<span>200MB za darmo na starcie\\!</span>";
-    private static final String NOFREEMESSAGE = "Only downloadable for registered users";
+    private static final String NOFREEMESSAGE  = "Only downloadable for registered users";
     private static final String FINALLINKREGEX = "class=\"download\" href=\"(.*?)\"";
 
     @Override
@@ -66,8 +66,14 @@ public class PrzeklejPl extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<h1 style=\"font-size: 40px;\">Podana strona nie istnieje</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(REGISTEREDONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.PrzeklejPl.errors.nofreedownloadlink", NOFREEMESSAGE));
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>przeklej.pl -(.*?)Wrzucaj", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex(Pattern.compile("class=\"size\".*?\\((.*?)\\)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>przeklej.pl -(.*?)\\. Wrzucaj", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (filename == null) {
+            Encoding.htmlDecode(br.getRegex(Pattern.compile("title=\"Pobierz plik\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        }
+        String filesize = br.getRegex(Pattern.compile("class=\"size\" style=\"font-weight: normal;\">[\t\n\r ]+\\((.*?)\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex(Pattern.compile("You are trying to download a <strong>(.*?)</strong> file", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));

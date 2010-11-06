@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.BufferedInputStream;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -51,9 +52,9 @@ public class FsxHu extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies("www.fsx.hu");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("V.lassz az ingyenes let.lt.s .s a regisztr.ci. k.z.l!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         br.getPage("http://www.fsx.hu/download.php?i=1");
         String filename = br.getRegex("<font color=\"#FF0000\" size=\"4\">(.+?)</font>").getMatch(0);
         String filesize = br.getRegex("<strong>M.ret:</strong> (.+?) B.jt").getMatch(0);
@@ -83,31 +84,33 @@ public class FsxHu extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(false);
-
         downloadImage("http://www.fsx.hu/img/button-letoltes1.gif");
         downloadImage("http://www.fsx.hu/img/bg0.gif");
         downloadImage("http://www.fsx.hu/img/bg1dl.gif");
-        downloadImage("http://www.fsx.hu/img/bg3.gif");
-        downloadImage("http://www.fsx.hu/img/bg4b.gif");
         downloadImage("http://www.fsx.hu/img/bg5.gif");
         downloadImage("http://www.fsx.hu/img/bg6.gif");
+        downloadImage("http://www.fsx.hu/img/bg4b.gif");
+        downloadImage("http://www.fsx.hu/img/bg3.gif");
         downloadImage("http://www.fsx.hu/img/style.css");
-        br.getPage("http://www.fsx.hu/download.php");
-
-        while (downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
-            String url1 = br.getRegex("<a id='dlink' href=\"(.+?)\">").getMatch(0);
-            String url2 = br.getRegex("elem\\.href = elem\\.href \\+ \"(.+?)\";").getMatch(0);
-            if (url1 != null && url2 != null) {
-                String url = url1 + url2;
-                dl = BrowserAdapter.openDownload(br, downloadLink, url);
-                dl.startDownload();
-                return;
+        String url1 = null;
+        String url2 = null;
+        for (int i = 0; i <= 30; i++) {
+            logger.info("Attempt " + i + " of 30");
+            String continueLink = br.getRegex("<font size=\"4\"><a href=\"(http://.*?)</a></font>").getMatch(0);
+            if (continueLink != null) {
+                logger.info("Found continueLink...");
+                br.getPage(continueLink);
+                System.out.print(br.toString());
             }
-
+            url1 = br.getRegex("<a id=\\'dlink\\' href=\"(.+?)\">").getMatch(0);
+            url2 = br.getRegex("elem\\.href = elem\\.href \\+ \"(.+?)\";").getMatch(0);
+            if (url1 != null && url2 != null) break;
             String serverQueueLength = br.getRegex("<font color=\"#FF0000\"><strong>(\\d+?)</strong></font> felhaszn.l. van el.tted").getMatch(0);
-
-            if (serverQueueLength == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (serverQueueLength == null) {
+                logger.warning("serverQueueLength is null...");
+                serverQueueLength = "notfound";
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             // next run of handleFree() will report the file as deleted
             // if it is really deleted because fsx.hu sometimes reports
@@ -115,11 +118,18 @@ public class FsxHu extends PluginForHost {
             if (br.containsHTML("A kiv.lasztott f.jl nem tal.lhat. vagy elt.vol.t.sra ker.lt."))
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 1 * 1000l);
             else if (br.containsHTML("A kiv.lasztott f.jl let.lt.s.t nem kezdted meg")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 1000l);
-
-            this.sleep(15000L, downloadLink, JDL.LF("plugins.hoster.fsxhu.waiting", "%s users in queue, ", serverQueueLength));
-
+            sleep(15000L, downloadLink, JDL.LF("plugins.hoster.fsxhu.waiting", "%s users in queue, ", serverQueueLength));
             br.getPage("http://www.fsx.hu/download.php");
+            downloadImage("http://www.fsx.hu/img/bg0.gif");
         }
+        if (url1 == null || url2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String url = url1 + url2;
+        dl = BrowserAdapter.openDownload(br, downloadLink, url);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private void login(Account account) throws Exception {

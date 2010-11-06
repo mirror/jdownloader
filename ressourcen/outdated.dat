@@ -475,3 +475,4 @@ jd/img/default/reconnect_enabled.png
 jd/img/default/stop_after_disabled_big.png
 jd/img/default/stop_after_enabled_big.png
 jd/plugins/hoster/MovieShareIn.class
+jd/plugins/hoster/StorageTo.class
