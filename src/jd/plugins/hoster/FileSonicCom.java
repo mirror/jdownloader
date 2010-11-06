@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
@@ -272,18 +271,8 @@ public class FileSonicCom extends PluginForHost {
             if (this.br.containsHTML("Recaptcha\\.create")) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
-                rc.parse();
-                // rc = rc;
-                rc.load();
-                final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-                final String code = this.getCaptchaCode(cf, downloadLink);
-                rc.setCode(code);
-                if (this.br.containsHTML("Recaptcha\\.create")) {
+                rc.handleAuto(this, downloadLink);
 
-                    // captcha wrong; fs does not return any error message.
-                    // just shows the captcha dialog again
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
             }
             if (this.br.containsHTML("This file is password protected")) {
                 /* password handling */

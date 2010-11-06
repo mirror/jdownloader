@@ -176,6 +176,14 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         }
     }
 
+    @Override
+    public int autoDetection() {
+
+        final long start = System.currentTimeMillis();
+
+        return -1;
+    }
+
     public void controlEvent(final ControlEvent event) {
         // if (event.getEventID() == ControlEvent.CONTROL_AFTER_RECONNECT &&
         // ReconnectPluginController.getInstance().getActivePlugin() == this &&
@@ -424,7 +432,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         this.btnAuto.addActionListener(this);
 
         // auto search is not ready yet
-        this.btnAuto.setEnabled(false);
+        // this.btnAuto.setEnabled(false);
         this.btnRecord = new JButton("Record Wizard");
         this.btnRecord.addActionListener(this);
         this.btnFindIP = new JButton("Find Router IP");
@@ -576,6 +584,11 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         } else {
             LiveHeaderReconnect.LOG.severe("Regular Expression without matches: " + patStr);
         }
+    }
+
+    @Override
+    public boolean hasAutoDetection() {
+        return true;
     }
 
     public boolean hasDetectionWizard() {
@@ -878,7 +891,10 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
     @Override
     public int runDetectionWizard() throws InterruptedException {
         final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
-        final int ret = wizard.runOfflineScan();
+        int ret = wizard.runOnlineScan();
+        if (ret < 0) {
+            ret = wizard.runOfflineScan();
+        }
         if (ret < 0) {
             // TODO
             // ret = wizard.runRouterRecorder();

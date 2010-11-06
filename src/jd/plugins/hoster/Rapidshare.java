@@ -438,6 +438,7 @@ public class Rapidshare extends PluginForHost {
         String error = null;
         if (this.br.toString().startsWith("ERROR: ")) {
             error = this.br.getRegex("ERROR: ([^\r\n]+)").getMatch(0);
+
             final String ipwait = new Regex(error, "You need to wait (\\d+) seconds until you can download another file without having RapidPro.").getMatch(0);
             if (ipwait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l); }
             if ("File not found.".equals(error)) {

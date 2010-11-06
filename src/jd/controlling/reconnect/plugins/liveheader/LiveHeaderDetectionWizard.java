@@ -96,6 +96,10 @@ public class LiveHeaderDetectionWizard {
 
     }
 
+    public int runOnlineScan() {
+        return 0;
+    }
+
     private int scanOfflineRouters(final String name, final String manufactor) throws InterruptedException {
 
         final ArrayList<String[]> scripts = LiveHeaderReconnect.getLHScripts();

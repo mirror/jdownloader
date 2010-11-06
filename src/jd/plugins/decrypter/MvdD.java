@@ -39,6 +39,7 @@ public class MvdD extends PluginForDecrypt {
 
     private void addLink(final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String link, final String name, final DestinationFormat convertTo) {
         final DownloadLink thislink = this.createDownloadlink(link);
+        thislink.setProperty("ALLOW_DUPE", true);
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName("MyVideo " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
         thislink.setFilePackage(filePackage);

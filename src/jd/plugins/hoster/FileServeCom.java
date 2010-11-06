@@ -30,233 +30,33 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://[\\w\\.]*?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
-    public FileServeCom(PluginWrapper wrapper) {
+    public String   FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)";
+
+    private boolean isFree      = false;
+
+    public FileServeCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.fileserve.com/premium.php");
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.fileserve.com/terms.php";
-    }
-
-    public String   FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)";
-    private boolean isFree      = false;
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        // All links should look the same to get no problems with regexing them
-        // later
-        String fileId = new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0);
-        link.setUrlDownload("http://fileserve.com/file/" + fileId);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailabilityStatusChecked()) {
-            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return link.getAvailableStatus();
-    }
-
-    public void login(Account account) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        br.getPage("http://fileserve.com/login.php");
-        if (br.containsHTML("This service is temporarily not available for your service area")) {
-            AccountInfo acInfo = new AccountInfo();
-            acInfo.setStatus("Your country is blocked by fileserve!");
-            account.setAccountInfo(acInfo);
-            // Show the user for 20 seconds that the account is blocked, the
-            // deactivate it
-            Thread.sleep(20 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        /* username and pass are limited to 20 chars */
-        String username = account.getUser();
-        String password = account.getPass();
-        if (username != null && username.length() > 20) username = username.substring(0, 20);
-        if (password != null && password.length() > 20) password = password.substring(0, 20);
-        br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(username) + "&loginUserPassword=" + Encoding.urlEncode(password) + "&loginFormSubmit=Login");
-        if (br.containsHTML("Username doesn't exist")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://fileserve.com/dashboard.php");
-        String accType = br.getRegex("<h5>Account type:</h5>[\r\n ]+<h3>(Premium|Free)</h3>").getMatch(0);
-        if (accType == null) accType = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium|Free)([ ]+)?</h5>").getMatch(0);
-        if (br.getCookie("http://fileserve.com", "cookie") == null || accType == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!accType.equals("Premium")) {
-            try {
-                account.setMaxSimultanDownloads(1);
-            } catch (Throwable e) {
-                /* not available in 0.9xxx */
-            }
-            account.setProperty("type", "free");
-            isFree = true;
-        } else {
-            account.setProperty("type", null);
-        }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            if (br.containsHTML("Username doesn't exist")) {
-                ai.setStatus("Username doesn't exist");
-            } else {
-                ai.setStatus("Account Invalid");
-            }
-            account.setValid(false);
-            return ai;
-        }
-        String uploadedFiles = br.getRegex("<h5>Files uploaded:</h5>\r\n[ ]+<h3>(\\d+)<span>").getMatch(0);
-        if (uploadedFiles != null) ai.setFilesNum(Integer.parseInt(uploadedFiles));
-        ai.setUnlimitedTraffic();
-        if (isFree)
-            ai.setStatus("Registered (free) User");
-        else
-            ai.setStatus("Premium User");
-        String expires = br.getRegex("<h4>Premium Until</h4></th> <td><h5>(.*?) EST</h5>").getMatch(0);
-        if(expires != null)ai.setValidUntil(Regex.getMilliSeconds(expires, "dd MMMM yyyy", null));
-        account.setValid(true);
-        return ai;
-    }
-
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        if (isFree) {
-            br.getPage(link.getDownloadURL());
-            doFree(link);
-        } else {
-            br.setFollowRedirects(false);
-            br.postPage(link.getDownloadURL(), "download=premium");
-            String dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getResponseCode() == 404) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                handleErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        int maxdls = -1;
-        try {
-            if (AccountController.getInstance().getValidAccount(this).getStringProperty("type").toString() != null) maxdls = 1;
-        } catch (Exception e) {
-
-        }
-        return maxdls;
-    }
-
-    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        handleErrors();
-        String fileId = br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
-        br.setFollowRedirects(false);
-        String captchaJSPage = br.getRegex("\"(/landing/.*?/download_captcha\\.js)\"").getMatch(0);
-        if (captchaJSPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        captchaJSPage = "http://fileserve.com" + captchaJSPage;
-        Browser br2 = br.cloneBrowser();
-        // It doesn't work without accessing this page!!
-        br2.getPage(captchaJSPage);
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        if (!br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">") || br2.containsHTML("showCaptcha\\(\\);")) {
-            Boolean failed = true;
-            for (int i = 0; i <= 3; i++) {
-                String id = br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);
-                if (!br.containsHTML("api.recaptcha.net") || id == null || fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                Form reCaptchaForm = new Form();
-                reCaptchaForm.setMethod(Form.MethodType.POST);
-                reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
-                reCaptchaForm.put("recaptcha_shortencode_field", fileId);
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setForm(reCaptchaForm);
-                rc.setId(id);
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                rc.getForm().put("recaptcha_response_field", c);
-                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
-                br2.submitForm(rc.getForm());
-                if (br2.containsHTML("incorrect-captcha") || br2.containsHTML("Captcha error")) {
-                    br.getPage(downloadLink.getDownloadURL());
-                    continue;
-                }
-                failed = false;
-                break;
-            }
-            if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
-        // Ticket Time
-        if (!br.getHttpConnection().isOK()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String reconTime = br.getRegex("(\\d+)").getMatch(0);
-        int tt = 60;
-        if (reconTime != null) {
-            logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
-            tt = Integer.parseInt(reconTime);
-        }
-        sleep(tt * 1001, downloadLink);
-        br2.postPage(downloadLink.getDownloadURL(), "downloadLink=show");
-        br.postPage(downloadLink.getDownloadURL(), "download=normal");
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            handleErrors();
-
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getResponseCode() == 404) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            handleErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
-        doFree(downloadLink);
-    }
-
-    public boolean checkLinks(DownloadLink[] urls) {
+    public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
-            StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder();
             while (true) {
                 sb.delete(0, sb.capacity());
                 sb.append("submit=Check+Urls&urls=");
@@ -266,40 +66,44 @@ public class FileServeCom extends PluginForHost {
                      * we test 100 links at once - its tested with 500 links,
                      * probably we could test even more at the same time...
                      */
-                    if (index == urls.length || links.size() > 100) break;
+                    if (index == urls.length || links.size() > 100) {
+                        break;
+                    }
                     links.add(urls[index]);
                     index++;
                 }
-                br.getPage("http://fileserve.com/link-checker.php");
+                this.br.getPage("http://fileserve.com/link-checker.php");
                 int c = 0;
-                for (DownloadLink dl : links) {
+                for (final DownloadLink dl : links) {
                     /*
                      * append fake filename, because api will not report
                      * anything else
                      */
-                    if (c > 0) sb.append("%0D%0A");
+                    if (c > 0) {
+                        sb.append("%0D%0A");
+                    }
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
-                br.postPage("http://fileserve.com/link-checker.php", sb.toString());
-                for (DownloadLink dl : links) {
-                    String fileid = new Regex(dl.getDownloadURL(), FILEIDREGEX).getMatch(0);
+                this.br.postPage("http://fileserve.com/link-checker.php", sb.toString());
+                for (final DownloadLink dl : links) {
+                    final String fileid = new Regex(dl.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
                     if (fileid == null) {
-                        logger.warning("Fileserve availablecheck is broken!");
+                        Plugin.logger.warning("Fileserve availablecheck is broken!");
                         return false;
                     }
-                    String regexForThisLink = "(<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
-                    String theData = br.getRegex(regexForThisLink).getMatch(0);
+                    final String regexForThisLink = "(<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
+                    final String theData = this.br.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
-                        logger.warning("Fileserve availablecheck is broken!");
+                        Plugin.logger.warning("Fileserve availablecheck is broken!");
                         return false;
                     }
-                    Regex linkinformation = new Regex(theData, "<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
-                    String status = linkinformation.getMatch(3);
+                    final Regex linkinformation = new Regex(theData, "<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
+                    final String status = linkinformation.getMatch(3);
                     String filename = linkinformation.getMatch(1);
-                    String filesize = linkinformation.getMatch(2);
+                    final String filesize = linkinformation.getMatch(2);
                     if (filename == null || filesize == null) {
-                        logger.warning("Fileserve availablecheck is broken!");
+                        Plugin.logger.warning("Fileserve availablecheck is broken!");
                         dl.setAvailable(false);
                     } else if (!status.equals("Available") || filename.equals("--") || filesize.equals("--")) {
                         filename = fileid;
@@ -310,26 +114,134 @@ public class FileServeCom extends PluginForHost {
                     dl.setName(filename);
                     dl.setDownloadSize(Regex.getSize(filesize));
                 }
-                if (index == urls.length) break;
+                if (index == urls.length) {
+                    break;
+                }
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return false;
         }
         return true;
     }
 
-    private void handleErrors() throws PluginException {
-        if (br.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users"));
-        if (br.containsHTML(">Your download link has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link expired, contact fileserve support", 10 * 60 * 1000l);
-        if (br.containsHTML("Captcha error") || br.containsHTML("incorrect-captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String wait = br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
-        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
-        if (br.containsHTML("landing-406.php")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
-        if (br.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry...</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time|URL=http://www\\.fileserve\\.com/landing-403\\.php\")")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        // All links should look the same to get no problems with regexing them
+        // later
+        final String fileId = new Regex(link.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
+        link.setUrlDownload("http://fileserve.com/file/" + fileId);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        this.handleErrors();
+        final String fileId = this.br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
+        this.br.setFollowRedirects(false);
+        String captchaJSPage = this.br.getRegex("\"(/landing/.*?/download_captcha\\.js)\"").getMatch(0);
+        if (captchaJSPage == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        captchaJSPage = "http://fileserve.com" + captchaJSPage;
+        final Browser br2 = this.br.cloneBrowser();
+        // It doesn't work without accessing this page!!
+        br2.getPage(captchaJSPage);
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        if (!this.br.containsHTML("<div id=\"captchaArea\" style=\"display:none;\">") || br2.containsHTML("showCaptcha\\(\\);")) {
+            Boolean failed = true;
+            for (int i = 0; i <= 10; i++) {
+                final String id = this.br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);
+                if (!this.br.containsHTML("api.recaptcha.net") || id == null || fileId == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                final Form reCaptchaForm = new Form();
+                reCaptchaForm.setMethod(Form.MethodType.POST);
+                reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
+                reCaptchaForm.put("recaptcha_shortencode_field", fileId);
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+
+                rc.setForm(reCaptchaForm);
+                rc.setId(id);
+                rc.load();
+                final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
+                final String c = this.getCaptchaCode(cf, downloadLink);
+                if (c == null || c.length() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed"); }
+
+                rc.getForm().put("recaptcha_response_field", c);
+                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+                br2.submitForm(rc.getForm());
+                if (!br2.containsHTML("success")) {
+
+                    this.br.getPage(downloadLink.getDownloadURL());
+                    continue;
+                }
+
+                failed = false;
+                break;
+            }
+            if (failed) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        }
+        this.br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
+        // Ticket Time
+        if (!this.br.getHttpConnection().isOK()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        final String reconTime = this.br.getRegex("(\\d+)").getMatch(0);
+        int tt = 60;
+        if (reconTime != null) {
+            Plugin.logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
+            tt = Integer.parseInt(reconTime);
+        }
+        this.sleep(tt * 1001, downloadLink);
+        br2.postPage(downloadLink.getDownloadURL(), "downloadLink=show");
+        this.br.postPage(downloadLink.getDownloadURL(), "download=normal");
+        final String dllink = this.br.getRedirectLocation();
+        if (dllink == null) {
+            this.handleErrors();
+
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
+        if (this.dl.getConnection().getResponseCode() == 404) {
+            this.br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (this.dl.getConnection().getContentType().contains("html")) {
+            this.br.followConnection();
+            this.handleErrors();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        this.dl.startDownload();
     }
 
     @Override
-    public void reset() {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            this.login(account);
+        } catch (final PluginException e) {
+            if (this.br.containsHTML("Username doesn't exist")) {
+                ai.setStatus("Username doesn't exist");
+            } else {
+                ai.setStatus("Account Invalid");
+            }
+            account.setValid(false);
+            return ai;
+        }
+        final String uploadedFiles = this.br.getRegex("<h5>Files uploaded:</h5>\r\n[ ]+<h3>(\\d+)<span>").getMatch(0);
+        if (uploadedFiles != null) {
+            ai.setFilesNum(Integer.parseInt(uploadedFiles));
+        }
+        ai.setUnlimitedTraffic();
+        if (this.isFree) {
+            ai.setStatus("Registered (free) User");
+        } else {
+            ai.setStatus("Premium User");
+        }
+        final String expires = this.br.getRegex("<h4>Premium Until</h4></th> <td><h5>(.*?) EST</h5>").getMatch(0);
+        if (expires != null) {
+            ai.setValidUntil(Regex.getMilliSeconds(expires, "dd MMMM yyyy", null));
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.fileserve.com/terms.php";
     }
 
     @Override
@@ -338,7 +250,121 @@ public class FileServeCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public int getMaxSimultanPremiumDownloadNum() {
+        int maxdls = -1;
+        try {
+            if (AccountController.getInstance().getValidAccount(this).getStringProperty("type").toString() != null) {
+                maxdls = 1;
+            }
+        } catch (final Exception e) {
+
+        }
+        return maxdls;
+    }
+
+    private void handleErrors() throws PluginException {
+        if (this.br.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users")); }
+        if (this.br.containsHTML(">Your download link has expired")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link expired, contact fileserve support", 10 * 60 * 1000l); }
+        if (this.br.containsHTML("Captcha error") || this.br.containsHTML("incorrect-captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        final String wait = this.br.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
+        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l); }
+        if (this.br.containsHTML("landing-406.php")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
+        if (this.br.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry...</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time|URL=http://www\\.fileserve\\.com/landing-403\\.php\")")) { throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support"); }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        this.requestFileInformation(downloadLink);
+        this.br.getPage(downloadLink.getDownloadURL());
+        this.doFree(downloadLink);
+    }
+
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.requestFileInformation(link);
+        this.login(account);
+        if (this.isFree) {
+            this.br.getPage(link.getDownloadURL());
+            this.doFree(link);
+        } else {
+            this.br.setFollowRedirects(false);
+            this.br.postPage(link.getDownloadURL(), "download=premium");
+            final String dllink = this.br.getRedirectLocation();
+            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
+            if (this.dl.getConnection().getResponseCode() == 404) {
+                this.br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (this.dl.getConnection().getContentType().contains("html")) {
+                this.br.followConnection();
+                if (this.dl.getConnection().getLongContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                this.handleErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.dl.startDownload();
+        }
+    }
+
+    public void login(final Account account) throws Exception {
+        this.setBrowserExclusive();
+        this.br.setFollowRedirects(true);
+        this.br.setDebug(true);
+        this.br.getPage("http://fileserve.com/login.php");
+        if (this.br.containsHTML("This service is temporarily not available for your service area")) {
+            final AccountInfo acInfo = new AccountInfo();
+            acInfo.setStatus("Your country is blocked by fileserve!");
+            account.setAccountInfo(acInfo);
+            // Show the user for 20 seconds that the account is blocked, the
+            // deactivate it
+            Thread.sleep(20 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        /* username and pass are limited to 20 chars */
+        String username = account.getUser();
+        String password = account.getPass();
+        if (username != null && username.length() > 20) {
+            username = username.substring(0, 20);
+        }
+        if (password != null && password.length() > 20) {
+            password = password.substring(0, 20);
+        }
+        this.br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(username) + "&loginUserPassword=" + Encoding.urlEncode(password) + "&loginFormSubmit=Login");
+        if (this.br.containsHTML("Username doesn't exist")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        this.br.getPage("http://fileserve.com/dashboard.php");
+        String accType = this.br.getRegex("<h5>Account type:</h5>[\r\n ]+<h3>(Premium|Free)</h3>").getMatch(0);
+        if (accType == null) {
+            accType = this.br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium|Free)([ ]+)?</h5>").getMatch(0);
+        }
+        if (this.br.getCookie("http://fileserve.com", "cookie") == null || accType == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (!accType.equals("Premium")) {
+            try {
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+                /* not available in 0.9xxx */
+            }
+            account.setProperty("type", "free");
+            this.isFree = true;
+        } else {
+            account.setProperty("type", null);
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        this.checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        return link.getAvailableStatus();
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }

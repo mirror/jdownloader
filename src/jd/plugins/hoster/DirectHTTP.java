@@ -16,20 +16,26 @@
 
 package jd.plugins.hoster;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.CaptchaController;
+import jd.controlling.DownloadController;
 import jd.controlling.HTACCESSController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDImage;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -40,6 +46,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 /**
@@ -50,20 +57,25 @@ public class DirectHTTP extends PluginForHost {
 
     public static class Recaptcha {
 
-        private final Browser br;
-        private String        challenge;
-        private String        server;
-        private String        captchaAddress;
-        private String        id;
-        private Browser       rcBr;
-        private Form          form;
+        private static final int MAX_TRIES = 10;
+        private final Browser    br;
+        private String           challenge;
+        private String           server;
+        private String           captchaAddress;
+        private String           id;
+        private Browser          rcBr;
+        private Form             form;
+        private int              tries     = 0;
 
         public Recaptcha(final Browser br) {
             this.br = br;
         }
 
-        public File downloadCaptcha(final File captchaFile) throws IOException {
+        public File downloadCaptcha(final File captchaFile) throws IOException, PluginException {
             /* follow redirect needed as google redirects to another domain */
+            if (this.getTries() > 0) {
+                this.reload();
+            }
             this.rcBr.setFollowRedirects(true);
             Browser.download(captchaFile, this.rcBr.openGetConnection(this.captchaAddress));
             return captchaFile;
@@ -71,6 +83,32 @@ public class DirectHTTP extends PluginForHost {
 
         public String getCaptchaAddress() {
             return this.captchaAddress;
+        }
+
+        protected String getCaptchaCode(final String method, final File file, final DownloadLink link, final Plugin plg) throws PluginException {
+            final LinkStatus linkStatus = link.getLinkStatus();
+            final String status = linkStatus.getStatusText();
+            final DownloadController downloadController = DownloadController.getInstance();
+            try {
+                linkStatus.addStatus(LinkStatus.WAITING_USERIO);
+                linkStatus.setStatusText(JDL.L("gui.downloadview.statustext.jac", "Captcha recognition"));
+                try {
+                    final BufferedImage img = ImageIO.read(file);
+                    linkStatus.setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                }
+                downloadController.fireDownloadLinkUpdate(link);
+
+                final String cc = new CaptchaController(plg.getHost(), plg instanceof PluginForHost ? ((PluginForHost) plg).getHosterIconUnscaled() : null, method, file, "", "Please enter both words").getCode(0);
+                if (cc == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                return cc;
+            } finally {
+                linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
+                linkStatus.setStatusText(status);
+                linkStatus.setStatusIcon(null);
+                downloadController.fireDownloadLinkUpdate(link);
+            }
         }
 
         public String getChallenge() {
@@ -89,6 +127,45 @@ public class DirectHTTP extends PluginForHost {
             return this.server;
         }
 
+        public int getTries() {
+            return this.tries;
+        }
+
+        public synchronized void handleAuto(final Plugin plg, final DownloadLink downloadLink) throws Exception {
+
+            this.parse();
+
+            this.load();
+            while (!this.isSolved()) {
+
+                int count = 1;
+
+                File dest = null;
+                while (dest == null || dest.exists()) {
+                    dest = JDUtilities.getResourceFile("captchas/recaptcha_" + plg.getHost() + "_" + count + ".jpg", true);
+                    count++;
+                }
+                dest.deleteOnExit();
+
+                this.downloadCaptcha(dest);
+                final String code = this.getCaptchaCode(plg.getHost(), dest, downloadLink, plg);
+                if (code == null || code.length() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed"); }
+                this.setCode(code);
+
+            }
+        }
+
+        public boolean isSolved() throws PluginException {
+            if (this.tries > Recaptcha.MAX_TRIES) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            try {
+                this.parse();
+                // recaptcha stil found. so it is not solved yet
+                return false;
+            } catch (final Exception e) {
+                return true;
+            }
+        }
+
         public void load() throws IOException, PluginException {
             this.rcBr = this.br.cloneBrowser();
             /* follow redirect needed as google redirects to another domain */
@@ -104,7 +181,8 @@ public class DirectHTTP extends PluginForHost {
         }
 
         public void parse() throws IOException, PluginException {
-
+            this.form = null;
+            this.id = null;
             if (this.br.containsHTML("Recaptcha\\.create\\(\".*?\"\\,\\s*\".*?\"\\,.*?\\)")) {
                 this.id = this.br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
                 final String div = this.br.getRegex("Recaptcha\\.create\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getMatch(1);
@@ -120,11 +198,6 @@ public class DirectHTTP extends PluginForHost {
                         this.form = f;
                         break;
                     }
-                }
-                if (this.form == null) {
-                    Plugin.logger.warning("reCaptcha form couldn't be found...");
-
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
 
             } else {
@@ -151,6 +224,28 @@ public class DirectHTTP extends PluginForHost {
                     }
                 }
             }
+            if (this.id == null || this.id.equals("")) {
+                Plugin.logger.warning("reCaptcha ID couldn't be found...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (this.form == null) {
+                Plugin.logger.warning("reCaptcha form couldn't be found...");
+
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+
+        }
+
+        public void reload() throws IOException, PluginException {
+
+            this.rcBr.getPage("http://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
+            this.challenge = this.rcBr.getRegex("Recaptcha\\.finish\\_reload\\(\\'(.*?)\\'\\, \\'image\\'\\)\\;").getMatch(0);
+
+            if (this.challenge == null) {
+                JDLogger.getLogger().severe("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.captchaAddress = this.server + "image?c=" + this.challenge;
         }
 
         public void setCaptchaAddress(final String captchaAddress) {
@@ -168,6 +263,7 @@ public class DirectHTTP extends PluginForHost {
             this.form.put("recaptcha_challenge_field", this.challenge);
             this.form.put("recaptcha_response_field", Encoding.urlEncode(code));
             this.br.submitForm(this.form);
+            this.tries++;
             return this.br;
         }
 

@@ -170,7 +170,8 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
         ReconnectPluginConfigGUI.LOG.info("Start Reconnect");
         this.lblStatusMessage.setText(JDL.L("gui.warning.reconnect.running", "running..."));
         this.lblStatusMessage.setEnabled(true);
-        this.lblBeforeIP.setText(this.lblCurrentIP.getText());
+        this.lblBeforeIP.setText(IPController.getInstance().fetchIP().toString());
+
         this.lblBeforeIP.setEnabled(true);
         this.lblBeforeIpLabel.setEnabled(true);
         this.lblCurrentIP.setText("?");
