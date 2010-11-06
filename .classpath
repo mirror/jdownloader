@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry excluding="jd/plugins/optional/neembuu/" kind="src" path="src"/>
+	<classpathentry kind="src" path="ressourcen"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="jd/ressourcen/libs/dbus"/>
@@ -81,6 +82,8 @@
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/trident.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.8.2.jar" sourcepath="ressourcen/code-ressourcen/junit-4.8.2-src.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/flex-messaging-common.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/flex-messaging-core.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding-AllPlatforms.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding.jar"/>
 	<classpathentry kind="output" path="bin"/>
