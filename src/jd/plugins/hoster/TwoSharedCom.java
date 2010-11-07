@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.script.Invocable;
@@ -25,12 +27,14 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -40,90 +44,39 @@ public class TwoSharedCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.2shared.com";
 
-    public TwoSharedCom(PluginWrapper wrapper) {
+    public TwoSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/audio/", "/file/"));
+        link.setUrlDownload(link.getDownloadURL().replace("/video/", "/file/"));
+    }
+
+    public String decrypt(final int a, final List<String> param) throws Exception {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        final Invocable inv = (Invocable) engine;
+        try {
+            if (a == 0) {
+                engine.eval("function charalgo(M){" + param.get(0) + "return (M);}");
+                result = inv.invokeFunction("charalgo", param.get(1));
+            } else {
+                engine.eval(param.get(0) + param.get(1));
+                result = inv.invokeFunction("decode", param.get(2));
+            }
+        } catch (final ScriptException e) {
+            e.printStackTrace();
+        }
+        if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        return result.toString();
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.2shared.com/terms.jsp";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/audio/", "/file/"));
-        link.setUrlDownload(link.getDownloadURL().replace("/video/", "/file/"));
-    }
-    
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        br.setCookiesExclusive(true);
-        br.getPage(downloadLink.getDownloadURL());
-        Form pwform = br.getForm(0);
-        if (pwform != null) {
-            String filename = br.getRegex("<td class=\"header\" align=\"center\">Download (.*?)</td>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(filename.trim());
-            return AvailableStatus.TRUE;
-        }
-        String filesize = br.getRegex(Pattern.compile("<span class=.*?>File size:</span>(.*?)&nbsp; &nbsp;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String filename = br.getRegex("<title>2shared - download(.*?)</title>").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim().replaceAll(",|\\.", "")));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        Form pwform = br.getForm(0);
-        if (pwform != null) {
-            String passCode;
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, downloadLink);
-            } else {
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            pwform.put("userPass2", passCode);
-            br.submitForm(pwform);
-            if (br.containsHTML("passError\\(\\);")) {
-                downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("plugins.hoster.2sharedcom.errors.wrongcaptcha", "Wrong captcha"));
-            } else {
-                downloadLink.setProperty("pass", passCode);
-            }
-        }
-        String link = br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        /* charalgo now works dynamically */
-        String jsquery = br.getPage(MAINPAGE + br.getRegex("src=\"(.*?)\"").getMatch(0, 1));
-        String charalgo = new Regex(jsquery, "var viw(.*)l2surl;\\}").getMatch(-1).replaceAll("M\\.url", "M");
-        if (link == null || jsquery == null || charalgo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String result = decrypt(charalgo, link);
-        if (result != null) link = result;
-        link = br.getPage(MAINPAGE + link).trim();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getURL().getQuery().contains("MAX_IP")) {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached"), 10 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-    
-    public String decrypt(String fun, String value) throws Exception {
-        Object result = new Object();
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("javascript");
-        Invocable inv = (Invocable) engine;
-        try {
-            engine.eval("function charalgo(M){" + fun + "return (M);}");
-            result = inv.invokeFunction("charalgo", value);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
-        return (String) result;
     }
 
     @Override
@@ -132,14 +85,87 @@ public class TwoSharedCom extends PluginForHost {
     }
 
     @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        this.requestFileInformation(downloadLink);
+        final Form pwform = this.br.getForm(0);
+        if (pwform != null) {
+            String passCode;
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput(null, downloadLink);
+            } else {
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            pwform.put("userPass2", passCode);
+            this.br.submitForm(pwform);
+            if (this.br.containsHTML("passError\\(\\);")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("plugins.hoster.2sharedcom.errors.wrongcaptcha", "Wrong captcha"));
+            } else {
+                downloadLink.setProperty("pass", passCode);
+            }
+        }
+        String link = this.br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String result = new String();
+        final List<String> param = new ArrayList<String>();
+        final Browser fn = this.br.cloneBrowser();
+        if (!link.contains("\\d+")) {
+            // Function Decode
+            param.add(new Regex(fn.toString().replaceAll("\n|\t", ""), "function decode(.*?)\\}.*?\\}").getMatch(-1));
+            // var em
+            param.add(this.br.getRegex("var em='(.*?)';").getMatch(-1));
+            // var key
+            param.add(this.br.getRegex("var key='(.*?)';").getMatch(0));
+            result = this.decrypt(1, param);
+            link += result;
+        }
+        final String jsquery = fn.getPage(TwoSharedCom.MAINPAGE + this.br.getRegex("src=\"(.*?)\"").getMatch(0, 1));
+        final String charalgo = new Regex(jsquery, "var viw(.*)l2surl;\\}").getMatch(-1).replaceAll("M\\.url", "M");
+        if ((link == null) || (jsquery == null) || (charalgo == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        param.clear();
+        param.add(charalgo);
+        param.add(link);
+        result = this.decrypt(0, param);
+        if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        link = this.br.getPage(TwoSharedCom.MAINPAGE + result).trim();
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, link, true, 1);
+        if (this.dl.getConnection().getContentType().contains("html")) {
+            if (this.dl.getConnection().getURL().getQuery().contains("MAX_IP")) {
+                this.dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached"), 10 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        this.dl.startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
+        this.br.setCookiesExclusive(true);
+        this.br.getPage(downloadLink.getDownloadURL());
+        final Form pwform = this.br.getForm(0);
+        if (pwform != null) {
+            final String filename = this.br.getRegex("<td class=\"header\" align=\"center\">Download (.*?)</td>").getMatch(0);
+            if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            downloadLink.setName(filename.trim());
+            return AvailableStatus.TRUE;
+        }
+        final String filesize = this.br.getRegex(Pattern.compile("<span class=.*?>File size:</span>(.*?)&nbsp; &nbsp;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        final String filename = this.br.getRegex("<title>2shared - download(.*?)</title>").getMatch(0);
+        if ((filesize == null) || (filename == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize.trim().replaceAll(",|\\.", "")));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

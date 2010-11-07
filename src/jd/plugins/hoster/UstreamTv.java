@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import flex.messaging.io.amf.ASObject;
 import flex.messaging.io.amf.client.AMFConnection;
 
-@HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://www.ustream.tv/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class UstreamTv extends PluginForHost {
 
     public UstreamTv(final PluginWrapper wrapper) {
@@ -81,11 +81,17 @@ public class UstreamTv extends PluginForHost {
         amfConnection.close();
         int chunk = 0;
         String dllink = new String();
-        if (pageUrl.contains("highlight")) {
+        /* mp4,flv Selection */
+        if (result.containsKey("liveHttpUrl")) {
             dllink = result.get("liveHttpUrl").toString();
             chunk = 1;
-        } else {
+        } else if (result.containsKey("flv")) {
+            if (pageUrl.contains("highlight")) {
+                downloadLink.setName(downloadLink.getName().replace("mp4", "flv"));
+            }
             dllink = result.get("flv").toString();
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporary offline!");
         }
         this.dl = BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, chunk);
         if (this.dl.getConnection().getContentType().contains("html")) {
@@ -99,6 +105,7 @@ public class UstreamTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         this.br.getPage(downloadLink.getDownloadURL());
+        if (this.br.containsHTML("We're sorry, the page you requested cannot be found.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = this.br.getRegex("VideoTitle\">(.*?)<").getMatch(0);
         if (filename == null) {
             filename = this.br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
