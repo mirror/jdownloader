@@ -24,15 +24,27 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
+import jd.nutils.Executer;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.IO;
 
 public class Recaptcha {
 
-    private static void autoRemoveCurves(final Captcha captcha) {
+    private static final int SMOOTH_FACTOR = 8;
 
+    private static void autoRemoveCurves(final Captcha captcha) {
         captcha.clean();
+        // Save orginial grid
+        final int[][] org = captcha.getGridCopy();
+        // find curve
+        captcha.blur(5, 5, 3);
+        BasicWindow.showImage(captcha.getImage());
+        captcha.toBlackAndWhite(0.8);
+        BasicWindow.showImage(captcha.getImage());
         final int[][] orgGrid = captcha.getGridCopy();
         final int height = captcha.getHeight();
         final int width = captcha.getWidth();
@@ -56,25 +68,29 @@ public class Recaptcha {
             if (topMax < 0) {
                 topMax = 0;
             }
-            // captcha.grid[x][bottomMax] = 0x00ff00;
-            // captcha.grid[x][topMax] = 0x0000ff;
+            // debug:print line
+            captcha.grid[x][bottomMax] = 0x00ff00;
+            captcha.grid[x][topMax] = 0x0000ff;
             midCurve[x] = (bottomMax + topMax) / 2;
             average += midCurve[x];
         }
+        // calulate mid line
         average /= midCurve.length;
-        midCurve = Recaptcha.smooth(midCurve, 8);
+        // smooth curve
+        midCurve = Recaptcha.smooth(midCurve, Recaptcha.SMOOTH_FACTOR);
         for (int x = 0; x < midCurve.length; x++) {
             captcha.grid[x][midCurve[x]] = 0xff0000;
             captcha.grid[x][average] = 0x00ff00;
 
         }
+        BasicWindow.showImage(captcha.getImage());
 
         for (int x = 0; x < width; x++) {
 
             for (int y = 0; y < height; y++) {
                 final int newY = y + midCurve[x] - average;
                 if (newY >= 0 && newY < height) {
-                    captcha.grid[x][y] = orgGrid[x][newY];
+                    captcha.grid[x][y] = org[x][newY];
                 } else {
                     captcha.grid[x][y] = 0xffffff;
                 }
@@ -84,15 +100,8 @@ public class Recaptcha {
 
     }
 
-    private static File handle(final Captcha captcha, final File file) throws IOException {
-        file.deleteOnExit();
-        ImageIO.write(captcha.getImage(), "jpg", file);
-
-        return file;
-    }
-
     public static void main(final String args[]) throws IOException {
-
+        // get a random recaptcha image
         final File[] list = JDUtilities.getResourceFile("/captchas/").listFiles(new FilenameFilter() {
 
             public boolean accept(final File dir, final String name) {
@@ -103,26 +112,46 @@ public class Recaptcha {
         final int id = (int) (Math.random() * (list.length - 1));
 
         final File f = list[id];
-        Recaptcha.prepareCaptcha(f);
+        final File input = new File("input.jpg");
+        input.delete();
+        IO.copyFile(f, input);
+        // prepare image
+        Recaptcha.prepareCaptcha(input);
 
+        final Executer exe = new Executer("tesseract.exe");
+        exe.addParameter("input.jpg");
+        exe.addParameter("tessoutput");
+        exe.addParameter("-l");
+        exe.addParameter("eng");
+        exe.addParameter("nobatch");
+        exe.addParameter("+arc");
+        exe.setWaitTimeout(-1);
+        exe.start();
+        exe.waitTimeout();
+        System.out.println(exe.getErrorStream());
+        System.out.println(exe.getOutputStream());
+
+        System.out.println(IO.readFileToString(new File("tessoutput.txt")));
     }
 
-    public static File[] prepareCaptcha(final File file) {
+    public static void prepareCaptcha(final File file) {
         try {
             final JAntiCaptcha jac = new JAntiCaptcha("recaptcha");
             jac.getJas().setColorType("RGB");
             final Image captchaImage = Utilities.loadImage(file);
-            final Captcha captcha = jac.createCaptcha(captchaImage);
+            BasicWindow.showImage(captchaImage);
+            Captcha captcha = jac.createCaptcha(captchaImage);
+            // scale x2
+            captcha = jac.createCaptcha(new Hq2x().scale(captcha.getImage()));
             if (captcha != null) {
                 captcha.setCaptchaFile(file);
             }
-            captcha.toBlackAndWhite(0.6);
-            captcha.clean();
+            BasicWindow.showImage(captcha.getImage());
 
             //
-
+            // try to remove distortion
             Recaptcha.autoRemoveCurves(captcha);
-            captcha.resizetoHeight(100);
+            // find gap between words
             int white = 0;
             int maxWhite = 0;
             int maxWhiteX = 0;
@@ -139,34 +168,16 @@ public class Recaptcha {
                 }
                 white++;
             }
-
-            final Captcha[] captchas = new Captcha[2];
-            captchas[0] = new Captcha(maxWhiteX - maxWhite / 2, captcha.getHeight());
-            captchas[0].setOwner(jac);
-            for (int x = 0; x < captchas[0].getWidth(); x++) {
-                captchas[0].grid[x] = captcha.grid[x];
-            }
-            captchas[1] = new Captcha(captcha.getWidth() - (maxWhiteX - maxWhite / 2), captcha.getHeight());
-            captchas[1].setOwner(jac);
-            for (int x = 0; x < captchas[1].getWidth(); x++) {
-                captchas[1].grid[x] = captcha.grid[x + captchas[0].getWidth()];
-            }
-
-            captchas[0].clean();
-            captchas[1].clean();
-
-            final File[] ret = new File[2];
-            ret[0] = Recaptcha.handle(captchas[0], new File(file.getAbsolutePath() + "_0.jpg"));
-            ret[1] = Recaptcha.handle(captchas[1], new File(file.getAbsolutePath() + "_1.jpg"));
-
+            // TODO: add a defined gap between two words (10 px). (space)
             // Recaptcha.autoRemoveCurves(captcha);
-            //
-            // Recaptcha.autoRemoveCurves(captcha);
-            return ret;
+            captcha.toBlackAndWhite(0.6);
+            captcha.clean();
+            BasicWindow.showImage(captcha.getImage());
+            ImageIO.write(captcha.getImage(), "jpg", file);
         } catch (final Exception e) {
             e.printStackTrace();
         }
-        return null;
+
     }
 
     private static int[] smooth(final int input[], final int radius) {
