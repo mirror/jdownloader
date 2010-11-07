@@ -44,7 +44,6 @@ import jd.utils.locale.JDL;
 public class FileSonicCom extends PluginForHost {
 
     private static final Object LOCK               = new Object();
-    private static long         LAST_FREE_DOWNLOAD = 0l;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -207,19 +206,11 @@ public class FileSonicCom extends PluginForHost {
         passCode = null;
         this.br.setCookiesExclusive(false);
 
-        this.br.forceDebug(true);
-        // we have to enter captcha before we get ip_blocked_state
-        // we do this timeing check to avoid this
-        final long waited = System.currentTimeMillis() - FileSonicCom.LAST_FREE_DOWNLOAD;
-        if (FileSonicCom.LAST_FREE_DOWNLOAD > 0 && waited < 300000) {
-            FileSonicCom.LAST_FREE_DOWNLOAD = 0;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 600000 - waited);
-        }
         this.requestFileInformation(downloadLink);
         passCode = null;
 
-        final String id = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
-        this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
+        final String id = getID(downloadLink);
+        XMLRequest(br, "http://www.filesonic.com/file/" + id + "/" + id + "?start=1", "");
         if (this.br.containsHTML("The file that you're trying to download is larger than")) {
             final String size = this.br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
             if (size != null) {
@@ -229,18 +220,10 @@ public class FileSonicCom extends PluginForHost {
             }
         }
         this.removeComments();
-        if (this.br.containsHTML("Free users may only download 1 file at a time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l); }
+        if (this.br.containsHTML("Free users may only download 1 file at a time")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l);
+        }
 
-        /*
-         * Cancel seem no longer usable if
-         * (this.br.containsHTML("href='\\?cancelDownload=1\\&start=1'>")) {
-         * Plugin.logger.info("Cancel running filesonic downloads");
-         * this.br.getPage("http://www.filesonic.com/file/" + id +
-         * "?cancelDownload=1&start=1"); //
-         * this.br.postPage("http://www.filesonic.com/file/" + id + //
-         * "?start=1", ""); throw new PluginException(LinkStatus.ERROR_RETRY);
-         * //this.removeComments(); }
-         */
         this.br.setFollowRedirects(true);
         // download is ready already
         final String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.com[^<]*?)\"><span>Start download now!</span></a></p>";
@@ -248,25 +231,25 @@ public class FileSonicCom extends PluginForHost {
         downloadUrl = this.br.getRegex(re).getMatch(0);
         if (downloadUrl == null) {
             this.errorHandling(downloadLink);
-            // downloadUrl =
-            // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
-            // if (downloadUrl == null) { throw new
-            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             if (this.br.containsHTML("This file is available for premium users only.")) {
-
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Premium only file. Buy Premium Account"); }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesonic.onlypremium", "Only downloadable for premium users!"));
+            }
             final String countDownDelay = this.br.getRegex("countDownDelay = (\\d+)").getMatch(0);
             if (countDownDelay != null) {
                 /*
                  * we have to wait a little longer than needed cause its not
                  * exactly the same time
                  */
+                Long delay = Long.parseLong(countDownDelay);
                 if (Long.parseLong(countDownDelay) > 300) {
-
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
-                this.sleep(Long.parseLong(countDownDelay) * 1001, downloadLink);
-                this.br.postPage("http://www.filesonic.com/file/" + id + "?start=1", "");
-                this.removeComments();
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (delay-60) * 1000l);
+                } else {
+                    this.sleep((delay+5) * 1000, downloadLink);
+                    String tm = this.br.getRegex("name='tm' value='([^']*)'").getMatch(0);
+                    String tmh = this.br.getRegex("name='tm_hash' value='([^']*)'").getMatch(0);
+                    XMLRequest(br, "http://www.filesonic.com/file/" + id + "/" + downloadLink.getName() + "?start=1", "tm="+tm+"&tm_hash="+tmh);
+                    this.removeComments();
+                }
             }
             if (this.br.containsHTML("Recaptcha\\.create")) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -289,13 +272,17 @@ public class FileSonicCom extends PluginForHost {
             }
             downloadUrl = this.br.getRegex(re).getMatch(0);
         }
-        if (downloadUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (downloadUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)
          */
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
-        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
+        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null
+        && (this.dl.getConnection().getContentType().contains("html")
+        || this.dl.getConnection().getContentType().contains("unknown"))) {
             this.br.followConnection();
 
             this.errorHandling(downloadLink);
@@ -306,7 +293,6 @@ public class FileSonicCom extends PluginForHost {
         }
         this.dl.setFilenameFix(true);
         this.dl.startDownload();
-        FileSonicCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
     }
 
     @Override
