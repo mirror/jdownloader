@@ -49,10 +49,10 @@ public class FilePlanetComUa extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public String brbefore = "";
+    public String               brbefore     = "";
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST = "http://fileplanet.com.ua";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST  = "http://fileplanet.com.ua";
+    public boolean              nopremium    = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -87,7 +87,7 @@ public class FilePlanetComUa extends PluginForHost {
             if (filesize == null) {
                 filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
                 if (filesize == null) {
-                    filesize = new Regex(brbefore, "Size: <b>(.*?)</b>").getMatch(0);
+                    filesize = new Regex(brbefore, "Size: (.*?)</font>").getMatch(0);
                 }
             }
         }
@@ -122,6 +122,7 @@ public class FilePlanetComUa extends PluginForHost {
             }
         }
         if (freeform != null) {
+            freeform.remove(null);
             freeform.remove("method_premium");
             br.submitForm(freeform);
             doSomething();
@@ -191,7 +192,7 @@ public class FilePlanetComUa extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (brbefore.contains("api.recaptcha.net")) {
+        } else if (brbefore.contains("api.recaptcha.net") || brbefore.contains("google.com/recaptcha/api/")) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom

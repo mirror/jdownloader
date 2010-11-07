@@ -476,3 +476,5 @@ jd/img/default/stop_after_disabled_big.png
 jd/img/default/stop_after_enabled_big.png
 jd/plugins/hoster/MovieShareIn.class
 jd/plugins/hoster/StorageTo.class
+jd/plugins/decrypter/DDLWrz.class
+jd/plugins/decrypter/AffgBz.class
