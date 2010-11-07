@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -44,6 +43,7 @@ import jd.utils.locale.JDL;
 public class FileSonicCom extends PluginForHost {
 
     private static final Object LOCK               = new Object();
+    private static long         LAST_FREE_DOWNLOAD = 0l;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -113,20 +113,31 @@ public class FileSonicCom extends PluginForHost {
         link.setUrlDownload("http://www.filesonic.com/file/" + id);
     }
 
-    private void errorHandling(final DownloadLink downloadLink) throws PluginException {
-        if (this.br.containsHTML("Free user can not download files")) {
+    private void errorHandling(final DownloadLink downloadLink, final Browser br) throws PluginException {
+        if (br.containsHTML("The file that you're trying to download is larger than")) {
+            final String size = br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
+            if (size != null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.filesonic.onlypremiumsize", "Only premium users can download files larger than %s.", size.trim()));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.onlypremium", "Only downloadable for premium users!"));
+            }
+        }
+
+        if (br.containsHTML("Free users may only download 1 file at a time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l); }
+
+        if (br.containsHTML("Free user can not download files")) {
             //
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.largefree", "Free user can not download files over 400MB"));
         }
-        if (this.br.containsHTML("Download session in progress")) {
+        if (br.containsHTML("Download session in progress")) {
             //
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.inprogress", "Download session in progress"), 10 * 60 * 1000l);
         }
-        if (this.br.containsHTML("This file is password protected")) {
+        if (br.containsHTML("This file is password protected")) {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         }
-        if (this.br.containsHTML("An Error Occurred")) {
+        if (br.containsHTML("An Error Occurred")) {
 
             //
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesonic.servererror", "Server error"), 20 * 60 * 1000l);
@@ -206,58 +217,61 @@ public class FileSonicCom extends PluginForHost {
         passCode = null;
         this.br.setCookiesExclusive(false);
 
+        this.br.forceDebug(true);
+        // we have to enter captcha before we get ip_blocked_state
+        // we do this timeing check to avoid this
+        final long waited = System.currentTimeMillis() - FileSonicCom.LAST_FREE_DOWNLOAD;
+        if (FileSonicCom.LAST_FREE_DOWNLOAD > 0 && waited < 300000) {
+            FileSonicCom.LAST_FREE_DOWNLOAD = 0;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 600000 - waited);
+        }
         this.requestFileInformation(downloadLink);
         passCode = null;
 
-        final String id = getID(downloadLink);
-        XMLRequest(br, "http://www.filesonic.com/file/" + id + "/" + id + "?start=1", "");
-        if (this.br.containsHTML("The file that you're trying to download is larger than")) {
-            final String size = this.br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
-            if (size != null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.filesonic.onlypremiumsize", "Only premium users can download files larger than %s.", size.trim()));
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.onlypremium", "Only downloadable for premium users!"));
-            }
-        }
-        this.removeComments();
-        if (this.br.containsHTML("Free users may only download 1 file at a time")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l);
-        }
+        final String freeDownloadLink = this.br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
+        // this is an ajax call
+        final Browser ajax = this.br.cloneBrowser();
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.postPage(freeDownloadLink, "");
 
+        this.errorHandling(downloadLink, ajax);
         this.br.setFollowRedirects(true);
         // download is ready already
         final String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.com[^<]*?)\"><span>Start download now!</span></a></p>";
 
-        downloadUrl = this.br.getRegex(re).getMatch(0);
+        downloadUrl = ajax.getRegex(re).getMatch(0);
         if (downloadUrl == null) {
-            this.errorHandling(downloadLink);
-            if (this.br.containsHTML("This file is available for premium users only.")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesonic.onlypremium", "Only downloadable for premium users!"));
-            }
-            final String countDownDelay = this.br.getRegex("countDownDelay = (\\d+)").getMatch(0);
+
+            // downloadUrl =
+            // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
+            // if (downloadUrl == null) { throw new
+            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (ajax.containsHTML("This file is available for premium users only.")) {
+
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Premium only file. Buy Premium Account"); }
+            final String countDownDelay = ajax.getRegex("countDownDelay = (\\d+)").getMatch(0);
             if (countDownDelay != null) {
                 /*
                  * we have to wait a little longer than needed cause its not
                  * exactly the same time
                  */
-                Long delay = Long.parseLong(countDownDelay);
                 if (Long.parseLong(countDownDelay) > 300) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (delay-60) * 1000l);
-                } else {
-                    this.sleep((delay+5) * 1000, downloadLink);
-                    String tm = this.br.getRegex("name='tm' value='([^']*)'").getMatch(0);
-                    String tmh = this.br.getRegex("name='tm_hash' value='([^']*)'").getMatch(0);
-                    XMLRequest(br, "http://www.filesonic.com/file/" + id + "/" + downloadLink.getName() + "?start=1", "tm="+tm+"&tm_hash="+tmh);
-                    this.removeComments();
-                }
-            }
-            if (this.br.containsHTML("Recaptcha\\.create")) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
-                rc.handleAuto(this, downloadLink);
 
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
+                this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
+                final String tm = ajax.getRegex("name='tm' value='(.*?)' />").getMatch(0);
+                final String tm_hash = ajax.getRegex("name='tm_hash' value='(.*?)' />").getMatch(0);
+                final Form form = new Form();
+                form.setMethod(Form.MethodType.POST);
+                form.setAction(downloadLink.getDownloadURL() + "?start=1");
+                form.put("tm", tm);
+                form.put("tm_hash", tm_hash);
+
+                ajax.submitForm(form);
+                this.errorHandling(downloadLink, ajax);
             }
-            if (this.br.containsHTML("This file is password protected")) {
+            int tries = 0;
+            while (ajax.containsHTML("Please Enter Password")) {
                 /* password handling */
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput(null, downloadLink);
@@ -265,27 +279,31 @@ public class FileSonicCom extends PluginForHost {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
-                final Form form = this.br.getForm(0);
-                form.put("password", Encoding.urlEncode(passCode));
-                this.br.submitForm(form);
+                final Form form = ajax.getForm(0);
+                form.put("passwd", Encoding.urlEncode(passCode));
+                ajax.submitForm(form);
+                if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
 
             }
-            downloadUrl = this.br.getRegex(re).getMatch(0);
+            if (ajax.containsHTML("Recaptcha\\.create")) {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
+                rc.handleAuto(this, downloadLink);
+
+            }
+
+            downloadUrl = ajax.getRegex(re).getMatch(0);
         }
-        if (downloadUrl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        if (downloadUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)
          */
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
-        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null
-        && (this.dl.getConnection().getContentType().contains("html")
-        || this.dl.getConnection().getContentType().contains("unknown"))) {
+        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
             this.br.followConnection();
 
-            this.errorHandling(downloadLink);
+            this.errorHandling(downloadLink, this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
@@ -293,6 +311,7 @@ public class FileSonicCom extends PluginForHost {
         }
         this.dl.setFilenameFix(true);
         this.dl.startDownload();
+        FileSonicCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
     }
 
     @Override
@@ -345,7 +364,7 @@ public class FileSonicCom extends PluginForHost {
         }
         if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
             this.br.followConnection();
-            this.errorHandling(downloadLink);
+            this.errorHandling(downloadLink, this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
@@ -414,10 +433,6 @@ public class FileSonicCom extends PluginForHost {
                 this.br.setFollowRedirects(false);
             }
         }
-    }
-
-    private void removeComments() throws CharacterCodingException {
-        this.br.getRequest().setHtmlCode(this.br.getRequest().getHtmlCode().replaceAll("<\\!\\-\\-.*?\\-\\-\\>", ""));
     }
 
     @Override
