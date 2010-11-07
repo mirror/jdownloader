@@ -55,8 +55,9 @@
 	<!-- Compiles the code -->
 	<target name="compile" depends="clean">
 		<mkdir dir="${cls}" />
-		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="${src}" excludes="jd/plugins/optional/neembuu/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
 			<classpath refid="classpath" />
+			
 		</javac>
 		<echo message="Finished." />
 	</target>
@@ -271,12 +272,13 @@
 		<buildAddon number="127" package="JDHJMerge" include="hjsplit/**" />
 		<buildAddon number="128" package="JDTray" include="jdtrayicon/**" />
 		<buildAddon number="129" package="ExternInterface" include="interfaces/**" />
-		<buildAddon number="130" package="JDPremium" include="jdpremclient**" />
+		<buildAddon number="130" package="JDPremium" include="jdpremclient/**" />
 		<buildAddon number="131" package="JDGrowl" include="JDGrowlNotification*" />
 		<buildAddon number="132" package="Customizer" include="customizer/**" />
 		<buildAddon number="133" package="AntiShutdown" include="antistandby/**" />
 		<buildAddon number="134" package="RouterDBEditor" include="routerdbeditor/**" />
 		<buildAddon number="137" package="scriptlauncher" include="scriptlauncher/**" />
+		<buildAddon number="140" package="JDFeedMe" include="jdfeedme/**" />
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
