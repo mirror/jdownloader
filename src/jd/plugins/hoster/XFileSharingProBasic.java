@@ -310,7 +310,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         account.setValid(true);
         String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("unlimited") && !availabletraffic.equals(" Mb")) {
+        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equals(" Mb")) {
             ai.setTrafficLeft(Regex.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();

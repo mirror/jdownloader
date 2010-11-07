@@ -39,9 +39,12 @@ public class ShareUaCom extends PluginForHost {
         return "http://shareua.com/terms";
     }
 
+    private static final String CAPTCHATEXT = "/files/get/sec_code";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         // Use English language
         br.getPage("http://shareua.com/lang/en");
         br.getPage(link.getDownloadURL());
@@ -66,15 +69,16 @@ public class ShareUaCom extends PluginForHost {
         // could be
         if (fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(br.getURL(), "file_id=" + fileid);
-        String captchaurl = "http://shareua.com/files/get/sec_code/" + fileid;
-        for (int i = 0; i <= 5; i++) {
-            if (!br.containsHTML("/files/get/sec_code")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode(captchaurl, downloadLink);
-            br.postPage(br.getURL(), "sec_num=" + code);
-            if (!br.containsHTML("/files/get/sec_code")) break;
-            continue;
+        if (br.containsHTML(CAPTCHATEXT)) {
+            String captchaurl = "http://shareua.com/files/get/sec_code/" + fileid;
+            for (int i = 0; i <= 5; i++) {
+                String code = getCaptchaCode(captchaurl, downloadLink);
+                br.postPage(br.getURL(), "sec_num=" + code);
+                if (!br.containsHTML("/files/get/sec_code")) break;
+                continue;
+            }
+            if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (br.containsHTML("/files/get/sec_code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String tokenPart = new Regex(br.getURL(), "get_file/(.+)").getMatch(0);
         if (tokenPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ttt = br.getRegex("var tAll =.*?(\\d+);").getMatch(0);
@@ -95,8 +99,8 @@ public class ShareUaCom extends PluginForHost {
         // Errors should only happen if you try to download more than 4 files at
         // the same time!
         if (dl.getConnection().getContentType().contains("html")) {
-            br.setCustomCharset("koi8-r");
             br.followConnection();
+            if (br.containsHTML("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=koi8-r\">")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

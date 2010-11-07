@@ -28,8 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com", "kewlfile.com", "mirrorafile.com", "klurk.com", "uploadsharefiles.com", "lougyl.com", "maishare.com", "uploadground.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "nahraj.me", "megaupper.com", "mirrory.pl", "shrta.com", "1filesharing.com", "7ups.net", "mirrorzian.com", "mirrorfusion.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?kewlfile\\.com/dl/\\d+", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?klurk\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadsharefiles\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?maishare\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadground\\.com/files/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.com/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?nahraj\\.me/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrory\\.pl/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorzian\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com", "kewlfile.com", "mirrorafile.com", "klurk.com", "uploadsharefiles.com", "lougyl.com", "maishare.com", "uploadground.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "nahraj.me", "megaupper.com", "mirrory.pl", "shrta.com", "1filesharing.com", "7ups.net", "mirrorzian.com", "mirrorfusion.com", "spreadmyfiles.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?kewlfile\\.com/dl/\\d+", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?klurk\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadsharefiles\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?maishare\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadground\\.com/files/[0-9A-Z]{8}",
+        "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.com/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?nahraj\\.me/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrory\\.pl/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorzian\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?spreadmyfiles\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -76,9 +76,15 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             if (singlelink.contains("/redirect/") || singlelink.contains("/rd/")) {
                 br.getPage(host + singlelink);
                 dllink = br.getRedirectLocation();
-                if (dllink == null) dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-                // For 1filesharing.com links
-                if (dllink == null) dllink = br.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+                    // For 1filesharing.com links
+                    if (dllink == null) {
+                        dllink = br.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
+                        // For Spreadmyfiles.com links
+                        if (dllink == null) dllink = br.getRegex("</iframe>[\n\t\r ]+<iframe style=\"border:0px\" src =\"(.*?)\"").getMatch(0);
+                    }
+                }
             } else {
                 // Handling for already regexed final-links
                 dllink = singlelink;

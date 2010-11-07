@@ -52,11 +52,11 @@ public class KeepFileCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private String brbefore = "";
-    private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
-    private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://keepfile.com";
-    public boolean nopremium = false;
+    private String              brbefore            = "";
+    private static final String PASSWORDTEXT0       = "<br><b>Password:</b> <input";
+    private static final String PASSWORDTEXT1       = "<br><b>Passwort:</b> <input";
+    private static final String COOKIE_HOST         = "http://keepfile.com";
+    public boolean              nopremium           = false;
     private static final String MAINTENANCEMODETEXT = "This server is in maintenance mode";
 
     @Override
@@ -316,13 +316,14 @@ public class KeepFileCom extends PluginForHost {
         }
         account.setValid(true);
         String availabletraffic = new Regex(brbefore, "Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("unlimited")) {
+        if (availabletraffic != null && !availabletraffic.contains("nlimited")) {
             ai.setTrafficLeft(Regex.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
         }
         if (!nopremium) {
-            String expire = new Regex(brbefore, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            String expire = new Regex(brbefore, "Premium-Account expire:</TD><TD><b><span class=\"premium_expire\">(.*?)</span></b>").getMatch(0);
+            if (expire == null) expire = new Regex(brbefore, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);

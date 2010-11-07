@@ -105,12 +105,12 @@ public class UstreamTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         this.br.getPage(downloadLink.getDownloadURL());
-        if (this.br.containsHTML("We're sorry, the page you requested cannot be found.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (this.br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = this.br.getRegex("VideoTitle\">(.*?)<").getMatch(0);
         if (filename == null) {
             filename = this.br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
         }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (downloadLink.getDownloadURL().contains("highlight")) {
             downloadLink.setName(filename.trim() + ".mp4");
         } else {
