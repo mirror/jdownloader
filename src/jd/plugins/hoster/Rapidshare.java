@@ -443,6 +443,11 @@ public class Rapidshare extends PluginForHost {
             if (ipwait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l); }
             if ("File not found.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, error);
+            } else if ("All free download slots are full. Please try again later.".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("jd.plugins.hoster.Rapidshare.handleErrors.message.nofreeslots", "Download as freeuser currently not possible"), 60 * 1000l);
+            } else if ("Please stop flooding our download servers.".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("jd.plugins.hoster.Rapidshare.handleErrors.message.stopflood", "Please stop flooding our download servers"), 120 * 1000l);
+
             } else if ("No traffic left.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if ("You need RapidPro to download more files from your IP address.".equals(error)) {
@@ -457,7 +462,11 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        /*fix http://rapidshare.com/files/3717252076/The.Shawshank.Redemption.1994.BluRay.1080p.x264.DTS-WiKi.part13.rar*/
+        /*
+         * fix
+         * http://rapidshare.com/files/3717252076/The.Shawshank.Redemption.1994
+         * .BluRay.1080p.x264.DTS-WiKi.part13.rar
+         */
         this.accName = "FreeUser";
         if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) {
             downloadLink.setMD5Hash(null);
@@ -474,7 +483,7 @@ public class Rapidshare extends PluginForHost {
             RSLink link = null;
             try {
                 link = RSLink.parse(downloadLink.getDownloadURL());
-            } catch (NumberFormatException e) {
+            } catch (final NumberFormatException e) {
                 /* invalid link format */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -545,8 +554,8 @@ public class Rapidshare extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.workAroundTimeOut(this.br);
 
-        boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
-        String prtotcol = (ssl) ? "https" : "http";
+        final boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
+        final String prtotcol = ssl ? "https" : "http";
 
         /* TODO: remove me after 0.9xx public */
         if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) {
@@ -597,7 +606,7 @@ public class Rapidshare extends PluginForHost {
             RSLink link = null;
             try {
                 link = RSLink.parse(downloadLink.getDownloadURL());
-            } catch (NumberFormatException e) {
+            } catch (final NumberFormatException e) {
                 /* invalid link format */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -707,8 +716,8 @@ public class Rapidshare extends PluginForHost {
             br.setCookiesExclusive(true);
             br.clearCookies(this.getHost());
 
-            boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
-            String prtotcol = (ssl) ? "https" : "http";
+            final boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
+            final String prtotcol = ssl ? "https" : "http";
 
             /*
              * we can use cookie login if user does not want to get asked before
@@ -837,7 +846,7 @@ public class Rapidshare extends PluginForHost {
         if (!downloadLink.isAvailabilityStatusChecked()) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else {
-            if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         }
         return downloadLink.getAvailableStatus();
     }
@@ -886,7 +895,7 @@ public class Rapidshare extends PluginForHost {
             final String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             final HashMap<String, String> data = this.getMap(matches);
             long autoTraffic = 0;
-            long rapids = Long.parseLong(data.get("rapids"));
+            final long rapids = Long.parseLong(data.get("rapids"));
             boolean notenoughrapids = false;
             if ("1".equals(data.get("autorefill"))) {
                 if (rapids > 280) {
