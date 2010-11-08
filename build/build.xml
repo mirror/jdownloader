@@ -39,7 +39,7 @@
 	<property name="exclude.mac" value="**/*.scpt, **/osx, **/osx/**/*, **/mac, **/mac/**/*" />
 
 	<property name="exe.windows.script" value="${res}/nsis/nsis-setup.nsi" />
-	<property name="exe.web.script" value="${res}/nsis/webinstaller.nsi" />
+	<!-- <property name="exe.web.script" value="${res}/nsis/webinstaller.nsi" /> -->
 
 	<path id="classpath">
 		<fileset dir="${res}/libs" includes="**/*.jar" />
@@ -375,14 +375,19 @@
 		<taskdef name="nsis" classname="net.sf.nsisant.Task">
 			<classpath location="nsisant-1.2.jar" />
 		</taskdef>
+		<echo message="Clean Windows Setup..." />
 		<nsis script="${exe.windows.script}" verbosity="2" />
+		<echo message="Kikin Windows Setup..." />
 		<nsis script="${exe.windows.script}" verbosity="2">
-			<define name="ADVERTISING_KIKIN" value="1" />
+			<define name="ADVERTISING_PLUGIN" value="kikin" />
+			<define name="ADVERTISING_OPTOUT" value="1" />
 		</nsis>
-		<!--nsis script="${exe.windows.script}" verbosity="3">
-			<define name="ADVERTISING_OPENCANDY" value="1"/>
-		</nsis-->
-		<nsis script="${exe.web.script}" verbosity="2" />
+		<echo message="OpenCandy Windows Setup..." />
+	    <nsis script="${exe.windows.script}" verbosity="2">
+	            <define name="ADVERTISING_PLUGIN" value="OpenCandy" />
+	    </nsis>
+		<echo message="NSIS Finished." />
+		<!-- <nsis script="${exe.web.script}" verbosity="2" /> -->
 		<move todir="${jd}">
 			<fileset dir="${dist}/.excludes" includes="**/*" />
 		</move>

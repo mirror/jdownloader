@@ -16,19 +16,10 @@ OutFile .\..\..\dist\JDownloaderSetup.exe
 SetCompressor lzma
 
 #Advertising
-!ifdef ADVERTISING_KIKIN
-  !include ".\advertising\kikin\kikin.nsh"
-!else
-  !ifdef ADVERTISING_OPENCANDY
-    !include ".\advertising\OpenCandy\OpenCandy.nsh"
-  !else
-    !ifdef ADVERTISING_GUTSCHEINRAUSCH
-      !include ".\advertising\gutscheinrausch\gutscheinrausch.nsh"
-    !else
-      !include ".\advertising\template.nsh"
-    !endif
-  !endif
+!ifndef ADVERTISING_PLUGIN
+    !define ADVERTISING_PLUGIN "example"
 !endif
+!include ".\advertising\${ADVERTISING_PLUGIN}\${ADVERTISING_PLUGIN}.nsh"
     
 #Disable version display for JD (Autoupdate)
 #VERSION2 is needed for VIAddVersionKey
