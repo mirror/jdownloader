@@ -156,6 +156,10 @@ public class FilesMailRu extends PluginForHost {
             logger.warning("The finallink doesn't seem to be a file, following connection...");
             logger.warning("finallink = " + downloadLink.getDownloadURL());
             br.followConnection();
+            if (br.getURL().equals(downloadLink.getStringProperty("folderID"))) {
+                logger.warning("Retrying...");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -167,7 +171,7 @@ public class FilesMailRu extends PluginForHost {
         int tt = 10;
         if (ttt != null) tt = Integer.parseInt(ttt);
         logger.info("Waiting " + tt + " seconds...");
-        sleep(tt * 1001, downloadLink);
+        sleep((tt + 1) * 1001, downloadLink);
     }
 
     private String fixLink(String dllink) {
