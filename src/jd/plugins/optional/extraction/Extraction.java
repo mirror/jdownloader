@@ -118,7 +118,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 return;
             }
             
-            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true) || link.getFilePackage().isPostProcessing()) {
+            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
                 Archive archive = buildArchive(link);
                 
                 if(archive.isComplete()) {
@@ -152,7 +152,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             if (event.getCaller() instanceof DownloadLink) {
                 link = (DownloadLink) event.getCaller();
 
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.extract", 1000));
+                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.extract", EXTRACT_LINK));
                 m.setIcon("gui.images.addons.unrar");
                 m.setActionListener(this);
                 
@@ -165,12 +165,15 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 }
                 
                 m.setProperty("LINK", link);
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.autoextract", 1005));
+                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT));
                 m.setActionListener(this);
                 m.setSelected(link.getFilePackage().isPostProcessing());
+                if(!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+                    m.setEnabled(false);
+                }
                 m.setProperty("LINK", link);
                 container.addMenuItem(new MenuAction(Types.SEPARATOR));
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.setextract", 1003));
+                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.setextract", SET_EXTRACT_TO));
                 m.setActionListener(this);
                 m.setProperty("LINK", link);
                 File dir = this.getExtractToPath(link);
@@ -179,20 +182,23 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     dir = dir.getParentFile();
                 }
                 if (dir == null) break;
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.openextract3", 1002));
+                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.openextract3", OPEN_EXTRACT));
                 m.setActionListener(this);
                 link.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
                 m.setProperty("LINK", link);
             } else {
                 FilePackage fp = (FilePackage) event.getCaller();
 
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.extract", 1001));
+                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE));
                 m.setIcon("gui.images.addons.unrar");
                 m.setActionListener(this);
                 m.setProperty("PACKAGE", fp);
-                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.autoextract", 1006));
+                container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT));
                 m.setSelected(fp.isPostProcessing());
                 m.setActionListener(this);
+                if(!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+                    m.setEnabled(false);
+                }
                 m.setProperty("PACKAGE", fp);
             }
             break;

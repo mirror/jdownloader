@@ -5,10 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.zip.CRC32;
-
-import jd.plugins.optional.extraction.ExtractionConstants;
-import jd.plugins.optional.extraction.ExtractionController;
-
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 
@@ -20,13 +16,12 @@ import net.sf.sevenzipjbinding.SevenZipException;
  */
 class MultiCallback implements ISequentialOutStream {
     private FileOutputStream fos;
-    private ExtractionController con;
+    private Multi multi;
     private CRC32 crc;
     boolean shouldCrc = false;
-    private long time;
     
-    MultiCallback(File file, ExtractionController con, boolean shouldCrc) throws FileNotFoundException {
-        this.con = con;
+    MultiCallback(File file, Multi multi, boolean shouldCrc) throws FileNotFoundException {
+        this.multi = multi;
         this.shouldCrc = shouldCrc;
         
         fos = new FileOutputStream(file, true);
@@ -34,20 +29,15 @@ class MultiCallback implements ISequentialOutStream {
 //        if(shouldCrc) {
 //            crc = new CRC32();
 //        }
-        
-        time = System.currentTimeMillis();
     }
     
     public int write(byte[] data) throws SevenZipException {
         try {
             fos.write(data);
             
-            con.getArchiv().setExtracted(con.getArchiv().getExtracted() + data.length);
+            multi.getArchive().setExtracted(multi.getArchive().getExtracted() + data.length);
 
-            if((System.currentTimeMillis() - time) > 1000) {
-                con.fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
-                time = System.currentTimeMillis();
-            }
+            multi.updatedisplay();
             
 //            if(shouldCrc) {
 //                crc.update(data);

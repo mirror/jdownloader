@@ -40,11 +40,20 @@ import jd.utils.JDUtilities;
  */
 public class Multi implements IExtraction {
     private static final String DUMMY_HOSTER = "dum.my";
+    
     private Archive archive;
-    private int crack = 0;
+    private int crack;
     private ExtractionController con;
-    private ISevenZipInArchive inArchive = null;
-    private List<String> postprocessing = new ArrayList<String>();
+    private ISevenZipInArchive inArchive;
+    private List<String> postprocessing;
+    private long time;
+    
+    public Multi() {
+        crack = 0;
+        time = 0;
+        postprocessing = new ArrayList<String>();
+        inArchive = null;
+    }
     
     public Archive buildArchive(DownloadLink link) {
         String file = link.getFileOutput();
@@ -201,13 +210,15 @@ public class Multi implements IExtraction {
                     }
                 }
                 
-                MultiCallback call = new MultiCallback(extractTo, con, item.getCRC() > 0 ? true : false);
+                MultiCallback call = new MultiCallback(extractTo, this, item.getCRC() > 0 ? true : false);
                 ExtractOperationResult res;
                 if(item.isEncrypted()) {
                     res = item.extractSlow(call, archive.getPassword());
                 } else {
                     res = item.extractSlow(call);
                 }
+                
+                updatedisplay();
                 
                 //TODO: Write an proper CRC check
 //                System.out.println(item.getCRC() + " : " + Integer.toHexString(item.getCRC()) + " : " + call.getComputedCRC());
@@ -333,6 +344,15 @@ public class Multi implements IExtraction {
     public void setArchiv(Archive archive) {
         this.archive = archive;
     }
+    
+    /**
+     * Retruns the {@link Archive} for this unpack process.
+     * 
+     * @return The {@link Archive}.
+     */
+    Archive getArchive() {
+        return archive;
+    }
 
     public void setExtractionController(ExtractionController controller) {
         con = controller;
@@ -390,6 +410,13 @@ public class Multi implements IExtraction {
 
     public List<String> filesForPostProcessing() {
         return postprocessing;
+    }
+    
+    void updatedisplay() {
+        if((System.currentTimeMillis() - time) > 1000) {
+            con.fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
+            time = System.currentTimeMillis();
+        }
     }
     
     /**
