@@ -7,7 +7,7 @@ import jd.utils.JDTheme;
 
 public class JDFeedMeView extends ClosableView {
 	
-	private static final long serialVersionUID = -8077441650881378656L;
+	private static final long serialVersionUID = -8074441650881378626L;
 	
 	public JDFeedMeView() {
         super();
@@ -45,7 +45,7 @@ public class JDFeedMeView extends ClosableView {
 
     @Override
     public String getID() {
-        return null;
+        return "jdfeedme";
     }
 
 }

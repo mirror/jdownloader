@@ -31,7 +31,7 @@ import jd.http.Browser;
 // if you want to compile a version for 9580 (interface version 5), change the following comments:
 // enable CODE_FOR_INTERFACE_5-START-END and disable CODE_FOR_INTERFACE_7-START-END
 // don't forget to change interface version from 7 to 5
-@OptionalPlugin(rev = "$Revision: 12882 $", id = "jdfeedme", hasGui = true, interfaceversion = 7, windows = true, linux = true)
+@OptionalPlugin(rev = "$Revision: 12882 $", id = "jdfeedme", hasGui = true, interfaceversion = 7)
 public class JDFeedMe extends PluginOptional 
 {
 	/// stop using config and use XML instead
@@ -73,7 +73,8 @@ public class JDFeedMe extends PluginOptional
     public boolean initAddon() 
     {
     	showAction = new MenuAction(getWrapper().getID(), 0);
-        showAction.setActionListener(this);
+        
+    	showAction.setActionListener(this);
         
         /* CODE_FOR_INTERFACE_5_START
         showAction.setTitle("JD FeedMe");
@@ -132,7 +133,7 @@ public class JDFeedMe extends PluginOptional
             if (showAction.isSelected()) {
                 showGui();
             } else {
-                view.close();
+                if (view != null) view.close();
             }
         }
     }

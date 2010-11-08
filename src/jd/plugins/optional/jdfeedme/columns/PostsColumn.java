@@ -55,13 +55,15 @@ public class PostsColumn extends JDTableColumn {
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
         labelRend.setIcon(JDTheme.II("gui.images.search", 16, 16));
         labelRend.setToolTipText("View recent posts");
+        labelRend.setOpaque(false);
         
         labelLink = new JRendererLabel();
         labelLink.setBorder(null);
         labelLink.setHorizontalAlignment(SwingConstants.CENTER);
         labelLink.setIcon(JDTheme.II("gui.images.search", 16, 16));
         labelLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
+        labelLink.setOpaque(false);
+        
         labelLink.addMouseListener(new JDMouseAdapter() {
 
             @Override
@@ -107,7 +109,6 @@ public class PostsColumn extends JDTableColumn {
     	if (((JDFeedMeFeed)value).getNewposts()) labelLink.setIcon(JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
     	else labelLink.setIcon(JDTheme.II("gui.images.search", 16, 16));
     	
-    	labelLink.setBackground(backgroundselected);
         return labelLink;
     }
 

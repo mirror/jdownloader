@@ -23,6 +23,7 @@ public class StatusColumn extends JDTableColumn {
         labelRend.setBorder(null);
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
         labelRend.setIcon(null);
+        labelRend.setOpaque(false);
     }
 
     @Override

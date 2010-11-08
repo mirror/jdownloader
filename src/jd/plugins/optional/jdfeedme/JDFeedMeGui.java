@@ -200,35 +200,44 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-                int[] rows = table.getSelectedRows();
                 table.editingStopped(null);
-                if (rows.length == 0) return;
                 
-                /* CODE_FOR_INTERFACE_5_START
-                int flags = UserIO.NO_COUNTDOWN;
-                CODE_FOR_INTERFACE_5_END */
-                /* CODE_FOR_INTERFACE_7_START */
-                int flags = 0;
-                /* CODE_FOR_INTERFACE_7_END */
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
                 
-                ComboDialog dialog = new ComboDialog(flags, "Reset Feed", "Get Old Posts:", JDFeedMeFeed.GET_OLD_OPTIONS, 0, null, "Reset", "Cancel", null);
+                        int[] rows = table.getSelectedRows();
+                        if (rows.length == 0) return null;
                 
-                /* CODE_FOR_INTERFACE_7_START */
-                dialog.displayDialog();
-                /* CODE_FOR_INTERFACE_7_END */
-                
-            	if (dialog.isResultOK())
-            	{
-            		ArrayList<JDFeedMeFeed> feeds = table.getModel().getFeeds();
-                    for (int i = rows.length - 1; i >= 0; --i) 
-                    {
-                    	JDFeedMeFeed feed = feeds.get(rows[i]);
-                        feed.setTimestampFromGetOld(dialog.getResultCombo());
-                        clearPostsFromFeed(feed);
+                        /* CODE_FOR_INTERFACE_5_START
+                        int flags = UserIO.NO_COUNTDOWN;
+                        CODE_FOR_INTERFACE_5_END */
+                        /* CODE_FOR_INTERFACE_7_START */
+                        int flags = 0;
+                        /* CODE_FOR_INTERFACE_7_END */
+                        
+                        ComboDialog dialog = new ComboDialog(flags, "Reset Feed", "Get Old Posts:", JDFeedMeFeed.GET_OLD_OPTIONS, 0, null, "Reset", "Cancel", null);
+                        
+                        /* CODE_FOR_INTERFACE_7_START */
+                        dialog.displayDialog();
+                        /* CODE_FOR_INTERFACE_7_END */
+                        
+                    	if (dialog.isResultOK())
+                    	{
+                    		ArrayList<JDFeedMeFeed> feeds = table.getModel().getFeeds();
+                            for (int i = rows.length - 1; i >= 0; --i) 
+                            {
+                            	JDFeedMeFeed feed = feeds.get(rows[i]);
+                                feed.setTimestampFromGetOld(dialog.getResultCombo());
+                                clearPostsFromFeed(feed);
+                            }
+                            table.getModel().refreshModel();
+                            table.getModel().fireTableDataChanged();
+                    	}
+                    	return null;
                     }
-                    table.getModel().refreshModel();
-                    table.getModel().fireTableDataChanged();
-            	}
+                }.start();
             }
         };
         
@@ -247,7 +256,15 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-                JDFeedMe.syncNowEvent();
+                table.editingStopped(null);
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        JDFeedMe.syncNowEvent();
+                        return null;
+                    }
+                }.start();
             }
         };
     }

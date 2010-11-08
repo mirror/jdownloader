@@ -52,12 +52,14 @@ public class DownloadColumn extends JDTableColumn
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
         labelRend.setIcon(JDTheme.II("gui.images.taskpanes.download", 16, 16));
         labelRend.setToolTipText("Download the files from this post");
+        labelRend.setOpaque(false);
         
         labelLink = new JRendererLabel();
         labelLink.setBorder(null);
         labelLink.setHorizontalAlignment(SwingConstants.CENTER);
         labelLink.setIcon(JDTheme.II("gui.images.taskpanes.download", 16, 16));
         labelLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        labelLink.setOpaque(false);
 
         labelLink.addMouseListener(new JDMouseAdapter() {
 
@@ -100,7 +102,6 @@ public class DownloadColumn extends JDTableColumn
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
     	this.obj = value;
-    	labelLink.setBackground(backgroundselected);
         return labelLink;
     }
 
