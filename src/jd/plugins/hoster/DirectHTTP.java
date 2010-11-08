@@ -99,8 +99,8 @@ public class DirectHTTP extends PluginForHost {
                     e.printStackTrace();
                 }
                 downloadController.fireDownloadLinkUpdate(link);
-
-                final String cc = new CaptchaController(plg.getHost(), plg instanceof PluginForHost ? ((PluginForHost) plg).getHosterIconUnscaled() : null, method, file, "", "Please enter both words").getCode(0);
+//plg instanceof PluginForHost ? ((PluginForHost) plg).getHosterIconUnscaled() :  is not part of stable
+                final String cc = new CaptchaController(plg.getHost(), null, method, file, "", "Please enter both words").getCode(0);
                 if (cc == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
                 return cc;
             } finally {
