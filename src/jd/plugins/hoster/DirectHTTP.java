@@ -16,26 +16,20 @@
 
 package jd.plugins.hoster;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.CaptchaController;
-import jd.controlling.DownloadController;
 import jd.controlling.HTACCESSController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDImage;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -85,32 +79,6 @@ public class DirectHTTP extends PluginForHost {
             return this.captchaAddress;
         }
 
-        protected String getCaptchaCode(final String method, final File file, final DownloadLink link, final Plugin plg) throws PluginException {
-            final LinkStatus linkStatus = link.getLinkStatus();
-            final String status = linkStatus.getStatusText();
-            final DownloadController downloadController = DownloadController.getInstance();
-            try {
-                linkStatus.addStatus(LinkStatus.WAITING_USERIO);
-                linkStatus.setStatusText(JDL.L("gui.downloadview.statustext.jac", "Captcha recognition"));
-                try {
-                    final BufferedImage img = ImageIO.read(file);
-                    linkStatus.setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
-                downloadController.fireDownloadLinkUpdate(link);
-//plg instanceof PluginForHost ? ((PluginForHost) plg).getHosterIconUnscaled() :  is not part of stable
-                final String cc = new CaptchaController(plg.getHost(), null, method, file, "", "Please enter both words").getCode(0);
-                if (cc == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-                return cc;
-            } finally {
-                linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
-                linkStatus.setStatusText(status);
-                linkStatus.setStatusIcon(null);
-                downloadController.fireDownloadLinkUpdate(link);
-            }
-        }
-
         public String getChallenge() {
             return this.challenge;
         }
@@ -148,7 +116,9 @@ public class DirectHTTP extends PluginForHost {
                 dest.deleteOnExit();
 
                 this.downloadCaptcha(dest);
-                final String code = this.getCaptchaCode(plg.getHost(), dest, downloadLink, plg);
+                // workaround
+                final String code = new DirectHTTP(PluginWrapper.getWrapper(plg.getClass().getName())).getCaptchaCode(plg.getHost(), dest, 0, downloadLink, "", "Please enter both words");
+
                 if (code == null || code.length() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed"); }
                 this.setCode(code);
 
