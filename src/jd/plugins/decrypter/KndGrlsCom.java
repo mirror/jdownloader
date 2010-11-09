@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "http://(www\\.)?kindgirls\\.com/gallery/.*?/[a-z0-9]+[0-9_]+/[a-z0-9]+/\\d+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "http://(www\\.)?kindgirls\\.com/gallery/.*?/[a-z0-9_-]+/[a-z0-9_-]+/\\d+/\\d+" }, flags = { 0 })
 public class KndGrlsCom extends PluginForDecrypt {
 
     public KndGrlsCom(PluginWrapper wrapper) {

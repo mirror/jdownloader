@@ -292,12 +292,16 @@ public class ShareOnlineBiz extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /*signal to use API for download*/
+            /* signal to use API for download */
             useAPI = true;
         } catch (PluginException e) {
-            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) throw e;
-            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) throw e;
-            if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+            /* workaround for stable */
+            DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
+            LinkStatus linkState = new LinkStatus(tmpLink);
+            e.fillLinkStatus(linkState);
+            if (linkState.hasStatus(LinkStatus.ERROR_PREMIUM)) throw e;
+            if (linkState.hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) throw e;
+            if (linkState.hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT)) {
                 logger.severe(br.toString());
             } else {
                 logger.severe(e.getErrorMessage());
@@ -310,7 +314,7 @@ public class ShareOnlineBiz extends PluginForHost {
             if (dlCookie != null) br.getCookies("http://www.share-online.biz").remove(dlCookie);
         }
         if (useAPI) {
-            /*let us use API to download the file*/
+            /* let us use API to download the file */
             dl.startDownload();
             return;
         }
