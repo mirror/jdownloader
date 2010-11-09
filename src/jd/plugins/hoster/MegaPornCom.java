@@ -46,7 +46,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaporn.com" }, urls = { "http://[\\w\\.]*?(megaporn|megarotic|sexuploader)\\.com/.*?(\\?|&)d=[\\w]+" }, flags = { 2 })
+// by Najjah
+// updating regex - must end up with v=[\\w]+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaporn.com" }, urls = { "http://[\\w\\.]*?(megaporn|megarotic|sexuploader)\\.com/.*?(\\?|&)v=[\\w]+" }, flags = { 2 })
 public class MegaPornCom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
