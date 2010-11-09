@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
-    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "turk-crew.com", "uwarez.ws", "oxygen-warez.com", "filefox.in", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "oneload.org", "1dl.in", "oneload.org", "saugking.net", "dark-load.net", "crimeland.de", "musik.am", "spreaded.net", "relfreaks.com", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "gamegalaxy.ws", "ddl.byte.to", "jokermovie.org", "top-hitz.com", "sound-load.com", "toxic.to", "sound-load.net", "sfulc.exofire.net/cms", "dream-team.bz/cms", "titanload.to", "gate-warez.com", "hot-porn-ddl.com", "defrap.org", "defrap.biz" };
+    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "turk-crew.com", "uwarez.ws", "oxygen-warez.com", "filefox.in", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "oneload.org", "1dl.in", "oneload.org", "saugking.net", "dark-load.net", "crimeland.de", "musik.am", "spreaded.net", "relfreaks.com", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "gamegalaxy.ws", "ddl.byte.to", "jokermovie.org", "top-hitz.com", "sound-load.com", "toxic.to", "sound-load.net", "sfulc.exofire.net/cms", "dream-team.bz/cms", "titanload.to", "gate-warez.com", "hot-porn-ddl.com", "defrap.org", "defrap.biz", "dream.loadz.biz" };
 
     /**
      * Returns the annotations names array
@@ -74,7 +74,7 @@ public class CMS extends PluginForDecrypt {
         return ret;
     }
 
-    private Pattern PAT_CAPTCHA = Pattern.compile("<IMG SRC=\".*?/gfx/secure/", Pattern.CASE_INSENSITIVE);
+    private Pattern PAT_CAPTCHA    = Pattern.compile("<IMG SRC=\".*?/gfx/secure/", Pattern.CASE_INSENSITIVE);
 
     private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\".*?Download.*?\".*?Click)", Pattern.CASE_INSENSITIVE);
 

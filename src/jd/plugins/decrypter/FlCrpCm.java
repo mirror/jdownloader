@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -62,16 +63,14 @@ public class FlCrpCm extends PluginForDecrypt {
                 if (br.containsHTML("(captcha.php?|red>Invalid access code)")) throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         }
-        String finallink = br.getRegex("Downloading</b> (.*?) <font").getMatch(0);
-        if (finallink == null) {
-            finallink = br.getRegex("class=\"direct_link\" rel=nofollow href=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("<td><b>Downloading</b></td><td>(.*?)<font").getMatch(0);
-            }
+        String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
+        if (lol == null || lol.length == 0) {
+            logger.warning("HTML Parser Array is null...");
+            return null;
         }
-        if (finallink == null) return null;
-        decryptedLinks.add(createDownloadlink(finallink));
-
+        for (String pwned : lol) {
+            if (!pwned.equals(parameter)) decryptedLinks.add(createDownloadlink(pwned));
+        }
         return decryptedLinks;
     }
 }

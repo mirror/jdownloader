@@ -478,3 +478,4 @@ jd/plugins/hoster/MovieShareIn.class
 jd/plugins/hoster/StorageTo.class
 jd/plugins/decrypter/DDLWrz.class
 jd/plugins/decrypter/AffgBz.class
+jd/plugins/hoster/HatLimitCom.class

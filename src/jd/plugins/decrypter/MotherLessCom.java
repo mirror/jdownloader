@@ -36,6 +36,8 @@ public class MotherLessCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String REPLACE = "motherlessmedia";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String fpName = parameter.getStringProperty("package");
@@ -53,25 +55,16 @@ public class MotherLessCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("player.swf")) {
+        if (br.containsHTML("player\\.swf")) {
             String parm = parameter.toString();
-            String filelink = br.getRegex("var __file_url = \\'([^']*)\\';").getMatch(0);
+            String filelink = br.getRegex("s1\\.addParam\\(\\'flashvars\\',\\'file=(http://.*?\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
+            if (filelink == null) filelink = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
             if (filelink == null) return null;
-            String matches = br.getRegex("s1.addParam\\(\\'flashvars\\',\\'file=([^)]*)").getMatch(0);
-            if (matches == null) {
-                matches = br.getRegex("(Not Available)").getMatch(0);
-                if (matches == null) return null;
-                logger.warning("The requested document was not found on this server.");
-                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                return decryptedLinks;
-            }
-            filelink = rot13(filelink);
-            String downloadlink = matches.replaceAll("\\'(.*?)__file_url(.*?)\\'", filelink).replaceAll("&image=[^&]*", "").replaceAll("(&mute=.+)", "");
-            DownloadLink dlink = createDownloadlink(downloadlink.replace("motherless", "motherlessvideos"));
+            filelink = filelink.replace(REPLACE, "motherless");
+            DownloadLink dlink = createDownloadlink(filelink.replace("motherless", "motherlessvideos"));
             dlink.setBrowserUrl(parm);
-            Regex regexName = new Regex(matches, ".*&link=[^&]*/([^&]*)'");
-            String finalName = regexName.getMatch(0);
-            dlink.setFinalFileName(finalName + ".flv");
+            String finalName = new Regex(filelink, "([A-Za-z0-9]+\\.flv)$").getMatch(0);
+            if (finalName != null) dlink.setFinalFileName(finalName);
             decryptedLinks.add(dlink);
         } else if (br.containsHTML("class=\"media_image\"")) {
             ArrayList<String> pages = new ArrayList<String>();
@@ -115,7 +108,7 @@ public class MotherLessCom extends PluginForDecrypt {
                 }
             }
             if (finallink == null) return null;
-            finallink = finallink.replace("motherlessmedia", "motherless");
+            finallink = finallink.replace(REPLACE, "motherless");
             DownloadLink fina = createDownloadlink(finallink.replace("motherless", "motherlesspictures"));
             decryptedLinks.add(fina);
         }
@@ -125,21 +118,5 @@ public class MotherLessCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    private String rot13(String s) {
-        String output = "";
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c >= 'a' && c <= 'm')
-                c += 13;
-            else if (c >= 'n' && c <= 'z')
-                c -= 13;
-            else if (c >= 'A' && c <= 'M')
-                c += 13;
-            else if (c >= 'A' && c <= 'Z') c -= 13;
-            output += c;
-        }
-        return output;
     }
 }
