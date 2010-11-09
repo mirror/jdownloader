@@ -1254,7 +1254,6 @@ plugins.container.exit = Completato! Trovati %s link
 plugins.container.exit.error = Errore contenitore: %s
 plugins.container.found = Elabora collegamento %s
 plugins.container.open = Apri contenitore
-plugins.decrypt.ddlwarez.humanverification = Verifica manuale DDL-Warez
 plugins.decrypt.errormsg.nolinks = URL errata o nessun collegamento da aggiungere
 plugins.decrypt.errormsg.unavailable = URL errato o il download non è più disponibile.
 plugins.decrypt.errormsg.unknownerror = Errore sconosciuto causato da multiupload.com.
