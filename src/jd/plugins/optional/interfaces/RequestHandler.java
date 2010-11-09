@@ -113,7 +113,6 @@ public class RequestHandler extends Thread {
         } catch (InterruptedException e) {
             JDLogger.exception(e);
         } finally {
-
             try {
                 socket.close();
             } catch (IOException e) {

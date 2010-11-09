@@ -16,8 +16,6 @@
 
 package jd.plugins.optional.interfaces;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -27,11 +25,9 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JFrame;
 
-import jd.Installer;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
@@ -53,7 +49,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.update.WebUpdater;
 import jd.utils.JDHexUtils;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
@@ -180,25 +175,13 @@ public class JDExternInterface extends PluginOptional {
     }
 
     private void initConfigEntries() {
-        config.setGroup(new ConfigGroup(JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.configgroup", "Install FlashGot Firefox Addon"), "gui.images.flashgot"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                Installer.installFirefoxAddon();
-            }
-
-        }, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot", "Install"), JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.long", "Install Firefox integration"), JDTheme.II("gui.images.flashgot", 16, 16)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOCALONLY, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.localonly", "Listen only on localhost?")).setDefaultValue(true));
     }
 
     @Override
     public boolean initAddon() {
-        logger.info("Extern Interface API initialized on port 9666");
+        logger.info("Extern Interface API initialized on port " + this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666));
         initConfigEntries();
-
-        if (!SubConfiguration.getConfig("FLASHGOT").getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) {
-            Installer.askInstallFlashgot();
-        }
         try {
             server = new HttpServer(this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666), handler, getPluginConfig().getBooleanProperty(LOCALONLY, true));
             server.start();
@@ -471,7 +454,6 @@ public class JDExternInterface extends PluginOptional {
         }
 
         public void finish(Request req, Response res) {
-            // TODO Auto-generated method stub
 
         }
 

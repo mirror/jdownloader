@@ -16,26 +16,8 @@
 
 package jd;
 
-import java.awt.Font;
-
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.SwingConstants;
-
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.dialog.ContainerDialog;
 import jd.gui.swing.dialog.InstallerDialog;
-import jd.nutils.JDImage;
-import jd.nutils.nativeintegration.LocalBrowser;
-import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
-
-import org.appwork.utils.swing.dialog.Dialog;
 
 /**
  * Der Installer erscheint nur beim ersten mal Starten der Webstartversion und
@@ -48,47 +30,7 @@ public class Installer {
 
     private static final long serialVersionUID = 8764525546298642601L;
 
-    public static void askInstallFlashgot() {
-        final SubConfiguration config = SubConfiguration.getConfig("FLASHGOT");
-        if (config.getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) { return; }
-
-        final int answer = new GuiRunnable<Integer>() {
-
-            @Override
-            public Integer runSave() {
-                final JPanel content = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]push[][][]push[]"));
-
-                JLabel lbl;
-
-                content.add(lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version.")), "pushx");
-                lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
-                lbl.setHorizontalAlignment(SwingConstants.CENTER);
-
-                content.add(lbl = new JLabel(JDL.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")));
-                lbl.setHorizontalAlignment(SwingConstants.CENTER);
-
-                content.add(lbl = new JLabel(JDImage.getImageIcon("flashgot_logo")));
-                lbl.setHorizontalAlignment(SwingConstants.CENTER);
-
-                content.add(lbl = new JLabel(JDL.L("installer.firefox.message.flashgot", "This installs the famous FlashGot Extension (flashgot.net).")));
-                lbl.setHorizontalAlignment(SwingConstants.CENTER);
-
-                content.add(new JSeparator(), "pushx");
-
-                final ContainerDialog dialog = new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), content, null, null, null);
-                return Dialog.getInstance().showDialog(dialog);
-            }
-        }.getReturnValue();
-        if (UserIO.isOK(answer)) {
-            Installer.installFirefoxAddon();
-        }
-    }
-
-    public static void installFirefoxAddon() {
-        LocalBrowser.openinFirefox(JDUtilities.getResourceFile("tools/flashgot.xpi").getAbsolutePath());
-    }
-
-    private boolean aborted = false;
+    private boolean           aborted          = false;
 
     public Installer() {
 
@@ -97,9 +39,6 @@ public class Installer {
             this.aborted = true;
             return;
         }
-
-        Installer.askInstallFlashgot();
-
     }
 
     public boolean isAborted() {
