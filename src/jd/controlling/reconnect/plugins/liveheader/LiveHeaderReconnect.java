@@ -178,9 +178,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     @Override
     public int autoDetection() {
-
-        final long start = System.currentTimeMillis();
-
+        // final long start = System.currentTimeMillis();
         return -1;
     }
 

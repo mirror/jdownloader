@@ -6,10 +6,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter.METHOD;
 import jd.nutils.encoding.Encoding;
 
 public class Tester {
@@ -18,10 +16,9 @@ public class Tester {
         Browser br = new Browser();
         br.setDebug(true);
         System.out.println(Encoding.htmlDecode("14300921004cb82f694cbed%0D%0A"));
-
-        int i = 1;
     }
 
+    @SuppressWarnings("unused")
     private static String runCommand(final String serviceType, final String controlUrl, final String command) throws IOException {
         String data = "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:" + command + " xmlns:u='" + serviceType + "' /> </s:Body> </s:Envelope>";
         // this works for fritz box.

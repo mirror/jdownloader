@@ -269,15 +269,18 @@ public class JDFeedMeFeed implements Serializable {
     {
     	Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
     	
-    	/* CODE_FOR_INTERFACE_5_START
-    	Object loaded = JDIO.loadObject(null, JDUtilities.getResourceFile(location), true);
-    	CODE_FOR_INTERFACE_5_END */
-    	/* CODE_FOR_INTERFACE_7_START */
-    	Object loaded = JDIO.loadObject(JDUtilities.getResourceFile(location), true);
-        /* CODE_FOR_INTERFACE_7_END */
-        
-    	if (loaded != null) return (ArrayList<JDFeedMeFeed>)loaded;
-    	else return new ArrayList<JDFeedMeFeed>();
+    	File xmlFile = JDUtilities.getResourceFile(location);
+    	Object loaded;
+    	if (xmlFile.exists()) {
+    	    /* CODE_FOR_INTERFACE_5_START
+    	    loaded = JDIO.loadObject(null, JDUtilities.getResourceFile(location), true);
+    	    CODE_FOR_INTERFACE_5_END */
+    	    /* CODE_FOR_INTERFACE_7_START */
+    	    loaded = JDIO.loadObject(JDUtilities.getResourceFile(location), true);
+    	    /* CODE_FOR_INTERFACE_7_END */
+    	    if (loaded != null) return (ArrayList<JDFeedMeFeed>)loaded;
+    	}
+    	return new ArrayList<JDFeedMeFeed>();
     	
     	/*
     	try

@@ -28,16 +28,12 @@ import jd.gui.swing.dialog.InstallerDialog;
  */
 public class Installer {
 
-    private static final long serialVersionUID = 8764525546298642601L;
-
-    private boolean           aborted          = false;
+    private boolean aborted = false;
 
     public Installer() {
-
         if (!InstallerDialog.showDialog(null)) {
             JDLogger.getLogger().severe("downloaddir not set");
             this.aborted = true;
-            return;
         }
     }
 

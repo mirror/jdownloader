@@ -154,13 +154,11 @@ public class Recaptcha {
             // find gap between words
             int white = 0;
             int maxWhite = 0;
-            int maxWhiteX = 0;
             columns: for (int x = 0; x < captcha.getWidth(); x++) {
                 for (int y = 0; y < captcha.getHeight(); y++) {
                     if (captcha.grid[x][y] <= 0x111111) {
                         if (white > maxWhite) {
                             maxWhite = white;
-                            maxWhiteX = x;
                         }
                         white = 0;
                         continue columns;

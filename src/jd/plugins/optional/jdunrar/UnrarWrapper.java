@@ -467,15 +467,15 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         // System.currentTimeMillis() + ".unrartmp");
         // String str=file.getFilepath();
         //
-        //     
+        //
         // CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         // CharsetDecoder decoder = Charset.forName("ISO-8859-1").newDecoder();
-        //       
+        //
         // try {
         // // Convert a string to ISO-LATIN-1 bytes in a ByteBuffer
         // // The new ByteBuffer is ready to be read.
         // ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(str));
-        //       
+        //
         // // Convert ISO-LATIN-1 bytes in a ByteBuffer to a character
         // ByteBuffer and then to a string.
         // // The new ByteBuffer is ready to be read.
@@ -487,9 +487,9 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         // }
         //
         // JDUtilities.writeLocalFile(fileFile,str);
-        //        
-        //       
-        //        
+        //
+        //
+        //
         // fileFile.deleteOnExit();
 
         if (smallestFile.getSize() < maximumCheckSize) {
@@ -605,7 +605,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     Signature signature = FileSignatures.getSignature(sig);
 
                     if (signature != null) {
-                        int o = 1;
                         if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(smallestFile.getFilepath()).matches()) {
                             // signatur und extension passen
                             if (passTry == 0) {
