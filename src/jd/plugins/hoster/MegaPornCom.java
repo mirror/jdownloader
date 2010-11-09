@@ -156,7 +156,7 @@ public class MegaPornCom extends PluginForHost {
         String url = null;
 
         br.setFollowRedirects(false);
-        br.getPage("http://megaporn.com/?d=" + getDownloadID(link));
+        br.getPage("http://megaporn.com/?v=" + getDownloadID(link));
 
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
