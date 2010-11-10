@@ -105,35 +105,40 @@ public class TwoSharedCom extends PluginForHost {
             }
         }
         String link = this.br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String result = new String();
-        final List<String> param = new ArrayList<String>();
-        final Browser fn = this.br.cloneBrowser();
-        if (!link.contains("\\d+")) {
-            // Function Decode
-            param.add(new Regex(fn.toString().replaceAll("\n|\t", ""), "function decode(.*?)\\}.*?\\}").getMatch(-1));
-            // var em
-            param.add(this.br.getRegex("var em='(.*?)';").getMatch(-1));
-            // var key
-            param.add(this.br.getRegex("var key='(.*?)';").getMatch(0));
-            result = this.decrypt(1, param);
-            link += result;
+        String result;
+        if (!this.br.containsHTML("\\+key")) {
+            final List<String> param = new ArrayList<String>();
+            final Browser fn = this.br.cloneBrowser();
+            if (!link.contains("\\d+")) {
+                // Function Decode
+                param.add(new Regex(fn.toString().replaceAll("\n|\t", ""), "function decode(.*?)\\}.*?\\}").getMatch(-1));
+                // var em
+                param.add(this.br.getRegex("var em='(.*?)';").getMatch(-1));
+                // var key
+                param.add(this.br.getRegex("var key='(.*?)';").getMatch(0));
+                result = this.decrypt(1, param);
+                link += result;
+            }
+            final String jsquery = fn.getPage(TwoSharedCom.MAINPAGE + this.br.getRegex("src=\"(.*?)\"").getMatch(0, 1));
+            final String charalgo = new Regex(jsquery, "var viw(.*)l2surl;\\}").getMatch(-1).replaceAll("M\\.url", "M");
+            if ((link == null) || (jsquery == null) || (charalgo == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            param.clear();
+            param.add(charalgo);
+            param.add(link);
+            result = this.decrypt(0, param);
+        } else {
+            result = link + this.br.getRegex("var key='(.*?)';").getMatch(0);
         }
-        final String jsquery = fn.getPage(TwoSharedCom.MAINPAGE + this.br.getRegex("src=\"(.*?)\"").getMatch(0, 1));
-        final String charalgo = new Regex(jsquery, "var viw(.*)l2surl;\\}").getMatch(-1).replaceAll("M\\.url", "M");
-        if ((link == null) || (jsquery == null) || (charalgo == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        param.clear();
-        param.add(charalgo);
-        param.add(link);
-        result = this.decrypt(0, param);
         if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         link = this.br.getPage(TwoSharedCom.MAINPAGE + result).trim();
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, link, true, 1);
-        if (this.dl.getConnection().getContentType().contains("html")) {
+        if (this.dl.getConnection().getContentType().contains("html") & (this.dl.getConnection().getURL().getQuery() == null)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
             if (this.dl.getConnection().getURL().getQuery().contains("MAX_IP")) {
                 this.dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached"), 10 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
     }
