@@ -88,19 +88,19 @@ public class JDAntiReconnect extends PluginOptional {
     
     private void initConfig() {
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.antistandby.mode", "Mode:")).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getPluginConfig(), CONFIG_IPS, JDL.L("gui.config.antistandby.ips", "Check Ips (192.168.1.20-80)")).setDefaultValue("192.168.178.20-80"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_TIMEOUT, JDL.L("gui.config.antistandby.timeout", "Check Timeout (ms):"), 1, 60000, 100).setDefaultValue(500));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_EACH, JDL.L("gui.config.antistandby.each", "Check Each (ms):"), 1, 60000, 1000).setDefaultValue(10000));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.antireconnect.mode", "Mode:")).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getPluginConfig(), CONFIG_IPS, JDL.L("gui.config.antireconnect.ips", "Check Ips (192.168.1.20-80)")).setDefaultValue("192.168.178.20-80"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_TIMEOUT, JDL.L("gui.config.antireconnect.timeout", "Check Timeout (ms):"), 1, 60000, 100).setDefaultValue(500));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_EACH, JDL.L("gui.config.antireconnect.each", "Check Each (ms):"), 1, 60000, 1000).setDefaultValue(10000));
 
-        config.setGroup(new ConfigGroup("Normally", getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDDOWNLOADS, JDL.L("gui.config.antistandby.olddownloads", "Simultanious Downloads:"), 1, 50, 1).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_OLDRECONNECT, JDL.L("gui.config.antistandby.oldreconnect", "Allow Reconnect:")).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT)));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDSPEED, JDL.L("gui.config.antistandby.oldspeed", "Downloadspeed in kb/s"), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
-        config.setGroup(new ConfigGroup("If Other Clients are Online", getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWDOWNLOADS, JDL.L("gui.config.antistandby.newdownloads", "Simultanious Downloads:"), 1, 50, 1).setDefaultValue(3));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_NEWRECONNECT, JDL.L("gui.config.antistandby.newreconnect", "Allow Reconnect:")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWSPEED, JDL.L("gui.config.antistandby.newspeed", "Downloadspeed in kb/s"), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
+        config.setGroup(new ConfigGroup(JDL.L("gui.config.antireconnect.oldgroup", "Normally"), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDDOWNLOADS, JDL.L("gui.config.antireconnect.olddownloads", "Simultanious Downloads:"), 1, 50, 1).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_OLDRECONNECT, JDL.L("gui.config.antireconnect.oldreconnect", "Allow Reconnect:")).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDSPEED, JDL.L("gui.config.antireconnect.oldspeed", "Downloadspeed in kb/s"), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
+        config.setGroup(new ConfigGroup(JDL.L("gui.config.antireconnect.newgroup", "If Other Clients are Online"), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWDOWNLOADS, JDL.L("gui.config.antireconnect.newdownloads", "Simultanious Downloads:"), 1, 50, 1).setDefaultValue(3));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_NEWRECONNECT, JDL.L("gui.config.antireconnect.newreconnect", "Allow Reconnect:")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWSPEED, JDL.L("gui.config.antireconnect.newspeed", "Downloadspeed in kb/s"), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
     }    
     @Override
     public ArrayList<MenuAction> createMenuitems() {
