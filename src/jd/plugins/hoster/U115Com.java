@@ -34,7 +34,9 @@ public class U115Com extends PluginForHost {
 
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(5000l);
+        // 10 seconds waittime between the downloadstart of simultan DLs of this
+        // host
+        this.setStartIntervall(10000l);
     }
 
     @Override
@@ -117,7 +119,7 @@ public class U115Com extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
 }
