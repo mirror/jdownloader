@@ -52,10 +52,9 @@ public class FileFactory extends PluginForHost {
     private static final String NO_SLOT       = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
     private static final String SLOTEXPIRED   = "<p>Your download slot has expired\\.";
-
     private static final String LOGIN_ERROR   = "The email or password you have entered is incorrect";
-
     private static final String SERVER_DOWN   = "server hosting the file you are requesting is currently down";
+    private static final String CAPTCHALIMIT  = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
@@ -63,6 +62,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public void checkErrors() throws PluginException {
+        if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (this.br.containsHTML(FileFactory.SLOTEXPIRED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
         if (this.br.containsHTML("there are currently no free download slots") || this.br.containsHTML("download slots on this server are")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l); }
         if (this.br.containsHTML(FileFactory.NOT_AVAILABLE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -331,9 +331,10 @@ public class FileFactory extends PluginForHost {
         final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
         final String c = this.getCaptchaCode(cf, link);
         rc.setCode(c);
-        if (!br.containsHTML("status:\"ok")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+        if (!br.containsHTML("status:\"ok")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         final String url = br.getRegex("path:\"(.*?)\"").getMatch(0);
-        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (url.startsWith("http")) { return url; }
         return "http://www.filefactory.com" + url;
     }
@@ -379,9 +380,9 @@ public class FileFactory extends PluginForHost {
                 if (this.br.containsHTML("File Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 final String fileName = this.br.getRegex("<title>(.*?) - download now for free").getMatch(0);
                 final String fileSize = this.br.getRegex(FileFactory.FILESIZE).getMatch(0);
-                if (fileName == null || fileSize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                if (fileName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 downloadLink.setName(fileName.trim());
-                downloadLink.setDownloadSize(Regex.getSize(fileSize));
+                if (fileSize != null) downloadLink.setDownloadSize(Regex.getSize(fileSize));
             }
 
         }

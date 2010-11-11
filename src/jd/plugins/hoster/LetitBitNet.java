@@ -183,7 +183,11 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
+        Form freeForm = br.getFormbyProperty("id", "ifree_form");
+        if (freeForm != null) {
+            logger.info("Found freeForm, sending it...");
+            br.submitForm(freeForm);
+        }
         String url = null;
         Form down = null;
         Form[] allforms = br.getForms();
@@ -194,41 +198,51 @@ public class LetitBitNet extends PluginForHost {
                 break;
             }
         }
+        String captchaId = down.getVarsMap().get("uid");
         String captchaurl = null;
         if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaId = down.getVarsMap().get("uid");
-        if (captchaId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        captchaurl = "http://letitbit.net/cap.php?jpg=" + captchaId + ".jpg";
-        URLConnectionAdapter con = br.openGetConnection(captchaurl);
-        File file = this.getLocalCaptchaFile();
-        Browser.download(file, con);
-        con.disconnect();
+        URLConnectionAdapter con = null;
+        if (br.containsHTML("cap\\.php")) {
+            if (captchaId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaurl = "http://letitbit.net/cap.php?jpg=" + captchaId + ".jpg";
+            con = br.openGetConnection(captchaurl);
+            File file = this.getLocalCaptchaFile();
+            Browser.download(file, con);
+            con.disconnect();
+            String code = getCaptchaCode(file, downloadLink);
+            down.put("cap", code);
+        }
         down.setMethod(Form.MethodType.POST);
-        String code = getCaptchaCode(file, downloadLink);
-        down.put("cap", code);
         down.put("uid2", captchaId);
         down.setAction("http://letitbit.net/download3.php");
         br.submitForm(down);
-        if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (!br.containsHTML("download3_content\\.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         url = br.getRegex("<frame src=\"http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\"").getMatch(0);
-        String nextpage = br.getRegex("<frame src=\"(http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=.*?)\"").getMatch(0);
+        String nextpage = "http://letitbit.net/download3_content.php";
         if (url == null || url.equals("")) {
             logger.info("Getting nextpage + ?link=");
+            if (nextpage == null) {
+                logger.warning("nextpage is null...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage(nextpage);
             // Ticket Time
             int waitThat = 60;
-            String time = br.getRegex("id=\"errt\">(\\d+)</span>").getMatch(0);
+            String time = br.getRegex("seconds = (\\d+);").getMatch(0);
+            if (time == null) time = br.getRegex("Wait for Your turn: <span id=\"seconds\" style=\"font-size:18px\">(\\d+)</span> seconds").getMatch(0);
             if (time != null) {
                 logger.info("Waittime found, waittime is " + time + " seconds.");
                 waitThat = Integer.parseInt(time);
             }
             sleep((waitThat + 5) * 1001, downloadLink);
-            br.getPage(nextpage);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Content-Length", "0");
+            br.postPage("http://letitbit.net/ajax/download3.php", "");
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
-            url = getUrl(null);
+            url = br.toString();
         }
-        if (url == null || url.equals("")) {
+        if (url == null || url.equals("") || !url.startsWith("http://") || url.length() > 1000) {
             logger.warning("url couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

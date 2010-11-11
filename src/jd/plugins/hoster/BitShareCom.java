@@ -65,7 +65,7 @@ public class BitShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("You reached your hourly traffic limit")) {
+        if (br.containsHTML("(You reached your hourly traffic limit|Your Traffic is used up for today)")) {
             String wait = br.getRegex("id=\"blocktimecounter\">(\\d+) Seconds</span>").getMatch(0);
             if (wait == null) wait = br.getRegex("var blocktime = (\\d+);").getMatch(0);
             if (wait != null)

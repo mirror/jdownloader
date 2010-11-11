@@ -98,6 +98,9 @@ public class CraMitIn extends PluginForHost {
             filesize = br.getRegex("</font>(</a>)?[ ]+\\((.*?)\\)(.*?)</font>").getMatch(1);
             if (filesize == null) {
                 filesize = br.getRegex(">http://cramit\\.in/[a-z0-9]{12}</font> \\((.*?)\\)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("class=\"green\">http://cramit\\.in/[a-z0-9]{12}</span></a>( )?\\((.*?)\\)</div>").getMatch(1);
+                }
             }
         }
         if (brbefore.contains("<b>File Not Found</b><br><br>") && (filename == null || filename.matches(""))) {
