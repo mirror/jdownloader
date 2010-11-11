@@ -105,6 +105,16 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
     }
+    
+    /**
+     * Override the requestFocusInWindow to request 
+     * the Focus in the underlying internal Table
+     */
+    @Override
+    public boolean requestFocusInWindow()
+    {
+        return internalTable.requestFocusInWindow();
+    }
 
     public boolean isNotVisible() {
         return notvisible;
