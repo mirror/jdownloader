@@ -65,6 +65,10 @@ public class DownloadView extends View {
     @Override
     protected void onShow() {
         setActionStatus(true);
+        /**
+         * Request Focus on DownloadLinksPanel
+         */
+        getContent().requestFocusInWindow();
     }
 
     private void setActionStatus(boolean enabled) {
