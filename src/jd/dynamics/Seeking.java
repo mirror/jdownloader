@@ -3,6 +3,7 @@ package jd.dynamics;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.controlling.DynamicPluginInterface;
 import jd.gui.UserIO;
@@ -19,12 +20,11 @@ public class Seeking extends DynamicPluginInterface {
             e1.printStackTrace();
         }
         final String id = "1";
-        if (SubConfiguration.getConfig("seeking").getGenericProperty(id, false)) {
+        if (SubConfiguration.getConfig("seeking").getGenericProperty(id, false) && JDInitFlags.SWITCH_DEBUG == false) {
             // Schon durchgefÃ¼hrt
             return;
         }
-        // SubConfiguration.getConfig("seeking").setProperty(id,
-        // true);
+        SubConfiguration.getConfig("seeking").setProperty(id, true);
 
         if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "Seeking for web developer", "We are seeking talented front-end web developers to join our team.\r\nWe are planing a new Web Frontent Interface. Thus, we need people with experience \r\nand strong knowledge of HTML, XHTML, CSS, JavaScript, Ajax, JQuery, JSON(P).\r\n\r\nGreetings, your JD-Team", null, "Read more", "Cancel"))) {
             try {
