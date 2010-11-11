@@ -72,7 +72,7 @@ public class JDFeedMe extends PluginOptional
     @Override
     public boolean initAddon() 
     {
-    	showAction = new MenuAction(getWrapper().getID(), 0);
+    	showAction = new MenuAction("feedme", 0);
         
     	showAction.setActionListener(this);
         

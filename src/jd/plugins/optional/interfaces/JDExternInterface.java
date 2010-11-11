@@ -28,6 +28,7 @@ import javax.swing.JFrame;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
@@ -175,6 +176,7 @@ public class JDExternInterface extends PluginOptional {
     }
 
     private void initConfigEntries() {
+        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOCALONLY, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.localonly", "Listen only on localhost?")).setDefaultValue(true));
     }
 

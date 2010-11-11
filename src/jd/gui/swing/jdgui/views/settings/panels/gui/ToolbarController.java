@@ -87,6 +87,7 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("chat");
         WHITELIST.add("livescripter");
         WHITELIST.add("infobar");
+        WHITELIST.add("feedme");
         WHITELIST.add("gui.jdshutdown.toggle");
         WHITELIST.add("optional.jdunrar.menu.extract.singlefils");
         WHITELIST.add("packagecustomizer");
