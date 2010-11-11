@@ -133,6 +133,7 @@ public class TwoSharedCom extends PluginForHost {
         link = this.br.getPage(TwoSharedCom.MAINPAGE + result).trim();
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, link, true, 1);
         if (this.dl.getConnection().getContentType().contains("html") & (this.dl.getConnection().getURL().getQuery() == null)) {
+            this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             if (this.dl.getConnection().getURL().getQuery().contains("MAX_IP")) {

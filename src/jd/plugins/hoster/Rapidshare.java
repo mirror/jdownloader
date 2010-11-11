@@ -263,7 +263,11 @@ public class Rapidshare extends PluginForHost {
                     // 3=Server down 4=File abused 5
                     switch (Integer.parseInt(matches[i][4])) {
                     case 0:
-                        tryWorkaround(u);
+                        if (tryWorkaround(u)) {
+                            /* retry this link with workaround */
+                            finishedurls.remove(u);
+                            doretry = true;
+                        }
                         u.getLinkStatus().setErrorMessage(JDL.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
                         u.setAvailable(false);
@@ -462,11 +466,6 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        /*
-         * fix
-         * http://rapidshare.com/files/3717252076/The.Shawshank.Redemption.1994
-         * .BluRay.1080p.x264.DTS-WiKi.part13.rar
-         */
         accName = "FreeUser";
         if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) {
             downloadLink.setMD5Hash(null);
@@ -599,7 +598,6 @@ public class Rapidshare extends PluginForHost {
                     account.setTempDisabled(true);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wait for Happy Hour!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-
             }
 
             br.setFollowRedirects(false);
@@ -874,10 +872,12 @@ public class Rapidshare extends PluginForHost {
     /**
      * try the html filename workaround
      */
-    private void tryWorkaround(final DownloadLink link) {
+    private boolean tryWorkaround(final DownloadLink link) {
         if (link.getProperty("htmlworkaround", null) == null) {
             link.setProperty("htmlworkaround", Rapidshare.HTMLWORKAROUND);
+            return true;
         }
+        return false;
     }
 
     private void updateAccountInfo(final Account account, final Browser br) {
