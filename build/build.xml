@@ -279,6 +279,7 @@
 		<buildAddon number="134" package="RouterDBEditor" include="routerdbeditor/**" />
 		<buildAddon number="137" package="scriptlauncher" include="scriptlauncher/**" />
 		<buildAddon number="140" package="JDFeedMe" include="jdfeedme/**" />
+		<buildAddon number="141" package="AntiReconnect" include="antireconnect/**" />
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
