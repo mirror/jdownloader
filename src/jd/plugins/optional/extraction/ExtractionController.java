@@ -209,7 +209,7 @@ public class ExtractionController extends Thread implements JDRunnable {
             } else {
                 fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
             }
-        } catch (Exception e) {
+         } catch (Exception e) {
             this.exception = e;
             JDLogger.exception(e);
             fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);

@@ -20,6 +20,8 @@ import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,6 +33,7 @@ import jd.plugins.optional.extraction.ExtractionController;
 import jd.plugins.optional.extraction.ExtractionControllerConstants;
 import jd.plugins.optional.extraction.IExtraction;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Extracts rar, zip, 7z. tar.gz, tar.bz2.
@@ -40,6 +43,7 @@ import jd.utils.JDUtilities;
  */
 public class Multi implements IExtraction {
     private static final String DUMMY_HOSTER = "dum.my";
+    private static final String PRIORITY = "PRIORITY";
     
     private Archive archive;
     private int crack;
@@ -47,6 +51,7 @@ public class Multi implements IExtraction {
     private ISevenZipInArchive inArchive;
     private List<String> postprocessing;
     private long time;
+    private SubConfiguration conf;
     
     public Multi() {
         crack = 0;
@@ -146,7 +151,7 @@ public class Multi implements IExtraction {
             } else if(archive.getType() == Archive.MULTI_RAR) {
                 RarOpener raropener = new RarOpener(password);
                 IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());
-                inArchive = SevenZip.openInArchive(null, inStream, raropener);
+                inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             } 
             
             long size = 0;
@@ -185,6 +190,8 @@ public class Multi implements IExtraction {
 
     public void extract() {
         try {
+            int priority = conf.getIntegerProperty(PRIORITY);
+            
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 final File extractTo = new File(archive.getExtractTo().getAbsoluteFile() + File.separator + item.getPath());
                 
@@ -210,7 +217,7 @@ public class Multi implements IExtraction {
                     }
                 }
                 
-                MultiCallback call = new MultiCallback(extractTo, this, item.getCRC() > 0 ? true : false);
+                MultiCallback call = new MultiCallback(extractTo, this, priority, item.getCRC() > 0 ? true : false);
                 ExtractOperationResult res;
                 if(item.isEncrypted()) {
                     res = item.extractSlow(call, archive.getPassword());
@@ -251,7 +258,6 @@ public class Multi implements IExtraction {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         } catch (IOException e) {
-            e.printStackTrace();
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
         }
@@ -339,6 +345,10 @@ public class Multi implements IExtraction {
     }
 
     public void initConfig(ConfigContainer config, SubConfiguration subConfig) {
+        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.multi.config", "Multi unpacker settings"), "gui.images.addons.unrar"));
+        
+        String[] priorities = new String[] { JDL.L("plugins.optional.extraction.multi.priority.high", "High"), JDL.L("plugins.optional.extraction.multi.priority.middle", "Middle"), JDL.L("plugins.optional.extraction.multi.priority.low", "Low")};
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PRIORITY, priorities, JDL.L("plugins.optional.extraction.multi.priority", "Priority")).setDefaultValue(0));
     }
 
     public void setArchiv(Archive archive) {
@@ -447,5 +457,9 @@ public class Multi implements IExtraction {
         boolean getBoolean() {
             return bool;
         }
+    }
+
+    public void setConfig(SubConfiguration config) {
+        conf = config;
     }
 }

@@ -117,6 +117,13 @@ public interface IExtraction {
     public List<String> filesForPostProcessing();
     
     /**
+     * Sets the  pluginconfiguration.
+     * 
+     * @param config The configuration.
+     */
+    public void setConfig(SubConfiguration config);
+    
+    /**
      * Ends the extraction.
      */
     public void close();

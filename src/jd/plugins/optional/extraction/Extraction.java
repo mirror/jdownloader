@@ -79,8 +79,8 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
         this.queue = new Jobber(1);
 
-        initConfig();
         initExtractors();
+        initConfig();
     }
 
     private void initExtractors() {
@@ -241,6 +241,8 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         controller.setPasswordList(pwList);
         
         archive.setActive(true);
+        
+        extractor.setConfig(getPluginConfig());
 
         controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
         queue.add(controller);
@@ -559,6 +561,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_UNRARCOMMAND, null);
             this.getPluginConfig().setProperty(ExtractionConstants.UNRAR_HASH, null);
             this.getPluginConfig().save();
+            controller.getArchiv().setActive(false);
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
             for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
@@ -575,8 +578,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     link.requestGuiUpdate();
                 }
             }
+            
+            controller.getArchiv().setActive(false);
             this.onFinished(controller);
-
             break;
         case ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
@@ -646,8 +650,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     link.requestGuiUpdate();
                 }
             }
+            
+            controller.getArchiv().setActive(false);
             this.onFinished(controller);
-
             break;
         case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL:
             File[] files = new File[controller.getPostProcessingFiles().size()];
@@ -674,7 +679,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 //                    logger.info(infoFiles.getName() + " removed");
 //                }
 //            }
-            
+            controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
         case ExtractionConstants.NOT_ENOUGH_SPACE:
@@ -739,6 +744,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_UNRARCOMMAND, null);
             this.getPluginConfig().setProperty(ExtractionConstants.UNRAR_HASH, null);
             this.getPluginConfig().save();
+            controller.getArchiv().setActive(false);
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
             if (controller.getException() != null) {
@@ -747,6 +753,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailed", "Extract failed"));
             }
 
+            controller.getArchiv().setActive(false);
             this.onFinished(controller);
 
             break;
@@ -784,6 +791,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED_CRC:
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailedcrc", "Extract failed (CRC error)"));
+            controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
         case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL:
@@ -803,6 +811,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     logger.info(infoFiles.getName() + " removed");
                 }
             }
+            controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
         }

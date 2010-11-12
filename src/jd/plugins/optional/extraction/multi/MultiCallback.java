@@ -18,11 +18,13 @@ class MultiCallback implements ISequentialOutStream {
     private FileOutputStream fos;
     private Multi multi;
     private CRC32 crc;
-    boolean shouldCrc = false;
+//    private boolean shouldCrc = false;
+    private int priority;
     
-    MultiCallback(File file, Multi multi, boolean shouldCrc) throws FileNotFoundException {
+    MultiCallback(File file, Multi multi, int priority, boolean shouldCrc) throws FileNotFoundException {
         this.multi = multi;
-        this.shouldCrc = shouldCrc;
+//        this.shouldCrc = shouldCrc;
+        this.priority = priority;
         
         fos = new FileOutputStream(file, true);
         
@@ -38,6 +40,18 @@ class MultiCallback implements ISequentialOutStream {
             multi.getArchive().setExtracted(multi.getArchive().getExtracted() + data.length);
 
             multi.updatedisplay();
+            
+            if(priority > 0) {
+                try {
+                    if(priority == 1) {
+                        Thread.sleep(100);
+                    } else if(priority == 2) {
+                        Thread.sleep(200);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             
 //            if(shouldCrc) {
 //                crc.update(data);
