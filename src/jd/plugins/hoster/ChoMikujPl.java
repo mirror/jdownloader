@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -42,7 +43,7 @@ public class ChoMikujPl extends PluginForHost {
         return "http://chomikuj.pl/Regulamin.aspx";
     }
 
-    public String dllink = null;
+    public String DLLINK = null;
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("60423fhrzisweguikipo9re", "chomikuj.pl").replace("amp;", ""));
@@ -51,27 +52,34 @@ public class ChoMikujPl extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        Browser br2 = br.cloneBrowser();
-        String gallerypage = new Regex(link.getDownloadURL(), "\\&gallerylink=(.*?)\\&").getMatch(0);
-        br.getPage(gallerypage);
         getDllink(link);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = br2.openGetConnection(dllink);
-        if (!con.getContentType().contains("html"))
-            link.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(getFileNameFromHeader(con));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         getDllink(downloadLink);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -82,13 +90,12 @@ public class ChoMikujPl extends PluginForHost {
     public void getDllink(DownloadLink theLink) throws NumberFormatException, PluginException, IOException {
         Browser br2 = br.cloneBrowser();
         String id = new Regex(theLink.getDownloadURL(), "\\&id=(.*?)\\&").getMatch(0);
-        String tmp = "http://chomikuj.pl/services/InterfaceCommandService.asmx/DownloadFile";
-        String postData = String.format("language=pl-PL&fileId=%s&confirmed=false&ownTransfer=false&getWindow=true", id);
+        String tmp = "http://chomikuj.pl/Chomik/License/Download";
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage(tmp, postData);
-        dllink = br2.getRegex("<RedirectUrl>(.*?)</RedirectUrl>").getMatch(0);
-        if (dllink != null) dllink = dllink.replace("amp;", "");
+        br2.postPage(tmp, "fileId=" + id);
+        DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+        if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
     }
 
     @Override

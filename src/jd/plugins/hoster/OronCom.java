@@ -178,9 +178,13 @@ public class OronCom extends PluginForHost {
             }
             // logger.info("Final downloadlink = " + dllink +
             // " starting the download...");
-            // Hoster allows up to 10 Chunks but then you can only start one
+            // Hoster allows up to 15 Chunks but then you can only start one
             // download...
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -15);
+
+            // Note: Chunks deactivated because it seems like every chunk is
+            // counted as a download which means that premiumusers using too
+            // many chunks lose all their traffic in a few minutes
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
