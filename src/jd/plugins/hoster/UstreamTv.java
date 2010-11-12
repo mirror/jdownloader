@@ -53,9 +53,9 @@ public class UstreamTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
-        /* Setup Gateway */
+        // Setup Gateway
         final String url = "http://216.52.240.138/gateway.php";
-        /* Generate Parameter */
+        // Generate Parameter
         final Date rpin = new Date();
         final String pageUrl = downloadLink.getDownloadURL();
         final String videoId = new Regex(pageUrl, "recorded/(\\d+)").getMatch(0);
@@ -65,7 +65,7 @@ public class UstreamTv extends PluginForHost {
         parameter.put("rpin", "rpin.0." + rpin.getTime());
         parameter.put("autoplay", "");
         parameter.put("pageUrl", pageUrl);
-        /* ActionMessageFormat */
+        // ActionMessageFormat
         ASObject result;
         final AMFConnection amfConnection = new AMFConnection();
         try {
@@ -81,7 +81,7 @@ public class UstreamTv extends PluginForHost {
         amfConnection.close();
         int chunk = 0;
         String dllink = new String();
-        /* mp4,flv Selection */
+        // mp4,flv Selection
         if (result.containsKey("liveHttpUrl")) {
             dllink = result.get("liveHttpUrl").toString();
             chunk = 1;
@@ -105,12 +105,12 @@ public class UstreamTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         this.br.getPage(downloadLink.getDownloadURL());
-        if (this.br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (this.br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = this.br.getRegex("VideoTitle\">(.*?)<").getMatch(0);
         if (filename == null) {
             filename = this.br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (downloadLink.getDownloadURL().contains("highlight")) {
             downloadLink.setName(filename.trim() + ".mp4");
         } else {
