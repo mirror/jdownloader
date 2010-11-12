@@ -80,7 +80,7 @@ public class ExtractionController extends Thread implements JDRunnable {
     }
     
     /**
-     * Checks if the extracted file(s) has enough space. Only wokrs with Java 6 or higher.
+     * Checks if the extracted file(s) has enough space. Only works with Java 6 or higher.
      * 
      * @return True if it's enough space.
      */
@@ -97,9 +97,7 @@ public class ExtractionController extends Thread implements JDRunnable {
             if(f == null) return false;
         }
 
-        //TODO: Make Buffer setable over the configuration
-        //Set 500MB extra Buffer
-        long size = 1024 * 1024 * 1024 * 500;
+        long size = 1024 * 1024 * new Integer(config.getIntegerProperty(ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, 512)).longValue();
         
         for(DownloadLink dlink : DownloadWatchDog.getInstance().getRunningDownloads()) {
             size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
@@ -333,5 +331,23 @@ public class ExtractionController extends Thread implements JDRunnable {
      */
     public List<String> getPostProcessingFiles() {
         return extractor.filesForPostProcessing();
+    }
+    
+    /**
+     * Sets a exeption that occurs during unpacking.
+     * 
+     * @param e
+     */
+    public void setExeption(Exception e) {
+        exception = e;
+    }
+    
+    /**
+     * Returns the extractor of this controller.
+     * 
+     * @return
+     */
+    public IExtraction getExtractor() {
+        return extractor;
     }
 }

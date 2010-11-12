@@ -5,6 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.zip.CRC32;
+
+import jd.plugins.optional.extraction.ExtractionController;
+import jd.plugins.optional.extraction.ExtractionControllerConstants;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 
@@ -16,13 +19,13 @@ import net.sf.sevenzipjbinding.SevenZipException;
  */
 class MultiCallback implements ISequentialOutStream {
     private FileOutputStream fos;
-    private Multi multi;
+    private ExtractionController con;
     private CRC32 crc;
 //    private boolean shouldCrc = false;
     private int priority;
     
-    MultiCallback(File file, Multi multi, int priority, boolean shouldCrc) throws FileNotFoundException {
-        this.multi = multi;
+    MultiCallback(File file, ExtractionController con, int priority, boolean shouldCrc) throws FileNotFoundException {
+        this.con = con;
 //        this.shouldCrc = shouldCrc;
         this.priority = priority;
         
@@ -37,10 +40,8 @@ class MultiCallback implements ISequentialOutStream {
         try {
             fos.write(data);
             
-            multi.getArchive().setExtracted(multi.getArchive().getExtracted() + data.length);
+            con.getArchiv().setExtracted(con.getArchiv().getExtracted() + data.length);
 
-            multi.updatedisplay();
-            
             if(priority > 0) {
                 try {
                     if(priority == 1) {
@@ -49,7 +50,8 @@ class MultiCallback implements ISequentialOutStream {
                         Thread.sleep(200);
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    con.setExeption(e);
+                    con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                 }
             }
             
@@ -57,12 +59,24 @@ class MultiCallback implements ISequentialOutStream {
 //                crc.update(data);
 //            }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            con.setExeption(e);
+            con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
         } catch (IOException e) {
-            e.printStackTrace();
+            con.setExeption(e);
+            con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
         }
         
         return data.length;
+    }
+    
+    /**
+     * Closes the unpacking.
+     * 
+     * @throws IOException
+     */
+    void close() throws IOException {
+        fos.flush();
+        fos.close();
     }
     
     /**

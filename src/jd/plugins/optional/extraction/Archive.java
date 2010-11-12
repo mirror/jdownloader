@@ -74,7 +74,7 @@ public class Archive {
     /**
      * Exitcode of the extrraction.
      */
-    private int exitCode;
+    private int exitCode = 0;
     
     /**
      * Status of the extraction.

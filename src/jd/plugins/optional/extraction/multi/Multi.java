@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Pattern;
 
 import net.sf.sevenzipjbinding.ArchiveFormat;
@@ -50,12 +52,10 @@ public class Multi implements IExtraction {
     private ExtractionController con;
     private ISevenZipInArchive inArchive;
     private List<String> postprocessing;
-    private long time;
     private SubConfiguration conf;
     
     public Multi() {
         crack = 0;
-        time = 0;
         postprocessing = new ArrayList<String>();
         inArchive = null;
     }
@@ -180,15 +180,16 @@ public class Multi implements IExtraction {
             archive.setPassword(password);
             return true;
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
             return false;
         } catch (SevenZipException e) {
-            e.printStackTrace();
             return false;
         }
     }
 
     public void extract() {
+        Timer update = new Timer("Extraction display update");
+        update.schedule(new UpdateDisplay(con), 0, 1000);
+        
         try {
             int priority = conf.getIntegerProperty(PRIORITY);
             
@@ -217,7 +218,7 @@ public class Multi implements IExtraction {
                     }
                 }
                 
-                MultiCallback call = new MultiCallback(extractTo, this, priority, item.getCRC() > 0 ? true : false);
+                MultiCallback call = new MultiCallback(extractTo, con, priority, item.getCRC() > 0 ? true : false);
                 ExtractOperationResult res;
                 if(item.isEncrypted()) {
                     res = item.extractSlow(call, archive.getPassword());
@@ -225,7 +226,11 @@ public class Multi implements IExtraction {
                     res = item.extractSlow(call);
                 }
                 
-                updatedisplay();
+                call.close();
+                
+                if(archive.getExitCode() != 0) {
+                    return;
+                }
                 
                 //TODO: Write an proper CRC check
 //                System.out.println(item.getCRC() + " : " + Integer.toHexString(item.getCRC()) + " : " + call.getComputedCRC());
@@ -260,6 +265,8 @@ public class Multi implements IExtraction {
         } catch (IOException e) {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
+        } finally {
+            update.cancel();
         }
         
         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
@@ -337,7 +344,6 @@ public class Multi implements IExtraction {
             archive.setProtected(true);
             return true;
         } catch(Exception e) {
-            e.printStackTrace();
             return false;
         }
         
@@ -421,12 +427,9 @@ public class Multi implements IExtraction {
     public List<String> filesForPostProcessing() {
         return postprocessing;
     }
-    
-    void updatedisplay() {
-        if((System.currentTimeMillis() - time) > 1000) {
-            con.fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
-            time = System.currentTimeMillis();
-        }
+
+    public void setConfig(SubConfiguration config) {
+        conf = config;
     }
     
     /**
@@ -443,7 +446,7 @@ public class Multi implements IExtraction {
         }
         
         /**
-         * 
+         * Marks that the boolean was found.
          */
         void found() {
             bool = true;
@@ -458,8 +461,23 @@ public class Multi implements IExtraction {
             return bool;
         }
     }
-
-    public void setConfig(SubConfiguration config) {
-        conf = config;
+    
+    /**
+     * Timertask for updating the current unpacking process.
+     * 
+     * @author botzi
+     *
+     */
+    private class UpdateDisplay extends TimerTask {
+        private ExtractionController con;
+        
+        public UpdateDisplay(ExtractionController con) {
+            this.con = con;
+        }
+        
+        @Override
+        public void run() {
+            con.fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
+        }
     }
 }
