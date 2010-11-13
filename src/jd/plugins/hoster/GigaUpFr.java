@@ -51,10 +51,12 @@ public class GigaUpFr extends PluginForHost {
         String filename = br.getRegex("<title>(.*?) \\| GigaUP\\.fr</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
         String filesize = br.getRegex("<br />Taille de (.*?)<br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filesize = filesize.replace("Mo", "Mb");
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) {
+            filesize = filesize.replace("Mo", "Mb");
+            link.setDownloadSize(Regex.getSize(filesize));
+        }
         String md5 = br.getRegex("Md5Sum : ([a-z0-9]+)").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
@@ -63,6 +65,7 @@ public class GigaUpFr extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">Vous ne pouvez télécharger ce fichier car il est \"En travail\"\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         String captchaid = (br.getRegex("<img src=\".*?uid=(.*?)\" style=\"margi").getMatch(0));
         Form captchaForm = br.getFormbyKey("bot_sucker");
         if (captchaForm == null || captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

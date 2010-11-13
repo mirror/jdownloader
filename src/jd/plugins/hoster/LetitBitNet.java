@@ -216,16 +216,9 @@ public class LetitBitNet extends PluginForHost {
         down.put("uid2", captchaId);
         down.setAction("http://letitbit.net/download3.php");
         br.submitForm(down);
-        if (!br.containsHTML("download3_content\\.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         url = br.getRegex("<frame src=\"http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\"").getMatch(0);
-        String nextpage = "http://letitbit.net/download3_content.php";
         if (url == null || url.equals("")) {
             logger.info("Getting nextpage + ?link=");
-            if (nextpage == null) {
-                logger.warning("nextpage is null...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(nextpage);
             // Ticket Time
             int waitThat = 60;
             String time = br.getRegex("seconds = (\\d+);").getMatch(0);
