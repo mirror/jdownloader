@@ -220,9 +220,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (finallink == null) finallink = br.getRegex("(http://fs\\d+\\.slutdrive\\.com/videos/\\d+\\.flv)").getMatch(0);
             if (finallink != null) finallink = "directhttp://" + finallink;
         } else if (parameter.contains("view.stern.de/de/")) {
-            if (parameter.contains("/picture/")) br.getPage(parameter.replace("/picture/", "/original/"));
-            finallink = br.getRegex("<div class=\"ImgBig\" style=\"width:950px\">[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\"(http://view\\.stern\\.de/de/original/\\d+/.*?\\..{3,4})\"").getMatch(0);
+            br.setFollowRedirects(true);
+            br.getPage(parameter.replace("/picture/", "/original/"));
+            if (br.containsHTML("/erotikfilter/")) {
+                br.postPage(br.getURL(), "savefilter=1&referer=" + Encoding.urlEncode(parameter.replace("/original/", "/picture/")) + "%3Fr%3D1%26g%3Dall");
+                br.getPage(parameter.replace("/picture/", "/original/"));
+            }
+            finallink = br.getRegex("<div class=\"ImgBig\" style=\"width:\\d+px\">[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\"(http://view\\.stern\\.de/de/original/([a-z0-9]+/)?\\d+/.*?\\..{3,4})\"").getMatch(0);
             if (finallink != null) finallink = "directhttp://" + finallink;
 
         }

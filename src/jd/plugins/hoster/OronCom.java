@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -110,95 +111,111 @@ public class OronCom extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (nopremium) {
-            doFree(link);
-        } else {
-            String dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                if (br.containsHTML("You have reached the download")) {
-                    String errormessage = "You have reached the download limit!";
-                    errormessage = br.getRegex("class=\"err\">(.*?)<br>").getMatch(0);
-                    if (errormessage != null) logger.warning(errormessage);
-                    link.getLinkStatus().setStatusText(errormessage);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                Form DLForm = br.getFormbyProperty("name", "F1");
-                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (br.containsHTML("name=\"password\"")) {
-                    if (link.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", link);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = link.getStringProperty("pass", null);
-                    }
-                    DLForm.put("password", passCode);
-                    logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-                }
-                br.submitForm(DLForm);
-                // Premium also got limits...
-                if (br.containsHTML("You have reached the download-limit")) {
-                    String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
-                    String tmpdays = br.getRegex("\\s+(\\d+)\\s+days?").getMatch(0);
-                    if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                    } else {
-                        int minutes = 0, seconds = 0, hours = 0, days = 0;
-                        if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                        if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                        if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                        if (tmpdays != null) days = Integer.parseInt(tmpdays);
-                        int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                        logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-                    }
-                }
+        String dllink = link.getStringProperty("finaldownloadlink");
+        URLConnectionAdapter con = null;
+        boolean generateLink = true;
+        if (dllink != null) {
+            con = br.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
+                logger.info("Saved final downloadlink is still valid, using this link to download...");
+                generateLink = false;
+            } else {
+                logger.info("Saved final downloadlink is NOT valid anymore, creating new link...");
+            }
+        }
+        if (con != null) con.disconnect();
+        if (generateLink) {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            if (nopremium) {
+                doFree(link);
+            } else {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    if (br.containsHTML("(name=\"password\"|Wrong password)")) {
-                        logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                        link.setProperty("pass", null);
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    if (br.containsHTML("You have reached the download")) {
+                        String errormessage = "You have reached the download limit!";
+                        errormessage = br.getRegex("class=\"err\">(.*?)<br>").getMatch(0);
+                        if (errormessage != null) logger.warning(errormessage);
+                        link.getLinkStatus().setStatusText(errormessage);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
+                    Form DLForm = br.getFormbyProperty("name", "F1");
+                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (br.containsHTML("name=\"password\"")) {
+                        if (link.getStringProperty("pass", null) == null) {
+                            passCode = Plugin.getUserInput("Password?", link);
+                        } else {
+                            /* gespeicherten PassCode holen */
+                            passCode = link.getStringProperty("pass", null);
+                        }
+                        DLForm.put("password", passCode);
+                        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+                    }
+                    br.submitForm(DLForm);
+                    // Premium also got limits...
+                    if (br.containsHTML("You have reached the download-limit")) {
+                        String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+                        String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+                        String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+                        String tmpdays = br.getRegex("\\s+(\\d+)\\s+days?").getMatch(0);
+                        if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                        } else {
+                            int minutes = 0, seconds = 0, hours = 0, days = 0;
+                            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                            if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                            int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                            logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
+                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                        }
+                    }
+                    dllink = br.getRedirectLocation();
                     if (dllink == null) {
-                        dllink = br.getRegex("<td align=\"center\" height=\"100\"><a href=\"(http.*?)\"").getMatch(0);
+                        if (br.containsHTML("(name=\"password\"|Wrong password)")) {
+                            logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                            link.setProperty("pass", null);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
                         if (dllink == null) {
-                            dllink = br.getRegex("\"(http://[a-zA-Z0-9]+\\.oron\\.com/.*?/.*?)\"").getMatch(0);
+                            dllink = br.getRegex("<td align=\"center\" height=\"100\"><a href=\"(http.*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                dllink = br.getRegex("\"(http://[a-zA-Z0-9]+\\.oron\\.com/.*?/.*?)\"").getMatch(0);
+                            }
                         }
                     }
                 }
-            }
-            if (dllink == null) {
-                if (br.containsHTML("You have reached the download")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // logger.info("Final downloadlink = " + dllink +
-            // " starting the download...");
-            // Hoster allows up to 15 Chunks but then you can only start one
-            // download...
-
-            // Note: Chunks deactivated because it seems like every chunk is
-            // counted as a download which means that premiumusers using too
-            // many chunks lose all their traffic in a few minutes
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            if (passCode != null) {
-                link.setProperty("pass", passCode);
-            }
-            if (!(dl.getConnection().isContentDisposition())) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                if (br.containsHTML("File Not Found")) {
-                    logger.warning("Server says link offline, please recheck that!");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (dllink == null) {
+                    if (br.containsHTML("You have reached the download")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // This hoster has a bad traffic-system, every
+                // downloadlink-generation will remove the full size of the
+                // file(s)
+                // from the users account even if he doesn't download the file
+                // after
+                // generating a link
+                link.setProperty("finaldownloadlink", dllink);
             }
-            dl.startDownload();
         }
+        // Hoster allows up to 15 Chunks but then you can only start one
+        // download...
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        if (!(dl.getConnection().isContentDisposition())) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            if (br.containsHTML("File Not Found")) {
+                logger.warning("Server says link offline, please recheck that!");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
