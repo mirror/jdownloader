@@ -268,8 +268,6 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         /* try api first */
-        boolean resumable = true;
-        int maxChunks = 0;
         boolean useAPI = false;
         try {
             this.setBrowserExclusive();
@@ -289,7 +287,8 @@ public class ShareOnlineBiz extends PluginForHost {
             if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
             /* Datei herunterladen */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, maxChunks);
+            /* api allows resume, only 1 chunk */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -370,7 +369,8 @@ public class ShareOnlineBiz extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, resumable, maxChunks);
+        /* website does not allow resume, only 1 chunk to allow api resume */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             handleErrors(br);
