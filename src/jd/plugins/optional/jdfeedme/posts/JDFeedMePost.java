@@ -1,5 +1,6 @@
 package jd.plugins.optional.jdfeedme.posts;
 
+import java.io.File;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -215,14 +216,18 @@ public class JDFeedMePost implements Serializable, Comparable<JDFeedMePost>
     {
     	Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
     	
-    	/* CODE_FOR_INTERFACE_5_START
-    	Object loaded = JDIO.loadObject(null, JDUtilities.getResourceFile(location), true);
-    	CODE_FOR_INTERFACE_5_END */
-        /* CODE_FOR_INTERFACE_7_START */
-    	Object loaded = JDIO.loadObject(JDUtilities.getResourceFile(location), true);
-        /* CODE_FOR_INTERFACE_7_END */
+    	File xmlFile = JDUtilities.getResourceFile(location);
+    	if (xmlFile.exists()) 
+        {
+        	/* CODE_FOR_INTERFACE_5_START
+        	Object loaded = JDIO.loadObject(null, xmlFile, true);
+        	CODE_FOR_INTERFACE_5_END */
+            /* CODE_FOR_INTERFACE_7_START */
+        	Object loaded = JDIO.loadObject(xmlFile, true);
+            /* CODE_FOR_INTERFACE_7_END */
     	
-    	if (loaded != null) return (HashMap<String, ArrayList<JDFeedMePost>>)loaded;
-    	else return new HashMap<String, ArrayList<JDFeedMePost>>();
+        	if (loaded != null) return (HashMap<String, ArrayList<JDFeedMePost>>)loaded;
+        }
+    	return new HashMap<String, ArrayList<JDFeedMePost>>();
     }
 }

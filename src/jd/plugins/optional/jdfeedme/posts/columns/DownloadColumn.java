@@ -21,7 +21,6 @@ import java.awt.Cursor;
 import java.awt.event.MouseEvent;
 import javax.swing.SwingConstants;
 import org.jdesktop.swingx.renderer.JRendererLabel;
-
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
@@ -119,12 +118,14 @@ public class DownloadColumn extends JDTableColumn
     }
     
     public void actionPerformed() {
-    	JDFeedMePost post = ((JDFeedMePost)this.obj);
+        
+        this.fireEditingStopped();
+        
+    	JDFeedMePost post = ((JDFeedMePost)DownloadColumn.this.obj);
     	// temporarily mark as added (until we know for sure)
     	post.setAdded(JDFeedMePost.ADDED_YES);
     	JDFeedMeFeed feed = table.getFeed();
     	JDFeedMe.downloadPostThreaded(feed, post, "", table);
-    	this.fireEditingStopped();
     }
     
     

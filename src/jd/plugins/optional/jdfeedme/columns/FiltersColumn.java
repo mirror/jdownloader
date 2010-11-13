@@ -138,7 +138,7 @@ public class FiltersColumn extends JDTableColumn {
     
     @Override
     protected int getMaxWidth() {
-        return 50;
+        return 60;
     }
 
 }

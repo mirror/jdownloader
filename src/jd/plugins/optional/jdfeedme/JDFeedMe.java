@@ -3,6 +3,7 @@ package jd.plugins.optional.jdfeedme;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
@@ -41,7 +42,8 @@ public class JDFeedMe extends PluginOptional
 	public static final String STORAGE_POSTS = "cfg/jdfeedme/posts.xml";
 	
 	public static final int MAX_POSTS = 100; // max number of last posts we save per feed (history)
-    
+    public static final boolean VERBOSE = false; // should we spit up lots of log messages
+	
     private JDFeedMeView view;
     private JDFeedMeGui gui = null;
     private MenuAction showAction;
@@ -193,7 +195,7 @@ public class JDFeedMe extends PluginOptional
             if (feed_address.length() == 0) continue;
             
             // sync each feed
-            String response;
+            String response = "not downloaded yet";
             try
             {
                 // get the feed last update timestamp
@@ -204,7 +206,9 @@ public class JDFeedMe extends PluginOptional
                 gui.setFeedStatus(feed, JDFeedMeFeed.STATUS_RUNNING);
                 
                 // get the feed content from the web
-                response = new Browser().getPage(feed_address);
+                Browser browser = new Browser();
+                browser.setFollowRedirects(true); // support redirects since some feeds have them
+                response = browser.getPage(feed_address);
                 
                 // parse the feed
                 String new_timestamp = parseFeed(feed,timestamp,response);
@@ -220,7 +224,19 @@ public class JDFeedMe extends PluginOptional
             }
             catch (Exception e)
             {
-                logger.severe("JDFeedMe cannot download feed: " + feed_address + " ("+e.getMessage()+")");
+                // shorten the response so we can show it in the log
+                int max_reponse_length = 1000;
+                String response_short = response;
+                if (response_short != null)
+                {
+                    if (response_short.length() > max_reponse_length) 
+                    {
+                        response_short = response_short.substring(0,max_reponse_length/2) + "..." + response_short.substring(response_short.length()-max_reponse_length/2);
+                    }
+                }
+                
+                e.printStackTrace();
+                logger.severe("JDFeedMe cannot sync feed: " + feed_address + " ("+e.toString()+"), feed response: "+response_short);
                 gui.setFeedStatus(feed, JDFeedMeFeed.STATUS_ERROR);
             }
         }
@@ -244,9 +260,12 @@ public class JDFeedMe extends PluginOptional
         {
         	feed_item_number++;
         	
-        	// remove the description from the post so we don't save it
+        	// get the original description
         	String post_description = post.getDescription();
-        	post.setDescription("");
+        	
+        	// originally we removed the description from the posts since posts are saved in xml and this could become large
+        	// new feature: let's do save the description, but make it somewhat shorter (extract links from it)
+        	post.setDescription(extractLinksFromHtml(post_description, JDFeedMeFeed.HOSTER_ANY_HOSTER, JDFeedMeFeed.HOSTER_EXCLUDE));
         	
             // handle the rss item
             if (post.isValid())
@@ -273,7 +292,7 @@ public class JDFeedMe extends PluginOptional
         // make sure this rss item is indeed newer than what we have
         if (post.isTimestampNewer(timestamp))
         {
-            logger.info("JDFeedMe found new item with timestamp: ["+post.getTimestamp()+"]");
+            if (JDFeedMe.VERBOSE) logger.info("JDFeedMe found new item with timestamp: ["+post.getTimestamp()+"]");
             post.setNewpost(true);
             
             // check for filters on this item (see if it passes download filters)
@@ -282,7 +301,7 @@ public class JDFeedMe extends PluginOptional
             // if we don't need to add, we can return now
         	if (!need_to_add)
         	{
-        		logger.info("JDFeedMe new item title: ["+post.getTitle()+"] description: ["+post_description+"] did not pass filters");
+        	    if (JDFeedMe.VERBOSE) logger.info("JDFeedMe new item title: ["+post.getTitle()+"] description: ["+post_description+"] did not pass filters");
         		post.setAdded(JDFeedMePost.ADDED_NO);
         	}
         	else
@@ -298,7 +317,7 @@ public class JDFeedMe extends PluginOptional
         }
         else
         {
-            logger.info("JDFeedMe ignoring item with old timestamp: ["+post.getTimestamp()+"]");
+            if (JDFeedMe.VERBOSE) logger.info("JDFeedMe ignoring item with old timestamp: ["+post.getTimestamp()+"]");
             return false;
         }
     }
@@ -318,8 +337,17 @@ public class JDFeedMe extends PluginOptional
             	// since post was probably updates, show changes in the table
             	if (table != null)
             	{
-            		table.refreshModel();
-            		table.fireTableDataChanged();
+            	    new GuiRunnable<Object>() {
+
+                        @Override
+                        public Object runSave() {
+                            
+                    		table.refreshModel();
+                    		table.fireTableDataChanged();
+                    		return null;
+                    
+                        }
+                    }.start();
             	}
             }
         }.start();
@@ -333,7 +361,7 @@ public class JDFeedMe extends PluginOptional
         if ((link_list_to_download == null) && (post.hasValidFiles()))
         {
             // just take the files field
-            link_list_to_download = extractLinksFromHtml(post.getFiles(),feed.getHoster(),"DirectHTTP");
+            link_list_to_download = extractLinksFromHtml(post.getFiles(),feed.getHoster(),JDFeedMeFeed.HOSTER_EXCLUDE);
         }
         
         // no file fields, maybe we have a good link
@@ -342,8 +370,10 @@ public class JDFeedMe extends PluginOptional
             // try to follow this link
             try
             {
-                String response = new Browser().getPage(post.getLink());
-                link_list_to_download = extractLinksFromHtml(response,feed.getHoster(),"DirectHTTP");
+                Browser browser = new Browser();
+                browser.setFollowRedirects(true); // support redirects since some feeds have them
+                String response = browser.getPage(post.getLink());
+                link_list_to_download = extractLinksFromHtml(response,feed.getHoster(), JDFeedMeFeed.HOSTER_EXCLUDE);
             }
             catch (Exception e)
             {
@@ -354,7 +384,7 @@ public class JDFeedMe extends PluginOptional
         // no good link, try the description
         if ((link_list_to_download == null) && (post_description != null) && (post_description.trim().length()>0))
         {
-            link_list_to_download = extractLinksFromHtml(post_description,feed.getHoster(),"DirectHTTP");
+            link_list_to_download = extractLinksFromHtml(post_description,feed.getHoster(), JDFeedMeFeed.HOSTER_EXCLUDE);
         }
         
         // nothing, exit
@@ -365,7 +395,7 @@ public class JDFeedMe extends PluginOptional
         }
         
         // JOptionPane.showMessageDialog(new JFrame(), "JDFeedMe says we need to download link: "+rssitem.link);
-        logger.info("JDFeedMe says to download: "+link_list_to_download);
+        logger.info("JDFeedMe attempting to download: "+link_list_to_download);
        
         // let's download the links.. finally..
         boolean anything_downloaded = downloadLinks(link_list_to_download, feed, post);
@@ -394,7 +424,7 @@ public class JDFeedMe extends PluginOptional
         	{
         		if (filter.match(post.getTitle())) 
         		{
-        			logger.info("JDFeedMe new item title: ["+post.getTitle()+"] passed filters");
+        		    if (JDFeedMe.VERBOSE) logger.info("JDFeedMe new item title: ["+post.getTitle()+"] passed filters");
         			return true;
         		}
         	}
@@ -404,7 +434,7 @@ public class JDFeedMe extends PluginOptional
         	{
         		if (filter.match(post_description)) 
         		{
-        			logger.info("JDFeedMe new item description: ["+post_description+"] passed filters");
+        		    if (JDFeedMe.VERBOSE) logger.info("JDFeedMe new item description: ["+post_description+"] passed filters");
         			return true;
         		}
         	}
@@ -415,11 +445,16 @@ public class JDFeedMe extends PluginOptional
     }
     
     // this function takes a page containing links or a description and cleans it so only interesting file links remain
-    private String extractLinksFromHtml(String html, String limit_to_host, String exclude_host)
+    private String extractLinksFromHtml(String html, String limit_to_host, String[] exclude_hosters)
     {
         String result = "";
         
         // get all links in the html
+        
+        // there is a bug in HTMLParser.getHttpLinks() - it does not handle <br/> correctly, so we must take action ourselves
+        html = html.replace("http://", " http://");
+        
+        // use HTMLParser.getHttpLinks to get links, maybe make our own link extractor some day
         String[] links = HTMLParser.getHttpLinks(html, null);
         
         // go over all links
@@ -431,8 +466,21 @@ public class JDFeedMe extends PluginOptional
                 // HostPluginWrapper.readLock.lock();
                 for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) 
                 {
+                    // make sure this hoster is enabled
                     if (!pHost.isEnabled()) continue;
-                    if ((exclude_host != null) && (pHost.getHost().equalsIgnoreCase(exclude_host))) continue;
+                    
+                    // check if we need to ignore certain hosters
+                    if (exclude_hosters != null)
+                    {
+                        boolean in_ignore_list = false;
+                        for (final String exclude_hoster : exclude_hosters)
+                        {
+                            if (pHost.getHost().equalsIgnoreCase(exclude_hoster)) in_ignore_list = true;
+                        }
+                        if (in_ignore_list) continue;
+                    }
+                    
+                    // check if we limit to certain hosters
                     if ((limit_to_host != null) && (!limit_to_host.equals(JDFeedMeFeed.HOSTER_ANY_HOSTER)))
                     {
                     	if (limit_to_host.equals(JDFeedMeFeed.HOSTER_ANY_PREMIUM))
@@ -569,7 +617,14 @@ public class JDFeedMe extends PluginOptional
                     {
                     	try
                     	{
-                    		syncRss();
+                    	    new GuiRunnable<Object>() {
+
+                                @Override
+                                public Object runSave() {
+                                    syncRss();
+                                    return null;
+                                }
+                    	    }.start();
                     	}
                     	catch (Exception e) {}
                     }

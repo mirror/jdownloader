@@ -20,6 +20,8 @@ public class JDFeedMeFeed implements Serializable {
     public static final String HOSTER_ANY_PREMIUM = "My Premium";
     public static final String HOSTER_ANY_HOSTER = "Any Hoster";
     
+    public static final String[] HOSTER_EXCLUDE = {"DirectHTTP", "imagehost.org"};
+    
     public static final String GET_OLD_OPTIONS_ALL = "All";
     public static final String GET_OLD_OPTIONS_LASTWEEK = "Last week";
     public static final String GET_OLD_OPTIONS_LAST24HOURS = "Last 24 hours";
@@ -270,14 +272,15 @@ public class JDFeedMeFeed implements Serializable {
     	Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
     	
     	File xmlFile = JDUtilities.getResourceFile(location);
-    	Object loaded;
-    	if (xmlFile.exists()) {
+    	if (xmlFile.exists()) 
+    	{
     	    /* CODE_FOR_INTERFACE_5_START
-    	    loaded = JDIO.loadObject(null, JDUtilities.getResourceFile(location), true);
+    	    Object loaded = JDIO.loadObject(null, xmlFile, true);
     	    CODE_FOR_INTERFACE_5_END */
     	    /* CODE_FOR_INTERFACE_7_START */
-    	    loaded = JDIO.loadObject(JDUtilities.getResourceFile(location), true);
+    	    Object loaded = JDIO.loadObject(xmlFile, true);
     	    /* CODE_FOR_INTERFACE_7_END */
+    	    
     	    if (loaded != null) return (ArrayList<JDFeedMeFeed>)loaded;
     	}
     	return new ArrayList<JDFeedMeFeed>();

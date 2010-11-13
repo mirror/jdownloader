@@ -153,7 +153,7 @@ public class PostsColumn extends JDTableColumn {
     
     @Override
     protected int getMaxWidth() {
-        return 50;
+        return 60;
     }
 
 }

@@ -1,5 +1,6 @@
 package jd.plugins.optional.jdfeedme;
 
+import java.io.File;
 import java.io.Serializable;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
@@ -56,14 +57,18 @@ public class JDFeedMeConfig implements Serializable
     {
     	Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
     	
-    	/* CODE_FOR_INTERFACE_5_START
-    	Object loaded = JDIO.loadObject(null, JDUtilities.getResourceFile(location), true);
-    	CODE_FOR_INTERFACE_5_END */
-    	/* CODE_FOR_INTERFACE_7_START */
-    	Object loaded = JDIO.loadObject(JDUtilities.getResourceFile(location), true);
-    	/* CODE_FOR_INTERFACE_7_END */
+    	File xmlFile = JDUtilities.getResourceFile(location);
+        if (xmlFile.exists()) 
+        {
+        	/* CODE_FOR_INTERFACE_5_START
+        	Object loaded = JDIO.loadObject(null, xmlFile, true);
+        	CODE_FOR_INTERFACE_5_END */
+        	/* CODE_FOR_INTERFACE_7_START */
+        	Object loaded = JDIO.loadObject(xmlFile, true);
+        	/* CODE_FOR_INTERFACE_7_END */
     	
-    	if (loaded != null) return (JDFeedMeConfig)loaded;
-    	else return new JDFeedMeConfig();
+        	if (loaded != null) return (JDFeedMeConfig)loaded;
+        }
+    	return new JDFeedMeConfig();
     }
 }
