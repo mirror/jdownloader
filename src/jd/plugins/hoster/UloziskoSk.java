@@ -46,7 +46,7 @@ public class UloziskoSk extends PluginForHost {
         br.setCustomCharset("windows-1250");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Prepáčte, Vaša krajina nie je podporovaná z dôvodu drahého medzinárodnému prenosu dát. Môžete skúsiť")) return AvailableStatus.UNCHECKABLE;
-        if (br.containsHTML("(or was removed|is not existed|The requested file does not exists)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(or was removed|is not existed|The requested file does not exists|>Zadaný súbor neexistuje z jedného z nasledujúcich dôvodov:<|Bol zmazaný používateľom\\.|Zle ste opísali adresu odkazu. Pozorne opíšte alebo skopírujte adresu odkazu)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"down1\">(.*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"down2\">(.*?)</div").getMatch(0);

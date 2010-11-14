@@ -26,10 +26,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kickload.com" }, urls = { "http://[\\w\\.]*?kickload\\.com/file/\\d+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kickload.com" }, urls = { "http://[\\w\\.]*?kickload\\.com/(file/\\d+/.+|get/[A-Za-z0-9]+/.+)" }, flags = { 0 })
 public class KickLoadCom extends PluginForHost {
-    private static final String MAINPAGE = "http://kickload.com/";
+    private static final String MAINPAGE            = "http://kickload.com/";
+    private static final String PREMIUMONLYTEXT     = "To download this file you need a premium account";
+    private static final String PREMIUMONLYUSERTEXT = "Only available for premium users";
 
     public KickLoadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,15 +55,17 @@ public class KickLoadCom extends PluginForHost {
         if (filesize == null) filesize = br.getRegex("class=\"download_details\">File size: (.*?) -  Downloads").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (!filesize.equals("unknow")) link.setDownloadSize(Regex.getSize(filesize));
         String md5 = br.getRegex("id=\"md5\">\\((.*?)\\)").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5.trim());
+        if (md5 != null && !md5.equals("")) link.setMD5Hash(md5.trim());
+        if (br.containsHTML(PREMIUMONLYTEXT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.kickloadcom.nofreedownloadlink", PREMIUMONLYUSERTEXT));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         br.postPage(downloadLink.getDownloadURL(), "free_download=1&free_download1.x=&free_download1.y=&free_download1=1");
         if (br.containsHTML("(ou are already downloading a file\\.|Please, wait until the file has been loaded\\.</h2>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         String postPage = br.getRegex("\"(http://srv\\d+\\.kickload\\.com/download\\.php\\?ticket=.*?)\"").getMatch(0);

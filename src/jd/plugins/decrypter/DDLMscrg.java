@@ -17,75 +17,87 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.FilePackage;
+import jd.plugins.DecrypterException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-music.org" }, urls = { "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+|http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-music.org" }, urls = { "http://(www\\.)?ddl-music\\.org/(download/\\d+/.*?/|download/links/[a-z0-9]+/(mirror/\\d+/)?)" }, flags = { 0 })
 public class DDLMscrg extends PluginForDecrypt {
-    static public final String DECRYPTER_DDLMSC_MAIN = "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+";
-    static public final String DECRYPTER_DDLMSC_CRYPT = "http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+";
+    private static final String DECRYPTER_DDLMSC_MAIN  = "http://(www\\.)?ddl-music\\.org/download/\\d+/.*?/";
+    private static final String DECRYPTER_DDLMSC_CRYPT = "http://(www\\.)?ddl-music\\.org/download/links/[a-z0-9]+/(mirror/\\d+/)?";
+    private static final String CAPTCHATEXT            = "captcha\\.php\\?id=";
 
     public DDLMscrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         if (parameter.matches(DECRYPTER_DDLMSC_CRYPT)) {
+            logger.info("The user added a DECRYPTER_DDLMSC_CRYPT link...");
             int add = 0;
-            for (int i = 1; i < 5; i++) {
+            for (int i = 1; i < 10; i++) {
                 br.getPage(parameter);
                 try {
                     Thread.sleep(3000 + add);
                 } catch (InterruptedException e) {
                 }
-                Form captchaForm = br.getForm(0);
-                String[] calc = br.getRegex(Pattern.compile("method=\"post\">[\\s]*?(\\d*?) (\\+|-) (\\d*?) =", Pattern.DOTALL)).getRow(0);
-                String inputname = captchaForm.getInputFieldsByType("text").get(0).getKey();
-                if (calc[1].equals("+")) {
-                    captchaForm.put(inputname, String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
-                } else {
-                    captchaForm.put(inputname, String.valueOf(Integer.parseInt(calc[0]) - Integer.parseInt(calc[2])));
-                }
-                br.submitForm(captchaForm);
-                if (!br.containsHTML("Du bist ein Angeber") && !br.containsHTML("Mein Gott, wo bist denn du zur Schule gegangen!")) {
-                    decryptedLinks.add(createDownloadlink(br.getRegex(Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+                if (!br.containsHTML(CAPTCHATEXT)) return null;
+                String captchaUrl = "http://ddl-music.org/captcha.php?id=" + new Regex(parameter, "ddl-music\\.org/download/links/([a-z0-9]+)/").getMatch(0) + "&rand=" + new Random().nextInt(1000);
+                String code = getCaptchaCode(captchaUrl, param);
+                br.postPage(parameter, "sent=1&captcha=" + code);
+                if (!br.containsHTML(">Sicherheitscode nicht korrekt\\!<") && !br.containsHTML("captcha.php?id=")) {
                     break;
+                } else {
+                    if (i >= 8) throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
                 add += 500;
             }
+            String[] allLinks = br.getRegex("<tr class=\"download_links_parts\">.*?<a href=\"(.*?)\"").getColumn(0);
+            if (allLinks == null || allLinks.length == 0) {
+                logger.warning("Could not find the links...");
+                return null;
+            }
+            for (String aLink : allLinks)
+                decryptedLinks.add(createDownloadlink(aLink));
         } else if (parameter.matches(DECRYPTER_DDLMSC_MAIN)) {
+            String fpName = br.getRegex("<title>DDL-Music v3.0 // Eric Clapton - (.*?)</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("\\'\\);\">\\&gt;\\&gt; (.*?)</div>").getMatch(0);
+            logger.info("The user added a DECRYPTER_DDLMSC_MAIN link...");
             br.getPage(parameter);
-
-            String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            if (password != null && password.contains("kein Passwort")) {
+            String password = br.getRegex(Pattern.compile("<b>Passwort:</b> <i>(.*?)</i><br />", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            if (password != null && password.contains("(kein Passwort)")) {
                 password = null;
             }
-
-            String ids[] = br.getRegex(Pattern.compile("<a href=\"(.*?)\" target=\"_blank\" onMouseOut=\"MM_swapImgRestore", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            progress.setRange(ids.length);
-            for (String id : ids) {
-                if (id.startsWith("/captcha/")) id = "http://ddl-music.org" + id;
-                DownloadLink dLink = createDownloadlink(id);
-                dLink.addSourcePluginPassword(password);
+            String allLinks[] = br.getRegex("\"(download/links/[a-z0-9]+/(mirror/\\d+/)?)\"").getColumn(0);
+            if (allLinks == null || allLinks.length == 0) {
+                logger.warning("Couldn't find any links...");
+                return null;
+            }
+            for (String singleLink : allLinks) {
+                DownloadLink dLink = createDownloadlink("http://ddl-music.org/" + singleLink);
+                if (password != null) dLink.addSourcePluginPassword(password);
                 decryptedLinks.add(dLink);
-                progress.increase(1);
+            }
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
             }
         }
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
