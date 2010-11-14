@@ -751,7 +751,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             out.close();
             if (upload) {
                 String message = UserIO.getInstance().requestInputDialog(0, "Enter change description", "Please enter a short description for your changes (in english).", "", null, null, null);
-                if (message == null) {
+                if ((message == null)||(message.trim() == "")) {
                     message = "Updated language file (" + this.lngKey + ")";
                 }
                 if (!this.commit(file, message, null)) {
