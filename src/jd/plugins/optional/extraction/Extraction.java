@@ -21,7 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
-
+import java.util.Timer;
 import javax.swing.filechooser.FileFilter;
 
 import jd.PluginWrapper;
@@ -69,6 +69,8 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
     private static MenuAction menuAction = null;
 
     private Jobber queue;
+    
+    private Timer update = null;
 
     private ArrayList<IExtraction> extractors = new ArrayList<IExtraction>();
     
@@ -83,8 +85,20 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         initConfig();
     }
 
+    /**
+     * Adds all internal extraction plugins.
+     */
     private void initExtractors() {
-        extractors.add(new Multi());
+        setExtractor(new Multi());
+    }
+    
+    /**
+     * Adds an ectraction plugin to the framework.
+     * 
+     * @param extractor The exractor.
+     */
+    public void setExtractor(IExtraction extractor) {
+        extractors.add(extractor);
     }
     
     /**
@@ -246,6 +260,12 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
         controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
         queue.add(controller);
+        
+        if(update == null) {
+            update = new Timer("Extraction display update");
+        }
+        controller.setTimer(update);
+        
         queue.start();
 
         for (DownloadLink link1 : archive.getDownloadLinks()) {
@@ -504,7 +524,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         return true;
     }
 
-    public void initConfig() {
+    private void initConfig() {
         ConfigEntry ce, conditionEntry;
         final SubConfiguration subConfig = getPluginConfig();
 

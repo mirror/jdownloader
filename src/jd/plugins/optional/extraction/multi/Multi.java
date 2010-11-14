@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -189,9 +187,6 @@ public class Multi implements IExtraction {
     }
 
     public void extract() {
-        Timer update = new Timer("Extraction display update");
-        update.schedule(new UpdateDisplay(con), 0, 1000);
-
         try {
             int priority = conf.getIntegerProperty(PRIORITY);
 
@@ -215,7 +210,7 @@ public class Multi implements IExtraction {
                             return;
                         }
                     } else {
-                        con.getArchiv().setExtracted(con.getArchiv().getExtracted() + item.getSize());
+                        archive.setExtracted(archive.getExtracted() + item.getSize());
                         continue;
                     }
                 }
@@ -272,8 +267,6 @@ public class Multi implements IExtraction {
         } catch (IOException e) {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
-        } finally {
-            update.cancel();
         }
 
         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
@@ -468,25 +461,6 @@ public class Multi implements IExtraction {
          */
         boolean getBoolean() {
             return bool;
-        }
-    }
-
-    /**
-     * Timertask for updating the current unpacking process.
-     * 
-     * @author botzi
-     * 
-     */
-    private class UpdateDisplay extends TimerTask {
-        private ExtractionController con;
-
-        public UpdateDisplay(ExtractionController con) {
-            this.con = con;
-        }
-
-        @Override
-        public void run() {
-            con.fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
         }
     }
 }

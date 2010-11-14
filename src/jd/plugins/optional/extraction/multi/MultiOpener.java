@@ -23,11 +23,11 @@ class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword 
     private Map<String, RandomAccessFile> openedRandomAccessFileList = new HashMap<String, RandomAccessFile>();
     private String password;
 
-    protected MultiOpener() {
+    MultiOpener() {
         this.password = "";
     }
     
-    protected MultiOpener(String password) {
+    MultiOpener(String password) {
         this.password = password;
     }
     

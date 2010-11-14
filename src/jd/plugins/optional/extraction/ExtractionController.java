@@ -19,6 +19,7 @@ package jd.plugins.optional.extraction;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
 
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
@@ -50,6 +51,8 @@ public class ExtractionController extends Thread implements JDRunnable {
     
     private IExtraction extractor;
     
+    private Timer timer;
+    
     ExtractionController(Archive archiv, IExtraction extractor) {
         this.archive = archiv;
         this.extractor = extractor;
@@ -65,7 +68,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * 
      * @param listener
      */
-    public void addExtractionListener(ExtractionListener listener) {
+    void addExtractionListener(ExtractionListener listener) {
         this.removeExtractionListener(listener);
         this.listener.add(listener);
     }
@@ -147,8 +150,10 @@ public class ExtractionController extends Thread implements JDRunnable {
                     archive.getExtractTo().mkdirs();
                 }
                 
-                fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
+                UpdateDisplay update = new UpdateDisplay(this);
+                timer.schedule(update, 0, 1000);
                 extractor.extract();
+                update.cancel();
                 
                 switch (archive.getExitCode()) {
                     case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
@@ -230,7 +235,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * 
      * @return The thrown exception.
      */
-    public Exception getException() {
+    Exception getException() {
         return exception;
     }
     
@@ -239,7 +244,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * Returns the current password finding process.
      * @return
      */
-    public int getCrackProgress() {
+    int getCrackProgress() {
         return extractor.getCrackProgress();
     }
 
@@ -259,7 +264,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * 
      * @param passwordList
      */
-    public void setPasswordList(ArrayList<String> passwordList) {
+    void setPasswordList(ArrayList<String> passwordList) {
         this.passwordList = passwordList;
     }
     
@@ -277,7 +282,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * 
      * @return
      */
-    public ProgressController getProgressController() {
+    ProgressController getProgressController() {
         return progressController;
     }
 
@@ -286,7 +291,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * 
      * @param setProperty
      */
-    public void setRemoveAfterExtract(boolean setProperty) {
+    void setRemoveAfterExtract(boolean setProperty) {
         this.removeAfterExtraction = setProperty;
     }
 
@@ -295,7 +300,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * 
      * @param progress
      */
-    public void setProgressController(ProgressController progress) {
+    void setProgressController(ProgressController progress) {
         progressController = progress;
     }
 
@@ -329,7 +334,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * 
      * @return
      */
-    public List<String> getPostProcessingFiles() {
+    List<String> getPostProcessingFiles() {
         return extractor.filesForPostProcessing();
     }
     
@@ -347,7 +352,16 @@ public class ExtractionController extends Thread implements JDRunnable {
      * 
      * @return
      */
-    public IExtraction getExtractor() {
+    IExtraction getExtractor() {
         return extractor;
+    }
+    
+    /**
+     * Sets the timer for updating the display;
+     * 
+     * @param timer
+     */
+    void setTimer(Timer timer) {
+        this.timer = timer;
     }
 }
