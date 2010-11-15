@@ -37,7 +37,8 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
     private boolean run = false;
     private boolean clients = false;
     private ArrayList<String> iplist = new ArrayList<String>();
-    private String lastIpString = "";
+    private String lastIpsString = "";
+    private String lastIp = "";
     private final Logger logger;
     private final JDAntiReconnect jdAntiReconnect;
 
@@ -48,8 +49,8 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
         this.jdAntiReconnect = jdAntiReconnect;
     }
     public void parselist(String ipString) {
-        if (ipString != lastIpString){
-            lastIpString = ipString;
+        if (ipString != lastIpsString){
+            lastIpsString = ipString;
             iplist.clear();
             
             String[] iparray = ipString.replaceAll(" ", "").split("\\s");
@@ -125,10 +126,23 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
     
     
     public boolean PingClients(){
+        if (lastIp != ""){
+            try {
+                if(InetAddress.getByName(lastIp).isReachable(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_TIMEOUT"))){
+                    this.setClients(true);
+                    return true;
+                } else {
+                    lastIp = "";
+                }
+            } catch (Exception e) {
+                logger.fine("JDAntiReconnect: IO-Exception");
+            }
+        }
         for (String i : iplist) {
             try {
                 if(InetAddress.getByName(i).isReachable(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_TIMEOUT"))){
                     this.setClients(true);
+                    lastIp = i;
                     logger.fine("JDAntiReconnect: Online " + i);
                     return true;
                 }
@@ -141,10 +155,23 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
     }
     
     public boolean ARPClients(){
+        if (lastIp != ""){
+            try {
+                if(callArpTool(lastIp)){
+                    this.setClients(true);
+                    return true;
+                } else {
+                    lastIp = "";
+                }
+            } catch (Exception e) {
+                logger.fine("JDAntiReconnect: IO-Exception");
+            }          
+        }
         for (String i : iplist) {
             try {
                 if(callArpTool(i)){
                     this.setClients(true);
+                    lastIp = i;
                     logger.fine("JDAntiReconnect: Client Online " + i);
                     return true;
                 }
