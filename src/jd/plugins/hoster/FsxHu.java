@@ -18,10 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,36 +29,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsx.hu" }, urls = { "http://s.*?.fsx.hu/.+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsx.hu" }, urls = { "http://s.*?.fsx.hu/.+/.+" }, flags = { 0 })
 public class FsxHu extends PluginForHost {
 
     public FsxHu(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium();
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        try {
-            this.login(account);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        String expire = this.br.getRegex("következő időpontig érvényes: <b>(.*?)</b>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            expire = expire.replaceAll("(<b>|</b>)", "");
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "yyyy-MMMM-dd hh:mm:ss", null));
-        }
-        ai.setStatus("Registered (free) User");
-        return ai;
     }
 
     @Override
@@ -76,11 +48,6 @@ public class FsxHu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
         return 1;
     }
 
@@ -143,28 +110,6 @@ public class FsxHu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.requestFileInformation(link);
-        this.login(account);
-        this.br.setFollowRedirects(false);
-        this.br.getPage(link.getDownloadURL());
-        this.handleFree0(link);
-    }
-
-    private void login(final Account account) throws Exception {
-        this.setBrowserExclusive();
-        this.br.setCookiesExclusive(true);
-        this.br.setFollowRedirects(true);
-        this.br.clearCookies("www.fsx.hu");
-        this.br.setCustomCharset("iso-8859-2");
-        this.br.getPage("http://fsx.hu/index.php?m=home&o=admin");
-        this.br.postPage("http://fsx.hu/index.php?m=home&o=admin", "u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&x=0&y=0");
-        System.out.print(this.br.toString());
-        if (!this.br.containsHTML("Előfizetésed a következő időpontig érvényes")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-
     }
 
     @Override
