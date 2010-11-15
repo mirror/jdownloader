@@ -32,7 +32,7 @@ import jd.http.Browser;
 // if you want to compile a version for 9580 (interface version 5), change the following comments:
 // enable CODE_FOR_INTERFACE_5-START-END and disable CODE_FOR_INTERFACE_7-START-END
 // don't forget to change interface version from 7 to 5
-@OptionalPlugin(rev = "$Revision: 12882 $", id = "jdfeedme", hasGui = true, interfaceversion = 7)
+@OptionalPlugin(rev = "$Revision: 12973 $", id = "jdfeedme", hasGui = true, interfaceversion = 7)
 public class JDFeedMe extends PluginOptional 
 {
 	/// stop using config and use XML instead
