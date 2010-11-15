@@ -54,11 +54,12 @@ public class FsxHu extends PluginForHost {
         br.clearCookies("www.fsx.hu");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("V.lassz az ingyenes let.lt.s .s a regisztr.ci. k.z.l!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("A kiválasztott fájl nem található vagy eltávolításra került")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getHeaders().put("Referer", br.getURL());
         br.getPage("http://www.fsx.hu/download.php?i=1");
         String filename = br.getRegex("<font color=\"#FF0000\" size=\"4\">(.+?)</font>").getMatch(0);
         String filesize = br.getRegex("<strong>M.ret:</strong> (.+?) B.jt").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
@@ -101,20 +102,22 @@ public class FsxHu extends PluginForHost {
         downloadImage("http://www.fsx.hu/img/bg4b.gif");
         downloadImage("http://www.fsx.hu/img/bg3.gif");
         downloadImage("http://www.fsx.hu/img/style.css");
+        br.getHeaders().remove("Referer");
         String url1 = null;
         String url2 = null;
         for (int i = 0; i <= 30; i++) {
             logger.info("Attempt " + i + " of 30");
-            String continueLink = br.getRegex("<font size=\"4\"><a href=\"(http://.*?)</a></font>").getMatch(0);
-            if (continueLink != null) {
-                logger.info("Found continueLink...");
-                br.getPage(continueLink);
-                System.out.print(br.toString());
-            }
+            // String continueLink =
+            // br.getRegex("<font size=\"4\"><a href=\"(http://.*?)</a></font>").getMatch(0);
+            // if (continueLink != null) {
+            // logger.info("Found continueLink...");
+            // br.getPage(continueLink);
+            // System.out.print(br.toString());
+            // }
             url1 = br.getRegex("<a id=\\'dlink\\' href=\"(.+?)\">").getMatch(0);
             url2 = br.getRegex("elem\\.href = elem\\.href \\+ \"(.+?)\";").getMatch(0);
             if (url1 != null && url2 != null) break;
-            String serverQueueLength = br.getRegex("<font color=\"#FF0000\"><strong>(\\d+?)</strong></font> felhaszn.l. van el.tted").getMatch(0);
+            String serverQueueLength = br.getRegex("<font color=\"#FF0000\"><strong>(\\d+?)</strong></font>").getMatch(0);
             if (serverQueueLength == null) {
                 logger.warning("serverQueueLength is null...");
                 serverQueueLength = "notfound";

@@ -356,7 +356,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
-            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 checkServerErrors();
