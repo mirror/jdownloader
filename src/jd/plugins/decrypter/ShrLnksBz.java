@@ -104,7 +104,7 @@ public class ShrLnksBz extends PluginForDecrypt {
             }
         }
         this.setBrowserExclusive();
-        this.br.forceDebug(true);
+        // this.br.setDebug(true);
         // Setup static Header
         this.br.setFollowRedirects(false);
         this.br.getHeaders().clear();
@@ -236,10 +236,15 @@ public class ShrLnksBz extends PluginForDecrypt {
                     final String fun = this.br.getRegex("eval(.*)\n").getMatch(0);
                     final String result = this.unpackJS(fun, 1);
                     if ((result + "").trim().length() != 0) {
-                        this.br.setFollowRedirects(false);
-                        this.br.getPage(result + "");
-                        final DownloadLink dl = this.createDownloadlink(this.br.getRedirectLocation());
-                        decryptedLinks.add(dl);
+                        if (result.contains("share-links\\.biz")) {
+                            this.br.setFollowRedirects(false);
+                            this.br.getPage(result + "");
+                            final DownloadLink dl = this.createDownloadlink(this.br.getRedirectLocation());
+                            decryptedLinks.add(dl);
+                        } else {
+                            final DownloadLink dl = this.createDownloadlink(result);
+                            decryptedLinks.add(dl);
+                        }
                         break;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
