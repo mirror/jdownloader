@@ -120,7 +120,6 @@ public class FsxHu extends PluginForHost {
             String serverQueueLength = br.getRegex("<font color=\"#FF0000\"><strong>(\\d+?)</strong></font>").getMatch(0);
             if (serverQueueLength == null) {
                 logger.warning("serverQueueLength is null...");
-                serverQueueLength = "notfound";
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
