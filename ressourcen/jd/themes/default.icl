@@ -91,6 +91,7 @@ gui.images.undo                      = default/edit-undo
 gui.images.container                 = default/package-x-generic
 gui.splash                           = splash
 gui.splash.languages                 = default/preferences-desktop-locale
+gui.images.rss                       = default/rss
 gui.images.reconnect                 = default/view-refresh
 gui.images.reconnect_warning         = default/view-refresh-warning
 gui.images.download                  = default/software-update-available
