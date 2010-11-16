@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,8 +36,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
-
-    private final String ua = RandomUserAgent.generate();
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,7 +92,6 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        prepareBrowser(br);
         br.setCookie("http://letitbit.net/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<br>File not found<br />|Запрашиваемый файл не найден<br>|Request file .*? Deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -186,10 +182,11 @@ public class LetitBitNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form freeForm = br.getFormbyProperty("id", "ifree_form");
-        if (freeForm != null) {
-            logger.info("Found freeForm, sending it...");
-            br.submitForm(freeForm);
+        if (freeForm == null) {
+            logger.info("Found did not found freeForm!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.submitForm(freeForm);
         String url = null;
         Form down = null;
         Form[] allforms = br.getForms();
@@ -230,8 +227,7 @@ public class LetitBitNet extends PluginForHost {
                 waitThat = Integer.parseInt(time);
             }
             sleep((waitThat + 5) * 1001, downloadLink);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getHeaders().put("Content-Length", "0");
+            prepareBrowser(br);
             br.postPage("http://letitbit.net/ajax/download3.php", "");
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */
@@ -262,13 +258,15 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private void prepareBrowser(final Browser br) {
-        /* seems they are blocking default jd browser */
+        /*
+         * last time they did not block the useragent, we just need this stuff
+         * below ;)
+         */
         if (br == null) { return; }
-        br.getHeaders().put("User-Agent", this.ua);
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
-        br.getHeaders().put("Pragma", null);
-        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Pragma", "no-cache");
+        br.getHeaders().put("Cache-Control", "no-cache");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Content-Length", "0");
     }
 
     private String getUrl(Account account) throws IOException {

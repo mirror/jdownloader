@@ -31,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://[\\w\\.]*?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
@@ -40,9 +41,6 @@ public class ShareFlareNet extends PluginForHost {
         this.setAccountwithoutUsername(true);
         enablePremium("http://shareflare.net/page/premium.php");
     }
-
-    private static final String NEXTPAGE      = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
-    private static final String LINKFRAMEPART = "tmpl/tmpl_frame_top\\.php\\?link=";
 
     @Override
     public String getAGBLink() {
@@ -75,56 +73,7 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        br.setFollowRedirects(false);
-        Form dlform = br.getFormbyProperty("id", "dvifree");
-        if (dlform == null) {
-            logger.warning("dlform is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.submitForm(dlform);
-        for (int i = 0; i <= 3; i++) {
-            br.setFollowRedirects(false);
-            Form captchaform = br.getFormbyProperty("id", "dvifree");
-            String captchaUrl = getCaptchaUrl();
-            if (captchaform == null || captchaUrl == null) {
-                logger.warning("captchaform or captchaUrl is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            String code = getCaptchaCode(captchaUrl, downloadLink);
-            captchaform.put("cap", code);
-            br.submitForm(captchaform);
-            if (getCaptchaUrl() != null) continue;
-            if (!br.containsHTML(LINKFRAMEPART)) {
-                logger.warning("Browser doesn't contain the LINKFRAMEPART string, stopping...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            break;
-        }
-        if (getCaptchaUrl() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        br.getPage(NEXTPAGE);
-        String wait = br.getRegex("y =.*?(\\d+);").getMatch(0);
-        int tt = 60;
-        if (wait != null) {
-            logger.info("Regexed waittime is found...");
-            tt = Integer.parseInt(wait);
-        }
-        sleep(tt * 1001, downloadLink);
-        br.getPage(NEXTPAGE);
-        String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/download[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("dllink is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("the dllink doesn't seem to be a file, following the connection...");
-            br.followConnection();
-            if (br.containsHTML("title>Error</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "Download is only possible for premium users!"));
     }
 
     @Override
@@ -155,18 +104,6 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String getCaptchaUrl() {
-        String captchaUrl = br.getRegex("<div class=\"cont c2\" align=\"center\">.*?<img src=\\'(http.*?)\\'").getMatch(0);
-        if (captchaUrl == null) {
-            captchaUrl = br.getRegex("('|\")(http://letitbit\\.net/cap\\.php\\?jpg=.*?\\.jpg)('|\")").getMatch(1);
-            if (captchaUrl == null) {
-                String capid = br.getRegex("name=\"(uid2|uid)\" value=\"(.*?)\"").getMatch(1);
-                if (capid != null) captchaUrl = "http://letitbit.net/cap.php?jpg=" + capid + ".jpg";
-            }
-        }
-        return captchaUrl;
     }
 
     @Override
