@@ -766,7 +766,6 @@ jd.plugins.optional.customizer.customizertablemodel.packagename = نام بست�
 jd.plugins.optional.customizer.customizertablemodel.password = رمز
 jd.plugins.optional.customizer.customizerview.title = اختصاصي ساز بسته بندي
 jd.plugins.optional.interfaces.jdexterninterface = واسط خارجي
-jd.plugins.optional.interfaces.jdexterninterface.flashgot = نصب
 jd.plugins.optional.interfaces.jdflashgot.security.title = درخواست خارجي از واسط %s به %s
 jd.plugins.optional.jdchat.closetab = بستن سربرگ
 jd.plugins.optional.jdchat.jdchat.topic.default = خواند پيام روز

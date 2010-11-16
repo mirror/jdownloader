@@ -468,7 +468,6 @@ jd.plugins.optional.customizer.customizertablemodel.password = Парола
 jd.plugins.optional.customizer.customizerview.tooltip = Настройте Вашия пакет
 jd.plugins.optional.folderwatch.gui.folderwatchtablemodel.filename = Име на файла
 jd.plugins.optional.infobar.jdinfobar.description = Малък подвижен панел, съдържащ информация в реално време отностно сваляните файлове, както и Drag'N'Drop зона, където може да добавяте връзки, URL или DLC файливе.
-jd.plugins.optional.interfaces.jdexterninterface.flashgot = Инсталирай
 jd.plugins.optional.interfaces.jdflashgot.security.btn_allow = Позволи!
 jd.plugins.optional.jdchat.closetab = Затвори таб-а
 jd.plugins.optional.jdgrowlnotification.finished = Свалянето приключено
