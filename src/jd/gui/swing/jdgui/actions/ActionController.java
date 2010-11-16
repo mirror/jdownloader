@@ -264,7 +264,7 @@ public class ActionController {
                             final StorageValueChangeEvent<?> storageEvent = (StorageValueChangeEvent<?>) event.getParameter();
                             if (storageEvent.getKey() == Reconnecter.RECONNECT_FAILED_COUNTER) {
 
-                                if ((Integer) storageEvent.getNewValue() > 5) {
+                                if (((Number) storageEvent.getNewValue()).longValue() > 5) {
                                     setIcon("gui.images.reconnect_warning");
                                     setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
                                     ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
