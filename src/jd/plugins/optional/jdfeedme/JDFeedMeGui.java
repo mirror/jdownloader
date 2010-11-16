@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
-import javax.swing.AbstractButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -68,24 +67,14 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
     }
 
     private void initGUI() {
-        this.setLayout(new MigLayout("ins 3", "[grow, fill]", "[grow, fill][]"));
-        ViewToolbar vt = new ViewToolbar() {
-            private static final long serialVersionUID = -2194834048392779383L;
-
-            @Override
-            public void setDefaults(int i, AbstractButton ab) {
-                ab.setForeground(new JLabel().getForeground());
-            }
-        };
-        vt.setList(new String[] { "Add Feed", "Remove Feed" , "Reset Feed", "Sync All Now"});
-
-        this.add(vt, "dock north,gapleft 3");
+        this.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[][grow,fill][]"));
+        this.add(new ViewToolbar("Add Feed", "Remove Feed" , "Reset Feed", "Sync All Now"));
         
         /// stop using config and use XML instead
         //this.add(new JScrollPane(table = new JDFeedMeTable(config.getGenericProperty(JDFeedMe.PROPERTY_SETTINGS, new ArrayList<JDFeedMeSetting>()))));
         ArrayList<JDFeedMeFeed> feeds = JDFeedMeFeed.loadXML(JDFeedMe.STORAGE_FEEDS);
         HashMap<String, ArrayList<JDFeedMePost>> posts = JDFeedMePost.loadXML(JDFeedMe.STORAGE_POSTS);
-        this.add(new JScrollPane(table = new JDFeedMeTable(feeds, posts)),"wrap");
+        this.add(new JScrollPane(table = new JDFeedMeTable(feeds, posts)), "grow");
         
         // config panel appears on the bottom
         JDFeedMeConfig config = JDFeedMeConfig.loadXML(JDFeedMe.STORAGE_CONFIG);
