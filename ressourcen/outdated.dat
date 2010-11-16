@@ -478,3 +478,14 @@ jd/plugins/hoster/StorageTo.class
 jd/plugins/decrypter/DDLWrz.class
 jd/plugins/decrypter/AffgBz.class
 jd/plugins/hoster/HatLimitCom.class
+jd/languages/es_castillian.loc
+jd/languages/eu-incomplete.loc
+jd/languages/fa-incomplete.loc
+jd/languages/hr-incomplete.loc
+jd/languages/ko-incomplete.loc
+jd/languages/no-incomplete.loc
+jd/languages/sv-incomplete.loc
+jd/languages/ms-incomplete.loc
+jd/languages/mt-incomplete.loc
+jd/languages/sl-incomplete.loc
+jd/languages/uk-incomplete.loc
