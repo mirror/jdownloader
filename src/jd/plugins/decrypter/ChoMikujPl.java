@@ -64,15 +64,6 @@ public class ChoMikujPl extends PluginForDecrypt {
             return null;
         }
         subFolderID = subFolderID.trim();
-        // Prepare browser
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
-        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        br.getHeaders().put("Cache-Control", "no-cache, no-cache");
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=utf-8r ");
-        br.getHeaders().put("X-MicrosoftAjax", "Delta=true");
-        br.getHeaders().put("Pragma", "no-cache");
         // Das sind die wichtigen Postdaten
         String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=&ctl00%24SearchFileBox=&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&ctl00%24CT%24TW%24TreeExpandLog=" + Encoding.urlEncode(treeExpandLog) + "&ChomikSubfolderId=" + subFolderID + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&FrGroupId=0&__ASYNCPOST=true&ctl00%24CT%24FrW%24FrPage=";
         logger.info("Looking how many pages we got here for folder " + subFolderID + " ...");
@@ -88,6 +79,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         for (int i = 0; i < pageCount; ++i) {
             logger.info("Decrypting page " + i + " of folder " + subFolderID + " now...");
             String postThatData = postdata + i;
+            prepareBrowser(parameter);
             br.postPage(parameter, postThatData);
             // Every full page has 30 links (pictures)
             // This regex finds all links to PICTUREs, the site also got .rar
@@ -147,5 +139,17 @@ public class ChoMikujPl extends PluginForDecrypt {
             pageCount = tempint;
         }
         return pageCount;
+    }
+
+    private void prepareBrowser(String parameter) {
+        br.getHeaders().put("Referer", parameter);
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        br.getHeaders().put("Cache-Control", "no-cache, no-cache");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=utf-8r ");
+        br.getHeaders().put("X-MicrosoftAjax", "Delta=true");
+        br.getHeaders().put("Pragma", "no-cache");
     }
 }

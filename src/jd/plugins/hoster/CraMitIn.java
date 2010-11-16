@@ -344,7 +344,7 @@ public class CraMitIn extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String space = br.getRegex(Pattern.compile("Used space:</TD><TD>(.*?) Mb[ ]+</TD>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space == null) space = br.getRegex(Pattern.compile("<TD>Used space:.{1,20}</TD><TD><b>(.*?)</b></TD>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -367,7 +367,7 @@ public class CraMitIn extends PluginForHost {
         }
         if (!nopremium) {
             String expire = br.getRegex("Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
-            if (expire == null) expire = br.getRegex("Account expires on:.{1,20}</TD><TD><b>(.*?)</b>").getMatch(0);
+            if (expire == null) expire = br.getRegex(">Premium Account expires on:</TD><TD>(.*?)</TD>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
