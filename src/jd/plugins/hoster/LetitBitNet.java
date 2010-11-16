@@ -38,6 +38,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
+    private final String ua = RandomUserAgent.generate();
+
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
@@ -93,7 +95,7 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        prepareBrowser(br);
         br.setCookie("http://letitbit.net/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<br>File not found<br />|Запрашиваемый файл не найден<br>|Request file .*? Deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -259,11 +261,22 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
+    private void prepareBrowser(final Browser br) {
+        /* seems they are blocking default jd browser */
+        if (br == null) { return; }
+        br.getHeaders().put("User-Agent", this.ua);
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Cache-Control", null);
+    }
+
     private String getUrl(Account account) throws IOException {
         // This information can only be found before each download so lets set
         // it here
         String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
         String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
+        if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
         if (expireDate != null || points != null) {
             AccountInfo accInfo = new AccountInfo();
             // 1 point = 1 GB
@@ -272,7 +285,8 @@ public class LetitBitNet extends PluginForHost {
                 accInfo.setValidUntil(Regex.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
             } else {
                 expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
-                accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
+                if (expireDate == null) expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);
+                if (expireDate != null) accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
             }
             account.setAccountInfo(accInfo);
         }
