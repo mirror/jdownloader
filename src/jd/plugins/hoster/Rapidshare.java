@@ -266,7 +266,7 @@ public class Rapidshare extends PluginForHost {
                     // 3=Server down 4=File abused 5
                     switch (Integer.parseInt(matches[i][4])) {
                     case 0:
-                        if (this.tryWorkaround(u)) {
+                        if (new Regex(u.getDownloadURL(), ".*?(html?)$").matches() && tryWorkaround(u)) {
                             /* retry this link with workaround */
                             finishedurls.remove(u);
                             doretry = true;

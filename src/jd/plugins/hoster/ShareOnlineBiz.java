@@ -287,7 +287,7 @@ public class ShareOnlineBiz extends PluginForHost {
             if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
             /* Datei herunterladen */
-            /* api allows resume, only 1 chunk */
+            /* api does allow resume, but only 1 chunk */
             dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
@@ -369,8 +369,12 @@ public class ShareOnlineBiz extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        /* website does not allow resume, only 1 chunk to allow api resume */
+        /*
+         * website does NOT allow resume, more chunks are possible but
+         * deactivated due api limitation
+         */
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, false, 1);
+
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             handleErrors(br);
