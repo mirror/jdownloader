@@ -62,14 +62,7 @@ public class UlozTo extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (downloadLink.getDownloadURL().matches(".*?bagruj\\.cz/[a-z0-9]{12}.*?") && br.getRedirectLocation() != null) {
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(downloadLink.getDownloadURL());
-        } else if (br.getRedirectLocation() != null) {
-            logger.info("Getting redirect-page");
-            br.getPage(br.getRedirectLocation());
-        }
+        handleDownloadUrl(downloadLink);
         String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
         if (continuePage != null) {
             downloadLink.setUrlDownload(continuePage);
@@ -104,16 +97,37 @@ public class UlozTo extends PluginForHost {
             br.submitForm(captchaForm);
             dllink = br.getRedirectLocation();
             if (dllink != null && dllink.contains("no#cpt")) {
-                br.getPage(downloadLink.getDownloadURL());
+                br.clearCookies("http://www.uloz.to/");
+                handleDownloadUrl(downloadLink);
                 continue;
             }
             failed = false;
             break;
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.contains("/error404/?fid=file_not_found")) {
+            logger.info("The user entered the correct captcha but this file is offline...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The finallink doesn't seem to be a file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
+    }
+
+    private void handleDownloadUrl(DownloadLink downloadLink) throws IOException {
+        br.getPage(downloadLink.getDownloadURL());
+        if (downloadLink.getDownloadURL().matches(".*?bagruj\\.cz/[a-z0-9]{12}.*?") && br.getRedirectLocation() != null) {
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            br.getPage(downloadLink.getDownloadURL());
+        } else if (br.getRedirectLocation() != null) {
+            logger.info("Getting redirect-page");
+            br.getPage(br.getRedirectLocation());
+        }
     }
 
     @Override
