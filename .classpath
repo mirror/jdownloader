@@ -85,5 +85,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/flex-messaging-core.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding-AllPlatforms.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding.jar"/>
+	<classpathentry kind="lib" path="C:/Program Files (x86)/Java/jdk1.6.0_22"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
