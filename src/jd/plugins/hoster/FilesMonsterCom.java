@@ -63,8 +63,8 @@ public class FilesMonsterCom extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=");
-        if (!br.containsHTML("<p>Your membership type: <span class=\"green\">Premium</span>") || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+        br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login");
+        if (br.getRegex("Your membership type: <span class=\"[A-Za-z0-9 ]+\">(Premium)</span>").getMatch(0) == null || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
     }
 
     @Override
@@ -77,20 +77,9 @@ public class FilesMonsterCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String hostedFiles = br.getRegex(">Hosted Files</span></td>.*?<td>(\\d+).*?<a").getMatch(0);
-        if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
-        String trafficleft = br.getRegex("id=\"info_credit\">.*?<strong>(.*?)</strong>").getMatch(0);
-        if (trafficleft != null) {
-            ai.setTrafficLeft(Regex.getSize(trafficleft));
-        }
-        String expires = br.getRegex("Membership period ends.*?([0-9]{1,2}/[0-9]{1,2}/[0-9]{1,2} [0-9]{1,2}:[0-9]{1,2}) ").getMatch(0);
+        ai.setUnlimitedTraffic();
+        String expires = br.getRegex("\">Valid until: <span class=\\'green\\'>(.*?)</span>").getMatch(0);
         long ms = 0;
-        if (expires == null) {
-            expires = br.getRegex("<span style=color:#[0-9a-z]+>.*?([0-9]{1,2}/[0-9]{1,2}/[0-9]{1,2} [0-9]{1,2}:[0-9]{1,2}).*?</span>").getMatch(0);
-        }
-        if (expires == null) {
-            expires = br.getRegex("\\(valid until (.*?)\\)").getMatch(0);
-        }
         if (expires != null) {
             ms = Regex.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
             if (ms <= 0) {
@@ -108,6 +97,7 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
+        if (!downloadLink.getDownloadURL().contains("download.php?id=")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4freeusers", "This file is only available for freeusers"));
         login(account);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
