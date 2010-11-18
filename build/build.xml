@@ -13,15 +13,15 @@
     
     -->
 
-	<property name="src" value="src" />
-	<property name="cls" value="bin" />
-	<property name="dist" value="dist" />
+	<property name="src" value="../src" />
+	<property name="cls" value="../bin" />
+	<property name="dist" value="../dist" />
 	<property name="jd" value="${dist}/JDownloader" />
-	<property name="res" value="ressourcen" />
+	<property name="res" value="../ressourcen" />
 	<property name="pluginres" value="${dist}/pluginressourcen" />
 	<property name="keystore" value="${user.home}/Desktop/jDownloader.keystore" />
 
-	<loadfile property="svn.revision" srcFile=".svn/entries">
+	<loadfile property="svn.revision" srcFile="../.svn/entries">
 		<filterchain>
 			<headfilter lines="1" skip="3" />
 			<striplinebreaks />
@@ -75,16 +75,16 @@
 		<copy todir="${jd}/libs">
 			<fileset dir="${res}/libs" includes="**/*" />
 		</copy>
-		<copy file="../AppWorkUtils/dist/appworkutils.jar" tofile="${jd}/libs/appworkutilities.jar" overwrite="true" failonerror="false" />
+		<copy file="../../AppWorkUtils/dist/appworkutils.jar" tofile="${jd}/libs/appworkutilities.jar" overwrite="true" failonerror="false" />
 		<copy todir="${jd}/licenses">
 			<fileset dir="${res}/licenses" includes="**/*" />
 		</copy>
 
 		<copy todir="${jd}/languages">
-			<fileset dir="../AppWorkUtils/resources/languages/" includes="**/*.loc" />
+			<fileset dir="../../AppWorkUtils/resources/languages/" includes="**/*.loc" />
 		</copy>
 		<copy todir="${jd}/images">
-			<fileset dir="../AppWorkUtils/resources/images/" includes="**/*.png" />
+			<fileset dir="../../AppWorkUtils/resources/images/" includes="**/*.png" />
 		</copy>
 		<copy todir="${jd}/tools">
 			<fileset dir="${res}/tools" includes="**/*" />
@@ -191,7 +191,7 @@
 				<include name="jd/parser/Regex.class" />
 			</fileset>
 			<zipfileset src="${res}/libs/hsqldb.jar" excludes="META-INF/*" />
-			<zipfileset src="../AppWorkUtils/dist/appworkutils.jar" excludes="META-INF/*" />
+			<zipfileset src="../../AppWorkUtils/dist/appworkutils.jar" excludes="META-INF/*" />
 		</jar>
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
@@ -373,19 +373,22 @@
 		<zip destfile="${dist}/${pack.windows.name}">
 			<zipfileset prefix="JDownloader" dir="${jd}" />
 		</zip>
-		<!--taskdef name="nsis" classname="net.sf.nsisant.Task">
+		<taskdef name="nsis" classname="net.sf.nsisant.Task">
 			<classpath location="nsisant-1.2.jar" />
-		</taskdef-->
-		<!--nsis script="${exe.windows.script}" verbosity="2" />
+		</taskdef>
+		<echo message="Clean Windows Setup..." />
+		<nsis script="${exe.windows.script}" verbosity="2" />
 		<echo message="Kikin Windows Setup..." />
 		<nsis script="${exe.windows.script}" verbosity="2">
 			<define name="ADVERTISING_PLUGIN" value="kikin" />
 			<define name="ADVERTISING_OPTOUT" value="1" />
-		</nsis-->
-		<!--nsis script="${exe.windows.script}" verbosity="3">
-			<define name="ADVERTISING_OPENCANDY" value="1"/>
-		</nsis-->
-		<!--nsis script="${exe.web.script}" verbosity="2" /-->
+		</nsis>
+		<echo message="OpenCandy Windows Setup..." />
+	    <nsis script="${exe.windows.script}" verbosity="2">
+	            <define name="ADVERTISING_PLUGIN" value="OpenCandy" />
+	    </nsis>
+		<echo message="NSIS Finished." />
+		<!-- <nsis script="${exe.web.script}" verbosity="2" /> -->
 		<move todir="${jd}">
 			<fileset dir="${dist}/.excludes" includes="**/*" />
 		</move>
