@@ -147,7 +147,10 @@ public class FileServeCom extends PluginForHost {
             Boolean failed = true;
             for (int i = 0; i <= 10; i++) {
                 final String id = this.br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);
-                if (!this.br.containsHTML("api.recaptcha.net") || id == null || fileId == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (!this.br.containsHTML("api.recaptcha.net") || id == null || fileId == null) {
+                    logger.warning("if or fileId is null or the browser doesn't contain the reCaptcha text...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 final Form reCaptchaForm = new Form();
                 reCaptchaForm.setMethod(Form.MethodType.POST);
                 reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
@@ -178,7 +181,10 @@ public class FileServeCom extends PluginForHost {
         }
         this.br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
         // Ticket Time
-        if (!this.br.getHttpConnection().isOK()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (!this.br.getHttpConnection().isOK()) {
+            logger.warning("The connection is not okay...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String reconTime = this.br.getRegex("(\\d+)").getMatch(0);
         int tt = 60;
         if (reconTime != null) {
@@ -191,17 +197,20 @@ public class FileServeCom extends PluginForHost {
         final String dllink = this.br.getRedirectLocation();
         if (dllink == null) {
             this.handleErrors();
-
+            logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
         if (this.dl.getConnection().getResponseCode() == 404) {
+            logger.info("got a 404 error...");
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (this.dl.getConnection().getContentType().contains("html")) {
+            logger.info("The finallink doesn't seem to be a file...");
             this.br.followConnection();
             this.handleErrors();
+            logger.warning("Unexpected error at the last step...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
@@ -263,6 +272,8 @@ public class FileServeCom extends PluginForHost {
     }
 
     private void handleErrors() throws PluginException {
+        logger.info("Handling errors...");
+        if (this.br.containsHTML("li>This file has been deleted by the system")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (this.br.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users")); }
         if (this.br.containsHTML(">Your download link has expired")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link expired, contact fileserve support", 10 * 60 * 1000l); }
         if (this.br.containsHTML("Captcha error") || this.br.containsHTML("incorrect-captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
@@ -275,7 +286,7 @@ public class FileServeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.requestFileInformation(downloadLink);
-        this.br.getPage(downloadLink.getDownloadURL());
+        this.getDownloadUrlPage(downloadLink);
         this.doFree(downloadLink);
     }
 
@@ -283,7 +294,7 @@ public class FileServeCom extends PluginForHost {
         this.requestFileInformation(link);
         this.login(account);
         if (this.isFree) {
-            this.br.getPage(link.getDownloadURL());
+            this.getDownloadUrlPage(link);
             this.doFree(link);
         } else {
             this.br.setFollowRedirects(false);
@@ -357,6 +368,12 @@ public class FileServeCom extends PluginForHost {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return link.getAvailableStatus();
+    }
+
+    private void getDownloadUrlPage(DownloadLink downloadLink) throws IOException {
+        // To get the english language
+        br.postPage(downloadLink.getDownloadURL(), "locale=en-us");
+        if (!br.getURL().equals(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
     }
 
     @Override

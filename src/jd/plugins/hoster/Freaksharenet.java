@@ -220,7 +220,7 @@ public class Freaksharenet extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resume, maxchunks);
         }
         if (!dl.getConnection().isContentDisposition()) {
-            logger.info("The finallink is no file, trying to handle errors...s");
+            logger.info("The finallink is no file, trying to handle errors...");
             br.followConnection();
             if (br.containsHTML(MAXDLSLIMITMESSAGE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l);
             if (br.containsHTML("File can not be found")) {
