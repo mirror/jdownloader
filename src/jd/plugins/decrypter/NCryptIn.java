@@ -18,12 +18,17 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -44,11 +49,12 @@ public class NCryptIn extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String RECAPTCHA         = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String OTHERCAPTCHA      = "\"(/temp/anicaptcha/\\d+\\.gif)\"";
-    private static final String PASSWORDPARAMETER = "password";
-    private static final String PASSWORDTEXT      = "<th>Passwort:</th>";
-    private static final String PASSWORDFAILED    = "class=\"error\">\\&bull; Das Passwort ist ung\\&uuml;ltig";
+    private static final String             RECAPTCHA         = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String             OTHERCAPTCHA      = "\"(/temp/anicaptcha/\\d+\\.gif)\"";
+    private static final String             PASSWORDPARAMETER = "password";
+    private static final String             PASSWORDTEXT      = "<th>Passwort:</th>";
+    private static final String             PASSWORDFAILED    = "class=\"error\">\\&bull; Das Passwort ist ung\\&uuml;ltig";
+    private static HashMap<String, Boolean> CNL_URL_MAP       = new HashMap<String, Boolean>();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -125,7 +131,17 @@ public class NCryptIn extends PluginForDecrypt {
             logger.info("ContainerID is null, trying webdecryption...");
             br.setFollowRedirects(false);
             String[] links = br.getRegex("\\'(http://ncrypt\\.in/link-.*?=)\\'").getColumn(0);
-            if (links == null || links.length == 0) return null;
+            if (links == null || links.length == 0) {
+                logger.info("No links found, let's see if CNL2 is available!");
+                if (br.containsHTML("cnl2")) {
+                    LocalBrowser.openDefaultURL(new URL(parameter));
+                    NCryptIn.CNL_URL_MAP.put(parameter, Boolean.TRUE);
+                    Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+                    throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+                }
+                logger.warning("Didn't find anything to decrypt, stopping...");
+                return null;
+            }
             progress.setRange(links.length);
             for (String singleLink : links) {
                 singleLink = singleLink.replace("link-", "frame-");
@@ -176,4 +192,10 @@ public class NCryptIn extends PluginForDecrypt {
         }
         return null;
     }
+
+    private static boolean isExternInterfaceActive() {
+        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
+        return ((plg != null) && plg.isLoaded() && plg.isEnabled());
+    }
+
 }

@@ -47,9 +47,10 @@ public class Freaksharenet extends PluginForHost {
         setConfigElements();
     }
 
-    private boolean             NOPREMIUM  = false;
-    private static final String WAIT1      = "WAIT1";
-    private int                 MAXPREMDLS = -1;
+    private boolean             NOPREMIUM          = false;
+    private static final String WAIT1              = "WAIT1";
+    private int                 MAXPREMDLS         = -1;
+    private static final String MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.Freaksharenet.waitInsteadOfReconnect", "Wait 10 minutes instead of reconnecting")).setDefaultValue(true);
@@ -158,7 +159,7 @@ public class Freaksharenet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         if (br.containsHTML("(Sorry but this File is not avaible|Sorry, this Download doesnt exist anymore)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No Downloadserver. Please try again")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML("No Downloadserver\\. Please try again")) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("\"box_heading\" style=\"text-align:center;\">(.*?)- .*?</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
@@ -174,10 +175,12 @@ public class Freaksharenet extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
+        final boolean resume = false;
+        final int maxchunks = 1;
         boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
         if (br.containsHTML("your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
-        if (br.containsHTML("No Downloadserver. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
+        if (br.containsHTML("No Downloadserver\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
         br.setFollowRedirects(false);
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -198,7 +201,7 @@ public class Freaksharenet extends PluginForHost {
         br.submitForm(form);
         form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("api.recaptcha.net")) {
+        if (br.containsHTML("api\\.recaptcha\\.net")) {
             for (int i = 0; i <= 5; i++) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -207,17 +210,19 @@ public class Freaksharenet extends PluginForHost {
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode(cf, downloadLink);
                 rc.setCode(c);
+                if (br.containsHTML(MAXDLSLIMITMESSAGE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l);
                 if (br.getRedirectLocation() == null) continue;
                 break;
             }
             if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), resume, maxchunks);
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resume, maxchunks);
         }
         if (!dl.getConnection().isContentDisposition()) {
+            logger.info("The finallink is no file, trying to handle errors...s");
             br.followConnection();
-            if (br.containsHTML("Sorry, you cant download more then")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l);
+            if (br.containsHTML(MAXDLSLIMITMESSAGE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l);
             if (br.containsHTML("File can not be found")) {
                 logger.info("File for the following is offline (server error): " + downloadLink.getDownloadURL());
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
