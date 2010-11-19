@@ -236,7 +236,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                     final String fun = this.br.getRegex("eval(.*)\n").getMatch(0);
                     final String result = this.unpackJS(fun, 1);
                     if ((result + "").trim().length() != 0) {
-                        if (result.contains("share-links\\.biz")) {
+                        if (result.contains("share-links.biz")) {
                             this.br.setFollowRedirects(false);
                             this.br.getPage(result + "");
                             final DownloadLink dl = this.createDownloadlink(this.br.getRedirectLocation());

@@ -81,6 +81,7 @@ public final class JDL {
 
         if ((COUNTRY_CODE = SubConfiguration.getConfig(JDL.CONFIG).getStringProperty("DEFAULTLANGUAGE", null)) != null) { return COUNTRY_CODE; }
         final Browser br = new Browser();
+        br.setFollowRedirects(true);
         br.setConnectTimeout(10000);
         br.setReadTimeout(10000);
         try {

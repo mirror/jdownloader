@@ -10,14 +10,16 @@
 			<arguments>
 			</arguments>
 		</buildCommand>
-		<buildCommand>
-			<name>net.sf.eclipsensis.installoptions.InstallOptionsBuilder</name>
-			<arguments>
-			</arguments>
-		</buildCommand>
 	</buildSpec>
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
-		<nature>net.sf.eclipsensis.installoptions.InstallOptionsNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>src/jd/plugins/a</name>
+			<type>2</type>
+			<location>/home/daniel/workspace/a</location>
+		</link>
+	</linkedResources>
 </projectDescription>
+
