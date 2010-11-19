@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twistys.com" }, urls = { "http://(www\\.)?(cdn\\d+\\.)?mdl\\.twistys\\.com/content/[a-z0-9]+/[a-z0-9]+/.*?\\..{3}(\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-z0-9]+)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twistys.com" }, urls = { "http://(www\\.)?(cdn\\d+\\.)?mdl\\.twistys\\.com/(content|visual)/[a-z0-9]+/.*?\\..{3}(\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-z0-9]+)?" }, flags = { 2 })
 public class TwisTysCom extends PluginForHost {
 
     public TwisTysCom(PluginWrapper wrapper) {
