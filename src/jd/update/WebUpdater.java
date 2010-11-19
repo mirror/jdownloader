@@ -410,6 +410,7 @@ public class WebUpdater implements Serializable {
                 }
                 return;
             } catch (final Exception e) {
+                e.printStackTrace();
             }
             try {
                 Thread.sleep(250);
