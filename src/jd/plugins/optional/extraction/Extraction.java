@@ -46,6 +46,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
+import jd.plugins.optional.extraction.hjsplit.HJSplt;
 import jd.plugins.optional.extraction.multi.Multi;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -89,6 +90,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
      * Adds all internal extraction plugins.
      */
     private void initExtractors() {
+        setExtractor(new HJSplt());
         setExtractor(new Multi());
     }
     
@@ -109,7 +111,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
      */
     private final boolean isLinkSupported(String file) {
         for (IExtraction extractor : extractors) {
-            if(extractor.isArchivSupportedFileFilter(file)) {
+            if(extractor.isArchivSupported(file)) {
                 return true;
             }
         }
@@ -128,14 +130,10 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getCaller() instanceof PluginForHost)) return;
             link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-            if(!isLinkSupported(link.getFileOutput())) {
-                return;
-            }
-            
-            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+            if(link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
                 Archive archive = buildArchive(link);
                 
-                if(archive.isComplete()) {
+                if(archive.isComplete() && !archive.isActive()) {
                     this.addToQueue(archive);
                 }
             }
@@ -507,7 +505,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     }
                 };
 
-                File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, null, ff, true, null, null);
+                File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
                 if (files == null) return;
 
                 for (File archiveStartFile : files) {
@@ -848,7 +846,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
     private IExtraction getExtractor(DownloadLink link) {
         for (IExtraction extractor : extractors) {
             try {
-                return extractor.getClass().newInstance();
+                if(extractor.isArchivSupported(link.getFileOutput())) {
+                    return extractor.getClass().newInstance();
+                }
             } catch (InstantiationException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
