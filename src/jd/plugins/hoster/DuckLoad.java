@@ -16,17 +16,21 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/\\d+/.+|(divx|play)/[A-Z0-9\\.-]+|[a-zA-Z0-9\\.]+)" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
@@ -52,29 +56,58 @@ public class DuckLoad extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.requestFileInformation(downloadLink);
         int waitThis = 20;
-        if (!downloadLink.getDownloadURL().contains("/download/")) {
+        String dllink = null;
+        // Filedownload now with recaptcha and without waittime
+        if (downloadLink.getDownloadURL().contains("/download/")) {
+            this.br.setFollowRedirects(false);
+            String id = this.br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
+            if (id != null) {
+                Boolean failed = true;
+                for (int i = 0; i <= 5; i++) {
+                    id = this.br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
+                    if (id == null) {
+                        Plugin.logger.warning("id is null...");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    id = id.trim();
+                    final Form reCaptchaForm = this.br.getForm(1);
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+                    rc.setForm(reCaptchaForm);
+                    rc.setId(id);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
+                    final String c = this.getCaptchaCode(cf, downloadLink);
+                    rc.getForm().put("recaptcha_response_field", c);
+                    rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+                    rc.getForm().put("free_dl", "");
+                    this.br.submitForm(rc.getForm());
+                    if (this.br.getRedirectLocation() == null) {
+                        this.br.getPage(downloadLink.getDownloadURL());
+                        continue;
+                    }
+                    failed = false;
+                    break;
+                }
+                if (failed) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                dllink = this.br.getRedirectLocation().toString();
+            }
+        } else {
+            this.br.setFollowRedirects(true);
             waitThis = 10;
             final String wait = this.br.getRegex("id=\"number\">(\\d+)</span> seconds").getMatch(0);
             if (wait != null) {
                 waitThis = Integer.parseInt(wait);
             }
+            this.sleep(waitThis * 1001l, downloadLink);
+            this.br.postPage(this.br.getURL(), "secret=&next=true");
         }
-        this.sleep(waitThis * 1001l, downloadLink);
-        this.br.postPage(this.br.getURL(), "secret=&next=true");
-        /* Cookie Begin */
-        final Random rndCookie = new Random();
-        final int rndX = rndCookie.nextInt(999999999 - 100000000) + 100000000;
-        final int rndY = rndCookie.nextInt(99999999 - 10000000) + 10000000;
-        final long ts = System.currentTimeMillis();
-        this.br.setCookie(DuckLoad.MAINPAGE, "__utma", rndY + "." + rndX + "." + ts + "." + ts + "." + ts + ".1");
-        this.br.setCookie(DuckLoad.MAINPAGE, "__utmb", rndY + ".7.10." + ts);
-        this.br.setCookie(DuckLoad.MAINPAGE, "__utmc", "" + rndY + "");
-        this.br.setCookie(DuckLoad.MAINPAGE, "__utmz", rndY + "." + ts + ".1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)");
-        /* Cookie End */
-        String dllink = this.br.getRegex("<param name=\"src\" value=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = this.br.getRegex("<param name=\"src\" value=\"(http://.*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             dllink = this.br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
-            /* swf-Download */
+            // swf-Download
             if ((dllink == null) && this.br.containsHTML("duckloadplayer\\.swf")) {
                 final String[] dl_id = this.br.getRequest().getUrl().getPath().split("/");
                 final String appendLink = "undefined&showTopBar=undefined";
@@ -117,10 +150,18 @@ public class DuckLoad extends PluginForHost {
         this.br.setCookie(DuckLoad.MAINPAGE, "dl_set_lang", "en");
         this.br.setFollowRedirects(true);
         this.br.getPage(link.getDownloadURL());
-        if (this.br.containsHTML("(File not found\\.|download\\.notfound)") || !this.br.containsHTML("stream_wait_table_bottom")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (this.br.containsHTML("(File not found\\.|download\\.notfound)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = this.br.getRegex("<title>(.*?) @ DuckLoad\\.com</title>").getMatch(0);
         if (filename == null) {
             filename = link.getName();
+        }
+        if (this.br.containsHTML("\\(<i>")) {
+            String filesize = this.br.getRegex("\\(<i>(.*?)</i>").getMatch(0);
+            final String unit = this.br.getRegex("\\(<i>.*?strong>(\\w+)</strong>\\)").getMatch(0);
+            filesize += unit;
+            if ((filesize != null) && (unit != null)) {
+                link.setDownloadSize(Regex.getSize(filesize.trim()));
+            }
         }
         // Server doesn't give us the correct name so we set it here
         link.setFinalFileName(filename.trim());
