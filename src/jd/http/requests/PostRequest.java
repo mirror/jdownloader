@@ -119,6 +119,7 @@ public class PostRequest extends Request {
     }
 
     public static ArrayList<RequestVariable> variableMaptoArray(final LinkedHashMap<String, String> post) {
+        if (post == null) return null;
         final ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
         for (final Entry<String, String> entry : post.entrySet()) {
             ret.add(new RequestVariable(entry.getKey(), entry.getValue()));
