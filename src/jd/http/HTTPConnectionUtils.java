@@ -5,6 +5,10 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 public class HTTPConnectionUtils {
+
+    private static byte R = (byte) 13;
+    private static byte N = (byte) 10;
+
     public static InputStream newInputStream(final ByteBuffer buf) {
         return new InputStream() {
             public synchronized int read() throws IOException {
@@ -37,19 +41,30 @@ public class HTTPConnectionUtils {
             }
             if (c > 0) bigbuffer.put(minibuffer);
             if (onlyHTTPHeader) {
-                if (bigbuffer.position() >= 2) {
+                if (bigbuffer.position() >= 1) {
+                    /*
+                     * \n only line termination, for fucking buggy non rfc
+                     * servers
+                     */
                     position = bigbuffer.position();
-                    complete = bigbuffer.get(position - 2) == (byte) 13;
-                    complete &= bigbuffer.get(position - 1) == (byte) 10;
-                    if (complete) break;
+                    if (bigbuffer.get(position - 1) == N) {
+                        break;
+                    }
+                } else if (bigbuffer.position() >= 2) {
+                    /* \r\n, correct line termination */
+                    position = bigbuffer.position();
+                    if (bigbuffer.get(position - 2) == R && bigbuffer.get(position - 1) == N) {
+                        break;
+                    }
                 }
             } else {
                 if (bigbuffer.position() >= 4) {
+                    /* RNRN for header<->content divider */
                     position = bigbuffer.position();
-                    complete = bigbuffer.get(position - 4) == (byte) 13;
-                    complete &= bigbuffer.get(position - 3) == (byte) 10;
-                    complete &= bigbuffer.get(position - 2) == (byte) 13;
-                    complete &= bigbuffer.get(position - 1) == (byte) 10;
+                    complete = bigbuffer.get(position - 4) == R;
+                    complete &= bigbuffer.get(position - 3) == N;
+                    complete &= bigbuffer.get(position - 2) == R;
+                    complete &= bigbuffer.get(position - 1) == N;
                     if (complete) break;
                 }
             }

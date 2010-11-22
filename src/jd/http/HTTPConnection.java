@@ -153,7 +153,8 @@ public class HTTPConnection implements URLConnectionAdapter {
         bytes = new byte[header.limit()];
         header.get(bytes);
         String temp = new String(bytes, "UTF-8");
-        String[] headerStrings = temp.split("\r\n");
+        /*split header into single strings, use RN or N(buggy fucking non rfc)*/
+        String[] headerStrings = temp.split("(\r\n)|(\n)");
         temp = null;
         for (int i = 0; i < headerStrings.length; i++) {
             String line = headerStrings[i];
