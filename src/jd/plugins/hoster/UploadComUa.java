@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.com.ua" }, urls = { "http://[\\w\\.]*?(beta\\.upload|upload)\\.com\\.ua/(link|get)/[0-9]+" }, flags = { 2 })
 public class UploadComUa extends PluginForHost {
@@ -72,6 +73,7 @@ public class UploadComUa extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (!br.containsHTML("Для продолжения скачивания необходимо ввести код подтверждения\\.")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.uploadcomua.nofreedownloadlink", "Download is only possible for premium users"));
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaurl = "http://upload.com.ua/confirm.php";
         String code = getCaptchaCode(captchaurl, downloadLink);

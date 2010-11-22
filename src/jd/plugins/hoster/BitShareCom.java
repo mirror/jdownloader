@@ -22,8 +22,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -32,14 +35,18 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/files/[a-z0-9]{8}/(.*?\\.html)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/files/[a-z0-9]{8}/(.*?\\.html)?" }, flags = { 2 })
 public class BitShareCom extends PluginForHost {
 
     // private static final String RECAPTCHA = "/recaptcha/";
-    private static final String JSONHOST = "http://bitshare.com/files-ajax/";
+    private static final String JSONHOST    = "http://bitshare.com/files-ajax/";
+    private static final String AJAXIDREGEX = "var ajaxdl = \"(.*?)\";";
+    private static final String FILEIDREGEX = "bitshare\\.com/files/([a-z0-9]{8})/";
+    private static final String DLLINKREGEX = "SUCCESS#(http://.+)";
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://bitshare.com/premium.html");
     }
 
     @Override
@@ -65,6 +72,7 @@ public class BitShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("(You reached your hourly traffic limit|Your Traffic is used up for today)")) {
             String wait = br.getRegex("id=\"blocktimecounter\">(\\d+) Seconds</span>").getMatch(0);
             if (wait == null) wait = br.getRegex("var blocktime = (\\d+);").getMatch(0);
@@ -73,8 +81,8 @@ public class BitShareCom extends PluginForHost {
             else
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
-        String fileID = new Regex(downloadLink.getDownloadURL(), "bitshare\\.com/files/([a-z0-9]{8})/").getMatch(0);
-        String tempID = br.getRegex("var ajaxdl = \"(.*?)\";").getMatch(0);
+        String fileID = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
+        String tempID = br.getRegex(AJAXIDREGEX).getMatch(0);
         if (fileID == null || tempID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -122,7 +130,7 @@ public class BitShareCom extends PluginForHost {
             if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
-        String dllink = br2.getRegex("SUCCESS#(http://.+)").getMatch(0);
+        String dllink = br2.getRegex(DLLINKREGEX).getMatch(0);
         if (dllink == null) {
             logger.warning("The dllink couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -137,6 +145,73 @@ public class BitShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+        if (!br.containsHTML("\\(<b>Premium</b>\\)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://bitshare.com/myaccount.html");
+        String space = br.getRegex(">Used Space:</td>[\t\n\r ]+<td><b>(.*?)</b></td>").getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim());
+        String points = br.getRegex(">BitShare Points:</td>[\t\n\r ]+<td><b>(.*?)</b></td>").getMatch(0);
+        if (points != null) ai.setPremiumPoints(points);
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex(">Valid until:</td>[\t\n\r ]+<td><b>(.*?)</b></td>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "yyyy-MM-dd hh:mm", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            String tempID = br.getRegex(AJAXIDREGEX).getMatch(0);
+            String fileID = new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
+            br.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
+            dllink = br.getRegex(DLLINKREGEX).getMatch(0);
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -15);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
