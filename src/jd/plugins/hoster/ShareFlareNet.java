@@ -87,28 +87,32 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(dlform);
-        for (int i = 0; i <= 3; i++) {
-            br.setFollowRedirects(false);
-            Form captchaform = br.getFormbyProperty("id", "dvifree");
-            String captchaUrl = getCaptchaUrl();
-            if (captchaform == null || captchaUrl == null) {
-                logger.warning("captchaform or captchaUrl is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Form captchaform = br.getFormbyProperty("id", "dvifree");
+        String captchaUrl = getCaptchaUrl();
+        if (captchaform != null && captchaUrl != null) {
+            for (int i = 0; i <= 3; i++) {
+                br.setFollowRedirects(false);
+                captchaform = br.getFormbyProperty("id", "dvifree");
+                captchaUrl = getCaptchaUrl();
+                if (captchaform == null || captchaUrl == null) {
+                    logger.warning("captchaform or captchaUrl is null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String code = getCaptchaCode(captchaUrl, downloadLink);
+                captchaform.put("cap", code);
+                br.submitForm(captchaform);
+                if (getCaptchaUrl() != null) continue;
+                if (!br.containsHTML(LINKFRAMEPART)) {
+                    logger.warning("Browser doesn't contain the LINKFRAMEPART string, stopping...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                break;
             }
-            String code = getCaptchaCode(captchaUrl, downloadLink);
-            captchaform.put("cap", code);
-            br.submitForm(captchaform);
-            if (getCaptchaUrl() != null) continue;
-            if (!br.containsHTML(LINKFRAMEPART)) {
-                logger.warning("Browser doesn't contain the LINKFRAMEPART string, stopping...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            break;
+            if (getCaptchaUrl() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (getCaptchaUrl() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(NEXTPAGE);
         String wait = br.getRegex("y =.*?(\\d+);").getMatch(0);
-        int tt = 60;
+        int tt = 45;
         if (wait != null) {
             logger.info("Regexed waittime is found...");
             tt = Integer.parseInt(wait);

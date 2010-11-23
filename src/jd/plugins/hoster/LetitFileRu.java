@@ -28,21 +28,28 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitfile.ru" }, urls = { "http://[\\w\\.]*?letitfile\\.ru/download/id\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitfile.ru" }, urls = { "http://[\\w\\.]*?letitfile\\.(ru|com)/download/id\\d+" }, flags = { 0 })
 public class LetitFileRu extends PluginForHost {
 
     public LetitFileRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String URLPIECE = "get_file";
+
     @Override
     public String getAGBLink() {
         return "http://letitfile.ru/rules/";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("letitfile.com", "letitfile.ru"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("(File name|Имя файла): <b>(.*?)</b>").getMatch(1);
@@ -65,17 +72,16 @@ public class LetitFileRu extends PluginForHost {
         if (br.containsHTML("Владелец данного файла разрешил скачивать файл только пользователям")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.LetitFileRu.Only4Premium", "This file is only downloadable for premium users!"));
         String dllink = null;
         for (int i = 0; i <= 3; i++) {
-            br.setFollowRedirects(true);
             if (!br.containsHTML("/captcha/cap.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchaUrl = "http://letitfile.ru/captcha/cap.php";
             String code = getCaptchaCode(captchaUrl, downloadLink);
             br.postPage(downloadLink.getDownloadURL(), "cap=" + code + "&down=y&x=0&y=0");
-            if (!br.getURL().contains("getfile/")) continue;
+            if (!br.getURL().contains(URLPIECE)) continue;
             // if (br.containsHTML("Введите код с картинки")) continue;
             break;
         }
-        if (!br.getURL().contains("getfile")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = br.getRegex("началось\\. Если этого не произошло, <a href=\"(/.*?)\"").getMatch(0);
+        if (!br.getURL().contains(URLPIECE)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = br.getRegex("\\(\"\\.dtl\"\\)\\.html\\(\\'Ваша <a href=\"(/.*?)\">ссылка</a>").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(/getfile/id\\d+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
@@ -89,6 +95,7 @@ public class LetitFileRu extends PluginForHost {
         dllink = "http://letitfile.ru" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The finallink doesn't seem to be a file...");
             br.followConnection();
             if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

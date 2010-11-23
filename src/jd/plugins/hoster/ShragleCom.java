@@ -103,6 +103,7 @@ public class ShragleCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://www.shragle.com", "lang", "de_DE");
         br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("index.php")) br.getPage(br.getRedirectLocation());
         if (br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, -4);
@@ -116,7 +117,7 @@ public class ShragleCom extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("bereits eine Datei herunter")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l);
             if (br.containsHTML("The selected file was not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if ((br.containsHTML("Die von Ihnen angeforderte Datei") && br.containsHTML("Bitte versuchen Sie es"))){
+            if ((br.containsHTML("Die von Ihnen angeforderte Datei") && br.containsHTML("Bitte versuchen Sie es"))) {
                 if (downloadLink.getLinkStatus().getRetryCount() == 1) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             }

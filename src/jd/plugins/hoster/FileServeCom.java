@@ -262,7 +262,7 @@ public class FileServeCom extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         int maxdls = -1;
         try {
-            if (AccountController.getInstance().getValidAccount(this).getStringProperty("type").toString() != null) {
+            if (AccountController.getInstance().getValidAccount(this).getStringProperty("type") != null) {
                 maxdls = 1;
             }
         } catch (final Exception e) {

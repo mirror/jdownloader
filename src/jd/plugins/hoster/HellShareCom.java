@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.((sk|cz|en)\\.hellshare\\.com|hellshare\\.(sk|hu|de))/.+/[0-9]+|hellshare\\.com/[0-9]+/.+/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.((sk|cz|en)?hellshare\\.com|hellshare\\.(sk|hu|de))/.+/[0-9]+|hellshare\\.com/[0-9]+/.+/.+)" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
 
     public HellShareCom(PluginWrapper wrapper) {
@@ -105,7 +105,10 @@ public class HellShareCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(http://data.*?\\.helldata\\.com.*?)(&|\"|')").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink (premium) is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replaceAll("\\\\", "");
         /*
          * set max chunks to 1 because each range request counts as download,
