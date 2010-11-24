@@ -18,12 +18,12 @@ package jd.controlling;
 
 import jd.plugins.Account;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class AccountControllerEvent extends DefaultEvent {
+public class AccountControllerEvent extends DefaultIntEvent {
 
     private final Account account;
-    private final String host;
+    private final String  host;
 
     public AccountControllerEvent(final Object source, final int ID, final String host, final Account account) {
         super(source, ID);
@@ -39,10 +39,10 @@ public class AccountControllerEvent extends DefaultEvent {
         return account;
     }
 
-    public static final byte ACCOUNT_ADDED = 10;
+    public static final byte ACCOUNT_ADDED   = 10;
     public static final byte ACCOUNT_REMOVED = 11;
 
-    public static final byte ACCOUNT_UPDATE = 20;
+    public static final byte ACCOUNT_UPDATE  = 20;
 
     public static final byte ACCOUNT_INVALID = 30;
     public static final byte ACCOUNT_EXPIRED = 31;

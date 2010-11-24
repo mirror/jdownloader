@@ -16,9 +16,9 @@
 
 package jd.controlling;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class ProgressControllerEvent extends DefaultEvent {
+public class ProgressControllerEvent extends DefaultIntEvent {
 
     public ProgressControllerEvent(Object source, int ID) {
         super(source, ID);

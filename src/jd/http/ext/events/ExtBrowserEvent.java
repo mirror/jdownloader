@@ -2,9 +2,9 @@ package jd.http.ext.events;
 
 import jd.http.ext.ExtBrowser;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class ExtBrowserEvent extends DefaultEvent {
+public class ExtBrowserEvent extends DefaultIntEvent {
 
     private final ExtBrowser browser;
 

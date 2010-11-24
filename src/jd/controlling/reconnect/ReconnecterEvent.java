@@ -1,8 +1,8 @@
 package jd.controlling.reconnect;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class ReconnecterEvent extends DefaultEvent {
+public class ReconnecterEvent extends DefaultIntEvent {
     /**
      * Is called before a reconnect process
      */

@@ -16,20 +16,18 @@
 
 package jd.plugins;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-
-
-public class FilePackageEvent extends DefaultEvent {
+public class FilePackageEvent extends DefaultIntEvent {
 
     /* ein wichtiger Wert wurde geändert */
-    public static final int FILEPACKAGE_UPDATE = 1;
+    public static final int FILEPACKAGE_UPDATE   = 1;
 
-    public static final int DOWNLOADLINK_ADDED = 2;
+    public static final int DOWNLOADLINK_ADDED   = 2;
     public static final int DOWNLOADLINK_REMOVED = 3;
 
     /* das FilePackage ist leer */
-    public static final int FILEPACKAGE_EMPTY = 999;
+    public static final int FILEPACKAGE_EMPTY    = 999;
 
     public FilePackageEvent(Object source, int ID) {
         super(source, ID);

@@ -16,13 +16,11 @@
 
 package jd.plugins;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
+public class DownloadLinkEvent extends DefaultIntEvent {
 
-
-public class DownloadLinkEvent extends DefaultEvent {
-
-    public static final int ENABLED = 3;
+    public static final int ENABLED  = 3;
 
     public static final int DISABLED = 4;
 

@@ -16,12 +16,12 @@
 
 package jd.nutils;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class FtpEvent extends DefaultEvent {
+public class FtpEvent extends DefaultIntEvent {
 
     public static final int DOWNLOAD_PROGRESS = 0;
-    private long progress;
+    private long            progress;
 
     /**
      * Returns bytes loaded

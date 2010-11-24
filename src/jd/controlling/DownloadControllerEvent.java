@@ -16,30 +16,30 @@
 
 package jd.controlling;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class DownloadControllerEvent extends DefaultEvent {
+public class DownloadControllerEvent extends DefaultIntEvent {
 
     /**
      * Wird bei Strukturänderungen der DownloadListe
      */
-    public static final int REFRESH_STRUCTURE = 1;
+    public static final int REFRESH_STRUCTURE   = 1;
 
     /**
      * Downloadlink oder ArrayList<DownloadLink> soll aktuallisiert werden
      */
-    public static final int REFRESH_SPECIFIC = 11;
+    public static final int REFRESH_SPECIFIC    = 11;
 
     /**
      * die komplette liste soll aktuallisiert werden
      */
-    public static final int REFRESH_ALL = 12;
+    public static final int REFRESH_ALL         = 12;
 
-    public static final int ADD_FILEPACKAGE = 2;
+    public static final int ADD_FILEPACKAGE     = 2;
 
-    public static final int REMOVE_FILPACKAGE = 3;
+    public static final int REMOVE_FILPACKAGE   = 3;
 
-    public static final int ADD_DOWNLOADLINK = 4;
+    public static final int ADD_DOWNLOADLINK    = 4;
 
     public static final int REMOVE_DOWNLOADLINK = 5;
 

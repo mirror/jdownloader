@@ -16,9 +16,9 @@
 
 package jd.controlling;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class LinkCheckEvent extends DefaultEvent {
+public class LinkCheckEvent extends DefaultIntEvent {
 
     public LinkCheckEvent(Object source, int ID, Object parameter) {
         super(source, ID, parameter);
@@ -30,8 +30,8 @@ public class LinkCheckEvent extends DefaultEvent {
         // TODO Auto-generated constructor stub
     }
 
-    public final static int START = 1;
-    public final static int STOP = 2;
-    public final static int ABORT = 3;
+    public final static int START       = 1;
+    public final static int STOP        = 2;
+    public final static int ABORT       = 3;
     public final static int AFTER_CHECK = 4;
 }

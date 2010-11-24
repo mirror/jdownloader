@@ -1,8 +1,8 @@
 package jd.gui.swing.jdgui.components.speedmeter;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class SpeedMeterEvent extends DefaultEvent {
+public class SpeedMeterEvent extends DefaultIntEvent {
 
     public static final int UPDATED = 0;
 

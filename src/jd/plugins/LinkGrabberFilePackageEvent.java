@@ -16,9 +16,9 @@
 
 package jd.plugins;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class LinkGrabberFilePackageEvent extends DefaultEvent {
+public class LinkGrabberFilePackageEvent extends DefaultIntEvent {
 
     public LinkGrabberFilePackageEvent(final Object source, final int ID) {
         super(source, ID);
@@ -33,10 +33,10 @@ public class LinkGrabberFilePackageEvent extends DefaultEvent {
     /* ein wichtiger Wert wurde geändert */
     public static final int UPDATE_EVENT = 1;
 
-    public static final int ADD_LINK = 2;
-    public static final int REMOVE_LINK = 3;
+    public static final int ADD_LINK     = 2;
+    public static final int REMOVE_LINK  = 3;
 
     /* das FilePackage ist leer */
-    public static final int EMPTY_EVENT = 999;
+    public static final int EMPTY_EVENT  = 999;
 
 }

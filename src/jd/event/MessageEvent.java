@@ -16,9 +16,9 @@
 
 package jd.event;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
-public class MessageEvent extends DefaultEvent {
+public class MessageEvent extends DefaultIntEvent {
 
     private final String message;
 

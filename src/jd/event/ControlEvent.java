@@ -16,14 +16,14 @@
 
 package jd.event;
 
-import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DefaultIntEvent;
 
 /**
  * Diese Klasse realisiert Ereignisse, die zum Steuern des Programmes dienen
  * 
  * @author astaldo
  */
-public class ControlEvent extends DefaultEvent {
+public class ControlEvent extends DefaultIntEvent {
 
     private static final long serialVersionUID                 = 1639354503246054870L;
 
@@ -125,6 +125,6 @@ public class ControlEvent extends DefaultEvent {
 
     @Deprecated
     public int getID() {
-        return super.getEventID();
+        return getEventID();
     }
 }
