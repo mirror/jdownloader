@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 /**
- * @author zdolny fixes by djuzi
+ * @author zdolny fixed by djuzi
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkfile.de" }, urls = { "http://[\\w\\.]*?linkfile.de/download-[\\w]+\\.php" }, flags = { 0 })
 public class LinkFileDe extends PluginForHost {
@@ -62,14 +62,12 @@ public class LinkFileDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-
         String code = getCaptchaCode(br.getBaseURL() + "captcha.php", downloadLink);
-
         Form captchaForm = br.getForm(0);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.put("captcha", code);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, true, 1);
+        if (dl.getConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, "Fataler Serverfehler");
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
@@ -85,9 +83,5 @@ public class LinkFileDe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 
 }
