@@ -238,34 +238,35 @@ public class Browser {
         cookies.add(request.getCookies());
     }
 
-    private String                          acceptLanguage   = "de, en-gb;q=0.9, en;q=0.8";
+    private String                          acceptLanguage      = "de, en-gb;q=0.9, en;q=0.8";
 
     /*
      * -1 means use default Timeouts
      * 
      * 0 means infinite (DO NOT USE if not needed)
      */
-    private int                             connectTimeout   = -1;
-    private int                             readTimeout      = -1;
-    private static int                      TIMEOUT_READ     = 30000;
-    private static int                      TIMEOUT_CONNECT  = 30000;
+    private int                             connectTimeout      = -1;
+    private int                             readTimeout         = -1;
+    private static int                      TIMEOUT_READ        = 30000;
+    private static int                      TIMEOUT_CONNECT     = 30000;
 
-    private URL                             currentURL       = null;
+    private URL                             currentURL          = null;
 
-    private boolean                         doRedirects      = false;
+    private boolean                         doRedirects         = false;
+    private int                             redirectLoopCounter = 0;
 
     private RequestHeader                   headers;
 
-    private int                             limit            = 1 * 1024 * 1024;
+    private int                             limit               = 1 * 1024 * 1024;
     private Request                         request;
-    private String                          customCharset    = null;
-    private boolean                         cookiesExclusive = true;
+    private String                          customCharset       = null;
+    private boolean                         cookiesExclusive    = true;
     private JDProxy                         proxy;
     private HashMap<String, Integer>        requestIntervalLimitMap;
     private HashMap<String, Long>           requestTimeMap;
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
     private static HashMap<String, Long>    REQUESTTIME_MAP;
-    private static boolean                  VERBOSE          = false;
+    private static boolean                  VERBOSE             = false;
 
     public Browser() {
 
@@ -550,7 +551,14 @@ public class Browser {
             if (request.getLocation().toLowerCase().startsWith("ftp://")) throw new BrowserException("Cannot redirect to FTP");
             String org = request.getUrl().toExternalForm();
             String red = request.getLocation();
-            if (!org.equalsIgnoreCase(red)) {
+            if (org.equalsIgnoreCase(red) && redirectLoopCounter >= 20) {
+                LOGGER.severe("20 Redirects!!!");
+            } else if (!org.equalsIgnoreCase(red) || redirectLoopCounter < 20) {
+                if (org.equalsIgnoreCase(red)) {
+                    redirectLoopCounter++;
+                } else {
+                    redirectLoopCounter = 0;
+                }
                 /* prevent buggy redirect loops */
                 /* source==dest */
                 try {

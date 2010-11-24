@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs.hoerbuch.in" }, urls = { "http://(rs\\.hoerbuch\\.in/[A-Za-z0-9]+|hoerbuch\\.in/download_\\d+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs.hoerbuch.in" }, urls = { "http://(rs\\.)?hoerbuch\\.in/([A-Za-z0-9_-]+|download_\\d+)(\\.html|/.+)" }, flags = { 0 })
 public class RsHrbchn extends PluginForDecrypt {
 
     public RsHrbchn(PluginWrapper wrapper) {

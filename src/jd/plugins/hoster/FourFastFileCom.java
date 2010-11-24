@@ -80,6 +80,7 @@ public class FourFastFileCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage("http://4fastfile.com/user/login");
         Form loginform = br.getFormbyProperty("id", "user-login");

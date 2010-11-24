@@ -22,7 +22,6 @@ import java.io.OutputStream;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-
 import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -36,39 +35,38 @@ import java.util.Map.Entry;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
-import sun.net.www.MessageHeader;
-import sun.net.www.http.ChunkedInputStream;
-
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;
+import sun.net.www.MessageHeader;
+import sun.net.www.http.ChunkedInputStream;
 
 public class HTTPConnection implements URLConnectionAdapter {
 
-    protected LinkedHashMap<String, String>     requestProperties    = null;
-    protected long[]                            ranges;
+    protected LinkedHashMap<String, String> requestProperties    = null;
+    protected long[]                        ranges;
 
-    protected Request                           request;
+    protected Request                       request;
 
-    protected String                            customcharset        = null;
+    protected String                        customcharset        = null;
 
-    protected Socket                            httpSocket           = null;
-    protected URL                               httpURL              = null;
-    protected JDProxy                           proxy                = null;
-    protected String                            httpPath             = null;
+    protected Socket                        httpSocket           = null;
+    protected URL                           httpURL              = null;
+    protected JDProxy                       proxy                = null;
+    protected String                        httpPath             = null;
 
-    private METHOD                              httpMethod           = METHOD.GET;
-    private LinkedHashMap<String, List<String>> headers              = null;
-    private int                                 httpResponseCode     = -1;
-    private String                              httpResponseMessage  = "";
-    private int                                 readTimeout          = 30000;
-    private int                                 connectTimeout       = 30000;
-    private long                                requestTime          = -1;
-    private InputStream                         inputStream          = null;
-    private boolean                             inputStreamConnected = false;
-    private String                              httpHeader           = null;
-    private byte[]                              preReadBytes         = null;
-    private boolean                             outputClosed         = false;
+    private METHOD                          httpMethod           = METHOD.GET;
+    private LowerCaseHashMap<List<String>>  headers              = null;
+    private int                             httpResponseCode     = -1;
+    private String                          httpResponseMessage  = "";
+    private int                             readTimeout          = 30000;
+    private int                             connectTimeout       = 30000;
+    private long                            requestTime          = -1;
+    private InputStream                     inputStream          = null;
+    private boolean                         inputStreamConnected = false;
+    private String                          httpHeader           = null;
+    private byte[]                          preReadBytes         = null;
+    private boolean                         outputClosed         = false;
 
     public boolean isConnected() {
         if (httpSocket != null && httpSocket.isConnected()) return true;
@@ -153,7 +151,7 @@ public class HTTPConnection implements URLConnectionAdapter {
         bytes = new byte[header.limit()];
         header.get(bytes);
         String temp = new String(bytes, "UTF-8");
-        /*split header into single strings, use RN or N(buggy fucking non rfc)*/
+        /* split header into single strings, use RN or N(buggy fucking non rfc) */
         String[] headerStrings = temp.split("(\r\n)|(\n)");
         temp = null;
         for (int i = 0; i < headerStrings.length; i++) {
