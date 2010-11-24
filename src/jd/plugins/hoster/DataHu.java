@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/.+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/.+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
 
     private static final Object LOCK = new Object();
@@ -55,12 +55,14 @@ public class DataHu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[] dat = br.getRegex("<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">").getRow(0);
-        if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setDownloadSize(Regex.getSize(dat[1].trim()));
-        downloadLink.setName(dat[0].trim());
+        String filename = br.getRegex("<div class=\"download_filename\">(.*?)</div>").getMatch(0);
+        String filesize = br.getRegex(", fájlméret: ([0-9\\.]+ [A-Za-z]{1,5})").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
 
@@ -143,14 +145,20 @@ public class DataHu extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
-
         if (br.containsHTML("A let.*?shez v.*?rnod kell:")) {
             long wait = (Long.parseLong(br.getRegex(Pattern.compile("<div id=\"counter\" class=\"countdown\">([0-9]+)</div>")).getMatch(0)) * 1000);
             sleep(wait, downloadLink);
         }
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex(Pattern.compile("download_it\"><a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1).startDownload();
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The finallink doesn't seem to be a file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
 
     }
 
@@ -166,7 +174,7 @@ public class DataHu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 3;
     }
 
     @Override

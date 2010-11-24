@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/\\d+/.+|(divx|play)/[A-Z0-9\\.-]+|[a-zA-Z0-9\\.]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/[a-z0-9]+|(divx|play)/[A-Z0-9\\.-]+|[a-zA-Z0-9\\.]+)" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
 
     private static final String MAINPAGE = "http://duckload.com/";
@@ -141,6 +141,7 @@ public class DuckLoad extends PluginForHost {
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        this.dl.setFilenameFix(true);
         this.dl.startDownload();
     }
 
@@ -153,7 +154,7 @@ public class DuckLoad extends PluginForHost {
         if (this.br.containsHTML("(File not found\\.|download\\.notfound)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = this.br.getRegex("<title>(.*?) @ DuckLoad\\.com</title>").getMatch(0);
         if (filename == null) {
-            filename = link.getName();
+            filename = this.br.getRegex("Download from <strong>\"(.*?)\"</strong>").getMatch(0);
         }
         if (this.br.containsHTML("\\(<i>")) {
             String filesize = this.br.getRegex("\\(<i>(.*?)</i>").getMatch(0);
@@ -164,7 +165,10 @@ public class DuckLoad extends PluginForHost {
             }
         }
         // Server doesn't give us the correct name so we set it here
-        link.setFinalFileName(filename.trim());
+        if (!filename.contains("."))
+            link.setName(filename.trim());
+        else
+            link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
     }
 
