@@ -46,11 +46,18 @@ public class UploadSpacePl extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        String id = new Regex(link.getDownloadURL(), "pl/plik([a-zA-Z0-9]+)").getMatch(0);
+        String ret = br.getPage("http://uploadspace.pl/api/file.php?id=" + id);
+        String[][] info = new Regex(ret, "(\\d+)," + id + ",(.*?),(\\d+)").getMatches();
+        if (info != null && info.length == 1 && info[0].length == 3) {
+            if ("0".equals(info[0][0])) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            link.setFinalFileName(info[0][1]);
+            link.setDownloadSize(Regex.getSize(info[0][2]));
+            return AvailableStatus.TRUE;
+        }
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(File not found|This file is either removed due to copyright claim or is deleted by the uploader)") || (!br.containsHTML("render.php"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // TODO: Filename and size are shown in a picture.
-        // To display it correctly a (captcha) recognition would be needed
         String filename = new Regex(link.getDownloadURL(), "uploadspace\\.pl/plik[a-zA-Z0-9]+/(.*?)\\.htm").getMatch(0);
         if (filename != null) link.setName(filename);
         return AvailableStatus.TRUE;
@@ -59,6 +66,8 @@ public class UploadSpacePl extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
         handleErrors();
         br.setFollowRedirects(false);
         Form dlform = br.getFormbyProperty("name", "plik");

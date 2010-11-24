@@ -50,7 +50,8 @@ public class HTTPConnectionUtils {
                     if (bigbuffer.get(position - 1) == N) {
                         break;
                     }
-                } else if (bigbuffer.position() >= 2) {
+                }
+                if (bigbuffer.position() >= 2) {
                     /* \r\n, correct line termination */
                     position = bigbuffer.position();
                     if (bigbuffer.get(position - 2) == R && bigbuffer.get(position - 1) == N) {

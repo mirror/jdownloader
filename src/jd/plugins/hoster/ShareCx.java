@@ -17,8 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -35,6 +39,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.cx" }, urls = { "http://[\\w\\.]*?share\\.cx/(files/)?\\d+" }, flags = { 2 })
 public class ShareCx extends PluginForHost {
 
+    private static AtomicInteger failedCounter = new AtomicInteger(0);
+
     public ShareCx(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.share.cx/premium");
@@ -47,25 +53,22 @@ public class ShareCx extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("alt=\"Download\" /></span>(.*?)</h3>").getMatch(0);
-        if (filename == null) filename = br.getRegex("name=\"fname\" value=\"(.*?)\"").getMatch(0);
-        String filesize = br.getRegex("\">Dateigröße:(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (filename.trim().equals("") || filesize.trim().equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        this.checkLinks(new DownloadLink[] { link });
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        if (failedCounter.get() > 5) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         requestFileInformation(downloadLink);
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         Form dlform0 = br.getForm(0);
         if (dlform0 == null) {
             logger.warning("dlform0 could not be found!");
+            failedCounter.incrementAndGet();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dlform0.put("method_free", "Datei+herunterladen");
@@ -76,6 +79,7 @@ public class ShareCx extends PluginForHost {
         Form dlform1 = br.getForm(0);
         if (dlform1 == null) {
             logger.warning("dlform1 is null, stopping...");
+            failedCounter.incrementAndGet();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Ticket Time
@@ -92,6 +96,7 @@ public class ShareCx extends PluginForHost {
             String captchaurl = null;
             if (sitelinks == null || sitelinks.length == 0) {
                 logger.warning("Standard captcha captchahandling broken!");
+                failedCounter.incrementAndGet();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (String link : sitelinks) {
@@ -102,6 +107,7 @@ public class ShareCx extends PluginForHost {
             }
             if (captchaurl == null) {
                 logger.warning("Standard captcha captchahandling broken!");
+                failedCounter.incrementAndGet();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String code = getCaptchaCode(captchaurl, downloadLink);
@@ -116,6 +122,7 @@ public class ShareCx extends PluginForHost {
             String waittime = br.getRegex("startTimer\\((\\d+)\\);").getMatch(0);
             if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
             logger.warning("dllink equals null, stopping...");
+            failedCounter.incrementAndGet();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -123,6 +130,7 @@ public class ShareCx extends PluginForHost {
             logger.info("The dllink doesn't seem to be a file, following connection...");
             br.followConnection();
             handleErrors();
+            failedCounter.incrementAndGet();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -133,7 +141,10 @@ public class ShareCx extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage("http://www.share.cx");
         Form form = br.getFormbyProperty("name", "FL");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null) {
+            failedCounter.incrementAndGet();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         form.put("login", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
@@ -172,6 +183,7 @@ public class ShareCx extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        if (failedCounter.get() > 5) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         requestFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(false);
@@ -195,6 +207,7 @@ public class ShareCx extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleErrors();
+            failedCounter.incrementAndGet();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -206,6 +219,67 @@ public class ShareCx extends PluginForHost {
         // same time
         if (br.containsHTML("<br>oder kaufen Sie sich jetzt einen <a")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (br.containsHTML("No File")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links=");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    if (c > 0) sb.append(";");
+                    if (dl.getDownloadURL().endsWith("/")) {
+                        sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    } else {
+                        sb.append(Encoding.urlEncode(dl.getDownloadURL() + "/"));
+                    }
+                    c++;
+                }
+                br.postPage("http://www.share.cx/uapi?do=check", sb.toString());
+                String infos[][] = br.getRegex(Pattern.compile("(.*?);(.*?);(\\d+)")).getMatches();
+                for (DownloadLink dl : links) {
+                    String id = new Regex(dl.getDownloadURL(), "/(\\d+)").getMatch(0);
+                    int hit = -1;
+                    for (int i = 0; i < infos.length; i++) {
+                        if (infos[i][0].contains(id)) {
+                            hit = i;
+                            break;
+                        }
+                    }
+                    if (hit == -1) {
+                        /* id not in response, so its offline */
+                        dl.setAvailable(false);
+                    } else {
+                        if (infos[hit][1] != null && infos[hit][1].length() > 0) {
+                            dl.setFinalFileName(infos[hit][1].trim());
+                            dl.setDownloadSize(Regex.getSize(infos[hit][2]));
+                            dl.setAvailable(true);
+                        } else {
+                            dl.setAvailable(false);
+                        }
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override

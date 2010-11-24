@@ -70,7 +70,7 @@ public class FourFastFileCom extends PluginForHost {
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String waitfbid = dlform.getRegex("form_build_id\" id=\"(.*?)\"").getMatch(0);
         dlform.put("waitfbid", waitfbid);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -120,7 +120,8 @@ public class FourFastFileCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, true, 0);
+        /* due buggy server, resume and chunks are disabled */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
