@@ -61,79 +61,92 @@ public class ShareCx extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (failedCounter.get() > 5) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        requestFileInformation(downloadLink);
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(false);
-        Form dlform0 = br.getForm(0);
-        if (dlform0 == null) {
-            logger.warning("dlform0 could not be found!");
-            failedCounter.incrementAndGet();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dlform0.put("method_free", "Datei+herunterladen");
-        br.submitForm(dlform0);
-        String reconTime = br.getRegex("startTimer\\((\\d+)\\)").getMatch(0);
-        if (reconTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconTime) * 1001l);
-        if (br.containsHTML("Sie haben Ihr Download-Limit von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        Form dlform1 = br.getForm(0);
-        if (dlform1 == null) {
-            logger.warning("dlform1 is null, stopping...");
-            failedCounter.incrementAndGet();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // Ticket Time
-        String ttt = new Regex(br.toString(), "countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = new Regex(br.toString(), "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-            int tt = Integer.parseInt(ttt);
-            sleep(tt * 1001, downloadLink);
-        }
-        if (br.containsHTML("/captchas/")) {
-            logger.info("Detected captcha method \"Standard captcha\" for this host");
-            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            String captchaurl = null;
-            if (sitelinks == null || sitelinks.length == 0) {
-                logger.warning("Standard captcha captchahandling broken!");
-                failedCounter.incrementAndGet();
+        try {
+            requestFileInformation(downloadLink);
+            this.setBrowserExclusive();
+            br.getPage(downloadLink.getDownloadURL());
+            br.setFollowRedirects(false);
+            Form dlform0 = br.getForm(0);
+            if (dlform0 == null) {
+                logger.warning("dlform0 could not be found!");
+
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            for (String link : sitelinks) {
-                if (link.contains("/captchas/")) {
-                    captchaurl = link;
-                    break;
+            dlform0.put("method_free", "Datei+herunterladen");
+            br.submitForm(dlform0);
+            String reconTime = br.getRegex("startTimer\\((\\d+)\\)").getMatch(0);
+            if (reconTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconTime) * 1001l);
+            if (br.containsHTML("Sie haben Ihr Download-Limit von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            Form dlform1 = br.getForm(0);
+            if (dlform1 == null) {
+                logger.warning("dlform1 is null, stopping...");
+
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // Ticket Time
+            String ttt = new Regex(br.toString(), "countdown\">.*?(\\d+).*?</span>").getMatch(0);
+            if (ttt == null) ttt = new Regex(br.toString(), "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+            if (ttt != null) {
+                logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                int tt = Integer.parseInt(ttt);
+                sleep(tt * 1001, downloadLink);
+            }
+            if (br.containsHTML("/captchas/")) {
+                logger.info("Detected captcha method \"Standard captcha\" for this host");
+                String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                String captchaurl = null;
+                if (sitelinks == null || sitelinks.length == 0) {
+                    logger.warning("Standard captcha captchahandling broken!");
+
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                for (String link : sitelinks) {
+                    if (link.contains("/captchas/")) {
+                        captchaurl = link;
+                        break;
+                    }
+                }
+                if (captchaurl == null) {
+                    logger.warning("Standard captcha captchahandling broken!");
+
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String code = getCaptchaCode(captchaurl, downloadLink);
+                dlform1.put("code", code);
+                logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+            } else {
+                logger.info("Couldn't find a captcha, continuing without captcha...");
             }
-            if (captchaurl == null) {
-                logger.warning("Standard captcha captchahandling broken!");
-                failedCounter.incrementAndGet();
+            br.submitForm(dlform1);
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                String waittime = br.getRegex("startTimer\\((\\d+)\\);").getMatch(0);
+                if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
+                logger.warning("dllink equals null, stopping...");
+
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String code = getCaptchaCode(captchaurl, downloadLink);
-            dlform1.put("code", code);
-            logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else {
-            logger.info("Couldn't find a captcha, continuing without captcha...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.info("The dllink doesn't seem to be a file, following connection...");
+                br.followConnection();
+                handleErrors();
+
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } catch (Exception e) {
+
+            if (e instanceof PluginException) {
+                if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                    failedCounter.incrementAndGet();
+                }
+            } else {
+                failedCounter.incrementAndGet();
+
+            }
+            throw e;
         }
-        br.submitForm(dlform1);
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            String waittime = br.getRegex("startTimer\\((\\d+)\\);").getMatch(0);
-            if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
-            logger.warning("dllink equals null, stopping...");
-            failedCounter.incrementAndGet();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.info("The dllink doesn't seem to be a file, following connection...");
-            br.followConnection();
-            handleErrors();
-            failedCounter.incrementAndGet();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     public void login(Account account) throws Exception {
