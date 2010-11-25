@@ -110,11 +110,11 @@ public class DuckLoad extends PluginForHost {
             dllink = this.br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
             // swf-Download
             if ((dllink == null) && this.br.containsHTML("duckloadplayer\\.swf")) {
-                final long cache = System.currentTimeMillis();
+                final long cache = System.currentTimeMillis() / 1000;
                 final String id = this.br.getURL().substring(this.br.getURL().lastIndexOf("/") + 1);
-                final String md5 = JDHash.getMD5(id + cache + "SuperSecretSalt");
+                final String md5 = JDHash.getMD5(id + cache + "GoOutOfMySourceBastard");
                 final long random = cache / 2 + 7331;
-                dllink = DuckLoad.FLASHPAGE + "api.php?id=" + id + "&random=" + random + "&md5=" + md5 + "&cache=" + cache;
+                dllink = DuckLoad.FLASHPAGE + "api.php?cache=" + cache + "&random=" + random + "&id=" + id + "&md5=" + md5 + "&cookie=";
                 this.br.getHeaders().put("Referer", DuckLoad.FLASHPAGE + "duckloadplayer.swf?id=" + id + "&cookie=/[[DYNAMIC]]/3");
                 this.br.getHeaders().put("x-flash-version", "10,1,53,64");
                 this.br.getPage(dllink);
