@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -32,6 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -42,52 +45,85 @@ public class BlurWs extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public static final Object  LOCK          = new Object();
+    private static final String RECAPTCHATEXT = "/recaptcha/api/challenge\\?k=";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<DownloadLink> dlclinks = new ArrayList<DownloadLink>();
-        ArrayList<String> passwords = new ArrayList<String>();
-        String parameter = param.toString();
-        br.setFollowRedirects(false);
-        br.getPage(parameter);
-        if (br.containsHTML(">Keine Daten vorhanden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<title>blur :: Ordneransicht zu (.*?)</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<h3 class=\"center\">(.*?)</h3>").getMatch(0);
-        String password = br.getRegex("<strong>Passwort:</strong>(.*?)</p>").getMatch(0);
-        if (password == null) password = br.getRegex("type=\"hidden\" name=\"passwords\" value=\"(.*?)\">").getMatch(0);
-        if (password != null && !password.equals("")) passwords.add(password);
-        dlclinks = loadcontainer(parameter);
-        if (dlclinks != null && dlclinks.size() != 0) {
-            if (passwords != null && passwords.size() != 0) {
-                for (DownloadLink dlclink : dlclinks)
-                    dlclink.setSourcePluginPasswordList(passwords);
+        // Allow only 1 instance of this decrypter at the same time
+        synchronized (LOCK) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            ArrayList<DownloadLink> dlclinks = new ArrayList<DownloadLink>();
+            ArrayList<String> passwords = new ArrayList<String>();
+            ArrayList<String> clearedlinks = new ArrayList<String>();
+            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+            String parameter = param.toString();
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            if (br.containsHTML(">Keine Daten vorhanden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.containsHTML(RECAPTCHATEXT)) {
+                logger.info("reCaptcha found...");
+                for (int i = 0; i <= 5; i++) {
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.parse();
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, param);
+                    rc.setCode(c);
+                    if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("wrongcaptcha")) {
+                        logger.info("User didn't enter the correct captcha, retrying...");
+                        br.getPage(parameter);
+                        continue;
+                    }
+                    break;
+                }
+                if (br.containsHTML(RECAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            String fpName = br.getRegex("<title>blur :: Ordneransicht zu (.*?)</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<h3 class=\"center\">(.*?)</h3>").getMatch(0);
+            String password = br.getRegex("<strong>Passwort:</strong>(.*?)</p>").getMatch(0);
+            if (password == null) password = br.getRegex("type=\"hidden\" name=\"passwords\" value=\"(.*?)\">").getMatch(0);
+            if (password != null && !password.equals("")) passwords.add(password);
+            dlclinks = loadcontainer(parameter);
+            if (dlclinks != null && dlclinks.size() != 0) {
+                if (passwords != null && passwords.size() != 0) {
+                    for (DownloadLink dlclink : dlclinks)
+                        dlclink.setSourcePluginPasswordList(passwords);
+                }
+                if (fpName != null) {
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fpName.trim());
+                    fp.addLinks(dlclinks);
+                }
+                return dlclinks;
+            }
+            logger.info("Failed to get the links via DLC, trying webdecryption...");
+            String[] links = br.getRegex("<li><a href=\"(http://.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)blur\\.ws/out\\.php\\?link=[0-9a-z-]+)\"").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            progress.setRange(links.length);
+            for (String aLink : links)
+                if (!clearedlinks.contains(aLink)) clearedlinks.add(aLink);
+            progress.setRange(clearedlinks.size());
+            for (String singleLink : clearedlinks) {
+                br.getPage(singleLink);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) return null;
+                if (!finallink.contains("/ref?id=")) {
+                    DownloadLink dl = createDownloadlink(finallink);
+                    if (passwords != null && passwords.size() != 0) dl.setSourcePluginPasswordList(passwords);
+                    decryptedLinks.add(dl);
+                }
+                progress.increase(1);
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
-                fp.addLinks(dlclinks);
+                fp.addLinks(decryptedLinks);
             }
-            return dlclinks;
+            return decryptedLinks;
         }
-        logger.info("Failed to get the links via DLC, trying webdecryption...");
-        String[] links = br.getRegex("<li><a href=\"(http://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?blur\\.ws/out\\.php\\?link=\\d+-\\d+)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String singleLink : links) {
-            br.getPage(singleLink);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) return null;
-            DownloadLink dl = createDownloadlink(finallink);
-            if (passwords != null && passwords.size() != 0) dl.setSourcePluginPasswordList(passwords);
-            decryptedLinks.add(dl);
-            progress.increase(1);
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
     }
 
     private ArrayList<DownloadLink> loadcontainer(String theLink) throws IOException, PluginException {

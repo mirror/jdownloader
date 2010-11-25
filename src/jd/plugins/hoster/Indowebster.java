@@ -41,6 +41,7 @@ public class Indowebster extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Original name :</b><!--INFOLINKS_ON-->(.*?)<").getMatch(0);
@@ -58,32 +59,22 @@ public class Indowebster extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String dl_url = br.getRegex("\\&file=(http.*?)\\&logo").getMatch(0);
-        if (dl_url == null) {
-            String adUrl = br.getRegex("style=\"float:right;\"><a href=\"(.*?)\"").getMatch(0);
-            if (adUrl != null) {
-                br.getPage("http://www.indowebster.com/" + adUrl);
-                Form dlForm = br.getFormbyProperty("name", "form1");
-                if (dlForm != null) {
-                    logger.info("Sending dlform now...");
-                    br.submitForm(dlForm);
-                }
-            }
-        }
-        if (dl_url == null) {
-            logger.warning("Final link is null!");
+        String ad_url = br.getRegex("<div style=\"float:left;margin-left:5px;\"><a href=\"(download=.*?)\" class=\"tn_button1\">DOWNLOAD").getMatch(0);
+        if (ad_url == null) ad_url = br.getRegex("\"(download=.*?\\&do=[A-Za-z0-9]+)\"").getMatch(0);
+        if (ad_url == null) {
+            logger.warning("ad_url is null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        logger.info("Final link = " + dl_url);
-        String filename = link.getFinalFileName();
-        String ext = filename.substring(filename.lastIndexOf('.'));
-        ext = ext.concat(".flv");
-        if (dl_url.endsWith(ext)) {
-            dl_url = dl_url.replaceFirst(".flv?", "");
+        br.getPage("http://www.indowebster.com/" + ad_url);
+        Form dlForm = br.getFormbyProperty("name", "form1");
+        if (dlForm == null) {
+            logger.warning("dlForm is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // logger.info("Final link = " + ad_url);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
