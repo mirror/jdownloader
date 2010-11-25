@@ -38,7 +38,7 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blur.ws" }, urls = { "http://[\\w\\.]*?blur\\.ws/view\\.php\\?id=\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blur.ws" }, urls = { "http://(www\\.)?blur\\.ws/view\\.php\\?id=\\w+" }, flags = { 0 })
 public class BlurWs extends PluginForDecrypt {
 
     public BlurWs(PluginWrapper wrapper) {
@@ -102,7 +102,6 @@ public class BlurWs extends PluginForDecrypt {
             String[] links = br.getRegex("<li><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)blur\\.ws/out\\.php\\?link=[0-9a-z-]+)\"").getColumn(0);
             if (links == null || links.length == 0) return null;
-            progress.setRange(links.length);
             for (String aLink : links)
                 if (!clearedlinks.contains(aLink)) clearedlinks.add(aLink);
             progress.setRange(clearedlinks.size());

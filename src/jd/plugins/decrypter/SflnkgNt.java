@@ -20,8 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,6 +37,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "http://[\\w\\.]*?safelinking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
 public class SflnkgNt extends PluginForDecrypt {
@@ -60,6 +60,7 @@ public class SflnkgNt extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("(\"This link does not exist\\.\"|ERROR - this link does not exist)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.containsHTML(">Not yet checked</span>")) throw new DecrypterException("Not yet checked");
+        if (br.containsHTML("To use reCAPTCHA you must get an API key from")) throw new DecrypterException("Server error, please contact the safelinking.net support!");
         if (!parameter.contains("/d/")) {
             Form capForm = new Form();
             capForm.put("post-protect", "1");
