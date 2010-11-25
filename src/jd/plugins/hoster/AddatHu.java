@@ -23,16 +23,14 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "addat.hu" }, urls = { "http://[\\w\\.]*?addat.hu/.+/.+" }, flags = { 0 })
 public class AddatHu extends PluginForHost {
-
-    private String id;
 
     public AddatHu(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,14 +40,6 @@ public class AddatHu extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.addat.hu/";
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        String url = link.getDownloadURL();
-        Regex regex = new Regex(url, ".*addat.hu/(.*)/");
-        id = regex.getMatch(0);
-        link.setUrlDownload("http://addat.hu/" + id + "/freedownload");
     }
 
     @Override
@@ -68,11 +58,15 @@ public class AddatHu extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex(Pattern.compile("<a href=\"(.*)\">\\s*<img border=\"0\" src=\"/images/letoltes_btn.jpg\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("id=\"lnkFree\" href=\"(.*?)\"").getMatch(0);
+        String id = new Regex(dllink, ".*addat.hu/(.*)/").getMatch(0);
+        if (dllink == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Just to bypass their little protection
-        String activation = "http://addat.hu/stmch.php?id=" + id;
+        String activation = "http://addat.hu/stmch.php?id=" + id + "&_dc=" + System.currentTimeMillis();
         br.getPage(activation);
+        if (dllink.endsWith("freedownload")) {
+            dllink = dllink.substring(0, dllink.lastIndexOf("/"));
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl.startDownload();

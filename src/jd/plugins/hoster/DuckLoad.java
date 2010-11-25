@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.BrowserAdapter;
@@ -35,7 +36,8 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/[a-z0-9]+|(divx|play)/[A-Z0-9\\.-]+|[a-zA-Z0-9\\.]+)" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
 
-    private static final String MAINPAGE = "http://duckload.com/";
+    private static final String MAINPAGE  = "http://duckload.com/";
+    private static final String FLASHPAGE = "http://flash.duckload.com/video/";
 
     public DuckLoad(final PluginWrapper wrapper) {
         super(wrapper);
@@ -55,7 +57,6 @@ public class DuckLoad extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.requestFileInformation(downloadLink);
-        int waitThis = 20;
         String dllink = null;
         // Filedownload now with recaptcha and without waittime
         if (downloadLink.getDownloadURL().contains("/download/")) {
@@ -94,7 +95,7 @@ public class DuckLoad extends PluginForHost {
             }
         } else {
             this.br.setFollowRedirects(true);
-            waitThis = 10;
+            int waitThis = 20;
             final String wait = this.br.getRegex("id=\"number\">(\\d+)</span> seconds").getMatch(0);
             if (wait != null) {
                 waitThis = Integer.parseInt(wait);
@@ -109,16 +110,22 @@ public class DuckLoad extends PluginForHost {
             dllink = this.br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
             // swf-Download
             if ((dllink == null) && this.br.containsHTML("duckloadplayer\\.swf")) {
-                final String[] dl_id = this.br.getRequest().getUrl().getPath().split("/");
-                final String appendLink = "undefined&showTopBar=undefined";
-                dllink = "http://flash.duckload.com/video/video_api.php?id=" + dl_id[dl_id.length - 1] + "&cookie=";
-                this.br.getPage(dllink + appendLink);
-                final String part1 = this.br.getRegex("ident\":\\ \"(.*?)\",").getMatch(0);
-                final String part2 = this.br.getRegex("link\":\\ \"(.*?)\"").getMatch(0).replace("\\/", "/");
-                dllink = "http://dl" + part1 + ".duckload.com" + part2;
-                if ((part1 == null) || (part2 == null)) {
-                    dllink = null;
+                final long cache = System.currentTimeMillis();
+                final String id = this.br.getURL().substring(this.br.getURL().lastIndexOf("/") + 1);
+                final String md5 = JDHash.getMD5(id + cache + "SuperSecretSalt");
+                final long random = cache / 2 + 7331;
+                dllink = DuckLoad.FLASHPAGE + "api.php?id=" + id + "&random=" + random + "&md5=" + md5 + "&cache=" + cache;
+                this.br.getHeaders().put("Referer", DuckLoad.FLASHPAGE + "duckloadplayer.swf?id=" + id + "&cookie=/[[DYNAMIC]]/3");
+                this.br.getHeaders().put("x-flash-version", "10,1,53,64");
+                this.br.getPage(dllink);
+                this.br.getHeaders().clear();
+                final String part1 = this.br.getRegex("ident\":\"(.*?)\",").getMatch(0);
+                String part2 = this.br.getRegex("link\":\"(.*?)\"").getMatch(0);
+                if (part2 != null) {
+                    part2 = part2.replace("\\/", "/");
                 }
+                dllink = "http://dl" + part1 + ".duckload.com" + part2;
+                if ((part1 == null) || (part2 == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             } else {
                 final String part1 = this.br.getRegex("\\'ident=(.*?)\\';").getMatch(0);
                 final String part2 = this.br.getRegex("\\'token=(.*?)\\&\\';").getMatch(0);
