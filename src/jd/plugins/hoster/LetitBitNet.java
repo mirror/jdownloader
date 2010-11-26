@@ -228,6 +228,10 @@ public class LetitBitNet extends PluginForHost {
             }
             sleep((waitThat + 5) * 1001, downloadLink);
             prepareBrowser(br);
+            /*
+             * this causes issues in 09580 stable, no workaround known, please
+             * update to latest jd version
+             */
             br.postPage("http://letitbit.net/ajax/download3.php", "");
             /* letitbit and vipfile share same hosting server ;) */
             /* because there can be another link to a downlodmanager first */

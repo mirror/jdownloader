@@ -77,6 +77,7 @@ public class Indowebster extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("But Our Download Server Can be Accessed from Indonesia Only")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download Server Can be Accessed from Indonesia Only");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
