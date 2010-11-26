@@ -33,25 +33,25 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/(files/\\d+/.+|\\#\\!download\\|\\d+\\|\\d+\\|.+?\\|\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/(files/\\d+/.+|\\#\\!download\\|\\d+.*?\\|\\d+\\|.+?\\|\\d+)" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
 
     public static class RSLink {
@@ -128,7 +128,7 @@ public class Rapidshare extends PluginForHost {
     private static String getID(final String link) {
         String ret = new Regex(link, "files/(\\d+)/").getMatch(0);
         if (ret == null) {
-            ret = new Regex(link, "\\#\\!download\\|(\\d+)\\|(\\d+)\\|(.+?)\\|").getMatch(1);
+            ret = new Regex(link, "\\#\\!download\\|(\\d+.*?)\\|(\\d+)\\|(.+?)\\|").getMatch(1);
         }
         return ret;
     }
@@ -391,7 +391,7 @@ public class Rapidshare extends PluginForHost {
 
         String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
         if (filename == null) {
-            filename = new Regex(link, "\\#\\!download\\|(\\d+)\\|(\\d+)\\|(.+?)\\|").getMatch(2);
+            filename = new Regex(link, "\\#\\!download\\|(\\d+.*?)\\|(\\d+)\\|(.+?)\\|").getMatch(2);
 
         }
         return "http://rapidshare.com/files/" + Rapidshare.getID(link) + "/" + filename;

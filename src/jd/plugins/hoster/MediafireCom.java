@@ -43,7 +43,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-
 import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
 import org.lobobrowser.html.style.AbstractCSS2Properties;
@@ -290,6 +289,7 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+
         String url = null;
         this.br.setDebug(true);
 
@@ -353,9 +353,9 @@ public class MediafireCom extends PluginForHost {
         this.requestFileInformation(downloadLink);
         this.login(account);
 
-        this.fileID = new Regex(downloadLink.getDownloadURL(), "\\?(.*)").getMatch(0);
+        this.fileID = new Regex(downloadLink.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
         if (this.fileID == null) {
-            this.fileID = new Regex(downloadLink.getDownloadURL(), "file/(.*)").getMatch(0);
+            this.fileID = new Regex(downloadLink.getDownloadURL(), "file/([^/]+)").getMatch(0);
         }
 
         this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + this.fileID);
@@ -463,7 +463,8 @@ public class MediafireCom extends PluginForHost {
         if (cookie.equals("x") || !acc.equals("MediaPro")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
             this.br.getPage("http://www.mediafire.com/myaccount/download_options.php");
-            final String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
+            String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
+            if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
             MediafireCom.CONFIGURATION_KEYS.put(account, configurationKey);
         }
 
