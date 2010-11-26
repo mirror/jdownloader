@@ -17,8 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -93,4 +97,54 @@ public class KickLoadCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 5 links at once, get request */
+                    if (index == urls.length || links.size() > 5) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("url=");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    if (c > 0) sb.append(Encoding.urlEncode("|"));
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    c++;
+                }
+                /* post seems buggy */
+                br.getPage("http://api.kickload.com/linkcheck.php?" + sb.toString());
+                String infos[][] = br.getRegex(Pattern.compile("((\\d+)?;?;?(.*?);;(.*?);;(\\d+))|((\\d+);;FILE)")).getMatches();
+                for (int i = 0; i < links.size(); i++) {
+                    DownloadLink dL = links.get(i);
+                    if (infos[i][2] == null) {
+                        /* id not in response, so its offline */
+                        dL.setAvailable(false);
+                    } else {
+                        if ("OK".equals(infos[i][2])) {
+                            dL.setFinalFileName(infos[i][3].trim());
+                            dL.setDownloadSize(Regex.getSize(infos[i][4]));
+                            dL.setAvailable(true);
+                        } else {
+                            dL.setAvailable(false);
+                        }
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
 }
