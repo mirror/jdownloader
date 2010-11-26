@@ -16,10 +16,19 @@
 
 package jd.plugins.hoster;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.zip.DataFormatException;
+import java.util.zip.InflaterInputStream;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -36,8 +45,12 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/[a-z0-9]+|(divx|play)/[A-Z0-9\\.-]+|[a-zA-Z0-9\\.]+)" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
 
-    private static final String MAINPAGE  = "http://duckload.com/";
-    private static final String FLASHPAGE = "http://flash.duckload.com/video/";
+    private static final String MAINPAGE    = "http://duckload.com/";
+    private static final String FLASHPAGE   = "http://flash.duckload.com/video/";
+    private static final String FLASHPLAYER = "http://flash.duckload.com/video/duckloadplayer.swf";
+    // private static final String FLASHPLAYER_MD5 =
+    // "8da8a269d70e3b1032dbc715a14c068f";
+    public String               aBrowser    = "";
 
     public DuckLoad(final PluginWrapper wrapper) {
         super(wrapper);
@@ -110,9 +123,10 @@ public class DuckLoad extends PluginForHost {
             dllink = this.br.getRegex("\"(http://dl\\d+\\.duckload\\.com/Get/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[A-Z0-9]+)\"").getMatch(0);
             // swf-Download
             if ((dllink == null) && this.br.containsHTML("duckloadplayer\\.swf")) {
+                // SWFDecompressor();
                 final long cache = System.currentTimeMillis() / 1000;
                 final String id = this.br.getURL().substring(this.br.getURL().lastIndexOf("/") + 1);
-                final String md5 = JDHash.getMD5(id + cache + "GoOutOfMySourceBastard");
+                final String md5 = JDHash.getMD5(id + cache + "asdf123");
                 final long random = cache / 2 + 7331;
                 dllink = DuckLoad.FLASHPAGE + "api.php?cache=" + cache + "&random=" + random + "&id=" + id + "&md5=" + md5 + "&cookie=";
                 this.br.getHeaders().put("Referer", DuckLoad.FLASHPAGE + "duckloadplayer.swf?id=" + id + "&cookie=/[[DYNAMIC]]/3");
@@ -153,12 +167,13 @@ public class DuckLoad extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         this.br.setCookie(DuckLoad.MAINPAGE, "dl_set_lang", "en");
         this.br.setFollowRedirects(true);
         this.br.getPage(link.getDownloadURL());
-        if (this.br.containsHTML("(File not found\\.|download\\.notfound)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        haveFun();
+        if (aBrowser.contains("(File not found\\.|download\\.notfound)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = this.br.getRegex("<title>(.*?) @ DuckLoad\\.com</title>").getMatch(0);
         if (filename == null) {
             filename = this.br.getRegex("Download from <strong>\"(.*?)\"</strong>").getMatch(0);
@@ -177,6 +192,57 @@ public class DuckLoad extends PluginForHost {
         else
             link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
+    }
+
+    static final String HEXES = "0123456789ABCDEF";
+
+    public void SWFDecompressor() throws IOException, DataFormatException {
+        // load swf file
+        Browser br2 = br.cloneBrowser();
+        File file = JDUtilities.getResourceFile("tmp/duckload/duckloadplayer.swf");
+        file.deleteOnExit();
+        br2.getDownload(file, FLASHPLAYER);
+        // decompress
+        try {
+            DataInputStream dis = new DataInputStream(new FileInputStream(file));
+            byte[] header = new byte[8];
+            dis.read(header);
+            DataOutputStream dos = new DataOutputStream(new FileOutputStream(file));
+            header[0] = 0x46; // 'F';
+            dos.write(header);
+            byte[] chunk = new byte[2048];
+            int bytesRead = 0;
+            InflaterInputStream decompressor = new InflaterInputStream(dis);
+            while ((bytesRead = decompressor.read(chunk)) > -1) {
+                dos.write(chunk, 0, bytesRead);
+            }
+            dos.close();
+            System.out.println("Decompressed to file: " + file);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void haveFun() throws Exception {
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("(<!--.*?-->)");
+        regexStuff.add("(type=\"hidden\".*?(name=\".*?\")?.*?value=\".*?\")");
+        regexStuff.add("display:none;\">(.*?)</span>");
+        for (String aRegex : regexStuff) {
+            aBrowser = br.toString();
+            String replaces[] = br.getRegex(aRegex).getColumn(0);
+            if (replaces != null && replaces.length != 0) {
+                for (String dingdang : replaces) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String gaMing : someStuff) {
+            aBrowser = aBrowser.replace(gaMing, "");
+        }
     }
 
     @Override
