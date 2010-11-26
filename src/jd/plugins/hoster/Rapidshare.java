@@ -56,21 +56,33 @@ public class Rapidshare extends PluginForHost {
 
     public static class RSLink {
 
-        public static RSLink parse(final String downloadURL) {
-            final RSLink ret = new RSLink(downloadURL);
-            ret.id = Integer.parseInt(new Regex(downloadURL, "files/(\\d+)/").getMatch(0));
-            ret.name = new Regex(downloadURL, "files/\\d+/(.*?)$").getMatch(0);
+        public static RSLink parse(final DownloadLink link) {
+            final RSLink ret = new RSLink(link);
+            ret.id = Integer.parseInt(new Regex(ret.url, "files/(\\d+)/").getMatch(0));
+            if (ret.link.getProperty("htmlworkaround", null) == null) {
+                /*
+                 * remove html ending, because rs now checks the complete
+                 * filename
+                 */
+                ret.name = new Regex(ret.url, "files/\\d+/(.*?)(\\.html?|$)").getMatch(0);
+
+            } else {
+                ret.name = new Regex(ret.url, "files/\\d+/(.*?)$").getMatch(0);
+            }
             return ret;
         }
 
-        private int    id;
+        private int          id;
 
-        private String name;
+        private String       name;
 
-        private String url;
+        private String       url;
 
-        public RSLink(final String downloadURL) {
-            this.url = downloadURL;
+        private DownloadLink link;
+
+        public RSLink(final DownloadLink link) {
+            this.link = link;
+            this.url = link.getDownloadURL();
         }
 
         public int getId() {
@@ -484,13 +496,13 @@ public class Rapidshare extends PluginForHost {
             this.br.setFollowRedirects(false);
             RSLink link = null;
             try {
-                link = RSLink.parse(downloadLink.getDownloadURL());
+                link = RSLink.parse(downloadLink);
             } catch (final NumberFormatException e) {
                 /* invalid link format */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
-            this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName(), null);
+            this.queryAPI(this.br, "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName(), null);
             this.handleErrors(this.br);
             // RS URL wird aufgerufen
             // this.br.getPage(link);
@@ -500,7 +512,7 @@ public class Rapidshare extends PluginForHost {
 
             this.sleep(Long.parseLong(wait) * 1000l, downloadLink);
 
-            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName();
+            final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&fileid=" + link.getId() + "&filename=" + link.getName();
 
             Plugin.logger.finest("Direct-Download: Server-Selection not available!");
             Request request = this.br.createGetRequest(directurl);
@@ -607,13 +619,13 @@ public class Rapidshare extends PluginForHost {
             this.br.setAcceptLanguage(Plugin.ACCEPT_LANGUAGE);
             RSLink link = null;
             try {
-                link = RSLink.parse(downloadLink.getDownloadURL());
+                link = RSLink.parse(downloadLink);
             } catch (final NumberFormatException e) {
                 /* invalid link format */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
-            this.queryAPI(this.br, prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie"), account);
+            this.queryAPI(this.br, prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download_v1&try=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie"), account);
             this.handleErrors(this.br);
 
             String host = this.br.getRegex("DL:(.*?),0,0,0").getMatch(0);
@@ -629,7 +641,7 @@ public class Rapidshare extends PluginForHost {
                     JDLogger.exception(e);
                 }
             }
-            final String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + downloadLink.getName() + "&cookie=" + account.getProperty("cookie");
+            final String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
 
             Plugin.logger.finest("Direct-Download: Server-Selection not available!");
             request = this.br.createGetRequest(directurl);
