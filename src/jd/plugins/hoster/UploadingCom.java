@@ -108,8 +108,8 @@ public class UploadingCom extends PluginForHost {
             /* fallback */
             ai.setValidUntil(br.getCookies("http://www.uploading.com/").get("remembered_user").getExpireDate());
         }
-        String balance=br.getRegex("Balance: <b>\\$([0-9\\.]+)+<").getMatch(0);
-        if (balance!=null){
+        String balance = br.getRegex("Balance: <b>\\$([0-9\\.]+)+<").getMatch(0);
+        if (balance != null) {
             ai.setAccountBalance(balance);
         }
         return ai;
@@ -231,6 +231,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
+
         if (urls == null || urls.length == 0) { return false; }
         try {
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -268,13 +269,8 @@ public class UploadingCom extends PluginForHost {
                     String regexForThisLink = "(\">http://uploading\\.com/files/" + fileid + ".*?/</a></td>ntttt<td>(Aktiv|active|Gelöscht|Deleted)</td>ntttt<td>.*?</td>)";
                     String theData = new Regex(correctedHTML, regexForThisLink).getMatch(0);
                     if (theData == null) {
-                        if (br.containsHTML("\"js\": \\{ \"checker_result\": \"\" \\}, \"text\": \"\" \\}")) {
-                            dl.setAvailable(false);
-                            continue;
-                        } else {
-                            logger.warning("Uploading.com availablecheck is broken!");
-                            return false;
-                        }
+                        dl.setAvailable(false);
+                        continue;
                     }
                     Regex allMatches = new Regex(theData, "\">http://uploading\\.com/files/" + fileid + "/(.*?)/</a></td>ntttt<td>(Aktiv|active|Gelöscht|Deleted)</td>ntttt<td>(.*?)</td>");
                     String status = allMatches.getMatch(1);
