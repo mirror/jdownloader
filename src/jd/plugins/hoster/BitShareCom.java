@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/files/[a-z0-9]{8}/(.*?\\.html)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/(files/[a-z0-9]{8}/(.*?\\.html)?|\\?f=[a-z0-9]{8})" }, flags = { 2 })
 public class BitShareCom extends PluginForHost {
 
     // private static final String RECAPTCHA = "/recaptcha/";
@@ -47,6 +47,11 @@ public class BitShareCom extends PluginForHost {
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://bitshare.com/premium.html");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        String fid = new Regex(link.getDownloadURL(), "bitshare\\.com/\\?f=(.+)").getMatch(0);
+        if (fid != null) link.setUrlDownload("http://bitshare.com/files/" + fid + "/.html");
     }
 
     @Override

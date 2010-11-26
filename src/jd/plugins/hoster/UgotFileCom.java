@@ -185,16 +185,16 @@ public class UgotFileCom extends PluginForHost {
                         logger.warning("Ugotfile availablecheck is broken!");
                         return false;
                     }
-                    String regexForThisLink = "(class='(green|red) (odd|even)'><td>http://ugotfile\\.com/file/" + fileid + "/.*?</td><td align='right'>.*?</td><td align='center'>(Alive|Dead)</td>)";
+                    String regexForThisLink = "(class=\\'(green|red) (odd|even)\\'><td>http://ugotfile\\.com/file/" + fileid + "/.*?</td><td align=\\'right\\'>.*?</td><td align=\\'center\\'>(Alive|Dead)</td>)";
                     String theData = br.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
                         logger.warning("Ugotfile availablecheck is broken!");
                         return false;
                     }
-                    String classx = new Regex(theData, "class='(.*?)'").getMatch(0);
-                    String status = new Regex(theData, "<td align='center'>(.*?)</td").getMatch(0);
-                    String filename = new Regex(theData, "ugotfile.com/file/\\d+/(.*?)</td>").getMatch(0);
-                    String filesize = new Regex(theData, "<td align='right'>(.*?)</td>").getMatch(0);
+                    String classx = new Regex(theData, "class=\\'(.*?)\\'").getMatch(0);
+                    String status = new Regex(theData, "<td align=\\'center\\'>(.*?)</td").getMatch(0);
+                    String filename = new Regex(theData, "ugotfile\\.com/file/\\d+/(.*?)</td>").getMatch(0);
+                    String filesize = new Regex(theData, "<td align=\\'right\\'>(.*?)</td>").getMatch(0);
                     if (filename == null || filesize == null) {
                         logger.warning("Ugotfile availablecheck is broken!");
                         dl.setAvailable(false);
