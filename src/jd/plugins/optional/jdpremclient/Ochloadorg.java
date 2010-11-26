@@ -13,12 +13,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
@@ -30,6 +30,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     private static final Object      LOCK                = new Object();
     private static final int         MAXDOWNLOADS        = 5;
     private volatile static int      currentMaxDownloads = MAXDOWNLOADS;
+    private boolean                  counted             = false;
 
     public Ochloadorg(PluginWrapper wrapper) {
         super(wrapper);
@@ -191,7 +192,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             while (true) {
                 showMessage(link, "ConnectTry: " + conTry);
                 try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&nick=" + login + "&pass=" + pw + "&url=" + url, false, 1);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&jd=1&nick=" + login + "&pass=" + pw + "&url=" + url, false, 1);
                     break;
                 } catch (Throwable e) {
                     try {
@@ -209,11 +210,16 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 logger.severe(br.toString());
                 String error = Encoding.urlEncode(br.toString());
                 /* post error message to api */
-                br.postPage("http://www.ochload.org/?apiv2&method=reportError", "hoster=" + link.getHost() + "&error=" + error + "&nick=" + Encoding.urlEncode(acc.getUser())+"&link="+Encoding.urlEncode(link.getDownloadURL()));
+                br.postPage("http://www.ochload.org/?apiv2&method=reportError", "hoster=" + link.getHost() + "&error=" + error + "&nick=" + Encoding.urlEncode(acc.getUser()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
                 synchronized (LOCK) {
                     premiumHosts.remove(link.getHost());
                 }
                 return false;
+            }
+            try {
+                if (!counted) br.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(acc.getUser()));
+                counted = true;
+            } catch (Exception e) {
             }
             dl.startDownload();
             return true;
@@ -285,10 +291,6 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 ac.setStatus("Account invalid");
                 resetAvailablePremium();
             } else {
-                try {
-                    br.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(account.getUser()));
-                } catch (Exception e) {
-                }
                 String infos[] = new Regex(page, "(.*?):(.*?):(.+)").getRow(0);
                 ac.setValidUntil(Long.parseLong(infos[2]) * 1000);
                 boolean megaupload = "1".equalsIgnoreCase(infos[1]);
