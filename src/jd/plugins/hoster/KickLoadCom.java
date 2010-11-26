@@ -24,22 +24,25 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kickload.com" }, urls = { "http://[\\w\\.]*?kickload\\.com/(file/\\d+/.+|get/[A-Za-z0-9]+/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kickload.com" }, urls = { "http://[\\w\\.]*?kickload\\.com/(file/\\d+/.+|get/[A-Za-z0-9]+/.+)" }, flags = { 2 })
 public class KickLoadCom extends PluginForHost {
     private static final String MAINPAGE            = "http://kickload.com/";
     private static final String PREMIUMONLYTEXT     = "To download this file you need a premium account";
     private static final String PREMIUMONLYUSERTEXT = "Only available for premium users";
+    private static final String POSTPAGEREGEX       = "\"(http://srv\\d+\\.kickload\\.com/download\\.php\\?ticket=.*?)\"";
 
     public KickLoadCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://kickload.com/premium/");
     }
 
     @Override
@@ -48,53 +51,93 @@ public class KickLoadCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie(MAINPAGE, "lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h2>This file couldn.t be found\\!</h2>|exit o has been deleted\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Download (.*?) \\(.*?\\) - kickload\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        String filesize = br.getRegex("<title>Download .*? \\(([0-9\\.]+ .*?)\\) - kickload\\.com</title>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("class=\"download_details\">File size: (.*?) -  Downloads").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (!filesize.equals("unknow")) link.setDownloadSize(Regex.getSize(filesize));
-        String md5 = br.getRegex("id=\"md5\">\\((.*?)\\)").getMatch(0);
-        if (md5 != null && !md5.equals("")) link.setMD5Hash(md5.trim());
-        if (br.containsHTML(PREMIUMONLYTEXT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.kickloadcom.nofreedownloadlink", PREMIUMONLYUSERTEXT));
-        return AvailableStatus.TRUE;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return downloadLink.getAvailableStatus();
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         br.postPage(downloadLink.getDownloadURL(), "free_download=1&free_download1.x=&free_download1.y=&free_download1=1");
         if (br.containsHTML("(ou are already downloading a file\\.|Please, wait until the file has been loaded\\.</h2>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
-        String postPage = br.getRegex("\"(http://srv\\d+\\.kickload\\.com/download\\.php\\?ticket=.*?)\"").getMatch(0);
-        String ticket = br.getRegex("\\?ticket=(.*?)\"").getMatch(0);
-        if (ticket == null) ticket = br.getRegex("name=\"ticket\" id=\"ticket\" value=\"(.*?)\"").getMatch(0);
+        String postPage = br.getRegex(POSTPAGEREGEX).getMatch(0);
+        String ticket = getTicket();
         if (ticket == null || postPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postPage, "ticket=" + ticket + "&x=&y=", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getURL().contains("error=filedontexist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    private String getTicket() {
+        String ticket = br.getRegex("\\?ticket=(.*?)\"").getMatch(0);
+        if (ticket == null) ticket = br.getRegex("name=\"ticket\" id=\"ticket\" value=\"(.*?)\"").getMatch(0);
+        return ticket;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie(MAINPAGE, "lang", "en");
+        br.postPage("http://kickload.com/login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login=1&x=0&y=0");
+        if (br.getCookie(MAINPAGE, "email") == null || br.getCookie(MAINPAGE, "password") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://kickload.com/settings/");
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("<strong>Valid until</strong></td>[\t\n\r ]+<td width=\"354\">([0-9-]+)</td>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setStatus("Premium User");
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM-dd-yyyy", null));
+        }
+        return ai;
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        final boolean resumable = true;
+        final int maxchunks = 1;
+        String dllink = br.getRedirectLocation();
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        } else {
+            String postPage = br.getRegex(POSTPAGEREGEX).getMatch(0);
+            String ticket = getTicket();
+            if (ticket == null || postPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, postPage, "ticket=" + ticket + "&x=&y=", resumable, maxchunks);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.getURL().contains("error=filedontexist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -147,4 +190,23 @@ public class KickLoadCom extends PluginForHost {
         }
         return true;
     }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+    }
+
 }
