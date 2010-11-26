@@ -215,11 +215,11 @@ public class UgotFileCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        }
+        } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.getAvailableStatus();
     }
 

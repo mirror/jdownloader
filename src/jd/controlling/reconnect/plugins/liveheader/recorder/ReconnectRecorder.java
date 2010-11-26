@@ -27,11 +27,11 @@ import jd.parser.Regex;
 public class ReconnectRecorder {
 
     static public Vector<String> steps;
-    static boolean running = false;
-    static ServerSocket Server_Socket_HTTP;
-    static ServerSocket Server_Socket_HTTPS;
-    static final String PROPERTY_PORT = "PARAM_PORT";
-    static String AUTH;
+    static boolean               running       = false;
+    static ServerSocket          Server_Socket_HTTP;
+    static ServerSocket          Server_Socket_HTTPS;
+    static final String          PROPERTY_PORT = "PARAM_PORT";
+    static String                AUTH;
 
     static public void startServer(String serverip, final boolean rawmode) {
         steps = new Vector<String>();
@@ -55,6 +55,7 @@ public class ReconnectRecorder {
     }
 
     static public void stopServer() {
+        if (running == false) return;
         running = false;
         if (steps != null) {
             steps.add("[[[/HSRC]]]");
@@ -72,11 +73,11 @@ public class ReconnectRecorder {
     }
 
     static public class JDRRServer extends Thread {
-        final ServerSocket Server_Socket;// = null;
-        final String serverip;
-        final int port;
-        final boolean ishttps;// = false;
-        final boolean israw;// = false;
+        final ServerSocket Server_Socket; // = null;
+        final String       serverip;
+        final int          port;
+        final boolean      ishttps;      // = false;
+        final boolean      israw;        // = false;
 
         public JDRRServer(final ServerSocket Server_Socket, final String server, final int port, final boolean ishttps, final boolean israw) {
             this.Server_Socket = Server_Socket;

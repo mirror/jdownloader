@@ -32,7 +32,6 @@ public class VideoGoogle extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, DLLINK, true, 0);
         if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("video")) {
             br.followConnection();
-            this.dl.getConnection().disconnect();
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.videogoogle.videotemporaryunavailable", "This video is temporary unavailable!"), 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

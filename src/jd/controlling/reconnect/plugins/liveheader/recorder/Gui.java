@@ -46,6 +46,7 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 
 public class Gui extends AbstractDialog<Object> {
 
@@ -97,12 +98,12 @@ public class Gui extends AbstractDialog<Object> {
         private RRStatus          statusicon;
 
         public JDRRInfoPopup() {
-            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON | UserIO.NO_OK_OPTION, JDL.L("gui.config.jdrr.status.title", "Recording Status"), null, null, JDL.L("gui.btn_abort", "Abort"));
+            super(UserIO.NO_ICON | UserIO.NO_OK_OPTION, JDL.L("gui.config.jdrr.status.title", "Recording Status"), null, null, JDL.L("gui.btn_abort", "Abort"));
 
         }
 
         public void closePopup() {
-            ReconnectRecorder.stopServer();
+
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     JDRRInfoPopup.this.cancelButton.setEnabled(false);
@@ -154,7 +155,7 @@ public class Gui extends AbstractDialog<Object> {
         }
 
         protected void setReturnmask(final boolean b) {
-
+            ReconnectRecorder.stopServer();
             super.setReturnmask(b);
             if (!b) {
                 this.closePopup();
@@ -179,6 +180,7 @@ public class Gui extends AbstractDialog<Object> {
                         if (IPController.getInstance().validate()) {
                             JDRRInfoPopup.this.statusicon.setStatus(1);
                             if (ReconnectRecorder.running == true) {
+                                ReconnectRecorder.stopServer();
                                 JDRRInfoPopup.this.closePopup();
                             }
                             return;
@@ -330,7 +332,7 @@ public class Gui extends AbstractDialog<Object> {
                 } catch (final Exception e1) {
                     JDLogger.exception(e1);
                 }
-                new JDRRInfoPopup();
+                Dialog.getInstance().showDialog(new JDRRInfoPopup());
                 return;
             }
         }
