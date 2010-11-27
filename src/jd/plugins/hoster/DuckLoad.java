@@ -113,7 +113,7 @@ public class DuckLoad extends PluginForHost {
             if ((dllink == null) && this.br.containsHTML("duckloadplayer\\.swf")) {
                 final long cache = System.currentTimeMillis() / 1000;
                 final String id = this.br.getURL().substring(this.br.getURL().lastIndexOf("/") + 1);
-                final String md5 = JDHash.getMD5(id + cache + "asdf123");
+                final String md5 = JDHash.getMD5(id + cache + "JDSUCKS");
                 final long random = cache / 2 + 7331;
                 dllink = DuckLoad.FLASHPAGE + "api.php?cache=" + cache + "&random=" + random + "&id=" + id + "&md5=" + md5 + "&cookie=";
                 this.br.getHeaders().put("Referer", DuckLoad.FLASHPAGE + "duckloadplayer.swf?id=" + id + "&cookie=/[[DYNAMIC]]/3");
@@ -186,7 +186,7 @@ public class DuckLoad extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("(<!--.*?-->)");
         regexStuff.add("(type=\"hidden\".*?(name=\".*?\")?.*?value=\".*?\")");
-        regexStuff.add("display:none;\">(.*?)</span>");
+        regexStuff.add("display:none;\">(.*?)</(div|span)>");
         for (String aRegex : regexStuff) {
             aBrowser = br.toString();
             String replaces[] = br.getRegex(aRegex).getColumn(0);
