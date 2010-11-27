@@ -21,7 +21,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -41,7 +45,7 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkstore.us" }, urls = { "http://(www\\.)?linkstore\\.us/([a-z0-9]+(-m\\d+)?|load\\?[a-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkstore.us" }, urls = { "http://(www\\.)?linkstore\\.us/(load\\?[a-z0-9]+|[a-z0-9]+(-m\\d+)?)" }, flags = { 0 })
 public class LinkStoreUs extends PluginForDecrypt {
 
     public LinkStoreUs(PluginWrapper wrapper) {
@@ -64,6 +68,7 @@ public class LinkStoreUs extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookie("http://linkstore.us/", "lang", "en");
         br.setFollowRedirects(false);
+        br.setCustomCharset("utf-8");
         br.getPage(parameter);
         if (br.containsHTML("<h2>Folder not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (parameter.matches(".*?linkstore\\.us/[a-z0-9]+(-m\\d+)?")) {
@@ -99,7 +104,7 @@ public class LinkStoreUs extends PluginForDecrypt {
             if (br.containsHTML(CIRCLECAPTCHATEXT) || br.containsHTML(PASSWORDTEXT) || br.containsHTML(RECAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
             // Mirrorlink: Find all mirrors and give the links back to the
             // decrypter (new modules will be started)
-            String mirrors[] = br.getRegex("class=\\'mirrortable\\' onclick=\\'self\\.location\\.href=\"(r\\d+ut-m\\d+)\"\\'").getColumn(0);
+            String mirrors[] = br.getRegex("class=\\'mirrortable\\' onclick=\\'self\\.location\\.href=\"([a-z0-9-]+)(\\&[a-zA-Z0-9]+\"|\")\\'").getColumn(0);
             if (mirrors != null && mirrors.length != 0) {
                 logger.info("Found mirrorlinks, decrypting...");
                 for (String mirror : mirrors)
@@ -126,7 +131,7 @@ public class LinkStoreUs extends PluginForDecrypt {
             logger.info("Failed to get the links via DLC, trying webdecryption...");
             // Hier wird geschaut ob die Links unverschlüsselt auf der Seite
             // stehen (kann vorkommen)
-            String uncryptedLinksPagepiece = br.getRegex("class=\\'textarea linklist\\' rows=5 wrap=\\'off\\' readonly>(.*?)</textarea></div><br><br><br").getMatch(0);
+            String uncryptedLinksPagepiece = br.getRegex("class=\\'textarea linklist\\'.+readonly>(.*?)</textarea></div><br><br><br").getMatch(0);
             String[] uncryptedLinks = null;
             if (uncryptedLinksPagepiece != null) uncryptedLinks = HTMLParser.getHttpLinks(uncryptedLinksPagepiece, "");
             if (uncryptedLinks != null && uncryptedLinks.length != 0) {
@@ -138,7 +143,7 @@ public class LinkStoreUs extends PluginForDecrypt {
                 }
             } else {
                 logger.info("Didn't find any uncrypted links...doing it the hard way!");
-                String[] links = br.getRegex("\\'(load\\?[a-z0-9]+)\\'").getColumn(0);
+                String[] links = br.getRegex("\\'(load\\?[a-zA-Z0-9]+)(\\&|\\')").getColumn(0);
                 if (links == null || links.length == 0) links = br.getRegex("</div></td><td width=\\'100\\' ><a href=\\'(.*?)\\'").getColumn(0);
                 if (links == null || links.length == 0) {
                     logger.warning("Couldn't find any crypted links...");
@@ -180,10 +185,38 @@ public class LinkStoreUs extends PluginForDecrypt {
             return null;
         }
         br.getPage(MAINPAGE + nextLink);
-        System.out.print(br.toString());
-        // Hier muss ein JS Decrypter rein ;)
-        String finallink = null;
+        String unescape = br.getRegex("eval\\(unescape\\(\"(.*?)\"\\)\\)").getMatch(0);
+        if (unescape == null) return null;
+        unescape = Encoding.htmlDecode(unescape);
+        if (unescape.contains("document.write")) {
+            unescape = unescape.substring(0, unescape.lastIndexOf("}") + 1);
+        }
+        String finallink = javascript(unescape);
+        if (finallink.contains("URL")) {
+            finallink = new Regex(finallink, "URL=(.*?)'").getMatch(0);
+        } else {
+            logger.warning("Finallink regex broken!");
+            System.out.print(finallink);
+            return null;
+        }
         return finallink;
+    }
+
+    private String javascript(String fun) throws IOException {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            result = engine.eval(fun);
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            return null;
+        }
+        if (result == null) {
+            logger.warning("Javascript: result is null...");
+            return null;
+        }
+        return result.toString();
     }
 
     private ArrayList<DownloadLink> loadcontainer(String theLink, String format) throws IOException, PluginException {
