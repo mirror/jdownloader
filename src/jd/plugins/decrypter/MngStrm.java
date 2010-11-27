@@ -8,6 +8,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "http://[\\w\\.]*?mangastream\\.com/read/.*?/\\d+" }, flags = { 0 })
@@ -48,6 +49,9 @@ public class MngStrm extends PluginForDecrypt {
             }
             progress.increase(1);
         }
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName(title.trim());
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }
