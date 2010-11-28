@@ -65,7 +65,7 @@ public class JDExternInterface extends PluginOptional {
     private RequestHandler      handler;
     private HttpServer          server    = null;
     private final static String LOCALONLY = "localonly";
-    private static String       jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/JDownloader.jar";
+    private static String       jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
     public JDExternInterface(PluginWrapper wrapper) {
         super(wrapper);

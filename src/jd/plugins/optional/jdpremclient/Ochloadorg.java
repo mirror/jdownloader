@@ -30,7 +30,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     private static final Object      LOCK                = new Object();
     private static final int         MAXDOWNLOADS        = 5;
     private volatile static int      currentMaxDownloads = MAXDOWNLOADS;
-    private boolean                  counted             = false;
+    private static boolean           counted             = false;
 
     public Ochloadorg(PluginWrapper wrapper) {
         super(wrapper);
@@ -222,7 +222,9 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 return false;
             }
             try {
-                if (!counted) br.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(acc.getUser()));
+                Browser br2 = br.getNewBrowser(br);
+                br2.setFollowRedirects(true);
+                if (!counted) br2.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(acc.getUser()));
                 counted = true;
             } catch (Exception e) {
             }
