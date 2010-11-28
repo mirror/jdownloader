@@ -63,7 +63,7 @@ public class FuFoxCom extends PluginForHost {
         if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(downloadLink.getDownloadURL(), "code=" + getCaptchaCode("http://www.fufox.com/code.php", downloadLink));
         if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        Regex allData = br.getRegex("onclick=\"timingout2\\(\\'(\\d+)\\',\\'(.*?)\\',\\'(.*?)\\',\\'(.*?)\\',\\'(.*?)\\'\\);");
+        Regex allData = br.getRegex("onclick=\"timingout2?\\(\\'(\\d+)\\',\\'(.*?)\\',\\'(.*?)\\',\\'(.*?)\\',\\'(.*?)\\'\\);");
         String name = allData.getMatch(1);
         String password = allData.getMatch(2);
         String filename = allData.getMatch(3);
