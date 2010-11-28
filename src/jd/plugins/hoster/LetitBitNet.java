@@ -134,7 +134,7 @@ public class LetitBitNet extends PluginForHost {
         br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
             // Get to the premium zone
-            br.postPage(downloadLink.getDownloadURL(), "if_not_ru=1");
+            br.postPage(downloadLink.getDownloadURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
             /* normal account with only a password */
             logger.info("Premium with pw only");
             Form premiumform = null;
@@ -149,6 +149,11 @@ public class LetitBitNet extends PluginForHost {
             if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             premiumform.put("pass", Encoding.urlEncode(account.getPass()));
             br.submitForm(premiumform);
+            String iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=\\&emergency_mode=)\"").getMatch(0);
+            if (iFrame != null) {
+                logger.info("Found iframe, accessing it...");
+                br.getPage("http://letitbit.net" + iFrame);
+            }
             dlUrl = getUrl(account);
         } else {
             /* account login */

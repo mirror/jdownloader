@@ -196,7 +196,6 @@ public class LinkStoreUs extends PluginForDecrypt {
             finallink = new Regex(finallink, "URL=(.*?)'").getMatch(0);
         } else {
             logger.warning("Finallink regex broken!");
-            System.out.print(finallink);
             return null;
         }
         return finallink;

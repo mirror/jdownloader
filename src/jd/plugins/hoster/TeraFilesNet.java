@@ -72,7 +72,7 @@ public class TeraFilesNet extends PluginForHost {
         String sessID = br.getRegex("sessdl=([a-z0-9]+)\\'").getMatch(0);
         if (fileID == null || sessID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.terafiles.net/ftp_download.php?id=" + fileID + "&sessdl=" + sessID);
-        if (br.containsHTML("Warning</b>:  include(includes-download/captcha_error.php)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
+        if (br.containsHTML("Warning</b>:  include(includes-download/captcha_error\\.php)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
         String dllink = br.getRegex("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"\\d+;URL=(ftp://.*?)\">").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex(">Connexion au serveur FTP en cours\\. Merci de patienter\\.<br /><a href=\"(ftp://.*?)\"").getMatch(0);
