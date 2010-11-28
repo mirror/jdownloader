@@ -302,6 +302,21 @@ public class SimpleFTP {
         return true;
     }
 
+    public long getSize(String file) throws IOException {
+        sendLine("SIZE " + file);
+        String Size = null;
+        try {
+            Size = readLines(new int[] { 213 }, "SIZE failed");
+        } catch (IOException e) {
+            if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) {
+                JDLogger.exception(e);
+                return -1;
+            }
+        }
+        String[] split = Size.split(" ");
+        return Long.parseLong(split[1].trim());
+    }
+
     /**
      * Sends a raw command to the FTP server.
      */

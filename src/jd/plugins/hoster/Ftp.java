@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.FtpEvent;
 import jd.nutils.FtpListener;
 import jd.nutils.JDHash;
@@ -35,6 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.plugins.download.DownloadInterface.Chunk;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.+/.+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
@@ -56,11 +58,34 @@ public class Ftp extends PluginForHost {
         try {
             URL url = new URL(downloadLink.getDownloadURL());
             ftp.connect(url);
-
-            String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
-            if (list == null) return AvailableStatus.FALSE;
-            downloadLink.setDownloadSize(Long.parseLong(list[4]));
-            downloadLink.setFinalFileName(list[6]);
+            String name = null;
+            if (oldStyle()) {
+                String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
+                if (list != null) {
+                    /* list command worked */
+                    name = new Regex(downloadLink.getDownloadURL(), ".*/(.+)").getMatch(0);
+                    if (name == null) {
+                        logger.severe("could not get filename from ftpurl");
+                        name = downloadLink.getName();
+                    }
+                    name = Encoding.urlDecode(name, false);
+                    downloadLink.setFinalFileName(name);
+                    downloadLink.setDownloadSize(Long.parseLong(list[4]));
+                }
+            } else {
+                /* switch binary mode */
+                ftp.bin();
+                /*
+                 * some servers do not allow to list the folder, so this may
+                 * fail but file still might be online
+                 */
+                long size = ftp.getSize(Encoding.urlDecode(url.getPath(), false));
+                if (size != -1) {
+                    downloadLink.setDownloadSize(size);
+                    name = Encoding.urlDecode(url.getPath(), false);
+                }
+            }
+            if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -75,19 +100,58 @@ public class Ftp extends PluginForHost {
         download(downloadLink.getDownloadURL(), downloadLink);
     }
 
+    /* old simpleftp does not have size command support */
+    private boolean oldStyle() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
+    }
+
     public void download(String ftpurl, final DownloadLink downloadLink) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
 
         try {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
+            String name = null;
             ftp.connect(url);
-            String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
-            if (list == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setDownloadSize(Long.parseLong(list[4]));
-            String path = Encoding.urlDecode(url.getPath().substring(0, url.getPath().lastIndexOf("/")), false);
-            if (path.length() > 0) ftp.cwd(path);
-            ftp.bin();
+            if (oldStyle()) {
+                String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
+                if (list != null) {
+                    /* list command worked */
+                    name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
+                    if (name == null) {
+                        logger.severe("could not get filename from ftpurl");
+                        name = downloadLink.getName();
+                    }
+                    name = Encoding.urlDecode(name, false);
+                    downloadLink.setFinalFileName(name);
+                    downloadLink.setDownloadSize(Long.parseLong(list[4]));
+                    String path = Encoding.urlDecode(url.getPath().substring(0, url.getPath().lastIndexOf("/")), false);
+                    if (path.length() > 0) ftp.cwd(path);
+                    /* switch binary mode */
+                    ftp.bin();
+                }
+            } else {
+                /* switch binary mode */
+                ftp.bin();
+                /*
+                 * some servers do not allow to list the folder, so this may
+                 * fail but file still might be online
+                 */
+                long size = ftp.getSize(Encoding.urlDecode(url.getPath(), false));
+                if (size != -1) {
+                    downloadLink.setDownloadSize(size);
+                    name = Encoding.urlDecode(url.getPath(), false);
+                }
+            }
+            if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             try {
                 ftp.getBroadcaster().addListener(new FtpListener() {
 
@@ -115,6 +179,11 @@ public class Ftp extends PluginForHost {
             }
 
             File tmp;
+            /*
+             * we need dummy browser for RAFDownload, else nullpointer will
+             * happen
+             */
+            br = new Browser();
             dl = new RAFDownload(this, downloadLink, null);
             dl.setResume(false);
 
@@ -128,12 +197,7 @@ public class Ftp extends PluginForHost {
             };
             ch.setInProgress(true);
             dl.getChunks().add(ch);
-            String name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
-            if (name == null) {
-                logger.severe("could not get filename from ftpurl");
-                name = downloadLink.getName();
-            }
-            name = Encoding.urlDecode(name, false);
+
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 ftp.download(name, tmp = new File(downloadLink.getFileOutput() + ".part"));

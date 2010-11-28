@@ -203,6 +203,11 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 }
                 this.sleep(15 * 1000l, link, "Error, wait and retry");
             }
+            if (dl.getConnection().getResponseCode() == 404) {
+                /* file offline */
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!dl.getConnection().isContentDisposition()) {
                 /* unknown error */
                 br.followConnection();

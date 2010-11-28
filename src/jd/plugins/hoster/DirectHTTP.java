@@ -119,7 +119,7 @@ public class DirectHTTP extends PluginForHost {
                 // workaround
                 final String code = new DirectHTTP(PluginWrapper.getWrapper(plg.getClass().getName())).getCaptchaCode(plg.getHost(), dest, 0, downloadLink, "", "Please enter both words");
 
-                if (code == null || code.length() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed"); }
+                if (code == null || code.length() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed", 10 * 1000l); }
                 this.setCode(code);
 
             }
