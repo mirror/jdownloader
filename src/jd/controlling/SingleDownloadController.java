@@ -150,7 +150,7 @@ public class SingleDownloadController extends Thread {
                         throw e;
                     }
                 }
-            } catch (PluginException e) {               
+            } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
                 if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
@@ -664,11 +664,11 @@ public class SingleDownloadController extends Thread {
                     linkStatus.setInProgress(true);
                 }
                 handlePlugin();
-                fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
                 plugin.clean();
             }
             if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
         } finally {
+            fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
             linkStatus.setInProgress(false);
             linkStatus.setActive(false);
             /* cleanup the DownloadInterface/Controller references */

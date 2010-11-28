@@ -143,8 +143,11 @@ public class ShareOnlineBiz extends PluginForHost {
             ai.setStatus(infos.get("group"));
             return ai;
         } catch (PluginException e) {
-            /* catch all except account invalid errors */
-            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+            /* workaround for stable */
+            DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
+            LinkStatus linkState = new LinkStatus(tmpLink);
+            e.fillLinkStatus(linkState);
+            if (linkState.hasStatus(LinkStatus.ERROR_PREMIUM)) {
                 account.setValid(false);
                 return ai;
             }

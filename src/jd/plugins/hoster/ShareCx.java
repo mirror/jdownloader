@@ -136,14 +136,17 @@ public class ShareCx extends PluginForHost {
             }
             dl.startDownload();
         } catch (Exception e) {
-
             if (e instanceof PluginException) {
-                if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                PluginException ee = (PluginException) e;
+                /* workaround for stable */
+                DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
+                LinkStatus linkState = new LinkStatus(tmpLink);
+                ee.fillLinkStatus(linkState);
+                if (linkState.hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT)) {
                     failedCounter.incrementAndGet();
                 }
             } else {
                 failedCounter.incrementAndGet();
-
             }
             throw e;
         }

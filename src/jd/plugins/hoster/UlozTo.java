@@ -51,6 +51,10 @@ public class UlozTo extends PluginForHost {
     public boolean rewriteHost(DownloadLink link) {
         if (link.getHost().contains("ulozto.sk") || link.getHost().contains("ulozto.cz") || link.getHost().contains("ulozto.net")) {
             correctDownloadLink(link);
+            /*
+             * not in public version, but rewriteHost is not used in 09580, so
+             * no problem
+             */
             link.setHost("uloz.to");
             return true;
         }

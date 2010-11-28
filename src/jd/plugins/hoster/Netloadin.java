@@ -530,7 +530,11 @@ public class Netloadin extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (PluginException e) {
             /* workaround for buggy api */
-            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+            /* workaround for stable */
+            DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
+            LinkStatus linkState = new LinkStatus(tmpLink);
+            e.fillLinkStatus(linkState);
+            if (linkState.hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                 return websiteFileCheck(downloadLink);
             } else {
                 throw e;

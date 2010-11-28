@@ -54,10 +54,14 @@ public class MegaVideo extends PluginForHost {
     }
 
     private void antiJDBlock(Browser br) {
-        if (br == null) return;
-        br.getHeaders().put("User-Agent", agent);
-        br.setAcceptLanguage("en-us,de;q=0.7,en;q=0.3");
-        br.setCookie("http://www.megavideo.com", "l", "en");
+        try {
+            if (br == null) return;
+            br.getHeaders().put("User-Agent", agent);
+            br.setAcceptLanguage("en-us,de;q=0.7,en;q=0.3");
+            br.setCookie("http://www.megavideo.com", "l", "en");
+        } catch (Throwable e) {
+            /* setCookie throws exception in 09580 */
+        }
     }
 
     public String getDownloadID(DownloadLink link) throws MalformedURLException {
@@ -74,7 +78,9 @@ public class MegaVideo extends PluginForHost {
             }
         }
         if (ret == null) ret = "";
-        if (ret.length() > 8) {ret = ret.substring(0, 8 );}
+        if (ret.length() > 8) {
+            ret = ret.substring(0, 8);
+        }
         return ret.toUpperCase();
     }
 
@@ -152,7 +158,7 @@ public class MegaVideo extends PluginForHost {
         }
         if (!link.getName().endsWith("." + JDIO.getFileExtension(link.getName()))) {
             link.setName(link.getName() + ".flv");
-        }    
+        }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
         if (dl.getConnection().getContentLength() == -1) {
@@ -203,7 +209,7 @@ public class MegaVideo extends PluginForHost {
             name = "MegaVideoClip_" + System.currentTimeMillis();
         }
         if (brc.containsHTML("hd=\"1\"")) {
-            name = name + " (HD)";           
+            name = name + " (HD)";
         }
         if (brc.containsHTML("error=\"1\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String size = brc.getRegex("size=\"(\\d+)\"").getMatch(0);

@@ -355,7 +355,7 @@ public class HotFileCom extends PluginForHost {
             Plugin.logger.severe(finalUrls);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String dlUrls[] = org.appwork.utils.Regex.getLines(finalUrls);
+        final String dlUrls[] = Regex.getLines(finalUrls);
         final StringBuilder errorSb = new StringBuilder("");
         if (dlUrls == null || dlUrls.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         boolean contentHeader = false;
@@ -482,13 +482,17 @@ public class HotFileCom extends PluginForHost {
     }
 
     private void prepareBrowser(final Browser br) {
-        if (br == null) { return; }
-        br.setCookie("http://hotfile.com", "lang", "en");
-        br.getHeaders().put("User-Agent", ua);
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
-        br.getHeaders().put("Pragma", null);
-        br.getHeaders().put("Cache-Control", null);
+        try {
+            if (br == null) { return; }
+            br.setCookie("http://hotfile.com", "lang", "en");
+            br.getHeaders().put("User-Agent", ua);
+            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+            br.getHeaders().put("Pragma", null);
+            br.getHeaders().put("Cache-Control", null);
+        } catch (Throwable e) {
+            /* setCookie throws exception in 09580 */
+        }
     }
 
     @Override
