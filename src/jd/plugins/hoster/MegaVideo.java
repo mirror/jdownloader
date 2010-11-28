@@ -165,14 +165,17 @@ public class MegaVideo extends PluginForHost {
             /* no content length= waiting page */
             DynByteBuffer buffer = new DynByteBuffer(1024);
             int read = -1;
-            while ((read = dl.getConnection().getInputStream().read()) != -1) {
+            byte bytebuffer[] = new byte[1];
+            while ((read = dl.getConnection().getInputStream().read(bytebuffer)) != -1) {
                 /*
                  * filter invalid chars
                  */
-                if (((byte) read) > 33) buffer.put((byte) read);
-                if (buffer.position() > 8192) {
-                    logger.severe("more than 8kb loaded, but no content-length!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (read == 1) {
+                    if (bytebuffer[0] > 33) buffer.put(bytebuffer, read);
+                    if (buffer.position() > 8192) {
+                        logger.severe("more than 8kb loaded, but no content-length!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
             String ret = buffer.toString();

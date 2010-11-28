@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -32,6 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://[\\w\\.]*?nk\\.pl/profile/\\d+/gallery(/album/\\d+|\\d+)" }, flags = { 0 })
 public class NkPlGallery extends PluginForDecrypt {

@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http://[\\w\\.]*?facebook\\.com/video/video\\.php\\?v=\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
@@ -47,8 +47,8 @@ public class FaceBookComVideos extends PluginForHost {
         return "http://www.facebook.com/terms.php";
     }
 
-    private static String FACEBOOKMAINPAGE = "http://www.facebook.com";
-    private static final String DLLINKREGEXP = "\\(\"video_src\", \"(http.*?)\"\\)";
+    private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
+    private static final String DLLINKREGEXP     = "\\(\"video_src\", \"(http.*?)\"\\)";
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
@@ -101,8 +101,8 @@ public class FaceBookComVideos extends PluginForHost {
 
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) return false;
-        br.setCookie("http://www.facebook.com", "locale", "en_GB");
         try {
+            br.setCookie("http://www.facebook.com", "locale", "en_GB");
             Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null || !aa.isValid()) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
             br.setFollowRedirects(true);
