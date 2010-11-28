@@ -55,13 +55,18 @@ public class FileApeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Free users can only download <em>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         String continuePage = br.getRegex("window\\.location = \\'(http://.*?)\\'").getMatch(0);
         if (continuePage == null) continuePage = br.getRegex("\\'(http://fileape\\.com/\\?act=download\\&t=[A-Za-z0-9_-]+)\\'").getMatch(0);
         if (continuePage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int wait = 20;
-        String waitRegexed = br.getRegex("id=\"waitnumber\" style=\"font-size:2em; text-align:center; width:33px; height:33px;\">(\\d+)</span>").getMatch(0);
-        if (waitRegexed == null) waitRegexed = br.getRegex("wait = (\\d+);").getMatch(0);
-        if (waitRegexed != null) wait = Integer.parseInt(waitRegexed);
+        int wait = 60;
+        String waitRegexed = br.getRegex("wait = (\\d+);").getMatch(0);
+        waitRegexed = null;
+        if (waitRegexed == null) waitRegexed = br.getRegex("id=\"waitnumber\" style=\"font-size:2em; text-align:center; width:33px; height:33px;\">(\\d+)</span>").getMatch(0);
+        if (waitRegexed != null) {
+            logger.info("Waittime found, waiting " + waitRegexed + " seconds...");
+            wait = Integer.parseInt(waitRegexed);
+        }
         sleep(wait * 1001l, downloadLink);
         br.getPage(continuePage);
         String dllink = br.getRegex("<div style=\"text-align:center; font-size: 30px;\"><a href=\"(http://.*?)\"").getMatch(0);
