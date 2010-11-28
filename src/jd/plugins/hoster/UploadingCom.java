@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
@@ -101,15 +101,16 @@ public class UploadingCom extends PluginForHost {
                 br.setCookie("http://www.uploading.com/", "language", "1");
                 br.setCookie("http://www.uploading.com/", "setlang", "en");
                 br.setCookie("http://www.uploading.com/", "_lang", "en");
-                final Object ret = account.getProperty("cookies", null);
-                if (ret != null && ret instanceof HashMap<?, ?> && !forceLogin) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (cookies.containsKey("remembered_user") && account.isValid()) {
-                        for (final String key : cookies.keySet()) {
-                            this.br.setCookie("http://www.uploading.com/", key, cookies.get(key));
+                if (!forceLogin) {
+                    final HashMap<String, String> cookies = account.getGenericProperty("cookies", (HashMap<String, String>) null);
+                    if (cookies != null) {
+                        if (cookies.containsKey("remembered_user") && account.isValid()) {
+                            for (final String key : cookies.keySet()) {
+                                this.br.setCookie("http://www.uploading.com/", key, cookies.get(key));
+                            }
+                            valid = true;
+                            return;
                         }
-                        valid = true;
-                        return;
                     }
                 }
                 br.getPage("http://www.uploading.com/");

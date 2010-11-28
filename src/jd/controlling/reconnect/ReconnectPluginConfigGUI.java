@@ -33,7 +33,7 @@ import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
 
-public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListener, DefaultEventListener<StorageEvent> {
+public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListener, DefaultEventListener<StorageEvent<?>> {
 
     private static final long                     serialVersionUID = 1L;
     private static final ReconnectPluginConfigGUI INSTANCE         = new ReconnectPluginConfigGUI();
@@ -126,7 +126,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
     /**
      * Update GUI
      */
-    public void onEvent(final StorageEvent event) {
+    public void onEvent(final StorageEvent<?> event) {
         if (event instanceof StorageValueChangeEvent<?>) {
             final StorageValueChangeEvent<?> changeEvent = (StorageValueChangeEvent<?>) event;
             if (changeEvent.getKey().equals(ReconnectPluginController.PRO_ACTIVEPLUGIN)) {

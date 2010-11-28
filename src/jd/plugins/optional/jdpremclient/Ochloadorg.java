@@ -13,11 +13,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
@@ -222,7 +222,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 return false;
             }
             try {
-                Browser br2 = br.getNewBrowser(br);
+                Browser br2 = Browser.getNewBrowser(br);
                 br2.setFollowRedirects(true);
                 if (!counted) br2.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(acc.getUser()));
                 counted = true;

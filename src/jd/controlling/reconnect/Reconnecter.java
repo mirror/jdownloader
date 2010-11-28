@@ -165,9 +165,9 @@ public final class Reconnecter implements StateMachineInterface {
         this.statemachine = new StateMachine(this, Reconnecter.IDLE, Reconnecter.IDLE);
         this.storage = JSonStorage.getPlainStorage("RECONNECT");
         // propagate
-        this.storage.getEventSender().addListener(new DefaultEventListener<StorageEvent>() {
+        this.storage.getEventSender().addListener(new DefaultEventListener<StorageEvent<?>>() {
 
-            public void onEvent(final StorageEvent event) {
+            public void onEvent(final StorageEvent<?> event) {
                 // TODO Auto-generated method stub
                 if (event instanceof StorageValueChangeEvent) {
                     Reconnecter.this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.SETTINGS_CHANGED, event));

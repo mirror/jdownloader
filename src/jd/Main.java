@@ -28,10 +28,10 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,16 +74,6 @@ public class Main {
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
 
     private static boolean          Init_Complete              = false;
-
-    private static void heapCheck() {
-        // heapcheck disable by adding a
-        JDInitFlags.ENOUGH_MEMORY = true;
-        // !(Runtime.getRuntime().maxMemory() < 100000000);
-        if (!JDInitFlags.ENOUGH_MEMORY) {
-            JDInitFlags.SHOW_SPLASH = false;
-            Main.LOG.warning("Heapcheck: Not enough heap. use: java -Xmx512m -jar JDownloader.jar");
-        }
-    }
 
     /**
      * Sets special Properties for MAC
@@ -311,10 +301,6 @@ public class Main {
 
             } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
 
-                if (!JDInitFlags.ENOUGH_MEMORY) {
-                    JDUtilities.restartJDandWait();
-                }
-
                 Main.LOG.finer(args[i] + " parameter");
                 JDInitFlags.SWITCH_NEW_INSTANCE = true;
 
@@ -409,7 +395,6 @@ public class Main {
     }
 
     private static void preInitChecks() {
-        Main.heapCheck();
         Main.javaCheck();
     }
 
@@ -418,11 +403,6 @@ public class Main {
     }
 
     private static void start(final String args[]) {
-
-        if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
-            JDUtilities.restartJDandWait();
-            return;
-        }
         if (!JDInitFlags.STOP) {
             final Main main = new Main();
             EventQueue.invokeLater(new Runnable() {
