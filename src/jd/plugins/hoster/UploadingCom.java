@@ -18,8 +18,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -44,6 +47,7 @@ public class UploadingCom extends PluginForHost {
     private boolean             free            = false;
     private static final String FILEIDREGEX     = "name=\"file_id\" value=\"(.*?)\"";
     private static final String CODEREGEX       = "uploading\\.com/files/get/(.+)";
+    private static final Object LOCK            = new Object();
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,44 +64,95 @@ public class UploadingCom extends PluginForHost {
         if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get"));
     }
 
-    public boolean isPremium() throws IOException {
-        boolean follow = br.isFollowingRedirects();
-        br.setFollowRedirects(true);
-        br.getPage("http://www.uploading.com/");
-        br.setFollowRedirects(follow);
-        if (br.containsHTML("UPGRADE TO PREMIUM")) return false;
-        if (br.containsHTML("Membership: Premium")) return true;
-        return false;
+    public boolean isPremium(Account account, boolean force) throws IOException {
+        boolean isPremium = false;
+        try {
+            synchronized (LOCK) {
+                final Object ret = account.getProperty("role", null);
+                if (ret == null || !(ret instanceof Boolean)) {
+                    boolean follow = br.isFollowingRedirects();
+                    br.setFollowRedirects(true);
+                    br.getPage("http://www.uploading.com/");
+                    br.setFollowRedirects(follow);
+                    if (br.containsHTML("UPGRADE TO PREMIUM")) {
+                        isPremium = false;
+                    } else if (br.containsHTML("Membership: Premium")) {
+                        isPremium = true;
+                    } else {
+                        isPremium = false;
+                    }
+                } else {
+                    isPremium = (Boolean) ret;
+                }
+            }
+            return isPremium;
+        } finally {
+            account.setProperty("role", isPremium);
+        }
     }
 
-    public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", userAgent);
-        br.setCookie("http://www.uploading.com/", "lang", "1");
-        br.setCookie("http://www.uploading.com/", "language", "1");
-        br.setCookie("http://www.uploading.com/", "setlang", "en");
-        br.setCookie("http://www.uploading.com/", "_lang", "en");
-        br.getPage("http://www.uploading.com/");
-        br.postPage("http://uploading.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
-        if (br.getCookie("http://www.uploading.com/", "remembered_user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        /* change language to english */
-        br.postPage("http://uploading.com/general/select_language/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "language=1");
+    public void login(Account account, boolean forceLogin) throws IOException, PluginException {
+        boolean valid = false;
+        try {
+            synchronized (LOCK) {
+                this.setBrowserExclusive();
+                br.getHeaders().put("User-Agent", userAgent);
+                br.setCookie("http://www.uploading.com/", "lang", "1");
+                br.setCookie("http://www.uploading.com/", "language", "1");
+                br.setCookie("http://www.uploading.com/", "setlang", "en");
+                br.setCookie("http://www.uploading.com/", "_lang", "en");
+                final Object ret = account.getProperty("cookies", null);
+                if (ret != null && ret instanceof HashMap<?, ?> && !forceLogin) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (cookies.containsKey("remembered_user") && account.isValid()) {
+                        for (final String key : cookies.keySet()) {
+                            this.br.setCookie("http://www.uploading.com/", key, cookies.get(key));
+                        }
+                        valid = true;
+                        return;
+                    }
+                }
+                br.getPage("http://www.uploading.com/");
+                br.postPage("http://uploading.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
+                if (br.getCookie("http://www.uploading.com/", "remembered_user") != null) {
+                    /* change language to english */
+                    br.postPage("http://uploading.com/general/select_language/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "language=1");
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    final Cookies add = this.br.getCookies("http://www.uploading.com/");
+                    for (final Cookie c : add.getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                    account.setProperty("cookies", cookies);
+                    valid = true;
+                } else {
+                    valid = false;
+                }
+            }
+        } finally {
+            if (valid == false) {
+                account.setProperty("cookies", null);
+                account.setProperty("role", null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        if (!isPremium()) {
-            account.setValid(true);
-            ai.setStatus("Free Membership");
-            return ai;
+        synchronized (LOCK) {
+            try {
+                login(account, true);
+            } catch (PluginException e) {
+                account.setValid(false);
+                return ai;
+            }
+            if (!isPremium(account, true)) {
+                account.setValid(true);
+                ai.setStatus("Free Membership");
+                return ai;
+            }
         }
         account.setValid(true);
         ai.setStatus("Premium Membership");
@@ -121,15 +176,17 @@ public class UploadingCom extends PluginForHost {
         br.setDebug(true);
         requestFileInformation(link);
         synchronized (PREMLOCK) {
-            login(account);
-            if (!isPremium()) {
-                simultanpremium = 1;
-                free = true;
-            } else {
-                if (simultanpremium + 1 > 20) {
-                    simultanpremium = 20;
+            synchronized (LOCK) {
+                login(account, false);
+                if (!isPremium(account, false)) {
+                    simultanpremium = 1;
+                    free = true;
                 } else {
-                    simultanpremium++;
+                    if (simultanpremium + 1 > 20) {
+                        simultanpremium = 20;
+                    } else {
+                        simultanpremium++;
+                    }
                 }
             }
         }
@@ -226,7 +283,7 @@ public class UploadingCom extends PluginForHost {
         checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        }
+        } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.getAvailableStatus();
     }
 
@@ -316,6 +373,13 @@ public class UploadingCom extends PluginForHost {
             br.submitForm(form);
         }
         String varLink = br.getRegex("var file_link = '(http://.*?)'").getMatch(0);
+        /* captcha may occur here */
+        String captcha = "";
+        if (br.containsHTML("var captcha_src = 'http://uploading")) {
+            String captchaUrl = "http://uploading.com/general/captcha/download" + fileID + "/?ts=" + System.currentTimeMillis();
+            String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
+            captcha = "&captcha_code=" + Encoding.urlEncode(captchaCode);
+        }
         if (varLink != null) {
             sleep(2000, downloadLink);
             return varLink;
@@ -331,11 +395,12 @@ public class UploadingCom extends PluginForHost {
         } else {
             fileID = "";
         }
-        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "code=" + code + "&action=get_link&pass=undefined" + fileID);
+        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "code=" + code + "&action=get_link&pass=undefined" + fileID + captcha);
         redirect = br.getRegex("link\":( )?\"(http.*?)\"").getMatch(1);
         if (redirect != null) {
             redirect = redirect.replaceAll("\\\\/", "/");
         } else {
+            if (captcha.length() > 0) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("Please wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
             if (br.containsHTML("Your download was not found or")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Your download was not found or has expired. Please try again later", 15 * 60 * 1000l);
             if (br.containsHTML("Your download has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Your download was not found or has expired. Please try again later", 15 * 60 * 1000l);

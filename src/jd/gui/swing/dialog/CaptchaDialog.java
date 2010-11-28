@@ -70,7 +70,8 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
 
     @Override
     protected String createReturnValue() {
-        return this.textField.getText();
+        if (Dialog.isOK(this.getReturnmask())) return this.textField.getText();
+        return null;
     }
 
     public void keyPressed(final KeyEvent e) {
