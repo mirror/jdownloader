@@ -78,7 +78,7 @@ public class UniBytesCom extends PluginForHost {
         String addedLink = downloadLink.getDownloadURL();
         br.setFollowRedirects(false);
         br.postPage(addedLink, "step=timer&referer=&ad=");
-        if (br.containsHTML("showNotUniqueIP\\(\\);")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads");
+        if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         int iwait = 60;
         String regexedTime = br.getRegex("id=\"slowRest\">(\\d+)</").getMatch(0);
         if (regexedTime == null) regexedTime = br.getRegex("var timerRest = (\\d+);").getMatch(0);
