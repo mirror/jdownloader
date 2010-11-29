@@ -206,7 +206,7 @@ public class OronCom extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        if (!(dl.getConnection().isContentDisposition())) {
+        if (!(dl.getConnection().isContentDisposition()) && dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("octet")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             if (br.containsHTML("File Not Found")) {
@@ -310,7 +310,7 @@ public class OronCom extends PluginForHost {
         String dllink = br.getRegex("height=\"[0-9]+\"><a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!(dl.getConnection().isContentDisposition()) && dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("octet")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
