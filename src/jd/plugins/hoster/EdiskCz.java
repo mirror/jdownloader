@@ -50,8 +50,8 @@ public class EdiskCz extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(Tento soubor již neexistuje z následujích důvodů:|<li>soubor byl smazán majitelem</li>|<li>vypršela doba, po kterou může být soubor nahrán</li>|<li>odkaz je uvedený v nesprávném tvaru</li>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("Stáhnout soubor:\\&nbsp;<span class=\"bold\">(.*?) \\(\\d+").getMatch(0));
-        if (filename == null) filename = br.getRegex("<title> \\&nbsp;\\&quot;(.*?)\\&quot; (").getMatch(0);
+        String filename = Encoding.htmlDecode(br.getRegex("<span class=\"fl\" title=\"(.*?)\">").getMatch(0));
+        if (filename == null) filename = br.getRegex("<title> \\&nbsp;\\&quot;(.*?)\\&quot; \\(").getMatch(0);
         String filesize = br.getRegex("<p>Velikost souboru: <strong>(.*?)</strong></p>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("<title> \\&nbsp;\\&quot;.*?\\&quot; \\((.*?)\\) - stáhnout soubor\\&nbsp; </title>").getMatch(0);
@@ -77,10 +77,13 @@ public class EdiskCz extends PluginForHost {
         String postData = "action=" + new Regex(downloadLink.getDownloadURL(), "/stahni/(\\d+.*?\\.html)").getMatch(0);
         br.postPage(postUrl, postData);
         String dllink = br.toString().trim();
-        if (!dllink.startsWith("http://") || !dllink.endsWith(".html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!dllink.startsWith("http://") || !dllink.endsWith(".html") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.toString().trim(), true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getURL().contains("/error/503") || br.containsHTML("<h3>Z této IP adresy již probíhá stahování</h3>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+            String unknownErrormessage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+            if (unknownErrormessage != null) throw new PluginException(LinkStatus.ERROR_FATAL, unknownErrormessage);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -153,8 +153,21 @@ public class FileBaseTo extends PluginForHost {
             if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.postPage(br.getURL(), "dl_free3=Normal+Download&uid=" + uidValue);
             if (br.containsHTML("lädt bereits ein Datei runter\\. Warten Sie bitte, bis der Download abgeschlossen ist")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            System.out.print(br.toString());
+            if (br.containsHTML("(Deine Stundenlimit von 300 MB ist bereits erreicht|oder kaufen Sie ein Premium Account, Premium Nutzer haben diese Limit nicht)")) {
+                int waitHours = 1;
+                String waittime = br.getRegex("Bitte warten Sie (\\d+) Stunde oder kaufen Sie ein Premium Account").getMatch(0);
+                if (waittime != null) {
+                    logger.info("Found regexed waittime..." + waittime + " hours.");
+                    waitHours = Integer.parseInt(waittime);
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitHours * 60 * 60 * 1001l);
+            }
             uidValue = br.getRegex("id=\"uid\" name=\"uid\" value=\"(.*?)\"").getMatch(0);
-            if (uidValue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (uidValue == null) {
+                logger.warning("uidValue #2 is null...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // // Ticket Time is skippable atm.
             // String ttt = br.getRegex("var sec = (\\d+);").getMatch(0);
             // int tt = 10;

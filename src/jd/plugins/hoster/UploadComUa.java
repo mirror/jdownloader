@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.com.ua" }, urls = { "http://[\\w\\.]*?(beta\\.upload|upload)\\.com\\.ua/(link|get)/[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.com.ua" }, urls = { "http://(www\\.)?(beta\\.upload|upload)\\.com\\.ua/(link|get)/[0-9]+" }, flags = { 2 })
 public class UploadComUa extends PluginForHost {
 
     public UploadComUa(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class UploadComUa extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Файл не найден|>Файл удален</td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\">Скачать (.*?)</a>").getMatch(0);
         String filesize = br.getRegex("file_size\">(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

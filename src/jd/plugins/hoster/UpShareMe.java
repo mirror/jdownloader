@@ -57,6 +57,7 @@ public class UpShareMe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.setFollowRedirects(true);
         String getLink = br.getRegex("disabled=\"disabled\" onclick=\"document\\.location=\\'\\.-(/get/.*?)\\';\"").getMatch(0);
         if (getLink == null) getLink = br.getRegex("\\'\\.(/get/[A-Za-z0-9]+/\\d+/.*?)\\'").getMatch(0);
         if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

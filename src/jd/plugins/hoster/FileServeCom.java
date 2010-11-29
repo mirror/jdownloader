@@ -30,12 +30,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -157,19 +157,16 @@ public class FileServeCom extends PluginForHost {
                 reCaptchaForm.put("recaptcha_shortencode_field", fileId);
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
-
                 rc.setForm(reCaptchaForm);
                 rc.setId(id);
                 rc.load();
                 final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                 final String c = this.getCaptchaCode(cf, downloadLink);
                 if (c == null || c.length() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed"); }
-
                 rc.getForm().put("recaptcha_response_field", c);
                 rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
                 br2.submitForm(rc.getForm());
-                if (!br2.containsHTML("success")) {
-
+                if (!br2.containsHTML("\"success\":1")) {
                     this.br.getPage(downloadLink.getDownloadURL());
                     continue;
                 }

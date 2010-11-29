@@ -26,6 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "http://vids\\.myspace\\.com/index\\.cfm\\?fuseaction=vids\\.individual\\&videoid=\\d+" }, flags = { 0 })
 public class VidsMySpaceCom extends PluginForHost {
@@ -44,6 +45,7 @@ public class VidsMySpaceCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains("vids.myspace")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.vidsmyspacecom.temporaryunavailable", "This link is temporary unavailable"));
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
@@ -59,6 +61,7 @@ public class VidsMySpaceCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("?fuseaction=vids.splash&vs=2")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!br.getRedirectLocation().contains("vids.myspace")) return AvailableStatus.UNCHECKABLE;
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = br.getRegex("<h1 id=\"tv_tbar_title\">(.*?)</h1>").getMatch(0);
