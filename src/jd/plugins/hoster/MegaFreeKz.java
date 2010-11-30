@@ -19,7 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -27,11 +30,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megafree.kz" }, urls = { "http://[\\w\\.]*?megafree\\.kz/file\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megafree.kz" }, urls = { "http://[\\w\\.]*?megafree\\.kz/file\\d+" }, flags = { 2 })
 public class MegaFreeKz extends PluginForHost {
 
     public MegaFreeKz(PluginWrapper wrapper) {
         super(wrapper);
+        // At the moment this plugin only accepts free accounts
+        this.enablePremium();
     }
 
     @Override
@@ -41,6 +46,7 @@ public class MegaFreeKz extends PluginForHost {
 
     private static final String CAPTCHATEXT = "confirm\\.php";
     private static final String AREA2       = "megafree.kz/delayfile";
+    private static final String MAINPAGE    = "http://megafree.kz/";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -70,6 +76,10 @@ public class MegaFreeKz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (!br.getURL().contains(AREA2)) {
             if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
@@ -91,6 +101,42 @@ public class MegaFreeKz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        // br.getPage(MAINPAGE);
+        br.postPage(MAINPAGE, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=%D0%92%D0%BE%D0%B9%D1%82%D0%B8");
+        String registered = br.getCookie(MAINPAGE, "registered");
+        if (registered == null || !registered.equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        doFree(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 2;
     }
 
     @Override

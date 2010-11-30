@@ -150,7 +150,8 @@ public class DataHu extends PluginForHost {
             sleep(wait, downloadLink);
         }
         br.getPage(downloadLink.getDownloadURL());
-        String link = br.getRegex(Pattern.compile("download_it\"><a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String link = br.getRegex(Pattern.compile("<div class=\"download_box_button\"><a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (link == null) link = br.getRegex(Pattern.compile("\"(http://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
