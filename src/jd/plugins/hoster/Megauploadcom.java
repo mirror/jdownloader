@@ -62,6 +62,7 @@ public class Megauploadcom extends PluginForHost {
     private static String         wwwWorkaround   = null;
     private static final Object   LOCK            = new Object();
     private static final Object   LOCK2           = new Object();
+    private static final Object   LOGINLOCK       = new Object();
     private static int            simultanpremium = 1;
 
     private synchronized static void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
@@ -263,7 +264,7 @@ public class Megauploadcom extends PluginForHost {
             this.sleep(waittime * 1000, link);
         }
         try {
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, url, resume, this.isPremium(account, this.br.cloneBrowser(), false) ? 0 : 1);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, url, resume, this.isPremium(account, this.br.cloneBrowser(), false, true) ? 0 : 1);
             if (!this.dl.getConnection().isOK()) {
                 this.dl.getConnection().disconnect();
                 if (this.dl.getConnection().getResponseCode() == 416) {
@@ -306,25 +307,27 @@ public class Megauploadcom extends PluginForHost {
         this.checkWWWWorkaround();
         final AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        try {
-            this.login(account, false);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
+        synchronized (LOGINLOCK) {
+            try {
+                this.login(account, false);
+            } catch (final PluginException e) {
+                account.setValid(false);
+                return ai;
+            }
+            if (!this.isPremium(account, this.br, true, false)) {
+                account.setValid(true);
+                ai.setStatus("Free Membership");
+                return ai;
+            }
         }
-        if (!this.isPremium(account, this.br, true)) {
-            account.setValid(true);
-            ai.setStatus("Free Membership");
-            return ai;
-        }
-        this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?c=account");
-        final String type = this.br.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String type = this.br.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (type != null && !type.contains("Lifetime")) {
-            final String days = this.br.getRegex("<TD><b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
+            ai.setStatus("Premium Membership");
+            final String days = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
             if (days != null && !days.equalsIgnoreCase("Unlimited")) {
                 ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days) * 24 * 60 * 60 * 1000);
             } else if (days == null || days.equals("0")) {
-                final String hours = this.br.getRegex("<TD><b>Premium</b>.*?\\((\\d+) hours remaining - <a").getMatch(0);
+                final String hours = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) hours remaining - <a").getMatch(0);
                 if (hours != null) {
                     ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(hours) * 60 * 60 * 1000);
                 } else {
@@ -333,8 +336,10 @@ public class Megauploadcom extends PluginForHost {
                     return ai;
                 }
             }
+        } else if (type != null && type.contains("Lifetime")) {
+            ai.setStatus("Lifetime Membership");
         }
-        final String points = this.br.getRegex(Pattern.compile("<TD>Reward points available:</TD>.*?<TD><b>(\\d+)</b> ", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String points = this.br.getRegex(Pattern.compile("Reward points available:.*?<strong>(\\d+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             ai.setPremiumPoints(Long.parseLong(points));
         }
@@ -352,14 +357,14 @@ public class Megauploadcom extends PluginForHost {
         return p.get("d").toUpperCase();
     }
 
-    private STATUS getFileStatus(final DownloadLink link) throws MalformedURLException {
+    private STATUS getFileStatus(final DownloadLink link) throws MalformedURLException, PluginException {
         this.onlyapi = false;
         this.checkWWWWorkaround();
         this.setBrowserExclusive();
         this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
         this.websiteFileCheck(link, this.br);
         if (link.getAvailableStatus() == AvailableStatus.TRUE) { return STATUS.ONLINE; }
-        if (link.getAvailableStatus() == AvailableStatus.FALSE) { return STATUS.OFFLINE; }
+        if (link.getAvailableStatus() == AvailableStatus.FALSE) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (link.getAvailableStatus() == AvailableStatus.UNCHECKABLE) {
             if (this.onlyapi) {
                 /*
@@ -519,7 +524,7 @@ public class Megauploadcom extends PluginForHost {
         boolean free = false;
         // free = false;
         STATUS filestatus = null;
-        synchronized (Megauploadcom.PREMLOCK) {
+        synchronized (LOGINLOCK) {
             filestatus = this.getFileStatus(parameter);
             if (filestatus != STATUS.API && filestatus != STATUS.OFFLINE) {
                 if (filestatus == STATUS.BLOCKED) {
@@ -530,7 +535,7 @@ public class Megauploadcom extends PluginForHost {
                 }
             }
             final boolean check = filestatus == STATUS.BLOCKED && !(filestatus == STATUS.API || filestatus == STATUS.OFFLINE);
-            if (!this.isPremium(account, this.br.cloneBrowser(), check)) {
+            if (!this.isPremium(account, this.br.cloneBrowser(), check, true)) {
                 Megauploadcom.simultanpremium = 1;
                 free = true;
             } else {
@@ -589,7 +594,7 @@ public class Megauploadcom extends PluginForHost {
             /* check if we are still premium user, because we login via cookie */
             final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null || this.br.containsHTML("trying to download is larger than")) {
-                if (!this.isPremium(account, this.br.cloneBrowser(), true)) {
+                if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
                     /* no longer premium retry */
                     Plugin.logger.info("No longer a premiumaccount, retry as normal account!");
                     parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
@@ -626,7 +631,7 @@ public class Megauploadcom extends PluginForHost {
             }
             if (form != null && form.containsHTML("captchacode")) {
                 /* captcha form as premiumuser? check status again */
-                if (!this.isPremium(account, this.br.cloneBrowser(), true)) {
+                if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
                     /* no longer premium retry */
                     Plugin.logger.info("No longer a premiumaccount, retry as normal account!");
                     parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
@@ -648,6 +653,9 @@ public class Megauploadcom extends PluginForHost {
             }
             url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
             if (url == null) {
+                url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
+            }
+            if (url == null) {
                 url = this.br.getRedirectLocation();
             }
         } else {
@@ -664,8 +672,14 @@ public class Megauploadcom extends PluginForHost {
         int captchTries = 10;
         Form form = null;
         String code = null;
+        String url = null;
         while (captchTries-- >= 0) {
             this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?d=" + this.getDownloadID(link));
+            url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
+            if (url == null) {
+                url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
+            }
+            if (url != null) break;
             /* check for iplimit */
             final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null) {
@@ -742,18 +756,26 @@ public class Megauploadcom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
             }
         }
-        final String url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
+        if (url == null) url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
+        if (url == null) {
+            url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
+        }
         this.doDownload(link, url, true, account);
     }
 
-    public boolean isPremium(final Account account, final Browser br, final boolean refresh) throws IOException {
-        synchronized (Megauploadcom.LOCK2) {
+    public boolean isPremium(final Account account, final Browser br, final boolean refresh, boolean cloneBrowser) throws IOException {
+        synchronized (LOGINLOCK) {
             if (account == null) { return false; }
             if (account.getBooleanProperty("typeknown", false) == false || refresh) {
-                final Browser brc = br.cloneBrowser();
+                final Browser brc;
+                if (cloneBrowser) {
+                    brc = br.cloneBrowser();
+                } else {
+                    brc = br;
+                }
                 this.antiJDBlock(brc);
                 brc.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?c=account");
-                final String type = brc.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+                final String type = brc.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (type == null || type.equalsIgnoreCase("regular")) {
                     account.setProperty("ispremium", false);
                     if (type != null) {
@@ -800,33 +822,34 @@ public class Megauploadcom extends PluginForHost {
 
     public void login(final Account account, final boolean cookielogin) throws IOException, PluginException {
         String user = account.getStringProperty("user", null);
-        this.antiJDBlock(this.br);
-        if (cookielogin && user != null) {
-            this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
-            this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "user", user);
-            return;
-        } else {
-            if (account.getUser().trim().equalsIgnoreCase("cookie")) {
-                this.setBrowserExclusive();
+        synchronized (LOGINLOCK) {
+            this.antiJDBlock(this.br);
+            if (cookielogin && user != null) {
                 this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
-                this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "user", account.getPass());
-                this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/");
+                this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "user", user);
+                return;
             } else {
-                this.setBrowserExclusive();
-                this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
-                this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?c=login");
-                this.br.postPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            }
-            user = this.br.getCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "user");
-            this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "user", user);
-            account.setProperty("user", user);
-            if (user == null) {
-                account.setProperty("ispremium", false);
-                account.setProperty("typeknown", false);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (account.getUser().trim().equalsIgnoreCase("cookie")) {
+                    this.setBrowserExclusive();
+                    this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
+                    this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "user", account.getPass());
+                    this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/");
+                } else {
+                    this.setBrowserExclusive();
+                    this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
+                    this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?c=login");
+                    this.br.postPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                }
+                user = this.br.getCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "user");
+                this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "user", user);
+                account.setProperty("user", user);
+                if (user == null) {
+                    account.setProperty("ispremium", false);
+                    account.setProperty("typeknown", false);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
         }
-
     }
 
     @Override
@@ -879,7 +902,7 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    private void websiteFileCheck(final DownloadLink l, Browser br) {
+    private void websiteFileCheck(final DownloadLink l, Browser br) throws PluginException {
         if (this.onlyapi) {
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
             return;
@@ -901,6 +924,7 @@ public class Megauploadcom extends PluginForHost {
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
             }
+            if (br.containsHTML("The file you are trying to access is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file you are trying to access is temporarily unavailable", 10 * 60 * 1000l);
             if (br.containsHTML("A temporary access restriction is place") || br.containsHTML("We have detected an elevated")) {
                 /* ip blocked by megauploaded */
                 this.wait = br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
@@ -912,21 +936,11 @@ public class Megauploadcom extends PluginForHost {
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
             }
-            if (br.containsHTML("The file has been deleted because it was violating")) {
-                l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                l.getLinkStatus().setStatusText("Link abused or invalid");
-                l.setAvailable(false);
-                return;
-            }
-            if (br.containsHTML("Invalid link")) {
-                l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                l.getLinkStatus().setStatusText("Link invalid");
-                l.setAvailable(false);
-                return;
-            }
+            if (br.containsHTML("The file has been deleted because it was violating")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
-            final String filename = br.getRegex("<font style=.*?>Filename:</font> <font style=.*?>(.*?)</font><br>").getMatch(0).trim();
-            final String filesize = br.getRegex("<font style=.*?>File size:</font> <font style=.*?>(.*?)</font>").getMatch(0).trim();
+            final String filename = br.getRegex(">File name:</.*?txt2\">(.*?)</span").getMatch(0).trim();
+            final String filesize = br.getRegex(">File size:</.*?>(.*?)<").getMatch(0).trim();
             if (filename == null || filesize == null) {
                 l.setAvailable(false);
             } else {
@@ -940,6 +954,7 @@ public class Megauploadcom extends PluginForHost {
             }
             return;
         } catch (final Exception e) {
+            if (br.containsHTML("The file you are trying to access is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file you are trying to access is temporarily unavailable", 10 * 60 * 1000l);
             Plugin.logger.info("Megaupload blocked this IP(2): 25 mins");
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
