@@ -272,17 +272,15 @@ public class EnteruploadCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>(.*?)of", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>\\$([0-9,.]+)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             // Who needs half points ? If we have a dot in the points, just
             // remove it
-            if (points.contains(".")) {
-                String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
-                points = points.replace(dot, "");
-            }
-            ai.setPremiumPoints(Long.parseLong(points.trim()));
+            points = points.replaceAll("\\.", "");
+            points = points.replaceAll(",", "");
+            ai.setAccountBalance(Long.parseLong(points.trim()));
         }
         account.setValid(true);
         String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
@@ -317,10 +315,13 @@ public class EnteruploadCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (nopremium) {
+            /* free user acc */
             doFree(link);
         } else {
+            /* premium user */
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
+                /* indirect download */
                 Form DLForm = br.getFormbyProperty("name", "F1");
                 if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)")) {
@@ -337,29 +338,38 @@ public class EnteruploadCom extends PluginForHost {
                 checkErrors(link);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
+                    /* search for final downloadlink */
                     if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
                         logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                         link.setProperty("pass", null);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
+                    dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-                        if (dllink == null) {
-                            dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
-                            if (dllink == null) {
-                                // This was for fileop.com, maybe also works for
-                                // others!
-                                dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
-                            }
+                        // This was for fileop.com, maybe also works for
+                        // others!
+                        dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                    }
+                    if (dllink == null) {
+                        /* downloadbutton */
+                        Form form = br.getForm(1);
+                        if (form != null && form.containsHTML("btn_download")) {
+                            dllink = form.getAction();
                         }
                     }
+                } else {
+                    /* direct after button download */
                 }
+            } else {
+                /* direct download */
             }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            // logger.info("Final downloadlink = " + dllink +
+            // " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);// chunk
             // limit
             // before
