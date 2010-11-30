@@ -21,8 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import org.appwork.utils.Hash;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
@@ -37,6 +35,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Hash;
+
 public class RAFDownload extends DownloadInterface {
 
     private RandomAccessFile outputFile;
@@ -48,13 +48,16 @@ public class RAFDownload extends DownloadInterface {
     @Override
     protected void onChunksReady() {
         logger.info("Close connections if they are not closed yet");
-        for (Chunk c : this.getChunks()) {
-            c.closeConnections();
-        }
-        logger.info("Close File. Let AV programs run");
         try {
-            outputFile.close();
-        } catch (Exception e) {
+            for (Chunk c : this.getChunks()) {
+                c.closeConnections();
+            }
+        } finally {
+            logger.info("Close File. Let AV programs run");
+            try {
+                outputFile.close();
+            } catch (Throwable e) {
+            }
         }
         /*
          * workaround for old Idle bug when one chunk got idle but download is
@@ -150,9 +153,8 @@ public class RAFDownload extends DownloadInterface {
         } catch (Exception e) {
             try {
                 logger.info("CLOSE HD FILE");
-                if (outputFile != null) outputFile.close();
-            } catch (Exception e2) {
-                JDLogger.exception(e2);
+                outputFile.close();
+            } catch (Throwable e2) {
             }
             addException(e);
             throw e;
@@ -295,6 +297,14 @@ public class RAFDownload extends DownloadInterface {
 
     public static DownloadInterface download(DownloadLink downloadLink, Request request) throws Exception {
         return download(downloadLink, request, false, 1);
+    }
+
+    @Override
+    public void cleanupDownladInterface() {
+        try {
+            this.outputFile.close();
+        } catch (Throwable e) {
+        }
     }
 
 }

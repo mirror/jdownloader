@@ -24,8 +24,8 @@ import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
@@ -111,6 +111,7 @@ abstract public class DownloadInterface {
             this.startByte = startByte;
             this.endByte = endByte;
             this.connection = connection;
+            this.clonedconnection = false;
             this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
             MAX_BUFFERSIZE = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(ByteBufferController.MAXBUFFERSIZE, 1000) * 1024;
@@ -189,7 +190,6 @@ abstract public class DownloadInterface {
                 logger.finer("Takeover connection at " + connection.getRange()[0]);
                 return connection;
             }
-            // connection.disconnect();
 
             try {
                 /* only forward referer if referer already has been sent! */
@@ -212,7 +212,8 @@ abstract public class DownloadInterface {
                     /* only forward referer if referer already has been sent! */
                     br.setCurrentURL(null);
                 }
-                URLConnectionAdapter con;
+                URLConnectionAdapter con = null;
+                clonedconnection = true;
                 if (connection.getRequestMethod() == METHOD.POST) {
                     connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
                     con = br.openRequestConnection(connection.getRequest());
@@ -221,6 +222,11 @@ abstract public class DownloadInterface {
                     con = br.openGetConnection(connection.getURL() + "");
                 }
                 if (!con.isOK()) {
+                    try {
+                        /* always close connections that got opened */
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                     if (con.getResponseCode() != 416) {
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getResponseMessage());
                     } else {
@@ -229,10 +235,14 @@ abstract public class DownloadInterface {
                     return null;
                 }
                 if (con.getHeaderField("Location") != null) {
+                    try {
+                        /* always close connections that got opened */
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: Redirect");
                     return null;
                 }
-                clonedconnection = true;
                 return con;
             } catch (Exception e) {
                 addException(e);
@@ -362,6 +372,13 @@ abstract public class DownloadInterface {
                 } finally {
                     inputStream = null;
                 }
+                try {
+                    if (this.clonedconnection) {
+                        /* cloned connection, we can disconnect now */
+                        this.connection.disconnect();
+                    }
+                } catch (Throwable e) {
+                }
             }
         }
 
@@ -442,56 +459,30 @@ abstract public class DownloadInterface {
         @Override
         public void run() {
             PluginForHost.setCurrentConnections(PluginForHost.getCurrentConnections() + 1);
-            run0();
-            PluginForHost.setCurrentConnections(PluginForHost.getCurrentConnections() - 1);
-            addToChunksInProgress(-1);
-
-            while (true) {
-                /* wait for all chunks being started */
-                if (getChunksStarted() == chunkNum) {
-                    break;
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    break;
-                }
-                /* external abort, proceed to close connection */
-                if (this.isExternalyAborted()) break;
-            }
-            /* check if we can close the root connection */
-            boolean rootconnectioninuse = false;
-            Vector<Chunk> chunks = dl.getChunks();
-            synchronized (chunks) {
-                for (Chunk chunk : chunks) {
-                    if (chunk.inProgress() && !chunk.isClonedConnection()) {
-                        /*
-                         * at least one chunk with root connection is still
-                         * active, so dont close the root connection
-                         */
-                        rootconnectioninuse = true;
+            try {
+                run0();
+                while (true) {
+                    /* wait for all chunks being started */
+                    if (getChunksStarted() == chunkNum) {
                         break;
                     }
-                }
-            }
-            if (isClonedConnection()) {
-                /* cloned connection is okay to close */
-                if (connection != null && connection.isConnected()) {
-                    this.connection.disconnect();
-                }
-            } else {
-                /*
-                 * chunk is using root connection, only close it if its not used
-                 * by any other chunk
-                 */
-                if (!rootconnectioninuse) {
-                    /* root connection is no longer in use, so we can close it */
-                    if (connection != null && connection.isConnected()) {
-                        this.connection.disconnect();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        break;
                     }
+                    /* external abort, proceed to close connection */
+                    if (this.isExternalyAborted()) break;
                 }
+            } finally {
+                try {
+                    PluginForHost.setCurrentConnections(PluginForHost.getCurrentConnections() - 1);
+                    addToChunksInProgress(-1);
+                } catch (Throwable e) {
+                    JDLogger.exception(e);
+                }
+                onChunkFinished();
             }
-            onChunkFinished();
         }
 
         public void run0() {
@@ -514,7 +505,6 @@ abstract public class DownloadInterface {
                         if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                         return;
                     }
-
                 } else if (startByte > 0) {
                     connection = copyConnection(connection);
                     // workaround fuer fertigen endchunk
@@ -650,6 +640,13 @@ abstract public class DownloadInterface {
                 logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
             } finally {
                 setChunkStartet();
+                try {
+                    /* we can close cloned connections here */
+                    if (this.clonedconnection) {
+                        connection.disconnect();
+                    }
+                } catch (Throwable e) {
+                }
             }
         }
 
@@ -672,13 +669,13 @@ abstract public class DownloadInterface {
             connectionclosed = true;
             try {
                 inputStream.close();
-            } catch (Exception e) {
+            } catch (Throwable e) {
             } finally {
                 inputStream = null;
             }
             try {
-                if (connection != null && connection.isConnected()) connection.disconnect();
-            } catch (Exception e) {
+                connection.disconnect();
+            } catch (Throwable e) {
             }
             logger.info("Closed connection before closing file");
         }
@@ -1233,36 +1230,36 @@ abstract public class DownloadInterface {
      * @throws Exception
      */
     public boolean startDownload() throws Exception {
-        logger.finer("Start Download");
-        if (!connected) connect();
-        if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-            /* GZIP Encoding kann weder chunk noch resume */
-            setResume(false);
-            setChunkNum(1);
-        }
-        // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
-        // mehrfachAufruf von connect entstehen kann
-        if (this.downloadLink.getFinalFileName() == null && ((connection != null && connection.isContentDisposition()) || this.allowFilenameFromURL)) {
-            String name = Plugin.getFileNameFromHeader(connection);
-            this.downloadLink.setFinalFileName(name);
-            if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
-        }
-        downloadLink.getLinkStatus().setStatusText(null);
-        if (connection == null || !connection.isOK()) {
-            if (connection != null) logger.finest(connection.toString());
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        }
-        if (connection.getHeaderField("Location") != null) {
-            error(LinkStatus.ERROR_PLUGIN_DEFECT, "Sent a redirect to Downloadinterface");
-            return false;
-        }
-        if (preDownloadCheckFailed(downloadLink)) return false;
         try {
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+            logger.finer("Start Download");
+            if (!connected) connect();
+            if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+                /* GZIP Encoding kann weder chunk noch resume */
+                setResume(false);
+                setChunkNum(1);
+            }
+            // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
+            // mehrfachAufruf von connect entstehen kann
+            if (this.downloadLink.getFinalFileName() == null && ((connection != null && connection.isContentDisposition()) || this.allowFilenameFromURL)) {
+                String name = Plugin.getFileNameFromHeader(connection);
+                this.downloadLink.setFinalFileName(name);
+                if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
+            }
+            downloadLink.getLinkStatus().setStatusText(null);
+            if (connection == null || !connection.isOK()) {
+                if (connection != null) logger.finest(connection.toString());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
+            if (connection.getHeaderField("Location") != null) {
+                error(LinkStatus.ERROR_PLUGIN_DEFECT, "Sent a redirect to Downloadinterface");
+                return false;
+            }
+            if (preDownloadCheckFailed(downloadLink)) return false;
+
             setupChunks();
             waitForChunks();
             onChunksReady();
-            linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             return handleErrors();
         } catch (Exception e) {
             if (e instanceof FileNotFoundException) {
@@ -1271,10 +1268,19 @@ abstract public class DownloadInterface {
                 JDLogger.exception(e);
             }
             handleErrors();
-            linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             return false;
+        } finally {
+            linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+            try {
+                this.connection.disconnect();
+            } catch (Throwable e) {
+            }
+            /* make sure file is really closed */
+            cleanupDownladInterface();
         }
     }
+
+    public abstract void cleanupDownladInterface();
 
     /**
      * Bricht den Download komplett ab.
@@ -1289,31 +1295,33 @@ abstract public class DownloadInterface {
     }
 
     private void waitForChunks() {
-        int i = 0;
-        logger.finer("Wait for chunks");
-        int interval = 150;
-        while (chunksInProgress > 0) {
-            synchronized (this) {
-                if (waitFlag) {
-                    try {
-                        this.wait(interval);
-                    } catch (Exception e) {
-                        // logger.log(Level.SEVERE,"Exception occurred",e);
-                        for (Chunk ch : chunks) {
-                            ch.interrupt();
+        try {
+            int i = 0;
+            logger.finer("Wait for chunks");
+            int interval = 150;
+            while (chunksInProgress > 0) {
+                synchronized (this) {
+                    if (waitFlag) {
+                        try {
+                            this.wait(interval);
+                        } catch (Exception e) {
+                            // logger.log(Level.SEVERE,"Exception occurred",e);
+                            for (Chunk ch : chunks) {
+                                ch.interrupt();
+                            }
+                            return;
                         }
-                        return;
                     }
                 }
+                i++;
+                waitFlag = true;
+                // checkChunkParts();
+                downloadLink.setDownloadCurrent(totaleLinkBytesLoaded);
+                downloadLink.requestGuiUpdate();
             }
-            i++;
-            waitFlag = true;
-            // checkChunkParts();
-            downloadLink.setDownloadCurrent(totaleLinkBytesLoaded);
-            downloadLink.requestGuiUpdate();
-
+        } catch (Throwable e) {
+            JDLogger.exception(e);
         }
-
     }
 
     protected synchronized boolean writeBytes(Chunk chunk) {

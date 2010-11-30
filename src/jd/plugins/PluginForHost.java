@@ -476,11 +476,9 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     blockAccount = true;
                 }
             } finally {
-                if (dl != null && dl.getConnection() != null) {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (Exception e) {
-                    }
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Exception e) {
                 }
                 dl = null;
             }
@@ -542,11 +540,9 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
             } finally {
-                if (dl != null && dl.getConnection() != null) {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (Exception e) {
-                    }
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable e) {
                 }
                 dl = null;
             }
