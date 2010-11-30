@@ -120,8 +120,7 @@ public class FourFastFileCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /* due buggy server, resume and chunks are disabled */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

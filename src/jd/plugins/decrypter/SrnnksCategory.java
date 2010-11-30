@@ -69,7 +69,7 @@ public class SrnnksCategory extends PluginForDecrypt {
 
         br.getPage("http://serienjunkies.org/" + ids[res] + "/");
         ArrayList<String> mirrors = new ArrayList<String>();
-        for (String m : br.getRegex("blank\">(part.*?|hier)</a> \\| ([^ ]*?)<").getColumn(1)) {
+        for (String m : br.getRegex("(?i)blank\">(part.*?|hier)</a> \\| ([^< ]+)").getColumn(1)) {
             if (m.trim().length() > 0 && !mirrors.contains(m)) {
                 mirrors.add(m);
             }
