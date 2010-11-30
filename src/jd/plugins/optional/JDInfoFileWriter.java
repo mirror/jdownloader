@@ -41,35 +41,36 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.Replacer;
+import jd.utils.StringUtil;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", id = "infofilewriter", interfaceversion = 7)
 public class JDInfoFileWriter extends PluginOptional {
 
-    private static final String JDL_PREFIX = "jd.plugins.optional.JDInfoFileWriter.";
+    private static final String JDL_PREFIX          = "jd.plugins.optional.JDInfoFileWriter.";
 
-    private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
+    private static final String FILENAME_DEFAULT    = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
 
     /**
      * Usually overridden by localization
      */
     private static final String INFO_STRING_DEFAULT = JDL.L("plugins.optional.infofilewriter.contentdefault", "Comment: %LAST_FINISHED_PACKAGE.COMMENT%\r\nPassword: %LAST_FINISHED_PACKAGE.PASSWORD%\r\nAuto-Password: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFinalized %SYSTEM.DATE% to %SYSTEM.TIME% Clock");
 
-    private static final String PARAM_CREATION = "CREATION";
+    private static final String PARAM_CREATION      = "CREATION";
 
-    private static final String PARAM_FILENAME = "FILENAME";
+    private static final String PARAM_FILENAME      = "FILENAME";
 
-    private static final String PARAM_INFO_STRING = "INFO_STRING";
+    private static final String PARAM_INFO_STRING   = "INFO_STRING";
 
-    private static final String PARAM_CREATE_FILE = "CREATE_FILE";
+    private static final String PARAM_CREATE_FILE   = "CREATE_FILE";
 
-    private static final String PARAM_ONLYPASSWORD = "ONLYPASSWORD";
+    private static final String PARAM_ONLYPASSWORD  = "ONLYPASSWORD";
 
-    private ConfigEntry cmbVars;
+    private ConfigEntry         cmbVars;
 
-    private ConfigEntry txtInfo;
+    private ConfigEntry         txtInfo;
 
-    private SubConfiguration subConfig = null;
+    private SubConfiguration    subConfig           = null;
 
     public JDInfoFileWriter(PluginWrapper wrapper) {
         super(wrapper);
@@ -166,7 +167,8 @@ public class JDInfoFileWriter extends PluginOptional {
 
         try {
             if (dest.createNewFile() && dest.canWrite()) {
-                String content = Replacer.insertVariables(subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT), lastDownloadFinished);
+                String rawContent = subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
+                String content = Replacer.insertVariables(rawContent.replaceAll("(\r\n|\n)", StringUtil.LINE_SEPARATOR), lastDownloadFinished);
 
                 JDIO.writeLocalFile(dest, content);
                 logger.severe("JDInfoFileWriter: info file " + dest.getAbsolutePath() + " successfully created");
