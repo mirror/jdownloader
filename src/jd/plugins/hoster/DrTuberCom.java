@@ -59,8 +59,7 @@ public class DrTuberCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.getHeaders().put("Referer", "");
-        br.getPage("http://drtuber.com/player/config.php?vkey=" + vKey + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("MzlkY24yNHQwOThz")));
+        br.getPage("http://drtuber.com/player/config.php?vkey=" + vKey + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("bm0zOWRjbjI0dDA5OHM=")));
         DLLINK = br.getRegex("<video_file>(http://.*?\\.flv)</video_file>").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
@@ -85,7 +84,7 @@ public class DrTuberCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
