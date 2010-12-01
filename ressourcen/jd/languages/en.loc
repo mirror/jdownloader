@@ -1484,6 +1484,7 @@ plugins.hoster.uploaderpl.accountexpired = Account expired
 plugins.hoster.uploaderpl.freememberacc = Free registered user account
 plugins.hoster.uploadingcom.errors.countrylimitreached = You have reached your country daily limit
 plugins.hoster.videogoogle.videotemporaryunavailable = Temporarily unavailable
+plugins.hoster.vidsmyspacecom.temporaryunavailable = Temporarily unavailable
 plugins.hoster.vipfilecom.errors.nofreedownloadlink = Only downloadable for premium users
 plugins.hoster.wattv.countryblocked = Not available for your country
 plugins.hoster.xsevento.errors.only4premium = Only downloadable for premium users
