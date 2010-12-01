@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
@@ -169,7 +169,10 @@ public class LetitBitNet extends PluginForHost {
             }
         }
         /* because there can be another link to a downlodmanager first */
-        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (dlUrl == null) {
+            logger.severe(br.toString());
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         /* we have to wait little because server too buggy */
         sleep(5000, downloadLink);
         br.setDebug(true);
@@ -221,7 +224,7 @@ public class LetitBitNet extends PluginForHost {
         down.setMethod(Form.MethodType.POST);
         down.put("uid2", captchaId);
         down.setAction("http://letitbit.net/download3.php");
-        br.submitForm(down);
+        String tmp1 = br.submitForm(down);
         url = br.getRegex("<frame src=\"http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\"").getMatch(0);
         if (url == null || url.equals("")) {
             logger.info("Getting nextpage + ?link=");
@@ -246,6 +249,8 @@ public class LetitBitNet extends PluginForHost {
         }
         if (url == null || url.equals("") || !url.startsWith("http://") || url.length() > 1000) {
             logger.warning("url couldn't be found!");
+            logger.severe(br.toString());
+            logger.severe(tmp1);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* we have to wait little because server too buggy */
