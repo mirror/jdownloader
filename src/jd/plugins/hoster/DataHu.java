@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -32,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/.+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
@@ -68,38 +68,20 @@ public class DataHu extends PluginForHost {
 
     public void login(Account account) throws Exception {
         synchronized (LOCK) {
+            br.setCustomCharset("utf-8");
+            br.setFollowRedirects(true);
             this.setBrowserExclusive();
             br.forceDebug(true);
             br.getPage("http://data.hu/");
-            Form form = br.getForm(0);
-            form.put("username", Encoding.urlEncode(account.getUser()));
-            form.put(form.getInputFieldByName("login_passfield").getValue(), Encoding.urlEncode(account.getPass()));
-            form.put("remember", "on");
-            br.submitForm(form);
-            br.getPage("http://data.hu/index.php");
+            String loginID = br.getRegex("name=\"login_passfield\" value=\"(.*?)\"").getMatch(0);
+            String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on";
+            br.postPage("http://data.hu/login.php", postData);
             if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
                 logger.warning("Cookie error!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (!isPremium()) {
-                logger.warning("This account is no a premium account!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            if (!br.containsHTML("<td>Prémium:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-    }
-
-    public boolean isPremium() throws IOException {
-        br.getPage("http://data.hu/user.php");
-        if (br.getRedirectLocation() != null) {
-            /* try to workaround server issue */
-            try {
-                Thread.sleep(1500);
-            } catch (InterruptedException e) {
-            }
-            br.getPage("http://data.hu/user.php");
-        }
-        if (br.getRegex("logged_user_prem_date\">(.*?)<").matches()) return true;
-        return false;
     }
 
     @Override
@@ -113,7 +95,7 @@ public class DataHu extends PluginForHost {
             return ai;
         }
 
-        String days = br.getRegex("logged_user_prem_date\">(.*?)<").getMatch(0);
+        String days = br.getRegex("<td><a href=\"/premium\\.php\">(.*?)<span").getMatch(0);
         if (days != null && !days.equals("0")) {
             ai.setValidUntil(Regex.getMilliSeconds(days, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
         } else {
@@ -122,8 +104,8 @@ public class DataHu extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String points = br.getRegex(Pattern.compile("leftpanel_datapont_pont\">(\\d+)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) ai.setPremiumPoints(Long.parseLong(points.trim().replaceAll(",|\\.", "")));
+        String points = br.getRegex(Pattern.compile("title=\"Mi az a DataPont\\?\">(\\d+) pont</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
         account.setValid(true);
         return ai;
     }
@@ -132,12 +114,17 @@ public class DataHu extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        br.forceDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-        String link = br.getRegex("window.location.href='(.*?)';").getMatch(0);
+        String link = br.getRegex("window\\.location\\.href=\\'(.*?)\\';").getMatch(0);
+        if (link == null) link = br.getRegex("\"(http://ddlp\\.data\\.hu/get/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The finallink doesn't seem to be a file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -156,6 +143,9 @@ public class DataHu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
+            // Wait a minute for respons 503 because JD tried to start too many
+            // downloads in a short time
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.datahu.toomanysimultandownloads", "Too many simultan downloads, please wait some time!"), 60 * 1000l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

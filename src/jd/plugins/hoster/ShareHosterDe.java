@@ -22,6 +22,8 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,12 +31,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehoster.de" }, urls = { "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait|vid)/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehoster.de" }, urls = { "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait|vid)/[a-z0-9]+" }, flags = { 2 })
 public class ShareHosterDe extends PluginForHost {
 
     public ShareHosterDe(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.sharehoster.com/index.php?open=premium");
     }
+
+    private static final String MAINPAGE = "http://www.sharehoster.com/";
 
     @Override
     public String getAGBLink() {
@@ -45,6 +50,7 @@ public class ShareHosterDe extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("sharehoster\\.(com|net|de)", "sharehoster.com").replace("/dl/", "/wait/"));
     }
 
+    // Note: This hoster is EXTREMELY BUGGY...
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -87,10 +93,14 @@ public class ShareHosterDe extends PluginForHost {
             br.getPage("http://www.sharehoster.com/?open=download_prepare&file=" + fileID);
         }
         if (downloadLink.getDownloadURL().contains("/vid/")) {
-            br.getPage("http://www.sharehoster.com/flowplayer/config.php?movie=" + fileID);
-            dllink = br.getRegex("\\'url\\': \\'(?!http://www\\.sharehoster\\.com/design/images)(http://.*?)\\'").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\\'(http://upload\\d+\\.sharehoster\\.com/video/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\\'").getMatch(0);
+            dllink = br.getRegex("name=\"stream\" value=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null && br.containsHTML("/v/")) {
+                br.getPage("http://www.sharehoster.com/flowplayer/config.php?movie=" + fileID);
+                dllink = br.getRegex("\\'url\\': \\'(?!http://www\\.sharehoster\\.com/design)(http://.*?\\.mp4)\\'").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\\'(http://(upload|media)\\d+\\.sharehoster\\.com/video/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\\'").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("Stream: (http://(media|upload)\\d+\\.sharehoster\\.com/video/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)").getMatch(0);
+                }
             }
         }
         if (dllink == null) {
@@ -120,6 +130,82 @@ public class ShareHosterDe extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.clearCookies(MAINPAGE);
+        br.getHeaders().put("Referer", "");
+        br.postPage("http://www.sharehoster.com/index.php", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login_submit=login");
+        if (br.getCookie(MAINPAGE, "sharehoster-data") == null || !br.containsHTML("- Premium for")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("- Premium for (\\d+) day\\(s\\)").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(System.currentTimeMillis() + Integer.parseInt(expire) * 24 * 60 * 60 * 1001);
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRegex("<param name=\"src\" value=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<embed type=\"video/divx\" src=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://(upload|media)\\d+\\.sharehoster\\.com/video/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.(avi|mp4))\"").getMatch(0);
+            }
+        }
+        if (dllink == null) {
+            logger.info("Couldn't find dllink, trying workaround...");
+            String theID = new Regex(link.getDownloadURL(), "sharehoster\\.com/(dl|wait|vid)/(.+)").getMatch(1);
+            if (br.containsHTML("(value=\"AVI\"|value=\"FLASH\")"))
+                br.postPage("http://www.sharehoster.com/dl/" + theID, "");
+            else
+                br.getPage("http://www.sharehoster.com/dl/" + theID);
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+                br.postPage("http://www.sharehoster.com/dl/" + theID, "submit=Download&open=show_wait_premium&file=" + theID + "&wait=");
+                dllink = br.getRedirectLocation();
+            }
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

@@ -142,6 +142,7 @@ public class CZShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         String linkurl = null;
         requestFileInformation(downloadLink);
+        br.setDebug(true);
         Form profidown = br.getFormBySubmitvalue("PROFI+download");
         if (profidown == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/profi/profi_down.php"));
         if (profidown == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
