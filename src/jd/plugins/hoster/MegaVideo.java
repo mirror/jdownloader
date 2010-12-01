@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,16 +33,17 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/(.*?(v|d)=|v/)[a-zA-Z0-9]+" }, flags = { 2 })
 public class MegaVideo extends PluginForHost {
 
-    private static String agent = RandomUserAgent.generate();
+    private static String       agent     = RandomUserAgent.generate();
+    private final static Object LOGINLOCK = new Object();
 
     public MegaVideo(PluginWrapper wrapper) {
         super(wrapper);
@@ -89,35 +91,121 @@ public class MegaVideo extends PluginForHost {
         link.setUrlDownload("http://www.megavideo.com/v/" + getDownloadID(link));
     }
 
-    public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        antiJDBlock(br);
-        br.getPage("http://www.megavideo.com/?s=signup");
-        br.postPage("http://www.megavideo.com/?s=signup", "action=login&nickname=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://www.megavideo.com", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://www.megavideo.com/xml/player_login.php?u=" + br.getCookie("http://www.megavideo.com", "user"));
-        if (!br.containsHTML("type=\"premium\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    public void login(final Account account, final boolean cookielogin) throws IOException, PluginException {
+        String user = account.getStringProperty("user", null);
+        synchronized (LOGINLOCK) {
+            this.antiJDBlock(this.br);
+            if (cookielogin && user != null) {
+                this.br.setCookie("http://www.megavideo.com", "l", "en");
+                this.br.setCookie("http://www.megavideo.com", "user", user);
+                return;
+            } else {
+                if (account.getUser().trim().equalsIgnoreCase("cookie")) {
+                    this.setBrowserExclusive();
+                    this.br.setCookie("http://www.megavideo.com", "l", "en");
+                    this.br.setCookie("http://www.megavideo.com", "user", account.getPass());
+                    this.br.getPage("http://www.megavideo.com/");
+                } else {
+                    this.setBrowserExclusive();
+                    this.br.setCookie("http://www.megavideo.com", "l", "en");
+                    this.br.getPage("http://www.megavideo.com/?s=account");
+                    this.br.postPage("http://www.megavideo.com/?s=account", "login=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                }
+                user = this.br.getCookie("http://www.megavideo.com", "user");
+                this.br.setCookie("http://www.megavideo.com", "user", user);
+                account.setProperty("user", user);
+                if (user == null) {
+                    account.setProperty("ispremium", false);
+                    account.setProperty("typeknown", false);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+        }
+    }
+
+    public boolean isPremium(final Account account, final Browser br, final boolean refresh, boolean cloneBrowser) throws IOException {
+        synchronized (LOGINLOCK) {
+            if (account == null) { return false; }
+            if (account.getBooleanProperty("typeknown", false) == false || refresh) {
+                final Browser brc;
+                if (cloneBrowser) {
+                    brc = br.cloneBrowser();
+                } else {
+                    brc = br;
+                }
+                this.antiJDBlock(brc);
+                brc.getPage("http://www.megavideo.com/?c=account");
+                final String type = brc.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+                if (type == null || type.equalsIgnoreCase("regular")) {
+                    account.setProperty("ispremium", false);
+                    if (type != null) {
+                        account.setProperty("typeknown", true);
+                    } else {
+                        account.setProperty("typeknown", false);
+                    }
+                    return false;
+                } else {
+                    account.setProperty("ispremium", true);
+                    account.setProperty("typeknown", true);
+                    return true;
+                }
+            } else {
+                return account.getBooleanProperty("ispremium", false);
+            }
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+        synchronized (LOGINLOCK) {
+            try {
+                this.login(account, false);
+            } catch (final PluginException e) {
+                account.setValid(false);
+                return ai;
+            }
+            if (!this.isPremium(account, this.br, true, false)) {
+                account.setValid(false);
+                ai.setStatus("Free Membership");
+                return ai;
+            }
         }
-        account.setValid(true);
+        br.getPage("http://www.megavideo.com/?c=account");
+        final String type = this.br.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (type != null && !type.contains("Lifetime")) {
+            ai.setStatus("Premium Membership");
+            final String days = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
+            if (days != null && !days.equalsIgnoreCase("Unlimited")) {
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days) * 24 * 60 * 60 * 1000);
+            } else if (days == null || days.equals("0")) {
+                final String hours = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) hours remaining - <a").getMatch(0);
+                if (hours != null) {
+                    ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(hours) * 60 * 60 * 1000);
+                } else {
+                    ai.setExpired(true);
+                    account.setValid(false);
+                    return ai;
+                }
+            }
+        } else if (type != null && type.contains("Lifetime")) {
+            ai.setStatus("Lifetime Membership");
+        }
+        final String points = this.br.getRegex(Pattern.compile("Reward points available:.*?<strong>(\\d+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) {
+            ai.setPremiumPoints(Long.parseLong(points));
+        }
         return ai;
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account);
+        synchronized (LOGINLOCK) {
+            this.login(account, true);
+            if (!this.isPremium(account, this.br.cloneBrowser(), false, true)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        }
         br.getPage(downloadLink.getDownloadURL());
         br.forceDebug(true);
         Browser brc = br.cloneBrowser();

@@ -318,6 +318,11 @@ public class UploadingCom extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
+                /* parser works on english language */
+                br.setCookie("http://www.uploading.com/", "lang", "1");
+                br.setCookie("http://www.uploading.com/", "language", "1");
+                br.setCookie("http://www.uploading.com/", "setlang", "en");
+                br.setCookie("http://www.uploading.com/", "_lang", "en");
                 br.setDebug(true);
                 br.postPage("http://uploading.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
                 String correctedHTML = br.toString().replace("\\", "");

@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
@@ -174,6 +174,8 @@ public class LetitBitNet extends PluginForHost {
         sleep(5000, downloadLink);
         br.setDebug(true);
         br.setFollowRedirects(true);
+        /* remove newline */
+        dlUrl = dlUrl.replaceAll("%0D%0A", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -202,9 +204,9 @@ public class LetitBitNet extends PluginForHost {
                 break;
             }
         }
+        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaId = down.getVarsMap().get("uid");
         String captchaurl = null;
-        if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         URLConnectionAdapter con = null;
         if (br.containsHTML("cap\\.php")) {
             if (captchaId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -248,6 +250,8 @@ public class LetitBitNet extends PluginForHost {
         }
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
+        /* remove newline */
+        url = url.replaceAll("%0D%0A", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         con = dl.getConnection();
         if (con.getResponseCode() == 404) {

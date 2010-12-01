@@ -32,22 +32,22 @@ import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaupload.com" }, urls = { "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[0-9A-Za-z]+" }, flags = { 2 })
@@ -61,7 +61,7 @@ public class Megauploadcom extends PluginForHost {
     private final static String[] ports           = new String[] { "80", "800", "1723" };
     private static String         wwwWorkaround   = null;
     private static final Object   LOCK            = new Object();
-    private static final Object   LOCK2           = new Object();
+
     private static final Object   LOGINLOCK       = new Object();
     private static int            simultanpremium = 1;
 
@@ -244,6 +244,11 @@ public class Megauploadcom extends PluginForHost {
         url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + this.usePort(link) + "/");
         this.br.setFollowRedirects(true);
         final String waitb = this.br.getRegex("count=(\\d+);").getMatch(0);
+        logger.info("Waittime: " + waitb);
+        if (waitb == null) {
+            /* debug */
+            logger.severe(br.toString());
+        }
         long waittime = 0;
         try {
             if (Megauploadcom.WaittimeWorkaround == 0) {
@@ -281,6 +286,11 @@ public class Megauploadcom extends PluginForHost {
                 this.br.followConnection();
                 Megauploadcom.handleWaittimeWorkaround(link, this.br);
                 if (this.br.containsHTML("The file you are trying to access is temporarily")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File currently not available", 10 * 60 * 1000l); }
+                if (this.br.getURL().contains("d=" + getDownloadID(link))) {
+                    logger.info(br.toString());
+                    logger.info("try to workaround loop with downloadpage again");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: redirect to Downloadpage", 5 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
