@@ -38,7 +38,6 @@ import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -48,8 +47,8 @@ import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
-    private static long                     LATEST_OPENED_CNL_TIME = 0;
-    private static HashMap<String, Boolean> CNL_URL_MAP            = new HashMap<String, Boolean>();
+    private static long LATEST_OPENED_CNL_TIME = 0;
+    private static HashMap<String, Boolean> CNL_URL_MAP = new HashMap<String, Boolean>();
 
     private static String getDirektLink(final Browser br) throws IOException {
         final String link = br.getRegex("<frame scrolling=\"auto\" noresize src=\"([^\"]*)\">").getMatch(0);
@@ -59,15 +58,12 @@ public class Lnksvn extends PluginForDecrypt {
         }
         String link2 = Encoding.htmlDecode(br.getRegex("iframe src=\"([^\"]*)\"").getMatch(0));
         if (link2 != null) { return link2.trim(); }
-
         br.getRequest().setHtmlCode(br.toString().replaceFirst("<script type=\"text/javascript\" src=\"[^\"]*.js\">", ""));
-
         // Start Evaluation of br
         try {
             // this is a workaround to use ExtBrowser Insteadof old
             // JavaScript class.
             final ExtBrowser eb = new ExtBrowser();
-
             // settings: blacklist allows nothing. this means that only
             // whitelisted links will be loaded
             eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*" }, new String[] { ".*linksave.in.*" }) {
@@ -100,10 +96,8 @@ public class Lnksvn extends PluginForDecrypt {
                     return null;
                 }
             }
-            Plugin.logger.info("Link: " + link2.trim());
             return link2.trim();
             // TODO: old code is below... did not find an example about that
-
             // if (link2 == null) {
             // js = new JavaScript(br);
             // js.runPage();
@@ -144,26 +138,151 @@ public class Lnksvn extends PluginForDecrypt {
             cnlcheck.getPage("http://linksave.in/cnl.php?id=" + folderID);
             // CNL Dummy
             if (cnlcheck.toString().trim().equals("1") && ((System.currentTimeMillis() - Lnksvn.LATEST_OPENED_CNL_TIME) > 60 * 1000) && !Lnksvn.CNL_URL_MAP.containsKey(parameter)) {
-
                 Lnksvn.LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
-
                 LocalBrowser.openDefaultURL(new URL(parameter + "?jd=1"));
                 Lnksvn.CNL_URL_MAP.put(parameter, Boolean.TRUE);
                 Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
                 return decryptedLinks;
-
             }
         }
-
         this.br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         this.br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         this.br.setRequestIntervalLimit("linksave.in", 1000);
         this.br.getPage(param.getCryptedUrl());
-
         if (this.br.containsHTML("Ordner nicht gefunden")) {
             Plugin.logger.info("Error 404 - Ordner: \"" + parameter + "\" nicht gefunden!");
             return decryptedLinks;
         }
+        this.getCaptcha(param);
+        // Container handling (DLC)
+        String[] container = this.br.getRegex("\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
+        if ((container != null) && (container.length > 0)) {
+            for (final String c : container) {
+                final Browser clone = this.br.cloneBrowser();
+                final String test = Encoding.htmlDecode(c);
+                File file = null;
+                if (test.endsWith(".cnl")) {
+                    final URLConnectionAdapter con = clone.openGetConnection("http://linksave.in/" + test.replace("dlc://linksave.in/", ""));
+                    if (con.getResponseCode() == 200) {
+                        file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
+                        clone.downloadConnection(file, con);
+                    } else {
+                        con.disconnect();
+                    }
+                } else if (test.endsWith(".rsdf")) {
+                    final URLConnectionAdapter con = clone.openGetConnection(test);
+                    if (con.getResponseCode() == 200) {
+                        file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace("http://linksave.in", ""));
+                        clone.downloadConnection(file, con);
+                    } else {
+                        con.disconnect();
+                    }
+                } else if (test.endsWith(".dlc")) {
+                    final URLConnectionAdapter con = clone.openGetConnection(test);
+                    if (con.getResponseCode() == 200) {
+                        file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace("http://linksave.in", ""));
+                        file.deleteOnExit();
+                        clone.downloadConnection(file, con);
+                    } else {
+                        con.disconnect();
+                    }
+                }
+                if ((file != null) && file.exists() && (file.length() > 100)) {
+                    try {
+                        decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                    } catch (final Exception e) {
+                    }
+                }
+            }
+        }
+        if ((decryptedLinks != null) && (decryptedLinks.size() > 0)) { return decryptedLinks; }
+        // if containersearch did not work
+        final ArrayList<String> allLinks = new ArrayList<String>();
+        int pages = 1;
+        final String tmpPages = this.br.getRegex("\"center\">Seiten(.*?)</a></td></tr>").getMatch(0);
+        if (tmpPages != null) {
+            pages = new Regex(tmpPages, "\\[(\\d+)\\]").count();
+        }
+        // erst alle verschlüsselten Links holen
+        for (int i = 1; i <= pages; i++) {
+            progress.setRange(pages);
+            if (i > 1) {
+                this.br.getPage(param.getCryptedUrl() + "?s=" + i + "#down");
+            }
+            // Captchaeingabe pro page erforderlich!
+            this.getCaptcha(param);
+            String[] links = this.br.getRegex("<a href=\"(http://linksave[^\"]*)\" onclick=\"javascript:document.getElementById").getColumn(0);
+            // Singlelinks
+            if ((links == null) || (links.length == 0)) {
+                if (this.br.getRegex("<frame scrolling=\"auto\" noresize src=\"([^\"]*)\">").getMatch(0) != null) {
+                    links = new String[1];
+                    links[0] = parameter;
+                }
+            }
+            for (final String tmplinks : links) {
+                allLinks.add(tmplinks);
+            }
+            if (container != null) {
+                container = null;
+            }
+            progress.increase(1);
+            Thread.sleep(500);
+        }
+        progress.decrease(progress.getMax());
+        // alle verschlüsseleten Links in einem Rutsch entschlüsseln
+        final class LsDirektLinkTH extends Thread {
+            Browser browser;
+            String result;
+
+            public LsDirektLinkTH(final Browser browser) {
+                this.browser = browser;
+            }
+
+            @Override
+            public void run() {
+                try {
+                    this.result = Lnksvn.getDirektLink(this.browser);
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
+                synchronized (this) {
+                    this.notify();
+                }
+            }
+        }
+        final LsDirektLinkTH[] dlinks = new LsDirektLinkTH[allLinks.size()];
+        progress.setRange(allLinks.size());
+        for (int i = 0; i < dlinks.length; i++) {
+            final Browser clone = this.br.cloneBrowser();
+            clone.getPage(allLinks.get(i));
+            dlinks[i] = new LsDirektLinkTH(clone);
+            dlinks[i].start();
+            progress.increase(1);
+            Plugin.logger.info("Link " + i + " von " + dlinks.length);
+        }
+        for (final LsDirektLinkTH lsDirektLinkTH : dlinks) {
+            while (lsDirektLinkTH.isAlive()) {
+                synchronized (lsDirektLinkTH) {
+                    try {
+                        lsDirektLinkTH.wait();
+                    } catch (final InterruptedException e) {
+                    }
+                    progress.increase(1);
+                }
+            }
+            if (lsDirektLinkTH.result != null) {
+                Plugin.logger.info("Added: " + lsDirektLinkTH.result);
+                decryptedLinks.add(this.createDownloadlink(lsDirektLinkTH.result));
+            }
+        }
+        if (decryptedLinks.size() == 0) {
+            Plugin.logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
+        }
+        return decryptedLinks;
+    }
+
+    private void getCaptcha(final CryptedLink param) throws Exception {
         Form form = this.br.getFormbyProperty("name", "form");
         for (int retry = 0; retry < 5; retry++) {
             if (form == null) {
@@ -175,6 +294,9 @@ public class Lnksvn extends PluginForDecrypt {
             }
             this.br.submitForm(form);
             form = this.br.getFormbyProperty("name", "form");
+            if (form == null) {
+                break;
+            }
             final String url = "captcha/cap.php?hsh=" + form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);
             final File captchaFile = this.getLocalCaptchaFile();
             Browser.download(captchaFile, this.br.cloneBrowser().openGetConnection(url));
@@ -189,121 +311,5 @@ public class Lnksvn extends PluginForDecrypt {
                 break;
             }
         }
-
-        final String[] container = this.br.getRegex("\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
-
-        String[] pages = this.br.getRegex("\\?s=(\\d+)\\#down").getColumn(0);
-        // if there are less than 30 links, there are no pages links.
-        if (pages.length == 0) {
-            pages = new String[] { "1" };
-        }
-        int pageID = 1;
-        int foundlinks = 0;
-        for (final String page : pages) {
-            if (Integer.parseInt(page) < pageID) {
-                break;
-            }
-            pageID = Integer.parseInt(page);
-            if (!page.equals("1")) {
-                this.br.getPage(param.getCryptedUrl() + "?s=" + page + "#down");
-            }
-            foundlinks = decryptedLinks.size();
-            if ((container != null) && (container.length > 0)) {
-                for (final String c : container) {
-                    final Browser clone = this.br.cloneBrowser();
-                    final String test = Encoding.htmlDecode(c);
-                    File file = null;
-                    if (test.endsWith(".cnl")) {
-                        final URLConnectionAdapter con = clone.openGetConnection("http://linksave.in/" + test.replace("dlc://linksave.in/", ""));
-                        if (con.getResponseCode() == 200) {
-                            file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
-                            clone.downloadConnection(file, con);
-                        } else {
-                            con.disconnect();
-                        }
-                    } else if (test.endsWith(".rsdf")) {
-                        final URLConnectionAdapter con = clone.openGetConnection(test);
-                        if (con.getResponseCode() == 200) {
-                            file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace("http://linksave.in", ""));
-                            clone.downloadConnection(file, con);
-                        } else {
-                            con.disconnect();
-                        }
-                    } else if (test.endsWith(".dlc")) {
-                        final URLConnectionAdapter con = clone.openGetConnection(test);
-                        if (con.getResponseCode() == 200) {
-                            file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace("http://linksave.in", ""));
-                            clone.downloadConnection(file, con);
-                        } else {
-                            con.disconnect();
-                        }
-                    }
-                    if ((file != null) && file.exists() && (file.length() > 100)) {
-                        try {
-                            decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                        } catch (final Exception e) {
-                        }
-
-                    }
-                }
-            }
-            if (decryptedLinks.size() == foundlinks) {
-                // if containersearch did not work
-                String[] links = this.br.getRegex("<a href=\"(http://linksave[^\"]*)\" onclick=\"javascript:document.getElementById").getColumn(0);
-                // Singlelinks
-                if ((links == null) || (links.length == 0)) {
-                    if (this.br.getRegex("<frame scrolling=\"auto\" noresize src=\"([^\"]*)\">").getMatch(0) != null) {
-                        links = new String[1];
-                        links[0] = parameter;
-                    }
-                }
-                final class LsDirektLinkTH extends Thread {
-                    Browser browser;
-                    String  result;
-
-                    public LsDirektLinkTH(final Browser browser) {
-                        this.browser = browser;
-                    }
-
-                    @Override
-                    public void run() {
-                        try {
-                            this.result = Lnksvn.getDirektLink(this.browser);
-                        } catch (final IOException e) {
-                            e.printStackTrace();
-                        }
-                        synchronized (this) {
-                            this.notify();
-                        }
-                    }
-                }
-                final LsDirektLinkTH[] dlinks = new LsDirektLinkTH[links.length];
-                progress.setRange(links.length);
-                for (int i = 0; i < dlinks.length; i++) {
-                    final Browser clone = this.br.cloneBrowser();
-                    clone.getPage(links[i]);
-                    dlinks[i] = new LsDirektLinkTH(clone);
-                    dlinks[i].start();
-                    progress.increase(1);
-                }
-                for (final LsDirektLinkTH lsDirektLinkTH : dlinks) {
-                    while (lsDirektLinkTH.isAlive()) {
-                        synchronized (lsDirektLinkTH) {
-                            try {
-                                lsDirektLinkTH.wait();
-                            } catch (final InterruptedException e) {
-                            }
-                            progress.increase(1);
-                        }
-                    }
-                    if (lsDirektLinkTH.result != null) {
-                        decryptedLinks.add(this.createDownloadlink(lsDirektLinkTH.result));
-                    }
-                }
-                if (decryptedLinks.isEmpty()) { throw new DecrypterException("Out of date. Try Click'n'Load"); }
-            }
-        }
-        return decryptedLinks;
     }
-
 }
