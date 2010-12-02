@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zomgupload.com" }, urls = { "http://[\\w\\.]*?zomgupload\\.com/.+[/0-9a-zA-Z]+.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zomgupload.com" }, urls = { "http://(www\\.)?zomgupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class ZomgUploadCom extends PluginForHost {
 
     public ZomgUploadCom(PluginWrapper wrapper) {
@@ -48,18 +48,14 @@ public class ZomgUploadCom extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         checkErrors(link, false, passCode);
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
         if (br.containsHTML("<Title>ZOMG Upload - Free File Hosting</Title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Form form = br.getForm(0);
-        form.remove("method_premium");
-        br.submitForm(form);
-        form = br.getForm(0);
+        Form form = br.getFormbyProperty("name", "F1");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Captcha. no image, just html placed numbers
         String[][] temp = br.getRegex("<span style='position:absolute;padding-left:([0-9]+)px;padding-top:[0-9]px;'>([0-9])</span>").getMatches();
         // COPY FROM BIGGERUPLOADCOM
         /* "Captcha Method" */
-        if (temp.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (temp == null || temp.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
         for (String[] letter : temp) {
             capMap.put(Integer.parseInt(letter[0]), letter[1]);
@@ -91,9 +87,14 @@ public class ZomgUploadCom extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        String dllink = br.getRegex("#bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
+        String dllink = getDllink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The finallink doesn't seem to be a file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
 
     }
@@ -107,14 +108,29 @@ public class ZomgUploadCom extends PluginForHost {
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form[] forms = br.getForms();
+        if (forms == null || forms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         forms[0].remove("method_premium");
         br.submitForm(forms[0]);
         String filename = br.getRegex("<tr><td align=right><b>Filename:</b></td><td nowrap>(.*?)</b></td></tr>").getMatch(0);
         String filesize = br.getRegex("<tr><td align=right><b>Size:</b></td><td>(.*?)<small>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
+    }
+
+    public String getDllink() {
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = br.getRegex("dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                if (dllink == null) {
+                    dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
+                }
+            }
+        }
+        return dllink;
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {

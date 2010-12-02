@@ -259,7 +259,7 @@ public class JiffyUploadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0);
+        doFree(downloadLink, true, 1);
     }
 
     @Override

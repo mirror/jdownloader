@@ -85,8 +85,10 @@ public class MegaRapidEu extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             dllink = br.getRedirectLocation();
         } else if (dllink == null) {
+            br.setFollowRedirects(true);
             String fileid = new Regex(downloadLink.getDownloadURL(), "(files/|file=)(\\d+)").getMatch(1);
             if (fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String downLink = "http://www.megarapid.eu/files/" + fileid + "/" + downloadLink.getName();
             String getData = "http://megarapid.eu/remote/?action=captcha&file=" + fileid + "/" + downloadLink.getName();
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             boolean valid = false;
@@ -109,7 +111,8 @@ public class MegaRapidEu extends PluginForHost {
                 if (hash == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 captchaurl = captchaurl.replace("\\", "");
                 String code = getCaptchaCode(captchaurl, downloadLink);
-                br.postPage("http://megarapid.eu/remote/", "action=captcha&hash=" + hash + "&code=" + code);
+                String postData = "action=captcha&hash=" + hash + "&code=" + code + "&odkaz=" + Encoding.urlEncode(downLink) + "&nazev=" + Encoding.urlEncode(downloadLink.getName());
+                br.postPage("http://megarapid.eu/remote/", postData);
                 if (!br.containsHTML("status\":true,\"msg\":\"OK\"") && br.containsHTML("msg\":\"Kod se neshoduje")) {
                 } else if (!br.containsHTML("status\":true,\"msg\":\"OK\"")) {
                     logger.warning("Unknown error in captchahandling for link: " + downloadLink.getDownloadURL());
@@ -122,19 +125,20 @@ public class MegaRapidEu extends PluginForHost {
             }
             if (!valid) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             Browser brLoad = br.cloneBrowser();
-            String downLink = "http://megarapid.eu/files/" + fileid + "/" + downloadLink.getName();
             brLoad.getPage(downLink);
+            if (brLoad.containsHTML("(<h1>Not Found</h1>|<p>The requested URL was not found on this server\\.</p>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             dllink = brLoad.getRedirectLocation();
         }
         if (dllink == null) {
             logger.warning("Couldn't get the final link for link: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (dllink.contains("free_traffic_exceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (dllink.contains("server_busy")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.MegaRapidEu.busyoroffline", "File is offline or server is busy"));
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Lost connection to MySQL server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1001l);
+            if (br.containsHTML("Lost connection to MySQL server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
