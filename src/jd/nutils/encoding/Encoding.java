@@ -66,6 +66,10 @@ public class Encoding {
         return str;
     }
 
+    /**
+     * WARNING: we MUST use the encoding given in charset info by webserver!
+     * else missmatch will happen eg UTF8 vs ISO-8859-15
+     **/
     public static String urlEncode(String str) {
         if (str == null) return null;
         try {
@@ -88,6 +92,10 @@ public class Encoding {
         }
     }
 
+    /**
+     * WARNING: we MUST use the encoding given in charset info by webserver!
+     * else missmatch will happen eg UTF8 vs ISO-8859-15
+     **/
     public static String formEncoding(String str) {
         /* Form Variablen dürfen keine Leerzeichen haben */
         if (str == null) return null;
