@@ -78,6 +78,9 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String waittime = br.getRegex("You can wait download for ([\t\n\r0-9]+) minutes or upgrade to premium").getMatch(0);
+        if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime.trim()) * 60 * 1001l);
+        if (br.containsHTML("You reached your hourly traffic limit\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         br.setFollowRedirects(false);
         Form dlform = br.getFormbyProperty("id", "dvifree");
@@ -88,8 +91,13 @@ public class ShareFlareNet extends PluginForHost {
         }
         br.submitForm(dlform);
         Form captchaform = br.getFormbyProperty("id", "dvifree");
-        String captchaUrl = getCaptchaUrl();
-        if (captchaform != null && captchaUrl != null) {
+        if (captchaform == null) {
+            logger.warning("captchaform is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (br.containsHTML("\"cap\"")) {
+            logger.info("Found captcha, continuing...");
+            String captchaUrl = getCaptchaUrl();
             for (int i = 0; i <= 3; i++) {
                 br.setFollowRedirects(false);
                 captchaform = br.getFormbyProperty("id", "dvifree");
@@ -109,12 +117,15 @@ public class ShareFlareNet extends PluginForHost {
                 break;
             }
             if (getCaptchaUrl() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            logger.info("Didn't found captcha, continuing...");
+            br.submitForm(captchaform);
         }
         br.getPage(NEXTPAGE);
         String wait = br.getRegex("y =.*?(\\d+);").getMatch(0);
         int tt = 45;
         if (wait != null) {
-            logger.info("Regexed waittime is found...");
+            logger.info("Regexed waittime is found...(" + wait + " seconds)");
             tt = Integer.parseInt(wait);
         }
         sleep(tt * 1001, downloadLink);

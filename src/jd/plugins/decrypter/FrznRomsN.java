@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "frozen-roms.in" }, urls = { "http://[\\w\\.]*?frozen-roms\\.in/download/\\d+/(wii|nds|gba|gbc|nes|n64|snes)/.{1}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "frozen-roms.in" }, urls = { "http://(www\\.)?frozen-roms\\.in/download/\\d+/(wii|nds|gba|gbc|nes|n64|snes|pc)/.{1}" }, flags = { 0 })
 public class FrznRomsN extends PluginForDecrypt {
 
     public FrznRomsN(PluginWrapper wrapper) {
@@ -52,12 +52,19 @@ public class FrznRomsN extends PluginForDecrypt {
         if (!br.containsHTML(CAPTCHATEXT)) return null;
         boolean failed = true;
         String downPage = null;
+        String[] linkList = null;
         for (int i = 0; i <= 3; i++) {
             File file = this.getLocalCaptchaFile();
             br.cloneBrowser().getDownload(file, "http://frozen-roms.in/captcha/go.php");
             Point p = UserIO.getInstance().requestClickPositionDialog(file, this.getHost(), JDL.L("plugins.decrypter.frznromsn.captchadescription", "Please click on the open circle!"));
             String postData = "button.x=" + p.x + "&button.y=" + p.y + "&button=Send";
             br.postPage(continueLink, postData);
+            linkList = br.getRegex("<FORM ACTION=\"(.*?)\"").getColumn(0);
+            if (linkList != null && linkList.length > 1) {
+                logger.info("Found multiple links, continuing...");
+                failed = false;
+                break;
+            }
             downPage = br.getRegex("<p align=\"center\"><b><a href=\"(http://.*?)\"").getMatch(0);
             if (downPage == null) downPage = br.getRegex("\"(http://frozen-roms\\.in/down-.*?\\.html)\"").getMatch(0);
             if (downPage == null) {
@@ -65,30 +72,37 @@ public class FrznRomsN extends PluginForDecrypt {
                 if (br.containsHTML(CAPTCHATEXT)) continue;
                 return null;
             }
+            logger.info("Found a single link, continuing...");
             failed = false;
             break;
         }
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
-        br.getPage(downPage);
-        if (br.containsHTML("http-equiv=\"refresh\" content=\"0 url=http://frozen-roms\\.in/\"")) throw new DecrypterException("Server error...");
-        String goFrame = br.getRegex("\"(http://frozen-roms\\.in/go-.*?\\.html)\"").getMatch(0);
-        if (goFrame == null) {
-            logger.warning("goLink is null...");
-            return null;
+        // Do we have multiple links ?? If so, add them and stop here
+        if (linkList != null && linkList.length > 1) {
+            for (String singleLink : linkList)
+                decryptedLinks.add(createDownloadlink(singleLink));
+        } else {
+            br.getPage(downPage);
+            if (br.containsHTML("http-equiv=\"refresh\" content=\"0 url=http://frozen-roms\\.in/\"")) throw new DecrypterException("Server error...");
+            String goFrame = br.getRegex("\"(http://frozen-roms\\.in/go-.*?\\.html)\"").getMatch(0);
+            if (goFrame == null) {
+                logger.warning("goLink is null...");
+                return null;
+            }
+            br.getPage(goFrame);
+            String goFrameTwo = br.getRegex("\"(http://frozen-roms\\.in/frame-.*?\\.html)\"").getMatch(0);
+            if (goFrameTwo == null) {
+                logger.warning("goFrameTwo is null...");
+                return null;
+            }
+            br.getPage(goFrameTwo);
+            String finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("finallink is null...");
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
         }
-        br.getPage(goFrame);
-        String goFrameTwo = br.getRegex("\"(http://frozen-roms\\.in/frame-.*?\\.html)\"").getMatch(0);
-        if (goFrameTwo == null) {
-            logger.warning("goFrameTwo is null...");
-            return null;
-        }
-        br.getPage(goFrameTwo);
-        String finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
-        if (finallink == null) {
-            logger.warning("finallink is null...");
-            return null;
-        }
-        decryptedLinks.add(createDownloadlink(finallink));
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());

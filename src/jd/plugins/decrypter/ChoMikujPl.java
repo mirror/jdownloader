@@ -22,6 +22,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -41,6 +42,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.12) Gecko/20101026 Firefox/3.6.12");
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
         br.getPage(parameter);
@@ -55,17 +57,16 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
         }
         String viewState = br.getRegex("id=\"__VIEWSTATE\" value=\"(.*?)\"").getMatch(0);
-        String treeExpandLog = br.getRegex("id=\"ctl00_CT_TW_TreeExpandLog\" value=\"(.*?)\"").getMatch(0);
         String chomikId = br.getRegex("id=\"ctl00_CT_ChomikID\" value=\"(.*?)\"").getMatch(0);
         String subFolderID = br.getRegex("id=\"ctl00_CT_FW_SubfolderID\" value=\"(.*?)\"").getMatch(0);
         if (subFolderID == null) subFolderID = br.getRegex("name=\"ChomikSubfolderId\" type=\"hidden\" value=\"(.*?)\"").getMatch(0);
-        if (subFolderID == null || fpName == null || chomikId == null || treeExpandLog == null || viewState == null) {
+        if (subFolderID == null || fpName == null || chomikId == null || viewState == null) {
             logger.warning(error);
             return null;
         }
         subFolderID = subFolderID.trim();
         // Das sind die wichtigen Postdaten
-        String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=&ctl00%24SearchFileBox=&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&ctl00%24CT%24TW%24TreeExpandLog=" + Encoding.urlEncode(treeExpandLog) + "&ChomikSubfolderId=" + subFolderID + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&FrGroupId=0&__ASYNCPOST=true&ctl00%24CT%24FrW%24FrPage=";
+        String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=&ctl00%24SearchFileBox=&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&ctl00%24CT%24TW%24TreeExpandLog=&ChomikSubfolderId=" + subFolderID + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&FrGroupId=0&__ASYNCPOST=true&ctl00%24CT%24FrW%24FrPage=";
         logger.info("Looking how many pages we got here for folder " + subFolderID + " ...");
         // Herausfinden wie viele Seiten der Link hat
         int pageCount = getPageCount(postdata, parameter);
@@ -79,13 +80,13 @@ public class ChoMikujPl extends PluginForDecrypt {
         for (int i = 0; i < pageCount; ++i) {
             logger.info("Decrypting page " + i + " of folder " + subFolderID + " now...");
             String postThatData = postdata + i;
-            prepareBrowser(parameter);
+            prepareBrowser(parameter, br);
             br.postPage(parameter, postThatData);
             // Every full page has 30 links (pictures)
             // This regex finds all links to PICTUREs, the site also got .rar
             // files but the regex doesn't find them because you need to be
             // logged in to download them anyways
-            String[] fileIds = br.getRegex("href=\"/Image\\.aspx\\?id=(\\d+)\"").getColumn(0);
+            String[] fileIds = br.getRegex("class=\"fileItemProp getFile\" onclick=\"return ch\\.Download\\.dnFile\\((\\d+)\\);\"").getColumn(0);
             if (fileIds == null || fileIds.length == 0) fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"").getColumn(0);
             if (fileIds == null || fileIds.length == 0) {
                 // If the last page only contains a file or fileS the regexes
@@ -114,12 +115,20 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     public int getPageCount(String postdata, String theParameter) throws NumberFormatException, DecrypterException, IOException {
+        Browser br2 = br.cloneBrowser();
+        prepareBrowser(theParameter, br2);
+        br2.getPage(theParameter);
         int pageCount = 0;
         int tempint = 0;
         // Loop limited to 20 in case something goes seriously wrong
         for (int i = 0; i <= 20; i++) {
             // Find number of pages
-            String pagePiece = br.getRegex("class=\"navigation\"><table id=\"ctl00_CT_FW_FV_NavTop_NavTable\" border=\"0\">(.*?)</table></div>").getMatch(0);
+            String pagePiece = br2.getRegex("class=\"navigation\"><table id=\"ctl00_CT_FW_FV_NavTop_NavTable\" border=\"0\">(.*?)</table></div>").getMatch(0);
+            if (pagePiece == null) {
+                logger.info("pagePiece is null so we should only have one page for this link...");
+                pageCount = 1;
+                break;
+            }
             String[] lolpages = null;
             if (pagePiece != null) lolpages = new Regex(pagePiece, "=\"javascript:;\">(\\d+)<").getColumn(0);
             if (lolpages == null || lolpages.length == 0) return -1;
@@ -135,21 +144,21 @@ public class ChoMikujPl extends PluginForDecrypt {
                 break;
             }
             String postThoseData = postdata + tempint;
-            br.postPage(theParameter, postThoseData);
+            br2.postPage(theParameter, postThoseData);
             pageCount = tempint;
         }
         return pageCount;
     }
 
-    private void prepareBrowser(String parameter) {
-        br.getHeaders().put("Referer", parameter);
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
-        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        br.getHeaders().put("Cache-Control", "no-cache, no-cache");
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=utf-8r ");
-        br.getHeaders().put("X-MicrosoftAjax", "Delta=true");
-        br.getHeaders().put("Pragma", "no-cache");
+    private void prepareBrowser(String parameter, Browser bro) {
+        bro.getHeaders().put("Referer", parameter);
+        bro.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        bro.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        bro.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        bro.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        bro.getHeaders().put("Cache-Control", "no-cache, no-cache");
+        bro.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=utf-8r ");
+        bro.getHeaders().put("X-MicrosoftAjax", "Delta=true");
+        bro.getHeaders().put("Pragma", "no-cache");
     }
 }
