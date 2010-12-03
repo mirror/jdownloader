@@ -134,7 +134,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final String                       PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
 
-    private static final String                       PRE_RESOLVE             = "PRE_RESOLVE";
+    private static final String                       PRE_RESOLVE             = "PRE_RESOLVE2";
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -401,7 +401,7 @@ public class Rapidshare extends PluginForHost {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
         }
 
-        String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
+        String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*?)($|\\?)").getMatch(0);
         if (filename == null) {
             filename = new Regex(link, "\\#\\!download\\|(\\d+.*?)\\|(\\d+)\\|(.+?)\\|").getMatch(2);
 
@@ -893,7 +893,11 @@ public class Rapidshare extends PluginForHost {
 
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl", "Use Secure Communication over SSL (Double traffic will be charged)")).setDefaultValue(false));
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.HTTPS_WORKAROUND, JDL.L("plugins.hoster.rapidshare.com.https", "Use HTTPS workaround for ISP Block")).setDefaultValue(false));
-        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.PRE_RESOLVE, JDL.L("plugins.hoster.rapidshare.com.resolve", "Use IP instead of hostname")).setDefaultValue(false));
+        /* caused issues lately because it seems some ip's are sharedhosting */
+        // this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // this.getPluginConfig(), Rapidshare.PRE_RESOLVE,
+        // JDL.L("plugins.hoster.rapidshare.com.resolve",
+        // "Use IP instead of hostname")).setDefaultValue(false));
 
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));

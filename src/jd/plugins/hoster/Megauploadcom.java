@@ -32,22 +32,22 @@ import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaupload.com" }, urls = { "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[0-9A-Za-z]+" }, flags = { 2 })
@@ -239,6 +239,7 @@ public class Megauploadcom extends PluginForHost {
     private void doDownload(final DownloadLink link, String url, final boolean resume, final Account account) throws Exception {
         if (url == null) {
             if (this.br.containsHTML("The file you are trying to access is temporarily")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+            logger.severe("dlURL is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + this.usePort(link) + "/");
@@ -247,7 +248,10 @@ public class Megauploadcom extends PluginForHost {
         logger.info("Waittime: " + waitb);
         if (waitb == null) {
             /* debug */
-            logger.severe(br.toString());
+            try {
+                logger.severe(br.toString());
+            } catch (Throwable e) {
+            }
         }
         long waittime = 0;
         try {
@@ -589,7 +593,10 @@ public class Megauploadcom extends PluginForHost {
         this.br.setFollowRedirects(false);
         this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?d=" + this.getDownloadID(parameter));
 
+        if (br.containsHTML("The file has been deleted because it was violating")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (this.br.containsHTML("Unfortunately, the link you have clicked is not available")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+
         if (this.br.getRedirectLocation() == null) {
             if (this.br.toString().trim().length() == 0) {
                 // megupload bug. probably direct download is activated.
@@ -689,6 +696,13 @@ public class Megauploadcom extends PluginForHost {
             if (url == null) {
                 url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
             }
+            if (url == null) {
+                /*
+                 * seems free users get directdownload too sometimes, maybe for
+                 * special links?
+                 */
+                url = br.getRedirectLocation();
+            }
             if (url != null) break;
             /* check for iplimit */
             final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
@@ -769,6 +783,13 @@ public class Megauploadcom extends PluginForHost {
         if (url == null) url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
         if (url == null) {
             url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
+        }
+        if (url == null) {
+            /*
+             * seems free users get directdownload too sometimes, maybe for
+             * special links?
+             */
+            url = br.getRedirectLocation();
         }
         this.doDownload(link, url, true, account);
     }
@@ -963,7 +984,11 @@ public class Megauploadcom extends PluginForHost {
                 l.setAvailable(true);
             }
             return;
+        } catch (final PluginException e2) {
+            throw e2;
         } catch (final Exception e) {
+            if (br.containsHTML("The file has been deleted because it was violating")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("The file you are trying to access is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file you are trying to access is temporarily unavailable", 10 * 60 * 1000l);
             Plugin.logger.info("Megaupload blocked this IP(2): 25 mins");
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
