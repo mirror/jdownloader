@@ -23,9 +23,11 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.1fichier\\.com/" }, flags = { 0 })
 public class OneFichierCom extends PluginForHost {
@@ -44,9 +46,13 @@ public class OneFichierCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL() + "en/en");
     }
 
+    private static final String PASSWORDTEXT = "(Accessing this file is protected by password|Please put it on the box bellow)";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(The requested file could not be found|The file may has been deleted by its owner|Le fichier demandé n'existe pas\\.|Il a pu être supprimé par son propriétaire\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Téléchargement du fichier : (.*?)</title>").getMatch(0);
@@ -67,21 +73,40 @@ public class OneFichierCom extends PluginForHost {
             filesize = filesize.replace("Go", "Gb").replace("Mo", "Mb").replace("Ko", "Kb");
             link.setDownloadSize(Regex.getSize(filesize));
         }
+        if (br.containsHTML(PASSWORDTEXT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String passCode = null;
         // Their limit is just very short so a 30 second waittime for all
         // downloads will remove the limit
         if (br.containsHTML("(You already downloading some files,|Téléchargements en cours,)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 30 * 1000l);
-        String dllink = br.getRegex("<br/>\\&nbsp;<br/>\\&nbsp;<br/>\\&nbsp;[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        String dllink = null;
+        if (br.containsHTML(PASSWORDTEXT)) {
+            logger.info("This link seems to be password protected, continuing...");
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            br.postPage(br.getURL(), "pass=" + passCode);
+            if (br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+            dllink = br.getRedirectLocation();
+        } else {
+            dllink = br.getRegex("<br/>\\&nbsp;<br/>\\&nbsp;<br/>\\&nbsp;[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }

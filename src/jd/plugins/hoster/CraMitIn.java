@@ -28,19 +28,19 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://[\\w\\.]*?(cramit\\.in|cramitin\\.(net|eu))/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://[\\w\\.]*?(cramit\\.in|cramitin\\.(net|eu|us))/[a-z0-9]{12}" }, flags = { 2 })
 public class CraMitIn extends PluginForHost {
 
     public CraMitIn(PluginWrapper wrapper) {
@@ -62,7 +62,7 @@ public class CraMitIn extends PluginForHost {
     public boolean              nopremium   = false;
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("cramitin\\.(net|eu)", "cramit.in"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("cramitin\\.(net|eu|us)", "cramit.in"));
     }
 
     @Override
@@ -100,6 +100,10 @@ public class CraMitIn extends PluginForHost {
                 filesize = br.getRegex(">http://cramit\\.in/[a-z0-9]{12}</font> \\((.*?)\\)</font>").getMatch(0);
                 if (filesize == null) {
                     filesize = br.getRegex("class=\"green\">http://cramit\\.in/[a-z0-9]{12}</span></a>( )?\\((.*?)\\)</div>").getMatch(1);
+                    if (filesize == null) {
+                        filesize = br.getRegex("alt=\"http://cramit.in/[a-z0-9]{12}\"></a><img src=\"http://static\\d+\\.cramit\\.in/cdn/cramitin/.*?\\.png\" alt=\"\\((.*?)\\)\"").getMatch(0);
+                        if (filesize == null) filesize = br.getRegex("\"\\(([0-9\\.]+ Mb)\\)\"").getMatch(0);
+                    }
                 }
             }
         }

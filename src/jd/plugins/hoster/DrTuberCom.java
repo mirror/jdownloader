@@ -53,7 +53,7 @@ public class DrTuberCom extends PluginForHost {
         if (br.containsHTML("The file you have requested was not found on this server") || br.getURL().contains("missing=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<a href=\"\" class=\"vtitle\">(.*?)</a>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) - Free Videos Adult Sex Tube - DrTuber.com</title>").getMatch(0);
-        String vKey = br.getRegex("vkey=(\\d+)").getMatch(0);
+        String vKey = br.getRegex("vkey=([0-9a-z]+)").getMatch(0);
         if (vKey == null) {
             logger.warning("vKey is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

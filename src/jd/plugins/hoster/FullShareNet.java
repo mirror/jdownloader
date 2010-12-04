@@ -68,9 +68,9 @@ public class FullShareNet extends PluginForHost {
         if (ttt != null) {
             String code = br.getRegex("name=\"code\" value=\"(.*?)\"").getMatch(0);
             if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            int tt = Integer.parseInt(ttt);
+            int tt = Integer.parseInt(ttt) + 5;
             sleep(tt * 1001l, downloadLink);
-            br.postPage(downloadLink.getDownloadURL(), "code=" + Encoding.urlEncode_light(code));
+            br.postPage(downloadLink.getDownloadURL(), "code=" + Encoding.urlEncode(code));
         }
         String dllink = br.getRegex("\"src\" value=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
