@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -34,7 +35,7 @@ public class KeezMoviesCom extends PluginForHost {
         super(wrapper);
     }
 
-    public String dllink = null;
+    private String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -52,13 +53,13 @@ public class KeezMoviesCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        dllink = br.getRegex("flashvars.video_url = '(http.*?)';").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        DLLINK = br.getRegex("flashvars.video_url = '(http.*?)';").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.trim() + ".flv");
-
-        URLConnectionAdapter con = br.openGetConnection(dllink);
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        URLConnectionAdapter con = br.openGetConnection(DLLINK);
         try {
-            con = br.openGetConnection(dllink);
+            con = br.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html"))
                 downloadLink.setDownloadSize(con.getLongContentLength());
             else
@@ -75,7 +76,7 @@ public class KeezMoviesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

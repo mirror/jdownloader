@@ -42,7 +42,7 @@ public class ExtaBitCom extends PluginForHost {
         this.enablePremium("http://extabit.com/premium.jsp");
     }
 
-    private static final String NOTAVAILABLETEXT = ">File is temporary unavailable<";
+    private static final String NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
     private static final String NOMIRROR         = ">No download mirror<";
     private static final String PREMIUMONLY      = ">Only premium users can download files of this size";
 
