@@ -57,7 +57,7 @@ public class SendFilePl extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://sendfile.pl/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "sendfile\\.pl/(\\d+)").getMatch(0), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://sendfile.pl/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "sendfile\\.pl/(\\d+)").getMatch(0), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

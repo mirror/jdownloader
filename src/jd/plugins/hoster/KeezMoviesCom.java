@@ -53,7 +53,7 @@ public class KeezMoviesCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("flashvars.video_url = '(http.*?)';").getMatch(0);
+        DLLINK = br.getRegex("flashvars\\.video_url = \\'(http.*?)\\';").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename.trim() + ".flv");
         DLLINK = Encoding.htmlDecode(DLLINK);
