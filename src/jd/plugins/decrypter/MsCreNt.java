@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://(www\\.)?(r\\.)?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|forums/index\\.php\\?showtopic=\\d+|\\?id=.*?\\&url=[a-zA-Z0-9=+/\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://(www\\.)?(r\\.)?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|forums/index\\.php\\?showtopic=\\d+|url\\.php\\?id=[A-Za-z0-9]+\\&url=[a-zA-Z0-9=\\+/\\-]+)" }, flags = { 0 })
 public class MsCreNt extends PluginForDecrypt {
 
     public MsCreNt(PluginWrapper wrapper) {

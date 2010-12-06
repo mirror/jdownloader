@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://[\\w\\.]*?edisk\\.(cz|sk)/stahni/[0-9]+/.+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://[\\w\\.]*?edisk\\.(cz|sk|eu)/stahni/[0-9]+/.+\\.html" }, flags = { 0 })
 public class EdiskCz extends PluginForHost {
 
     public EdiskCz(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class EdiskCz extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("edisk.sk", "edisk.cz"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("edisk\\.(sk|eu)", "edisk.cz"));
     }
 
     @Override
@@ -83,7 +83,10 @@ public class EdiskCz extends PluginForHost {
             br.followConnection();
             if (br.getURL().contains("/error/503") || br.containsHTML("<h3>Z této IP adresy již probíhá stahování</h3>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
             String unknownErrormessage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-            if (unknownErrormessage != null) throw new PluginException(LinkStatus.ERROR_FATAL, unknownErrormessage);
+            if (unknownErrormessage != null) {
+                if (unknownErrormessage.equals("Maximální rychlost stahování")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                throw new PluginException(LinkStatus.ERROR_FATAL, unknownErrormessage);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

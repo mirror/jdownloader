@@ -199,8 +199,8 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<h1><a href='(.*?)'>").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("('|\")(http://(www\\.)?turbobit\\.net//download/redirect/.*?)('|\")").getMatch(1);
+        String dllink = br.getRegex("<h1><a href=\\'(.*?)\\'>").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(\\'|\")(http://(www\\.)?turbobit\\.net//download/redirect/.*?)(\\'|\")").getMatch(1);
         if (dllink == null) {
             logger.warning("dllink equals null, plugin seems to be broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
