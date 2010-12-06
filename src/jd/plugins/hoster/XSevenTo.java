@@ -48,7 +48,8 @@ public class XSevenTo extends PluginForHost {
         return "http://x7.to/legal";
     }
 
-    public static final Object LOCK = new Object();
+    public static final Object  LOCK            = new Object();
+    private static final String PREMIUMONLYTEXT = "(only premium members will be able to download the file|The requested file is larger than|und kann nur von Premium-Benutzern herunter geladen werden)";
 
     public void login(Account account) throws Exception {
         synchronized (LOCK) {
@@ -170,7 +171,7 @@ public class XSevenTo extends PluginForHost {
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", ".")));
-            if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
+            if (br.containsHTML(PREMIUMONLYTEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
         } else {
             downloadLink.getLinkStatus().setStatusText("Direct link");
             downloadLink.setName(getFileNameFromHeader(con));
@@ -201,7 +202,7 @@ public class XSevenTo extends PluginForHost {
         if (con.getContentType().contains("html")) {
             br.followConnection();
             String dllink = null;
-            if (br.containsHTML("(only premium members will be able to download the file|The requested file is larger than)")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
+            if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
             String fileID = new Regex(downloadLink.getDownloadURL(), "\\.to/([a-zA-Z0-9]+)").getMatch(0);
             boolean isStream = br.containsHTML("<b>Stream</b>");
             if (!isStream) {
