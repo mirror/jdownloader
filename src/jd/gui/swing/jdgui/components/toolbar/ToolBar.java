@@ -124,7 +124,9 @@ public class ToolBar extends JToolBar {
                 switch (action.getType()) {
                 case NORMAL:
                     this.add(ab = new JButton(action), "w 32!");
-                    ab.setHideActionText(true);
+                    if (JDUtilities.getJavaVersion() >= 1.6) {
+                        ab.setHideActionText(true);
+                    }
                     lastseparator = false;
                     break;
                 case SEPARATOR:
@@ -135,7 +137,9 @@ public class ToolBar extends JToolBar {
                     break;
                 case TOGGLE:
                     this.add(ab = new JToggleButton(action), "w 32!");
-                    ab.setHideActionText(true);
+                    if (JDUtilities.getJavaVersion() >= 1.6) {
+                        ab.setHideActionText(true);
+                    }
                     if (JDUtilities.getJavaVersion() < 1.6) {
                         final AbstractButton button = ab;
                         ab.setSelected(action.isSelected());
