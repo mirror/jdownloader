@@ -24,46 +24,35 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
-
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.plugins.optional.antireconnect.JDAntiReconnectThread;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-
-
-
-
 @OptionalPlugin(rev = "$Revision: 12612 $", defaultEnabled = false, id = "jdantireconnect", interfaceversion = 7)
 public class JDAntiReconnect extends PluginOptional {
-    private static final String CONFIG_MODE = "CONFIG_MODE";
-    private static final String CONFIG_IPS = "CONFIG_IPS";
-    private static final String CONFIG_TIMEOUT = "CONFIG_TIMEOUT";
-    private static final String CONFIG_EACH = "CONFIG_EACH";
-    private static final String CONFIG_OLDDOWNLOADS = "CONFIG_OLDDOWNLOADS";  
-    private static final String CONFIG_NEWDOWNLOADS = "CONFIG_NEWDOWNLOADS"; 
-    private static final String CONFIG_OLDRECONNECT = "CONFIG_OLDRECONNECT";  
-    private static final String CONFIG_NEWRECONNECT = "CONFIG_NEWRECONNECT";  
-    private static final String CONFIG_OLDSPEED = "CONFIG_OLDSPEED";  
-    private static final String CONFIG_NEWSPEED = "CONFIG_NEWSPEED"; 
-    
-    
-    private String[]            MODES_AVAIL;
+    private static final String   CONFIG_MODE         = "CONFIG_MODE";
+    private static final String   CONFIG_IPS          = "CONFIG_IPS";
+    private static final String   CONFIG_TIMEOUT      = "CONFIG_TIMEOUT";
+    private static final String   CONFIG_EACH         = "CONFIG_EACH";
+    private static final String   CONFIG_OLDDOWNLOADS = "CONFIG_OLDDOWNLOADS";
+    private static final String   CONFIG_NEWDOWNLOADS = "CONFIG_NEWDOWNLOADS";
+    private static final String   CONFIG_OLDRECONNECT = "CONFIG_OLDRECONNECT";
+    private static final String   CONFIG_NEWRECONNECT = "CONFIG_NEWRECONNECT";
+    private static final String   CONFIG_OLDSPEED     = "CONFIG_OLDSPEED";
+    private static final String   CONFIG_NEWSPEED     = "CONFIG_NEWSPEED";
 
-    private JDAntiReconnectThread asthread    = null;
-    
-    
-    
+    private String[]              MODES_AVAIL;
+
+    private JDAntiReconnectThread asthread            = null;
+
     public JDAntiReconnect(PluginWrapper wrapper) {
         super(wrapper);
-        MODES_AVAIL = new String[] { JDL.L("gui.config.antireconnect.disabled", "Disabled"), JDL.L("gui.config.antireconnect.ping", "Detect only by Ping (faster)"), JDL.L("gui.config.antireconnect.arp", "Ping & ARP (recommended)") };   
+        MODES_AVAIL = new String[] { JDL.L("gui.config.antireconnect.disabled", "Disabled"), JDL.L("gui.config.antireconnect.ping", "Detect only by Ping (faster)"), JDL.L("gui.config.antireconnect.arp", "Ping & ARP (recommended)") };
         initConfig();
-    }  
-    
+    }
 
-    
     @Override
     public boolean initAddon() {
         try {
@@ -85,7 +74,6 @@ public class JDAntiReconnect extends PluginOptional {
         }
     }
 
-    
     private void initConfig() {
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.antireconnect.mode", "Mode:")).setDefaultValue(0));
@@ -94,15 +82,16 @@ public class JDAntiReconnect extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_EACH, JDL.L("gui.config.antireconnect.each", "Check Each (ms):"), 1, 300000, 1000).setDefaultValue(10000));
 
         config.setGroup(new ConfigGroup(JDL.L("gui.config.antireconnect.oldgroup", "Normally"), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDDOWNLOADS, JDL.L("gui.config.antireconnect.olddownloads", "Simultanious Downloads:"), 1, 50, 1).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDDOWNLOADS, JDL.L("gui.config.antireconnect.olddownloads", "Simultanious Downloads:"), 1, 20, 1).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_OLDRECONNECT, JDL.L("gui.config.antireconnect.oldreconnect", "Allow Reconnect:")).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_OLDSPEED, JDL.L("gui.config.antireconnect.oldspeed", "Downloadspeed in kb/s"), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
         config.setGroup(new ConfigGroup(JDL.L("gui.config.antireconnect.newgroup", "If Other Clients are Online"), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWDOWNLOADS, JDL.L("gui.config.antireconnect.newdownloads", "Simultanious Downloads:"), 1, 50, 1).setDefaultValue(3));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWDOWNLOADS, JDL.L("gui.config.antireconnect.newdownloads", "Simultanious Downloads:"), 1, 20, 1).setDefaultValue(3));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CONFIG_NEWRECONNECT, JDL.L("gui.config.antireconnect.newreconnect", "Allow Reconnect:")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), CONFIG_NEWSPEED, JDL.L("gui.config.antireconnect.newspeed", "Downloadspeed in kb/s"), 0, 500000, 10).setDefaultValue(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED)));
-        
-    }    
+
+    }
+
     @Override
     public ArrayList<MenuAction> createMenuitems() {
         return null;

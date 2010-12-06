@@ -65,17 +65,37 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         JDUtilities.getController().addControlListener(this);
         spMaxSpeed = new JDSpinner(JDL.L("gui.statusbar.speed", "Max. Speed"));
         spMaxSpeed.getSpinner().addChangeListener(this);
-        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
+        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 50));
+        try {
+            spMaxSpeed.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
+        } catch (Throwable e) {
+            spMaxSpeed.setValue(0);
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            dlConfig.save();
+        }
         spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Speed Limit (KiB/s) [0 = Infinite]"));
         colorizeSpinnerSpeed();
 
         spMaxDls = new JDSpinner(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."), "h 20!");
-        spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        spMaxDls.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
+        try {
+            spMaxDls.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
+        } catch (Throwable e) {
+            spMaxDls.setValue(2);
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
+            dlConfig.save();
+        }
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Maximum simultaneous Downloads [1..20]"));
         spMaxDls.getSpinner().addChangeListener(this);
 
         spMaxChunks = new JDSpinner(JDL.L("gui.statusbar.maxChunks", "Max. Con."), "h 20!");
-        spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
+        try {
+            spMaxChunks.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        } catch (Throwable e) {
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
+            dlConfig.save();
+        }
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
         spMaxChunks.getSpinner().addChangeListener(this);
 
@@ -110,13 +130,21 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
             } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
+                        try {
+                            spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
+                        } catch (Throwable e) {
+                            spMaxDls.setValue(2);
+                        }
                     }
                 });
             } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS)) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        spMaxChunks.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 1));
+                        try {
+                            spMaxChunks.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 1));
+                        } catch (Throwable e) {
+                            spMaxChunks.setValue(1);
+                        }
                     }
                 });
             }
@@ -138,8 +166,11 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     public void setSpinnerSpeed(Integer speed) {
-        spMaxSpeed.setValue(speed);
-        colorizeSpinnerSpeed();
+        try {
+            spMaxSpeed.setValue(speed);
+            colorizeSpinnerSpeed();
+        } catch (Throwable e) {
+        }
     }
 
     public void stateChanged(ChangeEvent e) {
