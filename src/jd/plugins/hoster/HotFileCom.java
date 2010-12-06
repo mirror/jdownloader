@@ -37,12 +37,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -446,7 +446,8 @@ public class HotFileCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("http://hotfile.com/");
                 br.setFollowRedirects(false);
-                final String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
+                String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
+                if (isPremium == null) isPremium = br.getRegex("centerSide\"><p><span>(Premium)</span>").getMatch(0);
                 if (isPremium == null) {
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -465,7 +466,8 @@ public class HotFileCom extends PluginForHost {
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                final String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
+                String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
+                if (isPremium == null) isPremium = br.getRegex("centerSide\"><p><span>(Premium)</span>").getMatch(0);
                 if (isPremium == null) {
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
