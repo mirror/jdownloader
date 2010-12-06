@@ -92,6 +92,7 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setDebug(true);
         br.setCookie("http://letitbit.net/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<br>File not found<br />|Запрашиваемый файл не найден<br>|Request file .*? Deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -191,6 +192,7 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        int i = 1;
         Form freeForm = br.getFormbyProperty("id", "ifree_form");
         if (freeForm == null) {
             logger.info("Found did not found freeForm!");
@@ -220,9 +222,11 @@ public class LetitBitNet extends PluginForHost {
             con.disconnect();
             String code = getCaptchaCode(file, downloadLink);
             down.put("cap", code);
+        } else {
+            captchaId = null;
         }
         down.setMethod(Form.MethodType.POST);
-        down.put("uid2", captchaId);
+        if (captchaId != null) down.put("uid2", captchaId);
         down.setAction("http://letitbit.net/download3.php");
         String tmp1 = br.submitForm(down);
         url = br.getRegex("<frame src=\"http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\"").getMatch(0);
