@@ -13,11 +13,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
@@ -211,6 +211,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             if (!dl.getConnection().isContentDisposition()) {
                 /* unknown error */
                 br.followConnection();
+                if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 logger.severe("OchLoad: error!");
                 logger.severe(br.toString());
                 String error = Encoding.urlEncode(br.toString());
