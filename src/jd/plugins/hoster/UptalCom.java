@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptal.com" }, urls = { "http://[\\w\\.]*?uptal\\.(com|org)/\\?d=[A-Fa-f0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptal.com" }, urls = { "http://(www\\.)?(new\\.)?uptal\\.(com|org)/\\?d=[A-Fa-f0-9]+" }, flags = { 0 })
 public class UptalCom extends PluginForHost {
 
     public UptalCom(PluginWrapper wrapper) {
@@ -51,12 +52,20 @@ public class UptalCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.getURL().contains("uptal.org")) br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().contains("DL_FileNotFound") || br.containsHTML(">Your requested file is not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("File name:</b></td>\\s+<td[^>]+>(.*?)</td>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("title=\"Click this to report (.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h2 class=\"float-left\">(.*?)</h2>").getMatch(0);
+            }
+        }
         String filesize = br.getRegex("File size:</b></td>\\s+<td[^>]+>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) filesize = br.getRegex("<strong>File size</strong></li>[\t\n\r ]+<li class=\"[a-z0-9_-]+\">(.*?)</li>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
@@ -65,6 +74,7 @@ public class UptalCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.postPage(downloadLink.getDownloadURL(), "downloadtype=free&d=&Free=Go+on+downloading%21");
         String filename = downloadLink.getName();
         br.setDebug(true);
         br.setFollowRedirects(true);
@@ -73,8 +83,7 @@ public class UptalCom extends PluginForHost {
             br.postPage(br.getURL(), post);
             if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-        if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
+        String getlink = findLink();
         if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         getlink = getlink.replaceAll(" ", "%20");
@@ -90,6 +99,20 @@ public class UptalCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String findLink() throws Exception {
+        String finalLink = null;
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+        return finalLink;
     }
 
     @Override
