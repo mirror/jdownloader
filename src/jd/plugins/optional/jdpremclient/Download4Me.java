@@ -8,17 +8,18 @@ import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class Download4Me extends PluginForHost implements JDPremInterface {
@@ -174,18 +175,50 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
         proxyused = true;
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Browser br = Browser.getNewBrowser(this.br);
         this.login(acc, br, false);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         br.setDebug(true);
         dl = null;
-        String url = Encoding.urlEncode_light(link.getDownloadURL());
+        br.getPage("http://dwnld4me.com/download.php");
+        final String uid = br.getRegex("uid\" type=\"hidden\" value=\"(.*?)\"").getMatch(0);
+        if (uid == null) {
+            logger.severe("Download4Me: error!");
+            logger.severe(br.toString());
+            synchronized (LOCK) {
+                premiumHosts.remove(link.getHost());
+            }
+            return false;
+        }
+        final String url = Encoding.urlEncode_light(link.getDownloadURL() + "\r\n");
         String dlUrl = null;
+        /* needed? */
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        /* this call blocks */
+        new Thread(new Runnable() {
+            public void run() {
+                URLConnectionAdapter con = null;
+                try {
+                    con = brc.openGetConnection("http://www.dwnld4me.com/ajax/test.py?uid=" + uid + "&urls=" + url);
+                } catch (Throwable e) {
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
+        }).start();
+
         int refresh = 10 * 1000;
+        String id = null;
         while (true) {
-            br.getPage("http://www.dwnld4me.com/ajax/progressBar.py?urls=" + url);
-            if (br.containsHTML("Download complete")) {
+            br.getPage("http://www.dwnld4me.com/ajax/progressBar.py?uid=" + uid + "&urls=" + url);
+            if (br.containsHTML("<b>Download</b>")) {
                 /* finished */
+                id = br.getRegex("download.php\\?id=(.*?)'").getMatch(0);
                 showMessage(link, "Download4Me finished");
                 break;
             } else if (br.containsHTML("Starting download")) {
@@ -198,10 +231,27 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
                 String done = br.getRegex("<td>([0-9.]+)%<").getMatch(0);
                 showMessage(link, done + " % Done");
                 refresh = 5 * 1000;
-            } else if (br.containsHTML("Error downloading")) { return false; }
+            } else if (br.containsHTML("Error downloading")) {
+                logger.severe("Download4Me: error!");
+                logger.severe(br.toString());
+                synchronized (LOCK) {
+                    premiumHosts.remove(link.getHost());
+                }
+                return false;
+            }
             Thread.sleep(refresh);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
+        if (id == null) {
+            logger.severe("Download4Me: error!");
+            logger.severe(br.toString());
+            synchronized (LOCK) {
+                premiumHosts.remove(link.getHost());
+            }
+            return false;
+        }
+        link.getTransferStatus().usePremium(true);
+        dlUrl = "http://www.dwnld4me.com/data/download.php?id=" + id;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             /* unknown error */
             br.followConnection();
@@ -298,7 +348,8 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
                 ac.setStatus("Dwnld4Me Server Error, temp disabled" + restartReq);
                 return ac;
             }
-
+            String validUntil = br.getRegex("Account expires on</b></td><td>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (validUntil != null) ac.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm:ss", null));
             ac.setStatus("Valid Account");
             synchronized (LOCK) {
                 premiumHosts.clear();
@@ -361,7 +412,7 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
             } else if (JDPremium.isEnabled() && enabled) {
                 /* Download4Me */
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("ochload.org") != null) return Integer.MAX_VALUE;
+                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("dwnld4me.com") != null) return Integer.MAX_VALUE;
                 }
             }
             return plugin.getMaxSimultanDownload(account);

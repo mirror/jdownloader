@@ -22,19 +22,18 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -111,24 +110,25 @@ public class OronCom extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account);
-        String dllink = link.getStringProperty("finaldownloadlink");
-        URLConnectionAdapter con = null;
-        boolean generateLink = true;
+
+        String dllink = link.getStringProperty("finaldownloadlink", null);
         if (dllink != null) {
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                logger.info("Saved final downloadlink is still valid, using this link to download...");
-                generateLink = false;
-            } else {
-                logger.info("Saved final downloadlink is NOT valid anymore, creating new link...");
+            /* try saved link */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -15);
+            if (!(dl.getConnection().isContentDisposition()) && dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("octet")) {
+                logger.warning("saved link no longer valid!");
+                dllink = null;
+                link.setProperty("finaldownloadlink", null);
+                br.followConnection();
             }
         }
-        if (con != null) con.disconnect();
-        if (generateLink) {
+
+        if (dllink == null) {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             if (nopremium) {
                 doFree(link);
+                return;
             } else {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
@@ -191,18 +191,11 @@ public class OronCom extends PluginForHost {
                     logger.warning("Final downloadlink (String is \"dllink\" regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // This hoster has a bad traffic-system, every
-                // downloadlink-generation will remove the full size of the
-                // file(s)
-                // from the users account even if he doesn't download the file
-                // after
-                // generating a link
-                link.setProperty("finaldownloadlink", dllink);
             }
+            // Hoster allows up to 15 Chunks but then you can only start one
+            // download...
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -15);
         }
-        // Hoster allows up to 15 Chunks but then you can only start one
-        // download...
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -15);
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
@@ -215,6 +208,13 @@ public class OronCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // This hoster has a bad traffic-system, every
+        // downloadlink-generation will remove the full size of the
+        // file(s)
+        // from the users account even if he doesn't download the file
+        // after
+        // generating a link
+        link.setProperty("finaldownloadlink", dllink);
         dl.startDownload();
     }
 

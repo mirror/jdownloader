@@ -13,11 +13,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class Ochloadorg extends PluginForHost implements JDPremInterface {
@@ -192,7 +192,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             while (true) {
                 showMessage(link, "ConnectTry: " + conTry);
                 try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&jd=1&nick=" + login + "&pass=" + pw + "&url=" + url, true, 1);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&jd=1&nick=" + login + "&pass=" + pw + "&url=" + url, resumePossible(this.getHost()), 1);
                     break;
                 } catch (Throwable e) {
                     try {
@@ -325,6 +325,20 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             return ac;
         } else
             return plugin.fetchAccountInfo(account);
+    }
+
+    private boolean resumePossible(String hoster) {
+        if (hoster != null) {
+            if (hoster.contains("megaupload.com")) return true;
+            if (hoster.contains("netload.in")) return true;
+            if (hoster.contains("uploaded.to")) return true;
+            if (hoster.contains("x7.to")) return true;
+            if (hoster.contains("shragle.com")) return true;
+            if (hoster.contains("freakshare.")) return true;
+            if (hoster.contains("fileserve.com")) return true;
+            if (hoster.contains("bitshare.com")) return true;
+        }
+        return false;
     }
 
     @Override
