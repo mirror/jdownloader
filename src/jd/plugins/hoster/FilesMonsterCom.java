@@ -28,11 +28,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -263,10 +263,12 @@ public class FilesMonsterCom extends PluginForHost {
         String findOtherLinks = br.getRegex("reserve_ticket\\(\\'(/dl/rft/.*?)\\'\\)").getMatch(0);
         if (findOtherLinks == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://filesmonster.com" + findOtherLinks);
-        String regexToFindANewTemporaryLinkInfo = "\\{(\"dlcode\":\"[A-Za-z0-9_.-]+\",\"name\":\"" + originalfilename + ")\",\"size\":\\d+,\"cutted_name\":\"[A-Za-z0-9_\\. %-]+\"\\}";
-        String tempLinkInfo = br.getRegex(regexToFindANewTemporaryLinkInfo).getMatch(0);
-        if (tempLinkInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String temporaryLink = new Regex(tempLinkInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
+        String temporaryLink = null;
+        String[] allInfo = br.getRegex("\\{(.*?)\\}").getColumn(0);
+        if (allInfo != null && allInfo.length != 0) {
+            for (String singleInfo : allInfo)
+                if (singleInfo.contains("\"name\":\"" + originalfilename + "\"")) temporaryLink = new Regex(singleInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
+        }
         if (temporaryLink != null) temporaryLink = "http://filesmonster.com/dl/" + mainlinkpart + "/free/2/" + temporaryLink + "/";
         return temporaryLink;
     }
