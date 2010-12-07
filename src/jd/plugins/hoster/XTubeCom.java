@@ -24,11 +24,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "http://(www\\.)?xtube\\.com/(watch|play_re)\\.php\\?v=[A-Za-z0-9_-]+" }, flags = { 0 })
 public class XTubeCom extends PluginForHost {
@@ -67,9 +67,10 @@ public class XTubeCom extends PluginForHost {
         br.postPage("http://video2.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
         DLLINK = br.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
         if (filename == null || DLLINK == null || DLLINK.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = server + Encoding.htmlDecode(DLLINK);
+        DLLINK = server + Encoding.htmlDecode(DLLINK.trim());
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
+        br.setDebug(true);
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {

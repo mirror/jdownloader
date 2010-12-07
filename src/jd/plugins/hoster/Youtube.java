@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -26,13 +28,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.JDUtilities;
@@ -41,12 +43,30 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "httpJDYoutube://[\\w\\.]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
-    private static final Object lock = new Object();
-    private boolean             prem = false;
+    private static final Object lock         = new Object();
+    private boolean             prem         = false;
+    private static final String IDASFILENAME = "ISASFILENAME";
+    private static final String ALLOW_MP3    = "ALLOW_MP3";
+    private static final String ALLOW_MP4    = "ALLOW_MP4";
+    private static final String ALLOW_WEBM   = "ALLOW_WEBM";
+    private static final String ALLOW_FLV    = "ALLOW_FLV";
+    private static final String ALLOW_3GP    = "ALLOW_3GP";
 
     public Youtube(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.youtube.com/login?next=/index");
+        setConfigElements();
+    }
+
+    private void setConfigElements() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_WEBM, JDL.L("plugins.hoster.youtube.checkwebm", "Grab WEBM?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP4, JDL.L("plugins.hoster.youtube.checkmp4", "Grab MP4?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP3, JDL.L("plugins.hoster.youtube.checkmp3", "Grab MP3?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_FLV, JDL.L("plugins.hoster.youtube.checkflv", "Grab FLV?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3GP, JDL.L("plugins.hoster.youtube.check3gp", "Grab 3GP?")).setDefaultValue(true));
+
     }
 
     @Override

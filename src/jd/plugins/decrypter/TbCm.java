@@ -22,11 +22,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -226,7 +228,17 @@ public class TbCm extends PluginForDecrypt {
                     YT_FILENAME = LinksFound.get(-1)[0];
                     LinksFound.remove(-1);
                 }
-
+                /* prefer videoID als filename? */
+                SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
+                if (cfg.getBooleanProperty("ISASFILENAME", false)) {
+                    String id = new Regex(parameter, "v=([a-z-_A-Z0-9]+)").getMatch(0);
+                    if (id != null) YT_FILENAME = id.toUpperCase(Locale.ENGLISH);
+                }
+                final boolean mp3 = cfg.getBooleanProperty("ALLOW_MP3", true);
+                final boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
+                final boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
+                final boolean flv = cfg.getBooleanProperty("ALLOW_FLV", true);
+                final boolean threegp = cfg.getBooleanProperty("ALLOW_3GP", true);
                 /* http://en.wikipedia.org/wiki/YouTube */
                 final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
                     /**
@@ -236,25 +248,33 @@ public class TbCm extends PluginForDecrypt {
 
                     {
                         // **** FLV *****
-                        this.put(0, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Mono" });
-                        this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo" });
-                        this.put(6, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Mono" });
-                        this.put(34, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo" });
-                        this.put(35, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo" });
+                        if (mp3) {
+                            this.put(0, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Mono" });
+                            this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo" });
+                            this.put(6, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Mono" });
+                        }
+                        if (flv) {
+                            this.put(34, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo" });
+                            this.put(35, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo" });
+                        }
 
                         // **** 3GP *****
-                        this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AMR", "Mono" });
-                        this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo" });
-
+                        if (threegp) {
+                            this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AMR", "Mono" });
+                            this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo" });
+                        }
                         // **** MP4 *****
-                        this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
-                        this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
-                        this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
-                        this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
-
+                        if (mp4) {
+                            this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
+                            this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
+                            this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
+                            this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
+                        }
                         // **** WebM *****
-                        this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo" });
-                        this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo" });
+                        if (webm) {
+                            this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo" });
+                            this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo" });
+                        }
                     }
                 };
 
@@ -262,87 +282,41 @@ public class TbCm extends PluginForDecrypt {
                 String dlLink = "";
                 String vQuality = "";
                 DestinationFormat cMode = null;
-                final boolean wishedFound = false;
-                final ArrayList<Integer> formats = new ArrayList<Integer>(LinksFound.keySet());
-                for (final Integer format : formats) {
+
+                for (final Integer format : LinksFound.keySet()) {
                     if (ytVideo.containsKey(format)) {
                         cMode = (DestinationFormat) ytVideo.get(format)[0];
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + ytVideo.get(format)[1] + "-" + ytVideo.get(format)[2] + ")";
                     } else {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
+                        /*
+                         * we do not want to download unknown formats at the
+                         * moment
+                         */
+                        continue;
                     }
-                    cMode = (DestinationFormat) (ytVideo.containsKey(format) ? ytVideo.get(format)[0] : DestinationFormat.UNKNOWN);
                     dlLink = LinksFound.get(format)[0];
-                    // if (ConvertDialog.getKeeped().contains(cMode)) {
-                    // try {
-                    // if (br.openGetConnection(dlLink).getResponseCode() ==
-                    // 200) {
-                    // addtopos(cMode, dlLink,
-                    // br.getHttpConnection().getLongContentLength(), vQuality,
-                    // format);
-                    // LinksFound.remove(format);
-                    // wishedFound = true;
-                    // }
-                    // } finally {
-                    // try {
-                    // br.getHttpConnection().disconnect();
-                    // } catch (Throwable e) {
-                    // }
-                    // }
-                    // }
-                    // if
-                    // (ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3)
-                    // && (format == 0 || format == 5 || format == 6)) {
-                    // try {
-                    // if (br.openGetConnection(dlLink).getResponseCode() ==
-                    // 200) {
-                    // addtopos(ConversionMode.AUDIOMP3, dlLink,
-                    // br.getHttpConnection().getLongContentLength(), "",
-                    // format);
-                    // LinksFound.remove(format);
-                    // wishedFound = true;
-                    // }
-                    // } finally {
-                    // try {
-                    // br.getHttpConnection().disconnect();
-                    // } catch (Throwable e) {
-                    // }
-                    // }
-                    // }
-                }
-
-                if (!wishedFound) {
-                    for (final Integer format : LinksFound.keySet()) {
-                        if (ytVideo.containsKey(format)) {
-                            cMode = (DestinationFormat) ytVideo.get(format)[0];
-                            vQuality = "(" + LinksFound.get(format)[1] + "_" + ytVideo.get(format)[1] + "-" + ytVideo.get(format)[2] + ")";
-                        } else {
-                            cMode = DestinationFormat.UNKNOWN;
-                            vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
+                    System.out.println(dlLink);
+                    try {
+                        if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
+                            this.addtopos(cMode, dlLink, this.br.getHttpConnection().getLongContentLength(), vQuality, format);
                         }
-                        dlLink = LinksFound.get(format)[0];
-                        System.out.println(dlLink);
+                    } finally {
+                        try {
+                            this.br.getHttpConnection().disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
+                    if (format == 0 || format == 5 || format == 6) {
                         try {
                             if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                this.addtopos(cMode, dlLink, this.br.getHttpConnection().getLongContentLength(), vQuality, format);
+                                this.addtopos(DestinationFormat.AUDIOMP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", format);
                             }
                         } finally {
                             try {
                                 this.br.getHttpConnection().disconnect();
                             } catch (final Throwable e) {
-                            }
-                        }
-                        if (format == 0 || format == 5 || format == 6) {
-                            try {
-                                if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                    this.addtopos(DestinationFormat.AUDIOMP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", format);
-                                }
-                            } finally {
-                                try {
-                                    this.br.getHttpConnection().disconnect();
-                                } catch (final Throwable e) {
-                                }
                             }
                         }
                     }
