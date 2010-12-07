@@ -8,6 +8,7 @@ import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -20,27 +21,24 @@ import jd.plugins.TransferStatus;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
-public class Ochloadorg extends PluginForHost implements JDPremInterface {
+public class Download4Me extends PluginForHost implements JDPremInterface {
 
-    private boolean                  proxyused           = false;
-    private String                   infostring          = null;
-    private PluginForHost            plugin              = null;
-    private static boolean           enabled             = false;
-    private static ArrayList<String> premiumHosts        = new ArrayList<String>();
-    private static final Object      LOCK                = new Object();
-    private static final int         MAXDOWNLOADS        = 5;
-    private volatile static int      currentMaxDownloads = MAXDOWNLOADS;
-    private static boolean           counted             = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           enabled      = false;
+    private static ArrayList<String> premiumHosts = new ArrayList<String>();
+    private static final Object      LOCK         = new Object();
 
-    public Ochloadorg(PluginWrapper wrapper) {
+    public Download4Me(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.ochload.org/Profil");
-        infostring = "OCHload.Org @ " + wrapper.getHost();
+        this.enablePremium("http://www.dwnld4me.com/signup.php");
+        infostring = "Download4Me.com @ " + wrapper.getHost();
     }
 
     @Override
     public String getAGBLink() {
-        if (plugin == null) return "http://www.ochload.org/";
+        if (plugin == null) return "http://www.dwnld4me.com";
         return plugin.getAGBLink();
     }
 
@@ -73,7 +71,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getHost() {
-        if (plugin == null) return "ochload.org";
+        if (plugin == null) return "dwnld4me.com";
         return plugin.getHost();
     }
 
@@ -85,7 +83,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getBuyPremiumUrl() {
-        if (plugin == null) return "http://www.ochload.org";
+        if (plugin == null) return "http://www.dwnld4me.com";
         return plugin.getBuyPremiumUrl();
     }
 
@@ -112,11 +110,11 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
             return;
         }
-        /* try ochload.org first */
+        /* try download4me first */
         if (account == null) {
-            if (handleOchLoad(downloadLink)) return;
+            if (handleDwnld4Me(downloadLink)) return;
         } else if (!JDPremium.preferLocalAccounts()) {
-            if (handleOchLoad(downloadLink)) return;
+            if (handleDwnld4Me(downloadLink)) return;
         }
         /* failed, now try normal */
         proxyused = false;
@@ -162,81 +160,60 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         link.requestGuiUpdate();
     }
 
-    private boolean handleOchLoad(DownloadLink link) throws Exception {
+    private boolean handleDwnld4Me(DownloadLink link) throws Exception {
+        Account acc = null;
         synchronized (LOCK) {
-            if (currentMaxDownloads == 0) return false;
-            currentMaxDownloads--;
+            /* jdpremium enabled */
+            if (!JDPremium.isEnabled() || !enabled) return false;
+            /* premium available for this host */
+            if (!premiumHosts.contains(link.getHost())) return false;
+            acc = AccountController.getInstance().getValidAccount("dwnld4me.com");
+            /* enabled account found? */
+            if (acc == null || !acc.isEnabled()) return false;
         }
-        try {
-            Account acc = null;
-            synchronized (LOCK) {
-                /* jdpremium enabled */
-                if (!JDPremium.isEnabled() || !enabled) return false;
-                /* premium available for this host */
-                if (!premiumHosts.contains(link.getHost())) return false;
-                acc = AccountController.getInstance().getValidAccount("ochload.org");
-                /* enabled account found? */
-                if (acc == null || !acc.isEnabled()) return false;
-            }
-            proxyused = true;
-            requestFileInformation(link);
-            if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String login = Encoding.Base64Encode(acc.getUser());
-            String pw = Encoding.Base64Encode(acc.getPass());
-            br.setConnectTimeout(90 * 1000);
-            br.setReadTimeout(90 * 1000);
-            br.setDebug(true);
-            dl = null;
-            String url = Encoding.Base64Encode(link.getDownloadURL());
-            int conTry = 1;
-            while (true) {
-                showMessage(link, "ConnectTry: " + conTry);
-                try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.ochload.org/?apiv2&method=startDownload&jd=1&nick=" + login + "&pass=" + pw + "&url=" + url, true, 1);
-                    break;
-                } catch (Throwable e) {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (Throwable e2) {
-                    }
-                    if (++conTry > 4) { return false; }
-                }
-                this.sleep(15 * 1000l, link, "Error, wait and retry");
-            }
-            if (dl.getConnection().getResponseCode() == 404) {
-                /* file offline */
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!dl.getConnection().isContentDisposition()) {
-                /* unknown error */
-                br.followConnection();
-                if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                logger.severe("OchLoad: error!");
-                logger.severe(br.toString());
-                String error = Encoding.urlEncode(br.toString());
-                /* post error message to api */
-                br.postPage("http://www.ochload.org/?apiv2&method=reportError", "hoster=" + link.getHost() + "&error=" + error + "&nick=" + Encoding.urlEncode(acc.getUser()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
-                synchronized (LOCK) {
-                    premiumHosts.remove(link.getHost());
-                }
-                return false;
-            }
-            try {
-                Browser br2 = Browser.getNewBrowser(br);
-                br2.setFollowRedirects(true);
-                if (!counted) br2.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(acc.getUser()));
-                counted = true;
-            } catch (Exception e) {
-            }
-            dl.startDownload();
-            return true;
-        } finally {
-            synchronized (LOCK) {
-                currentMaxDownloads++;
-                if (currentMaxDownloads > MAXDOWNLOADS) currentMaxDownloads = MAXDOWNLOADS;
-            }
+        proxyused = true;
+        requestFileInformation(link);
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        this.login(acc, br, false);
+        br.setConnectTimeout(90 * 1000);
+        br.setReadTimeout(90 * 1000);
+        br.setDebug(true);
+        dl = null;
+        String url = Encoding.urlEncode_light(link.getDownloadURL());
+        String dlUrl = null;
+        int refresh = 10 * 1000;
+        while (true) {
+            br.getPage("http://www.dwnld4me.com/ajax/progressBar.py?urls=" + url);
+            if (br.containsHTML("Download complete")) {
+                /* finished */
+                showMessage(link, "Download4Me finished");
+                break;
+            } else if (br.containsHTML("Starting download")) {
+                /* still in queue */
+                refresh = 10 * 1000;
+                showMessage(link, "Queued");
+            } else if (br.containsHTML("progress.png")) {
+                /* loading */
+                link.getTransferStatus().usePremium(true);
+                String done = br.getRegex("<td>([0-9.]+)%<").getMatch(0);
+                showMessage(link, done + " % Done");
+                refresh = 5 * 1000;
+            } else if (br.containsHTML("Error downloading")) { return false; }
+            Thread.sleep(refresh);
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            /* unknown error */
+            br.followConnection();
+            logger.severe("Download4Me: error!");
+            logger.severe(br.toString());
+            synchronized (LOCK) {
+                premiumHosts.remove(link.getHost());
+            }
+            return false;
+        }
+        dl.startDownload();
+        return true;
     }
 
     @Override
@@ -267,6 +244,34 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
         }
     }
 
+    private Browser login(Account account, Browser br, boolean forceUpdate) throws Exception {
+        synchronized (LOCK) {
+            if (br == null) {
+                br = this.br.getNewBrowser();
+            }
+            if (forceUpdate == false && account.getStringProperty("cookie", null) != null) {
+                br.setCookie("http://www.dwnld4me.com", "PHPSESSID", account.getStringProperty("cookie", null));
+                return br;
+            }
+            String username = Encoding.urlEncode(account.getUser());
+            String pass = JDHash.getMD5(account.getPass());
+            br.getPage("http://www.dwnld4me.com");
+            br.postPage("http://www.dwnld4me.com/login_form.php", "user=" + username + "&pass=" + pass + "&sublogin=");
+            br.getPage("http://www.dwnld4me.com/account.php");
+            if (!br.containsHTML("Account created on")) {
+                account.setProperty("cookie", null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            String cookie = br.getCookie("http://www.dwnld4me.com", "PHPSESSID");
+            if (cookie == null) {
+                account.setProperty("cookie", null);
+                throw new Exception("no cookie");
+            }
+            account.setProperty("cookie", cookie);
+            return br;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
@@ -275,52 +280,44 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
             br.setConnectTimeout(60 * 1000);
             br.setReadTimeout(60 * 1000);
             br.setDebug(true);
-            String username = Encoding.Base64Encode(account.getUser());
-            String pass = Encoding.Base64Encode(account.getPass());
-            String page = null;
-            String hosts = null;
             try {
-                page = br.getPage("http://www.ochload.org/?apiv2&nick=" + username + "&pass=" + pass + "&method=getInfos4jD");
-                hosts = br.getPage("http://www.ochload.org/hoster.html");
+                login(account, br, true);
             } catch (Exception e) {
+                if (e instanceof PluginException) {
+                    account.setValid(false);
+                    resetAvailablePremium();
+                    ac.setStatus("Invalid Account");
+                    return ac;
+                }
                 account.setTempDisabled(true);
                 account.setValid(true);
                 resetAvailablePremium();
                 synchronized (LOCK) {
                     premiumHosts.clear();
                 }
-                ac.setStatus("OchLoad Server Error, temp disabled" + restartReq);
+                ac.setStatus("Dwnld4Me Server Error, temp disabled" + restartReq);
                 return ac;
             }
-            boolean isPremium = page.startsWith("1");
-            if (!isPremium) {
-                account.setValid(false);
-                account.setTempDisabled(false);
-                ac.setStatus("Account invalid");
-                resetAvailablePremium();
-            } else {
-                String infos[] = new Regex(page, "(.*?):(.*?):(.+)").getRow(0);
-                ac.setValidUntil(Long.parseLong(infos[2]) * 1000);
-                boolean megaupload = "1".equalsIgnoreCase(infos[1]);
-                synchronized (LOCK) {
-                    premiumHosts.clear();
-                    if (megaupload) premiumHosts.add("megaupload.com");
+
+            ac.setStatus("Valid Account");
+            synchronized (LOCK) {
+                premiumHosts.clear();
+                String hosts = "rapidshare.com;hotfile.com;megaupload.com";
+                if (hosts != null) {
+                    String hoster[] = new Regex(hosts, "(.*?)(;|$)").getColumn(0);
                     if (hosts != null) {
-                        String hoster[] = new Regex(hosts, "(.*?)(;|$)").getColumn(0);
-                        if (hosts != null) {
-                            for (String host : hoster) {
-                                if (hosts == null || host.length() == 0) continue;
-                                premiumHosts.add(host.trim());
-                            }
+                        for (String host : hoster) {
+                            if (hosts == null || host.length() == 0) continue;
+                            premiumHosts.add(host.trim());
                         }
                     }
                 }
-                account.setValid(true);
-                if (premiumHosts.size() == 0) {
-                    ac.setStatus(restartReq + "Account valid: 0 Hosts via OCHLoad.org available");
-                } else {
-                    ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via OCHLoad.org available");
-                }
+            }
+            account.setValid(true);
+            if (premiumHosts.size() == 0) {
+                ac.setStatus(restartReq + "Account valid: 0 Hosts via Download4Me.com available");
+            } else {
+                ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via Download4Me.com available");
             }
             return ac;
         } else
@@ -362,9 +359,9 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
             } else if (JDPremium.isEnabled() && enabled) {
-                /* OchLoad */
+                /* Download4Me */
                 synchronized (LOCK) {
-                    if (currentMaxDownloads > 0 && premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("ochload.org") != null) return MAXDOWNLOADS;
+                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("ochload.org") != null) return Integer.MAX_VALUE;
                 }
             }
             return plugin.getMaxSimultanDownload(account);
