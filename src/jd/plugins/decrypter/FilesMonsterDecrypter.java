@@ -47,34 +47,37 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
         String postThat = br.getRegex("\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"").getMatch(0);
-        if (postThat == null) return null;
-        br.postPage(postThat, "");
-        String findOtherLinks = br.getRegex("reserve_ticket\\('(/dl/rft/.*?)'\\)").getMatch(0);
-        if (findOtherLinks != null) {
-            br.getPage("http://filesmonster.com" + findOtherLinks);
-            String[] decryptedStuff = br.getRegex("(\\{\"dlcode\":\".*?\",\"name\":\".*?\",\"size\":\\d+,\"cutted_name\":\".*?\"\\})").getColumn(0);
-            if (decryptedStuff == null || decryptedStuff.length == 0) return null;
-            String theImportantPartOfTheMainLink = new Regex(parameter, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
-            for (String fileInfo : decryptedStuff) {
-                String filename = new Regex(fileInfo, "\"name\":\"(.*?)\"").getMatch(0);
-                String filesize = new Regex(fileInfo, "\"size\":(\\d+)").getMatch(0);
-                String filelinkPart = new Regex(fileInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
-                if (filename == null || filesize == null || filelinkPart == null || filename.length() == 0 || filesize.length() == 0 || filelinkPart.length() == 0) {
-                    logger.warning("Filesmonsterdecrypter failed while decrypting link:" + parameter);
-                    return null;
+        if (postThat != null) {
+            logger.info("postThat is null, probably limit reached, adding only the premium link...");
+            br.postPage(postThat, "");
+            String findOtherLinks = br.getRegex("reserve_ticket\\('(/dl/rft/.*?)'\\)").getMatch(0);
+            if (findOtherLinks != null) {
+                logger.info("Other links found, decrypting...");
+                br.getPage("http://filesmonster.com" + findOtherLinks);
+                String[] decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
+                if (decryptedStuff == null || decryptedStuff.length == 0) return null;
+                String theImportantPartOfTheMainLink = new Regex(parameter, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
+                for (String fileInfo : decryptedStuff) {
+                    String filename = new Regex(fileInfo, "\"name\":\"(.*?)\"").getMatch(0);
+                    String filesize = new Regex(fileInfo, "\"size\":(\")?(\\d+)").getMatch(1);
+                    String filelinkPart = new Regex(fileInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
+                    if (filename == null || filesize == null || filelinkPart == null || filename.length() == 0 || filesize.length() == 0 || filelinkPart.length() == 0) {
+                        logger.warning("Filesmonsterdecrypter failed while decrypting link:" + parameter);
+                        return null;
+                    }
+                    String dllink = "http://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
+                    DownloadLink finalOne = createDownloadlink(dllink);
+                    finalOne.setName(filename.replace("amp;", ""));
+                    finalOne.setDownloadSize(Integer.parseInt(filesize));
+                    finalOne.setAvailable(true);
+                    finalOne.setProperty("origfilename", filename);
+                    finalOne.setProperty("origsize", filesize);
+                    finalOne.setProperty("mainlink", parameter);
+                    decryptedLinks.add(finalOne);
                 }
-                String dllink = "http://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
-                DownloadLink finalOne = createDownloadlink(dllink);
-                finalOne.setName(filename.replace("amp;", ""));
-                finalOne.setDownloadSize(Integer.parseInt(filesize));
-                finalOne.setAvailable(true);
-                finalOne.setProperty("origfilename", filename);
-                finalOne.setProperty("origsize", filesize);
-                finalOne.setProperty("mainlink", parameter);
-                decryptedLinks.add(finalOne);
+                thebigone.setProperty("PREMIUMONLY", "true");
             }
         }
-        thebigone.setProperty("PREMIUMONLY", "true");
         decryptedLinks.add(thebigone);
         return decryptedLinks;
     }

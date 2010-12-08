@@ -50,6 +50,7 @@ public class FilesMonsterCom extends PluginForHost {
     private static final String POSTTHATREGEX2       = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
     private static final String TEMPORARYUNAVAILABLE = "Download not available at the moment";
     private static final String REDIRECTFNF          = "DL_FileNotFound";
+    private static final String PREMIUMONLYUSERTEXT  = "Only downloadable via premium";
 
     @SuppressWarnings("deprecation")
     private void setConfigElements() {
@@ -152,7 +153,7 @@ public class FilesMonsterCom extends PluginForHost {
             }
         }
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));
-        if (downloadLink.getStringProperty("PREMIUMONLY") != null) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", "Only downloadable via premium"));
+        if (downloadLink.getStringProperty("PREMIUMONLY") != null) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
         return AvailableStatus.TRUE;
 
     }
@@ -160,7 +161,7 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getStringProperty("PREMIUMONLY") != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", "Only downloadable via premium"));
+        if (downloadLink.getStringProperty("PREMIUMONLY") != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
         handleErrors();
         br.setFollowRedirects(true);
         String postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
@@ -171,6 +172,10 @@ public class FilesMonsterCom extends PluginForHost {
         }
         if (!downloadLink.getDownloadURL().contains("/free/2/")) {
             br.postPage(postThat, "");
+            if (br.containsHTML("Free download links:")) {
+                downloadLink.setProperty("PREMIUMONLY", "true");
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
+            }
         } else {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             String newTemporaryLink = getNewTemporaryLink(downloadLink.getStringProperty("mainlink"), downloadLink.getStringProperty("origfilename"));
@@ -244,7 +249,6 @@ public class FilesMonsterCom extends PluginForHost {
         }
         dl.setFilenameFix(true);
         dl.startDownload();
-
     }
 
     private String getNewTemporaryLink(String mainlink, String originalfilename) throws IOException, PluginException {
@@ -277,12 +281,21 @@ public class FilesMonsterCom extends PluginForHost {
         logger.info("Handling errors...");
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"), 120 * 60 * 1000l);
         String wait = br.getRegex("You can wait for the start of downloading (\\d+)").getMatch(0);
-        if (wait != null && br.containsHTML("You reached your")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1001l);
-        wait = br.getRegex("is already in use (\\d+)").getMatch(0);
-        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1001l);
-        wait = br.getRegex("You can start new download in (\\d+)").getMatch(0);
-        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1001l);
-        wait = br.getRegex("will be avaliable for free download in (\\d+) min\\.").getMatch(0);
+        if (wait == null) {
+            wait = br.getRegex("is already in use (\\d+)").getMatch(0);
+            if (wait == null) {
+                wait = br.getRegex("You can start new download in (\\d+)").getMatch(0);
+                if (wait == null) {
+                    if (wait == null) {
+                        wait = br.getRegex("will be avaliable for free download in (\\d+) min\\.").getMatch(0);
+                        if (wait == null) {
+                            wait = br.getRegex("<br>Next free download will be available in (\\d+) min").getMatch(0);
+                        }
+                    }
+                }
+            }
+
+        }
         if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1001l);
         if (br.containsHTML("Minimum interval between free downloads is 45 minutes")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 45 * 60 * 1001l);
         if (br.containsHTML("Respectfully yours Adminstration of Filesmonster\\.com")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
