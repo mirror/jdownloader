@@ -30,21 +30,22 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://[\\w\\.]*?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
-    public String   FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)";
+    public String        FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)";
+    public static String agent       = RandomUserAgent.generate();
 
-    private boolean isFree      = false;
+    private boolean      isFree      = false;
 
     public FileServeCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -359,7 +360,7 @@ public class FileServeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        this.br.getHeaders().put("User-Agent", agent);
         this.checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);

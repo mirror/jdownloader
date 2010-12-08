@@ -166,14 +166,12 @@ public class FileSonicCom extends PluginForHost {
                 ai = account.getAccountInfo();
             }
             this.br.getPage("http://www.filesonic.com/user/settings");
-            final String expiredate = this.br.getRegex("settingsExpireDate\">(.*?)<").getMatch(0);
+            final String expiredate = this.br.getRegex("Premium Membership Valid Until:.*?info\">(.*?)<").getMatch(0);
             if (expiredate != null) {
                 ai.setStatus("Premium User");
                 // it seems expire date is still wrong for many users
-                // ai.setValidUntil(Regex.getMilliSeconds(expiredate,
-                // "yyyy-MM-dd HH:mm:ss", null));
-                ai.setValidUntil(-1);
                 account.setValid(true);
+                ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", null));
                 return ai;
             }
             account.setValid(false);

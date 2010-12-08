@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
@@ -192,7 +192,6 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        int i = 1;
         Form freeForm = br.getFormbyProperty("id", "ifree_form");
         if (freeForm == null) {
             logger.info("Found did not found freeForm!");
@@ -261,6 +260,7 @@ public class LetitBitNet extends PluginForHost {
         sleep(2000, downloadLink);
         /* remove newline */
         url = url.replaceAll("%0D%0A", "");
+        url = url.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         con = dl.getConnection();
         if (con.getResponseCode() == 404) {

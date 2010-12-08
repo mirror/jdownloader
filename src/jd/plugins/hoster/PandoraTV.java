@@ -71,6 +71,11 @@ public class PandoraTV extends PluginForHost {
         Random rnddummy = new Random();
         int dummy = rnddummy.nextInt(50000 - 10000) + 10000;
         String urlpath = br.getRegex("var vod = \"http.*?\\.tv(.*?)\"").getMatch(0);
+        /* check for high quality */
+        String hqurl = br.getRegex("flvInfo\":\\{\"flv\":\"http.*?\\.tv(.*?)\"").getMatch(0);
+        if (hqurl != null) {
+            urlpath = hqurl.replaceAll("\\\\/", "/");
+        }
         /* KEY1 */
         br.getPage("http://channel.pandora.tv/channel/cryptKey.ptv?dummy=" + dummy + "?");
         String keyOne = br.getRegex("\"(.*?)\"").getMatch(0, 1);

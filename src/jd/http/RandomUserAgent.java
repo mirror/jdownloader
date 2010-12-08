@@ -34,54 +34,54 @@ public final class RandomUserAgent {
     /**
      * Initial browser release date. Used for invalid randomDate() calls.
      */
-    private static final String[] releaseDate = { "2005", "11", "11" };
+    private static final String[]      releaseDate    = { "2005", "11", "11" };
 
     /**
      * Browser-Language
      */
-    private static ArrayList<String> langs = new ArrayList<String>();
+    private static ArrayList<String>   langs          = new ArrayList<String>();
 
     /**
      * Firefox branch revision, version and release date triplet. They MUST
      * match! Release date in form of "YYYY.MM.DD[.HH]". As of Firefox version >
      * 3.0 buildHour is appended. Use ".xx"
      */
-    private static ArrayList<String> ffVersionInfos = new ArrayList<String>();
+    private static ArrayList<String>   ffVersionInfos = new ArrayList<String>();
 
     /**
      * Internet Explorer versions
      */
-    private static ArrayList<String> ieVersions = new ArrayList<String>();
+    private static ArrayList<String>   ieVersions     = new ArrayList<String>();
 
     /**
      * Windows Versions. E.g. NT 5.1 is Windows XP
      */
-    private static String winVersions = "";
+    private static String              winVersions    = "";
 
     /**
      * Windows: dotNet addon-strings, to make the user-agent more random
      */
-    private static ArrayList<String[]> winAddons = new ArrayList<String[]>();
+    private static ArrayList<String[]> winAddons      = new ArrayList<String[]>();
 
     /**
      * Linux: distribution addon-strings, to make the user-agent more random
      */
-    private static ArrayList<String> linuxAddons = new ArrayList<String>();
+    private static ArrayList<String>   linuxAddons    = new ArrayList<String>();
 
     /**
      * Macintosh: version addon-strings, to make the user-agent more random
      */
-    private static ArrayList<String> macAddons = new ArrayList<String>();
+    private static ArrayList<String>   macAddons      = new ArrayList<String>();
 
     /**
      * Information about the system: platform, OS, architecture
      */
-    private static ArrayList<System> system = new ArrayList<System>();
+    private static ArrayList<System>   system         = new ArrayList<System>();
 
     /**
      * Fill in the values (the "CONFIGURATION")
      */
-    private static final void initData() {
+    static {
 
         /* Used only in generateIE */
         ieVersions.add("6.0");
@@ -155,7 +155,6 @@ public final class RandomUserAgent {
      * @return Random Firefox user-agent string
      */
     public static String generateFF() {
-        initData();
         final Random rand = new Random();
 
         String platform = "";
@@ -213,7 +212,6 @@ public final class RandomUserAgent {
      * @return Random Internet Explorer user-agent string
      */
     public static String generateIE() {
-        initData();
         final Random rand = new Random();
 
         final String ieVersion = ieVersions.get(rand.nextInt(ieVersions.size()));
@@ -292,9 +290,9 @@ public final class RandomUserAgent {
     }
 
     private static class System {
-        public String platform;
-        public String osName;
-        public String archs;
+        public String  platform;
+        public String  osName;
+        public String  archs;
         public boolean inverseOrder;
         public boolean useIt;
 
