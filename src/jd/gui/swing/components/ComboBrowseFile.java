@@ -53,7 +53,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private JComboBox                 cmboInput;
 
-    private File                       currentPath;
+    private File                      currentPath;
 
     private Vector<String>            files;
 
@@ -88,11 +88,9 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     public void actionPerformed(final ActionEvent e) {
-//        System.out.println("ACTION PERFORMED " + e);
-        if (e.getSource() == cmboInput)
-        {
-            if ("comboBoxChanged".equals(e.getActionCommand())) 
-            { 
+        // System.out.println("ACTION PERFORMED " + e);
+        if (e.getSource() == cmboInput) {
+            if ("comboBoxChanged".equals(e.getActionCommand())) {
                 final Object sel = cmboInput.getSelectedItem();
                 if (sel != null) {
                     setCurrentPath(new File(sel.toString()), false);
@@ -103,12 +101,12 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
                     }
                 }
             }
-        }
-        else if (e.getSource() == btnBrowse) {
+        } else if (e.getSource() == btnBrowse) {
             setCurrentPath(getPath(), true);
-//            for (ActionListener l : listenerList) {
-//                l.actionPerformed(new ActionEvent(this, e.getID(), e.getActionCommand()));
-//            }
+            // for (ActionListener l : listenerList) {
+            // l.actionPerformed(new ActionEvent(this, e.getID(),
+            // e.getActionCommand()));
+            // }
         }
     }
 
@@ -209,13 +207,13 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
         this.add(cmboInput, "grow");
         this.add(btnBrowse);
-        
-//        addActionListener(new ActionListener() {
-//            
-//            public void actionPerformed(ActionEvent e) {
-//                System.out.println("PERFORMED!!!");
-//            }
-//        });
+
+        // addActionListener(new ActionListener() {
+        //
+        // public void actionPerformed(ActionEvent e) {
+        // System.out.println("PERFORMED!!!");
+        // }
+        // });
     }
 
     public JButton getButton() {
@@ -230,27 +228,25 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         btnBrowse.setText(text);
     }
 
-    public void setCurrentPath(File currentFile)
-    {
+    public void setCurrentPath(File currentFile) {
         setCurrentPath(currentFile, false);
     }
-    
+
     /**
      * @param currentPath
      *            the currentPath to set
      */
     private void setCurrentPath(final File currentPath, boolean updateCombo) {
-//        System.out.println("SET CURRENT PATH " + updateCombo + "; path=" + currentPath);
-        if (updateCombo)
-            cmboInput.setSelectedItem(currentPath.toString());
-        
+        // System.out.println("SET CURRENT PATH " + updateCombo + "; path=" +
+        // currentPath);
+        if (updateCombo) cmboInput.setSelectedItem(currentPath.toString());
+
         if (currentPath != null && !currentPath.equals(this.currentPath)) {
             this.currentPath = currentPath;
             final String item = currentPath.toString();
-            if (!files.contains(item))
-            {
+            if (!files.contains(item)) {
                 cmboInput.insertItemAt(item, 0);
-//                System.out.println("FILES=" + files);
+                // System.out.println("FILES=" + files);
             }
 
             SubConfiguration guiConfig = SubConfiguration.getConfig("GUI");
@@ -260,13 +256,14 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     private Vector<String> createSortedVector(Vector<String> files, String item, int count) {
-        if (!item.equals(files.firstElement()))
-        {
+        if (!item.equals(files.firstElement())) {
             files = new Vector<String>(files);
-            while (files.remove(item));
+            while (files.remove(item)) {
+
+            }
             files.add(0, item);
         }
-            
+
         return new Vector<String>(files.subList(0, Math.min(files.size(), count)));
     }
 

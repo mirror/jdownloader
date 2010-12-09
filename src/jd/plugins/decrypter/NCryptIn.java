@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.swing.components.Balloon;
@@ -191,11 +190,6 @@ public class NCryptIn extends PluginForDecrypt {
             return null;
         }
         return null;
-    }
-
-    private static boolean isExternInterfaceActive() {
-        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
-        return ((plg != null) && plg.isLoaded() && plg.isEnabled());
     }
 
 }

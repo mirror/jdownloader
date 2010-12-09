@@ -43,8 +43,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends JDialog {
 
-    private static final long serialVersionUID = -7647771640756844691L;
-    private static final String JDL_PREFIX = "jd.gui.swing.components.AboutDialog.";
+    private static final long   serialVersionUID = -7647771640756844691L;
+    private static final String JDL_PREFIX       = "jd.gui.swing.components.AboutDialog.";
 
     public AboutDialog() {
         super(DummyFrame.getDialogParent());
