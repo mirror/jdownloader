@@ -25,13 +25,13 @@ import com.sun.jna.Native;
 
 public class JDAntiStandbyThread extends Thread implements Runnable {
 
-    private boolean running = true;
-    private boolean run = false;
-    private static final int sleep = 5000;
-    private final Logger logger;
+    private boolean             running  = true;
+    private boolean             run      = false;
+    private static final int    sleep    = 5000;
+    private final Logger        logger;
     private final JDAntiStandby jdAntiStandby;
 
-    private Kernel32 kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
+    private Kernel32            kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
 
     public JDAntiStandbyThread(JDAntiStandby jdAntiStandby) {
         super();
@@ -39,19 +39,13 @@ public class JDAntiStandbyThread extends Thread implements Runnable {
         this.jdAntiStandby = jdAntiStandby;
     }
 
+    @Override
     public void run() {
         while (running) {
             try {
                 if (jdAntiStandby.isStatus()) {
-                    switch (jdAntiStandby.getPluginConfig().getIntegerProperty("CONFIG_MODE")) {
+                    switch (jdAntiStandby.getMode()) {
                     case 0:
-                        if (run) {
-                            run = false;
-                            logger.fine("JDAntiStandby: Stop");
-                            kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
-                        }
-                        break;
-                    case 1:
                         if (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.RUNNING) {
                             if (!run) {
                                 run = true;
@@ -67,7 +61,7 @@ public class JDAntiStandbyThread extends Thread implements Runnable {
                             }
                         }
                         break;
-                    case 2:
+                    case 1:
                         if (!run) {
                             run = true;
                             logger.fine("JDAntiStandby: Start");
@@ -75,8 +69,7 @@ public class JDAntiStandbyThread extends Thread implements Runnable {
                         kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
                         break;
                     default:
-                        logger.finest("JDAntiStandby: Config error");
-
+                        logger.finest("JDAntiStandby: Config error (unknown mode: " + jdAntiStandby.getMode() + ")");
                     }
                 } else {
                     if (run) {

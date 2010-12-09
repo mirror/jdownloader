@@ -34,7 +34,8 @@ import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "jdantistandby", interfaceversion = 7, mac = false, linux = false)
 public class JDAntiStandby extends PluginOptional {
-    private static final String CONFIG_MODE = "CONFIG_MODE";
+
+    private static final String CONFIG_MODE = "CONFIG_MODE2";
     private String[]            MODES_AVAIL;
     private MenuAction          menuAction;
     private boolean             status;
@@ -44,9 +45,13 @@ public class JDAntiStandby extends PluginOptional {
         return status;
     }
 
+    public int getMode() {
+        return getPluginConfig().getIntegerProperty(CONFIG_MODE, 0);
+    }
+
     public JDAntiStandby(PluginWrapper wrapper) {
         super(wrapper);
-        MODES_AVAIL = new String[] { JDL.L("gui.config.antistandby.disabled", "Disabled"), JDL.L("gui.config.antistandby.whiledl", "Prevent standby while Downloading"), JDL.L("gui.config.antistandby.whilejd", "Prevent standby while JD is running") };
+        MODES_AVAIL = new String[] { JDL.L("gui.config.antistandby.whiledl", "Prevent standby while Downloading"), JDL.L("gui.config.antistandby.whilejd", "Prevent standby while JD is running") };
         initConfig();
     }
 
