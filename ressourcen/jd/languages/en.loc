@@ -159,7 +159,6 @@ gui.config.antireconnect.oldreconnect = Allow Reconnect:
 gui.config.antireconnect.oldspeed = Download speed in kb/s
 gui.config.antireconnect.ping = Detect only by Ping (faster)
 gui.config.antireconnect.timeout = Check Timeout (ms):
-gui.config.antistandby.disabled = Disabled
 gui.config.antistandby.mode = Mode:
 gui.config.antistandby.whiledl = Prevent standby while downloading
 gui.config.antistandby.whilejd = Prevent standby while JD is running
