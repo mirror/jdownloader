@@ -77,8 +77,7 @@ public class ChipDe extends PluginForHost {
         }
         if (step1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(step1);
-        String step2 = br.getRegex("<div class=\"dl-faktbox-row bottom\">.*?<a href=\"(http.*?)\"").getMatch(0);
-        if (step2 == null) step2 = br.getRegex("\"(http://www\\.chip\\.de/downloads/.*?downloads_hs_getfile_.*?)\"").getMatch(0);
+        String step2 = br.getRegex("<div class=\"dl-faktbox-row( bottom)?\">.*?<a href=\"(http.*?)\"").getMatch(1);
         if (step2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(step2);
         String dllink = br.getRegex("Falls der Download nicht beginnt,\\&nbsp;<a class=\"b\" href=\"(http.*?)\"").getMatch(0);
