@@ -45,6 +45,8 @@ public class MegaShareCom extends PluginForHost {
         this.enablePremium("http://www.megashare.com/premium.php");
     }
 
+    private static final String FILEIDREGEX = "megashare.com/(\\d+)";
+
     @Override
     public String getAGBLink() {
         return "http://www.megashare.com/tos.php";
@@ -125,15 +127,17 @@ public class MegaShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileId = new Regex(downloadLink.getDownloadURL(), "megashare.com/(\\d+)").getMatch(0);
-        if (!br.containsHTML("free premium") && !br.containsHTML("FREE") || fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Regex specialstuff = br.getRegex("name=\"(\\d+prVal)\" value=\"(\\d+)\">");
+        String fileId = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
+        String freeDz = br.getRegex("\"(FreeDz\\d+)\"").getMatch(0);
+        if (!br.containsHTML("free premium") && !br.containsHTML("FREE") || fileId == null || specialstuff.getMatch(0) == null || specialstuff.getMatch(1) == null || freeDz == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String preferThat = "free+premium";
         String preferThat2 = "FreePremDz";
         if (!br.containsHTML("free premium")) {
             preferThat = "FREE";
-            preferThat2 = "FreeDz" + fileId;
+            preferThat2 = freeDz;
         }
-        String post = preferThat2 + ".x=" + new Random().nextInt(10) + "&" + preferThat2 + ".y=" + new Random().nextInt(10) + "&" + preferThat2 + "=" + preferThat;
+        String post = specialstuff.getMatch(0) + "=" + specialstuff.getMatch(1) + "&" + preferThat2 + ".x=" + new Random().nextInt(10) + "&" + preferThat2 + ".y=" + new Random().nextInt(10) + "&" + preferThat2 + "=" + preferThat;
         br.postPage(downloadLink.getDownloadURL(), post);
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
@@ -142,15 +146,29 @@ public class MegaShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String reconnectWaittime = br.getRegex("var c = (\\d+);").getMatch(0);
+        if (reconnectWaittime != null) {
+            if (Integer.parseInt(reconnectWaittime) > 10) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l);
+        }
+        String timeDiffVar = br.getRegex("name=\"time_diff\" value=\"(\\d+)\"").getMatch(0);
+        String fileId = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
+        String prVal = br.getRegex("name=\"\\d+prVal\" value=\"(\\d+)\"").getMatch(0);
+        if (timeDiffVar == null || fileId == null || prVal == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String postData = "wComp=1&" + fileId + "prVal=" + prVal + "&id=" + fileId + "&time_diff=" + timeDiffVar + "&req_auth=n";
+        int wait = 10;
+        if (reconnectWaittime != null) wait = Integer.parseInt(reconnectWaittime);
+        sleep((wait + 2) * 1001l, downloadLink);
+        br.postPage(downloadLink.getDownloadURL(), postData);
+        sleep(1000l, downloadLink);
         Form form = br.getFormbyProperty("name", "downloader");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         File captchaFile = getLocalCaptchaFile();
         int i = 15;
         while (i-- > 0) {
             try {
-                String captchaimg = br.getRegex("id=\"cimg\" src=\"(.*?)\"").getMatch(0);
+                if (!br.containsHTML("security\\.php\\?i=")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                String captchaimg = "http://www.megashare.com/security.php?i=" + String.valueOf(Math.random()).replace(".", "") + String.valueOf(Math.random()).substring(10, 12);
                 if (captchaimg == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                captchaimg = "http://megashare.com/" + captchaimg;
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaimg));
             } catch (Exception e) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);

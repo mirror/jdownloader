@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/(dl/[\\w]+/|share/[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/(dl/[\\w]+/.*?\\.html|share/[a-z0-9]+)" }, flags = { 2 })
 public class KewlshareCom extends PluginForHost {
 
     public KewlshareCom(PluginWrapper wrapper) {
@@ -87,11 +87,9 @@ public class KewlshareCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("the file you requested is either deleted or not found in our database") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("NO_FILE_FOUND"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>(.*?)\\|\\|.*?</h1>").getMatch(0);
-        String filesize = br.getRegex("<h1>.*?\\|\\|(.*?)</h1>").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("<title>(.*?)\\.html</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -113,35 +111,7 @@ public class KewlshareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        Form freeform = br.getForm(1);
-        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        freeform.put("x", "2");
-        freeform.put("y", "68");
-        br.submitForm(freeform);
-        if (br.containsHTML("You can download your next file after")) {
-            int hour = Integer.parseInt(br.getRegex("You can download your next file after (\\d+):(\\d+):(\\d+)</div>").getMatch(0));
-            int minute = Integer.parseInt(br.getRegex("You can download your next file after (\\d+):(\\d+):(\\d+)</div>").getMatch(1));
-            int sec = Integer.parseInt(br.getRegex("You can download your next file after (\\d+):(\\d+):(\\d+)</div>").getMatch(2));
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (hour * 3600 + minute * 60 + sec) * 1001);
-        }
-        if (br.containsHTML("free download limit is reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Sorry, your Country's free download limit is reached", 60 * 60 * 1000l);
-        if (br.containsHTML("<b>Parse error</b>:  syntax error, unexpected")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error, reconnect");
-        br.setFollowRedirects(false);
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(form);
-        String dllink = br.getRegex("\"proceed\">.*?<form action=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.kewlshare\\.com/dl/.*?/.*?/.*?/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            if (br.containsHTML("your current parallel download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_FATAL, "No free downloads possible, contact kewlshare support!");
     }
 
     @Override
