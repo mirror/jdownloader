@@ -34,12 +34,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -179,6 +179,7 @@ public class MediafireCom extends PluginForHost {
 
     public MediafireCom(final PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(5000);
         this.enablePremium("https://www.mediafire.com/register.php");
 
     }

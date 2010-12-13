@@ -30,12 +30,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -60,6 +60,8 @@ public class Netloadin extends PluginForHost {
 
     static private final String  LIMIT_REACHED       = "share/images/download_limit_go_on.gif";
     static private final String  NEW_HOST_URL        = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
+
+    static public final Object   LOGINLOCK           = new Object();
 
     private static String getID(String link) {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
@@ -93,6 +95,7 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
+            setBrowserExclusive();
             workAroundTimeOut(br);
             requestFileInformation(downloadLink);
             br.setDebug(true);
@@ -259,64 +262,57 @@ public class Netloadin extends PluginForHost {
         }
     }
 
-    private void login(Account account) throws IOException, PluginException {
-        setBrowserExclusive();
-        // br.setDebug(true);
-        workAroundTimeOut(br);
-        br.getPage("http://netload.in/index.php?lang=de");
-        br.getPage("http://netload.in/index.php");
-        br.postPage("http://netload.in/index.php", "txtuser=" + Encoding.urlEncode(account.getUser()) + "&txtpass=" + Encoding.urlEncode(account.getPass()) + "&txtcheck=login&txtlogin=");
-        String cookie = br.getCookie("http://netload.in/", "cookie_user");
-        if (cookie == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        if (br.getRedirectLocation() == null || !br.getRedirectLocation().trim().equalsIgnoreCase("http://netload.in/index.php")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-    }
-
-    private void isExpired(Account account) throws IOException, PluginException {
-        br.getPage("http://netload.in/index.php?id=2");
-        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0);
-        if (validUntil != null && new Regex(validUntil.trim(), "kein").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
+        synchronized (LOGINLOCK) {
+            workAroundTimeOut(br);
+            if (ai == null) {
+                ai = account.getAccountInfo();
+                if (ai == null) {
+                    ai = new AccountInfo();
+                    account.setAccountInfo(ai);
+                }
+            }
+            String res = br.getPage("http://api.netload.in/user_info.php?auth=BVm96BWDSoB4WkfbEhn42HgnjIe1ilMt&user_id=" + Encoding.urlEncode(account.getUser()) + "&user_password=" + Encoding.urlEncode(account.getPass()));
+            if (res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            res = res.trim();
+            account.setValid(true);
+            if ("disallowd_agent".equalsIgnoreCase(res) || "unknown_auth".equalsIgnoreCase(res)) {
+                logger.severe("api reports: " + res);
+                ai.setStatus("api reports: " + res);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if ("0".equalsIgnoreCase(res)) {
+                /* free user */
+                ai.setStatus("No premium user");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("unknown_user".equalsIgnoreCase(res)) {
+                ai.setStatus("Unknown user");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("unknown_password".equalsIgnoreCase(res) || "wrong_password".equalsIgnoreCase(res)) {
+                ai.setStatus("Wrong password");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("-1".equalsIgnoreCase(res)) {
+                /* lifetime */
+                ai.setStatus("Lifetime premium");
+                ai.setValidUntil(-1);
+                return;
+            } else {
+                /* normal premium */
+                ai.setStatus("Premium");
+                ai.setValidUntil(Regex.getMilliSeconds(res, "yyyy-MM-dd HH:mm", null));
+                if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            loginAPI(account, ai);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        try {
-            isExpired(account);
-
-        } catch (PluginException e) {
-            ai.setExpired(true);
-            return ai;
-        }
-        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0);
-        if (validUntil == null) {
-            account.setValid(true);
-            account.setTempDisabled(true);
-            ai.setStatus("Temp Server Error, will retry later");
-            /* only for debugging */
-            try {
-                logger.finest(br.getRequest().getHttpConnection() + "");
-            } catch (Throwable e) {
-            }
-            try {
-                logger.finest(br + "");
-            } catch (Throwable e) {
-            }
-            return ai;
-        }
-        validUntil = validUntil.trim();
-        String days = new Regex(validUntil, "([\\d]+) ?Tage?").getMatch(0);
-        String hours = new Regex(validUntil, "([\\d]+) ?Stunde").getMatch(0);
-        long res = 0;
-        if (days != null) res += Long.parseLong(days.trim()) * 24 * 60 * 60 * 1000;
-        if (hours != null) res += Long.parseLong(hours.trim()) * 60 * 60 * 1000;
-        res += System.currentTimeMillis();
-        ai.setValidUntil(res);
         return ai;
     }
 
@@ -327,10 +323,15 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        setBrowserExclusive();
         workAroundTimeOut(br);
         requestFileInformation(downloadLink);
-        login(account);
-        isExpired(account);
+        loginAPI(account, null);
+        String cookie = br.getCookie("http://www.netload.in", "cookie_user");
+        if (cookie == null) {
+            logger.severe("no cookie!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         boolean resume = true;
         int chunks = 0;
         if (downloadLink.getBooleanProperty("nochunk", false) == true) {

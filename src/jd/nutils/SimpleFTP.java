@@ -249,20 +249,36 @@ public class SimpleFTP {
     private String readLines(int expectcodes[], String errormsg) throws IOException {
         StringBuilder sb = new StringBuilder();
         String response = null;
+        boolean multilineResponse = false;
         boolean error = true;
+        int endCodeMultiLine = 0;
         while (true) {
             response = readLine();
             if (response == null) return sb.toString();
             sb.append(response + "\r\n");
             error = true;
             for (int expectcode : expectcodes) {
-                if (response.startsWith("" + expectcode + " ")) return sb.toString();
+                if (response.startsWith("" + expectcode + "-")) {
+                    /* multiline response, RFC 640 */
+                    endCodeMultiLine = expectcode;
+                    error = false;
+                    multilineResponse = true;
+                    break;
+                }
+                if (multilineResponse == true && response.startsWith("" + endCodeMultiLine + " ")) {
+                    /* end of response of multiline */
+                    return sb.toString();
+                }
+                if (multilineResponse == false && response.startsWith("" + expectcode + " ")) {
+                    /* end of response */
+                    return sb.toString();
+                }
                 if (response.startsWith("" + expectcode)) {
                     error = false;
                     break;
                 }
             }
-            if (error) throw new IOException((errormsg != null ? errormsg : "revieved unexpected responsecode ") + sb.toString());
+            if (error && !multilineResponse) throw new IOException((errormsg != null ? errormsg : "revieved unexpected responsecode ") + sb.toString());
         }
     }
 
