@@ -28,13 +28,13 @@ import net.miginfocom.swing.MigLayout;
 
 public class TinyProgressBar extends JPanel {
 
-    private static final long serialVersionUID = 8385631080915257786L;
-    private final JLabel lbl;
+    private static final long   serialVersionUID = 8385631080915257786L;
+    private final JLabel        lbl;
     private final JDProgressBar prg;
-    private PluginForHost plugin;
+    private PluginForHost       plugin;
 
     public TinyProgressBar() {
-        super(new MigLayout("ins 0", "[grow,fill]1[10!]", "[grow,fill]"));
+        super(new MigLayout("ins 0", "[grow,fill]1[10]", "[grow,fill]"));
 
         lbl = new JLabel();
         lbl.setOpaque(false);
@@ -42,7 +42,8 @@ public class TinyProgressBar extends JPanel {
         prg = new JDProgressBar();
         prg.setOpaque(false);
         prg.setOrientation(JDProgressBar.VERTICAL);
-        prg.setBorder(null);
+        /* FIXME: wait for synthethica simple2d bugfix */
+        // prg.setBorder(null);
 
         this.add(lbl);
         this.add(prg);

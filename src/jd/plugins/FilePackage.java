@@ -49,16 +49,16 @@ class FilePackageBroadcaster extends Eventsender<FilePackageListener, FilePackag
  */
 public class FilePackage extends Property implements Serializable, DownloadLinkListener, FilePackageListener {
 
-    private static final long serialVersionUID = -8859842964299890820L;
+    private static final long            serialVersionUID = -8859842964299890820L;
 
-    private static final long UPDATE_INTERVAL = 2000;
+    private static final long            UPDATE_INTERVAL  = 2000;
 
-    private String comment;
+    private String                       comment;
 
-    private String downloadDirectory;
+    private String                       downloadDirectory;
 
-    private ArrayList<DownloadLink> downloadLinkList;
-    private transient static FilePackage FP = null;
+    private ArrayList<DownloadLink>      downloadLinkList;
+    private transient static FilePackage FP               = null;
 
     public synchronized static FilePackage getDefaultFilePackage() {
         if (FP == null) {
@@ -68,39 +68,39 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return FP;
     }
 
-    private int linksFailed;
+    private int                              linksFailed;
 
-    private int linksFinished;
+    private int                              linksFinished;
 
-    private int linksInProgress;
+    private int                              linksInProgress;
 
-    private String name = null;
+    private String                           name                 = null;
 
-    private String password2;
+    private String                           password2;
 
-    private boolean extractAfterDownload = true;
+    private boolean                          extractAfterDownload = true;
 
-    private long totalBytesLoaded_v2;
+    private long                             totalBytesLoaded_v2;
 
-    private long totalDownloadSpeed_v2;
+    private long                             totalDownloadSpeed_v2;
 
-    private long totalEstimatedPackageSize_v2;
+    private long                             totalEstimatedPackageSize_v2;
 
-    private long updateTime;
+    private long                             updateTime;
 
-    private long updateTime1;
+    private long                             updateTime1;
 
-    private boolean isFinished;
+    private boolean                          isFinished;
 
-    private transient FilePackageBroadcaster broadcaster = new FilePackageBroadcaster();
+    private transient FilePackageBroadcaster broadcaster          = new FilePackageBroadcaster();
 
-    private Integer links_Disabled;
+    private Integer                          links_Disabled;
 
-    private String ListHoster = null;
+    private String                           ListHoster           = null;
 
-    private long created = -1l;
+    private long                             created              = -1l;
 
-    private long finishedDate = -1l;
+    private long                             finishedDate         = -1l;
 
     public void addListener(FilePackageListener l) {
         broadcaster.addListener(l);

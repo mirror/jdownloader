@@ -44,35 +44,51 @@ class LinkGrabberFilePackageBroadcaster extends Eventsender<LinkGrabberFilePacka
 
 public class LinkGrabberFilePackage extends Property implements LinkGrabberFilePackageListener {
 
-    private static final long serialVersionUID = 5865820033205069205L;
-    private String downloadDirectory;
-    private ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
-    private String name = "";
-    private boolean postProcessing = true;
-    private boolean useSubDir = true;
-    private String comment = "";
-    private String password = "";
-    private long size = -1;
+    private static final long                           serialVersionUID = 5865820033205069205L;
+    private String                                      downloadDirectory;
+    private ArrayList<DownloadLink>                     downloadLinks    = new ArrayList<DownloadLink>();
+    private String                                      name             = "";
+    private boolean                                     postProcessing   = true;
+    private boolean                                     useSubDir        = true;
+    private String                                      comment          = "";
+    private String                                      password         = "";
+    private long                                        size             = -1;
 
-    private long lastSizeCalc = 0;
-    private int lastfail = 0;
-    private long lastFailCount = 0;
-    private String hosts;
-    private boolean ignorePackage = false;
-    private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
-    private long lastEnabledCount = 0;
-    private int lastenabled = 0;
+    private long                                        lastSizeCalc     = 0;
+    private int                                         lastfail         = 0;
+    private long                                        lastFailCount    = 0;
+    private String                                      hosts;
+    private boolean                                     ignorePackage    = false;
+    private transient LinkGrabberFilePackageBroadcaster broadcaster      = new LinkGrabberFilePackageBroadcaster();
+    private long                                        lastEnabledCount = 0;
+    private int                                         lastenabled      = 0;
     /**
      * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
      * icon to be shown in the LinkGrabberTable
      */
-    private ImageIcon customIcon = null;
+    private ImageIcon                                   customIcon       = null;
     /**
      * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
      * tooltip to be shown in the LinkGrabberTable
      */
-    private String customIconText = null;
-    private int lastunchecked = 0;
+    private String                                      customIconText   = null;
+    private int                                         lastunchecked    = 0;
+    private long                                        created          = -1;
+
+    /**
+     * @return the created
+     */
+    public long getCreated() {
+        return created;
+    }
+
+    /**
+     * @param created
+     *            the created to set
+     */
+    public void setCreated(long created) {
+        this.created = created;
+    }
 
     public boolean isIgnored() {
         return ignorePackage;
@@ -83,6 +99,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public LinkGrabberFilePackage() {
+        created = System.currentTimeMillis();
         downloadDirectory = JDUtilities.getDefaultDownloadDirectory();
         name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);

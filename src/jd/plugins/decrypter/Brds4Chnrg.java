@@ -24,11 +24,11 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.DownloadLink.AvailableStatus;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"boards.4chan.org"}, urls = {"http://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/(res/[0-9]+)?"}, flags = {0})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "http://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/(res/[0-9]+)?" }, flags = { 0 })
 public class Brds4Chnrg extends PluginForDecrypt {
 
     public Brds4Chnrg(PluginWrapper wrapper) {
@@ -44,11 +44,11 @@ public class Brds4Chnrg extends PluginForDecrypt {
         if (parameter.matches("http://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/[0-9]*")) {
             String[] threads = br.getRegex("<span id=\"nothread([0-9]+)\"><a href=\"res/").getColumn(0);
             for (String thread : threads) {
-                decryptedLinks.add(createDownloadlink(parameter+ "res/" + thread));
+                decryptedLinks.add(createDownloadlink(parameter + "res/" + thread));
             }
         } else {
             String[] images = br.getRegex("(http://[\\w\\.]*?images.4chan\\.org/[0-9a-z]{1,3}/src/[0-9]+\\.(?i:(gif|jpg|png)))").getColumn(0);
-            
+
             if (br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");
                 br.getPage("http://www.4chan.org/error/404/rid.php");
@@ -61,7 +61,13 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 return decryptedLinks;
             } else {
                 String domain = "4chan.org";
-                String cat = br.getRegex("<div class=\"logo\">.*?<span>/.{1,3}/ - (.*?)</span>").getMatch(0).replace("&amp;", "&");
+                String cat = br.getRegex("<div class=\"logo\">.*?<span>/.{1,3}/ - (.*?)</span>").getMatch(0);
+                if (cat == null) cat = br.getRegex("<div class=\"logo\">.*?<span>\"(.*?)\"</span>").getMatch(0);
+                if (cat != null) {
+                    cat = cat.replace("&amp;", "&");
+                } else {
+                    cat = "Unknown Cat";
+                }
                 String date = new Date().toString();
                 fp.setName(domain + " - " + cat + " - " + date);
                 for (String image : images) {

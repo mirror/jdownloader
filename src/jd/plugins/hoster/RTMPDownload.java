@@ -29,19 +29,28 @@ public class RTMPDownload extends RAFDownload {
         URL.setURLStreamHandlerFactory(new CustomUrlStreamHandlerFactory());
 
         try {
+            /* these libs are 32bit */
             if (CrossSystem.isWindows()) {
                 System.load(JDUtilities.getResourceFile("libs/rtmp.dll").getAbsolutePath());
             } else if (CrossSystem.isLinux()) {
                 System.load(JDUtilities.getResourceFile("libs/librtmp.so").getAbsolutePath());
             }
-        } catch (Exception e) {
-            System.out.println("Error: " + e);
+        } catch (Throwable e) {
+            System.out.println("Error loading 32bit: " + e);
+            if (CrossSystem.isLinux()) {
+                /* on linux we try to load the *maybe installed* native lib */
+                try {
+                    System.load("/usr/lib/librtmp.so");
+                } catch (Throwable e2) {
+                    System.out.println("Error loading /usr/lib/librtmp.so: " + e);
+                }
+            }
         }
 
     }
-    private Chunk chunk;
-    private long speed = 0l;
-    private URL url;
+    private Chunk             chunk;
+    private long              speed = 0l;
+    private URL               url;
     private RtmpUrlConnection rtmpConnection;
 
     public RtmpUrlConnection getRtmpConnection() {

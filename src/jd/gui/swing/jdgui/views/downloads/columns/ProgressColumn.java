@@ -37,24 +37,25 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class ProgressColumn extends JDTableColumn {
 
-    private static final long serialVersionUID = 2228210790952050305L;
-    private DownloadLink dLink;
+    private static final long   serialVersionUID   = 2228210790952050305L;
+    private DownloadLink        dLink;
     private JDProgressBarRender progress;
-    private final String strPluginDisabled;
-    private final String strPluginError;
-    private final String strUnknownFilesize;
-    private final Color COL_PROGRESS_ERROR = new Color(0xCC3300);
-    private final Color COL_PROGRESS_NORMAL;
-    private Color COL_PROGRESS = null;
-    private FilePackage fp;
-    private JRendererLabel jlr;
+    private final String        strPluginDisabled;
+    private final String        strPluginError;
+    private final String        strUnknownFilesize;
+    private final Color         COL_PROGRESS_ERROR = new Color(0xCC3300);
+    private final Color         COL_PROGRESS_NORMAL;
+    private Color               COL_PROGRESS       = null;
+    private FilePackage         fp;
+    private JRendererLabel      jlr;
 
     public ProgressColumn(String name, JDTableModel table) {
         super(name, table);
         progress = new JDProgressBarRender();
         progress.setStringPainted(true);
         progress.setOpaque(true);
-        progress.setBorder(null);
+        /* FIXME: wait for synthethica simple2d bugfix */
+        // progress.setBorder(null);
         COL_PROGRESS_NORMAL = progress.getForeground();
         strPluginDisabled = JDL.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");

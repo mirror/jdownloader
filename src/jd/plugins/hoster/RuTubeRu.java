@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html" }, flags = { 0 })
 public class RuTubeRu extends PluginForHost {
@@ -50,8 +50,8 @@ public class RuTubeRu extends PluginForHost {
         String fsk18 = br.getRegex("<br><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
         if (fsk18 != null) br.getPage(fsk18);
         br.setFollowRedirects(true);
-        String filename = br.getRegex("<title>(.*?):: Видео на RuTube </title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)- \"").getMatch(0);
+        String filename = br.getRegex("<title>(.*?):: Видео на RuTube").getMatch(0);
+        if (filename == null) filename = br.getRegex("meta name=\"title\" content=\"(.*?):: Видео на RuTube").getMatch(0);
         String filesize = br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim() + ".flv");
@@ -70,13 +70,20 @@ public class RuTubeRu extends PluginForHost {
         linkurl = linkurl + "?referer=" + Encoding.urlEncode(downloadLink.getDownloadURL() + "?v=" + video_id);
         br.getPage(linkurl);
         linkurl = br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (linkurl.startsWith("rtmp:")) {
+            dl = new RTMPDownload(this, downloadLink, linkurl);
+            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            rtmp.setApp("rutube/");
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override

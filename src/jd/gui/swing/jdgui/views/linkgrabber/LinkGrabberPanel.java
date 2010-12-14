@@ -66,39 +66,39 @@ import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 
-    private static final long serialVersionUID = 1607433619381447389L;
+    private static final long          serialVersionUID       = 1607433619381447389L;
 
-    public static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.linkgrabberview";
+    public static final String         JDL_PREFIX             = "jd.gui.swing.jdgui.views.linkgrabberview";
 
-    private ArrayList<DownloadLink> waitingList = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink>    waitingList            = new ArrayList<DownloadLink>();
 
-    private LinkGrabberTable internalTable;
+    private LinkGrabberTable           internalTable;
 
-    protected Logger logger = jd.controlling.JDLogger.getLogger();
+    protected Logger                   logger                 = jd.controlling.JDLogger.getLogger();
 
-    private transient Thread gatherer;
-    private boolean gatherer_running = false;
-    private ProgressController pc;
+    private transient Thread           gatherer;
+    private boolean                    gatherer_running       = false;
+    private ProgressController         pc;
 
     private LinkGrabberFilePackageInfo filePackageInfo;
-    private Timer gathertimer;
+    private Timer                      gathertimer;
 
-    private Jobber checkJobbers = new Jobber(4);
+    private Jobber                     checkJobbers           = new Jobber(4);
 
-    private LinkCheck lc = LinkCheck.getLinkChecker();
-    private Timer updateAsync;
-    private static LinkGrabberPanel INSTANCE;
+    private LinkCheck                  lc                     = LinkCheck.getLinkChecker();
+    private Timer                      updateAsync;
+    private static LinkGrabberPanel    INSTANCE;
 
-    private LinkGrabberController LGINSTANCE = null;
+    private LinkGrabberController      LGINSTANCE             = null;
 
-    protected boolean tablerefreshinprogress = false;
-    protected boolean addinginprogress = false;
+    protected boolean                  tablerefreshinprogress = false;
+    protected boolean                  addinginprogress       = false;
 
-    private JScrollPane scrollPane;
+    private JScrollPane                scrollPane;
 
-    private ViewToolbar toolbar;
+    private ViewToolbar                toolbar;
 
-    private boolean notvisible = true;
+    private boolean                    notvisible             = true;
 
     public static synchronized LinkGrabberPanel getLinkGrabber() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberPanel();
@@ -536,11 +536,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             fpv2.setDownloadLinks(linkList);
         }
         /* set same add date to package and files */
-        long curtime = System.currentTimeMillis();
-        fp.setCreated(curtime);
-        for (DownloadLink link : fp.getDownloadLinkList()) {
-            link.setCreated(curtime);
-        }
+        fp.setCreated(fpv2.getCreated());
         if (!fpv2.isIgnored()) {
             if (GUIUtils.getConfig() != null && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
                 JDUtilities.getDownloadController().addPackageAt(fp, index, 0);

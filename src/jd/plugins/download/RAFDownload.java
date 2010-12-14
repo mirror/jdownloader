@@ -39,7 +39,8 @@ import org.appwork.utils.Hash;
 
 public class RAFDownload extends DownloadInterface {
 
-    private RandomAccessFile outputFile;
+    private static final Object HASHCHECKLOCK = new Object();
+    private RandomAccessFile    outputFile;
 
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         super(plugin, downloadLink, request);
@@ -77,46 +78,52 @@ public class RAFDownload extends DownloadInterface {
              * CRC/SFV Check
              */
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, true)) {
-                String hashType = null;
-                boolean success = false;
-                DownloadLink sfv = downloadLink.getFilePackage().getSFV();
-                if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
-                    downloadLink.requestGuiUpdate();
-
-                    String sfvText = JDIO.readFileToString(new File(sfv.getFileOutput()));
-                    /* Delete comments */
-                    if (sfvText != null) sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
-                    File outputFile = new File(downloadLink.getFileOutput());
-                    if (sfvText != null && sfvText.contains(outputFile.getName())) {
-                        String crc = Long.toHexString(Hash.getCRC32(outputFile));
-
-                        hashType = "CRC32";
-                        success = new Regex(sfvText, outputFile.getName() + "\\s*" + crc).matches();
-                    } else {
-                        downloadLink.getLinkStatus().setStatusText(null);
+                synchronized (HASHCHECKLOCK) {
+                    /*
+                     * we only want one hashcheck running at the same time. many
+                     * finished downloads can cause heavy diskusage here
+                     */
+                    String hashType = null;
+                    boolean success = false;
+                    DownloadLink sfv = downloadLink.getFilePackage().getSFV();
+                    if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
                         downloadLink.requestGuiUpdate();
+
+                        String sfvText = JDIO.readFileToString(new File(sfv.getFileOutput()));
+                        /* Delete comments */
+                        if (sfvText != null) sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
+                        File outputFile = new File(downloadLink.getFileOutput());
+                        if (sfvText != null && sfvText.contains(outputFile.getName())) {
+                            String crc = Long.toHexString(Hash.getCRC32(outputFile));
+
+                            hashType = "CRC32";
+                            success = new Regex(sfvText, outputFile.getName() + "\\s*" + crc).matches();
+                        } else {
+                            downloadLink.getLinkStatus().setStatusText(null);
+                            downloadLink.requestGuiUpdate();
+                        }
                     }
-                }
 
-                if (hashType == null) {
-                    if (downloadLink.getMD5Hash() != null) {
-                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "MD5"));
-                        downloadLink.requestGuiUpdate();
+                    if (hashType == null) {
+                        if (downloadLink.getMD5Hash() != null) {
+                            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "MD5"));
+                            downloadLink.requestGuiUpdate();
 
-                        hashType = "MD5";
-                        success = downloadLink.getMD5Hash().equalsIgnoreCase(JDHash.getMD5(new File(downloadLink.getFileOutput())));
-                    } else if (downloadLink.getSha1Hash() != null) {
-                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "SHA1"));
-                        downloadLink.requestGuiUpdate();
+                            hashType = "MD5";
+                            success = downloadLink.getMD5Hash().equalsIgnoreCase(JDHash.getMD5(new File(downloadLink.getFileOutput())));
+                        } else if (downloadLink.getSha1Hash() != null) {
+                            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "SHA1"));
+                            downloadLink.requestGuiUpdate();
 
-                        hashType = "SHA1";
-                        success = downloadLink.getSha1Hash().equalsIgnoreCase(JDHash.getSHA1(new File(downloadLink.getFileOutput())));
+                            hashType = "SHA1";
+                            success = downloadLink.getSha1Hash().equalsIgnoreCase(JDHash.getSHA1(new File(downloadLink.getFileOutput())));
+                        }
                     }
-                }
 
-                if (hashType != null) {
-                    hashCheckFinished(hashType, success);
+                    if (hashType != null) {
+                        hashCheckFinished(hashType, success);
+                    }
                 }
             }
         } catch (Exception e) {
