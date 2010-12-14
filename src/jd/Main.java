@@ -246,7 +246,7 @@ public class Main {
                 Main.LOG.info("DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-brdebug")) {
                 JDInitFlags.SWITCH_DEBUG = true;
-                Browser.setVerbose(true);
+                Browser.setGlobalVerbose(true);
                 Main.LOG.info("Browser DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-config")) {
                 new Config();

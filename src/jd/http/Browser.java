@@ -267,6 +267,7 @@ public class Browser {
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
     private static HashMap<String, Long>    REQUESTTIME_MAP;
     private static boolean                  VERBOSE             = false;
+    private boolean                         verbose             = false;
 
     public Browser() {
 
@@ -1236,15 +1237,11 @@ public class Browser {
     }
 
     public boolean isDebug() {
-        return debug || VERBOSE;
+        return debug || isVerbose();
     }
 
     public void setDebug(final boolean debug) {
-        final String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
-
-        if (!caller.matches("jar\\:.*\\.jar\\!.*")) {
-            this.debug = debug;
-        }
+        this.debug = debug;
     }
 
     /* TODO: setauth needs to be done */
@@ -1340,12 +1337,16 @@ public class Browser {
         REQUEST_INTERVAL_LIMIT_MAP.put(domain, i);
     }
 
-    public static boolean isVerbose() {
-        return VERBOSE;
+    public boolean isVerbose() {
+        return VERBOSE || verbose;
     }
 
-    public static void setVerbose(final boolean b) {
+    public static void setGlobalVerbose(final boolean b) {
         VERBOSE = b;
+    }
+
+    public void setVerbose(final boolean b) {
+        verbose = b;
     }
 
     /**

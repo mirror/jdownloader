@@ -38,8 +38,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
@@ -117,7 +117,7 @@ public class Main {
 
                     OSFilter = false;
                 } else if (p.trim().equalsIgnoreCase("-brdebug")) {
-                    Browser.setVerbose(true);
+                    Browser.setGlobalVerbose(true);
                 } else if (p.trim().equalsIgnoreCase("-restore")) {
                     RESTORE = true;
 

@@ -37,6 +37,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
+    private static boolean debugSwitch = false;
+
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
@@ -191,6 +193,11 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        try {
+            br.setVerbose(debugSwitch);
+        } catch (Throwable e) {
+            /* only available after 0.9xx version */
+        }
         requestFileInformation(downloadLink);
         Form freeForm = br.getFormbyProperty("id", "ifree_form");
         if (freeForm == null) {
@@ -254,6 +261,7 @@ public class LetitBitNet extends PluginForHost {
             logger.warning("url couldn't be found!");
             logger.severe(br.toString());
             logger.severe(tmp1);
+            debugSwitch = true;
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* we have to wait little because server too buggy */

@@ -459,13 +459,15 @@ public class MediafireCom extends PluginForHost {
         form.put("login_pass", Encoding.urlEncode(account.getPass()));
         this.br.submitForm(form);
         this.br.getPage("http://www.mediafire.com/myfiles.php");
-        final String acc = this.br.getRegex("Account:.*?style=\"margin.*?\">(.*?)</").getMatch(0);
         final String cookie = this.br.getCookie("http://www.mediafire.com", "user");
-        if (cookie.equals("x") || !acc.equals("MediaPro")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (cookie.equals("x")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
             this.br.getPage("http://www.mediafire.com/myaccount/download_options.php");
+            String red = br.getRedirectLocation();
+            if (red != null && red.contains("select_account_type.php")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
             if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
+            if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             MediafireCom.CONFIGURATION_KEYS.put(account, configurationKey);
         }
 

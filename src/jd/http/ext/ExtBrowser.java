@@ -34,7 +34,7 @@ public class ExtBrowser {
 
         Browser.init();
         Browser.setLogger(Log.L);
-        Browser.setVerbose(true);
+        Browser.setGlobalVerbose(true);
         br.getCommContext().forceDebug(true);
 
         ExtBrowser eb = new ExtBrowser();
@@ -175,10 +175,10 @@ public class ExtBrowser {
     }
 
     // private HTMLDocumentImpl document;
-    private FrameController htmlFrameController;
-    private UserAgentDelegate uac;
-    private Browser commContext;
-    private String url;
+    private FrameController       htmlFrameController;
+    private UserAgentDelegate     uac;
+    private Browser               commContext;
+    private String                url;
     // private InputController inputController;
     private ExtBrowserEventSender eventSender;
 
