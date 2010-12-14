@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -32,22 +33,22 @@ import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaupload.com" }, urls = { "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[0-9A-Za-z]+" }, flags = { 2 })
@@ -273,6 +274,17 @@ public class Megauploadcom extends PluginForHost {
             this.sleep(waittime * 1000, link);
         }
         try {
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                /*
+                 * workaround for buggy megaupload servers that can freeze
+                 * stable 0.9xx
+                 */
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(20000);
+            } catch (final Throwable ee) {
+            }
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, url, resume, this.isPremium(account, this.br.cloneBrowser(), false, true) ? 0 : 1);
             if (!this.dl.getConnection().isOK()) {
                 this.dl.getConnection().disconnect();
@@ -297,7 +309,17 @@ public class Megauploadcom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                /*
+                 * workaround for buggy megaupload servers that can freeze
+                 * stable 0.9xx
+                 */
+                dl.getConnection().setConnectTimeout(30000);
+                dl.getConnection().setReadTimeout(20000);
+            } catch (final Throwable ee) {
+            }
             this.dl.startDownload();
             // Wenn ein Download Premium mit mehreren chunks angefangen wird,
             // und
@@ -368,7 +390,9 @@ public class Megauploadcom extends PluginForHost {
 
     public String getDownloadID(final DownloadLink link) throws MalformedURLException {
         final HashMap<String, String> p = Request.parseQuery(link.getDownloadURL());
-        return p.get("d").toUpperCase();
+        String ret = p.get("d");
+        if (ret != null) ret = ret.toUpperCase(Locale.ENGLISH);
+        return ret;
     }
 
     private STATUS getFileStatus(final DownloadLink link) throws MalformedURLException, PluginException {

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -83,7 +84,7 @@ public class MegaVideo extends PluginForHost {
         if (ret.length() > 8) {
             ret = ret.substring(0, 8);
         }
-        return ret.toUpperCase();
+        return ret.toUpperCase(Locale.ENGLISH);
     }
 
     @Override
