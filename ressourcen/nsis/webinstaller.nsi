@@ -36,7 +36,7 @@ VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} ProductVersion "${VERSION}"
 
 
-!include LogicLib.nsh
+
 !macro IfKeyExists ROOT MAIN_KEY KEY
   Push $R0
   Push $R1
@@ -64,42 +64,49 @@ VIAddVersionKey /LANG=${LANG_ENGLISH} ProductVersion "${VERSION}"
   Exch $R2
 !macroend
 
-
+Var FF
+Var OPERA
+Var CHROME
+Var IE
+Var JDCOM
 Section
 
 
 !insertmacro IfKeyExists "HKLM" "SOFTWARE\Mozilla" "Mozilla Firefox"
 Pop $R0
 
-StrCpy $9 "$R0"
+StrCpy $FF "$R0"
 
 !insertmacro IfKeyExists "HKLM" "SOFTWARE" "Opera Software"
 Pop $R0
-StrCpy $9 "$9$R0"
+StrCpy $OPERA "$R0"
 
 !insertmacro IfKeyExists "HKLM" "SOFTWARE\Google" "Chrome"
 Pop $R0
-StrCpy $9 "$9$R0"
+StrCpy $CHROME "$R0"
 !insertmacro IfKeyExists "HKLM" "SOFTWARE\Microsoft" "Internet Explorer"
 Pop $R0
-StrCpy $9 "$9$R0"
+StrCpy $IE "$R0"
 !insertmacro IfKeyExists "HKLM" "SOFTWARE\Conduit\Toolbars" "jdownloader-pro Toolbar"
 Pop $R0
-StrCpy $9 "$9$R0"
+StrCpy $JDCOM "$R0"
 
     StrCpy $0 $HWNDPARENT
-    System::Call "user32::ShowWindow(i r0, i 0)"
+    ;System::Call "user32::ShowWindow(i r0, i 0)"
     #http://nsis.sourceforge.net/Inetc_plug-in
     
+    inetc::get /SILENT /useragent "JDownloaderWebSetup_inetc_$$Revision$$" "http://jdownloader.org/scripts/inst.php?do=webstart&f=$FF&o=$OPERA&c=$CHROME&i=$IE&j=$JDCOM" ".a.log"
+    Delete ".a.log"
+  
     IntOp $2 0 + 0 #count    
-    
+          
     #This might not be the reference implementation for a random number,
     #but it's working and it's working good.
     System::Call kernel32::GetTickCount()i.r3
     IntOp $3 $3 % 4
     
     ${DoWhile} $2 < 3
-        inetc::get /caption $(DownloadCaption) /useragent "JDownloaderSetup_inetc_$Revision$" /popup "JDownloaderSetup.exe" /translate $(inetc_url) $(inetc_downloading) $(inetc_connecting) $(inetc_file_name) $(inetc_received) $(inetc_file_size) $(inetc_remaining_time) $(inetc_total_time) "http://download$3.jdownloader.org/download.php?b=$9" "$TEMP\JDownloaderSetup.exe"
+        inetc::get /caption $(DownloadCaption) /useragent "JDownloaderWebSetup_inetc_$$Revision$$" /popup "JDownloaderSetup.exe" /translate $(inetc_url) $(inetc_downloading) $(inetc_connecting) $(inetc_file_name) $(inetc_received) $(inetc_file_size) $(inetc_remaining_time) $(inetc_total_time) "http://download$3.jdownloader.org/download.php?f=$FF&o=$OPERA&c=$CHROME&i=$IE&j=$JDCOM" "$TEMP\JDownloaderSetup.exe"
         Pop $1
         
         ${If} $1 == "OK"
@@ -120,6 +127,8 @@ StrCpy $9 "$9$R0"
     ${Loop}
     MessageBox MB_ICONEXCLAMATION|MB_OK $(WebInstallFailed)
     ExecShell "open" "http://jdownloader.org/download?source=webinstall&v=${VERSION}&err=downloadfailed&msg=$1"
+     inetc::get /SILENT /useragent "JDownloaderWebSetup_inetc_$$Revision$$" "http://jdownloader.org/scripts/inst.php?do=webstartfailed" ".a.log"
+   
     Quit
 SectionEnd
 

@@ -5,6 +5,18 @@ RequestExecutionLevel user
 # Config
 
 #TODO Better UAC Handling http://nsis.sourceforge.net/UAC_plug-in
+!macro onBundleInstallOK
+      inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=bundleok" ".a.log"
+    Delete ".a.log"
+
+!macroend
+
+!macro onBundleInstallFailed
+  inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=bundlefail" ".a.log"
+    Delete ".a.log"
+
+
+!macroend
 
 !define COMPANY "AppWork UG (haftungsbeschränkt)"
 !define URL http://www.jdownloader.org
@@ -19,7 +31,7 @@ SetCompressor lzma
 !ifndef ADVERTISING_PLUGIN
     !define ADVERTISING_PLUGIN "example"
 !endif
-!include ".\advertising\${ADVERTISING_PLUGIN}\${ADVERTISING_PLUGIN}.nsh"
+!include ".\advertising\${ADVERTISING_PLUGIN}\script.nsh"
     
 #Disable version display for JD (Autoupdate)
 #VERSION2 is needed for VIAddVersionKey
@@ -35,7 +47,7 @@ InstallDir "$PROGRAMFILES\${APPNAME_SHORT}" #Necessary for correct append behavi
 # MUI Symbol Definitions
 !define MUI_ICON .\res\install.ico
 !define MUI_FINISHPAGE_NOAUTOCLOSE
-!define MUI_FINISHPAGE_RUN $INSTDIR\JDownloader.exe
+!define MUI_FINISHPAGE_RUN $INSTDIR\JDUpdate.exe
 !define MUI_UNICON .\res\uninstall.ico
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
@@ -56,8 +68,8 @@ InstallDir "$PROGRAMFILES\${APPNAME_SHORT}" #Necessary for correct append behavi
 !include "Utilities.nsh"
 
 # Variables
-Var ADMINATINSTALL
 
+Var ADMINATINSTALL
 # Installer pages
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE ${LICENSE}
@@ -82,6 +94,7 @@ Var ADMINATINSTALL
 !insertmacro ADVERTISING_GENERAL
 
 # Installer attributes
+
 CRCCheck on
 XPStyle on
 ShowInstDetails  hide
@@ -101,7 +114,7 @@ VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "${VERSION}"
 # Installer sections
 Section $(SecJDMain_TITLE) SecJDMain
     SectionIn RO
-    
+
     #Java Check
     ${If} ${UAC_IsAdmin}
       Call DownloadAndInstallJREIfNecessary
@@ -114,10 +127,10 @@ Section $(SecJDMain_TITLE) SecJDMain
     
     #Create shortcuts
     SetOutPath "$SMPROGRAMS\$(^Name)"
-    CreateShortcut "$SMPROGRAMS\$(^Name)\$(^Name).lnk" $INSTDIR\JDownloader.exe
+    CreateShortcut "$SMPROGRAMS\$(^Name)\$(^Name).lnk" $INSTDIR\JDownloaderD3D.exe
     CreateShortcut "$SMPROGRAMS\$(^Name)\$(HelpLink).lnk" "http://jdownloader.org/knowledge/index"
     SetOutPath $DESKTOP
-    CreateShortcut "$DESKTOP\$(^Name).lnk" $INSTDIR\JDownloader.exe
+    CreateShortcut "$DESKTOP\$(^Name).lnk" $INSTDIR\JDownloaderD3D.exe
     
     #make files writeable for user
     ${If} ${UAC_IsAdmin}
@@ -130,18 +143,18 @@ Section $(SecJDMain_TITLE) SecJDMain
 SectionEnd
 
 Section $(SecAssociateFiles_TITLE) SecAssociateFiles
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".jd" "JDownloader JD File"
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".jdc" "JDownloader JDContainer File"
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".dlc" "JDownloader DLC Container"
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".ccf" "JDownloader CCF Container"
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".rsdf" "JDownloader RSDF Container"
-    ${registerExtension} "$INSTDIR\JDownloader.exe" ".metalink" "JDownloader Metalink"
-    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "rsdf" "JDownloader RSDF Link"
-    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "ccf" "JDownloader CCF Link"
-    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "dlc" "JDownloader DLC Link"
-    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "metalink" "JDownloader Metalink"
-    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "jd" "JDownloader JD Link"
-    ${registerProtocol}  "$INSTDIR\JDownloader.exe" "jdlist" "JDownloader JDList Link"
+    ${registerExtension} "$INSTDIR\JDownloaderD3D.exe" ".jd" "JDownloader JD File"
+    ${registerExtension} "$INSTDIR\JDownloaderD3D.exe" ".jdc" "JDownloader JDContainer File"
+    ${registerExtension} "$INSTDIR\JDownloaderD3D.exe" ".dlc" "JDownloader DLC Container"
+    ${registerExtension} "$INSTDIR\JDownloaderD3D.exe" ".ccf" "JDownloader CCF Container"
+    ${registerExtension} "$INSTDIR\JDownloaderD3D.exe" ".rsdf" "JDownloader RSDF Container"
+    ${registerExtension} "$INSTDIR\JDownloaderD3D.exe" ".metalink" "JDownloader Metalink"
+    ${registerProtocol}  "$INSTDIR\JDownloaderD3D.exe" "rsdf" "JDownloader RSDF Link"
+    ${registerProtocol}  "$INSTDIR\JDownloaderD3D.exe" "ccf" "JDownloader CCF Link"
+    ${registerProtocol}  "$INSTDIR\JDownloaderD3D.exe" "dlc" "JDownloader DLC Link"
+    ${registerProtocol}  "$INSTDIR\JDownloaderD3D.exe" "metalink" "JDownloader Metalink"
+    ${registerProtocol}  "$INSTDIR\JDownloaderD3D.exe" "jd" "JDownloader JD Link"
+    ${registerProtocol}  "$INSTDIR\JDownloaderD3D.exe" "jdlist" "JDownloader JDList Link"
     
     WriteRegStr SHELL_CONTEXT "${REGKEY}\Components" SecAssociateFiles 1 
 SectionEnd
@@ -161,7 +174,7 @@ Section -post SecPostInstall
     WriteRegStr SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" DisplayName "$(^Name)"
     WriteRegStr SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" Publisher "${COMPANY}"
     WriteRegStr SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" URLInfoAbout "${URL}"
-    WriteRegStr SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" DisplayIcon $INSTDIR\JDownloader.exe
+    WriteRegStr SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" DisplayIcon $INSTDIR\JDownloaderD3D.exe
     WriteRegStr SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" UninstallString $INSTDIR\uninstall.exe
     WriteRegDWORD SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" NoModify 1
     WriteRegDWORD SHELL_CONTEXT "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME_SHORT}" NoRepair 1
@@ -230,16 +243,25 @@ Function .onInit
         StrCpy $INSTDIR ${INSTDIR_USER}
         SetShellVarContext current
     ${EndIf}
+        inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=init" ".a.log"
+    Delete ".a.log"
     
     !insertmacro ADVERTISING_ONINIT
 FunctionEnd
 
 Function .onInstSuccess
     !insertmacro ADVERTISING_ONINSTSUCCESS
+          inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=success" ".a.log"
+    Delete ".a.log"
+    
+
 FunctionEnd
 
 Function .onInstFailed
     !insertmacro ADVERTISING_ONINSTFAILED
+        inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=failed" ".a.log"
+    Delete ".a.log"
+        
 FunctionEnd
 
 Function .onGUIEnd
