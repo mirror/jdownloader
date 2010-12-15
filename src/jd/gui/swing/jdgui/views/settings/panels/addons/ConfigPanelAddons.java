@@ -21,6 +21,7 @@ import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -78,6 +79,16 @@ public class ConfigPanelAddons extends ConfigPanel {
                 private static final long serialVersionUID = -3960914415647488335L;
 
                 @Override
+                protected Icon getIcon(OptionalPluginWrapper value) {
+                    ImageIcon icon = null;
+                    if (value.isLoaded() && (icon = JDTheme.II(value.getPlugin().getIconKey(), 16, 16)) != null) {
+                        return icon;
+                    } else {
+                        return smallDefaultIcon;
+                    }
+                }
+
+                @Override
                 protected String getStringValue(OptionalPluginWrapper value) {
                     return value.getHost();
                 }
@@ -109,6 +120,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private static final long                      serialVersionUID = 4145243293360008779L;
 
+    private final ImageIcon                        smallDefaultIcon;
     private final ImageIcon                        defaultIcon;
     private final ArrayList<OptionalPluginWrapper> pluginsOptional;
 
@@ -121,6 +133,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     public ConfigPanelAddons() {
         super();
 
+        smallDefaultIcon = JDTheme.II(ConfigPanel.getIconKey(), 16, 16);
         defaultIcon = JDTheme.II(ConfigPanel.getIconKey(), 24, 24);
         pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
         Collections.sort(pluginsOptional);
@@ -173,8 +186,11 @@ public class ConfigPanelAddons extends ConfigPanel {
     }
 
     public void updateShowcase() {
-        if (table.getSelectedRow() < 0) return;
-        OptionalPluginWrapper opw = pluginsOptional.get(table.getSelectedRow());
+        int row = table.getSelectedRow();
+        if (row < 0) return;
+
+        table.getExtTableModel().fireTableRowsUpdated(row, row);
+        OptionalPluginWrapper opw = pluginsOptional.get(row);
         ImageIcon icon;
         if (opw.isLoaded() && (icon = JDTheme.II(opw.getPlugin().getIconKey(), 24, 24)) != null) {
             lblName.setIcon(icon);
