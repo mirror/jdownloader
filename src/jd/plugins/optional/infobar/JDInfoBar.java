@@ -19,17 +19,17 @@ import com.sun.awt.AWTUtilities;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "infobar", hasGui = true, interfaceversion = 7)
 public class JDInfoBar extends PluginOptional {
 
-    private static final String JDL_PREFIX = "jd.plugins.optional.infobar.";
+    private static final String JDL_PREFIX            = "jd.plugins.optional.infobar.";
 
-    private static final String PROPERTY_OPACITY = "PROPERTY_OPACITY";
+    private static final String PROPERTY_OPACITY      = "PROPERTY_OPACITY";
 
     private static final String PROPERTY_DROPLOCATION = "PROPERTY_DROPLOCATION";
 
-    private static final String PROPERTY_DOCKING = "PROPERTY_DOCKING";
+    private static final String PROPERTY_DOCKING      = "PROPERTY_DOCKING";
 
-    private MenuAction activateAction;
+    private MenuAction          activateAction;
 
-    private InfoDialog infoDialog;
+    private InfoDialog          infoDialog;
 
     public JDInfoBar(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,13 +95,6 @@ public class JDInfoBar extends PluginOptional {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == activateAction) {
-            setGuiEnable(activateAction.isSelected());
-        }
-    }
-
-    @Override
     public void setGuiEnable(boolean b) {
         if (b) {
             if (infoDialog == null) {
@@ -119,8 +112,15 @@ public class JDInfoBar extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        activateAction = new MenuAction("infobar", 0);
-        activateAction.setActionListener(this);
+        activateAction = new MenuAction("infobar", 0) {
+            private static final long serialVersionUID = 3252473048646596851L;
+
+            @Override
+            public void onAction(ActionEvent e) {
+                System.out.println(activateAction.isSelected());
+                setGuiEnable(activateAction.isSelected());
+            }
+        };
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
 

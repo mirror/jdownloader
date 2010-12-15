@@ -86,13 +86,11 @@ public abstract class ToolBarAction extends JDAction {
             updateIcon();
             if (JDUtilities.getJavaVersion() < 1.6) this.setSelected(!this.isSelected());
         }
-        if (getActionListener() == null) {
+        if (getActionListener() != null) {
+            getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
+        } else {
             onAction(e);
-
-            return;
         }
-
-        getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
     }
 
     @Override

@@ -33,29 +33,29 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     private static final String JDL_PREFIX = "jd.plugins.optional.infobar.InfoDialog.";
 
-    private static InfoDialog INSTANCE = null;
+    private static InfoDialog   INSTANCE   = null;
 
     public static InfoDialog getInstance(MenuAction action) {
         if (INSTANCE == null) INSTANCE = new InfoDialog(action);
         return INSTANCE;
     }
 
-    private static final long serialVersionUID = 4715904261105562064L;
+    private static final long          serialVersionUID = 4715904261105562064L;
 
-    private static final int DOCKING_DISTANCE = 25;
+    private static final int           DOCKING_DISTANCE = 25;
 
     private final DownloadInformations ds;
-    private final MenuAction action;
-    private final DragDropHandler ddh;
-    private boolean enableDocking;
+    private final MenuAction           action;
+    private final DragDropHandler      ddh;
+    private boolean                    enableDocking;
 
-    private InfoUpdater updater = null;
-    private Point point;
+    private InfoUpdater                updater          = null;
+    private Point                      point;
 
-    private JDProgressBar prgTotal;
-    private JLabel lblProgress;
-    private JLabel lblETA;
-    private JLabel lblHelp;
+    private JDProgressBar              prgTotal;
+    private JLabel                     lblProgress;
+    private JLabel                     lblETA;
+    private JLabel                     lblHelp;
 
     private InfoDialog(MenuAction action) {
         super();
@@ -254,8 +254,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     public void actionPerformed(ActionEvent e) {
-        hideDialog();
         action.setSelected(false);
+        action.actionPerformed(new ActionEvent(action, e.getID(), e.getActionCommand()));
     }
 
 }
