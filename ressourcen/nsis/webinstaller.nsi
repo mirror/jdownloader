@@ -35,7 +35,58 @@ VIProductVersion "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} ProductVersion "${VERSION}"
 
+
+!include LogicLib.nsh
+!macro IfKeyExists ROOT MAIN_KEY KEY
+  Push $R0
+  Push $R1
+  Push $R2
+ 
+  # XXX bug if ${ROOT}, ${MAIN_KEY} or ${KEY} use $R0 or $R1
+ 
+  StrCpy $R1 "0" # loop index
+  StrCpy $R2 "0" # not found
+ 
+  ${Do}
+    EnumRegKey $R0 ${ROOT} "${MAIN_KEY}" "$R1"
+    ${If} $R0 == "${KEY}"
+      StrCpy $R2 "1" # found
+      ${Break}
+    ${EndIf}
+    IntOp $R1 $R1 + 1
+  ${LoopWhile} $R0 != ""
+ 
+  ClearErrors
+ 
+  Exch 2
+  Pop $R0
+  Pop $R1
+  Exch $R2
+!macroend
+
+
 Section
+
+
+!insertmacro IfKeyExists "HKLM" "SOFTWARE\Mozilla" "Mozilla Firefox"
+Pop $R0
+
+StrCpy $9 "$R0"
+
+!insertmacro IfKeyExists "HKLM" "SOFTWARE" "Opera Software"
+Pop $R0
+StrCpy $9 "$9$R0"
+
+!insertmacro IfKeyExists "HKLM" "SOFTWARE\Google" "Chrome"
+Pop $R0
+StrCpy $9 "$9$R0"
+!insertmacro IfKeyExists "HKLM" "SOFTWARE\Microsoft" "Internet Explorer"
+Pop $R0
+StrCpy $9 "$9$R0"
+!insertmacro IfKeyExists "HKLM" "SOFTWARE\Conduit\Toolbars" "jdownloader-pro Toolbar"
+Pop $R0
+StrCpy $9 "$9$R0"
+
     StrCpy $0 $HWNDPARENT
     System::Call "user32::ShowWindow(i r0, i 0)"
     #http://nsis.sourceforge.net/Inetc_plug-in
@@ -48,7 +99,7 @@ Section
     IntOp $3 $3 % 4
     
     ${DoWhile} $2 < 3
-        inetc::get /caption $(DownloadCaption) /useragent "JDownloaderSetup_inetc" /popup "JDownloaderSetup.exe" /translate $(inetc_url) $(inetc_downloading) $(inetc_connecting) $(inetc_file_name) $(inetc_received) $(inetc_file_size) $(inetc_remaining_time) $(inetc_total_time) "http://update$3.jdownloader.org/webinstall/JDownloaderSetup.exe" "$TEMP\JDownloaderSetup.exe"
+        inetc::get /caption $(DownloadCaption) /useragent "JDownloaderSetup_inetc_$Revision$" /popup "JDownloaderSetup.exe" /translate $(inetc_url) $(inetc_downloading) $(inetc_connecting) $(inetc_file_name) $(inetc_received) $(inetc_file_size) $(inetc_remaining_time) $(inetc_total_time) "http://download$3.jdownloader.org/download.php?b=$9" "$TEMP\JDownloaderSetup.exe"
         Pop $1
         
         ${If} $1 == "OK"
@@ -71,3 +122,4 @@ Section
     ExecShell "open" "http://jdownloader.org/download?source=webinstall&v=${VERSION}&err=downloadfailed&msg=$1"
     Quit
 SectionEnd
+
