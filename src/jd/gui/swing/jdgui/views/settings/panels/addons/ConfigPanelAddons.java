@@ -190,7 +190,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         if (row < 0) return;
 
         table.getExtTableModel().fireTableRowsUpdated(row, row);
-        OptionalPluginWrapper opw = pluginsOptional.get(row);
+        OptionalPluginWrapper opw = table.getExtTableModel().getElementAt(row);
         ImageIcon icon;
         if (opw.isLoaded() && (icon = JDTheme.II(opw.getPlugin().getIconKey(), 24, 24)) != null) {
             lblName.setIcon(icon);
