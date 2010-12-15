@@ -176,7 +176,7 @@ public class Youtube extends PluginForHost {
                 InType = convertto;
             }
             if (!TbCm.ConvertFile(downloadLink, InType, convertto)) {
-                Plugin.logger.severe("Video-Convert failed!");
+                logger.severe("Video-Convert failed!");
             }
         }
     }

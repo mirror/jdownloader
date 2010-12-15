@@ -60,7 +60,7 @@ public class MyVideo extends PluginForHost {
                 /* to load the TbCm plugin */
                 JDUtilities.getPluginForDecrypt("youtube.com");
                 if (!TbCm.ConvertFile(downloadLink, InType, convertto)) {
-                    Plugin.logger.severe("Video-Convert failed!");
+                    logger.severe("Video-Convert failed!");
                 }
             }
         }

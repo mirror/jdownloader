@@ -24,8 +24,8 @@ import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Map;
-import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
@@ -684,7 +684,7 @@ abstract public class DownloadInterface {
 
     public static final int        ERROR_REDIRECTED                 = -1;
 
-    public static Logger           logger                           = JDLogger.getLogger();
+    public Logger                  logger                           = null;
 
     protected int                  chunkNum                         = 1;
 
@@ -763,7 +763,7 @@ abstract public class DownloadInterface {
     private DownloadInterface(PluginForHost plugin, DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
         this.plugin = plugin;
-
+        logger = plugin.getLogger();
         linkStatus = downloadLink.getLinkStatus();
         linkStatus.setStatusText(JDL.L("download.connection.normal", "Download"));
         browser = plugin.getBrowser().cloneBrowser();
@@ -1187,7 +1187,6 @@ abstract public class DownloadInterface {
         DownloadLink block = JDUtilities.getDownloadController().getFirstLinkThatBlocks(downloadLink);
         LinkStatus linkstatus = link.getLinkStatus();
         if (block != null) {
-            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
             if (block.getDefaultPlugin() != null) linkstatus.setStatusText(JDL.LF("system.download.errors.linkisBlocked", "Mirror %s is loading", block.getHost()));
             return true;

@@ -30,6 +30,7 @@ import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.controlling.CaptchaController;
 import jd.controlling.JDLogger;
+import jd.controlling.JDPluginLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
@@ -49,8 +50,11 @@ import jd.utils.locale.JDL;
  */
 public abstract class PluginForDecrypt extends Plugin {
 
+    protected JDPluginLogger logger = null;
+
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
+        logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
     }
 
     public void setBrowser(Browser br) {

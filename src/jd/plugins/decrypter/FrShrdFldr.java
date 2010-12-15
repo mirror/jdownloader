@@ -60,7 +60,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                     break;
                 } else {
                     if (retry == 1) {
-                        Plugin.logger.severe("Wrong Password!");
+                        logger.severe("Wrong Password!");
                         throw new DecrypterException("Wrong Password!");
                     }
                 }

@@ -97,29 +97,27 @@ public class Browser {
 
     }
 
-    private static JDProxy                        GLOBAL_PROXY = null;
-    private static Logger                         LOGGER;
-    // added proxy map to find proxy passwords.
-    private static final HashMap<String, JDProxy> PROXIES      = new HashMap<String, JDProxy>();
+    private static JDProxy GLOBAL_PROXY = null;
+    private static Logger  LOGGER       = null;
+    private Logger         logger       = null;
 
-    public static Logger getLogger() {
+    // added proxy map to find proxy passwords.
+
+    public Logger getLogger() {
+        if (logger != null) return logger;
         return LOGGER;
     }
 
-    public static void setLogger(final Logger logger) {
+    public static void setGlobalLogger(final Logger logger) {
         Browser.LOGGER = logger;
     }
 
-    public static void setGlobalProxy(final JDProxy p) {
-        if (LOGGER != null) {
-            LOGGER.info("Use global proxy: " + p);
-        }
-        PROXIES.put(p.getHost() + ":" + p.getPort(), p);
-        GLOBAL_PROXY = p;
+    public void setLogger(final Logger logger) {
+        this.logger = logger;
     }
 
-    public static JDProxy getGlobalProxy() {
-        return GLOBAL_PROXY;
+    public static void setGlobalProxy(final JDProxy p) {
+        GLOBAL_PROXY = p;
     }
 
     private static final HashMap<String, Cookies> COOKIES = new HashMap<String, Cookies>();
@@ -270,7 +268,17 @@ public class Browser {
     private boolean                         verbose             = false;
 
     public Browser() {
-
+        Thread currentThread = Thread.currentThread();
+        /**
+         * use BrowserSettings from current thread if available
+         */
+        if (currentThread != null && currentThread instanceof BrowserSettings) {
+            BrowserSettings settings = (BrowserSettings) currentThread;
+            proxy = settings.getCurrentProxy();
+            debug = settings.isDebug();
+            verbose = settings.isVerbose();
+            logger = settings.getLogger();
+        }
     }
 
     public String getAcceptLanguage() {
@@ -394,8 +402,8 @@ public class Browser {
         if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) {
             return;
         } else if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
-            if (LOGGER != null) {
-                LOGGER.severe(request.printHeaders());
+            if (getLogger() != null) {
+                getLogger().severe(request.printHeaders());
             }
             throw new BrowserException("Content-length too big", request.getHttpConnection());
         }
@@ -542,8 +550,8 @@ public class Browser {
     public URLConnectionAdapter openRequestConnection(final Request request) throws IOException {
         connect(request);
         if (isDebug()) {
-            if (LOGGER != null) {
-                LOGGER.finest("\r\n" + request.printHeaders());
+            if (getLogger() != null) {
+                getLogger().finest("\r\n" + request.printHeaders());
             }
         }
         updateCookies(request);
@@ -553,7 +561,7 @@ public class Browser {
             String org = request.getUrl().toExternalForm();
             String red = request.getLocation();
             if (org.equalsIgnoreCase(red) && redirectLoopCounter >= 20) {
-                LOGGER.severe("20 Redirects!!!");
+                if (getLogger() != null) getLogger().severe("20 Redirects!!!");
             } else if (!org.equalsIgnoreCase(red) || redirectLoopCounter < 20) {
                 if (org.equalsIgnoreCase(red)) {
                     redirectLoopCounter++;
@@ -1018,8 +1026,8 @@ public class Browser {
             throw new BrowserException(e.getMessage(), con, e).closeConnection();
         }
         if (isVerbose()) {
-            if (LOGGER != null) {
-                LOGGER.finest("\r\n" + requ + "\r\n");
+            if (getLogger() != null) {
+                getLogger().finest("\r\n" + requ + "\r\n");
             }
         }
         return requ;
@@ -1126,7 +1134,7 @@ public class Browser {
         br.cookies = cookies;
         br.cookiesExclusive = cookiesExclusive;
         br.debug = debug;
-        br.proxy = proxy;
+        br.verbose = verbose;
         return br;
     }
 
@@ -1148,34 +1156,8 @@ public class Browser {
         requestIntervalLimitMap = null;
         requestTimeMap = null;
         cookiesExclusive = true;
+        verbose = false;
         acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
-    }
-
-    /**
-     * creates new Browser instance and forwards usefull variables(eg proxy)
-     * current Request will NOT be forwarded
-     * 
-     * @return
-     */
-    public Browser getNewBrowser() {
-        Browser br = new Browser();
-        br.requestIntervalLimitMap = this.requestIntervalLimitMap;
-        br.requestTimeMap = this.requestTimeMap;
-        br.acceptLanguage = acceptLanguage;
-        br.connectTimeout = connectTimeout;
-        br.setCustomCharset(this.customCharset);
-        br.limit = limit;
-        br.readTimeout = readTimeout;
-        br.cookies = cookies;
-        br.cookiesExclusive = cookiesExclusive;
-        br.debug = debug;
-        br.proxy = proxy;
-        return br;
-    }
-
-    public static Browser getNewBrowser(Browser source) {
-        if (source == null) return new Browser();
-        return source.getNewBrowser();
     }
 
     public Form[] getForms(final String downloadURL) throws IOException {
@@ -1217,7 +1199,7 @@ public class Browser {
 
     public String followConnection() throws IOException {
         if (request.getHtmlCode() != null) {
-            if (LOGGER != null) LOGGER.warning("Request has already been read");
+            if (getLogger() != null) getLogger().warning("Request has already been read");
             return null;
         }
         try {
@@ -1229,8 +1211,8 @@ public class Browser {
             throw new BrowserException(e.getMessage(), request.getHttpConnection(), e).closeConnection();
         }
         if (isVerbose()) {
-            if (LOGGER != null) {
-                LOGGER.finest("\r\n" + request + "\r\n");
+            if (getLogger() != null) {
+                getLogger().finest("\r\n" + request + "\r\n");
             }
         }
         return request.getHtmlCode();
@@ -1279,15 +1261,6 @@ public class Browser {
         if (debug) {
             if (LOGGER != null) LOGGER.info("Use local proxy: " + proxy);
         }
-
-        if (proxy == null) {
-            System.err.println("Browser:No proxy");
-            this.proxy = null;
-            return;
-        }
-
-        PROXIES.put(proxy.getHost() + ":" + proxy.getPort(), proxy);
-
         this.proxy = proxy;
     }
 

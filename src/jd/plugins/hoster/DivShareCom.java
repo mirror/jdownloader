@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -118,7 +117,7 @@ public class DivShareCom extends PluginForHost {
                 br.submitForm(pw);
                 pw = br.getFormbyKey("gallery_password");
                 if (pw != null) {
-                    JDLogger.getLogger().warning("Wrong Password for " + downloadLink + ". You will need the correct password to download this file.");
+                    logger.warning("Wrong Password for " + downloadLink + ". You will need the correct password to download this file.");
                 } else {
                     downloadLink.setProperty("pass", password);
                     getPluginConfig().setProperty("pass", password);

@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -71,7 +72,7 @@ public class Wrdprss extends PluginForDecrypt {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\?p=[\\d]+)");
         }
         completePattern.append(")");
-        logger.finest("Wrdprss: " + (10 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
+        JDLogger.getLogger().finest("Wrdprss: " + (10 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
         return new String[] { completePattern.toString() };
     }
 

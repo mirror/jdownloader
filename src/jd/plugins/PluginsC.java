@@ -26,6 +26,7 @@ import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
+import jd.controlling.JDPluginLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
@@ -47,28 +48,31 @@ import jd.utils.locale.JDL;
 
 public abstract class PluginsC extends Plugin {
 
+    protected JDPluginLogger logger = null;
+
     public PluginsC(final PluginWrapper wrapper) {
         super(wrapper);
         br = new Browser();
+        logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
     }
 
-    private static final HashMap<String, PluginsC> PLUGINS = new HashMap<String, PluginsC>();
+    private static final HashMap<String, PluginsC> PLUGINS                 = new HashMap<String, PluginsC>();
 
-    private static final int STATUS_NOTEXTRACTED = 0;
+    private static final int                       STATUS_NOTEXTRACTED     = 0;
 
-    private static final int STATUS_ERROR_EXTRACTING = 1;
+    private static final int                       STATUS_ERROR_EXTRACTING = 1;
 
-    protected ArrayList<DownloadLink> cls = new ArrayList<DownloadLink>();
+    protected ArrayList<DownloadLink>              cls                     = new ArrayList<DownloadLink>();
 
-    private ContainerStatus containerStatus = null;
+    private ContainerStatus                        containerStatus         = null;
 
-    protected ArrayList<String> dlU;
+    protected ArrayList<String>                    dlU;
 
-    protected String md5;
-    protected byte[] k;
-    protected ProgressController progress;
+    protected String                               md5;
+    protected byte[]                               k;
+    protected ProgressController                   progress;
 
-    private int status = STATUS_NOTEXTRACTED;
+    private int                                    status                  = STATUS_NOTEXTRACTED;
 
     public abstract ContainerStatus callDecryption(File file);
 

@@ -90,13 +90,13 @@ public class FileServeCom extends PluginForHost {
                 for (final DownloadLink dl : links) {
                     final String fileid = new Regex(dl.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
                     if (fileid == null) {
-                        Plugin.logger.warning("Fileserve availablecheck is broken!");
+                        logger.warning("Fileserve availablecheck is broken!");
                         return false;
                     }
                     final String regexForThisLink = "(<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
                     final String theData = this.br.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
-                        Plugin.logger.warning("Fileserve availablecheck is broken!");
+                        logger.warning("Fileserve availablecheck is broken!");
                         return false;
                     }
                     final Regex linkinformation = new Regex(theData, "<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
@@ -104,7 +104,7 @@ public class FileServeCom extends PluginForHost {
                     String filename = linkinformation.getMatch(1);
                     final String filesize = linkinformation.getMatch(2);
                     if (filename == null || filesize == null) {
-                        Plugin.logger.warning("Fileserve availablecheck is broken!");
+                        logger.warning("Fileserve availablecheck is broken!");
                         dl.setAvailable(false);
                     } else if (!status.equals("Available") || filename.equals("--") || filesize.equals("--")) {
                         filename = fileid;
@@ -186,7 +186,7 @@ public class FileServeCom extends PluginForHost {
         final String reconTime = this.br.getRegex("(\\d+)").getMatch(0);
         int tt = 60;
         if (reconTime != null) {
-            Plugin.logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
+            logger.info("Waittime detected, waiting " + reconTime + " seconds from now on...");
             tt = Integer.parseInt(reconTime);
         }
         this.sleep(tt * 1001, downloadLink);

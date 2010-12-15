@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
@@ -41,15 +42,15 @@ import org.w3c.dom.Element;
 @OptionalPlugin(rev = "$Revision$", id = "scriptlauncher", interfaceversion = 7)
 public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
 
-    private static final String scriptdir = "./scripts/";
+    private static final String              scriptdir    = "./scripts/";
 
-    private ArrayList<File> scripts;
-    private static HashMap<Integer, Process> processlist = new HashMap<Integer, Process>();
+    private ArrayList<File>                  scripts;
+    private static HashMap<Integer, Process> processlist  = new HashMap<Integer, Process>();
 
-    private ArrayList<MenuAction> menuitems = new ArrayList<MenuAction>();
-    private ArrayList<String> scriptconfig = new ArrayList<String>();
+    private ArrayList<MenuAction>            menuitems    = new ArrayList<MenuAction>();
+    private ArrayList<String>                scriptconfig = new ArrayList<String>();
 
-    private static final String ADD_CHECKBOX = "ADD_CHECKBOX";
+    private static final String              ADD_CHECKBOX = "ADD_CHECKBOX";
 
     public JDScriptLauncher(PluginWrapper wrapper) {
         super(wrapper);
@@ -89,9 +90,9 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             Process p = Runtime.getRuntime().exec(exepath);
             JDScriptLauncher.processlist.put(index, p);
 
-            logger.info("\"" + exepath + "\" has been executed");
+            JDLogger.getLogger().info("\"" + exepath + "\" has been executed");
         } catch (IOException eio) {
-            logger.warning(eio.toString());
+            JDLogger.getLogger().warning(eio.toString());
         }
     }
 
@@ -190,7 +191,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             for (int i = 0; i < filelist.length; i++) {
                 File file = filelist[i];
                 if (file.isFile() && file.canExecute()) {
-                    logger.info("\"" + file.getName() + "\" has been found");
+                    JDLogger.getLogger().info("\"" + file.getName() + "\" has been found");
                     scripts.add(file);
                 }
             }

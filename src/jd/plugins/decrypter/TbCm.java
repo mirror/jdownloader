@@ -203,7 +203,7 @@ public class TbCm extends PluginForDecrypt {
                     final String[] info = new Regex(parameter, this.StreamingShareLink).getMatches()[0];
 
                     for (final String debug : info) {
-                        Plugin.logger.info(debug);
+                        logger.info(debug);
                     }
                     final DownloadLink thislink = this.createDownloadlink(info[1]);
                     thislink.setProperty("ALLOW_DUPE", true);
@@ -354,7 +354,7 @@ public class TbCm extends PluginForDecrypt {
                 }
             } catch (final IOException e) {
                 this.br.getHttpConnection().disconnect();
-                Plugin.logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 return null;
             }
         }

@@ -22,20 +22,24 @@ import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.JDPluginLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
-    public static final int ADDON_INTERFACE_VERSION = 7;
+    public static final int  ADDON_INTERFACE_VERSION = 7;
 
     /**
      * is the optional plugin running
      */
-    private boolean         running                 = false;
+    private boolean          running                 = false;
+
+    protected JDPluginLogger logger                  = null;
 
     public PluginOptional(final PluginWrapper wrapper) {
         super(wrapper);
+        logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
     }
 
     public final void controlEvent(final ControlEvent event) {

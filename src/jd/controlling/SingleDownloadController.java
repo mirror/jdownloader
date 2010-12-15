@@ -34,6 +34,8 @@ import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettings;
+import jd.http.JDProxy;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -52,7 +54,7 @@ import jd.utils.locale.JDL;
  * 
  * @author astaldo/JD-Team
  */
-public class SingleDownloadController extends Thread {
+public class SingleDownloadController extends Thread implements BrowserSettings {
     public static final String              WAIT_TIME_ON_CONNECTION_LOSS = "WAIT_TIME_ON_CONNECTION_LOSS";
 
     private static final Object             DUPELOCK                     = new Object();
@@ -71,7 +73,7 @@ public class SingleDownloadController extends Thread {
     /**
      * Der Logger
      */
-    private Logger                          logger                       = JDLogger.getLogger();
+    private JDPluginLogger                  logger                       = null;
 
     private long                            startTime;
 
@@ -134,7 +136,6 @@ public class SingleDownloadController extends Thread {
         try {
             this.startTime = System.currentTimeMillis();
             linkStatus.setStatusText(JDL.L("gui.download.create_connection", "Connecting..."));
-            System.out.println("PreDupeChecked: no mirror found!");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
             currentPlugin.init();
@@ -624,13 +625,14 @@ public class SingleDownloadController extends Thread {
             linkStatus.setStatusText(null);
             linkStatus.setErrorMessage(null);
             linkStatus.resetWaitTime();
-            logger.info("Start working on " + downloadLink.getName());
             /*
              * we are going to download this link, create new liveplugin
              * instance here
              */
             downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getWrapper().getNewPluginInstance());
             currentPlugin = plugin = downloadLink.getLivePlugin();
+            currentPlugin.setLogger(new JDPluginLogger(downloadLink.getHost() + ":" + downloadLink.getName()));
+            logger = currentPlugin.getLogger();
             /*
              * handle is only called in download situation, that why we create a
              * new browser instance here
@@ -664,6 +666,18 @@ public class SingleDownloadController extends Thread {
                     linkStatus.setInProgress(true);
                 }
                 handlePlugin();
+                if (isAborted() && !linkStatus.isFinished()) {
+                    /* download aborted */
+                    logger.clear();
+                    logger.info("\r\nDownload stopped- " + downloadLink.getName());
+                } else if (linkStatus.isFinished()) {
+                    /* error free */
+                    logger.clear();
+                    logger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
+                    logger.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
+                }
+                /* move download log into global log */
+                logger.logInto(JDLogger.getLogger());
                 plugin.clean();
             }
             if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
@@ -677,8 +691,40 @@ public class SingleDownloadController extends Thread {
             if (currentPlugin != null) {
                 currentPlugin.setBrowser(null);
             }
+            if (currentPlugin != null) {
+                /* clear log history for this download */
+                currentPlugin.getLogger().clear();
+            }
             downloadLink.setLivePlugin(null);
         }
+    }
+
+    public JDProxy getCurrentProxy() {
+        return null;
+    }
+
+    public void setCurrentProxy(JDProxy proxy) {
+    }
+
+    public void setVerbose(boolean b) {
+    }
+
+    public boolean isVerbose() {
+        return false;
+    }
+
+    public void setDebug(boolean b) {
+    }
+
+    public boolean isDebug() {
+        return false;
+    }
+
+    public void setLogger(Logger logger) {
+    }
+
+    public Logger getLogger() {
+        return logger;
     }
 
 }

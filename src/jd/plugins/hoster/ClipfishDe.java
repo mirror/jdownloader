@@ -65,7 +65,7 @@ public class ClipfishDe extends PluginForHost {
                 /* to load the TbCm plugin */
                 JDUtilities.getPluginForDecrypt("youtube.com");
                 if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
-                    Plugin.logger.severe("Video-Convert failed!");
+                    logger.severe("Video-Convert failed!");
                 }
             }
         }

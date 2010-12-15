@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
+import jd.controlling.JDPluginLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -139,6 +140,18 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
     }
 
     @Override
+    public void setLogger(JDPluginLogger logger) {
+        this.logger = logger;
+        if (plugin != null) plugin.setLogger(logger);
+    }
+
+    @Override
+    public JDPluginLogger getLogger() {
+        if (plugin != null) plugin.getLogger();
+        return logger;
+    }
+
+    @Override
     public void setBrowser(Browser br) {
         this.br = br;
         if (plugin != null) plugin.setBrowser(br);
@@ -175,7 +188,7 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
         proxyused = true;
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Browser br = Browser.getNewBrowser(this.br);
+        Browser br = new Browser();
         this.login(acc, br, false);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
@@ -297,7 +310,7 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
     private Browser login(Account account, Browser br, boolean forceUpdate) throws Exception {
         synchronized (LOCK) {
             if (br == null) {
-                br = this.br.getNewBrowser();
+                br = new Browser();
             }
             if (forceUpdate == false && account.getStringProperty("cookie", null) != null) {
                 br.setCookie("http://www.dwnld4me.com", "PHPSESSID", account.getStringProperty("cookie", null));

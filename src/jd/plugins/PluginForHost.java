@@ -35,6 +35,7 @@ import jd.controlling.DownloadController;
 import jd.controlling.FavIconController;
 import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
+import jd.controlling.JDPluginLogger;
 import jd.controlling.SingleDownloadController;
 import jd.gui.UserIF;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -59,12 +60,23 @@ import jd.utils.locale.JDL;
 public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     private static final String JDL_PREFIX = "jd.plugins.PluginsForHost.";
+    protected JDPluginLogger    logger     = null;
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
         /* defaultPlugin does not need any Browser instance */
         br = null;
         dl = null;
+        /* defaultPlugins do not have any working logger */
+        setLogger(JDPluginLogger.Trash);
+    }
+
+    public void setLogger(JDPluginLogger logger) {
+        this.logger = logger;
+    }
+
+    public JDPluginLogger getLogger() {
+        return logger;
     }
 
     public void setBrowser(Browser br) {

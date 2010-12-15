@@ -68,7 +68,7 @@ public class DuckLoad extends PluginForHost {
                 for (int i = 0; i <= 5; i++) {
                     id = this.br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
                     if (id == null) {
-                        Plugin.logger.warning("id is null...");
+                        logger.warning("id is null...");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     id = id.trim();

@@ -63,14 +63,14 @@ public class Stlth extends PluginForDecrypt {
         }
         // Captcha
         if (this.br.containsHTML("Sicherheitsabfrage")) {
-            Plugin.logger.fine("The current page is captcha protected, getting captcha ID...");
+            logger.fine("The current page is captcha protected, getting captcha ID...");
             final int max = 3;
             for (int i = 0; i <= max; i++) {
                 final String recaptchaID = this.br.getRegex("k=([a-zA-Z0-9]+)\"").getMatch(0);
                 final Form captchaForm = this.br.getForm(0);
                 if ((recaptchaID == null) || (captchaForm == null)) { return null; }
-                Plugin.logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
-                Plugin.logger.fine("The current stealth ID is '" + stealthID + "'");
+                logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
+                logger.fine("The current stealth ID is '" + stealthID + "'");
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
                 rc.setId(recaptchaID);
@@ -91,7 +91,7 @@ public class Stlth extends PluginForDecrypt {
         // Container handling
         final String containerDownloadLink = this.br.getRegex("\"(http://[a-z]+\\.stealth\\.to/dlc\\.php\\?name=[a-z0-9]+)\"").getMatch(0);
         if (containerDownloadLink == null) {
-            Plugin.logger.warning("containerDownloadLink equals null");
+            logger.warning("containerDownloadLink equals null");
             return null;
         }
         Browser brc = this.br.cloneBrowser();
@@ -128,16 +128,16 @@ public class Stlth extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                         progress.increase(1);
                     } else {
-                        Plugin.logger.warning("Filepart " + i + " Regex broken!");
+                        logger.warning("Filepart " + i + " Regex broken!");
                     }
                 }
             } else {
-                Plugin.logger.warning("Decrypter out of date for link: " + parameter);
+                logger.warning("Decrypter out of date for link: " + parameter);
                 return null;
             }
         }
         if (decryptedLinks.size() == 0) {
-            Plugin.logger.warning("Decrypter out of date for link: " + parameter);
+            logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
         if ((name != null) || (pass != null)) {

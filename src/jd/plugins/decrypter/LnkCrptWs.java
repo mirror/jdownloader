@@ -63,7 +63,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             this.br.getPage("http://linkcrypt.ws/dir/" + containerId);
         } catch (final Exception e) {
             if (Utilities.isLoggerActive()) {
-                Plugin.logger.severe("Error Server: " + e.getLocalizedMessage());
+                logger.severe("Error Server: " + e.getLocalizedMessage());
             }
             throw e;
         }
@@ -183,7 +183,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         if (container != null) {
             // container available
-            Plugin.logger.info("Container found: " + container);
+            logger.info("Container found: " + container);
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             if (decryptedLinks.size() > 0) { return decryptedLinks; }
@@ -237,7 +237,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            Plugin.logger.warning("Decrypter out of date for link: " + parameter);
+            logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
         return decryptedLinks;

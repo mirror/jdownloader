@@ -220,13 +220,13 @@ public class FileFactory extends PluginForHost {
         } catch (final InterruptedException e2) {
             return;
         } catch (final IOException e) {
-            Plugin.logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             if (e.getMessage() != null && e.getMessage().contains("502")) {
-                Plugin.logger.severe("Filefactory returned Bad gateway.");
+                logger.severe("Filefactory returned Bad gateway.");
                 Thread.sleep(1000);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (e.getMessage() != null && e.getMessage().contains("503")) {
-                Plugin.logger.severe("Filefactory returned Bad gateway.");
+                logger.severe("Filefactory returned Bad gateway.");
                 Thread.sleep(1000);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
@@ -244,7 +244,7 @@ public class FileFactory extends PluginForHost {
             urlWithFilename = this.getUrl();
         }
         if (urlWithFilename == null) {
-            Plugin.logger.warning("getUrl is broken!");
+            logger.warning("getUrl is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.setFollowRedirects(true);
@@ -258,7 +258,7 @@ public class FileFactory extends PluginForHost {
         this.checkErrors();
         final String downloadUrl = this.getUrl();
         if (downloadUrl == null) {
-            Plugin.logger.warning("getUrl is broken!");
+            logger.warning("getUrl is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
@@ -307,12 +307,12 @@ public class FileFactory extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
             } else {
                 final String red = this.br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
-                Plugin.logger.finer("Indirect download");
+                logger.finer("Indirect download");
                 this.br.setFollowRedirects(true);
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, red, true, 0);
             }
         } else {
-            Plugin.logger.finer("DIRECT download");
+            logger.finer("DIRECT download");
         }
         this.dl.startDownload();
     }

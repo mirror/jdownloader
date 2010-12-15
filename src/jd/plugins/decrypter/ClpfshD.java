@@ -76,7 +76,7 @@ public class ClpfshD extends PluginForDecrypt {
         } else if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_SPECIAL_VIDEO).matches()) {
             vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_SPECIAL_VIDEO).getMatch(0));
         } else {
-            Plugin.logger.severe("No VidID found");
+            logger.severe("No VidID found");
             return decryptedLinks;
         }
         final String page = this.br.getPage(ClpfshD.XML_PATH + vidId);

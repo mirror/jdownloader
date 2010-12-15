@@ -30,7 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 8888 $", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://[\\w\\.]*?anilinkz\\.com/(?!get).+/.+" }, flags = { 0 })
@@ -66,7 +65,7 @@ public class AniLinkzCom extends PluginForDecrypt {
             if (escapeAll != null) {
                 escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
             } else {
-                Plugin.logger.warning("Decrypter out of date for link: " + parameter);
+                logger.warning("Decrypter out of date for link: " + parameter);
                 return null;
             }
             unescape.add(Encoding.htmlDecode(escapeAll));
@@ -125,13 +124,13 @@ public class AniLinkzCom extends PluginForDecrypt {
                         }
                     } catch (final Exception e) {
                         JDLogger.exception(e);
-                        Plugin.logger.warning("Decrypter Exception for link: " + dllink);
+                        logger.warning("Decrypter Exception for link: " + dllink);
                     }
                     if (mirror == null) {
                         mirror = new Regex(dllink, "http://.*?\\.(\\w+\\.\\w+)/.*?").getMatch(0);
                     }
                     if ((mirrorCount == 0) && (new Regex(mirror, AniLinkzCom.PATTERN_UNSUPPORTED_HOSTER).count() == 1)) {
-                        Plugin.logger.warning(mirror + " is not supported yet! Link: " + parameter);
+                        logger.warning(mirror + " is not supported yet! Link: " + parameter);
                         return null;
                     }
                     if ((new Regex(dllink, AniLinkzCom.PATTERN_SUPPORTED_FILE_EXTENSION).count() == 1) || (new Regex(dllink, AniLinkzCom.PATTERN_SUPPORTED_HOSTER).count() == 1)) {
@@ -158,7 +157,7 @@ public class AniLinkzCom extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            Plugin.logger.warning("Decrypter out of date for link: " + parameter);
+            logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
         return decryptedLinks;

@@ -33,7 +33,7 @@ public class ExtBrowser {
         br.setBrowserEnviroment(new FullBrowserEnviroment());
 
         Browser.init();
-        Browser.setLogger(Log.L);
+        Browser.setGlobalLogger(Log.L);
         Browser.setGlobalVerbose(true);
         br.getCommContext().forceDebug(true);
 

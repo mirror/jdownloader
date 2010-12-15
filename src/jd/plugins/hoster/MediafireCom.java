@@ -272,7 +272,7 @@ public class MediafireCom extends PluginForHost {
                 }
             }
         } catch (final Exception e) {
-            Plugin.logger.info(eb.getHtmlText());
+            logger.info(eb.getHtmlText());
             e.printStackTrace();
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -330,7 +330,7 @@ public class MediafireCom extends PluginForHost {
             }
 
             if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
-                Plugin.logger.info("DirectDownload");
+                logger.info("DirectDownload");
                 url = this.br.getRedirectLocation();
             } else {
                 this.handlePW(downloadLink);
@@ -342,7 +342,7 @@ public class MediafireCom extends PluginForHost {
         this.br.setDebug(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
         if (!this.dl.getConnection().isContentDisposition()) {
-            Plugin.logger.info("Error (3)");
+            logger.info("Error (3)");
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -387,10 +387,10 @@ public class MediafireCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
         if (!this.dl.getConnection().isContentDisposition()) {
-            Plugin.logger.info("Error (4)");
+            logger.info("Error (4)");
             this.br.followConnection();
             if (this.br.getRequest().getHttpConnection().getResponseCode() == 403) {
-                Plugin.logger.info("Error (3)");
+                logger.info("Error (3)");
             } else if (this.br.getRequest().getHttpConnection().getResponseCode() == 200 && passwordprotected) {
                 // workaround for api error:
                 // try website password solving
@@ -413,7 +413,7 @@ public class MediafireCom extends PluginForHost {
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
 
         if (!this.dl.getConnection().isContentDisposition()) {
-            Plugin.logger.info("Error (3)");
+            logger.info("Error (3)");
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -488,7 +488,7 @@ public class MediafireCom extends PluginForHost {
                     status = AvailableStatus.FALSE;
                     final String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
                     if (errorCode.equals("320")) {
-                        Plugin.logger.warning("The requested file ['" + url + "'] is invalid");
+                        logger.warning("The requested file ['" + url + "'] is invalid");
                     }
                     break;
                 }
@@ -511,7 +511,7 @@ public class MediafireCom extends PluginForHost {
                 break;
             } catch (final IOException e) {
                 if (e.getMessage().contains("code: 500")) {
-                    Plugin.logger.info("ErrorCode 500! Wait a moment!");
+                    logger.info("ErrorCode 500! Wait a moment!");
                     Thread.sleep(200);
                     continue;
                 } else {

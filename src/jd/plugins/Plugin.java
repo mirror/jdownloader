@@ -24,7 +24,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,8 +53,6 @@ import jd.utils.locale.JDL;
 public abstract class Plugin implements ActionListener {
 
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
-
-    protected static Logger    logger          = JDLogger.getLogger();
 
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
@@ -97,7 +94,7 @@ public abstract class Plugin implements ActionListener {
                 contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
                 final String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
                 if (format == null) {
-                    Plugin.logger.severe("Content-Disposition: invalid format: " + header);
+                    JDLogger.getLogger().severe("Content-Disposition: invalid format: " + header);
                     filename = null;
                     return filename;
                 }
@@ -114,7 +111,7 @@ public abstract class Plugin implements ActionListener {
                     try {
                         filename = URLDecoder.decode(filename, format);
                     } catch (final Exception e) {
-                        Plugin.logger.severe("Content-Disposition: could not decode filename: " + header);
+                        JDLogger.getLogger().severe("Content-Disposition: could not decode filename: " + header);
                         filename = null;
                         return filename;
                     }
@@ -130,7 +127,7 @@ public abstract class Plugin implements ActionListener {
                     try {
                         filename = URLDecoder.decode(Encoding.Base64Decode(tokens[0][2].trim()), tokens[0][0].trim());
                     } catch (final Exception e) {
-                        Plugin.logger.severe("Content-Disposition: could not decode filename: " + header);
+                        JDLogger.getLogger().severe("Content-Disposition: could not decode filename: " + header);
                         filename = null;
                         return filename;
                     }
@@ -143,7 +140,7 @@ public abstract class Plugin implements ActionListener {
                         contentdisposition = new String(tokens[0][1].trim().getBytes("ISO-8859-1"), tokens[0][0].trim());
                         continue;
                     } catch (final Exception e) {
-                        Plugin.logger.severe("Content-Disposition: could not decode filename: " + header);
+                        JDLogger.getLogger().severe("Content-Disposition: could not decode filename: " + header);
                         filename = null;
                         return filename;
                     }
@@ -167,12 +164,12 @@ public abstract class Plugin implements ActionListener {
         if (filename != null) {
             filename = filename.trim();
             if (filename.startsWith("\"")) {
-                Plugin.logger.info("Using Workaround for broken filename header!");
+                JDLogger.getLogger().info("Using Workaround for broken filename header!");
                 filename = filename.substring(1);
             }
         }
         if (filename == null) {
-            Plugin.logger.severe("Content-Disposition: could not parse header: " + orgheader);
+            JDLogger.getLogger().severe("Content-Disposition: could not parse header: " + orgheader);
         }
         return filename;
     }

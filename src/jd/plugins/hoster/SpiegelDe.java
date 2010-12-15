@@ -71,7 +71,7 @@ public class SpiegelDe extends PluginForHost {
                     /* to load the TbCm plugin */
                     JDUtilities.getPluginForDecrypt("youtube.com");
                     if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
-                        Plugin.logger.severe("Video-Convert failed!");
+                        logger.severe("Video-Convert failed!");
                     }
 
                 }
@@ -84,7 +84,7 @@ public class SpiegelDe extends PluginForHost {
         try {
             urlConnection = this.br.openGetConnection(downloadLink.getDownloadURL());
         } catch (final IOException e) {
-            Plugin.logger.severe(e.getMessage());
+            logger.severe(e.getMessage());
             downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

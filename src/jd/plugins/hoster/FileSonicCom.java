@@ -323,7 +323,7 @@ public class FileSonicCom extends PluginForHost {
         final String url = this.br.getRedirectLocation();
         if (url == null) {
             /* no redirect, what the frak */
-            Plugin.logger.warning(this.br.toString());
+            logger.warning(this.br.toString());
             AccountInfo ai = account.getAccountInfo();
             if (ai == null) {
                 ai = new AccountInfo();

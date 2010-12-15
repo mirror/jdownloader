@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
+import jd.controlling.JDPluginLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -140,6 +141,18 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
     }
 
     @Override
+    public void setLogger(JDPluginLogger logger) {
+        this.logger = logger;
+        if (plugin != null) plugin.setLogger(logger);
+    }
+
+    @Override
+    public JDPluginLogger getLogger() {
+        if (plugin != null) plugin.getLogger();
+        return logger;
+    }
+
+    @Override
     public void setBrowser(Browser br) {
         this.br = br;
         if (plugin != null) plugin.setBrowser(br);
@@ -223,7 +236,7 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
                 return false;
             }
             try {
-                Browser br2 = Browser.getNewBrowser(br);
+                Browser br2 = new Browser();
                 br2.setFollowRedirects(true);
                 if (!counted) br2.getPage("http://www.jdownloader.org/scripts/ochload.php?id=" + Encoding.urlEncode(acc.getUser()));
                 counted = true;

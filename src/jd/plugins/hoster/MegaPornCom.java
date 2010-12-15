@@ -71,7 +71,7 @@ public class MegaPornCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(megarotic|sexuploader)\\.com", "megaporn.com"));
     }
 
-    private synchronized static void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
+    private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
         if (br.containsHTML("gencap\\.php\\?")) {
             /* page contains captcha */
             if (WaittimeWorkaround == 0) {
@@ -80,17 +80,17 @@ public class MegaPornCom extends PluginForHost {
                  * normal waittime
                  */
                 WaittimeWorkaround = 1;
-                Plugin.logger.info("WaittimeWorkaround failed (1)");
+                logger.info("WaittimeWorkaround failed (1)");
                 link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (WaittimeWorkaround == 1) {
-                Plugin.logger.info("strange servererror: we did wait(normal) but again a captcha?");
+                logger.info("strange servererror: we did wait(normal) but again a captcha?");
                 /* no reset here for retry count */
                 /* retry with longer waittime */
                 WaittimeWorkaround = 2;
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (WaittimeWorkaround == 2) {
-                Plugin.logger.info("strange servererror: we did wait(longer) but again a captcha?");
+                logger.info("strange servererror: we did wait(longer) but again a captcha?");
                 /* no reset here for retry count */
                 /* retry with normal waittime again */
                 WaittimeWorkaround = 1;
@@ -101,11 +101,11 @@ public class MegaPornCom extends PluginForHost {
             if (WaittimeWorkaround == 0) {
                 /* lets try again with normal waittime */
                 WaittimeWorkaround = 1;
-                Plugin.logger.info("WaittimeWorkaround failed (2)");
+                logger.info("WaittimeWorkaround failed (2)");
                 link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (WaittimeWorkaround > 1) {
-                Plugin.logger.info("WaittimeWorkaround failed (3)");
+                logger.info("WaittimeWorkaround failed (3)");
                 if (++WaittimeWorkaround > 1) {
                     WaittimeWorkaround = 1;
                 }
@@ -169,7 +169,7 @@ public class MegaPornCom extends PluginForHost {
                 map.put("id" + i, id);
                 i++;
             } catch (final Exception e) {
-                Plugin.logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
 
         }
@@ -226,7 +226,7 @@ public class MegaPornCom extends PluginForHost {
                 wwwWorkaround = "www.";
             } catch (final BrowserException e) {
                 if (e.getException() != null && e.getException() instanceof UnknownHostException) {
-                    Plugin.logger.info("Using Workaround for megaporn DNS Problem!");
+                    logger.info("Using Workaround for megaporn DNS Problem!");
                     wwwWorkaround = "";
                     return;
                 }
@@ -457,7 +457,7 @@ public class MegaPornCom extends PluginForHost {
              * pw needed
              */
             try {
-                JDLogger.getLogger().info(this.br.getRequest().getHttpConnection().toString());
+                logger.info(this.br.getRequest().getHttpConnection().toString());
             } catch (final Throwable e2) {
             }
             JDLogger.exception(e);
@@ -489,7 +489,7 @@ public class MegaPornCom extends PluginForHost {
                  * of pw needed
                  */
                 try {
-                    JDLogger.getLogger().info(this.br.getRequest().getHttpConnection().toString());
+                    logger.info(this.br.getRequest().getHttpConnection().toString());
                 } catch (final Throwable e3) {
                 }
                 JDLogger.exception(e2);
@@ -562,7 +562,7 @@ public class MegaPornCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
             }
         }
-        Plugin.logger.severe("Ooops");
+        logger.severe("Ooops");
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -646,7 +646,7 @@ public class MegaPornCom extends PluginForHost {
             if (red != null || this.br.containsHTML("trying to download is larger than")) {
                 if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
                     /* no longer premium retry */
-                    Plugin.logger.info("No longer a premiumaccount, retry as normal account!");
+                    logger.info("No longer a premiumaccount, retry as normal account!");
                     parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
@@ -683,7 +683,7 @@ public class MegaPornCom extends PluginForHost {
                 /* captcha form as premiumuser? check status again */
                 if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
                     /* no longer premium retry */
-                    Plugin.logger.info("No longer a premiumaccount, retry as normal account!");
+                    logger.info("No longer a premiumaccount, retry as normal account!");
                     parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
@@ -694,7 +694,7 @@ public class MegaPornCom extends PluginForHost {
             if (this.br.containsHTML("location='http://www\\.megaporn\\.com/\\?c=msg")) {
                 this.br.getPage("http://www.megaporn.com/?c=msg");
                 this.wait = this.br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
-                Plugin.logger.info("megaporn blocked this IP(3): " + this.wait + " mins");
+                logger.info("megaporn blocked this IP(3): " + this.wait + " mins");
                 if (this.wait != null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.wait.trim()) * 60 * 1000l);
                 } else {
@@ -740,7 +740,7 @@ public class MegaPornCom extends PluginForHost {
             /* check for iplimit */
             final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null) {
-                Plugin.logger.severe("Your IP got banned");
+                logger.severe("Your IP got banned");
                 this.br.getPage(red);
                 final String wait = this.br.getRegex("Please check back in (\\d+) minute").getMatch(0);
                 int l = 30;
@@ -806,10 +806,10 @@ public class MegaPornCom extends PluginForHost {
             this.br.getPage("http://www.megaporn.com/?c=msg");
             this.wait = this.br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
             if (this.wait != null) {
-                Plugin.logger.info("megaporn blocked this IP(3): " + this.wait + " mins");
+                logger.info("megaporn blocked this IP(3): " + this.wait + " mins");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.wait.trim()) * 60 * 1000l);
             } else {
-                Plugin.logger.severe("Waittime not found!: " + this.br.toString());
+                logger.severe("Waittime not found!: " + this.br.toString());
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
             }
         }
@@ -928,7 +928,7 @@ public class MegaPornCom extends PluginForHost {
             return AvailableStatus.TRUE;
         case OFFLINE:
             /* file offline */
-            Plugin.logger.info("DebugInfo for maybe Wrong FileNotFound: " + this.br.toString());
+            logger.info("DebugInfo for maybe Wrong FileNotFound: " + this.br.toString());
             return AvailableStatus.FALSE;
         case BLOCKED:
             /* ip blocked by megaporned */
@@ -983,7 +983,7 @@ public class MegaPornCom extends PluginForHost {
                 br.getPage("http://www.megaporn.com/?c=msg");
             }
             if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
-                Plugin.logger.info("It seems megaporn is blocked! Only API may work! " + br.toString());
+                logger.info("It seems megaporn is blocked! Only API may work! " + br.toString());
                 this.onlyapi = true;
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
@@ -993,9 +993,9 @@ public class MegaPornCom extends PluginForHost {
                 /* ip blocked by megaporned */
                 this.wait = br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
                 if (this.wait != null) {
-                    Plugin.logger.info("megaporn blocked this IP(1): " + this.wait + " mins");
+                    logger.info("megaporn blocked this IP(1): " + this.wait + " mins");
                 } else {
-                    Plugin.logger.severe("Waittime not found!: " + br.toString());
+                    logger.severe("Waittime not found!: " + br.toString());
                 }
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
@@ -1024,7 +1024,7 @@ public class MegaPornCom extends PluginForHost {
             if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("The file you are trying to access is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file you are trying to access is temporarily unavailable", 10 * 60 * 1000l);
             JDLogger.exception(e);
-            Plugin.logger.info("megaporn blocked this IP(2): 25 mins");
+            logger.info("megaporn blocked this IP(2): 25 mins");
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
         return;

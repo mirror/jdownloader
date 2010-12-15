@@ -733,7 +733,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private void startDownloadThread(final DownloadLink dlink, final Account account) {
         dlink.getLinkStatus().setActive(true);
         final SingleDownloadController download = new SingleDownloadController(dlink, account);
-        DownloadWatchDog.LOG.info("Start new Download: " + dlink.getHost());
+        DownloadWatchDog.LOG.info("Start new Download: " + dlink.getHost() + ":" + dlink.getName());
         this.activateDownload(dlink, download);
         /* add download to stopMarkTracker */
         if (!this.stopMarkTracker.contains(dlink)) {

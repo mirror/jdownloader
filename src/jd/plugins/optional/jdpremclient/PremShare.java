@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
+import jd.controlling.JDPluginLogger;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -15,12 +16,12 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.TransferStatus;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.TransferStatus;
+import jd.plugins.download.DownloadInterface;
 
 public class PremShare extends PluginForHost implements JDPremInterface {
 
@@ -140,6 +141,18 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         proxyused = false;
         br.reset();
         plugin.handlePremium(downloadLink, account);
+    }
+
+    @Override
+    public void setLogger(JDPluginLogger logger) {
+        this.logger = logger;
+        if (plugin != null) plugin.setLogger(logger);
+    }
+
+    @Override
+    public JDPluginLogger getLogger() {
+        if (plugin != null) plugin.getLogger();
+        return logger;
     }
 
     @Override
@@ -309,6 +322,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
+            Browser br = new Browser();
             String restartReq = enabled == false ? "(Restart required) " : "";
             AccountInfo ac = new AccountInfo();
             String jdpremServer = JDPremium.getJDPremServer();
@@ -379,7 +393,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 String jdpremServer = JDPremium.getJDPremServer();
                 try {
                     if (jdpremServer == null || jdpremServer.length() == 0) return;
-                    Browser br = Browser.getNewBrowser(this.br);
+                    Browser br = new Browser();
                     /* lower timeout is okay here */
                     br.setConnectTimeout(5000);
                     br.getPage(jdpremServer);

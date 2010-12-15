@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
+import jd.controlling.JDPluginLogger;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -13,11 +14,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class MultiShare extends PluginForHost implements JDPremInterface {
@@ -64,6 +65,18 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
         } else {
             super.actionPerformed(e);
         }
+    }
+
+    @Override
+    public void setLogger(JDPluginLogger logger) {
+        this.logger = logger;
+        if (plugin != null) plugin.setLogger(logger);
+    }
+
+    @Override
+    public JDPluginLogger getLogger() {
+        if (plugin != null) plugin.getLogger();
+        return logger;
     }
 
     @Override
@@ -118,7 +131,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
             if (handleMultiShare(downloadLink)) return;
         } else if (!JDPremium.preferLocalAccounts()) {
             if (handleMultiShare(downloadLink)) return;
-        }        
+        }
         /* failed, now try normal */
         proxyused = false;
         plugin.handle(downloadLink, account);
@@ -163,7 +176,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
         if (br.getCookie("http://www.multishare.cz", "sess_ID") == null) {
             acc.setValid(false);
             return false;
-        }        
+        }
         br.getPage("http://www.multishare.cz/");
         String trafficleft = br.getRegex("Kredit:</span>.*?<strong>(.*?)</strong").getMatch(0);
         if (trafficleft == null) trafficleft = br.getRegex("class=\"big\"><strong>Kredit:(.*?)</strong>").getMatch(0);
@@ -172,7 +185,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
             trafficleft = trafficleft.replace(" ", "");
             AccountInfo ai = acc.getAccountInfo();
             synchronized (LOCK) {
-            if (ai != null) ai.setTrafficLeft(Regex.getSize(trafficleft));
+                if (ai != null) ai.setTrafficLeft(Regex.getSize(trafficleft));
             }
         }
         Form form = br.getForm(0);

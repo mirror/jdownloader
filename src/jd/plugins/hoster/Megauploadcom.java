@@ -66,7 +66,7 @@ public class Megauploadcom extends PluginForHost {
     private static final Object   LOGINLOCK       = new Object();
     private static int            simultanpremium = 1;
 
-    private synchronized static void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
+    private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
         if (br.containsHTML("gencap\\.php\\?")) {
             /* page contains captcha */
             if (Megauploadcom.WaittimeWorkaround == 0) {
@@ -75,17 +75,17 @@ public class Megauploadcom extends PluginForHost {
                  * normal waittime
                  */
                 Megauploadcom.WaittimeWorkaround = 1;
-                Plugin.logger.info("WaittimeWorkaround failed (1)");
+                logger.info("WaittimeWorkaround failed (1)");
                 link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (Megauploadcom.WaittimeWorkaround == 1) {
-                Plugin.logger.info("strange servererror: we did wait(normal) but again a captcha?");
+                logger.info("strange servererror: we did wait(normal) but again a captcha?");
                 /* no reset here for retry count */
                 /* retry with longer waittime */
                 Megauploadcom.WaittimeWorkaround = 2;
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (Megauploadcom.WaittimeWorkaround == 2) {
-                Plugin.logger.info("strange servererror: we did wait(longer) but again a captcha?");
+                logger.info("strange servererror: we did wait(longer) but again a captcha?");
                 /* no reset here for retry count */
                 /* retry with normal waittime again */
                 Megauploadcom.WaittimeWorkaround = 1;
@@ -96,11 +96,11 @@ public class Megauploadcom extends PluginForHost {
             if (Megauploadcom.WaittimeWorkaround == 0) {
                 /* lets try again with normal waittime */
                 Megauploadcom.WaittimeWorkaround = 1;
-                Plugin.logger.info("WaittimeWorkaround failed (2)");
+                logger.info("WaittimeWorkaround failed (2)");
                 link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (Megauploadcom.WaittimeWorkaround > 1) {
-                Plugin.logger.info("WaittimeWorkaround failed (3)");
+                logger.info("WaittimeWorkaround failed (3)");
                 if (++Megauploadcom.WaittimeWorkaround > 1) {
                     Megauploadcom.WaittimeWorkaround = 1;
                 }
@@ -163,7 +163,7 @@ public class Megauploadcom extends PluginForHost {
                 id = this.getDownloadID(u);
                 map.put("id" + i, id);
             } catch (final Exception e) {
-                Plugin.logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
             i++;
         }
@@ -219,7 +219,7 @@ public class Megauploadcom extends PluginForHost {
                 Megauploadcom.wwwWorkaround = "www.";
             } catch (final BrowserException e) {
                 if (e.getException() != null && e.getException() instanceof UnknownHostException) {
-                    Plugin.logger.info("Using Workaround for Megaupload DNS Problem!");
+                    logger.info("Using Workaround for Megaupload DNS Problem!");
                     Megauploadcom.wwwWorkaround = "";
                     return;
                 }
@@ -300,7 +300,7 @@ public class Megauploadcom extends PluginForHost {
             }
             if (!this.dl.getConnection().isContentDisposition()) {
                 this.br.followConnection();
-                Megauploadcom.handleWaittimeWorkaround(link, this.br);
+                handleWaittimeWorkaround(link, this.br);
                 if (this.br.containsHTML("The file you are trying to access is temporarily")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File currently not available", 10 * 60 * 1000l); }
                 if (this.br.getURL().contains("d=" + getDownloadID(link))) {
                     logger.info(br.toString());
@@ -448,7 +448,7 @@ public class Megauploadcom extends PluginForHost {
              * pw needed
              */
             try {
-                JDLogger.getLogger().info(this.br.getRequest().getHttpConnection().toString());
+                logger.info(this.br.getRequest().getHttpConnection().toString());
             } catch (final Throwable e2) {
             }
             JDLogger.exception(e);
@@ -480,7 +480,7 @@ public class Megauploadcom extends PluginForHost {
                  * of pw needed
                  */
                 try {
-                    JDLogger.getLogger().info(this.br.getRequest().getHttpConnection().toString());
+                    logger.info(this.br.getRequest().getHttpConnection().toString());
                 } catch (final Throwable e3) {
                 }
                 JDLogger.exception(e2);
@@ -553,7 +553,7 @@ public class Megauploadcom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
             }
         }
-        Plugin.logger.severe("Ooops");
+        logger.severe("Ooops");
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -637,7 +637,7 @@ public class Megauploadcom extends PluginForHost {
             if (red != null || this.br.containsHTML("trying to download is larger than")) {
                 if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
                     /* no longer premium retry */
-                    Plugin.logger.info("No longer a premiumaccount, retry as normal account!");
+                    logger.info("No longer a premiumaccount, retry as normal account!");
                     parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
@@ -674,7 +674,7 @@ public class Megauploadcom extends PluginForHost {
                 /* captcha form as premiumuser? check status again */
                 if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
                     /* no longer premium retry */
-                    Plugin.logger.info("No longer a premiumaccount, retry as normal account!");
+                    logger.info("No longer a premiumaccount, retry as normal account!");
                     parameter.getLinkStatus().setRetryCount(parameter.getLinkStatus().getRetryCount() + 1);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
@@ -685,7 +685,7 @@ public class Megauploadcom extends PluginForHost {
             if (this.br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
                 this.br.getPage("http://www.megaupload.com/?c=msg");
                 this.wait = this.br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
-                Plugin.logger.info("Megaupload blocked this IP(3): " + this.wait + " mins");
+                logger.info("Megaupload blocked this IP(3): " + this.wait + " mins");
                 if (this.wait != null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.wait.trim()) * 60 * 1000l);
                 } else {
@@ -731,7 +731,7 @@ public class Megauploadcom extends PluginForHost {
             /* check for iplimit */
             final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null) {
-                Plugin.logger.severe("Your IP got banned");
+                logger.severe("Your IP got banned");
                 this.br.getPage(red);
                 final String wait = this.br.getRegex("Please check back in (\\d+) minute").getMatch(0);
                 int l = 30;
@@ -797,10 +797,10 @@ public class Megauploadcom extends PluginForHost {
             this.br.getPage("http://www.megaupload.com/?c=msg");
             this.wait = this.br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
             if (this.wait != null) {
-                Plugin.logger.info("Megaupload blocked this IP(3): " + this.wait + " mins");
+                logger.info("Megaupload blocked this IP(3): " + this.wait + " mins");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.wait.trim()) * 60 * 1000l);
             } else {
-                Plugin.logger.severe("Waittime not found!: " + this.br.toString());
+                logger.severe("Waittime not found!: " + this.br.toString());
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
             }
         }
@@ -919,7 +919,7 @@ public class Megauploadcom extends PluginForHost {
             return AvailableStatus.TRUE;
         case OFFLINE:
             /* file offline */
-            Plugin.logger.info("DebugInfo for maybe Wrong FileNotFound: " + this.br.toString());
+            logger.info("DebugInfo for maybe Wrong FileNotFound: " + this.br.toString());
             return AvailableStatus.FALSE;
         case BLOCKED:
             /* ip blocked by megauploaded */
@@ -974,7 +974,7 @@ public class Megauploadcom extends PluginForHost {
                 br.getPage("http://www.megaupload.com/?c=msg");
             }
             if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
-                Plugin.logger.info("It seems Megaupload is blocked! Only API may work! " + br.toString());
+                logger.info("It seems Megaupload is blocked! Only API may work! " + br.toString());
                 this.onlyapi = true;
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
@@ -984,9 +984,9 @@ public class Megauploadcom extends PluginForHost {
                 /* ip blocked by megauploaded */
                 this.wait = br.getRegex("Please check back in (\\d+) minutes").getMatch(0);
                 if (this.wait != null) {
-                    Plugin.logger.info("Megaupload blocked this IP(1): " + this.wait + " mins");
+                    logger.info("Megaupload blocked this IP(1): " + this.wait + " mins");
                 } else {
-                    Plugin.logger.severe("Waittime not found!: " + br.toString());
+                    logger.severe("Waittime not found!: " + br.toString());
                 }
                 l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return;
@@ -1015,7 +1015,7 @@ public class Megauploadcom extends PluginForHost {
             if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("The file you are trying to access is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file you are trying to access is temporarily unavailable", 10 * 60 * 1000l);
             JDLogger.exception(e);
-            Plugin.logger.info("Megaupload blocked this IP(2): 25 mins");
+            logger.info("Megaupload blocked this IP(2): 25 mins");
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
         return;

@@ -47,10 +47,10 @@ import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
-    private static long LATEST_OPENED_CNL_TIME = 0;
-    private static HashMap<String, Boolean> CNL_URL_MAP = new HashMap<String, Boolean>();
+    private static long                     LATEST_OPENED_CNL_TIME = 0;
+    private static HashMap<String, Boolean> CNL_URL_MAP            = new HashMap<String, Boolean>();
 
-    private static String getDirektLink(final Browser br) throws IOException {
+    private String getDirektLink(final Browser br) throws IOException {
         final String link = br.getRegex("<frame scrolling=\"auto\" noresize src=\"([^\"]*)\">").getMatch(0);
         final String url = br.getURL().toString();
         if (link != null) {
@@ -92,7 +92,7 @@ public class Lnksvn extends PluginForDecrypt {
             }
             if ((link2 == null) && eb.getCommContext().getHttpConnection().getContentType().contains("html")) {
                 if (eb.getCommContext().containsHTML("404 - Not Found")) {
-                    Plugin.logger.info("404 - File: \"" + url + "\" not found!");
+                    logger.info("404 - File: \"" + url + "\" not found!");
                     return null;
                 }
             }
@@ -150,7 +150,7 @@ public class Lnksvn extends PluginForDecrypt {
         this.br.setRequestIntervalLimit("linksave.in", 1000);
         this.br.getPage(param.getCryptedUrl());
         if (this.br.containsHTML("Ordner nicht gefunden")) {
-            Plugin.logger.info("Error 404 - Ordner: \"" + parameter + "\" nicht gefunden!");
+            logger.info("Error 404 - Ordner: \"" + parameter + "\" nicht gefunden!");
             return decryptedLinks;
         }
         this.getCaptcha(param);
@@ -232,7 +232,7 @@ public class Lnksvn extends PluginForDecrypt {
         // alle verschlüsseleten Links in einem Rutsch entschlüsseln
         final class LsDirektLinkTH extends Thread {
             Browser browser;
-            String result;
+            String  result;
 
             public LsDirektLinkTH(final Browser browser) {
                 this.browser = browser;
@@ -241,7 +241,7 @@ public class Lnksvn extends PluginForDecrypt {
             @Override
             public void run() {
                 try {
-                    this.result = Lnksvn.getDirektLink(this.browser);
+                    this.result = getDirektLink(this.browser);
                 } catch (final IOException e) {
                     e.printStackTrace();
                 }
@@ -258,7 +258,7 @@ public class Lnksvn extends PluginForDecrypt {
             dlinks[i] = new LsDirektLinkTH(clone);
             dlinks[i].start();
             progress.increase(1);
-            Plugin.logger.info("Link " + i + " von " + dlinks.length);
+            logger.info("Link " + i + " von " + dlinks.length);
         }
         for (final LsDirektLinkTH lsDirektLinkTH : dlinks) {
             while (lsDirektLinkTH.isAlive()) {
@@ -271,12 +271,12 @@ public class Lnksvn extends PluginForDecrypt {
                 }
             }
             if (lsDirektLinkTH.result != null) {
-                Plugin.logger.info("Added: " + lsDirektLinkTH.result);
+                logger.info("Added: " + lsDirektLinkTH.result);
                 decryptedLinks.add(this.createDownloadlink(lsDirektLinkTH.result));
             }
         }
         if (decryptedLinks.size() == 0) {
-            Plugin.logger.warning("Decrypter out of date for link: " + parameter);
+            logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
         return decryptedLinks;

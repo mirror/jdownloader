@@ -186,10 +186,10 @@ public class HotFileCom extends PluginForHost {
         if (getPluginConfig().getBooleanProperty(HotFileCom.TRY_IWL_BYPASS, false)) { return fetchAccountInfoWebsite(account); }
         final HashMap<String, String> info = callAPI(null, "getuserinfo", account, null);
         final String rawAnswer = info.get("httpresponse");
-        Plugin.logger.severe("HotFileDebug: " + rawAnswer);
+        logger.severe("HotFileDebug: " + rawAnswer);
         if (rawAnswer != null && rawAnswer.startsWith(".too many failed")) {
             /* fallback to normal website */
-            Plugin.logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
+            logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
             return fetchAccountInfoWebsite(account);
         }
         if (!info.containsKey("is_premium") || !"1".equalsIgnoreCase(info.get("is_premium"))) {
@@ -228,7 +228,7 @@ public class HotFileCom extends PluginForHost {
             }
             final String validUntil[] = br.getRegex("Premium until.*?>(.*?)<.*?>(\\d+:\\d+:\\d+)").getRow(0);
             if (validUntil == null || validUntil[0] == null || validUntil[1] == null) {
-                Plugin.logger.severe("HotFileDebug: " + br.toString());
+                logger.severe("HotFileDebug: " + br.toString());
                 account.setProperty("cookies", null);
                 account.setValid(false);
             } else {
@@ -265,10 +265,10 @@ public class HotFileCom extends PluginForHost {
             try {
                 sleeptime = Long.parseLong(br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0)) + 1;
                 // for debugging purposes
-                Plugin.logger.info("Regexed waittime is " + sleeptime + " seconds");
+                logger.info("Regexed waittime is " + sleeptime + " seconds");
             } catch (final Exception e) {
-                Plugin.logger.info("WaittimeRegex broken");
-                Plugin.logger.info(br.toString());
+                logger.info("WaittimeRegex broken");
+                logger.info(br.toString());
                 sleeptime = 60 * 1000l;
             }
             // Reconnect if the waittime is too big!
@@ -306,7 +306,7 @@ public class HotFileCom extends PluginForHost {
                 final String newLink = br.getRegex("href=\"(http://.*?)\"").getMatch(0);
                 if (newLink != null) {
                     /* set new downloadlink */
-                    Plugin.logger.warning("invalid link -> use new link");
+                    logger.warning("invalid link -> use new link");
                     link.setUrlDownload(newLink.trim());
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
@@ -326,7 +326,7 @@ public class HotFileCom extends PluginForHost {
         checkLinks(new DownloadLink[] { downloadLink });
         if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (getPluginConfig().getBooleanProperty(HotFileCom.TRY_IWL_BYPASS, false)) {
-            Plugin.logger.severe("trying iwl-bypass");
+            logger.severe("trying iwl-bypass");
             handlePremiumWebsite(downloadLink, account);
             return;
         }
@@ -334,25 +334,25 @@ public class HotFileCom extends PluginForHost {
         params.put("link", Encoding.urlEncode(downloadLink.getDownloadURL() + "\n\r"));
         params.put("alllinks", "1");
         final HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params);
-        Plugin.logger.severe("HotFileDebug: " + info.get("httpresponse"));
+        logger.severe("HotFileDebug: " + info.get("httpresponse"));
         if (info.get("httpresponse").contains("file not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (info.get("httpresponse").contains("premium required")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         final String finalUrls = info.get("httpresponse").trim();
         if (finalUrls == null || finalUrls.startsWith(".")) {
             if (finalUrls != null) {
                 if (finalUrls.startsWith(".too many failed")) {
-                    Plugin.logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
+                    logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
                     handlePremiumWebsite(downloadLink, account);
                     return;
                 }
                 if (finalUrls.startsWith(".ip blocked")) {
-                    Plugin.logger.severe("api reports: ip blocked! using website fallback!");
+                    logger.severe("api reports: ip blocked! using website fallback!");
                     handlePremiumWebsite(downloadLink, account);
                     return;
                 }
                 if (finalUrls.startsWith(".server that hosts the file is temporarily")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily unavailable", 30 * 60 * 1000l); }
             }
-            Plugin.logger.severe(finalUrls);
+            logger.severe(finalUrls);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String dlUrls[] = Regex.getLines(finalUrls);
@@ -380,7 +380,7 @@ public class HotFileCom extends PluginForHost {
             downloadLink.setFinalFileName(urlFileName);
             dl.startDownload();
         } else {
-            Plugin.logger.info("APIDebug:" + errorSb.toString());
+            logger.info("APIDebug:" + errorSb.toString());
             /* try website workaround */
             handlePremiumWebsite(downloadLink, account);
         }
@@ -437,7 +437,7 @@ public class HotFileCom extends PluginForHost {
             br.setCookie("http://hotfile.com", "lang", "en");
             final Object ret = account.getProperty("cookies", null);
             if (ret != null && ret instanceof HashMap<?, ?> && getPluginConfig().getBooleanProperty(HotFileCom.TRY_IWL_BYPASS, false)) {
-                Plugin.logger.info("Use cookie login");
+                logger.info("Use cookie login");
                 /* use saved cookies */
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 for (final String key : cookies.keySet()) {

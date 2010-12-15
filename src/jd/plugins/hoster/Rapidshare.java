@@ -33,21 +33,21 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -196,14 +196,14 @@ public class Rapidshare extends PluginForHost {
                 }
                 return true;
             }
-            Plugin.logger.finest("OnlineCheck: " + urls.length + " links");
+            logger.finest("OnlineCheck: " + urls.length + " links");
             final StringBuilder idlist = new StringBuilder();
             final StringBuilder namelist = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int size = 0;
             for (final DownloadLink u : urls) {
                 if (size > 3000) {
-                    Plugin.logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
+                    logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
                     /* do not stop here because we are not finished yet */
                     this.checkLinksIntern2(links);
                     links.clear();
@@ -219,9 +219,9 @@ public class Rapidshare extends PluginForHost {
             }
             if (links.size() != 0) {
                 if (links.size() != urls.length) {
-                    Plugin.logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
+                    logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
                 } else {
-                    Plugin.logger.finest("OnlineCheck: Check " + urls.length + " links");
+                    logger.finest("OnlineCheck: Check " + urls.length + " links");
                 }
                 if (!this.checkLinksIntern2(links)) { return false; }
             }
@@ -253,7 +253,7 @@ public class Rapidshare extends PluginForHost {
                 this.queryAPI(null, req, null);
 
                 if (this.br.containsHTML("access flood")) {
-                    Plugin.logger.warning("RS API flooded! Will not check again the next 5 minutes!");
+                    logger.warning("RS API flooded! Will not check again the next 5 minutes!");
                     Rapidshare.RS_API_WAIT = System.currentTimeMillis() + 5 * 60 * 1000l;
                     return false;
                 }
@@ -321,7 +321,7 @@ public class Rapidshare extends PluginForHost {
             return false;
         } catch (final Exception e) {
             if (this.br.containsHTML("access flood")) {
-                Plugin.logger.warning("RS API flooded! Will not check again the next 5 minutes!");
+                logger.warning("RS API flooded! Will not check again the next 5 minutes!");
                 Rapidshare.RS_API_WAIT = System.currentTimeMillis() + 5 * 60 * 1000l;
             }
             return false;
@@ -514,7 +514,7 @@ public class Rapidshare extends PluginForHost {
 
             final String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&dlauth=" + auth + "&bin=1&fileid=" + link.getId() + "&filename=" + link.getName();
 
-            Plugin.logger.finest("Direct-Download: Server-Selection not available!");
+            logger.finest("Direct-Download: Server-Selection not available!");
             Request request = this.br.createGetRequest(directurl);
 
             try {
@@ -634,7 +634,7 @@ public class Rapidshare extends PluginForHost {
             // names
             if (this.getPluginConfig().getBooleanProperty(Rapidshare.PRE_RESOLVE, false)) {
                 try {
-                    JDLogger.getLogger().fine("Try to resolve adress " + host);
+                    logger.fine("Try to resolve adress " + host);
                     final InetAddress inetAddress = InetAddress.getByName(host);
                     host = inetAddress.getHostAddress();
                 } catch (final Exception e) {
@@ -643,7 +643,7 @@ public class Rapidshare extends PluginForHost {
             }
             final String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
 
-            Plugin.logger.finest("Direct-Download: Server-Selection not available!");
+            logger.finest("Direct-Download: Server-Selection not available!");
             request = this.br.createGetRequest(directurl);
 
             try {
@@ -674,7 +674,7 @@ public class Rapidshare extends PluginForHost {
                     request.setReadTimeout(60000);
                 } catch (final Throwable ee) {
                 }
-                Plugin.logger.info("Load from " + request.getUrl().toString().substring(0, 35));
+                logger.info("Load from " + request.getUrl().toString().substring(0, 35));
                 // Download
                 this.dl = new RAFDownload(this, downloadLink, request);
                 this.dl.setResume(true);
@@ -772,7 +772,7 @@ public class Rapidshare extends PluginForHost {
             }
             /* cookie login or not? */
             if (cookieLogin && cookies != null && cookies.get("enc") != null && cookies.get("enc").length() != 0) {
-                Plugin.logger.finer("Cookie Login");
+                logger.finer("Cookie Login");
                 for (final Entry<String, String> cookie : cookies.entrySet()) {
                     br.setCookie(prtotcol + "://rapidshare.com", cookie.getKey(), cookie.getValue());
                 }
@@ -786,26 +786,26 @@ public class Rapidshare extends PluginForHost {
             final String error = br.getRegex("ERROR:(.*)").getMatch(0);
             if (error != null) {
                 account.setProperty(Rapidshare.COOKIEPROP, null);
-                Plugin.logger.severe("10 " + br.toString());
+                logger.severe("10 " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (br.containsHTML("Login failed")) {
                 account.setProperty(Rapidshare.COOKIEPROP, null);
-                Plugin.logger.severe("1 " + br.toString());
+                logger.severe("1 " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (br.containsHTML("access flood")) {
-                Plugin.logger.warning("RS API flooded! will not check again the next 15 minutes!");
+                logger.warning("RS API flooded! will not check again the next 15 minutes!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
-                Plugin.logger.finer("API Login");
+                logger.finer("API Login");
                 final String cookie = br.getRegex("cookie=([A-Z0-9]+)").getMatch(0);
                 br.setCookie("http://rapidshare.com", "enc", cookie);
             }
             final String cookie = br.getCookie("http://rapidshare.com", "enc");
             if (cookie == null) {
                 account.setProperty(Rapidshare.COOKIEPROP, null);
-                Plugin.logger.severe("2 " + br.toString());
+                logger.severe("2 " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 cookies = new HashMap<String, String>();
@@ -863,7 +863,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     private void reportUnknownError(final Object req, final int id) {
-        Plugin.logger.severe("Unknown error(" + id + "). Please add this HTML-Code to your Bugreport:\r\n" + req);
+        logger.severe("Unknown error(" + id + "). Please add this HTML-Code to your Bugreport:\r\n" + req);
     }
 
     @Override
@@ -964,7 +964,7 @@ public class Rapidshare extends PluginForHost {
                 this.getPluginConfig().setProperty(Rapidshare.SSL_CONNECTION, false);
             }
         } catch (final Exception e) {
-            Plugin.logger.severe("RS-API change detected, please inform support!");
+            logger.severe("RS-API change detected, please inform support!");
         }
         account.setValid(true);
     }
