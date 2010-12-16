@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+" }, flags = { 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+" }, flags = { 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(PluginWrapper wrapper) {
@@ -45,8 +45,8 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         if (parameter.contains("imagebam.com")) {
             /* Error handling */
             if (br.containsHTML("Image not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            finallink = br.getRegex("'(http://[0-9]+\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("'(http://[0-9]+\\.imagebam\\.com/download\\.php\\?ID=.*?)'").getMatch(0);
+            finallink = br.getRegex("\\'(http://[0-9]+\\.imagebam\\.com/dl\\.php\\?ID=.*?)\\'").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\\'(http://[0-9]+\\.imagebam\\.com/download\\.php\\?ID=.*?)\\'").getMatch(0);
         } else if (parameter.contains("media.photobucket.com")) {
             finallink = br.getRegex("mediaUrl':'(http.*?)'").getMatch(0);
         } else if (parameter.contains("freeimagehosting.net")) {
@@ -58,6 +58,9 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (!br.containsHTML("images/")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             finallink = br.getRegex("show_image\" src=\"(http.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("\"(http://img[0-9]+\\.pixhost\\.org/images/[0-9]+/.*?)\"").getMatch(0);
+        } else if (parameter.contains("pixhost.info/")) {
+            finallink = br.getRegex("border=\\'0\\' src=\\'(http://.*?)\\'>").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\\'(http://pixhost\\.info/avaxhome/[0-9/]+\\.jpeg)\\'").getMatch(0);
         }
         if (finallink == null) return null;
         finallink = "directhttp://" + finallink;

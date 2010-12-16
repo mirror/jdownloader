@@ -50,16 +50,17 @@ public class SourceForgeNet extends PluginForDecrypt {
                 link = br.getRegex("Please use this <a href=\"(.*?)\"").getMatch(0);
                 if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
             } else {
-                link = br.getRegex("Please use this <a href=\"(http://.*?)\"").getMatch(0);
-                if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge.net/project/.*?\\?use_mirror=.*?)\"").getMatch(0);
+                String continuelink = br.getRegex("\\}\" href=\"(http://sourceforge\\.net/projects/.*?/download)\"").getMatch(0);
+                if (continuelink != null) br.getPage(Encoding.htmlDecode(continuelink));
+                link = br.getRegex("Please use this <a href=\"(http://downloads\\.sourceforge\\.net/project/.*?)\"").getMatch(0);
             }
             if (link == null) return null;
             br.setFollowRedirects(false);
-            br.getPage(Encoding.htmlDecode(link));
+            link = Encoding.htmlDecode(link);
             String finallink = null;
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
-                br.getPage(Encoding.htmlDecode(link));
+                br.getPage(link);
                 finallink = br.getRedirectLocation();
                 if (finallink == null) return null;
                 con = br.openGetConnection(finallink);
