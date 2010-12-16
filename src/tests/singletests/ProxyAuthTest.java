@@ -17,11 +17,10 @@
 package tests.singletests;
 
 import java.net.InetSocketAddress;
-import java.net.Proxy;
 
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.http.Browser;
-import jd.http.JDProxy;
+import jd.http.HTTPProxy;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,7 +35,7 @@ public class ProxyAuthTest {
         Browser.init();
         TestUtils.log("init Proxy");
 
-        final JDProxy pr = new JDProxy(Proxy.Type.HTTP, TestUtils.getStringProperty("proxy_ip"), TestUtils.getIntegerProperty("proxy_port"));
+        final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.HTTP, TestUtils.getStringProperty("proxy_ip"), TestUtils.getIntegerProperty("proxy_port"));
         final String user = TestUtils.getStringProperty("proxy_user");
         final String pass = TestUtils.getStringProperty("proxy_pass");
 

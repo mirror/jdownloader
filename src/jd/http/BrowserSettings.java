@@ -4,9 +4,9 @@ import java.util.logging.Logger;
 
 public interface BrowserSettings {
 
-    public JDProxy getCurrentProxy();
+    public HTTPProxy getCurrentProxy();
 
-    public void setCurrentProxy(JDProxy proxy);
+    public void setCurrentProxy(HTTPProxy proxy);
 
     public void setVerbose(boolean b);
 

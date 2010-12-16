@@ -16,15 +16,22 @@
 
 package jd.http;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.SocketAddress;
-
 import jd.controlling.JDLogger;
 import jd.parser.Regex;
 
-public class JDProxy extends Proxy {
-    private String user = null;
+public class HTTPProxy {
+
+    public static enum TYPE {
+        NONE, DIRECT, SOCKS5, HTTP
+    }
+
+    public static final HTTPProxy NONE = new HTTPProxy(TYPE.NONE);
+
+    private String                user = null;
+    private String                pass = null;
+    private int                   port = 80;
+    private String                host = null;
+    private TYPE                  type = TYPE.DIRECT;
 
     public String getUser() {
         return user;
@@ -42,25 +49,18 @@ public class JDProxy extends Proxy {
         this.pass = pass;
     }
 
-    private String pass = null;
-    private int port = 80;
-    private String host;
-    private boolean direct = false;
-    public static JDProxy NO_PROXY = new JDProxy();
-
     public int getPort() {
         return port;
     }
 
-    public JDProxy(final java.net.Proxy.Type type, final SocketAddress sa) {
-        super(type, sa);
-        this.host = new Regex(sa.toString(), "(.*)\\/").getMatch(0);
+    public HTTPProxy(TYPE type, final String host, final int port) {
+        this.port = port;
+        this.type = type;
+        this.host = getInfo(host, "" + port)[0];
     }
 
-    public JDProxy(final java.net.Proxy.Type type, final String host, final int port) {
-        super(type, new InetSocketAddress(getInfo(host, "" + port)[0], port));
-        this.port = port;
-        this.host = getInfo(host, "" + port)[0];
+    private HTTPProxy(TYPE type) {
+        this.type = type;
     }
 
     private static String[] getInfo(final String host, final String port) {
@@ -85,27 +85,8 @@ public class JDProxy extends Proxy {
         return info;
     }
 
-    public JDProxy(final String hostAndPort) {
-        super(JDProxy.Type.HTTP, new InetSocketAddress(getInfo(hostAndPort, null)[0], Integer.parseInt(getInfo(hostAndPort, null)[1])));
-        port = Integer.parseInt(getInfo(hostAndPort, null)[1]);
-        host = getInfo(hostAndPort, null)[0];
-    }
-
-    public JDProxy(final String host, final int port, final String user, final String pass) {
-        super(JDProxy.Type.HTTP, new InetSocketAddress(getInfo(host, "" + port)[0], port));
-        this.port = port;
-        this.user = user;
-        this.pass = pass;
-        this.host = getInfo(host, "" + port)[0];
-    }
-
-    private JDProxy() {
-        super(JDProxy.Type.HTTP, new InetSocketAddress(80));
-        this.direct = true;
-    }
-
-    public Type type() {
-        return (direct) ? Type.DIRECT : super.type();
+    public TYPE getType() {
+        return type;
     }
 
     public String getHost() {
@@ -113,6 +94,6 @@ public class JDProxy extends Proxy {
     }
 
     public String toString() {
-        return "JDProxy: " + super.toString();
+        return "HTTPProxy: " + type.name() + " " + host;
     }
 }

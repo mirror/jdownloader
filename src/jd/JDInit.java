@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -47,7 +46,7 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
-import jd.http.JDProxy;
+import jd.http.HTTPProxy;
 import jd.nutils.ClassFinder;
 import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
@@ -285,7 +284,7 @@ public class JDInit {
                 return;
             }
 
-            final JDProxy pr = new JDProxy(Proxy.Type.HTTP, host, port);
+            final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.HTTP, host, port);
             if (user != null && user.trim().length() > 0) {
                 pr.setUser(user);
             }
@@ -305,7 +304,7 @@ public class JDInit {
                 return;
             }
 
-            final JDProxy pr = new JDProxy(Proxy.Type.SOCKS, host, port);
+            final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.SOCKS5, host, port);
             if (user != null && user.trim().length() > 0) {
                 pr.setUser(user);
             }

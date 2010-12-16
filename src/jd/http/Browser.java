@@ -97,9 +97,9 @@ public class Browser {
 
     }
 
-    private static JDProxy GLOBAL_PROXY = null;
-    private static Logger  LOGGER       = null;
-    private Logger         logger       = null;
+    private static HTTPProxy GLOBAL_PROXY = null;
+    private static Logger    LOGGER       = null;
+    private Logger           logger       = null;
 
     // added proxy map to find proxy passwords.
 
@@ -116,7 +116,7 @@ public class Browser {
         this.logger = logger;
     }
 
-    public static void setGlobalProxy(final JDProxy p) {
+    public static void setGlobalProxy(final HTTPProxy p) {
         GLOBAL_PROXY = p;
     }
 
@@ -259,7 +259,7 @@ public class Browser {
     private Request                         request;
     private String                          customCharset       = null;
     private boolean                         cookiesExclusive    = true;
-    private JDProxy                         proxy;
+    private HTTPProxy                       proxy;
     private HashMap<String, Integer>        requestIntervalLimitMap;
     private HashMap<String, Long>           requestTimeMap;
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
@@ -672,9 +672,9 @@ public class Browser {
         }
     }
 
-    private JDProxy selectProxy() {
+    private HTTPProxy selectProxy() {
         if (proxy != null) {
-            if (proxy == JDProxy.NO_PROXY) return null;
+            if (proxy == HTTPProxy.NONE) return null;
             return proxy;
         }
         return GLOBAL_PROXY;
@@ -1257,14 +1257,14 @@ public class Browser {
         return new XPath(this.toString(), xPath, false).getFirstMatch();
     }
 
-    public void setProxy(final JDProxy proxy) {
+    public void setProxy(final HTTPProxy proxy) {
         if (debug) {
             if (LOGGER != null) LOGGER.info("Use local proxy: " + proxy);
         }
         this.proxy = proxy;
     }
 
-    public JDProxy getProxy() {
+    public HTTPProxy getProxy() {
         return proxy;
     }
 

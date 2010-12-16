@@ -43,30 +43,30 @@ import sun.net.www.http.ChunkedInputStream;
 
 public class HTTPConnection implements URLConnectionAdapter {
 
-    protected LinkedHashMap<String, String> requestProperties    = null;
-    protected long[]                        ranges;
+    protected LinkedHashMap<String, String>  requestProperties    = null;
+    protected long[]                         ranges;
 
-    protected Request                       request;
+    protected Request                        request;
 
-    protected String                        customcharset        = null;
+    protected String                         customcharset        = null;
 
-    protected Socket                        httpSocket           = null;
-    protected URL                           httpURL              = null;
-    protected JDProxy                       proxy                = null;
-    protected String                        httpPath             = null;
+    protected Socket                         httpSocket           = null;
+    protected URL                            httpURL              = null;
+    protected HTTPProxy                      proxy                = null;
+    protected String                         httpPath             = null;
 
-    private METHOD                          httpMethod           = METHOD.GET;
-    private LowerCaseHashMap<List<String>>  headers              = null;
-    private int                             httpResponseCode     = -1;
-    private String                          httpResponseMessage  = "";
-    private int                             readTimeout          = 30000;
-    private int                             connectTimeout       = 30000;
-    private long                            requestTime          = -1;
-    private InputStream                     inputStream          = null;
-    private boolean                         inputStreamConnected = false;
-    private String                          httpHeader           = null;
-    private byte[]                          preReadBytes         = null;
-    private boolean                         outputClosed         = false;
+    protected METHOD                         httpMethod           = METHOD.GET;
+    protected LowerCaseHashMap<List<String>> headers              = null;
+    protected int                            httpResponseCode     = -1;
+    protected String                         httpResponseMessage  = "";
+    protected int                            readTimeout          = 30000;
+    protected int                            connectTimeout       = 30000;
+    protected long                           requestTime          = -1;
+    protected InputStream                    inputStream          = null;
+    protected boolean                        inputStreamConnected = false;
+    protected String                         httpHeader           = null;
+    protected byte[]                         preReadBytes         = null;
+    protected boolean                        outputClosed         = false;
 
     public boolean isConnected() {
         if (httpSocket != null && httpSocket.isConnected()) return true;
@@ -77,7 +77,7 @@ public class HTTPConnection implements URLConnectionAdapter {
         this(url, null);
     }
 
-    public HTTPConnection(URL url, JDProxy p) {
+    public HTTPConnection(URL url, HTTPProxy p) {
         httpURL = url;
         proxy = p;
         requestProperties = new LinkedHashMap<String, String>();
@@ -99,9 +99,8 @@ public class HTTPConnection implements URLConnectionAdapter {
         int port = httpURL.getPort();
         if (port == -1) port = httpURL.getDefaultPort();
         long startTime = System.currentTimeMillis();
-        if (proxy != null) {
-            /* http://de.wikipedia.org/wiki/SOCKS */
-            throw new RuntimeException("proxy support not done yet");
+        if (proxy != null && !proxy.getType().equals(HTTPProxy.TYPE.DIRECT)) {
+            throw new RuntimeException("Invalid Direct Proxy");
         } else {
             httpSocket.connect(new InetSocketAddress(host, port), connectTimeout);
         }

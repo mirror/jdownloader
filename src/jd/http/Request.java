@@ -88,7 +88,7 @@ public abstract class Request {
     private long                   readTime       = -1;
     private boolean                requested      = false;
 
-    private JDProxy                proxy;
+    private HTTPProxy                proxy;
     private URL                    orgURL;
     private String                 customCharset  = null;
     private byte[]                 byteArray;
@@ -103,11 +103,11 @@ public abstract class Request {
         initDefaultHeader();
     }
 
-    public void setProxy(final JDProxy proxy) {
+    public void setProxy(final HTTPProxy proxy) {
         this.proxy = proxy;
     }
 
-    public JDProxy getProxy() {
+    public HTTPProxy getProxy() {
         return proxy;
     }
 
@@ -130,7 +130,7 @@ public abstract class Request {
 
         final String host = Browser.getHost(httpConnection.getURL());
 
-        for (int i = 0; i <cookieHeaders.size(); i++) {
+        for (int i = 0; i < cookieHeaders.size(); i++) {
             final String header = cookieHeaders.get(i);
             cookies.add(Cookies.parseCookies(header, host, date));
         }
@@ -325,11 +325,11 @@ public abstract class Request {
         headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            /*deflate only java >=1.6*/
+            /* deflate only java >=1.6 */
             headers.put("Accept-Encoding", "gzip,deflate");
         } else {
             headers.put("Accept-Encoding", "gzip");
-        }        
+        }
         headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
 
         headers.put("Cache-Control", "no-cache");
@@ -356,7 +356,7 @@ public abstract class Request {
             }
         }
 
-        httpConnection = new HTTPConnection(orgURL, proxy);
+        httpConnection = HTTPConnectionFactory.createHTTPConnection(orgURL, proxy);
         httpConnection.setRequest(this);
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(connectTimeout);

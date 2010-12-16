@@ -40,7 +40,7 @@ import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.http.Browser;
-import jd.http.JDProxy;
+import jd.http.HTTPProxy;
 import jd.http.RequestHeader;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
@@ -634,7 +634,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
         /* set custom timeouts here because 10secs is a LONG time ;) */
         br.setReadTimeout(10000);
         br.setConnectTimeout(10000);
-        br.setProxy(JDProxy.NO_PROXY);
+        br.setProxy(HTTPProxy.NONE);
         if (user != null && pass != null) {
             br.setAuth(ip, user, pass);
         }

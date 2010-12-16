@@ -35,7 +35,7 @@ import jd.gui.swing.dialog.AgbDialog;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettings;
-import jd.http.JDProxy;
+import jd.http.HTTPProxy;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -699,11 +699,11 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
         }
     }
 
-    public JDProxy getCurrentProxy() {
+    public HTTPProxy getCurrentProxy() {
         return null;
     }
 
-    public void setCurrentProxy(JDProxy proxy) {
+    public void setCurrentProxy(HTTPProxy proxy) {
     }
 
     public void setVerbose(boolean b) {

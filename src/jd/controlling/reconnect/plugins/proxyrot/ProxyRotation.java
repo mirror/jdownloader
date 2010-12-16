@@ -12,7 +12,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.http.Browser;
-import jd.http.JDProxy;
+import jd.http.HTTPProxy;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -136,7 +136,7 @@ public class ProxyRotation extends RouterPlugin {
                 port = "8080";
             }
 
-            final JDProxy proxy = new JDProxy(type.equalsIgnoreCase("socks") ? JDProxy.Type.SOCKS : JDProxy.Type.HTTP, ip, Integer.parseInt(port));
+            final HTTPProxy proxy = new HTTPProxy(type.equalsIgnoreCase("socks") ? HTTPProxy.TYPE.SOCKS5 : HTTPProxy.TYPE.HTTP, ip, Integer.parseInt(port));
             proxy.setUser(username);
             proxy.setPass(password);
             JDLogger.getLogger().info("Use Proxy: " + proxy);
