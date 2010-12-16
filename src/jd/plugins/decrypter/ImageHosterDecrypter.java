@@ -46,6 +46,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             /* Error handling */
             if (br.containsHTML("Image not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             finallink = br.getRegex("'(http://[0-9]+\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("'(http://[0-9]+\\.imagebam\\.com/download\\.php\\?ID=.*?)'").getMatch(0);
         } else if (parameter.contains("media.photobucket.com")) {
             finallink = br.getRegex("mediaUrl':'(http.*?)'").getMatch(0);
         } else if (parameter.contains("freeimagehosting.net")) {

@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -27,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/users/[A-Z0-9]+(\\&pw=.+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/(users/[A-Z0-9]+(\\&pw=.+)?|#!linklist\\|[A-Z0-9]+)" }, flags = { 0 })
 public class RpdshrCmFldr extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -36,51 +35,18 @@ public class RpdshrCmFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String PASSWORDTEXT = "input type=\"password\" name=\"password\"";
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
-        String page = br.getPage(parameter);
-        String password = "";
-        for (int retry = 1; retry < 5; retry++) {
-            if (page.contains(PASSWORDTEXT)) {
-                password = new Regex(parameter, "\\&pw=(.+)").getMatch(0);
-                if (password == null) {
-                    password = this.getPluginConfig().getStringProperty("PASSWORD", null);
-                    if (password == null) password = getUserInput(null, param);
-                }
-                page = br.postPage(parameter, "password=" + password);
-                if (br.containsHTML(PASSWORDTEXT)) {
-                    getPluginConfig().setProperty("PASSWORD", null);
-                    getPluginConfig().save();
-                    parameter = parameter.replace(new Regex(parameter, "(\\&pw=.+)").getMatch(0), "");
-                } else {
-                    // Save actual password if it is valid
-                    getPluginConfig().setProperty("PASSWORD", password);
-                    getPluginConfig().save();
-                }
-            } else {
-                break;
-            }
+        String id = new Regex(parameter, "http://[\\w\\.]*?rapidshare\\.com/users/([A-Z0-9]+)(\\&pw=.+)?").getMatch(0);
+        if (id == null) id = new Regex(parameter, "http://[\\w\\.]*?rapidshare\\.com/#!linklist\\|([A-Z0-9]+)").getMatch(0);
+        String page = br.getPage("http://rapidshare.com/cgi-bin/rsapi.cgi?sub=viewlinklist_v1&linklist=" + id + "&cbf=RSAPIDispatcher&cbid=1");
+        page = page.replaceAll("\\\\\"", "\"");
+        String links[][] = new Regex(page, "\"(\\d+)\",\"(\\d+)\",\"(\\d+)\",\"(.*?)\",\"(\\d+)\"").getMatches();
+        for (String[] link : links) {
+            decryptedLinks.add(this.createDownloadlink("http://rapidshare.com/files/" + link[2] + "/" + link[3]));
         }
-
-        getLinks(parameter, password, page);
 
         return decryptedLinks;
     }
-
-    private void getLinks(String para, String password, String source) throws IOException {
-        String[] folders = new Regex(source, "font\\-size:12pt\\;\" href=\"javascript:folderoeffnen\\('(\\d+?)'\\);").getColumn(0);
-        String[] links = new Regex(source, "<a style=\"font-size:12pt;\" target=\"_blank\" href=\"http://rapidshare.com/files/(.*?)\">").getColumn(0);
-        for (String element : folders) {
-            getLinks(para, password, br.postPage(para, "password=" + password + "&subpassword=&browse=ID%3D" + element));
-        }
-
-        for (String element : links) {
-            decryptedLinks.add(createDownloadlink("http://rapidshare.com/files/" + element));
-        }
-    }
-
-    // @Override
 
 }

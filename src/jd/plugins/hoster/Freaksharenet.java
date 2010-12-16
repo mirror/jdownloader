@@ -49,7 +49,7 @@ public class Freaksharenet extends PluginForHost {
 
     private boolean             NOPREMIUM          = false;
     private static final String WAIT1              = "WAIT1";
-    private int                 MAXPREMDLS         = -1;
+    private static int          MAXPREMDLS         = -1;
     private static final String MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
 
     private void setConfigElements() {
@@ -115,8 +115,16 @@ public class Freaksharenet extends PluginForHost {
                 ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd.MM.yyyy - HH:mm", null));
                 account.setValid(true);
             }
+            try {
+                account.setMaxSimultanDownloads(-1);
+            } catch (Throwable e) {
+            }
             ai.setStatus("Premium User");
         } else {
+            try {
+                account.setMaxSimultanDownloads(1);
+            } catch (Throwable e) {
+            }
             ai.setStatus("Registered (free) User");
         }
         return ai;
@@ -127,6 +135,7 @@ public class Freaksharenet extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Sorry, you cant download more then 50 files at time.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         if (NOPREMIUM) {
             doFree(downloadLink);
         } else {
@@ -142,7 +151,7 @@ public class Freaksharenet extends PluginForHost {
                 url = br.getRedirectLocation();
             }
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -5);
             if (!dl.getConnection().isContentDisposition()) {
                 logger.info("The finallink is no file, trying to handle errors...");
                 br.followConnection();
@@ -195,6 +204,7 @@ public class Freaksharenet extends PluginForHost {
         final boolean resume = false;
         final int maxchunks = 1;
         boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
+        if (br.containsHTML("Sorry, you cant download more then 50 files at time.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         if (br.containsHTML("your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         if (br.containsHTML("No Downloadserver\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
