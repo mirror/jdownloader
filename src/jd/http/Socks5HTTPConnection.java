@@ -66,7 +66,10 @@ public class Socks5HTTPConnection extends HTTPConnection {
             /* read response, 2 bytes */
             byte[] resp = readResponse(2);
             if (resp[0] != 1) { throw new IOException("Socks5HTTPConnection: invalid Socks5 response"); }
-            if (resp[1] != 0) { throw new IOException("Socks5HTTPConnection: authentication failed"); }
+            if (resp[1] != 0) {
+                proxy.setStatus(HTTPProxy.STATUS.INVALIDAUTH);
+                throw new IOException("Socks5HTTPConnection: authentication failed");
+            }
         } catch (IOException e) {
             try {
                 socks5socket.close();

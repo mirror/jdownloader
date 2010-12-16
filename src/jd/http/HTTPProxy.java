@@ -25,13 +25,33 @@ public class HTTPProxy {
         NONE, DIRECT, SOCKS5, HTTP
     }
 
-    public static final HTTPProxy NONE = new HTTPProxy(TYPE.NONE);
+    public static enum STATUS {
+        OK, OFFLINE, INVALIDAUTH
+    }
 
-    private String                user = null;
-    private String                pass = null;
-    private int                   port = 80;
-    private String                host = null;
-    private TYPE                  type = TYPE.DIRECT;
+    public static final HTTPProxy NONE   = new HTTPProxy(TYPE.NONE);
+
+    private String                user   = null;
+    private String                pass   = null;
+    private int                   port   = 80;
+    private String                host   = null;
+    private TYPE                  type   = TYPE.DIRECT;
+    private STATUS                status = STATUS.OK;
+
+    /**
+     * @return the status
+     */
+    public STATUS getStatus() {
+        return status;
+    }
+
+    /**
+     * @param status
+     *            the status to set
+     */
+    public void setStatus(STATUS status) {
+        this.status = status;
+    }
 
     public String getUser() {
         return user;
