@@ -219,7 +219,7 @@ public class HTMLParser {
                 String[] result = getHttpLinksIntern(nexttag, url);
                 if (result.length == 0) {
                     if (nexttag.startsWith("/div")) {
-                        /*<div>, insert newline here*/
+                        /* <div>, insert newline here */
                         data = data.replaceFirst("(?s)<.*?>", "\r\n");
                     } else {
                         /* no links, lets replace it with nothing */

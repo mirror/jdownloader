@@ -459,6 +459,9 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         if (new Regex(biggestFile.getFilepath(), ".+\\.iso").matches()) {
             /* for iso images we need more data for signature check */
             minimumCheckSize = 37000;
+        } else if (new Regex(biggestFile.getFilepath(), ".+\\.mp3").matches()) {
+            /* for mp3 images we need more data for signature check */
+            minimumCheckSize = 512;
         } else {
             minimumCheckSize = 50;
         }

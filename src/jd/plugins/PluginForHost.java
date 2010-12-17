@@ -335,9 +335,16 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         if (hits != null && hits.length > 0) {
             links = new ArrayList<DownloadLink>();
             for (String file : hits) {
+                /* remove newlines... */
+                file = file.trim();
+                /*
+                 * this removes the " from HTMLParser.ArrayToString
+                 */
+                /* only 1 " at start */
                 while (file.charAt(0) == '"') {
                     file = file.substring(1);
                 }
+                /* can have several " at the end */
                 while (file.charAt(file.length() - 1) == '"') {
                     file = file.substring(0, file.length() - 1);
                 }

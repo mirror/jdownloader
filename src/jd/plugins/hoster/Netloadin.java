@@ -308,6 +308,7 @@ public class Netloadin extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
+            setBrowserExclusive();
             loginAPI(account, ai);
         } catch (PluginException e) {
             account.setValid(false);
