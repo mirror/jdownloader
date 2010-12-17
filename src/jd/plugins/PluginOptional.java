@@ -35,11 +35,11 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
      */
     private boolean          running                 = false;
 
-    protected JDPluginLogger logger                  = null;
+    protected JDPluginLogger log                     = null;
 
     public PluginOptional(final PluginWrapper wrapper) {
         super(wrapper);
-        logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
+        log = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
     }
 
     public final void controlEvent(final ControlEvent event) {

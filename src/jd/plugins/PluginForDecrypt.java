@@ -50,9 +50,11 @@ import jd.utils.locale.JDL;
  */
 public abstract class PluginForDecrypt extends Plugin {
 
+    protected JDPluginLogger log = null;
+
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
-        logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
+        log = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
     }
 
     public void setBrowser(Browser br) {
@@ -190,8 +192,8 @@ public abstract class PluginForDecrypt extends Plugin {
             JDLogger.exception(e);
         }
         if (tmpLinks == null) {
-            logger.severe("Decrypter out of date: " + this);
-            logger.severe("Decrypter out of date: " + getVersion());
+            log.severe("Decrypter out of date: " + this);
+            log.severe("Decrypter out of date: " + getVersion());
             progress.setStatusText(JDL.LF(JDL_PREFIX + "error.outOfDate", "Decrypter out of date: %s", this.getHost()));
 
             progress.setColor(Color.RED);
@@ -218,7 +220,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     protected String getCaptchaCode(String method, String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
         if (captchaAddress == null) {
-            logger.severe("Captcha Adresse nicht definiert");
+            log.severe("Captcha Adresse nicht definiert");
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         File captchaFile = this.getLocalCaptchaFile();
@@ -226,7 +228,7 @@ public abstract class PluginForDecrypt extends Plugin {
         try {
             brc.getDownload(captchaFile, captchaAddress);
         } catch (Exception e) {
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+            log.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         // erst im Nachhinein das der Bilddownload nicht gestört wird

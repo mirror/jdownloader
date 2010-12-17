@@ -60,6 +60,7 @@ import jd.utils.locale.JDL;
 public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     private static final String JDL_PREFIX = "jd.plugins.PluginsForHost.";
+    protected JDPluginLogger    log        = null;
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
@@ -71,11 +72,11 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public void setLogger(JDPluginLogger logger) {
-        this.logger = logger;
+        this.log = logger;
     }
 
     public JDPluginLogger getLogger() {
-        return logger;
+        return log;
     }
 
     public void setBrowser(Browser br) {
@@ -93,14 +94,14 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
         if (captchaAddress == null) {
-            logger.severe("Captcha Adresse nicht definiert");
+            log.severe("Captcha Adresse nicht definiert");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         final File captchaFile = getLocalCaptchaFile();
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
         } catch (Exception e) {
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+            log.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
@@ -474,7 +475,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         }
         putLastTimeStarted(System.currentTimeMillis());
         if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + this.getWrapper().getID());
+            log.severe("AGB not signed : " + this.getWrapper().getID());
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
             return;
         }
@@ -488,8 +489,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 handlePremium(downloadLink, account);
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
-                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
-                logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) log.info(JDLogger.getStackTrace(e));
+                log.info(downloadLink.getLinkStatus().getLongErrorMessage());
                 if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
                     blockAccount = true;
                 }
@@ -511,16 +512,16 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     long left = Math.max(0, ai.getTrafficLeft() - traffic);
                     ai.setTrafficLeft(left);
                     if (left == 0 && ai.isSpecialTraffic()) {
-                        logger.severe("Premium Account " + account.getUser() + ": Traffic Limit could be reached, but SpecialTraffic might be available!");
+                        log.severe("Premium Account " + account.getUser() + ": Traffic Limit could be reached, but SpecialTraffic might be available!");
                     } else if (left == 0) {
-                        logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+                        log.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                         account.setTempDisabled(true);
                     }
                     throwupdate = true;
                 }
                 /* check blocked account(eg free user accounts with waittime) */
                 if (blockAccount) {
-                    logger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
+                    log.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
                     AccountController.getInstance().addAccountBlocked(account);
                 }
             }
@@ -529,7 +530,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             }
             if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
                 if (downloadLink.getLinkStatus().getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
-                    logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+                    log.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                     account.setTempDisabled(true);
                     account.getAccountInfo().setTrafficLeft(0);
                     if (accountInfo != null) {
@@ -538,11 +539,11 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 } else if (downloadLink.getLinkStatus().getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                     account.setEnabled(false);
                     if (accountInfo != null) accountInfo.setStatus(downloadLink.getLinkStatus().getErrorMessage());
-                    logger.severe("Premium Account " + account.getUser() + ": expired:" + downloadLink.getLinkStatus().getLongErrorMessage());
+                    log.severe("Premium Account " + account.getUser() + ": expired:" + downloadLink.getLinkStatus().getLongErrorMessage());
                 } else {
                     account.setEnabled(false);
                     if (accountInfo != null) accountInfo.setStatus(downloadLink.getLinkStatus().getErrorMessage());
-                    logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getLongErrorMessage());
+                    log.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getLongErrorMessage());
                 }
             } else {
                 if (accountInfo != null) {
@@ -555,8 +556,8 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 handleFree(downloadLink);
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
-                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
-                logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) log.info(JDLogger.getStackTrace(e));
+                log.info(downloadLink.getLinkStatus().getLongErrorMessage());
             } finally {
                 try {
                     dl.getConnection().disconnect();
