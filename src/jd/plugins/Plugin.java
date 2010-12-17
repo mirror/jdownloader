@@ -55,7 +55,11 @@ public abstract class Plugin implements ActionListener {
 
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
     /* to keep 0.95xx comp */
-    protected static Logger    logger          = jd.controlling.JDLogger.getLogger();
+    /* switch this on every stable update */
+    protected static Logger    logger          = null;
+
+    /* afer 0.95xx */
+    // protected JDPluginLogger logger = null;
 
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den

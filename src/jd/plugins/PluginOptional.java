@@ -28,18 +28,16 @@ import jd.event.ControlListener;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
-    public static final int  ADDON_INTERFACE_VERSION = 7;
+    public static final int ADDON_INTERFACE_VERSION = 7;
 
     /**
      * is the optional plugin running
      */
-    private boolean          running                 = false;
-
-    protected JDPluginLogger log                     = null;
+    private boolean         running                 = false;
 
     public PluginOptional(final PluginWrapper wrapper) {
         super(wrapper);
-        log = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
+        logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
     }
 
     public final void controlEvent(final ControlEvent event) {

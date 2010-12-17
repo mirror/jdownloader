@@ -145,14 +145,14 @@ public class PremShare extends PluginForHost implements JDPremInterface {
 
     @Override
     public void setLogger(JDPluginLogger logger) {
-        this.log = logger;
+        this.logger = logger;
         if (plugin != null) plugin.setLogger(logger);
     }
 
     @Override
     public JDPluginLogger getLogger() {
         if (plugin != null) plugin.getLogger();
-        return log;
+        return (JDPluginLogger) logger;
     }
 
     @Override
