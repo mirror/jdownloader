@@ -142,14 +142,14 @@ public class Ochloadorg extends PluginForHost implements JDPremInterface {
 
     @Override
     public void setLogger(JDPluginLogger logger) {
-        this.logger = logger;
+        this.log = logger;
         if (plugin != null) plugin.setLogger(logger);
     }
 
     @Override
     public JDPluginLogger getLogger() {
         if (plugin != null) plugin.getLogger();
-        return logger;
+        return log;
     }
 
     @Override
