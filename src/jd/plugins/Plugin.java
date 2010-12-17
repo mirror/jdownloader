@@ -24,6 +24,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,7 +35,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.JDPluginLogger;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -53,9 +53,9 @@ import jd.utils.locale.JDL;
  */
 public abstract class Plugin implements ActionListener {
 
-    public static final String      ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
+    public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
     /* to keep 0.95xx comp */
-    protected static JDPluginLogger logger          = null;
+    protected static Logger    logger          = jd.controlling.JDLogger.getLogger();
 
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
