@@ -138,16 +138,17 @@ public class GrvShrkCm extends PluginForDecrypt {
                 final String AlbumName = titleContent.get("AlbumName");
                 String fpName = ArtistName + "_" + AlbumName;
                 if (method == "popular") {
-                    fpName = "popular_Top_Ten";
+                    fpName = "Groovesharlk daily popular";
                 }
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 dlLink.setFilePackage(fp);
                 decryptedLinks.add(dlLink);
                 progress.increase(1);
-                if ((method == "popular") && (decryptedLinks.size() > 9)) {
-                    break;
-                }
+                // we do no linkcheck..so this should be fast
+                // if ((method == "popular") && (decryptedLinks.size() > 9)) {
+                // break;
+                // }
             }
         }
 
