@@ -60,7 +60,6 @@ import jd.utils.locale.JDL;
 public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     private static final String JDL_PREFIX = "jd.plugins.PluginsForHost.";
-    protected JDPluginLogger    logger     = null;
 
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);

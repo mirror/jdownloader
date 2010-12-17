@@ -50,8 +50,6 @@ import jd.utils.locale.JDL;
  */
 public abstract class PluginForDecrypt extends Plugin {
 
-    protected JDPluginLogger logger = null;
-
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
         logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());

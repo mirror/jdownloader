@@ -34,6 +34,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.controlling.JDPluginLogger;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -53,6 +54,7 @@ import jd.utils.locale.JDL;
 public abstract class Plugin implements ActionListener {
 
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
+    protected JDPluginLogger   logger          = null;
 
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
