@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -40,6 +42,8 @@ public class GrvShrkCm extends PluginForDecrypt {
 
     private static final String LISTEN = "http://listen.grooveshark.com/";
     private static final String USERID = UUID.randomUUID().toString().toUpperCase();
+    private String              userID;
+    private String              userName;
 
     public GrvShrkCm(final PluginWrapper wrapper) {
         super(wrapper);
@@ -53,6 +57,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             this.logger.warning("Link format is not supported: " + parameter);
             return null;
         }
+
         // single
         if (parameter.contains("/s/")) {
             parameter = parameter.replaceFirst("grooveshark\\.com", "grooveshark.viajd");
@@ -62,6 +67,14 @@ public class GrvShrkCm extends PluginForDecrypt {
             decryptedLinks.add(dlLink);
             return decryptedLinks;
         }
+
+        // favourites
+        // login
+
+        br.setDebug(true);
+        // this.br.getPage(GrooveShark.LISTEN);
+        if (new Regex(param, ".*?listen.grooveshark.com/\\#/user/.*?/\\d+/music/favorites").matches()) { return decryptFavourites(param, progress); }
+
         // album
         this.br.getPage(parameter);
         final String country = this.br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
@@ -72,7 +85,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             if (method == null) {
                 method = "popular";
             }
-            String rawPost = this.getRequestToken(parameter, method + "GetSongs", country);
+            String rawPost = this.getPostParameterString(parameter, method + "GetSongs", country);
             Boolean type = true;
             String t1 = null;
             for (int i = 1; i <= 2; i++) {
@@ -96,7 +109,7 @@ public class GrvShrkCm extends PluginForDecrypt {
                     type = false;
                 }
             }
-            t1 = this.U2U(t1.replace("#", "-").replace("},{", "}#{"));
+            t1 = this.decodeUnicode(t1.replace("#", "-").replace("},{", "}#{"));
             final String[] t2 = t1.split("#");
             progress.setRange(t2.length);
             for (final String t3 : t2) {
@@ -108,35 +121,36 @@ public class GrvShrkCm extends PluginForDecrypt {
                     }
                     titleContent.put(finalline[0], finalline[1]);
                 }
-                // getTokenForSong
-                rawPost = this.getRequestToken(parameter, "getTokenForSong", country);
-                rawPost = rawPost + "\"parameters\":{\"songID\":\"" + titleContent.get("SongID") + "\"," + country + "}}";
-                this.br.getHeaders().put("Content-Type", "application/json");
-                this.br.postPageRaw(GrvShrkCm.LISTEN + "more.php?getTokenForSong", rawPost);
 
-                final String Name = titleContent.get("Name").replace(" ", "_").replaceAll("\\?", "");
-                final String Token = this.br.getRegex("Token\":\"(\\w+)\"").getMatch(0);
+                final DownloadLink dlLink = this.createDownloadlink("http://grooveshark.viajd/song/" + titleContent.get("SongID"));
+                for (Iterator<Entry<String, String>> it = titleContent.entrySet().iterator(); it.hasNext();) {
+                    Entry<String, String> next = it.next();
+                    dlLink.setProperty(next.getKey(), decodeUnicode(next.getValue()));
+                }
+                final String filename = dlLink.getProperty("ArtistName", "UnknownArtist") + " - " + dlLink.getProperty("AlbumName", "UnkownAlbum") + " - " + dlLink.getProperty("Name", "UnknownSong") + ".mp3";
+                dlLink.setName(filename.trim());
+                try {
+                    dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
+                } catch (Exception e) {
+                }
+
                 final String ArtistName = titleContent.get("ArtistName");
                 final String AlbumName = titleContent.get("AlbumName");
                 String fpName = ArtistName + "_" + AlbumName;
                 if (method == "popular") {
                     fpName = "popular_Top_Ten";
                 }
-
-                String dllink = GrvShrkCm.LISTEN + "s/" + Name + "/" + Token;
-                dllink = dllink.replaceFirst("grooveshark\\.com", "grooveshark.viajd");
-                final DownloadLink dl = this.createDownloadlink(dllink.trim());
-
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
-                dl.setFilePackage(fp);
-                decryptedLinks.add(dl);
+                dlLink.setFilePackage(fp);
+                decryptedLinks.add(dlLink);
                 progress.increase(1);
                 if ((method == "popular") && (decryptedLinks.size() > 9)) {
                     break;
                 }
             }
         }
+
         if (decryptedLinks.size() == 0) {
             this.logger.warning("Decrypter out of date for link: " + parameter);
             return null;
@@ -144,7 +158,90 @@ public class GrvShrkCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getRequestToken(final String parameter, final String method, final String country) throws IOException {
+    private ArrayList<DownloadLink> decryptFavourites(CryptedLink param, ProgressController progress) throws IOException {
+
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        userID = new Regex(parameter, "listen.grooveshark.com/#/user/.*?/(\\d+)/").getMatch(0);
+        this.userName = new Regex(parameter, "listen.grooveshark.com/#/user/(.*?)/(\\d+)/").getMatch(0);
+        this.br.getPage(parameter);
+        final String country = this.br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
+        String method = "getFavorites";
+        String paramString = this.getPostParameterString(LISTEN, method, country) + "\"parameters\":{\"userID\":" + this.userID + ",\"ofWhat\":\"Songs\"}}";
+        this.br.getHeaders().put("Content-Type", "application/json");
+        this.br.postPageRaw(GrvShrkCm.LISTEN + "more.php?" + method, paramString);
+        String result = br.getRegex("\"result\"\\:\\[(.*)\\]").getMatch(0);
+        String[][] songs = new Regex(result, "\\{.*?\\}").getMatches();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(userName + "'s GrooveShark Favourites");
+        progress.increase(1);
+        for (String[] s : songs) {
+            HashMap<String, String> ret = new HashMap<String, String>();
+            for (String[] ss : new Regex(s[0], "\"(.*?)\"\\s*:\\s*\"(.*?)\"").getMatches()) {
+                ret.put(ss[0], ss[1]);
+
+            }
+
+            final DownloadLink dlLink = this.createDownloadlink("http://grooveshark.viajd/song/" + ret.get("SongID"));
+            for (Iterator<Entry<String, String>> it = ret.entrySet().iterator(); it.hasNext();) {
+                Entry<String, String> next = it.next();
+                dlLink.setProperty(next.getKey(), decodeUnicode(next.getValue()));
+            }
+            final String filename = dlLink.getProperty("ArtistName", "UnknownArtist") + " - " + dlLink.getProperty("AlbumName", "UnkownAlbum") + " - " + dlLink.getProperty("Name", "UnknownSong") + ".mp3";
+            dlLink.setName(filename.trim());
+            try {
+                dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
+            } catch (Exception e) {
+            }
+
+            decryptedLinks.add(dlLink);
+            dlLink.setFilePackage(fp);
+
+        }
+        return decryptedLinks;
+
+    }
+
+    // private boolean login(Account account) throws IOException {
+    // this.br.getPage(LISTEN);
+    // final String c = this.br.getRegex(Pattern.compile("\"country(.*?)}",
+    // Pattern.UNICODE_CASE)).getMatch(-1);
+    // br.postPage("https://listen.grooveshark.com/empty.php", "username=" +
+    // account.getUser() + "&password=" + account.getPass());
+    //
+    // Browser ajax = br.cloneBrowser();
+    // // get SongID
+    // ajax.getHeaders().put("Content-Type", "application/json");
+    // ajax.getHeaders().put("Referer",
+    // "http://listen.grooveshark.com/JSQueue.swf?20101203.14");
+    // ajax.getHeaders().put("x-flash-version", "10,1,53,64");
+    //
+    // final String sid = br.getCookie("http://listen.grooveshark.com/",
+    // "PHPSESSID");
+    // // https://cowbell.grooveshark.com/more.php?authenticateUser
+    //
+    // String loginJSon = "{\"parameters\":{\"savePassword\":0,\"password\":\""
+    // + account.getPass() + "\",\"username\":\"" + account.getUser() +
+    // "\"},\"header\":" + "{\"token\":\"token\"," +
+    // "\"clientRevision\":\"20101012.36\"," + "\"client\":\"htmlshark\"," +
+    // "\"session\":\"" + sid + "\",\"privacy\":0," + c + ",\"uuid\":\"" +
+    // USERID + "\"},\"method\":\"authenticateUser\"}";
+    //
+    // // this.br.getHeaders().put("x-flash-version", "10,1,53,64");
+    // final String token = this.getSecretToken("authenticateUser",
+    // JDHash.getMD5(sid), sid);
+    //
+    // ajax.postPageRaw("https://cowbell.grooveshark.com/more.php?authenticateUser",
+    // loginJSon.replace("\"token\":\"token\"", "\"token\":\"" + token + "\""));
+    // userID = ajax.getRegex("\"userID\"\\:(\\d+)").getMatch(0);
+    // userName = ajax.getRegex("\"username\"\\:\"(.*?)\"").getMatch(0);
+    // isPremium =
+    // "1".equals(ajax.getRegex("\"isPremium\"\\:\"(\\d)\"").getMatch(0));
+    // authCode = ajax.getRegex("\"authToken\"\\:\"(.*?)\"").getMatch(0);
+    // return userID != null;
+    // }
+
+    private String getPostParameterString(final String parameter, final String method, final String country) throws IOException {
         this.br.getHeaders().put("Content-Type", "application/json");
         this.br.getHeaders().put("Referer", parameter);
         final String sid = this.br.getCookie(parameter, "PHPSESSID");
@@ -175,7 +272,7 @@ public class GrvShrkCm extends PluginForDecrypt {
         return new String(chArray);
     }
 
-    private String U2U(final String s) {
+    private String decodeUnicode(final String s) {
         final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
         String res = s;
         final Matcher m = p.matcher(res);
