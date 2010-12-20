@@ -21,8 +21,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
@@ -46,16 +46,19 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
+import jd.plugins.optional.remotecontrol.utils.JSONException;
+import jd.plugins.optional.remotecontrol.utils.JSONObject;
 import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
+import jd.plugins.optional.remotecontrol.utils.XML;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
@@ -130,6 +133,31 @@ public class Serverhandler implements Handler {
         return element;
     }
 
+    private String getJSONString(Document xml, String jsoncallback) {
+        String jsonstr = "";
+
+        boolean isjsonp = false;
+
+        if (jsoncallback != null) {
+            isjsonp = true;
+        }
+
+        if (isjsonp) jsonstr += jsoncallback + "(";
+
+        try {
+            JSONObject jsonobject = XML.toJSONObject(JDUtilities.createXmlString(xml));
+            jsonstr += jsonobject.toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        if (isjsonp) jsonstr += ");";
+
+        if (jsonstr.equals("")) { return null; }
+
+        return jsonstr;
+    }
+
     public void finish(final Request req, final Response res) {
         // TODO Auto-generated method stub
 
@@ -152,7 +180,11 @@ public class Serverhandler implements Handler {
         response.setReturnType("text/html");
         response.setReturnStatus(Response.OK);
 
-        final String requestUrl = request.getRequestUrl();
+        String requestUrl = request.getRequestUrl();
+
+        boolean jsonresponse = Boolean.parseBoolean(request.getParameter("getjson"));
+        String jsoncallback = request.getParameter("jsoncallback");
+
         if (requestUrl.equals("/help")) {
             // Get help page
 
@@ -221,7 +253,11 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            response.addContent(JDUtilities.createXmlString(xml));
+            if (jsonresponse) {
+                response.addContent(getJSONString(xml, jsoncallback));
+            } else {
+                response.addContent(JDUtilities.createXmlString(xml));
+            }
         } else if (requestUrl.matches("/get/grabber/count")) {
             // Get number of links in grabber
 
@@ -303,7 +339,11 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            response.addContent(JDUtilities.createXmlString(xml));
+            if (jsonresponse) {
+                response.addContent(getJSONString(xml, jsoncallback));
+            } else {
+                response.addContent(JDUtilities.createXmlString(xml));
+            }
         } else if (requestUrl.equals("/get/downloads/current/list")) {
             // Get current DLs
 
@@ -317,7 +357,11 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            response.addContent(JDUtilities.createXmlString(xml));
+            if (jsonresponse) {
+                response.addContent(getJSONString(xml, jsoncallback));
+            } else {
+                response.addContent(JDUtilities.createXmlString(xml));
+            }
         } else if (requestUrl.equals("/get/downloads/finished/list")) {
             // Get finished DLs
 
@@ -331,7 +375,11 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            response.addContent(JDUtilities.createXmlString(xml));
+            if (jsonresponse) {
+                response.addContent(getJSONString(xml, jsoncallback));
+            } else {
+                response.addContent(JDUtilities.createXmlString(xml));
+            }
         } else if (requestUrl.matches("(?is).*/set/reconnect/(true|false)")) {
             // Set Reconnect enabled
 
@@ -1015,7 +1063,11 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            response.addContent(JDUtilities.createXmlString(xml));
+            if (jsonresponse) {
+                response.addContent(getJSONString(xml, jsoncallback));
+            } else {
+                response.addContent(JDUtilities.createXmlString(xml));
+            }
         } else if (requestUrl.matches("(?is).*/addon/.+")) {
             // search in addons
             final ArrayList<OptionalPluginWrapper> addons = OptionalPluginWrapper.getOptionalWrapper();
@@ -1036,7 +1088,11 @@ public class Serverhandler implements Handler {
                 if (cmdResponse instanceof String) {
                     response.addContent(cmdResponse);
                 } else if (cmdResponse instanceof Document) {
-                    response.addContent(JDUtilities.createXmlString((Document) cmdResponse));
+                    if (jsonresponse) {
+                        response.addContent(getJSONString((Document) cmdResponse, jsoncallback));
+                    } else {
+                        response.addContent(JDUtilities.createXmlString((Document) cmdResponse));
+                    }
                 } else {
                     response.addContent(Serverhandler.ERROR_UNKNOWN_RESPONSE_TYPE);
                 }
