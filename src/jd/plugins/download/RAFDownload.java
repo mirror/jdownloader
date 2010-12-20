@@ -39,8 +39,8 @@ import org.appwork.utils.Hash;
 
 public class RAFDownload extends DownloadInterface {
 
-    private static final Object HASHCHECKLOCK = new Object();
-    private RandomAccessFile    outputFile;
+    public static final Object HASHCHECKLOCK = new Object();
+    private RandomAccessFile   outputFile;
 
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         super(plugin, downloadLink, request);

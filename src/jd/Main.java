@@ -80,7 +80,13 @@ public class Main {
      */
     private static void initMACProperties() {
         // set DockIcon (most used in Building)
-        com.apple.eawt.Application.getApplication().setDockIconImage(JDImage.getImage("logo/jd_logo_128_128"));
+        try {
+            com.apple.eawt.Application.getApplication().setDockIconImage(JDImage.getImage("logo/jd_logo_128_128"));
+        } catch (final Throwable e) {
+            /* not every mac has this */
+            Main.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
+            e.printStackTrace();
+        }
 
         // Use ScreenMenu in every LAF
         System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -99,8 +105,8 @@ public class Main {
 
         try {
             MacOSApplicationAdapter.enableMacSpecial();
-        } catch (final Exception e) {
-            Main.LOG.info("Error Initializing Look and Feel: " + e);
+        } catch (final Throwable e) {
+            Main.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
             e.printStackTrace();
         }
 
