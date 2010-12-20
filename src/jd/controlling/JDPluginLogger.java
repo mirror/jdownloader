@@ -23,7 +23,7 @@ public class JDPluginLogger extends Logger {
         this.setUseParentHandlers(false);
         this.setLevel(Level.ALL);
         if (trash) return;
-        if (JDInitFlags.SWITCH_DEBUG) {
+        if (JDInitFlags.SWITCH_DEBUG || true) {
             for (Handler handler : JDLogger.getLogger().getHandlers()) {
                 addHandler(handler);
             }

@@ -994,11 +994,13 @@ public class Megauploadcom extends PluginForHost {
             if (br.containsHTML("The file has been deleted because it was violating")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
-            final String filename = br.getRegex(">File name:</.*?txt2\">(.*?)</span").getMatch(0).trim();
-            final String filesize = br.getRegex(">File size:</.*?>(.*?)<").getMatch(0).trim();
+            String filename = br.getRegex(">File name:</.*?txt2\">(.*?)</span").getMatch(0);
+            String filesize = br.getRegex(">File size:</.*?>(.*?)<").getMatch(0);
             if (filename == null || filesize == null) {
                 l.setAvailable(false);
             } else {
+                filename = filename.trim();
+                filesize = filesize.trim();
                 /* maybe api check failed, then set name,size here */
                 if (l.getBooleanProperty("webcheck", false) == false) {
                     l.setName(filename.trim());
