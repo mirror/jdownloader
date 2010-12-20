@@ -227,6 +227,7 @@ public class Main {
     }
 
     public static void main(final String args[]) {
+        Main.LOG = JDLogger.getLogger();
         // Mac OS specific
         if (OSDetector.isMac()) {
             // Set MacApplicationName
@@ -242,7 +243,6 @@ public class Main {
         System.setProperty("java.net.preferIPv4Stack", "true");
         // Disable the GUI rendering on the graphic card
         System.setProperty("sun.java2d.d3d", "false");
-        Main.LOG = JDLogger.getLogger();
 
         Main.LOG.info("Start JDownloader");
 
