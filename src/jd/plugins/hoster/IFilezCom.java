@@ -42,16 +42,20 @@ public class IFilezCom extends PluginForHost {
         return "http://i-filez.com/terms";
     }
 
+    private static final String CAPTCHATEXT = "includes/vvc\\.php\\?vvcid=";
+
     // Linkchecker: http://i-filez.com/checkfiles (not usable, doesn't show
     // filesize)
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Set English language
+        br.setCookie("http://i-filez.com/", "sdlanguageid", "2");
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Файл не найден в базе i-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Файл не найден в базе i-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i-filez\\.com database|It is possible that you provided wrong link\\.</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
-        String filesize = br.getRegex("<th>Размер:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(Regex.getSize(filesize));
@@ -63,7 +67,15 @@ public class IFilezCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.postPage(downloadLink.getDownloadURL(), "s_pair=&FREE=%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C+%D0%B1%D0%B5%D1%81%D0%BF%D0%BB%D0%B0%D1%82%D0%BD%D0%BE");
+        String verifycode = br.getRegex("name=\"vvcid\" value=\"(\\d+)\"").getMatch(0);
+        if (verifycode == null) verifycode = br.getRegex("\\?vvcid=(\\d+)\"").getMatch(0);
+        if (!br.containsHTML(CAPTCHATEXT) || verifycode == null) {
+            logger.warning("Captchatext not found or verifycode null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String code = getCaptchaCode("http://i-filez.com/includes/vvc.php?vvcid=" + verifycode, downloadLink);
+        br.postPage(downloadLink.getDownloadURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&FREE=Download+for+free");
+        if (br.containsHTML(CAPTCHATEXT) || br.containsHTML(">The image code you entered is incorrect\\!<")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String additionalWaittime = br.getRegex("Для выдачи новой ссылки должно пройти не менее (\\d+) сек").getMatch(0);
         if (additionalWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(additionalWaittime) * 1001l);
         br.setFollowRedirects(false);
@@ -73,7 +85,7 @@ public class IFilezCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.deepHtmlDecode(dllink).trim();
-        int wait = 30;
+        int wait = 60;
         String regexedWaittime = br.getRegex("var sec=(\\d+);").getMatch(0);
         if (regexedWaittime != null) wait = Integer.parseInt(regexedWaittime);
         sleep(wait * 1001l, downloadLink);
