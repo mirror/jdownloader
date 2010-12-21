@@ -44,6 +44,9 @@ public class MotherLessCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter.toString());
         if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        // Common bug: It can happen that the texts that we use to differ
+        // between the kinds of links change so the decrypter breaks down,
+        // always check that first!
         if (br.containsHTML("The member uploaded this image for subscribers only")) {
             DownloadLink dl = createDownloadlink(parameter.toString().replace("motherless", "premiummotherlesspictures"));
             dl.setProperty("kind", "picture");
@@ -66,7 +69,7 @@ public class MotherLessCom extends PluginForDecrypt {
             String finalName = new Regex(filelink, "([A-Za-z0-9]+\\.flv)$").getMatch(0);
             if (finalName != null) dlink.setFinalFileName(finalName);
             decryptedLinks.add(dlink);
-        } else if (br.containsHTML("class=\"media_image\"")) {
+        } else if (!br.containsHTML("<strong>Uploaded</strong>")) {
             ArrayList<String> pages = new ArrayList<String>();
             pages.add("currentPage");
             String pagenumbers[] = br.getRegex("page=(\\d+)\"").getColumn(0);
@@ -75,40 +78,31 @@ public class MotherLessCom extends PluginForDecrypt {
                     if (!pages.contains(aPageNumer)) pages.add(aPageNumer);
                 }
             }
-            progress.setRange(pages.size());
-
             logger.info("Found " + pages.size() + " pages, decrypting now...");
             for (String getthepage : pages) {
                 if (!getthepage.equals("currentPage")) br.getPage(parameter.toString() + "?page=" + getthepage);
                 fpName = br.getRegex("<title>MOTHERLESS\\.COM - Moral Free Hosting : Galleries :(.*?)</title>").getMatch(0);
-                if (fpName == null) fpName = br.getRegex("<h1 style=\"font-size: 1.4em; font-weight: bold;\">(.*?)</h1>").getMatch(0);
-                String[] links = br.getRegex("<div class=\"media_image\" id=\".*?\">.*?<a href=\"(.*?)\">").getColumn(0);
-                if (links == null || links.length == 0) br.getRegex("<a href=\"(http://motherless\\.com/[A-Z0-9]+/[A-Z0-9]+)\"").getColumn(0);
+                if (fpName == null) {
+                    fpName = br.getRegex("<h1 style=\"font-size: 1.4em; font-weight: bold;\">(.*?)</h1>").getMatch(0);
+                    if (fpName == null) fpName = br.getRegex("<title>MOTHERLESS\\.COM - Go Ahead She Isn\\'t Looking\\! : Galleries : (.*?)</title>").getMatch(0);
+                }
+                String[] links = br.getRegex("id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a href=\"(/[A-Z0-9]+/[A-Z0-9]+)\"").getColumn(0);
+                progress.setRange(links.length);
                 if (links == null || links.length == 0) return null;
                 logger.info("Decrypting page " + getthepage + " which contains " + links.length + " links.");
                 for (String singlelink : links) {
-                    DownloadLink dl = createDownloadlink(singlelink);
+                    br.getPage("http://motherless.com" + singlelink);
+                    String finallink = getSingleLink();
+                    if (finallink == null) return null;
+                    DownloadLink dl = createDownloadlink(finallink.replace("motherless", "motherlesspictures"));
                     if (fpName != null) dl.setProperty("package", fpName);
                     decryptedLinks.add(dl);
+                    progress.increase(1);
                 }
-                progress.increase(1);
             }
         } else {
-            String finallink = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
-                if (finallink == null) {
-                    finallink = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
-                    if (finallink == null) {
-                        finallink = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
-                        if (finallink == null) {
-                            finallink = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
-                        }
-                    }
-                }
-            }
+            String finallink = getSingleLink();
             if (finallink == null) return null;
-            finallink = finallink.replace(REPLACE, "motherless");
             DownloadLink fina = createDownloadlink(finallink.replace("motherless", "motherlesspictures"));
             decryptedLinks.add(fina);
         }
@@ -118,5 +112,23 @@ public class MotherLessCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String getSingleLink() {
+        String finallink = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
+            if (finallink == null) {
+                finallink = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        finallink = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
+                    }
+                }
+            }
+        }
+        if (finallink != null) finallink = finallink.replace(REPLACE, "motherless");
+        return finallink;
     }
 }

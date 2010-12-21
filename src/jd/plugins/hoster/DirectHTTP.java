@@ -34,12 +34,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -184,7 +184,7 @@ public class DirectHTTP extends PluginForHost {
                 } else {
                     this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
                     if (this.id == null || this.id.equals("")) {
-                        this.id = this.br.getRegex("\\?k=([A-Za-z0-9%]+)\"").getMatch(0);
+                        this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+]+)\"").getMatch(0);
                     }
                     if (this.id == null || this.id.equals("")) {
                         JDLogger.getLogger().warning("reCaptcha ID couldn't be found...");
