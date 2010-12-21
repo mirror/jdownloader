@@ -106,7 +106,7 @@ public class TwoSharedCom extends PluginForHost {
         }
         String link = this.br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String result;
-        if (!this.br.containsHTML("\\+key")) {
+        if (!this.br.containsHTML("\\+key") && (link != null)) {
             final List<String> param = new ArrayList<String>();
             final Browser fn = this.br.cloneBrowser();
             if (!link.contains("\\d+")) {
@@ -127,10 +127,12 @@ public class TwoSharedCom extends PluginForHost {
             param.add(link);
             result = this.decrypt(0, param);
         } else {
-            result = link + this.br.getRegex("var key='(.*?)';").getMatch(0);
+            result = this.br.getRegex("window\\.location ='(.*?)';").getMatch(0);
+            // result = link + this.br.getRegex("var key='(.*?)';").getMatch(0);
         }
         if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        link = this.br.getPage(TwoSharedCom.MAINPAGE + result).trim();
+        // link = this.br.getPage(TwoSharedCom.MAINPAGE + result).trim();
+        link = result.trim();
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, link, true, 1);
         if (this.dl.getConnection().getContentType().contains("html") & (this.dl.getConnection().getURL().getQuery() == null)) {
             this.dl.getConnection().disconnect();

@@ -34,7 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -132,7 +131,7 @@ public class UpNitoSk extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            logger.warning("Javascript regex seems to be broken. This could cause errors...");
+            this.logger.warning("Javascript regex seems to be broken. This could cause errors...");
         }
         // dwToken
         final String thisDamnToken = new Regex(downloadLink.getDownloadURL(), "dwToken=([a-z0-9]+)").getMatch(0);
@@ -146,7 +145,7 @@ public class UpNitoSk extends PluginForHost {
             if (ttt != null) {
                 sleepTime = Integer.parseInt(ttt);
             } else {
-                logger.warning("Sleeptime regex seems to be broken. This could cause errors...");
+                this.logger.warning("Sleeptime regex seems to be broken. This could cause errors...");
             }
             this.sleep(sleepTime * 1001l, downloadLink);
         } else {
@@ -170,7 +169,7 @@ public class UpNitoSk extends PluginForHost {
         if (this.dl.getConnection().getContentType().contains("html")) {
             this.br.followConnection();
             if (this.br.containsHTML("Neplatne GWT overenie!")) {
-                logger.warning("Waittimehack is outdated!");
+                this.logger.warning("Waittimehack is outdated!");
             }
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
