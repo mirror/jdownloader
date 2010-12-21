@@ -353,6 +353,10 @@ public class Megauploadcom extends PluginForHost {
             if (!this.isPremium(account, this.br, true, false)) {
                 account.setValid(true);
                 ai.setStatus("Free Membership");
+                try {
+                    account.setMaxSimultanDownloads(1);
+                } catch (final Throwable e) {
+                }
                 return ai;
             }
         }
@@ -378,6 +382,10 @@ public class Megauploadcom extends PluginForHost {
         final String points = this.br.getRegex(Pattern.compile("Reward points available:.*?<strong>(\\d+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             ai.setPremiumPoints(Long.parseLong(points));
+        }
+        try {
+            account.setMaxSimultanDownloads(-1);
+        } catch (final Throwable e) {
         }
         account.setValid(true);
         return ai;

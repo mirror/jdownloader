@@ -177,6 +177,7 @@ public class JDPremium extends PluginOptional {
                 premShareHosts.put("ochload.org", "Ochloadorg");
                 premShareHosts.put("multishare.cz", "MultiShare");
                 premShareHosts.put("dwnld4me.com", "Download4Me");
+                premShareHosts.put("linksnappy.com", "LinkSnappycom");
                 int replaceIndex = 0;
                 for (String key : premShareHosts.keySet()) {
                     /* init replacePlugin */
