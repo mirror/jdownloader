@@ -25,10 +25,10 @@ import jd.utils.JDUtilities;
 
 public class HelpPage {
 
-    private static final long serialVersionUID = -7554703678938558791L;
+    private static final long            serialVersionUID = -7554703678938558791L;
 
-    private static ArrayList<Table> tables = null;
-    private static OptionalPluginWrapper rc = JDUtilities.getOptionalPlugin("remotecontrol");
+    private static ArrayList<Table>      tables           = null;
+    private static OptionalPluginWrapper rc               = JDUtilities.getOptionalPlugin("remotecontrol");
 
     public static ArrayList<Table> getTables() {
         return tables;
@@ -195,14 +195,20 @@ public class HelpPage {
         // Table: Edit linkgrabber packages
         t = createTable(new Table("Edit linkgrabber packages"));
 
-        t.setCommand("/action/grabber/add/archivepassword/%X%/%Y%");
+        t.setCommand("/action/grabber/set/archivepassword/%X%/%Y%");
         t.setInfo("Add an archive password %Y% to one or more packages with packagename %X% hold by the linkgrabber, each packagename seperated by a slash)");
 
-        t.setCommand("/action/grabber/join/%X%/%Y%");
-        t.setInfo("Join all denoted linkgrabber packages %Y%, each separated by a slash, to the package %X%");
+        t.setCommand("/action/grabber/set/downloaddir/%X%/%Y%");
+        t.setInfo("Set the download directory %Y% for a specific package %X%");
+
+        t.setCommand("/action/grabber/set/comment/%X%/%Y%");
+        t.setInfo("Set a comment %Y% for a specific package %X%");
 
         t.setCommand("/action/grabber/rename/%X%/%Y%");
         t.setInfo("Rename link grabber package from %X% to %Y%");
+
+        t.setCommand("/action/grabber/join/%X%/%Y%");
+        t.setInfo("Join all denoted linkgrabber packages %Y%, each separated by a slash, to the package %X%");
 
         t.setCommand("/action/grabber/confirmall");
         t.setInfo("Schedule all packages as download that are located in the link grabber");

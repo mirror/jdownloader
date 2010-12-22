@@ -591,11 +591,11 @@ public class Serverhandler implements Handler {
             }
 
             response.addContent("Container saved. (" + dlcfilestr + ")");
-        } else if (requestUrl.matches("(?is).*/action/grabber/add/archivepassword/.+/.+")) {
+        } else if (requestUrl.matches("(?is).*/action/grabber/set/archivepassword/.+/.+")) {
             // Add an archive password to package
 
-            final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/add/archivepassword/(.+)/.+").getMatch(0).split("/"));
-            final String password = new Regex(requestUrl, ".*/action/grabber/add/archivepassword/.+/(.+)").getMatch(0);
+            final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/set/archivepassword/(.+)/.+").getMatch(0).split("/"));
+            final String password = new Regex(requestUrl, ".*/action/grabber/set/archivepassword/.+/(.+)").getMatch(0);
 
             final ArrayList<LinkGrabberFilePackage> packages = LinkGrabberController.getInstance().getPackages();
             final ArrayList<LinkGrabberFilePackage> packagesWithPW = new ArrayList<LinkGrabberFilePackage>();
@@ -628,6 +628,46 @@ public class Serverhandler implements Handler {
                         response.addContent(", ");
                     }
                     response.addContent("'" + packagesWithPW.get(i).getName() + "'");
+                }
+            }
+        } else if (requestUrl.matches("(?is).*/action/grabber/set/downloaddir/.+/.+")) {
+            // set download directory for a single package
+
+            if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
+            } else {
+                final String[] params = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/set/downloaddir/(.+)").getMatch(0).split("/"));
+
+                synchronized (LinkGrabberController.ControllerLock) {
+                    final LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(params[0]);
+
+                    if (destPackage == null) {
+                        response.addContent("ERROR: Package '" + params[0] + "' not found!");
+                    } else {
+                        destPackage.setDownloadDirectory(params[1]);
+                        LinkGrabberController.getInstance().throwRefresh();
+                        response.addContent("Set '" + params[1] + "' as download directory for package: '" + params[0] + "'.");
+                    }
+                }
+            }
+        } else if (requestUrl.matches("(?is).*/action/grabber/set/comment/.+/.+")) {
+            // set download directory for a single package
+
+            if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
+            } else {
+                final String[] params = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/set/comment/(.+)").getMatch(0).split("/"));
+
+                synchronized (LinkGrabberController.ControllerLock) {
+                    final LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(params[0]);
+
+                    if (destPackage == null) {
+                        response.addContent("ERROR: Package '" + params[0] + "' not found!");
+                    } else {
+                        destPackage.setComment(params[1]);
+                        LinkGrabberController.getInstance().throwRefresh();
+                        response.addContent("Added comment '" + params[1] + "' to package: '" + params[0] + "'.");
+                    }
                 }
             }
         } else if (requestUrl.matches("(?is).*/action/grabber/join/.+")) {
