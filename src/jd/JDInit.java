@@ -362,9 +362,13 @@ public class JDInit {
                     try {
                         if (plg.isEnabled() && !plg.getPlugin().startAddon()) {
                             JDInit.LOG.severe("Error loading Optional Plugin:" + plg.getClassName());
+                            /* could not start, so set disabled again */
+                            plg.setEnabled(false);
                         }
                     } catch (final Throwable e) {
                         JDInit.LOG.severe("Error loading Optional Plugin: " + e.getMessage());
+                        /* could not start, so set disabled again */
+                        plg.setEnabled(false);
                         JDLogger.exception(e);
                     }
                 }

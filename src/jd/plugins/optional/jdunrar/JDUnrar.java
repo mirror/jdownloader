@@ -21,9 +21,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.filechooser.FileFilter;
 
+import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -542,6 +544,16 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
 
     @Override
     public boolean initAddon() {
+        ArrayList<OptionalPluginWrapper> pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
+        Collections.sort(pluginsOptional);
+
+        for (OptionalPluginWrapper pow : pluginsOptional) {
+            if (pow.getAnnotation().id().equals("extraction") && pow.isEnabled()) {
+                logger.warning("Disable extraction to use this plugin");
+                return false;
+            }
+        }
+
         menuAction = new MenuAction("optional.jdunrar.menu.extract.singlefils", "gui.images.addons.unrar") {
             private static final long serialVersionUID = -7569522709162921624L;
 

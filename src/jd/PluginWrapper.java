@@ -98,7 +98,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
     /**
      * @see PluginWrapper#ALWAYS_ENABLED
      */
-    private boolean                                     alwaysenabled   = false;
+    protected boolean                                   alwaysenabled   = false;
 
     /**
      * Usage and InitFlags created by <br> {@link PluginWrapper#CNL_2} <br>

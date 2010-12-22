@@ -476,9 +476,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
         for (OptionalPluginWrapper pow : pluginsOptional) {
             if (pow.getAnnotation().id().equals("unrar") || pow.getAnnotation().id().equals("hjsplit")) {
-                if (pow.isEnabled() || pow.isLoaded()) {
+                if (pow.isEnabled()) {
                     logger.warning("Disable unrar and hjsplit to use this plugin");
-                    // return false;
+                    return false;
                 }
             }
         }

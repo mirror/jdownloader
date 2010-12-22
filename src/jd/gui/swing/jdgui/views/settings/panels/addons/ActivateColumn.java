@@ -53,8 +53,6 @@ public class ActivateColumn extends ExtCheckColumn<OptionalPluginWrapper> {
     @Override
     protected void setBooleanValue(boolean value, OptionalPluginWrapper object) {
         if (value == object.isEnabled()) return;
-        config.setProperty(object.getConfigParamKey(), value);
-        config.save();
         if (value) {
             if (object.getPlugin().startAddon()) {
                 if (object.getAnnotation().hasGui()) {
@@ -69,6 +67,11 @@ public class ActivateColumn extends ExtCheckColumn<OptionalPluginWrapper> {
             object.getPlugin().setGuiEnable(false);
             object.getPlugin().stopAddon();
         }
+        /*
+         * we save enabled/disabled status here, plugin must be running when
+         * enabled
+         */
+        object.setEnabled(object.getPlugin().isRunning());
         AddonsMenu.getInstance().update();
         ConfigSidebar.getInstance(null).updateAddons();
         addons.updateShowcase();

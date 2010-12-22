@@ -20,9 +20,11 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.filechooser.FileFilter;
 
+import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,15 +66,15 @@ public class JDHJSplit extends PluginOptional {
     }
 
     private static final String CONFIG_KEY_REMOVE_MERGED = "REMOVE_MERGED";
-    private static final String DUMMY_HOSTER = "dum.my";
-    private static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
+    private static final String DUMMY_HOSTER             = "dum.my";
+    private static final String CONFIG_KEY_OVERWRITE     = "OVERWRITE";
 
-    private MenuAction menuAction = null;
+    private MenuAction          menuAction               = null;
 
     /**
      * Wird als reihe für anstehende extracthjobs verwendet
      */
-    private Jobber queue;
+    private Jobber              queue;
 
     public JDHJSplit(PluginWrapper wrapper) {
         super(wrapper);
@@ -553,6 +555,15 @@ public class JDHJSplit extends PluginOptional {
 
     @Override
     public boolean initAddon() {
+        ArrayList<OptionalPluginWrapper> pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
+        Collections.sort(pluginsOptional);
+
+        for (OptionalPluginWrapper pow : pluginsOptional) {
+            if (pow.getAnnotation().id().equals("extraction") && pow.isEnabled()) {
+                logger.warning("Disable extraction to use this plugin");
+                return false;
+            }
+        }
         menuAction = new MenuAction("optional.hjsplit.menu.extract.singlefils", "gui.images.addons.merge") {
             private static final long serialVersionUID = 8740837466603254496L;
 

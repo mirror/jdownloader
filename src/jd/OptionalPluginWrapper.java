@@ -19,6 +19,7 @@ package jd;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
+import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
@@ -33,10 +34,10 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return OPTIONAL_WRAPPER;
     }
 
-    private final String id;
-    private final double version;
-    private final String name;
-    private final String description;
+    private final String         id;
+    private final double         version;
+    private final String         name;
+    private final String         description;
     private final OptionalPlugin annotation;
 
     public OptionalPluginWrapper(Class<?> c, OptionalPlugin help) {
@@ -136,6 +137,16 @@ public class OptionalPluginWrapper extends PluginWrapper {
     @Override
     public boolean isEnabled() {
         return JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), annotation.defaultEnabled());
+    }
+
+    public void setEnabled(final boolean bool) {
+        if (!this.alwaysenabled) {
+            JDUtilities.getConfiguration().setProperty(getConfigParamKey(), bool);
+            JDUtilities.getConfiguration().save();
+            if (JDUtilities.getController() != null) {
+                DownloadController.getInstance().fireGlobalUpdate();
+            }
+        }
     }
 
 }
