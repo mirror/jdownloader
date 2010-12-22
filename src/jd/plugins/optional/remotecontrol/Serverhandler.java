@@ -55,10 +55,7 @@ import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
-import jd.plugins.optional.remotecontrol.utils.JSONException;
-import jd.plugins.optional.remotecontrol.utils.JSONObject;
 import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
-import jd.plugins.optional.remotecontrol.utils.XML;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
@@ -93,7 +90,7 @@ public class Serverhandler implements Handler {
     }
 
     private Element addFilePackage(final Document xml, final FilePackage fp) {
-        final Element element = xml.createElement("package");
+        final Element element = xml.createElement("packages");
         xml.getFirstChild().appendChild(element);
         element.setAttribute("package_name", fp.getName());
         element.setAttribute("package_percent", this.f.format(fp.getPercent()));
@@ -126,41 +123,14 @@ public class Serverhandler implements Handler {
     }
 
     private Element addGrabberPackage(final Document xml, final LinkGrabberFilePackage fp) {
-        final Element element = xml.createElement("package");
+        final Element element = xml.createElement("packages");
         xml.getFirstChild().appendChild(element);
         element.setAttribute("package_name", fp.getName());
         element.setAttribute("package_linkstotal", fp.size() + "");
         return element;
     }
 
-    private String getJSONString(Document xml, String jsoncallback) {
-        String jsonstr = "";
-
-        boolean isjsonp = false;
-
-        if (jsoncallback != null) {
-            isjsonp = true;
-        }
-
-        if (isjsonp) jsonstr += jsoncallback + "(";
-
-        try {
-            JSONObject jsonobject = XML.toJSONObject(JDUtilities.createXmlString(xml));
-            jsonstr += jsonobject.toString();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        if (isjsonp) jsonstr += ");";
-
-        if (jsonstr.equals("")) { return null; }
-
-        return jsonstr;
-    }
-
     public void finish(final Request req, final Response res) {
-        // TODO Auto-generated method stub
-
     }
 
     private String[] getHTMLDecoded(final String[] arr) {
@@ -182,8 +152,8 @@ public class Serverhandler implements Handler {
 
         String requestUrl = request.getRequestUrl();
 
-        boolean jsonresponse = Boolean.parseBoolean(request.getParameter("getjson"));
-        String jsoncallback = request.getParameter("jsoncallback");
+        response.setJSONFormat(Boolean.parseBoolean(request.getParameter("getjson")));
+        response.setCallbackJSONP(request.getParameter("jsonp_callback"));
 
         if (requestUrl.equals("/help")) {
             // Get help page
@@ -199,6 +169,7 @@ public class Serverhandler implements Handler {
             response.addContent(JDUtilities.getJDTitle());
         } else if (requestUrl.equals("/get/config")) {
             // Get config
+            // TODO: parse config to xml
 
             Property config = JDUtilities.getConfiguration();
             response.addContent("<pre>");
@@ -253,11 +224,7 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            if (jsonresponse) {
-                response.addContent(getJSONString(xml, jsoncallback));
-            } else {
-                response.addContent(JDUtilities.createXmlString(xml));
-            }
+            response.addContent(xml);
         } else if (requestUrl.matches("/get/grabber/count")) {
             // Get number of links in grabber
 
@@ -339,11 +306,7 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            if (jsonresponse) {
-                response.addContent(getJSONString(xml, jsoncallback));
-            } else {
-                response.addContent(JDUtilities.createXmlString(xml));
-            }
+            response.addContent(xml);
         } else if (requestUrl.equals("/get/downloads/current/list")) {
             // Get current DLs
 
@@ -357,11 +320,7 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            if (jsonresponse) {
-                response.addContent(getJSONString(xml, jsoncallback));
-            } else {
-                response.addContent(JDUtilities.createXmlString(xml));
-            }
+            response.addContent(xml);
         } else if (requestUrl.equals("/get/downloads/finished/list")) {
             // Get finished DLs
 
@@ -375,11 +334,7 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            if (jsonresponse) {
-                response.addContent(getJSONString(xml, jsoncallback));
-            } else {
-                response.addContent(JDUtilities.createXmlString(xml));
-            }
+            response.addContent(xml);
         } else if (requestUrl.matches("(?is).*/set/reconnect/(true|false)")) {
             // Set Reconnect enabled
 
@@ -1063,11 +1018,7 @@ public class Serverhandler implements Handler {
                 }
             }
 
-            if (jsonresponse) {
-                response.addContent(getJSONString(xml, jsoncallback));
-            } else {
-                response.addContent(JDUtilities.createXmlString(xml));
-            }
+            response.addContent(xml);
         } else if (requestUrl.matches("(?is).*/addon/.+")) {
             // search in addons
             final ArrayList<OptionalPluginWrapper> addons = OptionalPluginWrapper.getOptionalWrapper();
@@ -1086,13 +1037,9 @@ public class Serverhandler implements Handler {
 
             if (cmdResponse != null) {
                 if (cmdResponse instanceof String) {
-                    response.addContent(cmdResponse);
+                    response.addContent((String) cmdResponse);
                 } else if (cmdResponse instanceof Document) {
-                    if (jsonresponse) {
-                        response.addContent(getJSONString((Document) cmdResponse, jsoncallback));
-                    } else {
-                        response.addContent(JDUtilities.createXmlString((Document) cmdResponse));
-                    }
+                    response.addContent((Document) cmdResponse);
                 } else {
                     response.addContent(Serverhandler.ERROR_UNKNOWN_RESPONSE_TYPE);
                 }

@@ -23,38 +23,76 @@ import java.io.RandomAccessFile;
 import java.util.HashMap;
 
 import jd.nutils.encoding.Encoding;
+import jd.plugins.optional.remotecontrol.utils.JSONException;
+import jd.plugins.optional.remotecontrol.utils.JSONObject;
+import jd.plugins.optional.remotecontrol.utils.XML;
+import jd.utils.JDUtilities;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 public class Response {
 
-    public final static String OK = "200 OK";
+    public final static String OK        = "200 OK";
 
-    public final static String ERROR = "404 ERROR";
+    public final static String ERROR     = "404 ERROR";
 
-    public File fileServe = null;
+    public File                fileServe = null;
 
-    private StringBuilder data = new StringBuilder();
+    private StringBuilder      data      = new StringBuilder();
 
     public StringBuilder getData() {
         return data;
     }
 
-    private HashMap<String, String> headers = new HashMap<String, String>();
+    private HashMap<String, String> headers         = new HashMap<String, String>();
 
-    private String returnStatus = Response.OK;
+    private String                  returnStatus    = Response.OK;
 
-    private String returnType = "text/html";
+    private String                  returnType      = "text/html";
 
-    private long filestart = 0;
+    private long                    filestart       = 0;
 
-    private long fileend = -1;
+    private long                    fileend         = -1;
 
-    private long filesize = 0;
+    private long                    filesize        = 0;
 
-    private long fileBytesServed = -1;
+    private long                    fileBytesServed = -1;
 
-    private boolean range = false;
+    private boolean                 range           = false;
 
-    private Object additionalData = null;
+    private Object                  additionalData  = null;
+
+    private boolean                 handleJSONP     = false;
+
+    private String                  callbackJSONP   = null;
+
+    private boolean                 isJSONFormat    = false;
+
+    public String getCallbackJSONP() {
+        return callbackJSONP;
+    }
+
+    public void setCallbackJSONP(String callbackJSONP) {
+        this.handleJSONP = true;
+        this.callbackJSONP = callbackJSONP;
+    }
+
+    public boolean isHandleJSONP() {
+        return handleJSONP;
+    }
+
+    public void setHandleJSONP(boolean handleJSONP) {
+        this.handleJSONP = handleJSONP;
+    }
+
+    public boolean isJSONFormat() {
+        return isJSONFormat;
+    }
+
+    public void setJSONFormat(boolean isJSONFormat) {
+        this.isJSONFormat = isJSONFormat;
+    }
 
     public Response() {
     }
@@ -88,8 +126,48 @@ public class Response {
         this.returnStatus = returnStatus;
     }
 
+    private String xmlToJSONString(Document xml) {
+        String jsonstr = null;
+
+        try {
+            JSONObject jsonobject = XML.toJSONObject(JDUtilities.createXmlString(xml));
+            jsonstr = jsonobject.toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return jsonstr;
+    }
+
+    private String textToJSONString(String message, String jsoncallback) {
+        Document xml = JDUtilities.parseXmlString("<jdownloader></jdownloader>", false);
+        Element element = xml.createElement("mssg");
+        element.setTextContent(message);
+        xml.getFirstChild().appendChild(element);
+
+        return xmlToJSONString(xml);
+    }
+
     public void addContent(Object content) {
-        data.append(content.toString());
+        String datastr = content.toString();
+
+        if (content instanceof Document) {
+            if (isJSONFormat) {
+                datastr = xmlToJSONString((Document) content);
+            } else {
+                datastr = JDUtilities.createXmlString((Document) content);
+            }
+        } else if (content instanceof String) {
+            if (isJSONFormat) {
+                datastr = textToJSONString(datastr, callbackJSONP);
+            }
+        }
+
+        if (isJSONFormat && handleJSONP) {
+            datastr = callbackJSONP + "(" + datastr + ");";
+        }
+
+        data.append(datastr);
     }
 
     public void setReturnType(String returnType) {
@@ -174,5 +252,4 @@ public class Response {
             out.write(data.toString().getBytes("UTF-8"));
         }
     }
-
 }
