@@ -21,9 +21,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Timer;
+
 import javax.swing.filechooser.FileFilter;
 
+import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,37 +56,32 @@ import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision: 10523 $", defaultEnabled = true, id = "extraction", interfaceversion = 7)
 public class Extraction extends PluginOptional implements ControlListener, ExtractionListener, ActionListener {
-    private static final String DUMMY_HOSTER = "dum.my";
+    private static final String    DUMMY_HOSTER            = "dum.my";
 
-    private static final int EXTRACT_LINK = 1000;
+    private static final int       EXTRACT_LINK            = 1000;
 
-    private static final int EXTRACT_PACKAGE = 1001;
+    private static final int       EXTRACT_PACKAGE         = 1001;
 
-    private static final int OPEN_EXTRACT = 1002;
+    private static final int       OPEN_EXTRACT            = 1002;
 
-    private static final int SET_EXTRACT_TO = 1003;
+    private static final int       SET_EXTRACT_TO          = 1003;
 
-    private static final int SET_LINK_AUTOEXTRACT = 1005;
+    private static final int       SET_LINK_AUTOEXTRACT    = 1005;
 
-    private static final int SET_PACKAGE_AUTOEXTRACT = 1006;
+    private static final int       SET_PACKAGE_AUTOEXTRACT = 1006;
 
-    private static MenuAction menuAction = null;
+    private static MenuAction      menuAction              = null;
 
-    private Jobber queue;
-    
-    private Timer update = null;
+    private Jobber                 queue;
 
-    private ArrayList<IExtraction> extractors = new ArrayList<IExtraction>();
-    
-    private ArrayList<Archive> archives = new ArrayList<Archive>();
+    private Timer                  update                  = null;
+
+    private ArrayList<IExtraction> extractors              = new ArrayList<IExtraction>();
+
+    private ArrayList<Archive>     archives                = new ArrayList<Archive>();
 
     public Extraction(PluginWrapper wrapper) {
         super(wrapper);
-
-        this.queue = new Jobber(1);
-
-        initExtractors();
-        initConfig();
     }
 
     /**
@@ -93,29 +91,29 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         setExtractor(new HJSplt());
         setExtractor(new Multi());
     }
-    
+
     /**
      * Adds an ectraction plugin to the framework.
      * 
-     * @param extractor The exractor.
+     * @param extractor
+     *            The exractor.
      */
     public void setExtractor(IExtraction extractor) {
         extractors.add(extractor);
     }
-    
+
     /**
      * Checks if there is supported extractor.
      * 
-     * @param file Path of the packed file
+     * @param file
+     *            Path of the packed file
      * @return True if a extractor was found
      */
     private final boolean isLinkSupported(String file) {
         for (IExtraction extractor : extractors) {
-            if(extractor.isArchivSupported(file)) {
-                return true;
-            }
+            if (extractor.isArchivSupported(file)) { return true; }
         }
-        
+
         return false;
     }
 
@@ -130,10 +128,10 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getCaller() instanceof PluginForHost)) return;
             link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-            if(link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
+            if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
                 Archive archive = buildArchive(link);
-                
-                if(archive.isComplete() && !archive.isActive()) {
+
+                if (archive.isComplete() && !archive.isActive()) {
                     this.addToQueue(archive);
                 }
             }
@@ -143,10 +141,10 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 try {
                     File[] list = (File[]) event.getParameter();
                     for (File archiveStartFile : list) {
-                        if(isLinkSupported(archiveStartFile.getAbsolutePath())) {
+                        if (isLinkSupported(archiveStartFile.getAbsolutePath())) {
                             Archive ar = buildDummyArchive(archiveStartFile);
                             if (ar.isActive()) continue;
-                            
+
                             addToQueue(buildDummyArchive(archiveStartFile));
                         }
                     }
@@ -167,20 +165,20 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.extract", EXTRACT_LINK));
                 m.setIcon(getIconKey());
                 m.setActionListener(this);
-                
+
                 boolean isLocalyAvailable = new File(link.getFileOutput()).exists() || new File(link.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, link.getFileOutput())).exists();
-                
-                if(isLocalyAvailable && isLinkSupported(link.getFileOutput())) {
+
+                if (isLocalyAvailable && isLinkSupported(link.getFileOutput())) {
                     m.setEnabled(true);
                 } else {
                     m.setEnabled(false);
                 }
-                
+
                 m.setProperty("LINK", link);
                 container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT));
                 m.setActionListener(this);
                 m.setSelected(link.getFilePackage().isPostProcessing());
-                if(!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+                if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
                     m.setEnabled(false);
                 }
                 m.setProperty("LINK", link);
@@ -208,7 +206,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT));
                 m.setSelected(fp.isPostProcessing());
                 m.setActionListener(this);
-                if(!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+                if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
                     m.setEnabled(false);
                 }
                 m.setProperty("PACKAGE", fp);
@@ -251,19 +249,19 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         pwList.add(extractor.getArchiveName(archive.getFirstDownloadLink()));
         pwList.add(new File(archive.getFirstDownloadLink().getFileOutput()).getName());
         controller.setPasswordList(pwList);
-        
+
         archive.setActive(true);
-        
+
         extractor.setConfig(getPluginConfig());
 
         controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
         queue.add(controller);
-        
-        if(update == null) {
+
+        if (update == null) {
             update = new Timer("Extraction display update");
         }
         controller.setTimer(update);
-        
+
         queue.start();
 
         for (DownloadLink link1 : archive.getDownloadLinks()) {
@@ -353,21 +351,19 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             actionPerformedOnMenuItem((MenuAction) e.getSource());
         }
     }
-    
+
     private Archive buildArchive(DownloadLink link) {
-        for(Archive archive : archives) {
-            if(archive.getDownloadLinks().contains(link)) {
-                return archive;
-            }
+        for (Archive archive : archives) {
+            if (archive.getDownloadLinks().contains(link)) { return archive; }
         }
-        
+
         Archive archive = getExtractor(link).buildArchive(link);
-        
+
         archives.add(archive);
-        
+
         return archive;
     }
-    
+
     private Archive buildDummyArchive(File file) {
         DownloadLink link = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
         if (link == null) {
@@ -378,7 +374,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             fp.setDownloadDirectory(file.getParent());
             link.setFilePackage(fp);
         }
-        
+
         return buildArchive(link);
     }
 
@@ -434,7 +430,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         case SET_EXTRACT_TO:
             link = (DownloadLink) source.getProperty("LINK");
             Archive archive0 = buildArchive(link);
-            
+
             FileFilter ff = new FileFilter() {
                 @Override
                 public boolean accept(File pathname) {
@@ -447,7 +443,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     return JDL.L("plugins.optional.extraction.filefilter.extractto", "Extract Directory");
                 }
             };
-            
+
             File extractto = this.getExtractToPath(link);
             while (extractto != null && !extractto.isDirectory()) {
                 extractto = extractto.getParentFile();
@@ -475,6 +471,23 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
     @Override
     public boolean initAddon() {
+        ArrayList<OptionalPluginWrapper> pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
+        Collections.sort(pluginsOptional);
+
+        for (OptionalPluginWrapper pow : pluginsOptional) {
+            if (pow.getAnnotation().id().equals("unrar") || pow.getAnnotation().id().equals("hjsplit")) {
+                if (pow.isEnabled() || pow.isLoaded()) {
+                    logger.warning("Disable unrar and hjsplit to use this plugin");
+                    // return false;
+                }
+            }
+        }
+
+        this.queue = new Jobber(1);
+
+        initExtractors();
+        initConfig();
+
         if (menuAction == null) menuAction = new MenuAction("optional.extraction.menu.extract.singlefiles", getIconKey()) {
             private static final long serialVersionUID = -7569522709162921624L;
 
@@ -489,13 +502,11 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     @Override
                     public boolean accept(File pathname) {
                         if (pathname.isDirectory()) return true;
-                        
+
                         for (IExtraction extractor : extractors) {
-                            if(extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) {
-                                return true;
-                            }
+                            if (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) { return true; }
                         }
-                        
+
                         return false;
                     }
 
@@ -527,7 +538,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         final SubConfiguration subConfig = getPluginConfig();
 
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        
+
         config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDL.L("gui.config.extraction.use_extractto", "Use customized extract path")).setDefaultValue(false));
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, ExtractionConstants.CONFIG_KEY_UNRARPATH, JDL.L("gui.config.extraction.path", "Extract to")));
         ce.setDefaultValue(JDUtilities.getDefaultDownloadDirectory());
@@ -544,7 +555,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.extraction.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.extraction.deep_extract", "Deep-Extraction")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.extraction.remove_infofile", "Delete Infofile after extraction")).setDefaultValue(false));
-        
+
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, JDL.L("gui.config.extraction.additional_space", "Leave x MiB additional space after unpacking"), 1, 2048, 1).setDefaultValue(512));
 
         for (IExtraction extractor : extractors) {
@@ -598,7 +609,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     link.requestGuiUpdate();
                 }
             }
-            
+
             controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
@@ -670,7 +681,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     link.requestGuiUpdate();
                 }
             }
-            
+
             controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
@@ -681,7 +692,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 files[i++] = new File(f);
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(wrapper, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
-            
+
             for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
                 if (link == null) continue;
                 link.getLinkStatus().addStatus(LinkStatus.FINISHED);
@@ -689,16 +700,22 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 link.getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.extractok", "Extract OK"));
                 link.requestGuiUpdate();
             }
-            
-            //TODO
-//            if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
-//                File fileOutput = new File(controller.getArchiv().getFirstDownloadLink().getFileOutput());
-//                String packname = controller.getArchiv().getFirstDownloadLink().getFilePackage().getName();
-//                File infoFiles = new File(fileOutput.getParentFile(), packname.replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
-//                if (infoFiles.exists() && infoFiles.delete()) {
-//                    logger.info(infoFiles.getName() + " removed");
-//                }
-//            }
+
+            // TODO
+            // if
+            // (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE,
+            // false)) {
+            // File fileOutput = new
+            // File(controller.getArchiv().getFirstDownloadLink().getFileOutput());
+            // String packname =
+            // controller.getArchiv().getFirstDownloadLink().getFilePackage().getName();
+            // File infoFiles = new File(fileOutput.getParentFile(),
+            // packname.replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$",
+            // "") + ".info");
+            // if (infoFiles.exists() && infoFiles.delete()) {
+            // logger.info(infoFiles.getName() + " removed");
+            // }
+            // }
             controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
@@ -836,7 +853,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             break;
         }
     }
-    
+
     /**
      * Returns the extractor for the {@link DownloadLink}.
      * 
@@ -846,9 +863,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
     private IExtraction getExtractor(DownloadLink link) {
         for (IExtraction extractor : extractors) {
             try {
-                if(extractor.isArchivSupported(link.getFileOutput())) {
-                    return extractor.getClass().newInstance();
-                }
+                if (extractor.isArchivSupported(link.getFileOutput())) { return extractor.getClass().newInstance(); }
             } catch (InstantiationException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
