@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*" }, flags = { 2 })
@@ -175,12 +175,18 @@ public class EasyShareCom extends PluginForHost {
             String captchaAddress = server + "image?c=" + challenge;
             File cf = getLocalCaptchaFile();
             Browser.download(cf, rcBr.openGetConnection(captchaAddress));
-            Form form = br.getForm(3);
+            Form form = null;
+            Form[] allForms = br.getForms();
+            if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (Form singleForm : allForms)
+                if (singleForm.containsHTML("\"id\"") && !singleForm.containsHTML("lang_select")) {
+                    form = singleForm;
+                    break;
+                }
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode("recaptcha", cf, downloadLink);
-
             form.put("recaptcha_challenge_field", challenge);
             form.put("recaptcha_response_field", Encoding.urlEncode(code));
-
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
             if (!dl.getConnection().isContentDisposition()) {

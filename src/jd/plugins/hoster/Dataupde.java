@@ -38,17 +38,23 @@ public class Dataupde extends PluginForHost {
         return "http://dataup.to/agb";
     }
 
+    private static final String FILESIZEREGEX = "Gr\\&ouml;\\&szlig;e: (.*?)<br";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Die Datei wird gerade verarbeitet und steht in wenigen Minuten bereit\\!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"box_header\"><h1>Download: (.*?)</h1></div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("Name: (.*?)<br />").getMatch(0);
-        String filesize = br.getRegex("Gr\\&ouml;\\&szlig;e: (.*?)<br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("Name: (.*?)<br />").getMatch(0);
+            if (filename == null) filename = br.getRegex("Stream: (.*?)</").getMatch(0);
+        }
+        // Gr&ouml;&szlig;e: 174,61MB<br
+        String filesize = br.getRegex(FILESIZEREGEX).getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -56,12 +62,17 @@ public class Dataupde extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
-        this.setBrowserExclusive();
-        br.setCookie("http://www.dataup.to/", "language", "en");
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        // Skips the waittime
+        br.postPage(downloadLink.getDownloadURL(), "submitter=Weiter+zum+Stream");
+        // Often the download can't be started because of timeouts but at least
+        // we can find the filesize here
+        String filesize = br.getRegex(FILESIZEREGEX).getMatch(0);
+        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
         String dllink = br.getRegex("class=\"download\" href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://q\\d+\\.dataup\\.to:\\d+/download\\.php\\?id=\\d+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://q\\d+\\.dataup\\.to:\\d+/download/\\d+/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("type=\"video/divx\" src=\"(http://.*?)\"").getMatch(0);
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getLongContentLength() == 0) {
