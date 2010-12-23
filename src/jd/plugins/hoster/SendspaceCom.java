@@ -169,7 +169,7 @@ public class SendspaceCom extends PluginForHost {
             // Do we have to submit a form to enter the "free download area" for
             // the
             // file ?
-            if (br.getForm(1) != null) br.submitForm(br.getForm(1));
+            br.postPage(downloadLink.getDownloadURL(), "download=%C2%A0REGULAR+DOWNLOAD%C2%A0");
             if (br.containsHTML("You have reached your daily download limit")) {
                 int minutes = 0, hours = 0;
                 String tmphrs = br.getRegex("again in.*?(\\d+)h:.*?m or").getMatch(0);
@@ -289,6 +289,7 @@ public class SendspaceCom extends PluginForHost {
             if (untilm != null && untilh != null) wait = wait + Integer.parseInt(untilm);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily download limit", wait * 60 * 1000l);
         }
+        if (br.containsHTML("(>The file is not currently available|Our support staff have been notified and we hope to resolve the problem shortly)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.temporaryunavailable", "This file is not available at the moment!"));
         if (plugindefect) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 

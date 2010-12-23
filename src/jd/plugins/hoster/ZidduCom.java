@@ -51,7 +51,6 @@ public class ZidduCom extends PluginForHost {
         String capurl = form.getRegex("(/CaptchaSecurityImages\\.php\\?width=\\d+&height=\\d+&characters=\\d)").getMatch(0);
         if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String code = getCaptchaCode("http://downloads.ziddu.com" + capurl, downloadLink);
-
         form.put("securitycode", code);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
@@ -60,7 +59,8 @@ public class ZidduCom extends PluginForHost {
          * angenommen wird dass das Captcha falsch war.
          */
         if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
+            br.followConnection();
+            if (br.containsHTML("Oops The requested URL  was not found on this server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         }
         dl.startDownload();

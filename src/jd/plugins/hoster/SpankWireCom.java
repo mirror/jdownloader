@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -50,8 +51,8 @@ public class SpankWireCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://www.spankwire.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String matches = Encoding.htmlDecode(br.getRegex("videoPath: \"..(.*?)\"").getMatch(0));
-        if (matches == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String fileID = new Regex(downloadLink.getDownloadURL(), "spankwire\\.com/.*?/video(\\d+)").getMatch(0);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -59,7 +60,7 @@ public class SpankWireCom extends PluginForHost {
                 filename = br.getRegex("<meta name=\"Description\" content=\"(.*?)\"").getMatch(0);
             }
         }
-        String lookup = "http://cdn1.static.spankwire.com/Controls/UserControls/Players/v3" + matches;
+        String lookup = "http://cdn1.static.spankwire.com/Controls/UserControls/Players/v3/PlaylistXml.aspx?id=" + fileID;
         br.getPage(lookup);
         dllink = Encoding.htmlDecode(br.getRegex("url>(.*?)<").getMatch(0));
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

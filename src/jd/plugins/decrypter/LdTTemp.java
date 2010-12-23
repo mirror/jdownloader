@@ -39,39 +39,53 @@ public class LdTTemp extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.getPage(parameter);
-        for (int i = 0; i <= 5; i++) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, param);
-            rc.setCode(c);
-            if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch)")) continue;
-            if (br.containsHTML("das Falsche Captcha eingegeben")) {
-                sleep(60 * 1001l, param);
-                br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-                br.getPage(parameter);
-                continue;
-            }
-            break;
-        }
-        if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch|das Falsche Captcha eingegeben)")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String links[] = br.getRegex("<a href=\"(http.*?)\" target=\"_blank\" onclick=").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("First LdTTemp regex failed, trying the second one...");
-            links = HTMLParser.getHttpLinks(br.toString(), "");
-        }
-        if (links.length == 0) return null;
-        for (String finallink : links) {
-            if (!finallink.contains("iload.to") && !finallink.contains("lof.cc") && !finallink.endsWith(".gif") && !finallink.endsWith(".swf")) decryptedLinks.add(createDownloadlink(finallink));
-        }
+    public static final Object LOCK = new Object();
 
-        return decryptedLinks;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        synchronized (LOCK) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            String parameter = param.toString();
+            br.getPage(parameter);
+            String waittime = br.getRegex("<p>Du musst noch (\\d+) Sekunden warten bis du").getMatch(0);
+            if (waittime != null) {
+                int wait = Integer.parseInt(waittime);
+                if (wait > 80) {
+                    logger.warning("Limit erreicht!");
+                    logger.warning(br.toString());
+                    return null;
+                }
+                sleep(wait * 1001l, param);
+            }
+            for (int i = 0; i <= 5; i++) {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, param);
+                rc.setCode(c);
+                if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch)")) continue;
+                if (br.containsHTML("das Falsche Captcha eingegeben")) {
+                    sleep(60 * 1001l, param);
+                    br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+                    br.getPage(parameter);
+                    continue;
+                }
+                break;
+            }
+            if (br.containsHTML("(api.recaptcha.net|Das war leider Falsch|das Falsche Captcha eingegeben)")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            String links[] = br.getRegex("<a href=\"(http.*?)\" target=\"_blank\" onclick=").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("First LdTTemp regex failed, trying the second one...");
+                links = HTMLParser.getHttpLinks(br.toString(), "");
+            }
+            if (links.length == 0) return null;
+            for (String finallink : links) {
+                if (!finallink.contains("iload.to") && !finallink.contains("lof.cc") && !finallink.endsWith(".gif") && !finallink.endsWith(".swf")) decryptedLinks.add(createDownloadlink(finallink));
+            }
+
+            return decryptedLinks;
+        }
     }
 
 }
