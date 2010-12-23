@@ -54,7 +54,7 @@ public class HelpPage {
         t.setInfo("Get version");
 
         t.setCommand("/get/config");
-        t.setInfo("Get config");
+        t.setInfo("Get config (as XML)");
 
         t.setCommand("/get/ip");
         t.setInfo("Get IP");

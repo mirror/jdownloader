@@ -169,20 +169,21 @@ public class Serverhandler implements Handler {
             response.addContent(JDUtilities.getJDTitle());
         } else if (requestUrl.equals("/get/config")) {
             // Get config
-            // TODO: parse config to xml
 
             Property config = JDUtilities.getConfiguration();
-            response.addContent("<pre>");
+
+            Element element = xml.createElement("config");
+            xml.getFirstChild().appendChild(element);
 
             if (request.getParameters().containsKey("sub")) {
                 config = SubConfiguration.getConfig(request.getParameters().get("sub").toUpperCase());
             }
 
             for (final Entry<String, Object> next : config.getProperties().entrySet()) {
-                response.addContent(next.getKey() + " = " + next.getValue() + "\r\n");
+                element.setAttribute(next.getKey(), next.getValue() + "");
             }
 
-            response.addContent("</pre>");
+            response.addContent(xml);
         } else if (requestUrl.equals("/get/ip")) {
             // Get IP
 

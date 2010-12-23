@@ -74,7 +74,7 @@ public class Response {
     }
 
     public void setCallbackJSONP(String callbackJSONP) {
-        this.handleJSONP = true;
+        if (callbackJSONP != null) this.handleJSONP = true;
         this.callbackJSONP = callbackJSONP;
     }
 
