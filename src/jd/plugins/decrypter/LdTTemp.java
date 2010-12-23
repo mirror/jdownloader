@@ -50,7 +50,7 @@ public class LdTTemp extends PluginForDecrypt {
             if (waittime != null) {
                 int wait = Integer.parseInt(waittime);
                 if (wait > 80) {
-                    logger.warning("Limit erreicht!");
+                    logger.warning(wait + " Sekunden Wartezeit: Limit erreicht!");
                     logger.warning(br.toString());
                     return null;
                 }
