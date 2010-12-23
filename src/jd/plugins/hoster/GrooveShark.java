@@ -104,83 +104,47 @@ public class GrooveShark extends PluginForHost {
         return -1;
     }
 
-    private String getPostParameterString(Browser ajax, final String parameter, final String method, final String country) throws IOException {
-
+    private String getPostParameterString(final Browser ajax, final String parameter, final String method, final String country) throws IOException {
         ajax.getHeaders().put("Content-Type", "application/json");
         ajax.getHeaders().put("Referer", parameter);
         final String sid = this.br.getCookie(parameter, "PHPSESSID");
-        final String token = this.getSecretToken(ajax, method, JDHash.getMD5(sid), sid);
-        final String str = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":20100831," + country + ",\"uuid\":\"" + USERID + "\",\"session\":\"" + sid + "\",\"token\":\"" + token + "\"},\"method\":\"" + method + "\",";
+        final String secretKey = this.getSecretKey(ajax, JDHash.getMD5(sid), sid);
+        final String str = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":20100831," + country + ",\"uuid\":\"" + GrooveShark.USERID + "\",\"session\":\"" + sid + "\",\"token\":\"" + this.getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
         return str;
     }
 
-    private String getSecretToken(Browser ajax, final String method, final String token, final String sid) throws IOException {
+    private String getSecretKey(final Browser ajax, final String token, final String sid) throws IOException {
         ajax.getHeaders().put("Content-Type", "application/json");
-        String secretKey = "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"jsqueue\",\"clientRevision\":\"20100831.08\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERID + "\"},\"method\":\"getCommunicationToken\"}";
-        ajax.postPageRaw("https://cowbell.grooveshark.com/service.php", secretKey);
+        String secretKey = "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"20100831.08\",\"session\":\"" + sid + "\",\"uuid\":\"" + GrooveShark.USERID + "\"},\"method\":\"getCommunicationToken\"}";
+        ajax.postPageRaw("https://cowbell.grooveshark.com//more.php?getCommunicationToken", secretKey);
         secretKey = ajax.getRegex("result\":\"(.*?)\"").getMatch(0);
+        return secretKey;
+    }
+
+    private String getToken(final String method, final String secretKey) {
         final String lastRandomizer = this.makeNewRandomizer();
         final String z = lastRandomizer + JDHash.getSHA1(method + ":" + secretKey + ":quitStealinMahShit:" + lastRandomizer);
         return z;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        this.requestFileInformation(downloadLink);
-        String url = downloadLink.getDownloadURL();
-        if (new Regex(url, "grooveshark\\.com\\/song\\/\\d+").matches()) {
-            // converts from a virtual link to a real link
-            // we pass virtual links from decrypter, because we do not want to
-            // do a linkcheck when adding the link ... this would do too much
-            // requests.
-            this.br.getPage(GrooveShark.LISTEN);
-
-            Browser ajax = br;
-
-            String sid = this.br.getCookie(GrooveShark.LISTEN, "PHPSESSID");
-            String country = this.br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
-            String rawPost = this.getPostParameterString(ajax, LISTEN, "getTokenForSong", country);
-            rawPost = rawPost + "\"parameters\":{\"songID\":\"" + downloadLink.getStringProperty("SongID") + "\"," + country + "}}";
-            ajax.getHeaders().put("Content-Type", "application/json");
-            ajax.postPageRaw(LISTEN + "more.php?getTokenForSong", rawPost);
-
-            String token = ajax.getRegex("Token\":\"(\\w+)\"").getMatch(0);
-            final String Name = downloadLink.getStringProperty("Name").replace(" ", "_").replaceAll("\\?", "");
-            String dllink = LISTEN + "s/" + Name + "/" + token;
-
-            downloadLink.setUrlDownload(dllink);
-            token = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
-
-            this.br.getHeaders().put("Content-Type", "application/json");
-            this.br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-
-            handleDownload(downloadLink, country, sid, token);
-        } else {
-            // direct links..
-            // countrystring
-            this.br.getPage(GrooveShark.LISTEN);
-            final String country = this.br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
-            // get SongID
-            this.br.getHeaders().put("Content-Type", "application/json");
-            this.br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-            final String sid = this.br.getCookie(GrooveShark.LISTEN, "PHPSESSID");
-            final String Token = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
-            handleDownload(downloadLink, country, sid, Token);
-        }
-    }
-
     private void handleDownload(final DownloadLink downloadLink, final String country, final String sid, final String token) throws IOException, Exception, PluginException {
-        String songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":20100831," + country + ",\"uuid\":\"" + GrooveShark.USERID + "\",\"session\":\"" + sid + "\",\"token\":\"" + this.makeNewRandomizer() + JDHash.getSHA1(sid) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + token + "\"," + country + "}}";
+        // pro Titel ein secretKey
+        // pro Request ein neuer Tokenhash(getToken)
+        final String secretKey = this.getSecretKey(this.br, JDHash.getMD5(sid), sid);
+        // get songID
+        String songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":20100831," + country + ",\"uuid\":\"" + GrooveShark.USERID + "\",\"session\":\"" + sid + "\",\"token\":\"" + this.getToken("getSongFromToken", secretKey) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + token + "\"," + country + "}}";
+        this.br.getHeaders().put("Content-Type", "application/json");
         this.br.postPageRaw(GrooveShark.LISTEN + "more.php?getSongFromToken", songID);
         songID = this.br.getRegex("SongID\":\"(\\d+)\"").getMatch(0);
         // get streamKey
-        final String mysecretKey = this.getSecretToken(br, "getStreamKeyFromSongIDEx", JDHash.getMD5(sid), sid);
         this.br.getHeaders().put("Content-Type", "application/json");
         this.br.getHeaders().put("Referer", "http://listen.grooveshark.com/JSQueue.swf?20101203.14");
         this.br.getHeaders().put("x-flash-version", "10,1,53,64");
-        String streamKey = "{\"parameters\":{" + country + ",\"prefetch\":true,\"songID\":" + songID + ",\"mobile\":false},\"header\":{\"privacy\":0,\"token\":\"" + mysecretKey + "\",\"session\":\"" + sid + "\"," + country + ",\"uuid\":\"" + GrooveShark.USERID + "\",\"client\":\"jsqueue\",\"clientRevision\":\"20101012.36\"},\"method\":\"getStreamKeyFromSongIDEx\"}";
+        String streamKey = "{\"parameters\":{" + country + ",\"prefetch\":true,\"songID\":" + songID + ",\"mobile\":false},\"header\":{\"privacy\":0,\"token\":\"" + this.getToken("getStreamKeyFromSongIDEx", secretKey) + "\",\"session\":\"" + sid + "\"," + country + ",\"uuid\":\"" + GrooveShark.USERID + "\",\"client\":\"jsqueue\",\"clientRevision\":\"20101012.36\"},\"method\":\"getStreamKeyFromSongIDEx\"}";
         this.br.postPageRaw(GrooveShark.COWBELL + "more.php?getStreamKeyFromSongIDEx", streamKey);
-        streamKey = "streamKey=" + this.br.getRegex("streamKey\":\"(\\w+)\"").getMatch(0).replace("_", "%5F");
+        streamKey = this.br.getRegex("streamKey\":\"(\\w+)\"").getMatch(0);
+        if (streamKey == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        streamKey = "streamKey=" + streamKey.replace("_", "%5F");
         final String ip = this.br.getRegex("ip\":\"(.*?)\"").getMatch(0);
         final String dllink = "http://" + ip + "/stream.php";
 
@@ -193,6 +157,45 @@ public class GrooveShark extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        this.requestFileInformation(downloadLink);
+        final String url = downloadLink.getDownloadURL();
+        if (new Regex(url, "grooveshark\\.com\\/song\\/\\d+").matches()) {
+            // converts from a virtual link to a real link
+            // we pass virtual links from decrypter, because we do not want to
+            // do a linkcheck when adding the link ... this would do too much
+            // requests.
+            this.br.getPage(GrooveShark.LISTEN);
+            final Browser ajax = this.br;
+            final String sid = this.br.getCookie(GrooveShark.LISTEN, "PHPSESSID");
+            final String country = this.br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
+            String rawPost = this.getPostParameterString(ajax, GrooveShark.LISTEN, "getTokenForSong", country);
+            rawPost = rawPost + "\"parameters\":{\"songID\":\"" + downloadLink.getStringProperty("SongID") + "\"," + country + "}}";
+            ajax.getHeaders().put("Content-Type", "application/json");
+            ajax.postPageRaw(GrooveShark.LISTEN + "more.php?getTokenForSong", rawPost);
+            String token = ajax.getRegex("Token\":\"(\\w+)\"").getMatch(0);
+            final String Name = downloadLink.getStringProperty("Name").replace(" ", "_").replaceAll("\\?", "");
+            final String dllink = GrooveShark.LISTEN + "s/" + Name + "/" + token;
+            downloadLink.setUrlDownload(dllink);
+            token = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
+            this.br.getHeaders().put("Content-Type", "application/json");
+            this.br.getHeaders().put("Referer", downloadLink.getDownloadURL());
+            this.handleDownload(downloadLink, country, sid, token);
+        } else {
+            // direct links..
+            // countrystring
+            this.br.getPage(GrooveShark.LISTEN);
+            final String country = this.br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
+            // get SongID
+            this.br.getHeaders().put("Content-Type", "application/json");
+            this.br.getHeaders().put("Referer", downloadLink.getDownloadURL());
+            final String sid = this.br.getCookie(GrooveShark.LISTEN, "PHPSESSID");
+            final String Token = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
+            this.handleDownload(downloadLink, country, sid, Token);
+        }
     }
 
     private String makeNewRandomizer() {
@@ -209,16 +212,14 @@ public class GrooveShark extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        String url = downloadLink.getDownloadURL();
+        final String url = downloadLink.getDownloadURL();
         if (new Regex(url, "grooveshark\\.com\\/song\\/\\d+").matches()) {
-
             return AvailableStatus.TRUE;
         } else {
             this.br.getPage(url);
             if (this.br.containsHTML("not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            String[] filenm = br.getRegex("<h1 class=\"song\">(.*?)by\\s+<a href=\".*?\" rel=\"artist parent\" rev=\"child\">(.*?)</a>.*?on.*?<a href=.*? rel=\"album parent\" rev=\"child\">(.*?)</a>.*?</h1>").getRow(0);
+            final String[] filenm = this.br.getRegex("<h1 class=\"song\">(.*?)by\\s+<a href=\".*?\" rel=\"artist parent\" rev=\"child\">(.*?)</a>.*?on.*?<a href=.*? rel=\"album parent\" rev=\"child\">(.*?)</a>.*?</h1>").getRow(0);
             final String filename = filenm[1].trim() + " - " + filenm[2].trim() + " - " + filenm[0].trim() + ".mp3";
-
             if (filename != null) {
                 downloadLink.setName(filename.trim());
             }
