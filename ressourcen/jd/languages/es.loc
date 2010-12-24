@@ -1451,6 +1451,7 @@ plugins.hoster.scribdcom.errors.nofreedownloadlink = Solo disponible para usuari
 plugins.hoster.scribdcom.nodownloadavailable = La descarga esta deshabilitada para este archivo!
 plugins.hoster.sendspacecom.errors.servererror = Error del servidor
 plugins.hoster.sendspacecom.errors.serverfull = No hay slots gratuitos disponibles
+plugins.hoster.sendspacecom.errors.temporaryunavailable = Temporalmente no disponible
 plugins.hoster.sendspacepl.only4premium = Solo disponible para usuarios Premium
 plugins.hoster.sharebaseto.errors.maintenance = Trabajos de mantenimiento en progreso
 plugins.hoster.sharebaseto.errors.toomanyusers = Demasiados usuarios
