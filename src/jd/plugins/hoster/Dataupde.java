@@ -50,7 +50,6 @@ public class Dataupde extends PluginForHost {
             filename = br.getRegex("Name: (.*?)<br />").getMatch(0);
             if (filename == null) filename = br.getRegex("Stream: (.*?)</").getMatch(0);
         }
-        // Gr&ouml;&szlig;e: 174,61MB<br
         String filesize = br.getRegex(FILESIZEREGEX).getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());

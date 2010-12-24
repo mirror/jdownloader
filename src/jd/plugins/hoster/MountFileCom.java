@@ -19,8 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -44,9 +44,12 @@ public class MountFileCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("share.", ""));
     }
 
+    private static final String MAINPAGE = "http://mountfile.com/";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://mountfile.com/", "language", "en_us");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("File not found or System under maintanence\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -63,18 +66,31 @@ public class MountFileCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String bigWaittime = br.getRegex("id=\"down_interval\">(\\d+)</span>").getMatch(0);
+        if (bigWaittime == null) bigWaittime = br.getRegex("style=\"font-size: 28px; color: green;\">(\\d+)</span> minutes</span>").getMatch(0);
         if (bigWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(bigWaittime) * 60 * 1001l);
+        if (br.containsHTML(">You reached your hourly traffic limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         // The little waittime is skippable atm.
         // int waitThis = 30;
         // String littleWaittime =
-        // br.getRegex("style=\"font-size: 30px; color: green;\">(\\d+)</span> seconds").getMatch(0);
-        // if (littleWaittime != null) waitThis =
-        // Integer.parseInt(littleWaittime);
+        // br.getRegex(">\\&nbsp;\\&nbsp;(\\d+) seconds").getMatch(0);
+        // if (littleWaittime != null) {
+        // logger.info("Regexed waittime: " + littleWaittime + " seconds");
+        // waitThis = Integer.parseInt(littleWaittime);
+        // }
         // sleep(waitThis * 1001l, downloadLink);
-        br.getPage(downloadLink.getDownloadURL().replace("file/", "file/down/") + ".html");
-        Form dlform = br.getFormbyProperty("id", "down_from");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        String userid = new Regex(downloadLink.getDownloadURL(), "mountfile\\.com/file/(.*?)/").getMatch(0);
+        String fileid = new Regex(downloadLink.getDownloadURL(), "mountfile\\.com/file/.*?/(.+)").getMatch(0);
+        if (userid == null || fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://mountfile.com/file/down/" + userid + "/" + fileid + ".html");
+        String vid = br.getRegex("name=\"vid\" value=\"(.*?)\"").getMatch(0);
+        String vid1 = br.getRegex("setCookie\\(\"vid1\", \"(.*?)\"").getMatch(0);
+        String vid2 = br.getRegex("setCookie\\(\"vid2\", \"(.*?)\"").getMatch(0);
+        if (vid == null || vid1 == null || vid2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Those cookies are important, no downloadstart without them!
+        br.setCookie(MAINPAGE, "vid1", vid1);
+        br.setCookie(MAINPAGE, "vid2", vid2);
+        String postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://dl1.mountfile.com/view", postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
