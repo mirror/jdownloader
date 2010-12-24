@@ -16,10 +16,11 @@
 
 package jd.plugins.optional.antireconnect;
 
+import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-
 
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
@@ -27,43 +28,40 @@ import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
-import java.io.IOException;
-import java.net.InetAddress;
-
-
 public class JDAntiReconnectThread extends Thread implements Runnable {
 
-    private boolean running = true;
-    private boolean run = false;
-    private boolean clients = false;
-    private ArrayList<String> iplist = new ArrayList<String>();
-    private String lastIpsString = "";
-    private String lastIp = "";
-    private final Logger logger;
+    private boolean               running       = true;
+    private boolean               run           = false;
+    private boolean               clients       = false;
+    private ArrayList<String>     iplist        = new ArrayList<String>();
+    private String                lastIpsString = "";
+    private String                lastIp        = "";
+    private final Logger          logger;
     private final JDAntiReconnect jdAntiReconnect;
-
 
     public JDAntiReconnectThread(JDAntiReconnect jdAntiReconnect) {
         super();
         this.logger = JDLogger.getLogger();
         this.jdAntiReconnect = jdAntiReconnect;
     }
+
     public void parselist(String ipString) {
-        if (ipString != lastIpsString){
+        if (ipString == null) return;
+        if (ipString != lastIpsString) {
             lastIpsString = ipString;
             iplist.clear();
-            
+
             String[] iparray = ipString.replaceAll(" ", "").split("\\s");
-            for(int i = 0; i < iparray.length; i++){
-                if (iparray[i].indexOf("-") == -1){
-                    if(validateIP(iparray[i])){
+            for (int i = 0; i < iparray.length; i++) {
+                if (iparray[i].indexOf("-") == -1) {
+                    if (validateIP(iparray[i])) {
                         iplist.add(iparray[i]);
                     }
                 } else {
                     final Pattern IP_PATTERN = Pattern.compile("(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
                     if (IP_PATTERN.matcher(iparray[i]).matches()) {
                         Regex paramid = new Regex(iparray[i], "(\\d+\\.\\d+\\.\\d+)\\.(\\d+)-(\\d+)");
-                        for(int u = Integer.valueOf(paramid.getMatch(1)); u < Integer.valueOf(paramid.getMatch(2)); u++){
+                        for (int u = Integer.valueOf(paramid.getMatch(1)); u < Integer.valueOf(paramid.getMatch(2)); u++) {
                             iplist.add(paramid.getMatch(0) + "." + u);
                         }
                     }
@@ -71,50 +69,48 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
             }
         }
     }
-    
 
-    
     public void run() {
         while (running) {
             try {
-                
-                    switch (jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_MODE")) {
-                    case 0:
-                        if (run) {
-                            run = false;
-                            this.setClients(false);
-                        }
-                        break;
-                    case 1:
 
-                        if (!run) {
-                            run = true;
-                            logger.fine("JDAntiReconnect: Start");
-                        }
-                        parselist(jdAntiReconnect.getPluginConfig().getStringProperty("CONFIG_IPS"));
-                        this.clients = false;
-                        PingClients();
-                        if (!this.clients) this.setClients(false);
-                        break;
-                        
-                    case 2:
-                        if (!run) {
-                            run = true;
-                            logger.fine("JDAntiReconnect: Start");
-                        }
-                        parselist(jdAntiReconnect.getPluginConfig().getStringProperty("CONFIG_IPS"));
-                        this.clients = false;
-                        ARPClients();
-                        if (!this.clients) this.setClients(false);
-                        break;
-                    default:
-                        logger.finest("JDAntiReconnect: Config error");
-
+                switch (jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_MODE", 0)) {
+                case 0:
+                    if (run) {
+                        run = false;
+                        this.setClients(false);
                     }
+                    break;
+                case 1:
 
-                Thread.sleep(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_EACH"));
+                    if (!run) {
+                        run = true;
+                        logger.fine("JDAntiReconnect: Start");
+                    }
+                    parselist(jdAntiReconnect.getPluginConfig().getStringProperty("CONFIG_IPS"));
+                    this.clients = false;
+                    PingClients();
+                    if (!this.clients) this.setClients(false);
+                    break;
+
+                case 2:
+                    if (!run) {
+                        run = true;
+                        logger.fine("JDAntiReconnect: Start");
+                    }
+                    parselist(jdAntiReconnect.getPluginConfig().getStringProperty("CONFIG_IPS"));
+                    this.clients = false;
+                    ARPClients();
+                    if (!this.clients) this.setClients(false);
+                    break;
+                default:
+                    logger.finest("JDAntiReconnect: Config error");
+                    jdAntiReconnect.getPluginConfig().setProperty("CONFIG_MODE", 0);
+                }
+
+                Thread.sleep(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_EACH", 10000));
             } catch (InterruptedException e) {
-            
+
             }
         }
         logger.fine("JDAntiReconnect: Terminated");
@@ -123,12 +119,11 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
     public void setRunning(boolean running) {
         this.running = running;
     }
-    
-    
-    public boolean PingClients(){
-        if (lastIp != ""){
+
+    public boolean PingClients() {
+        if (lastIp != "") {
             try {
-                if(InetAddress.getByName(lastIp).isReachable(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_TIMEOUT"))){
+                if (InetAddress.getByName(lastIp).isReachable(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_TIMEOUT"))) {
                     this.setClients(true);
                     return true;
                 } else {
@@ -140,7 +135,7 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
         }
         for (String i : iplist) {
             try {
-                if(InetAddress.getByName(i).isReachable(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_TIMEOUT"))){
+                if (InetAddress.getByName(i).isReachable(jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_TIMEOUT"))) {
                     this.setClients(true);
                     lastIp = i;
                     logger.fine("JDAntiReconnect: Online " + i);
@@ -149,15 +144,15 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
             } catch (Exception e) {
                 logger.fine("JDAntiReconnect: IO-Exception");
             }
-            
-         }
+
+        }
         return false;
     }
-    
-    public boolean ARPClients(){
-        if (lastIp != ""){
+
+    public boolean ARPClients() {
+        if (lastIp != "") {
             try {
-                if(callArpTool(lastIp)){
+                if (callArpTool(lastIp)) {
                     this.setClients(true);
                     return true;
                 } else {
@@ -165,11 +160,11 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
                 }
             } catch (Exception e) {
                 logger.fine("JDAntiReconnect: IO-Exception");
-            }          
+            }
         }
         for (String i : iplist) {
             try {
-                if(callArpTool(i)){
+                if (callArpTool(i)) {
                     this.setClients(true);
                     lastIp = i;
                     logger.fine("JDAntiReconnect: Client Online " + i);
@@ -179,17 +174,17 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
                 logger.fine("JDAntiReconnect: IO-Exception");
             }
 
-            
         }
         return false;
     }
+
     public void setClients(boolean clients2) {
-        if (this.clients != clients2){
+        if (this.clients != clients2) {
             this.clients = clients2;
-            if(clients2 == true){
+            if (clients2 == true) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, jdAntiReconnect.getPluginConfig().getBooleanProperty("CONFIG_NEWRECONNECT"));
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWDOWNLOADS"));
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWSPEED"));  
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_NEWSPEED"));
             } else {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, jdAntiReconnect.getPluginConfig().getBooleanProperty("CONFIG_OLDRECONNECT"));
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, jdAntiReconnect.getPluginConfig().getIntegerProperty("CONFIG_OLDDOWNLOADS"));
@@ -197,32 +192,30 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
             }
         }
     }
+
     private static boolean callArpTool(final String ipAddress) throws IOException, InterruptedException {
 
         if (OSDetector.isWindows()) { return callArpToolWindows(ipAddress); }
-           
-        if (callArpToolDefault(ipAddress) == null) { 
-            return false; 
+
+        if (callArpToolDefault(ipAddress) == null) {
+            return false;
         } else {
-            return true; 
+            return true;
         }
     }
-    
+
     /**
-     * Validates the givvei ip. a) checks if it is a valid IP adress (regex) 
+     * Validates the givvei ip. a) checks if it is a valid IP adress (regex)
      * 
      * @param iPaddress
      * @return
      */
     public static boolean validateIP(final String iPaddress) {
         final Pattern IP_PATTERN = Pattern.compile("(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
-        if (IP_PATTERN.matcher(iPaddress).matches()) {
-            return true;
-        }
+        if (IP_PATTERN.matcher(iPaddress).matches()) { return true; }
         return false;
-    } 
-    
-    
+    }
+
     private static String callArpToolDefault(final String ipAddress) throws IOException, InterruptedException {
         String out = null;
         final InetAddress hostAddress = InetAddress.getByName(ipAddress);

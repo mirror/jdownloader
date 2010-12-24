@@ -33,12 +33,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
@@ -197,8 +197,8 @@ public class DepositFiles extends PluginForHost {
         setLangtoGer();
         br.getPage("http://depositfiles.com/de/gold/payment.php");
         Form login = br.getFormBySubmitvalue("Anmelden");
-        login.put("login", account.getUser());
-        login.put("password", account.getPass());
+        login.put("login", Encoding.urlEncode(account.getUser()));
+        login.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(login);
         br.setFollowRedirects(false);
         String cookie = br.getCookie("http://depositfiles.com", "autologin");
@@ -270,6 +270,7 @@ public class DepositFiles extends PluginForHost {
         setLangtoGer();
         br.getPage("http://depositfiles.com/de/gold/");
         if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) return true;
+        if (br.containsHTML("So lange haben Sie noch den Gold-Zugriff")) return false;
         if (br.containsHTML(">Goldmitgliedschaft<")) return false;
         if (br.containsHTML("noch den Gold-Zugriff")) return false;
         return true;
