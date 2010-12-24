@@ -445,6 +445,19 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
             if (alllinks.isEmpty()) return;
             new DeleteAction(alllinks).actionPerformed(null);
         }
+        if ((e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_DOWN) && linkgrabber.isFilePackageInfoVisible(null)) {
+
+            int[] rows = getSelectedRows();
+
+            Object element = getValueAt(rows[0], 0);
+            if (linkgrabber.isFilePackageInfoVisible(element)) {
+                linkgrabber.hideFilePackageInfo();
+            } else if (element != null && element instanceof LinkGrabberFilePackage) {
+                linkgrabber.showFilePackageInfo((LinkGrabberFilePackage) element);
+            } else {
+                linkgrabber.showFilePackageInfo(LinkGrabberController.getInstance().getFPwithLink((DownloadLink) element));
+            }
+        }
     }
 
     public void keyPressed(KeyEvent arg0) {
