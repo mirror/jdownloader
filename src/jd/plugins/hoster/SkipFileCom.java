@@ -36,15 +36,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadstore.net" }, urls = { "http://(www\\.)?uploadstore\\.net/[a-z0-9]{12}" }, flags = { 0 })
-public class UploadStoreNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "skipfile.com" }, urls = { "http://(www\\.)?skipfile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class SkipFileCom extends PluginForHost {
 
-    public UploadStoreNet(PluginWrapper wrapper) {
+    public SkipFileCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(10 * 1000l);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.0.0.0, added one extra filesize regex
+    // XfileSharingProBasic Version 2.0.1.0
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -53,7 +54,7 @@ public class UploadStoreNet extends PluginForHost {
     private String              BRBEFORE      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST   = "http://uploadstore.net";
+    private static final String COOKIE_HOST   = "http://skipfile.com";
     public boolean              NOPREMIUM     = false;
 
     @Override
@@ -63,7 +64,7 @@ public class UploadStoreNet extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<") || BRBEFORE.contains(">The file was removed by administrator<") || BRBEFORE.contains("Reason of deletion:") || BRBEFORE.contains("class=\"err\">DMCA File</b>")) {
+        if (BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -88,7 +89,6 @@ public class UploadStoreNet extends PluginForHost {
             filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) filesize = new Regex(BRBEFORE, "<span>\\|</span> <strong>(.*?)</strong>").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -136,7 +136,7 @@ public class UploadStoreNet extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Ticket Time (can be skipped right now
+        // Ticket Time, can be skipped at the moment
         // String ttt = new Regex(BRBEFORE,
         // "countdown\">.*?(\\d+).*?</span>").getMatch(0);
         // if (ttt == null) ttt = new Regex(BRBEFORE,
@@ -222,35 +222,23 @@ public class UploadStoreNet extends PluginForHost {
             if (password) {
                 passCode = handlePassword(passCode, DLForm, downloadLink);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
+            br.submitForm(DLForm);
             logger.info("Submitted DLForm");
         }
-        boolean error = false;
+        doSomething();
+        checkErrors(downloadLink, true, passCode, loggedIn);
+        dllink = getDllink();
         if (dllink == null) {
-            try {
-                if (dl.getConnection().getContentType().contains("html")) error = true;
-            } catch (Exception e) {
-                error = true;
-            }
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (error) {
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            logger.info("followed connection...");
-            doSomething();
-            checkErrors(downloadLink, true, passCode, loggedIn);
-            dllink = getDllink();
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            checkServerErrors();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -266,7 +254,7 @@ public class UploadStoreNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
@@ -399,7 +387,10 @@ public class UploadStoreNet extends PluginForHost {
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
-            if (finallink == null) finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
+                if (finallink == null) finallink = new Regex(decoded, "s1\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+            }
         }
         return finallink;
     }
