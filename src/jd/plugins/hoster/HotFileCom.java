@@ -62,9 +62,9 @@ public class HotFileCom extends PluginForHost {
         setConfigElements();
     }
 
-    private HashMap<String, String> callAPI(final Browser br, final String action, final Account account, final HashMap<String, String> addParams) throws Exception {
+    private HashMap<String, String> callAPI(final Browser brr, final String action, final Account account, final HashMap<String, String> addParams) throws Exception {
         if (action == null || action.length() == 0) { return null; }
-        Browser tbr = br;
+        Browser tbr = brr;
         if (tbr == null) {
             tbr = new Browser();
         }
@@ -73,6 +73,7 @@ public class HotFileCom extends PluginForHost {
         post.put("action", action);
         if (account != null) {
             /* do not remove */
+            if (account.getPass() == null || account.getUser() == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             final String pwMD5 = JDHash.getMD5(account.getPass().trim());
             post.put("passwordmd5", pwMD5);
             post.put("username", Encoding.urlEncode(account.getUser().trim()));
@@ -184,7 +185,13 @@ public class HotFileCom extends PluginForHost {
             return ai;
         }
         if (getPluginConfig().getBooleanProperty(HotFileCom.TRY_IWL_BYPASS, false)) { return fetchAccountInfoWebsite(account); }
-        final HashMap<String, String> info = callAPI(null, "getuserinfo", account, null);
+        final HashMap<String, String> info;
+        try {
+            info = callAPI(null, "getuserinfo", account, null);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
         final String rawAnswer = info.get("httpresponse");
         logger.severe("HotFileDebug: " + rawAnswer);
         if (rawAnswer != null && rawAnswer.startsWith(".too many failed")) {

@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -95,7 +96,13 @@ public class HTTPConnection implements URLConnectionAdapter {
         httpSocket.setSoTimeout(readTimeout);
         httpResponseCode = -1;
         /* host auflösen nur wenn kein proxy, ansonsten über proxy */
-        InetAddress host = Inet4Address.getByName(httpURL.getHost());
+        InetAddress host = null;
+        try {
+            host = Inet4Address.getByName(httpURL.getHost());
+        } catch (UnknownHostException e) {
+            System.out.println("Unknown Host:" + httpURL);
+            throw e;
+        }
         int port = httpURL.getPort();
         if (port == -1) port = httpURL.getDefaultPort();
         long startTime = System.currentTimeMillis();

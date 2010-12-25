@@ -162,7 +162,7 @@ public class Executer extends Thread implements Runnable {
             } catch (final InterruptedException e) {
                 // e.printStackTrace();
             } finally {
-                System.out.println("END");
+                // System.out.println("END");
                 /* close streams for good */
                 try {
                     this.reader.close();
