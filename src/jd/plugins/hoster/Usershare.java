@@ -140,6 +140,7 @@ public class Usershare extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(COOKIE_HOST + "/login.html");
         Form loginform = br.getForm(1);
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -207,16 +208,19 @@ public class Usershare extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("No such user exist") || br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"hdr\"><TD colspan=2>(.*?)</TD>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<b>Filename:</b></td><td nowrap>(.*?)</b>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>Download(.*?)</title>").getMatch(0);
+                filename = br.getRegex("<h3>Download File:(.*?)</h3>").getMatch(0);
+                if (filename == null) filename = br.getRegex("<title>Download(.*?)</title>").getMatch(0);
             }
         }
         String filesize = br.getRegex("Size:</b></td><td>(.*?)<small>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("label>Size:</label> <span>(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize));
