@@ -53,7 +53,7 @@ public class DatPiffCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("")) {
+        if (br.containsHTML(ONLYREGISTEREDUSERTEXT)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.datpiffcom.only4premium", ONLYREGISTEREDUSERTEXT));
             return AvailableStatus.TRUE;
         }
