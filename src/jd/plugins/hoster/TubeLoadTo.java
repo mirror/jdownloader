@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeload.to" }, urls = { "http://[\\w\\.]*?tubeload\\.to/file-[0-9]+-[0-9a-z]+-.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeload.to" }, urls = { "http://[\\w\\.]*?tubeload\\.to/file(\\d+)?-.+" }, flags = { 0 })
 public class TubeLoadTo extends PluginForHost {
 
     public TubeLoadTo(PluginWrapper wrapper) {

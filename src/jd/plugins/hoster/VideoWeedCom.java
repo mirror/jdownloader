@@ -28,7 +28,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://[\\w\\.]*?videoweed\\.com/file/[a-z0-9]+" }, flags = { 0 })
+import org.appwork.utils.Regex;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://((www\\.)?videoweed\\.com/file/|embed\\.videoweed\\.com/embed\\.php\\?.*?v=)[a-z0-9]+" }, flags = { 0 })
 public class VideoWeedCom extends PluginForHost {
 
     public VideoWeedCom(PluginWrapper wrapper) {
@@ -40,6 +42,12 @@ public class VideoWeedCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.videoweed.com/terms.php";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        // Make normal links out of embedded links
+        String fileID = new Regex(link.getDownloadURL(), "v=([a-z0-9]+)").getMatch(0);
+        if (fileID != null) link.setUrlDownload("http://www.videoweed.com/file/" + fileID);
     }
 
     @Override
@@ -58,14 +66,14 @@ public class VideoWeedCom extends PluginForHost {
                 }
             }
         }
-        dllink = br.getRegex("s1\\.addVariable\\(\"file\",\"(.*?)\"\\);").getMatch(0);
+        dllink = br.getRegex("flashvars\\.file=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://(www\\.)?videoweed\\.com/stream/.*?\\.flv)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?n\\d+\\.epornik\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?n\\d+\\.(epornik|videoweed)\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"").getMatch(0);
         }
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
