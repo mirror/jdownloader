@@ -143,7 +143,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
      */
     public PluginWrapper(final String host, final String classNamePrefix, final String className, final String pattern, final int flags, final String revision) {
         this.pattern = (pattern != null) ? Pattern.compile(pattern, Pattern.CASE_INSENSITIVE) : null;
-        this.host = host.toLowerCase(Locale.getDefault());
+        this.host = host.toLowerCase(Locale.ENGLISH);
         final String classn = (classNamePrefix == null ? "" : classNamePrefix) + className;
         this.className = classn;
         this.flags = flags;

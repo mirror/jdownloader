@@ -136,7 +136,8 @@ public class ExtaBitCom extends PluginForHost {
         String dllink = br.getRegex("Turn your download manager off and[ ]+<a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl.setFilenameFix(true);
         if ((dl.getConnection().getContentType().contains("html"))) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
             if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
