@@ -197,11 +197,20 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         link.setProperty("genLink", null);
         if (genlink != null) {
             /* try saved link first */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), 1);
-            if (dl.getConnection().isContentDisposition()) {
-                savedLinkValid = true;
-            } else {
-                dl.getConnection().disconnect();
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), 1);
+                if (dl.getConnection().isContentDisposition()) {
+                    savedLinkValid = true;
+                }
+            } catch (final Throwable e) {
+                savedLinkValid = false;
+            } finally {
+                if (savedLinkValid == false) {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable e1) {
+                    }
+                }
             }
         }
         if (savedLinkValid == false) {
