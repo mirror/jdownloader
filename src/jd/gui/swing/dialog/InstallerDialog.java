@@ -50,7 +50,7 @@ public class InstallerDialog extends AbstractDialog<Object> {
     private BrowseFile browseFile;
 
     private InstallerDialog(final File dlFolder) {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("installer.gui.title", "JDownloader Installation"), null, null, null);
+        super(UserIO.NO_ICON, JDL.L("installer.gui.title", "JDownloader Installation"), null, null, null);
 
         final String countryCode = JDL.getCountryCodeByIP();
         final String languageCode = countryCode != null ? countryCode.toLowerCase(Locale.getDefault()) : null;

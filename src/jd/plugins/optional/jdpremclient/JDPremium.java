@@ -174,7 +174,7 @@ public class JDPremium extends PluginOptional {
             if (!init) {
                 /* init our new plugins */
                 premShareHosts.put("jdownloader.org", "PremShare");
-                premShareHosts.put("ochload.org", "Ochloadorg");
+                premShareHosts.put("speedload.cx", "SpeedLoadcx");
                 premShareHosts.put("multishare.cz", "MultiShare");
                 premShareHosts.put("dwnld4me.com", "Download4Me");
                 premShareHosts.put("linksnappy.com", "LinkSnappycom");

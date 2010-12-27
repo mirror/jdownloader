@@ -16,8 +16,12 @@
 
 package jd;
 
+import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.swing.dialog.InstallerDialog;
+import jd.update.WebUpdater;
+
+import org.appwork.storage.JacksonStorageChest;
 
 /**
  * Der Installer erscheint nur beim ersten mal Starten der Webstartversion und
@@ -34,6 +38,17 @@ public class Installer {
         if (!InstallerDialog.showDialog(null)) {
             JDLogger.getLogger().severe("downloaddir not set");
             this.aborted = true;
+        } else {
+            /* install not aborted */
+            try {
+                /* read default values from jddefaults */
+                JacksonStorageChest defaults = new JacksonStorageChest("jddefaults", true);
+                final SubConfiguration webConfig = SubConfiguration.getConfig("WEBUPDATE");
+                webConfig.setProperty(WebUpdater.PARAM_BRANCH, defaults.get(WebUpdater.PARAM_BRANCH, null));
+                webConfig.save();
+            } catch (final Throwable e) {
+                JDLogger.exception(e);
+            }
         }
     }
 
