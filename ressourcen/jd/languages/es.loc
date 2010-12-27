@@ -1369,6 +1369,7 @@ plugins.hoster.adrivecom.errors.toomanyconnections = Demasiadas conexiones
 plugins.hoster.czsharecom.nocreditleft = No hay crédito de tráfico restante
 plugins.hoster.czsharecom.nofreeslots = No hay slots gratuitos disponibles
 plugins.hoster.datahu.toomanysimultandownloads = No hay slots gratuitos disponibles
+plugins.hoster.datpiffcom.only4premium = Solo disponible para usuarios Premium
 plugins.hoster.depositfilescom.accountbad = La cuenta expiró o no es válida.
 plugins.hoster.depositfilescom.accountok = Cuenta correcta
 plugins.hoster.depositfilescom.accountokfree = Cuenta gratuita correcta
