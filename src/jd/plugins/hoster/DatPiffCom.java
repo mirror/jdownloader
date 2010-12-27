@@ -91,7 +91,6 @@ public class DatPiffCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        // br.getPage("http://www.datpiff.com/login");
         br.postPage("http://www.datpiff.com/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.getCookie(MAINPAGE, "dp4uid") == null || br.getCookie(MAINPAGE, "lastuser") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }

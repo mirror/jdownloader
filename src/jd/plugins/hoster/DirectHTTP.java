@@ -183,7 +183,7 @@ public class DirectHTTP extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
-                    if (this.id == null || this.id.equals("")) {
+                    if (this.id == null || this.id.equals("") || this.id.contains("\\")) {
                         this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+]+)\"").getMatch(0);
                     }
                     if (this.id == null || this.id.equals("")) {
