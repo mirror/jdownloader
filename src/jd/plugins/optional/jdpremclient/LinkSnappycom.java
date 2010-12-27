@@ -191,35 +191,51 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         br.setDebug(true);
         dl = null;
         login(acc, false);
-        String postData = "genLinks={\"links\" : \"" + Encoding.urlEncode(link.getDownloadURL()) + "\", \"Kcookies\" : \"" + br.getCookie("www.linksnappy.com", "lseSavePass") + "\"}";
-        String response = br.postPageRaw("http://linksnappy.com/lseAPI.php", postData);
-        response = response.replaceAll("\\\\/", "/");
-        String status = new Regex(response, "status\":\"(.*?)\"").getMatch(0);
-        // String error = new Regex(response, "error\":(.*?)}").getMatch(0);
-        String genlink = new Regex(response, "generated\":\"(http.*?)\"").getMatch(0);
-        if ("FAILED".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if ("OK".equalsIgnoreCase(status) && genlink != null) {
-            br.setFollowRedirects(true);
+        boolean savedLinkValid = false;
+        String genlink = link.getStringProperty("genLink", null);
+        /* remove generated link */
+        link.setProperty("genLink", null);
+        if (genlink != null) {
+            /* try saved link first */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), 1);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dl.getConnection().getResponseCode() == 404) {
-            /* file offline */
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!dl.getConnection().isContentDisposition()) {
-            /* unknown error */
-            br.followConnection();
-            if (br.containsHTML("this download server is disabled at the moment")) throw new PluginException(LinkStatus.ERROR_RETRY);
-            if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            logger.severe("LinkSnappy: error!");
-            logger.severe(br.toString());
-            synchronized (LOCK) {
-                premiumHosts.remove(link.getHost());
+            if (dl.getConnection().isContentDisposition()) {
+                savedLinkValid = true;
+            } else {
+                dl.getConnection().disconnect();
             }
-            return false;
+        }
+        if (savedLinkValid == false) {
+            /* generate new downloadlink */
+            String postData = "genLinks={\"links\" : \"" + Encoding.urlEncode(link.getDownloadURL()) + "\", \"Kcookies\" : \"" + br.getCookie("www.linksnappy.com", "lseSavePass") + "\"}";
+            String response = br.postPageRaw("http://linksnappy.com/lseAPI.php", postData);
+            response = response.replaceAll("\\\\/", "/");
+            String status = new Regex(response, "status\":\"(.*?)\"").getMatch(0);
+            // String error = new Regex(response, "error\":(.*?)}").getMatch(0);
+            genlink = new Regex(response, "generated\":\"(http.*?)\"").getMatch(0);
+            if ("FAILED".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if ("OK".equalsIgnoreCase(status) && genlink != null) {
+                br.setFollowRedirects(true);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), 1);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dl.getConnection().getResponseCode() == 404) {
+                /* file offline */
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!dl.getConnection().isContentDisposition()) {
+                /* unknown error */
+                br.followConnection();
+                if (br.containsHTML("this download server is disabled at the moment")) throw new PluginException(LinkStatus.ERROR_RETRY);
+                if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                logger.severe("LinkSnappy: error!");
+                logger.severe(br.toString());
+                synchronized (LOCK) {
+                    premiumHosts.remove(link.getHost());
+                }
+                return false;
+            }
         }
         try {
             Browser br2 = new Browser();
@@ -228,6 +244,8 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             counted = true;
         } catch (Exception e) {
         }
+        /* save generated link */
+        link.setProperty("genLink", genlink);
         link.getTransferStatus().usePremium(true);
         dl.startDownload();
         return true;

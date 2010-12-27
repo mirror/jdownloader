@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.http.ext.BasicBrowserEnviroment;
 import jd.http.ext.ExtBrowser;
 import jd.nutils.encoding.Encoding;
@@ -34,12 +35,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -505,7 +506,24 @@ public class MediafireCom extends PluginForHost {
                     if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
                         downloadLink.setName(Plugin.extractFileNameFromURL(redirectURL));
                     }
-                    return AvailableStatus.TRUE;
+                    URLConnectionAdapter con = null;
+                    try {
+                        /* only catch filesize and name once */
+                        if (downloadLink.getDownloadSize() != 0) { return AvailableStatus.TRUE; }
+                        con = br.cloneBrowser().openGetConnection(redirectURL);
+                        if (con.isContentDisposition()) {
+                            downloadLink.setDownloadSize(con.getLongContentLength());
+                            downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                            return AvailableStatus.TRUE;
+                        } else {
+                            return AvailableStatus.FALSE;
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
                 }
 
                 break;

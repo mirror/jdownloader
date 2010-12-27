@@ -25,6 +25,7 @@ import java.util.HashMap;
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.captcha.specials.Linksave;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
@@ -133,7 +134,7 @@ public class Lnksvn extends PluginForDecrypt {
         final String parameter = param.toString();
         // http://linksave.in/21341715574afdcd07e69d5
         final String folderID = new Regex(parameter, "linksave\\.in/(view.php\\?id=)?([\\w]+)").getMatch(1);
-        if ((folderID != null) && Lnksvn.isExternInterfaceActive()) {
+        if ((folderID != null) && Lnksvn.isExternInterfaceActive() && SubConfiguration.getConfig("LINKGRABBER").getBooleanProperty("PARAM_USE_CNL2", true)) {
             final Browser cnlcheck = this.br.cloneBrowser();
             cnlcheck.getPage("http://linksave.in/cnl.php?id=" + folderID);
             // CNL Dummy
@@ -153,7 +154,7 @@ public class Lnksvn extends PluginForDecrypt {
             logger.info("Error 404 - Ordner: \"" + parameter + "\" nicht gefunden!");
             return decryptedLinks;
         }
-        this.getCaptcha(param);
+        this.getCaptcha(param, "");
         // Container handling (DLC)
         String[] container = this.br.getRegex("\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
         if ((container != null) && (container.length > 0)) {
@@ -206,11 +207,12 @@ public class Lnksvn extends PluginForDecrypt {
         // erst alle verschlüsselten Links holen
         for (int i = 1; i <= pages; i++) {
             progress.setRange(pages);
+            String extras = "?s=" + i + "#down";
             if (i > 1) {
-                this.br.getPage(param.getCryptedUrl() + "?s=" + i + "#down");
+                this.br.getPage(param.getCryptedUrl() + extras);
             }
             // Captchaeingabe pro page erforderlich!
-            this.getCaptcha(param);
+            this.getCaptcha(param, extras);
             String[] links = this.br.getRegex("<a href=\"(http://linksave[^\"]*)\" onclick=\"javascript:document.getElementById").getColumn(0);
             // Singlelinks
             if ((links == null) || (links.length == 0)) {
@@ -246,7 +248,7 @@ public class Lnksvn extends PluginForDecrypt {
                     e.printStackTrace();
                 }
                 synchronized (this) {
-                    this.notify();
+                    this.notifyAll();
                 }
             }
         }
@@ -264,11 +266,11 @@ public class Lnksvn extends PluginForDecrypt {
             while (lsDirektLinkTH.isAlive()) {
                 synchronized (lsDirektLinkTH) {
                     try {
-                        lsDirektLinkTH.wait();
+                        lsDirektLinkTH.wait(5000);
                     } catch (final InterruptedException e) {
                     }
-                    progress.increase(1);
                 }
+                progress.increase(1);
             }
             if (lsDirektLinkTH.result != null) {
                 logger.info("Added: " + lsDirektLinkTH.result);
@@ -282,7 +284,7 @@ public class Lnksvn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void getCaptcha(final CryptedLink param) throws Exception {
+    private void getCaptcha(final CryptedLink param, final String extras) throws Exception {
         Form form = this.br.getFormbyProperty("name", "form");
         for (int retry = 0; retry < 5; retry++) {
             if (form == null) {
@@ -305,7 +307,7 @@ public class Lnksvn extends PluginForDecrypt {
             form.put("code", captchaCode);
             this.br.submitForm(form);
             if (this.br.containsHTML("Falscher Code") || this.br.containsHTML("Captcha-code ist falsch") || this.br.containsHTML("Besucherpasswort ist falsch")) {
-                this.br.getPage(param.getCryptedUrl());
+                this.br.getPage(param.getCryptedUrl() + extras);
                 form = this.br.getFormbyProperty("name", "form");
             } else {
                 break;

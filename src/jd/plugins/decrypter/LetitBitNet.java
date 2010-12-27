@@ -53,10 +53,12 @@ public class LetitBitNet extends PluginForDecrypt {
             if (filename != null) dl.setFinalFileName(filename.trim());
             String filesize = new Regex(singleInfo, "<b></b>(.*?)<br />").getMatch(0);
             if (filesize != null && !filesize.equals(" ")) dl.setDownloadSize(Regex.getSize(filesize));
-            if (singleInfo.contains(">OK</font>"))
+            if (singleInfo.contains(">OK</font>")) {
                 dl.setAvailable(true);
-            else if (singleInfo.contains("<b>BAD</b>")) dl.setAvailable(false);
-            decryptedLinks.add(createDownloadlink(singleInfo));
+            } else if (singleInfo.contains("<b>BAD</b>")) {
+                dl.setAvailable(false);
+            }
+            decryptedLinks.add(dl);
         }
 
         return decryptedLinks;

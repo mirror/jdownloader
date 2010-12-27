@@ -80,9 +80,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     public void setBrowser(Browser brr) {
         br = brr;
-        if (brr == null) {
-            System.out.println("br == null");
-        }
     }
 
     protected String getCaptchaCode(final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
