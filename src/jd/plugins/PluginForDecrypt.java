@@ -232,8 +232,7 @@ public abstract class PluginForDecrypt extends Plugin {
         // erst im Nachhinein das der Bilddownload nicht gestört wird
 
         String captchaCode = getCaptchaCode(method, captchaFile, param);
-        String ext = LoadImage.getFileType(captchaAddress, brc.getHttpConnection().getContentType());
-        captchaFile.renameTo(getLocalCaptchaFile(ext));
+        captchaFile.delete();
         return captchaCode;
     }
 

@@ -353,7 +353,6 @@ public abstract class Plugin implements ActionListener {
         final String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
 
         final File dest = JDUtilities.getResourceFile("captchas/" + this.getHost() + "_" + date + extension, true);
-        dest.deleteOnExit();
         return dest;
     }
 

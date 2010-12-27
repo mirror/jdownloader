@@ -104,6 +104,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
+        captchaFile.delete();
         return captchaCode;
     }
 
