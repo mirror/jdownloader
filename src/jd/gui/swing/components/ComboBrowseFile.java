@@ -239,7 +239,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private void setCurrentPath(final File currentPath, boolean updateCombo) {
         // System.out.println("SET CURRENT PATH " + updateCombo + "; path=" +
         // currentPath);
-        if (updateCombo) cmboInput.setSelectedItem(currentPath.toString());
+        if (updateCombo && currentPath != null) cmboInput.setSelectedItem(currentPath.toString());
 
         if (currentPath != null && !currentPath.equals(this.currentPath)) {
             this.currentPath = currentPath;
