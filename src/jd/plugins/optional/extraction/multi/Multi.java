@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.optional.extraction.multi;
 
 import java.io.File;
@@ -50,6 +66,7 @@ public class Multi implements IExtraction {
     private ISevenZipInArchive   inArchive;
     private List<String>         postprocessing;
     private SubConfiguration     conf;
+    private ArchiveFormat        format;
 
     public Multi() {
         crack = 0;
@@ -60,7 +77,7 @@ public class Multi implements IExtraction {
     public Archive buildArchive(DownloadLink link) {
         String file = link.getFileOutput();
         Archive archive = new Archive();
-        archive.addDownloadLink(link);
+        // archive.addDownloadLink(link);
 
         String pattern = file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+.*?.rar$", "");
         pattern = pattern.replaceAll("(?i)\\.rar$", "");
@@ -95,6 +112,10 @@ public class Multi implements IExtraction {
         } else {
             for (DownloadLink l : matches) {
                 if (l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) {
+                    archive.setType(Archive.MULTI_RAR);
+                    archive.setFirstDownloadLink(l);
+                    break;
+                } else if (l.getFileOutput().matches("(?i).*\\.rar$") && !l.getFileOutput().matches("(?i)\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
                     archive.setType(Archive.MULTI_RAR);
                     archive.setFirstDownloadLink(l);
                     break;
@@ -142,10 +163,10 @@ public class Multi implements IExtraction {
 
         try {
             if (archive.getType() == Archive.SINGLE_FILE) {
-                inArchive = SevenZip.openInArchive(null, new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r")), password);
+                inArchive = SevenZip.openInArchive(format, new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r")), password);
             } else if (archive.getType() == Archive.MULTI) {
                 MultiOpener multiopener = new MultiOpener(password);
-                inArchive = SevenZip.openInArchive(null, new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener));
+                inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener));
             } else if (archive.getType() == Archive.MULTI_RAR) {
                 RarOpener raropener = new RarOpener(password);
                 IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());
@@ -314,11 +335,29 @@ public class Multi implements IExtraction {
 
     public boolean prepare() {
         try {
+            if (archive.getFirstDownloadLink().getHost().equals(DUMMY_HOSTER)) {
+                Archive a = buildArchive(archive.getFirstDownloadLink());
+                archive.setDownloadLinks(a.getDownloadLinks());
+                archive.setType(a.getType());
+            }
+
             if (archive.getType() == Archive.SINGLE_FILE) {
-                inArchive = SevenZip.openInArchive(null, new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r")));
+                if (archive.getFirstDownloadLink().getFileOutput().endsWith(".rar")) {
+                    format = ArchiveFormat.RAR;
+                } else if (archive.getFirstDownloadLink().getFileOutput().endsWith(".7z")) {
+                    format = ArchiveFormat.SEVEN_ZIP;
+                } else if (archive.getFirstDownloadLink().getFileOutput().endsWith(".zip")) {
+                    format = ArchiveFormat.ZIP;
+                } else if (archive.getFirstDownloadLink().getFileOutput().endsWith(".tar.gz")) {
+                    format = ArchiveFormat.GZIP;
+                } else if (archive.getFirstDownloadLink().getFileOutput().endsWith(".tar,bz2")) {
+                    format = ArchiveFormat.BZIP2;
+                }
+
+                inArchive = SevenZip.openInArchive(format, new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r")));
             } else if (archive.getType() == Archive.MULTI) {
                 MultiOpener multiopener = new MultiOpener();
-                inArchive = SevenZip.openInArchive(null, new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener));
+                inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener));
             } else if (archive.getType() == Archive.MULTI_RAR) {
                 RarOpener raropener = new RarOpener();
                 IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());

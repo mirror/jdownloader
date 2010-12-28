@@ -120,7 +120,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
     /**
      * das controllevent fängt heruntergeladene file ab und wertet sie aus
      */
-    @SuppressWarnings("unchecked")
     @Override
     public void onControlEvent(ControlEvent event) {
         DownloadLink link;
@@ -546,12 +545,12 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDL.L("gui.config.extraction.remove_after_extract", "Delete archives after suc. extraction?")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_OVERWRITE, JDL.L("gui.config.extraction.overwrite", "Overwrite existing files?")).setDefaultValue(false));
 
-        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.config.advanced", "Premium settings"), getIconKey()));
+        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.config.advanced", "Advanced settings"), getIconKey()));
         config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_SUBPATH, JDL.L("gui.config.extraction.use_subpath", "Use subpath")).setDefaultValue(false));
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH, JDL.L("gui.config.extraction.subpath", "Subpath")));
         ce.setDefaultValue("%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 0, 600, 5).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 1, 600, 5).setDefaultValue(5));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.extraction.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.extraction.deep_extract", "Deep-Extraction")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.extraction.remove_infofile", "Delete Infofile after extraction")).setDefaultValue(false));

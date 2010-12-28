@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.optional.extraction.multi;
 
 import java.io.FileNotFoundException;
@@ -17,20 +33,20 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
  * Used to join the separated HJSplit and 7z files.
  * 
  * @author botzi
- *
+ * 
  */
 class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword {
     private Map<String, RandomAccessFile> openedRandomAccessFileList = new HashMap<String, RandomAccessFile>();
-    private String password;
+    private String                        password;
 
     MultiOpener() {
         this.password = "";
     }
-    
+
     MultiOpener(String password) {
         this.password = password;
     }
-    
+
     public Object getProperty(PropID propID) throws SevenZipException {
         return null;
     }
@@ -42,10 +58,10 @@ class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword 
                 randomAccessFile.seek(0);
                 return new RandomAccessFileInStream(randomAccessFile);
             }
-            
+
             randomAccessFile = new RandomAccessFile(filename, "r");
             openedRandomAccessFileList.put(filename, randomAccessFile);
-        
+
             return new RandomAccessFileInStream(randomAccessFile);
         } catch (FileNotFoundException fileNotFoundException) {
             return null;
