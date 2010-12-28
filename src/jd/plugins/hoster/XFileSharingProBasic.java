@@ -465,7 +465,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if (BRBEFORE.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
-        if (BRBEFORE.contains(" can download files up to ") || BRBEFORE.contains("Upgrade your account to download bigger files") || BRBEFORE.contains("This file reached max downloads") || BRBEFORE.contains(">Upgrade your account to download larger files")) {
+        if (BRBEFORE.contains(" can download files up to ") || BRBEFORE.contains("Upgrade your account to download bigger files") || BRBEFORE.contains(">Upgrade your account to download larger files") || BRBEFORE.contains(">The file You requested  reached max downloads limit for Free Users") || BRBEFORE.contains("Please Buy Premium To download this file<")) {
             String filesizelimit = new Regex(BRBEFORE, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
