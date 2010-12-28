@@ -3,6 +3,8 @@ package jd.plugins.optional.jdpremclient;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
@@ -16,11 +18,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class Download4Me extends PluginForHost implements JDPremInterface {
@@ -481,6 +483,26 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
     public void setDownloadInterface(DownloadInterface dl) {
         this.dl = dl;
         if (plugin != null) plugin.setDownloadInterface(dl);
+    }
+
+    @Override
+    public String getCustomFavIconURL() {
+        if (proxyused) return "dwnld4me.com";
+        if (plugin != null) return plugin.getCustomFavIconURL();
+        return null;
+    }
+
+    @Override
+    public void setFavIcon(ImageIcon icon) {
+        if (plugin != null) plugin.setFavIcon(icon);
+        this.hosterIcon = icon;
+    }
+
+    @Override
+    public void resetFavIcon() {
+        if (plugin != null) plugin.resetFavIcon();
+        hosterIconRequested = false;
+        hosterIcon = null;
     }
 
 }

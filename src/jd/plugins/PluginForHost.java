@@ -685,7 +685,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public ImageIcon getHosterIconUnscaled() {
-        if (hosterIcon == null && getCustomFavIconURL() != null && !hosterIconRequested) {
+        if (hosterIcon == null && !hosterIconRequested && getCustomFavIconURL() != null) {
             hosterIcon = FavIconController.getFavIcon(getCustomFavIconURL(), this, true);
             hosterIconRequested = true;
         }
@@ -694,7 +694,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public final ImageIcon getHosterIconScaled() {
-        if (hosterIcon == null && getCustomFavIconURL() != null && !hosterIconRequested) {
+        if (hosterIcon == null && !hosterIconRequested && getCustomFavIconURL() != null) {
             hosterIcon = FavIconController.getFavIcon(getCustomFavIconURL(), this, true);
             hosterIconRequested = true;
         }

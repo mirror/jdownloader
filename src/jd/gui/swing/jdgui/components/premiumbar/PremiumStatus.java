@@ -123,7 +123,10 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             if (wrapper.isLoaded() && wrapper.isEnabled()) {
                 ArrayList<Account> accs = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
                 for (Account a : accs) {
-                    AccountController.getInstance().updateAccountInfo(host, a, false);
+                    if (a.isEnabled()) {
+                        /* only update enabled accounts */
+                        AccountController.getInstance().updateAccountInfo(host, a, false);
+                    }
                 }
             }
         }

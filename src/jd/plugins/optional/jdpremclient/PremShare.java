@@ -3,6 +3,8 @@ package jd.plugins.optional.jdpremclient;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
@@ -16,11 +18,11 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class PremShare extends PluginForHost implements JDPremInterface {
@@ -122,8 +124,11 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         } else if (!JDPremium.preferLocalAccounts()) {
             if (handleJDPremServ(downloadLink)) return;
         }
-        /* failed, now try normal */
-        proxyused = false;
+        if (proxyused = true) {
+            /* failed, now try normal */
+            proxyused = false;
+            resetFavIcon();
+        }
         plugin.handle(downloadLink, account);
     }
 
@@ -190,6 +195,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         proxyused = true;
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        resetFavIcon();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         br.setDebug(true);
@@ -495,4 +501,25 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         this.dl = dl;
         if (plugin != null) plugin.setDownloadInterface(dl);
     }
+
+    @Override
+    public String getCustomFavIconURL() {
+        if (proxyused) return "jdownloader.org";
+        if (plugin != null) return plugin.getCustomFavIconURL();
+        return null;
+    }
+
+    @Override
+    public void setFavIcon(ImageIcon icon) {
+        if (plugin != null) plugin.setFavIcon(icon);
+        this.hosterIcon = icon;
+    }
+
+    @Override
+    public void resetFavIcon() {
+        if (plugin != null) plugin.resetFavIcon();
+        hosterIconRequested = false;
+        hosterIcon = null;
+    }
+
 }

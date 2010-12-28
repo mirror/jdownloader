@@ -29,6 +29,7 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.StorageEvent;
+import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.EDTRunner;
@@ -127,20 +128,26 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
      * Update GUI
      */
     public void onEvent(final StorageEvent<?> event) {
+        boolean b = false;
         if (event instanceof StorageValueChangeEvent<?>) {
             final StorageValueChangeEvent<?> changeEvent = (StorageValueChangeEvent<?>) event;
             if (changeEvent.getKey().equals(ReconnectPluginController.PRO_ACTIVEPLUGIN)) {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        ReconnectPluginConfigGUI.this.combobox.setSelectedItem(ReconnectPluginController.getInstance().getActivePlugin());
-                        ReconnectPluginConfigGUI.this.scrollPane.getViewport().setView(((RouterPlugin) ReconnectPluginConfigGUI.this.combobox.getSelectedItem()).getGUI());
-                    }
-
-                };
+                b = true;
+            }
+        } else if (event instanceof StorageKeyAddedEvent<?>) {
+            final StorageKeyAddedEvent<?> changeEvent = (StorageKeyAddedEvent<?>) event;
+            if (changeEvent.getKey().equals(ReconnectPluginController.PRO_ACTIVEPLUGIN)) {
+                b = true;
             }
         }
+        if (b == false) return;
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                ReconnectPluginConfigGUI.this.combobox.setSelectedItem(ReconnectPluginController.getInstance().getActivePlugin());
+                ReconnectPluginConfigGUI.this.scrollPane.getViewport().setView(((RouterPlugin) ReconnectPluginConfigGUI.this.combobox.getSelectedItem()).getGUI());
+            }
+        };
     }
 
     @Override

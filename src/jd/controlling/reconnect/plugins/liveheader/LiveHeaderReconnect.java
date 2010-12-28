@@ -52,6 +52,7 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.StorageEvent;
+import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.logging.Log;
@@ -124,9 +125,14 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
             @SuppressWarnings("unchecked")
             public void onEvent(final StorageEvent<?> event) {
                 try {
-                    if (ReconnectPluginController.getInstance().getActivePlugin() instanceof LiveHeaderReconnect && this.dosession && !RouterSender.getInstance().isRequested() && event instanceof StorageValueChangeEvent && ((StorageValueChangeEvent<?>) event).getKey().equalsIgnoreCase(Reconnecter.RECONNECT_SUCCESS_COUNTER)) {
-
-                        if (((StorageValueChangeEvent<Long>) event).getNewValue() > 2) {
+                    if (ReconnectPluginController.getInstance().getActivePlugin() instanceof LiveHeaderReconnect && this.dosession && !RouterSender.getInstance().isRequested()) {
+                        boolean b = false;
+                        if (event instanceof StorageValueChangeEvent && ((StorageValueChangeEvent<?>) event).getKey().equalsIgnoreCase(Reconnecter.RECONNECT_SUCCESS_COUNTER) && ((StorageValueChangeEvent<Long>) event).getNewValue() > 2) {
+                            b = true;
+                        } else if (event instanceof StorageKeyAddedEvent && ((StorageKeyAddedEvent<?>) event).getKey().equalsIgnoreCase(Reconnecter.RECONNECT_SUCCESS_COUNTER) && ((StorageKeyAddedEvent<Long>) event).getNewValue() > 2) {
+                            b = true;
+                        }
+                        if (b) {
                             RouterSender.getInstance().setRequested(true);
                             new Thread() {
                                 public void run() {

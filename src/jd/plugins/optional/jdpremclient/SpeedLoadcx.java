@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.ImageIcon;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
@@ -119,8 +121,11 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
         } else if (!JDPremium.preferLocalAccounts()) {
             if (handleSpeedLoad(downloadLink)) return;
         }
-        /* failed, now try normal */
-        proxyused = false;
+        if (proxyused = true) {
+            /* failed, now try normal */
+            proxyused = false;
+            resetFavIcon();
+        }
         plugin.handle(downloadLink, account);
     }
 
@@ -194,6 +199,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
             proxyused = true;
             requestFileInformation(link);
             if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            resetFavIcon();
             String user = Encoding.urlEncode(acc.getUser());
             String pw = Encoding.urlEncode(acc.getPass());
             br.setConnectTimeout(90 * 1000);
@@ -421,6 +427,26 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
     public void setDownloadInterface(DownloadInterface dl) {
         this.dl = dl;
         if (plugin != null) plugin.setDownloadInterface(dl);
+    }
+
+    @Override
+    public String getCustomFavIconURL() {
+        if (proxyused) return "speedload.cx";
+        if (plugin != null) return plugin.getCustomFavIconURL();
+        return null;
+    }
+
+    @Override
+    public void setFavIcon(ImageIcon icon) {
+        if (plugin != null) plugin.setFavIcon(icon);
+        this.hosterIcon = icon;
+    }
+
+    @Override
+    public void resetFavIcon() {
+        if (plugin != null) plugin.resetFavIcon();
+        hosterIconRequested = false;
+        hosterIcon = null;
     }
 
 }

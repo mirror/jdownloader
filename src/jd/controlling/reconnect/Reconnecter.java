@@ -39,6 +39,7 @@ import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.storage.StorageEvent;
+import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
@@ -169,7 +170,7 @@ public final class Reconnecter implements StateMachineInterface {
 
             public void onEvent(final StorageEvent<?> event) {
                 // TODO Auto-generated method stub
-                if (event instanceof StorageValueChangeEvent) {
+                if (event instanceof StorageValueChangeEvent<?> || event instanceof StorageKeyAddedEvent<?>) {
                     Reconnecter.this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.SETTINGS_CHANGED, event));
                 }
             }
