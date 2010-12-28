@@ -342,15 +342,15 @@ public class Multi implements IExtraction {
             }
 
             if (archive.getType() == Archive.SINGLE_FILE) {
-                if (archive.getFirstDownloadLink().getFileOutput().endsWith(".rar")) {
+                if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.rar$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.RAR;
-                } else if (archive.getFirstDownloadLink().getFileOutput().endsWith(".7z")) {
+                } else if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.7z$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.SEVEN_ZIP;
-                } else if (archive.getFirstDownloadLink().getFileOutput().endsWith(".zip")) {
+                } else if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.zip$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.ZIP;
-                } else if (archive.getFirstDownloadLink().getFileOutput().endsWith(".tar.gz")) {
+                } else if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.tar\\.gz$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.GZIP;
-                } else if (archive.getFirstDownloadLink().getFileOutput().endsWith(".tar,bz2")) {
+                } else if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.tar\\.bz2$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.BZIP2;
                 }
 
@@ -416,21 +416,21 @@ public class Multi implements IExtraction {
     }
 
     public String getArchiveName(DownloadLink link) {
-        String match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.pa?r?t?\\.?[0-9]+.rar$").getMatch(0);
+        String match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.pa?r?t?\\.?[0-9]+.rar$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.rar$").getMatch(0);
+        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.rar$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.zip$").getMatch(0);
+        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.zip$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.7z$").getMatch(0);
+        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.7z$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.7z\\.\\d+$").getMatch(0);
+        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.7z\\.\\d+$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.tar\\.gz$").getMatch(0);
+        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.tar\\.gz$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.tar\\.bz2$").getMatch(0);
+        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.tar\\.bz2$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.r\\d+$").getMatch(0);
+        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE).getMatch(0);
         return match;
     }
 
