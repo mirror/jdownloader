@@ -27,42 +27,42 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
 public class HJSplt implements IExtraction {
-    private static final String  DUMMY_HOSTER = "dum.my";
-    
-    private Archive archive;
-    private List<String> postprocessing;
+    private static final String DUMMY_HOSTER = "dum.my";
+
+    private Archive             archive;
+    private List<String>        postprocessing;
 
     public HJSplt() {
         postprocessing = new ArrayList<String>();
     }
-    
+
     public Archive buildArchive(DownloadLink link) {
         Archive a = new Archive();
-        
+
         File file = new File(link.getFileOutput());
-        
+
         file = this.getStartFile(file);
-        
+
         ArrayList<File> files = getFileList(file);
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String startfile = getStartFile(new File(link.getFileOutput())).getAbsolutePath();
-        
-        for(File f : files) {
+
+        for (File f : files) {
             DownloadLink l = JDUtilities.getController().getDownloadLinkByFileOutput(f.getAbsoluteFile(), LinkStatus.FINISHED);
             if (l == null) {
                 l = buildDownloadLinkFromFile(f.getAbsolutePath());
             }
-            
-            if(startfile.equals(f.getAbsolutePath())) {
+
+            if (startfile.equals(f.getAbsolutePath())) {
                 a.setFirstDownloadLink(l);
             }
-            
+
             ret.add(l);
         }
-        
+
         a.setDownloadLinks(ret);
         a.setProtected(false);
-        
+
         return a;
     }
 
@@ -110,14 +110,14 @@ public class HJSplt implements IExtraction {
             }
         });
         join.overwriteExistingFile(archive.isOverwriteFiles());
-        
+
         join.run();
-        
-        if(!join.wasSuccessfull()) {
+
+        if (!join.wasSuccessfull()) {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         }
-        
+
         postprocessing.add(getOutputFile(first).getAbsolutePath());
     }
 
@@ -169,11 +169,11 @@ public class HJSplt implements IExtraction {
 
     public void close() {
     }
-    
+
     private static enum ARCHIV_TYPE {
         NONE, NORMAL, UNIX, CUTKILLER, XTREMSPLIT
     }
-    
+
     /**
      * Gibt die zu entpackende Datei zurück.
      * 
@@ -400,10 +400,11 @@ public class HJSplt implements IExtraction {
         String name = file.getName();
         if (name.matches(".*\\.a.$")) return ARCHIV_TYPE.UNIX;
         if (name.matches(".*\\.\\d+\\.xtm$")) return ARCHIV_TYPE.XTREMSPLIT;
-        if (name.matches(".*\\.[\\d]+($|\\.[^\\d]*$)")) return ARCHIV_TYPE.NORMAL;
+        /* eg. bla.001.rar */
+        if (name.matches(".*\\.[\\d]+($|\\.[^\\d]{1,5}$)")) return ARCHIV_TYPE.NORMAL;
         return ARCHIV_TYPE.NONE;
     }
-    
+
     /**
      * returns String with fileextension if we find a valid cutkiller fileheader
      * returns null if no cutkiller fileheader found

@@ -532,7 +532,7 @@ public class JDHJSplit extends PluginOptional {
         String name = file.getName();
         if (name.matches(".*\\.a.$")) return ARCHIV_TYPE.UNIX;
         if (name.matches(".*\\.\\d+\\.xtm$")) return ARCHIV_TYPE.XTREMSPLIT;
-        if (name.matches(".*\\.[\\d]+($|\\.[^\\d]*$)")) return ARCHIV_TYPE.NORMAL;
+        if (name.matches(".*\\.[\\d]+($|\\.[^\\d]{1,5}$)")) return ARCHIV_TYPE.NORMAL;
         return ARCHIV_TYPE.NONE;
     }
 
