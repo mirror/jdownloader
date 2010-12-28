@@ -122,16 +122,20 @@ public class ShareFlareNet extends PluginForHost {
             br.submitForm(captchaform);
         }
         br.getPage(NEXTPAGE);
-        String wait = br.getRegex("y =.*?(\\d+);").getMatch(0);
-        int tt = 45;
-        if (wait != null) {
-            logger.info("Regexed waittime is found...(" + wait + " seconds)");
-            tt = Integer.parseInt(wait);
+        String dllink = getDllink();
+        if (dllink == null) {
+            String wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
+            int tt = 45;
+            if (wait != null) {
+                logger.info("Regexed waittime is found...(" + wait + " seconds)");
+                tt = Integer.parseInt(wait);
+            }
+            sleep(tt * 1001, downloadLink);
+            br.getPage(NEXTPAGE);
+            dllink = getDllink();
+        } else {
+            logger.info("dllink found, hopefully we have no hidden waittime here...");
         }
-        sleep(tt * 1001, downloadLink);
-        br.getPage(NEXTPAGE);
-        String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/download[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("dllink is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -186,6 +190,12 @@ public class ShareFlareNet extends PluginForHost {
             }
         }
         return captchaUrl;
+    }
+
+    private String getDllink() {
+        String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/download[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
+        return dllink;
     }
 
     @Override
