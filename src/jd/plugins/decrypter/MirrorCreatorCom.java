@@ -38,9 +38,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        // Tohse links need a "/" at the end to be valid
-        if (!param.getCryptedUrl().endsWith("/")) param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
         String parameter = param.toString().replace("mir.cr/", "mirrorcreator.com/files/").replaceAll("(http://|www\\.)", "");
+        // Those links need a "/" at the end to be valid
+        if (!parameter.endsWith("/")) parameter += "/";
         parameter = "http://www." + parameter;
         String host = new Regex(parameter, "(.+)/files").getMatch(0);
         String id = new Regex(parameter, "files/([0-9A-Z]+)").getMatch(0);
