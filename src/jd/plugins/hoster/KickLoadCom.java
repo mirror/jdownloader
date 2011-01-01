@@ -38,7 +38,7 @@ public class KickLoadCom extends PluginForHost {
     private static final String MAINPAGE            = "http://kickload.com/";
     private static final String PREMIUMONLYTEXT     = "To download this file you need a premium account";
     private static final String PREMIUMONLYUSERTEXT = "Only available for premium users";
-    private static final String POSTPAGEREGEX       = "\"(http://srv\\d+\\.kickload\\.com/download\\.php\\?ticket=.*?)\"";
+    private static final String POSTPAGEREGEX       = "\"(http://(srv|ftp)\\d+\\.kickload\\.com/download\\.php\\?ticket=.*?)\"";
 
     public KickLoadCom(PluginWrapper wrapper) {
         super(wrapper);
