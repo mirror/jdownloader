@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -57,7 +58,7 @@ public class MvdD extends PluginForDecrypt {
 
         this.br.setFollowRedirects(true);
         this.br.getPage(parameter);
-        final String videoid = this.br.getRegex(Pattern.compile("p\\.addVariable\\('_videoid','(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String videoid = new Regex(parameter, "myvideo\\.de/watch/(\\d+)").getMatch(0);
         String serverpath = this.br.getRegex(Pattern.compile("<link rel='image_src'.*?href='(.*?)thumbs/.*?'.*?/><link", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (serverpath == null) {
             serverpath = this.br.getRegex("\"(http://is[0-9]+\\.myvideo\\.de/de/movie[0-9]+/.*?/)thumbs\"").getMatch(0);

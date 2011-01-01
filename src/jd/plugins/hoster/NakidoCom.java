@@ -70,15 +70,18 @@ public class NakidoCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        long size = downloadLink.getDownloadSize();
         br.setFollowRedirects(true);
-        String dllink = br.getRegex("else.*?x\\.href='(.*?)'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("'(/[A-Z0-9]+/[A-Z0-9]+\\?attach.*?)'").getMatch(0);
+        String dllink = br.getRegex("else.*?x\\.href=\\'(.*?)\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(/[A-Z0-9]+/[A-Z0-9]+\\?attach.*?)\\'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.equals("javascript:void(0)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available!");
         dllink = "http://www.nakido.com" + dllink;
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
+            // To display the user the correct size
+            downloadLink.setDownloadSize(size);
             if (br.containsHTML("You have reach concurrent connection to the server")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
             if (br.getURL().contains("SERVER_BUSY")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server busy");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
