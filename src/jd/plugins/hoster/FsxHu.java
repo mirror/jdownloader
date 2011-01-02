@@ -24,7 +24,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -80,7 +79,7 @@ public class FsxHu extends PluginForHost {
             }
             String serverQueueLength = this.br.getRegex("<font color=\"#FF0000\"><strong>(\\d+?)</strong></font> felhaszn.l. van el.tted").getMatch(0);
             if (serverQueueLength == null) {
-                logger.warning("serverQueueLength is null...");
+                this.logger.warning("serverQueueLength is null...");
                 serverQueueLength = "notfound";
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
