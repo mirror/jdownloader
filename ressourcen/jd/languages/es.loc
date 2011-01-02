@@ -1430,6 +1430,7 @@ plugins.hoster.netloadin.errors.couldnotfollow = No disponible
 plugins.hoster.netloadin.errors.damagedfile = Archivo dañado
 plugins.hoster.netloadin.errors.dlnotfound = No disponible
 plugins.hoster.netloadin.errors.fileondmgserver = El archivo está en un servidor dañado
+plugins.hoster.nicovideojp.only4registered = Solo disponible para usuarios Premium
 plugins.hoster.nopremiumsupport = El complemento para este servidor no soporta cuentas Premium.
 plugins.hoster.onefichiercom.passwordprotected = Enlace con contraseña
 plugins.hoster.onefichiercom.wrongpassword = Contraseña incorrecta
