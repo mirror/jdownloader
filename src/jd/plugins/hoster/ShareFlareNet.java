@@ -25,6 +25,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -50,6 +51,8 @@ public class ShareFlareNet extends PluginForHost {
     public String getAGBLink() {
         return "http://shareflare.net/page/terms.php";
     }
+
+    private static final Object LOCK = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -178,6 +181,15 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
+            ai.setStatus("Status can only be checked while downloading!");
+            account.setValid(true);
+            return ai;
+        }
     }
 
     private String getCaptchaUrl() {

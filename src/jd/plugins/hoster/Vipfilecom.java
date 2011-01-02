@@ -48,7 +48,8 @@ public class Vipfilecom extends PluginForHost {
         return "http://vip-file.com/tmpl/terms.php";
     }
 
-    public static final String FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
+    public static final String  FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
+    private static final Object LOCK          = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
@@ -136,6 +137,15 @@ public class Vipfilecom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
+            ai.setStatus("Status can only be checked while downloading!");
+            account.setValid(true);
+            return ai;
+        }
     }
 
     @Override

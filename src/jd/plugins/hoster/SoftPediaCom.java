@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://[\\w\\.]*?softpedia\\.com/get/.+/.*?\\.shtml" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://(www\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?-download-\\d+\\.(s)?html)" }, flags = { 2 })
 public class SoftPediaCom extends PluginForHost {
 
     public SoftPediaCom(PluginWrapper wrapper) {
@@ -43,11 +43,11 @@ public class SoftPediaCom extends PluginForHost {
         return "http://www.softpedia.com/user/terms.shtml";
     }
 
-    private static final String   moddbservers = "moddbservers";
-    private static final String   SERVER0      = "SP Mirror (US)";
-    private static final String   SERVER1      = "SP Mirror (RO)";
-    private static final String   SERVER2      = "Softpedia Mirror (US)";
-    private static final String   SERVER3      = "Softpedia Mirror (RO)";
+    private static final String   SOFTPEDIASERVERS = "allservers";
+    private static final String   SERVER0          = "SP Mirror (US)";
+    private static final String   SERVER1          = "SP Mirror (RO)";
+    private static final String   SERVER2          = "Softpedia Mirror (US)";
+    private static final String   SERVER3          = "Softpedia Mirror (RO)";
 
     /** The list of server values displayed to the user */
     private static final String[] servers;
@@ -57,11 +57,11 @@ public class SoftPediaCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), moddbservers, servers, JDL.L("plugins.host.SoftPediaCom.servers", "Use this server:")).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SOFTPEDIASERVERS, servers, JDL.L("plugins.host.SoftPediaCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
     private int getConfiguredServer() {
-        switch (getPluginConfig().getIntegerProperty(moddbservers, -1)) {
+        switch (getPluginConfig().getIntegerProperty(SOFTPEDIASERVERS, -1)) {
         case 0:
             logger.fine("The server " + SERVER0 + " is configured");
             return 0;
@@ -78,6 +78,11 @@ public class SoftPediaCom extends PluginForHost {
             logger.fine("No server is configured, returning default server (" + SERVER0 + ")");
             return 0;
         }
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        String fileID = new Regex(link.getDownloadURL(), "softpedia\\.com/progDownload/(.*?)-Download-\\d+\\.html").getMatch(0);
+        if (fileID != null) link.setUrlDownload("http://www.softpedia.com/get/Programming/" + fileID + ".shtml");
     }
 
     @Override
