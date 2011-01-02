@@ -280,6 +280,7 @@
 		<buildAddon number="137" package="scriptlauncher" include="scriptlauncher/**" />
 		<buildAddon number="140" package="JDFeedMe" include="jdfeedme/**" />
 		<buildAddon number="141" package="AntiReconnect" include="antireconnect/**" />
+		<buildAddon number="142" package="Extraction" include="extraction/**" />
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
