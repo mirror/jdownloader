@@ -28,11 +28,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefrog.to" }, urls = { "http://[\\w\\.]*?filefrog\\.to/download/\\d+/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FilefrogTo extends PluginForHost {
@@ -88,7 +88,7 @@ public class FilefrogTo extends PluginForHost {
             form.setAction(downloadLink.getDownloadURL());
             br.submitForm(form);
         }
-        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 0);
+        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();
