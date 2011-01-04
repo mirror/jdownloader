@@ -44,6 +44,8 @@ public class UzManTvCom extends PluginForHost {
         return "http://www.uzmantv.com/kullanimkosullari";
     }
 
+    private static final String DLLINKPART = "?source=site";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
@@ -60,7 +62,8 @@ public class UzManTvCom extends PluginForHost {
         DLLINK = getDllink();
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        downloadLink.setFinalFileName(filename + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
+        DLLINK += DLLINKPART;
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -120,9 +123,10 @@ public class UzManTvCom extends PluginForHost {
         }
         String jsOne = br.getRegex("</div><script type=\"text/javascript\">(.*?)</script>").getMatch(0);
         String securedStuff = br.getRegex("var tok = (.*?);").getMatch(0);
-        if (securedStuff == null || jsOne == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String ext = br.getRegex("ext=([a-z0-9]{2,5})\\&").getMatch(0);
+        if (securedStuff == null || jsOne == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         securedStuff = execJS(jsOne + securedStuff);
-        return "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + securedStuff + ".flv?source=site";
+        return "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + securedStuff + "." + ext;
     }
 
     private String execJS(final String fun) throws Exception {

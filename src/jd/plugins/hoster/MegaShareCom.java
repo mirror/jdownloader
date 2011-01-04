@@ -150,7 +150,7 @@ public class MegaShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String reconnectWaittime = br.getRegex("var c = (\\d+);").getMatch(0);
         if (reconnectWaittime != null) {
-            if (Integer.parseInt(reconnectWaittime) > 10) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l);
+            if (Integer.parseInt(reconnectWaittime) > 320) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l);
         }
         String timeDiffVar = br.getRegex(TIMEDIFFVARREGEX).getMatch(0);
         String fileId = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
