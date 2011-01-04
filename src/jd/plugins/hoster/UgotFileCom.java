@@ -198,8 +198,10 @@ public class UgotFileCom extends PluginForHost {
                     if (filename == null || filesize == null) {
                         logger.warning("Ugotfile availablecheck is broken!");
                         dl.setAvailable(false);
+                        continue;
                     } else if (classx.contains("red") || !status.matches("Alive")) {
                         dl.setAvailable(false);
+                        continue;
                     } else {
                         dl.setAvailable(true);
                     }

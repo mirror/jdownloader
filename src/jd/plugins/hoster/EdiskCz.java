@@ -21,6 +21,8 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,17 +30,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://[\\w\\.]*?edisk\\.(cz|sk|eu)/stahni/[0-9]+/.+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://[\\w\\.]*?edisk\\.(cz|sk|eu)/stahni/[0-9]+/.+\\.html" }, flags = { 2 })
 public class EdiskCz extends PluginForHost {
 
     public EdiskCz(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium();
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.edisk.cz/kontakt";
     }
+
+    private static final String MAINPAGE = "http://www.edisk.cz/";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("edisk\\.(sk|eu)", "edisk.cz"));
@@ -90,6 +95,72 @@ public class EdiskCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.postPage("http://www.edisk.cz/prihlaseni", "email=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&rememberMe=on&set_auth=true");
+        if (br.getCookie(MAINPAGE, "randStr") == null || br.getCookie(MAINPAGE, "email") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://www.edisk.cz/moje-soubory");
+        String availabletraffic = br.getRegex("id=\"usercredit\">(\\d+)</span> MB</a>").getMatch(0);
+        if (availabletraffic == null) availabletraffic = br.getRegex("<strong>Kredit: </strong>(\\d+)</span>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(Regex.getSize(availabletraffic + "MB"));
+        } else {
+            account.setValid(false);
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        String fileID = new Regex(link.getDownloadURL(), "edisk\\.cz/stahni/(\\d+)/").getMatch(0);
+        String premiumPage = br.getRegex("\"(x-premium/\\d+)\"").getMatch(0);
+        if (fileID == null || premiumPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://www.edisk.cz/cz/" + premiumPage, "");
+        String dllink = br.getRegex("class=\"wide\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("Pokud se tak nestane, <a href=\"(/stahni-.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(/stahni-rychle/\\d+/.*?\\.html)\"").getMatch(0);
+            }
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!dllink.contains("edisk.cz")) dllink = "http://www.edisk.cz" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
