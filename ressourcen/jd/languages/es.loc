@@ -1416,6 +1416,7 @@ plugins.hoster.icyfilescom.errors.nofreeslotsavailable = No hay slots gratuitos 
 plugins.hoster.ifolderru.errors.ticketwait = Esperando el ticket
 plugins.hoster.jamendo = Preferir descargas de Alta Calidad
 plugins.hoster.letitfileru.only4premium = Solo disponible para usuarios Premium
+plugins.hoster.livemixtapescom.only4registered = Solo disponible para usuarios registrados
 plugins.hoster.madsharecom.nofreeslotsavailable = No hay slots gratuitos disponibles
 plugins.hoster.mega1280com.servererror = Error del servidor
 plugins.hoster.megarapideu.busyoroffline = No disponible, o servidor ocupado
