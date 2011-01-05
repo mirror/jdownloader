@@ -1416,6 +1416,7 @@ plugins.hoster.icyfilescom.errors.nofreeslotsavailable = No free slots available
 plugins.hoster.ifolderru.errors.ticketwait = Waiting for ticket
 plugins.hoster.jamendo = Prefer High Quality Download
 plugins.hoster.letitfileru.only4premium = Only downloadable for premium users
+plugins.hoster.livemixtapescom.only4registered = Only downloadable for registered users
 plugins.hoster.madsharecom.nofreeslotsavailable = No free slots available, retry later
 plugins.hoster.mega1280com.servererror = Server error
 plugins.hoster.megarapideu.busyoroffline = File is offline or server is busy
