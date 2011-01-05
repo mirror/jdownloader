@@ -115,7 +115,7 @@ public class Multi implements IExtraction {
                     archive.setType(Archive.MULTI_RAR);
                     archive.setFirstDownloadLink(l);
                     break;
-                } else if (l.getFileOutput().matches("(?i).*\\.rar$") && !l.getFileOutput().matches("(?i)\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
+                } else if (l.getFileOutput().matches("(?i).*\\.rar$") && !l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
                     archive.setType(Archive.MULTI_RAR);
                     archive.setFirstDownloadLink(l);
                     break;
