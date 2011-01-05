@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -31,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/file/[0-9|A-Z]+" }, flags = { 2 })
@@ -72,14 +74,13 @@ public class Mega1280Com extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         if (br.containsHTML("Vui lòng chờ cho lượt download kế tiếp")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-        // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
-        String captchaurl = "http://mega.1280.com/security_code.php";
-        String code = getCaptchaCode(captchaurl, downloadLink);
-        Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Captcha Usereingabe in die Form einfügen
-        captchaForm.put("code_security", code);
-        br.submitForm(captchaForm);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.parse();
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, downloadLink);
+        rc.setCode(c);
         if (br.containsHTML("frm_download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String downloadURL = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/downloads/file/[a-z0-9]+/.*?)\\'").getMatch(0);
         if (downloadURL == null) downloadURL = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);

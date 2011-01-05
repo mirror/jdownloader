@@ -176,7 +176,8 @@ public class FilesMailRu extends PluginForHost {
 
     private String fixLink(String dllink) {
         logger.info("Correcting link...");
-        dllink = dllink.replace("content3-n", "content3");
+        String replaceThis = new Regex(dllink, "http://(content\\d+-n)\\.files\\.mail\\.ru.*?").getMatch(0);
+        if (replaceThis != null) dllink = dllink.replace(replaceThis, replaceThis.replace("-n", ""));
         return dllink;
     }
 
