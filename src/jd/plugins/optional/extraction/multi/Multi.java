@@ -57,16 +57,23 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
  * 
  */
 public class Multi implements IExtraction {
-    private static final String  DUMMY_HOSTER = "dum.my";
-    private static final String  PRIORITY     = "PRIORITY";
+    private static final String      DUMMY_HOSTER = "dum.my";
+    private static final String      PRIORITY     = "PRIORITY";
 
-    private Archive              archive;
-    private int                  crack;
-    private ExtractionController con;
-    private ISevenZipInArchive   inArchive;
-    private List<String>         postprocessing;
-    private SubConfiguration     conf;
-    private ArchiveFormat        format;
+    private Archive                  archive;
+    private int                      crack;
+    private ExtractionController     con;
+    private ISevenZipInArchive       inArchive;
+    private List<String>             postprocessing;
+    private SubConfiguration         conf;
+    private ArchiveFormat            format;
+
+    // For 7z
+    private MultiOpener              multiopener;
+    // For rar
+    private RarOpener                raropener;
+    // For all single files
+    private RandomAccessFileInStream stream;
 
     public Multi() {
         crack = 0;
@@ -162,13 +169,26 @@ public class Multi implements IExtraction {
         con.fireEvent(ExtractionConstants.WRAPPER_PASSWORT_CRACKING);
 
         try {
+            if (inArchive != null) {
+                inArchive.close();
+            }
+
             if (archive.getType() == Archive.SINGLE_FILE) {
-                inArchive = SevenZip.openInArchive(format, new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r")), password);
+                inArchive = SevenZip.openInArchive(format, stream, password);
             } else if (archive.getType() == Archive.MULTI) {
-                MultiOpener multiopener = new MultiOpener(password);
-                inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener));
+                if (multiopener != null) {
+                    multiopener.close();
+                }
+
+                multiopener = new MultiOpener(password);
+                IInStream inStream = new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener);
+                inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == Archive.MULTI_RAR) {
-                RarOpener raropener = new RarOpener(password);
+                if (raropener != null) {
+                    raropener.close();
+                }
+
+                raropener = new RarOpener(password);
                 IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             }
@@ -203,6 +223,9 @@ public class Multi implements IExtraction {
         } catch (FileNotFoundException e) {
             return false;
         } catch (SevenZipException e) {
+            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
             return false;
         }
     }
@@ -354,12 +377,14 @@ public class Multi implements IExtraction {
                     format = ArchiveFormat.BZIP2;
                 }
 
-                inArchive = SevenZip.openInArchive(format, new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r")));
+                stream = new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r"));
+                inArchive = SevenZip.openInArchive(format, stream);
             } else if (archive.getType() == Archive.MULTI) {
-                MultiOpener multiopener = new MultiOpener();
-                inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener));
+                multiopener = new MultiOpener();
+                IInStream inStream = new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener);
+                inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == Archive.MULTI_RAR) {
-                RarOpener raropener = new RarOpener();
+                raropener = new RarOpener();
                 IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             } else {
@@ -447,8 +472,22 @@ public class Multi implements IExtraction {
 
     public void close() {
         try {
+            if (multiopener != null) {
+                multiopener.close();
+            }
+
+            if (raropener != null) {
+                raropener.close();
+            }
+
+            if (stream != null) {
+                stream.close();
+            }
+
             inArchive.close();
         } catch (SevenZipException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

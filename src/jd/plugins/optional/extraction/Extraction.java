@@ -850,6 +850,17 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
+        case ExtractionConstants.NOT_ENOUGH_SPACE:
+            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
+                if (link == null) continue;
+
+                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                link.getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.notenoughspace", "Not enough space to extract"));
+                link.requestGuiUpdate();
+            }
+
+            this.onFinished(controller);
+            break;
         }
     }
 
