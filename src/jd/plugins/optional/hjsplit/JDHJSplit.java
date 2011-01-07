@@ -561,6 +561,7 @@ public class JDHJSplit extends PluginOptional {
         for (OptionalPluginWrapper pow : pluginsOptional) {
             if (pow.getAnnotation().id().equals("extraction") && pow.isEnabled()) {
                 logger.warning("Disable extraction to use this plugin");
+                UserIO.getInstance().requestMessageDialog(0, "Disable extraction to use this plugin");
                 return false;
             }
         }

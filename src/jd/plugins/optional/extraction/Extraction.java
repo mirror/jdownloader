@@ -477,6 +477,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             if (pow.getAnnotation().id().equals("unrar") || pow.getAnnotation().id().equals("hjsplit")) {
                 if (pow.isEnabled()) {
                     logger.warning("Disable unrar and hjsplit to use this plugin");
+                    UserIO.getInstance().requestMessageDialog(0, "Disable unrar and hjsplit to use this plugin");
                     return false;
                 }
             }
@@ -729,6 +730,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
             this.onFinished(controller);
             break;
+        case ExtractionConstants.REMOVE_ARCHIVE_METADATA:
+            archives.remove(controller.getArchiv());
+            break;
         }
     }
 
@@ -860,6 +864,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             }
 
             this.onFinished(controller);
+            break;
+        case ExtractionConstants.REMOVE_ARCHIVE_METADATA:
+            archives.remove(controller.getArchiv());
             break;
         }
     }
