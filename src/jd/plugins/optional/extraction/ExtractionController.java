@@ -152,6 +152,8 @@ public class ExtractionController extends Thread implements JDRunnable {
                 extractor.extract();
                 update.cancel();
 
+                extractor.close();
+
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
                     if (!archive.getGotInterrupted() && removeAfterExtraction) {
@@ -210,12 +212,12 @@ public class ExtractionController extends Thread implements JDRunnable {
                 fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
             }
         } catch (Exception e) {
+            extractor.close();
             this.exception = e;
             JDLogger.exception(e);
             fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
         } finally {
             fireEvent(ExtractionConstants.REMOVE_ARCHIVE_METADATA);
-            extractor.close();
         }
     }
 

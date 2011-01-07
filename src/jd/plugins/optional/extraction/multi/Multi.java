@@ -272,6 +272,11 @@ public class Multi implements IExtraction {
                     call.close();
                 }
 
+                // Set last write time
+                if (item.getLastWriteTime() != null) {
+                    extractTo.setLastModified(item.getLastWriteTime().getTime());
+                }
+
                 if (archive.getExitCode() != 0) { return; }
 
                 // TODO: Write an proper CRC check

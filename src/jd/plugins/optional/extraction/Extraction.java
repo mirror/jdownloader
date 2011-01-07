@@ -551,7 +551,8 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH, JDL.L("gui.config.extraction.subpath", "Subpath")));
         ce.setDefaultValue("%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 1, 600, 5).setDefaultValue(5));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 1, 600, 5).setDefaultValue(5));
+        ce.setEnabledCondidtion(conditionEntry, true);
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.extraction.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.extraction.deep_extract", "Deep-Extraction")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.extraction.remove_infofile", "Delete Infofile after extraction")).setDefaultValue(false));
