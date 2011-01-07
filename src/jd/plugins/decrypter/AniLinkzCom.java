@@ -32,11 +32,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 8888 $", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://[\\w\\.]*?anilinkz\\.com/(?!get).+/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 13155 $", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://[\\w\\.]*?anilinkz\\.com/(?!get).+/.+" }, flags = { 0 })
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(zshare\\.net|megavideo\\.com|youtube\\.com)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(veoh\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(zshare\\.net|megavideo\\.com|youtube\\.com|veoh\\.com)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
 
     public AniLinkzCom(final PluginWrapper wrapper) {
@@ -47,13 +47,23 @@ public class AniLinkzCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final Browser br2 = this.br.cloneBrowser();
         this.br.getHeaders().put("Referer", null);
         this.br.getPage(parameter);
+        final Browser br2 = this.br.cloneBrowser();
         // set filepackage
         final String filepackage = this.br.getRegex("<h3>(.*?)</h3>").getMatch(0);
         // get Mirrors
-        final int mirrorCount = this.br.getRegex("Source \\d+").count();
+        int mirrorCount = 0;
+        final String[] img = this.br.getRegex("(/images/src\\d+\\.png)").getColumn(0);
+        for (int i = img.length - 1; i > 0; i--) {
+            br2.openGetConnection(img[i]);
+            if (br2.getRequest().getHttpConnection().getResponseCode() == 404) {
+                mirrorCount = i;
+            } else {
+                mirrorCount = i;
+                break;
+            }
+        }
         final List<String> unescape = new ArrayList<String>();
         String[] dllinks;
         String mirror = null;
@@ -65,11 +75,11 @@ public class AniLinkzCom extends PluginForDecrypt {
             if (escapeAll != null) {
                 escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
             } else {
-                logger.warning("Decrypter out of date for link: " + parameter);
+                this.logger.warning("Decrypter out of date for link: " + parameter);
                 return null;
             }
             unescape.add(Encoding.htmlDecode(escapeAll));
-            dllinks = new Regex(unescape.get(i), "(url|file)=(.*?)\"").getColumn(1);
+            dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
             if ((dllinks == null) || (dllinks.length == 0)) {
                 dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
             }
@@ -124,13 +134,13 @@ public class AniLinkzCom extends PluginForDecrypt {
                         }
                     } catch (final Exception e) {
                         JDLogger.exception(e);
-                        logger.warning("Decrypter Exception for link: " + dllink);
+                        continue;
                     }
                     if (mirror == null) {
                         mirror = new Regex(dllink, "http://.*?\\.(\\w+\\.\\w+)/.*?").getMatch(0);
                     }
                     if ((mirrorCount == 0) && (new Regex(mirror, AniLinkzCom.PATTERN_UNSUPPORTED_HOSTER).count() == 1)) {
-                        logger.warning(mirror + " is not supported yet! Link: " + parameter);
+                        this.logger.warning(mirror + " is not supported yet! Link: " + parameter);
                         return null;
                     }
                     if ((new Regex(dllink, AniLinkzCom.PATTERN_SUPPORTED_FILE_EXTENSION).count() == 1) || (new Regex(dllink, AniLinkzCom.PATTERN_SUPPORTED_HOSTER).count() == 1)) {
@@ -157,7 +167,7 @@ public class AniLinkzCom extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter out of date for link: " + parameter);
+            this.logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
         return decryptedLinks;
