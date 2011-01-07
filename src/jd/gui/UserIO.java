@@ -321,7 +321,8 @@ public class UserIO {
      * @return an array of files or null if the user cancel the dialog
      */
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
-        return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType, null);
+
+        return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode == null ? -1 : fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType == null ? -1 : dialogType, null);
     }
 
     /**
