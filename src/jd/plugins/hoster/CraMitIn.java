@@ -333,7 +333,7 @@ public class CraMitIn extends PluginForHost {
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("value=\"Extend Premium Account\"")) {
+        if (!br.containsHTML("value=\"Extend Premium Account\"") && !br.containsHTML("alt=\"EXTEND PREMIUM ACCOUNT\">")) {
             logger.info("Entered account is valid and it's a registered account.");
             nopremium = true;
         }
@@ -349,7 +349,10 @@ public class CraMitIn extends PluginForHost {
             return ai;
         }
         String space = br.getRegex(Pattern.compile("Used space:</TD><TD>(.*?) Mb[ ]+</TD>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space == null) space = br.getRegex(Pattern.compile("<TD>Used space:.{1,20}</TD><TD><b>(.*?)</b></TD>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space == null) {
+            space = br.getRegex(Pattern.compile("<TD>Used space:.{1,20}</TD><TD><b>(.*?)</b></TD>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (space == null) space = br.getRegex(">Used Storage</TD><TD>(.*?) Mb").getMatch(0);
+        }
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points == null) points = br.getRegex(Pattern.compile("<TD>Your Points:.{1,20}</TD><TD><b>(.*?)</b></TD>", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -371,7 +374,7 @@ public class CraMitIn extends PluginForHost {
         }
         if (!nopremium) {
             String expire = br.getRegex("Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
-            if (expire == null) expire = br.getRegex(">Premium Account expires on:</TD><TD>(.*?)</TD>").getMatch(0);
+            if (expire == null) expire = br.getRegex(">Premium Account expires on(:)?</TD><TD>(.*?)</TD>").getMatch(1);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);

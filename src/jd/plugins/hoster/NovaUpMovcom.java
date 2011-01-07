@@ -25,6 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://[\\w\\.]*?nova(up|mov)\\.com/(download|sound|video)/[a-z|0-9]+" }, flags = { 0 })
 public class NovaUpMovcom extends PluginForHost {
@@ -38,12 +39,15 @@ public class NovaUpMovcom extends PluginForHost {
         return "http://novamov.com/terms.html";
     }
 
-    private static final String VIDEOREGEX  = "flashvars\\.file=\"(http.*?)\"";
-    private static final String VIDEOREGEX2 = "\"(http://s\\d+\\.novamov\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"";
+    private static final String VIDEOREGEX                   = "flashvars\\.file=\"(http.*?)\"";
+    private static final String VIDEOREGEX2                  = "\"(http://s\\d+\\.novamov\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"";
+    private static final String TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
+    private static final String TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.novaupmovcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 30 * 60 * 1000l);
         br.setFollowRedirects(false);
         String infolink = link.getDownloadURL();
         br.getPage(infolink);
@@ -72,24 +76,23 @@ public class NovaUpMovcom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("This file no longer exists on our servers")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         // onlinecheck für Videolinks
         if (parameter.getDownloadURL().contains("video")) {
             String dllink = br.getRegex(VIDEOREGEX).getMatch(0);
             if (dllink == null) dllink = br.getRegex(VIDEOREGEX2).getMatch(0);
-            String filename = br.getRegex("<h3>(.*?)</h3").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
-                }
+            String filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = filename.trim() + ".flv";
+            parameter.setFinalFileName(filename);
+            if (br.containsHTML(TEMPORARYUNAVAILABLE)) {
+                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.novaupmovcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT));
+                return AvailableStatus.TRUE;
             }
-            if (dllink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             URLConnectionAdapter con = br.openGetConnection(dllink);
             try {
                 parameter.setDownloadSize(con.getContentLength());
-                filename = filename.trim() + ".flv";
-                parameter.setFinalFileName(filename);
             } finally {
                 con.disconnect();
             }

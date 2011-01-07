@@ -63,13 +63,22 @@ public class VideoWeedCom extends PluginForHost {
                 filename = br.getRegex("<td><strong>Title: </strong>(.*?)</td>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("<td width=\"580\">[\t\n\r ]+<div class=\"div_titlu\">(.*?) - <a").getMatch(0);
+                    if (filename == null) filename = br.getRegex("colspan=\"2\"><strong>Title: </strong>(.*?)</td>").getMatch(0);
                 }
             }
         }
         dllink = br.getRegex("flashvars\\.file=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://(www\\.)?videoweed\\.com/stream/.*?\\.flv)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?n\\d+\\.(epornik|videoweed)\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://(www\\.)?n\\d+\\.(epornik|videoweed)\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("addVariable\\(\"(file|streamer)\",\"(http://.*?)\"\\)").getMatch(1);
+                    if (dllink == null) {
+                        dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/dl/[a-z0-9]+/[a-z0-9]+/.*?\\.flv)\"").getMatch(0);
+                    }
+                }
+            }
         }
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
