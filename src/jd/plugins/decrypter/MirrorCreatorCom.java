@@ -42,6 +42,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         // Those links need a "/" at the end to be valid
         if (!parameter.endsWith("/")) parameter += "/";
         parameter = "http://www." + parameter;
+        param.setCryptedUrl(parameter);
         String host = new Regex(parameter, "(.+)/files").getMatch(0);
         String id = new Regex(parameter, "files/([0-9A-Z]+)").getMatch(0);
         // This should never happen but in case a dev changes the plugin without

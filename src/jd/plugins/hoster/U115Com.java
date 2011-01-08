@@ -60,23 +60,21 @@ public class U115Com extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!br.containsHTML("class=\"alert-box\"") || br.containsHTML("很抱歉，文件不存在。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("file_name = '(.*?)';").getMatch(0);
+        if (br.containsHTML("id=\"pickcode_error\">很抱歉，文件不存在。</div>") || br.containsHTML("很抱歉，文件不存在。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)\\|优盘|115优盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?)- 115网络U盘").getMatch(0);
+            filename = br.getRegex("id=\"Download\"></a><a id=\"Download(.*?)\"></a>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("class=\"nowrap file-name [a-z]+\">(.*?)</h2>").getMatch(0);
+                filename = br.getRegex(",file_name:\"(.*?)\"").getMatch(0);
             }
         }
-        String filesize = br.getRegex("文件大小：(.*?)\\\\r\\\\n").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("文件大小：(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<li><strong>文件大小</strong>：(.*?)</li>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.replace(",", "");
         link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
-        String sh1 = br.getRegex("nsha1：([A-Z0-9]+)\\\\r\\\\n").getMatch(0);
-        if (sh1 == null) sh1 = br.getRegex("colspan=\"4\">SHA1：(A-Z0-9]+)").getMatch(0);
-        if (sh1 != null) link.setSha1Hash(sh1);
+        String sh1 = br.getRegex("<li><strong>SHA1</strong>：(.*?)<a").getMatch(0);
+        if (sh1 != null) link.setSha1Hash(sh1.trim());
         return AvailableStatus.TRUE;
     }
 
@@ -103,7 +101,8 @@ public class U115Com extends PluginForHost {
     }
 
     public String findLink() throws Exception {
-        String linkToDownload = br.getRegex("class=\"normal-down\" href=\"(.*?)\"").getMatch(0);
+        String linkToDownload = br.getRegex("\"(http://\\d+\\.(cnc|tel|bak)\\.115cdn\\.com/pickdown/.*?)\"").getMatch(0);
+        if (linkToDownload == null) linkToDownload = br.getRegex("</a>\\&nbsp;[\t\r\n ]+<a href=\"(http://.*?)\"").getMatch(0);
         return linkToDownload;
     }
 
