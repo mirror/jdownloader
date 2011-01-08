@@ -54,7 +54,7 @@ import jd.plugins.optional.extraction.multi.Multi;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision: 10523 $", defaultEnabled = true, id = "extraction", interfaceversion = 7)
+@OptionalPlugin(rev = "$Revision: 10523 $", defaultEnabled = false, id = "extraction", interfaceversion = 7)
 public class Extraction extends PluginOptional implements ControlListener, ExtractionListener, ActionListener {
     private static final String    DUMMY_HOSTER            = "dum.my";
 
@@ -551,7 +551,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH, JDL.L("gui.config.extraction.subpath", "Subpath")));
         ce.setDefaultValue("%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 1, 600, 5).setDefaultValue(5));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 1, 600, 1).setDefaultValue(5));
         ce.setEnabledCondidtion(conditionEntry, true);
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.extraction.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.extraction.deep_extract", "Deep-Extraction")).setDefaultValue(true));
@@ -743,19 +743,13 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
      * @param controller
      */
     private void assignRealDownloadDir(ExtractionController controller) {
-        PasswordListController.getInstance().addPassword(controller.getArchiv().getPassword(), true);
+        Boolean usesub = this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, false);
+        if (usesub) {
+            int min = this.getPluginConfig().getIntegerProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
+            if (min > controller.getArchiv().getNumberOfFiles()) { return; }
 
-        int min = this.getPluginConfig().getIntegerProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
-        if (min > 0) {
-            Boolean usesub = this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, false);
-            if (min >= controller.getArchiv().getNumberOfFiles()) {
-                this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, false);
-            } else {
-                this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, true);
-            }
             File dl = this.getExtractToPath(controller.getArchiv().getFirstDownloadLink());
             controller.getArchiv().setExtractTo(dl);
-            this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, usesub);
 
             ArrayList<DownloadLink> linkList = controller.getArchiv().getDownloadLinks();
             for (DownloadLink l : linkList) {
