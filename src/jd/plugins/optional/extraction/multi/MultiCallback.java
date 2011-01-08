@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.zip.CRC32;
 
 import jd.plugins.optional.extraction.ExtractionController;
 import jd.plugins.optional.extraction.ExtractionControllerConstants;
@@ -36,7 +35,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 class MultiCallback implements ISequentialOutStream {
     private FileOutputStream     fos = null;
     private ExtractionController con;
-    private CRC32                crc;
+    // private CRC32 crc;
     // private boolean shouldCrc = false;
     private int                  priority;
 
@@ -107,7 +106,7 @@ class MultiCallback implements ISequentialOutStream {
      * 
      * @return The computed CRC.
      */
-    String getComputedCRC() {
-        return Long.toHexString(crc.getValue());
-    }
+    // String getComputedCRC() {
+    // return Long.toHexString(crc.getValue());
+    // }
 }

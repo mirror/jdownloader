@@ -22,12 +22,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -68,6 +70,8 @@ public class Multi implements IExtraction {
     private SubConfiguration         conf;
     private ArchiveFormat            format;
 
+    private Logger                   logger;
+
     // For 7z
     private MultiOpener              multiopener;
     // For rar
@@ -79,6 +83,7 @@ public class Multi implements IExtraction {
         crack = 0;
         postprocessing = new ArrayList<String>();
         inArchive = null;
+        logger = JDLogger.getLogger();
     }
 
     public Archive buildArchive(DownloadLink link) {
@@ -274,7 +279,9 @@ public class Multi implements IExtraction {
 
                 // Set last write time
                 if (item.getLastWriteTime() != null) {
-                    extractTo.setLastModified(item.getLastWriteTime().getTime());
+                    if (!extractTo.setLastModified(item.getLastWriteTime().getTime())) {
+                        logger.warning("Could not set last write/modified time for " + item.getPath());
+                    }
                 }
 
                 if (archive.getExitCode() != 0) { return; }
@@ -523,7 +530,7 @@ public class Multi implements IExtraction {
      * @author botzi
      * 
      */
-    private class BooleanHelper {
+    private static class BooleanHelper {
         private boolean bool;
 
         BooleanHelper() {

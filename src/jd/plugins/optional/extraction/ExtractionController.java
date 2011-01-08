@@ -20,10 +20,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
+import java.util.logging.Logger;
 
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
+import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.nutils.jobber.JDRunnable;
 import jd.plugins.DownloadLink;
@@ -40,18 +42,14 @@ import jd.utils.locale.JDL;
 public class ExtractionController extends Thread implements JDRunnable {
     private ArrayList<ExtractionListener> listener = new ArrayList<ExtractionListener>();
     private ArrayList<String>             passwordList;
-
     private SubConfiguration              config   = null;
-
     private Exception                     exception;
     private boolean                       removeAfterExtraction;
     private ProgressController            progressController;
-
     private Archive                       archive;
-
     private IExtraction                   extractor;
-
     private Timer                         timer;
+    private Logger                        logger;
 
     ExtractionController(Archive archiv, IExtraction extractor) {
         this.archive = archiv;
@@ -61,6 +59,8 @@ public class ExtractionController extends Thread implements JDRunnable {
         extractor.setExtractionController(this);
 
         config = SubConfiguration.getConfig(JDL.L("plugins.optional.extraction.name", "Extraction"));
+
+        logger = JDLogger.getLogger();
     }
 
     /**
@@ -99,7 +99,7 @@ public class ExtractionController extends Thread implements JDRunnable {
             if (f == null) return false;
         }
 
-        long size = 1024 * 1024 * new Integer(config.getIntegerProperty(ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, 512)).longValue();
+        long size = 1024L * 1024 * config.getIntegerProperty(ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, 512);
 
         for (DownloadLink dlink : DownloadWatchDog.getInstance().getRunningDownloads()) {
             size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
@@ -114,14 +114,17 @@ public class ExtractionController extends Thread implements JDRunnable {
     public void run() {
         try {
             fireEvent(ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE);
+            logger.info("Start unpacking of " + archive.getFirstDownloadLink().getFileOutput());
             if (extractor.prepare()) {
                 if (!checkSize()) {
                     fireEvent(ExtractionConstants.NOT_ENOUGH_SPACE);
+                    logger.info("Not enough space for unpacking of " + archive.getFirstDownloadLink().getFileOutput());
                     return;
                 }
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
                     fireEvent(ExtractionConstants.WRAPPER_CRACK_PASSWORD);
+                    logger.info("Start password finding for " + archive.getFirstDownloadLink().getFileOutput());
 
                     for (String password : passwordList) {
                         if (password == null || password.equals("")) continue;
@@ -132,20 +135,29 @@ public class ExtractionController extends Thread implements JDRunnable {
                     }
                     if (archive.getPassword().equals("")) {
                         fireEvent(ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
+                        logger.info("Found no password in passwordlist " + archive.getFirstDownloadLink().getFileOutput());
 
                         if (!extractor.findPassword(archive.getPassword())) {
                             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                            logger.info("No password found for " + archive.getFirstDownloadLink().getFileOutput());
                             return;
                         }
+                        PasswordListController.getInstance().addPassword(archive.getPassword(), true);
                     }
 
                     fireEvent(ExtractionConstants.WRAPPER_PASSWORD_FOUND);
+                    logger.info("Found password for " + archive.getFirstDownloadLink().getFileOutput());
                 }
                 fireEvent(ExtractionConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS);
 
                 if (!archive.getExtractTo().exists()) {
-                    archive.getExtractTo().mkdirs();
+                    if (!archive.getExtractTo().mkdirs()) {
+                        JDLogger.getLogger().warning("Could not create subpath");
+                        fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
+                    }
                 }
+
+                logger.info("Execute unpacking of " + archive.getFirstDownloadLink().getFileOutput());
 
                 UpdateDisplay update = new UpdateDisplay(this);
                 timer.schedule(update, 0, 1000);
@@ -156,6 +168,7 @@ public class ExtractionController extends Thread implements JDRunnable {
 
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
+                    logger.info("Unpacking successfull for " + archive.getFirstDownloadLink().getFileOutput());
                     if (!archive.getGotInterrupted() && removeAfterExtraction) {
                         removeArchiveFiles();
                     }
@@ -226,7 +239,9 @@ public class ExtractionController extends Thread implements JDRunnable {
      */
     private void removeArchiveFiles() {
         for (DownloadLink link : archive.getDownloadLinks()) {
-            new File(link.getFileOutput()).delete();
+            if (!new File(link.getFileOutput()).delete()) {
+                JDLogger.getLogger().warning("Could not delete archive: " + link.getFileOutput());
+            }
         }
     }
 

@@ -283,7 +283,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         if (!getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_EXTRACT_PATH, false)) {
             path = new File(link.getFileOutput()).getParent();
         } else {
-            path = this.getPluginConfig().getStringProperty(ExtractionConstants.CONFIG_KEY_UNRARPATH, JDUtilities.getDefaultDownloadDirectory());
+            path = this.getPluginConfig().getStringProperty(ExtractionConstants.CONFIG_KEY_UNPACKPATH, JDUtilities.getDefaultDownloadDirectory());
         }
 
         File ret = new File(path);
@@ -540,7 +540,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
 
         config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDL.L("gui.config.extraction.use_extractto", "Use customized extract path")).setDefaultValue(false));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, ExtractionConstants.CONFIG_KEY_UNRARPATH, JDL.L("gui.config.extraction.path", "Extract to")));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, ExtractionConstants.CONFIG_KEY_UNPACKPATH, JDL.L("gui.config.extraction.path", "Extract to")));
         ce.setDefaultValue(JDUtilities.getDefaultDownloadDirectory());
         ce.setEnabledCondidtion(conditionEntry, true);
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDL.L("gui.config.extraction.remove_after_extract", "Delete archives after suc. extraction?")).setDefaultValue(false));
@@ -590,9 +590,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             break;
         case ExtractionConstants.INVALID_BINARY:
             logger.severe("Invalid extraction binary!");
-            this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_UNRARCOMMAND, null);
-            this.getPluginConfig().setProperty(ExtractionConstants.UNRAR_HASH, null);
-            this.getPluginConfig().save();
             controller.getArchiv().setActive(false);
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
@@ -631,8 +628,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         case ExtractionConstants.WRAPPER_CRACK_PASSWORD:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-            break;
-        case ExtractionConstants.WRAPPER_NEW_STATUS:
             break;
         case ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE:
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.openingarchive", "Opening archive"));
@@ -776,9 +771,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             break;
         case ExtractionConstants.INVALID_BINARY:
             logger.severe("Invalid extraction binary!");
-            this.getPluginConfig().setProperty(ExtractionConstants.CONFIG_KEY_UNRARCOMMAND, null);
-            this.getPluginConfig().setProperty(ExtractionConstants.UNRAR_HASH, null);
-            this.getPluginConfig().save();
             controller.getArchiv().setActive(false);
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
