@@ -253,17 +253,9 @@ public class OronCom extends PluginForHost {
         if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
+        long timeBefore = System.currentTimeMillis();
         doSomething();
         checkErrors(downloadLink);
-        // Ticket Time
-        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        int tt = 60;
-        if (ttt != null && Integer.parseInt(ttt) < 100) {
-            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-            tt = Integer.parseInt(ttt);
-        }
-        sleep(tt * 1001, downloadLink);
         String passCode = null;
         // Re Captcha handling
         if (br.containsHTML("api\\.recaptcha\\.net")) {
@@ -282,6 +274,7 @@ public class OronCom extends PluginForHost {
                 }
                 rc.getForm().put("password", passCode);
             }
+            waitTime(timeBefore, downloadLink);
             rc.setCode(c);
         } else {
             // No captcha handling
@@ -296,6 +289,7 @@ public class OronCom extends PluginForHost {
                 }
                 dlForm.put("password", passCode);
             }
+            waitTime(timeBefore, downloadLink);
             br.submitForm(dlForm);
         }
         doSomething();
@@ -315,6 +309,20 @@ public class OronCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        // Ticket Time
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        int tt = 60;
+        if (ttt != null && Integer.parseInt(ttt) < 100) {
+            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+            tt = Integer.parseInt(ttt);
+        }
+        tt -= passedTime;
+        sleep(tt * 1001l, downloadLink);
     }
 
     @Override

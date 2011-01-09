@@ -30,6 +30,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -259,72 +260,76 @@ public class HotFileCom extends PluginForHost {
          * website anyway
          */
         requestFileInformation(link);
-        if (br.containsHTML("You are currently downloading")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
-        if (br.containsHTML("starthtimer\\(\\)")) {
-            final String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
-            if (Long.parseLong(waittime.trim()) > 0) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim())); }
-        }
-        int tries = getPluginConfig().getIntegerProperty(HotFileCom.CAPTCHARETRIES, 20);
-        while (true) {
-            final Form[] forms = br.getForms();
-            final Form form = forms[1];
-            long sleeptime = 0;
-            try {
-                sleeptime = Long.parseLong(br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0)) + 1;
-                // for debugging purposes
-                logger.info("Regexed waittime is " + sleeptime + " seconds");
-            } catch (final Exception e) {
-                logger.info("WaittimeRegex broken");
-                logger.info(br.toString());
-                sleeptime = 60 * 1000l;
+        if (link.getStringProperty("directlink") != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -15);
+        } else {
+            if (br.containsHTML("You are currently downloading")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
+            if (br.containsHTML("starthtimer\\(\\)")) {
+                final String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
+                if (Long.parseLong(waittime.trim()) > 0) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim())); }
             }
-            // Reconnect if the waittime is too big!
-            if (sleeptime > 100 * 1000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime); }
-            this.sleep(sleeptime, link);
-            submit(br, form);
-            // captcha
-            if (!br.containsHTML("Click here to download")) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.handleAuto(this, link);
-
+            int tries = getPluginConfig().getIntegerProperty(HotFileCom.CAPTCHARETRIES, 20);
+            while (true) {
+                final Form[] forms = br.getForms();
+                final Form form = forms[1];
+                long sleeptime = 0;
+                try {
+                    sleeptime = Long.parseLong(br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0)) + 1;
+                    // for debugging purposes
+                    logger.info("Regexed waittime is " + sleeptime + " seconds");
+                } catch (final Exception e) {
+                    logger.info("WaittimeRegex broken");
+                    logger.info(br.toString());
+                    sleeptime = 60 * 1000l;
+                }
+                // Reconnect if the waittime is too big!
+                if (sleeptime > 100 * 1000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime); }
+                this.sleep(sleeptime, link);
+                submit(br, form);
+                // captcha
                 if (!br.containsHTML("Click here to download")) {
-                    if (tries-- > 0) {
-                        continue;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.handleAuto(this, link);
+
+                    if (!br.containsHTML("Click here to download")) {
+                        if (tries-- > 0) {
+                            continue;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                     }
                 }
-            }
 
-            break;
-        }
-        String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
-        if (dl_url == null) {
-            dl_url = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
-        }
-        if (dl_url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            if (br.containsHTML("Invalid link")) {
-                final String newLink = br.getRegex("href=\"(http://.*?)\"").getMatch(0);
-                if (newLink != null) {
-                    /* set new downloadlink */
-                    logger.warning("invalid link -> use new link");
-                    link.setUrlDownload(newLink.trim());
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+                break;
             }
-            if (br.containsHTML("You are currently downloading")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
+            if (dl_url == null) {
+                dl_url = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
+            }
+            if (dl_url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            br.setFollowRedirects(true);
+            br.setDebug(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+                if (br.containsHTML("Invalid link")) {
+                    final String newLink = br.getRegex("href=\"(http://.*?)\"").getMatch(0);
+                    if (newLink != null) {
+                        /* set new downloadlink */
+                        logger.warning("invalid link -> use new link");
+                        link.setUrlDownload(newLink.trim());
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+                if (br.containsHTML("You are currently downloading")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* filename workaround */
+            String urlFileName = Plugin.getFileNameFromURL(new URL(br.getURL()));
+            urlFileName = Encoding.htmlDecode(urlFileName);
+            link.setFinalFileName(urlFileName);
         }
-        /* filename workaround */
-        String urlFileName = Plugin.getFileNameFromURL(new URL(br.getURL()));
-        urlFileName = Encoding.htmlDecode(urlFileName);
-        link.setFinalFileName(urlFileName);
         dl.startDownload();
     }
 
@@ -513,7 +518,26 @@ public class HotFileCom extends PluginForHost {
         final String lastDl = parameter.getDownloadURL().replaceFirst("http://.*?/", "/");
         br.setCookie("http://hotfile.com", "lastdl", Encoding.urlEncode(lastDl));
         prepareBrowser(br);
-        br.getPage(parameter.getDownloadURL());
+        br.setFollowRedirects(true);
+        // Differ between normal- and directlinks
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(parameter.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                parameter.setProperty("directlink", "true");
+                parameter.setDownloadSize(con.getLongContentLength());
+                parameter.setFinalFileName(getFileNameFromHeader(con));
+                return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        br.setFollowRedirects(false);
         final Browser cl = new Browser();
         cl.setDebug(true);
         cl.setCookie("http://hotfile.com", "lastdl", br.getCookie("http://hotfile.com", "lastdl"));
