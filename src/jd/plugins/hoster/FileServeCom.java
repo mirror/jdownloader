@@ -216,7 +216,7 @@ public class FileServeCom extends PluginForHost {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, false, 1);
         if (this.dl.getConnection().getResponseCode() == 404) {
             logger.info("got a 404 error...");
             this.br.followConnection();
