@@ -208,6 +208,10 @@ public class TurboBitNet extends PluginForHost {
         if (!dllink.contains("turbobit.net")) dllink = "http://turbobit.net" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                logger.info("No traffic available");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             br.followConnection();
             logger.warning("dllink doesn't seem to be a file...");
             if (br.containsHTML("<h1>404 Not Found</h1>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");

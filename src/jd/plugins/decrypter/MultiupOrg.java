@@ -39,7 +39,7 @@ public class MultiupOrg extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("Sorry but your file does not exist or no longer exists")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] links = br.getRegex("<a href=\"pages/telecharger\\.php\\?lien=.*?\">(.*?)</a>").getColumn(0);
+        String[] links = br.getRegex("php\\?lien=(.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));

@@ -23,18 +23,18 @@ import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import flex.messaging.io.amf.ASObject;
 import flex.messaging.io.amf.AmfTrace;
 import flex.messaging.io.amf.client.AMFConnection;
 
 @HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler.com/explore/\\w+/videos/\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class VddlrCm extends PluginForHost {
-
+    // Note this plugin does still not work because of an AMF bug (?!)
     public VddlrCm(final PluginWrapper wrapper) {
         super(wrapper);
     }

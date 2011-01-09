@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-rapid.cz" }, urls = { "http://[\\w\\.]*?(share-rapid\\.(com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e-stahuj|premium-rapidshare|qiuck|rapidshare-premium|share-credit|srapid|share-free)\\.cz)|((strelci|share-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj-zdarma\\.eu|share-central\\.cz)/stahuj/[0-9]+/.+" }, flags = { 2 })
 public class ShareRapidCz extends PluginForHost {
@@ -113,7 +114,10 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Soubor byl chybně nahrán na server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000);
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!");
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            if (br.containsHTML(">Stahování zdarma je možné jen přes náš")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.sharerapidcz.only4downloadmanager", "This file can only be downloaded with the share-rapid downloadmanager!"));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         logger.info("Final downloadlink = " + dllink);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
