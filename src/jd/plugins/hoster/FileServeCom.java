@@ -54,6 +54,7 @@ public class FileServeCom extends PluginForHost {
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
+            br.setCustomCharset("utf-8");
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             final StringBuilder sb = new StringBuilder();
@@ -143,7 +144,6 @@ public class FileServeCom extends PluginForHost {
         }
         captchaJSPage = "http://fileserve.com" + captchaJSPage;
         final Browser br2 = this.br.cloneBrowser();
-        br.setCustomCharset("utf-8");
         br2.setCustomCharset("utf-8");
         // It doesn't work without accessing this page!!
         br2.getPage(captchaJSPage);
@@ -331,6 +331,8 @@ public class FileServeCom extends PluginForHost {
             this.doFree(link);
         } else {
             this.br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            handleErrors(br);
             this.br.postPage(link.getDownloadURL(), "download=premium");
             final String dllink = this.br.getRedirectLocation();
             if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
