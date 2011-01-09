@@ -1378,6 +1378,7 @@ plugins.hoster.netloadin.errors.dlnotfound = Collegamento per download non trova
 plugins.hoster.netloadin.errors.fileondmgserver = File su server danneggiato
 plugins.hoster.nicovideojp.only4registered = Scaricabile solo per utenti registrati
 plugins.hoster.nopremiumsupport = Il plugin non può usare il metodo Premium!
+plugins.hoster.novaupmovcom.temporaryunavailable = Temoraneamente non disponibile
 plugins.hoster.onefichiercom.passwordprotected = Questo collegamento è protetto da password
 plugins.hoster.onefichiercom.wrongpassword = Password errata
 plugins.hoster.passquestion = Collegamento '%s' protetto da password; Inserire password:
