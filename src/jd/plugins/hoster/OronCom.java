@@ -322,7 +322,7 @@ public class OronCom extends PluginForHost {
             tt = Integer.parseInt(ttt);
         }
         tt -= passedTime;
-        sleep(tt * 1001l, downloadLink);
+        if (tt > 0) sleep(tt * 1001l, downloadLink);
     }
 
     @Override
