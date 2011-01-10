@@ -24,14 +24,18 @@ import java.awt.KeyEventPostProcessor;
 import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
@@ -298,6 +302,23 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
         this.mainTabbedPane.setSelectedComponent(this.downloadView);
         this.toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
+
+        if (OSDetector.isMac()) {
+            // add handling for Command+W for closing window on Mac OS
+            KeyStroke closeKey = KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+            this.mainTabbedPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(closeKey, "closeWindow");
+            this.mainTabbedPane.getActionMap().put("closeWindow", new AbstractAction() {
+                public void actionPerformed(ActionEvent e) {
+                    new GuiRunnable<Object>() {
+                        @Override
+                        public Object runSave() {
+                            JDGui.this.getMainFrame().setVisible(false);
+                            return null;
+                        }
+                    }.start();
+                }
+            });
+        }
     }
 
     private void initDefaults() {
