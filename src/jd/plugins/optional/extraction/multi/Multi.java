@@ -59,8 +59,16 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
  * 
  */
 public class Multi implements IExtraction {
-    private static final String      DUMMY_HOSTER = "dum.my";
-    private static final String      PRIORITY     = "PRIORITY";
+    private static final String      DUMMY_HOSTER    = "dum.my";
+    private static final String      PRIORITY        = "PRIORITY";
+
+    private static final String      PatternRar      = "(?i).*\\.rar$";
+    private static final String      PatternRarMulti = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
+    private static final String      PatternZip      = "(?i).*\\.zip$";
+    private static final String      PatternTarGz    = "(?i).*\\.tar\\.gz$";
+    private static final String      PatternTarBz2   = "(?i).*\\.tar\\.bz2$";
+    private static final String      Pattern7z       = "(?i).*\\.7z$";
+    private static final String      Pattern7zMulti  = "(?i).*\\.7z\\.\\d+$";
 
     private Archive                  archive;
     private int                      crack;
@@ -89,29 +97,45 @@ public class Multi implements IExtraction {
     public Archive buildArchive(DownloadLink link) {
         String file = link.getFileOutput();
         Archive archive = new Archive();
-        // archive.addDownloadLink(link);
 
-        String pattern = file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+.*?.rar$", "");
-        pattern = pattern.replaceAll("(?i)\\.rar$", "");
-        pattern = pattern.replaceAll("(?i)\\.r\\d+$", "");
-        pattern = pattern.replaceAll("(?i)\\.zip$", "");
-        pattern = pattern.replaceAll("(?i)\\.tar\\.gz$", "");
-        pattern = pattern.replaceAll("(?i)\\.tar\\.bz2$", "");
-        pattern = pattern.replaceAll("(?i)\\.7z$", "");
-        pattern = pattern.replaceAll("(?i)\\.7z\\.\\d+$", "");
-        pattern = "^" + Regex.escape(pattern) + ".*";
-
+        String pattern = "";
         ArrayList<DownloadLink> matches = new ArrayList<DownloadLink>();
 
-        if (!link.getHost().equals(DUMMY_HOSTER)) {
-            matches = JDUtilities.getController().getDownloadLinksByPathPattern(pattern);
+        if (file.matches(PatternRarMulti)) {
+            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+\\.rar$", "")) + "\\.pa?r?t?\\.?[0-9]+\\.rar$";
+        } else if (file.matches(PatternRar)) {
+            matches.add(buildDownloadLinkFromFile(file));
+            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + "\\.r\\d+$";
+        } else if (file.matches(Pattern7zMulti)) {
+            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z\\.\\d+$", "")) + "\\.7z\\.\\d+$";
         } else {
-            archive.setFirstDownloadLink(link);
+            matches.add(buildDownloadLinkFromFile(file));
+        }
 
-            for (File f : new File(file).getParentFile().listFiles()) {
-                if (f.isDirectory()) continue;
-                if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
-                    matches.add(buildDownloadLinkFromFile(f.getAbsolutePath()));
+        // String pattern = file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+.*?.rar$",
+        // "");
+        // pattern = pattern.replaceAll("(?i)\\.rar$", "");
+        // pattern = pattern.replaceAll("(?i)\\.r\\d+$", "");
+        // pattern = pattern.replaceAll("(?i)\\.zip$", "");
+        // pattern = pattern.replaceAll("(?i)\\.tar\\.gz$", "");
+        // pattern = pattern.replaceAll("(?i)\\.tar\\.bz2$", "");
+        // pattern = pattern.replaceAll("(?i)\\.7z$", "");
+        // pattern = pattern.replaceAll("(?i)\\.7z\\.\\d+$", "");
+        // pattern = "^" + Regex.escape(pattern) + ".*";
+
+        if (!pattern.equals("")) {
+            if (!link.getHost().equals(DUMMY_HOSTER)) {
+                for (DownloadLink l : JDUtilities.getController().getDownloadLinksByPathPattern(pattern)) {
+                    matches.add(l);
+                }
+            } else {
+                archive.setFirstDownloadLink(link);
+
+                for (File f : new File(link.getFileOutput()).getParentFile().listFiles()) {
+                    if (f.isDirectory()) continue;
+                    if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
+                        matches.add(buildDownloadLinkFromFile(f.getAbsolutePath()));
+                    }
                 }
             }
         }
@@ -243,7 +267,7 @@ public class Multi implements IExtraction {
                 final File extractTo = new File(archive.getExtractTo().getAbsoluteFile() + File.separator + item.getPath());
 
                 // Skip 0 Byte files (folders)
-                if (item.getSize() == 0) {
+                if (item == null || item.getSize() == 0) {
                     continue;
                 }
 
@@ -472,13 +496,13 @@ public class Multi implements IExtraction {
     }
 
     public boolean isArchivSupported(String file) {
-        if (file.matches("(?i).*\\.pa?r?t?\\.?\\d+.rar$")) return true;
-        if (file.matches("(?i).*\\.rar$")) return true;
-        if (file.matches("(?i).*\\.zip$")) return true;
-        if (file.matches("(?i).*\\.7z$")) return true;
-        if (file.matches("(?i).*\\.7z\\.\\d+$")) return true;
-        if (file.matches("(?i).*\\.tar\\.gz$")) return true;
-        if (file.matches("(?i).*\\.tar\\.bz2$")) return true;
+        if (file.matches(PatternRarMulti)) return true;
+        if (file.matches(PatternRar)) return true;
+        if (file.matches(PatternZip)) return true;
+        if (file.matches(Pattern7z)) return true;
+        if (file.matches(Pattern7zMulti)) return true;
+        if (file.matches(PatternTarGz)) return true;
+        if (file.matches(PatternTarBz2)) return true;
         return false;
     }
 
@@ -530,7 +554,7 @@ public class Multi implements IExtraction {
      * @author botzi
      * 
      */
-    private static class BooleanHelper {
+    private class BooleanHelper {
         private boolean bool;
 
         BooleanHelper() {

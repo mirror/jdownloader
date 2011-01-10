@@ -60,7 +60,12 @@ public class HJSplt implements IExtraction {
         file = this.getStartFile(file);
 
         ArrayList<File> files = getFileList(file);
+
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        a.setDownloadLinks(ret);
+
+        if (files == null) return a;
+
         String startfile = getStartFile(new File(link.getFileOutput())).getAbsolutePath();
 
         for (File f : files) {
@@ -76,7 +81,6 @@ public class HJSplt implements IExtraction {
             ret.add(l);
         }
 
-        a.setDownloadLinks(ret);
         a.setProtected(false);
 
         return a;
@@ -167,6 +171,17 @@ public class HJSplt implements IExtraction {
         switch (getArchiveType(new File(file))) {
         case NONE:
             return false;
+        case NORMAL:
+            if (file.matches("(?i).*\\.7z\\.\\d+$")) {
+                return false;
+            } else {
+                Archive a = buildDummyArchive(file);
+                if (a.getFirstDownloadLink() != null || a.getDownloadLinks().size() < 2) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
         default:
             return true;
         }
