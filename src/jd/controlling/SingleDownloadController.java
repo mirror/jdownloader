@@ -33,9 +33,9 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettings;
 import jd.http.HTTPProxy;
+import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -316,6 +316,11 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
             ArrayList<DownloadLink> links = DownloadController.getInstance().getAllDownloadLinks();
             for (DownloadLink link : links) {
                 if (downloadLink != link && downloadLink.getFileOutput().equals(link.getFileOutput())) {
+                    /*
+                     * mirror links need this error at the moment for other
+                     * things to work correctly
+                     */
+                    link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
                     link.getLinkStatus().setErrorMessage(JDL.LF("controller.status.fileexists.othersource", "File loaded from %s.", downloadLink.getHost()));
                     link.setEnabled(false);
                     if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(link);

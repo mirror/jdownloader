@@ -150,14 +150,26 @@ public class Multi implements IExtraction {
                 if (l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) {
                     archive.setType(Archive.MULTI_RAR);
                     archive.setFirstDownloadLink(l);
+                    if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                        /* this should help finding the link that got downloaded */
+                        continue;
+                    }
                     break;
                 } else if (l.getFileOutput().matches("(?i).*\\.rar$") && !l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
                     archive.setType(Archive.MULTI_RAR);
                     archive.setFirstDownloadLink(l);
+                    if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                        /* this should help finding the link that got downloaded */
+                        continue;
+                    }
                     break;
                 } else if (l.getFileOutput().matches("(?i).*\\.7z\\.001$")) {
                     archive.setType(Archive.MULTI);
                     archive.setFirstDownloadLink(l);
+                    if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                        /* this should help finding the link that got downloaded */
+                        continue;
+                    }
                     break;
                 }
             }

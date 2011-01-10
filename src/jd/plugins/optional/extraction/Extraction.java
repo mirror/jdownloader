@@ -143,7 +143,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                         if (isLinkSupported(archiveStartFile.getAbsolutePath())) {
                             Archive ar = buildDummyArchive(archiveStartFile);
                             if (ar.isActive()) continue;
-
                             addToQueue(buildDummyArchive(archiveStartFile));
                         }
                     }

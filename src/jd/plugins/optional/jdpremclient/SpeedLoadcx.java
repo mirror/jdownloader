@@ -289,7 +289,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
             String hosts = null;
             try {
                 page = br.getPage("http://speedload.cx/?action=api&method=checkLogin&nick=" + username + "&pass=" + pass);
-                hosts = br.getPage("http://speedload.cx/hoster.html");
+                hosts = br.getPage("http://speedload.cx/?action=api&method=getHoster&nick=" + username);
             } catch (Exception e) {
                 account.setTempDisabled(true);
                 account.setValid(true);

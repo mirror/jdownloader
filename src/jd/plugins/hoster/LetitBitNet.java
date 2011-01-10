@@ -133,6 +133,7 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String dlUrl = null;
+        int uu = 1;
         requestFileInformation(downloadLink);
         br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
@@ -154,8 +155,15 @@ public class LetitBitNet extends PluginForHost {
             br.submitForm(premiumform);
             String iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=\\&emergency_mode=)\"").getMatch(0);
             if (iFrame != null) {
-                logger.info("Found iframe, accessing it...");
+                logger.info("Found iframe(old one), accessing it...");
                 br.getPage("http://letitbit.net" + iFrame);
+            }
+            if (iFrame == null) {
+                iFrame = br.getRegex("(/sms/check2_iframe\\.php\\?.*?uid=.*?)\"").getMatch(0);
+                if (iFrame != null) {
+                    logger.info("Found iframe(new one), accessing it...");
+                    br.getPage("http://letitbit.net" + iFrame);
+                }
             }
             dlUrl = getUrl(account);
         } else {
