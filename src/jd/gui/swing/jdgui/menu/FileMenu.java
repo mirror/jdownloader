@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.menu;
 
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
@@ -23,8 +24,11 @@ public class FileMenu extends JMenu {
         add(new RestoreAction());
         add(new RestartAction());
 
-        if (!OSDetector.isMac()) {
-            add(new ExitAction());
+        // add exit action, used by tray extension
+        JMenuItem exitItem = add(new ExitAction());
+        // but hide it from menu action list in case we are on Mac
+        if (OSDetector.isMac()) {
+            exitItem.setVisible(false);
         }
     }
 
