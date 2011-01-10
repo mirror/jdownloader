@@ -27,12 +27,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxupload.com" }, urls = { "http://(www\\.)?maxupload\\.com/files/[A-Za-z0-9]+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxupload.com" }, urls = { "http://(www\\.)?maxupload\\.com/files/[A-Za-z0-9]+\\.html" }, flags = { 0 })
 public class MaxUploadCom extends PluginForHost {
 
     public MaxUploadCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE + "/get-premium.php");
     }
 
     @Override

@@ -142,6 +142,8 @@ public class MegaShareCom extends PluginForHost {
         String post = specialstuff.getMatch(0) + "=" + specialstuff.getMatch(1) + "&" + preferThat2 + ".x=" + new Random().nextInt(10) + "&" + preferThat2 + ".y=" + new Random().nextInt(10) + "&" + preferThat2 + "=" + preferThat;
         br.postPage(downloadLink.getDownloadURL(), post);
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("addthis_open\\(this, \\'\\', \\'http://(www\\.)?MegaShare\\.com\\d+\\', \\'(.*?)\\'\\)").getMatch(1);
+        if (filename != null) downloadLink.setName(filename);
         return AvailableStatus.TRUE;
     }
 

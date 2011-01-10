@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdmixtapes.com" }, urls = { "http://(www\\.)?hdmixtapes\\.com/(newsingles|mixtapes)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdmixtapes.com" }, urls = { "http://(www\\.)?hdmixtapes\\.com/(newsingles|mixtape(s)?)/.+" }, flags = { 0 })
 public class HdMxTpsCom extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -68,7 +68,10 @@ public class HdMxTpsCom extends PluginForDecrypt {
         if (br.containsHTML("<title> -  // Free Download @ HDMixtapes\\.com </title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (finallink == null) {
             finallink = br.getRegex("<div style=\"margin-top:40px;\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("<\\!--<a href=\"(http://.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("<\\!--<a href=\"(http://.*?)\"").getMatch(0);
+                if (finallink == null) finallink = br.getRegex("\\d+\\&url=(http://.*?)\"").getMatch(0);
+            }
         }
         if (finallink == null) {
             logger.warning("Failed to find the finallink(s) for link: " + parameter);
