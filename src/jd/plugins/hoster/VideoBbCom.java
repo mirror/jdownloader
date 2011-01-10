@@ -23,13 +23,13 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://www\\.videobb\\.com/video/\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/video/\\w+" }, flags = { 2 })
 public class VideoBbCom extends PluginForHost {
 
     private static final Object LOCK     = new Object();
@@ -99,11 +99,11 @@ public class VideoBbCom extends PluginForHost {
         if (!this.br.containsHTML("token")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final String dllink = Encoding.Base64Decode(this.br.getRegex("token1\":\"(.*?)\",").getMatch(0));
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, false, 1);
-        this.dl.setFilenameFix(true);
         if (!(this.dl.getConnection().isContentDisposition())) {
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        this.dl.setFilenameFix(true);
         this.dl.startDownload();
     }
 
