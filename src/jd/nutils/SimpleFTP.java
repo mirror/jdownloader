@@ -35,15 +35,14 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.OutputStreamWriter;
+import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -63,9 +62,8 @@ import org.appwork.utils.speedmeter.AverageSpeedMeter;
 /**
  * SimpleFTP is a simple package that implements a Java FTP client. With
  * SimpleFTP, you can connect to an FTP server and upload multiple files.
- * <p>
- * Copyright Paul Mutton, <a href="http://www.jibble.org/host+"
- * >http://www.jibble.org/</a>
+ * 
+ * Based on Work of Paul Mutton http://www.jibble.org/
  */
 public class SimpleFTP {
     private static final int                   TIMEOUT    = 10 * 1000;
@@ -324,10 +322,7 @@ public class SimpleFTP {
         try {
             Size = readLines(new int[] { 213 }, "SIZE failed");
         } catch (IOException e) {
-            if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) {
-                JDLogger.exception(e);
-                return -1;
-            }
+            if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) { return -1; }
         }
         String[] split = Size.split(" ");
         return Long.parseLong(split[1].trim());
@@ -647,29 +642,39 @@ public class SimpleFTP {
 
     }
 
-    public void download(String filename, File file) throws IOException {
+    public void download(String filename, File file, boolean restart) throws IOException {
+        long resumePosition = 0;
         if (!binarymode) System.out.println("Warning: Download in ASCII mode may fail!");
         InetSocketAddress pasv = pasv();
-
+        if (restart) {
+            resumePosition = file.length();
+            if (resumePosition > 0) {
+                sendLine("REST " + resumePosition);
+                readLines(new int[] { 350 }, "Resume not supported");
+            }
+        }
         sendLine("RETR " + filename);
         MeteredThrottledInputStream input = null;
-        DataOutputStream out = null;
-        Socket dataSocket;
+        RandomAccessFile fos = null;
+        Socket dataSocket = null;
         try {
             dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
             input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter());
-            out = new DataOutputStream(new FileOutputStream(file));
+            fos = new RandomAccessFile(file, "rw");
+            if (resumePosition > 0) {
+                /* in case we do resume, reposition the writepointer */
+                fos.seek(resumePosition);
+            }
             DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(input);
 
             String response = readLines(new int[] { 150 }, null);
-            byte[] buffer = new byte[4096];
+            byte[] buffer = new byte[32767];
             int bytesRead = 0;
-            long counter = 0;
+            long counter = resumePosition;
             while ((bytesRead = input.read(buffer)) != -1) {
                 if (Thread.currentThread().isInterrupted()) {
                     /* max 10 seks wait for buggy servers */
                     socket.setSoTimeout(TIMEOUT);
-                    out.close();
                     shutDownSocket(dataSocket);
                     input.close();
                     try {
@@ -679,17 +684,14 @@ public class SimpleFTP {
                     }
                     this.shutDownSocket(dataSocket);
                     input.close();
-                    out.close();
-
                     throw new InterruptedIOException();
                 }
                 counter += bytesRead;
-                if (bytesRead > 0) out.write(buffer, 0, bytesRead);
+                if (bytesRead > 0) fos.write(buffer, 0, bytesRead);
                 broadcaster.fireEvent(new FtpEvent(this, FtpEvent.DOWNLOAD_PROGRESS, counter));
             }
             /* max 10 seks wait for buggy servers */
             socket.setSoTimeout(TIMEOUT);
-            out.close();
             shutDownSocket(dataSocket);
             input.close();
             try {
@@ -718,15 +720,22 @@ public class SimpleFTP {
             return;
         } finally {
             try {
-                if (input != null) input.close();
+                input.close();
             } catch (Throwable e) {
             }
             try {
-                if (out != null) out.close();
+                fos.close();
+            } catch (Throwable e) {
+            }
+            try {
+                dataSocket.close();
             } catch (Throwable e) {
             }
         }
+    }
 
+    public void download(String filename, File file) throws IOException {
+        download(filename, file, false);
     }
 
     private void shutDownSocket(Socket dataSocket) {

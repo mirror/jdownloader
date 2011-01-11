@@ -29,13 +29,13 @@ import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 import jd.plugins.download.DownloadInterface.Chunk;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.+/.+" }, flags = { 0 })
@@ -57,10 +57,11 @@ public class Ftp extends PluginForHost {
         SimpleFTP ftp = new SimpleFTP();
         try {
             URL url = new URL(downloadLink.getDownloadURL());
+            final String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+)").getMatch(0);
             ftp.connect(url);
             String name = null;
             if (oldStyle()) {
-                String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
+                String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
                 if (list != null) {
                     /* list command worked */
                     name = new Regex(downloadLink.getDownloadURL(), ".*/(.+)").getMatch(0);
@@ -79,16 +80,29 @@ public class Ftp extends PluginForHost {
                  * some servers do not allow to list the folder, so this may
                  * fail but file still might be online
                  */
-                long size = ftp.getSize(Encoding.urlDecode(url.getPath(), false));
+                long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {
                     downloadLink.setDownloadSize(size);
-                    name = Encoding.urlDecode(url.getPath(), false);
+                    name = new Regex(downloadLink.getDownloadURL(), ".*/(.+)").getMatch(0);
+                    if (name == null) {
+                        logger.severe("could not get filename from ftpurl");
+                        name = downloadLink.getName();
+                    }
+                    name = Encoding.urlDecode(name, false);
+                    downloadLink.setFinalFileName(name);
                 }
             }
             if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (IOException e) {
+            if (e.getMessage().contains("530 Login incorrect")) {
+                downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
+                return AvailableStatus.FALSE;
+            } else
+                throw e;
+        } catch (PluginException e) {
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
-
         } finally {
             ftp.disconnect();
         }
@@ -115,14 +129,18 @@ public class Ftp extends PluginForHost {
 
     public void download(String ftpurl, final DownloadLink downloadLink) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
-
         try {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
+            final String filePath = new Regex(ftpurl, "://.*?/(.+)").getMatch(0);
             String name = null;
             ftp.connect(url);
             if (oldStyle()) {
-                String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
+                /*
+                 * old style, list folder content and then change into folder to
+                 * retrieve the file
+                 */
+                String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
                 if (list != null) {
                     /* list command worked */
                     name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
@@ -133,28 +151,37 @@ public class Ftp extends PluginForHost {
                     name = Encoding.urlDecode(name, false);
                     downloadLink.setFinalFileName(name);
                     downloadLink.setDownloadSize(Long.parseLong(list[4]));
-                    String path = Encoding.urlDecode(url.getPath().substring(0, url.getPath().lastIndexOf("/")), false);
+                    String path = Encoding.urlDecode(filePath.substring(0, filePath.lastIndexOf("/")), false);
                     if (path.length() > 0) ftp.cwd(path);
                     /* switch binary mode */
                     ftp.bin();
                 }
             } else {
+                /*
+                 * new style, do a getSize request and then switch to binary and
+                 * retrieve file by complete path
+                 */
                 /* switch binary mode */
                 ftp.bin();
                 /*
                  * some servers do not allow to list the folder, so this may
                  * fail but file still might be online
                  */
-                long size = ftp.getSize(Encoding.urlDecode(url.getPath(), false));
+                long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {
                     downloadLink.setDownloadSize(size);
-                    name = Encoding.urlDecode(url.getPath(), false);
+                    name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
+                    if (name == null) {
+                        logger.severe("could not get filename from ftpurl");
+                        name = downloadLink.getName();
+                    }
+                    name = Encoding.urlDecode(name, false);
+                    downloadLink.setFinalFileName(name);
                 }
             }
             if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             try {
                 ftp.getBroadcaster().addListener(new FtpListener() {
-
                     private long before   = 0;
                     private long last     = 0;
                     private long lastTime = System.currentTimeMillis();
@@ -178,7 +205,7 @@ public class Ftp extends PluginForHost {
                 downloadLink.requestGuiUpdate();
             }
 
-            File tmp;
+            File tmp = null;
             /*
              * we need dummy browser for RAFDownload, else nullpointer will
              * happen
@@ -197,10 +224,32 @@ public class Ftp extends PluginForHost {
             };
             ch.setInProgress(true);
             dl.getChunks().add(ch);
-
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
-                ftp.download(name, tmp = new File(downloadLink.getFileOutput() + ".part"));
+                if (oldStyle()) {
+                    /*
+                     * in old style we moved into the folder and only need to
+                     * retrieve the file by name
+                     */
+                    ftp.download(name, tmp = new File(downloadLink.getFileOutput() + ".part"));
+                } else {
+                    /*
+                     * in new style we need to retrieve the file by complete
+                     * path
+                     */
+                    try {
+
+                        ftp.download(Encoding.urlDecode(filePath, false), tmp = new File(downloadLink.getFileOutput() + ".part"), downloadLink.getBooleanProperty("RESUME", true));
+                    } catch (IOException e) {
+                        if (e.getMessage().contains("Resume not supported")) {
+                            /* resume not supported, retry without resume */
+                            downloadLink.setProperty("RESUME", false);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
             } finally {
                 downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 downloadLink.setDownloadInstance(null);
@@ -208,7 +257,9 @@ public class Ftp extends PluginForHost {
                 ch.setInProgress(false);
             }
             if (tmp.length() != downloadLink.getDownloadSize()) {
-                tmp.delete();
+                if (oldStyle() || downloadLink.getBooleanProperty("RESUME", true) == false) {
+                    tmp.delete();
+                }
                 throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
             }
 
@@ -218,6 +269,12 @@ public class Ftp extends PluginForHost {
 
             if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " Rename failed. file exists?"); }
             downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+        } catch (IOException e) {
+            if (e.getMessage().contains("530 Login incorrect")) {
+                downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else
+                throw e;
         } finally {
             ftp.disconnect();
         }
@@ -238,5 +295,6 @@ public class Ftp extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("RESUME", true);
     }
 }
