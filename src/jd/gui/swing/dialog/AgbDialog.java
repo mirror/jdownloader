@@ -25,7 +25,6 @@ import javax.swing.JPanel;
 
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -33,6 +32,8 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 /**
  * Dieser Dialog wird angezeigt, wenn ein Download mit einem Plugin getätigt
@@ -53,10 +54,17 @@ public class AgbDialog extends AbstractDialog<Integer> {
     public static void showDialog(final DownloadLink downloadLink) {
         if (downloadLink.getDefaultPlugin() == null) { return; }
         final AgbDialog dialog = new AgbDialog(downloadLink.getDefaultPlugin());
+        try {
+            Dialog.getInstance().showDialog(dialog);
 
-        if (JDFlags.hasAllFlags(Dialog.getInstance().showDialog(dialog), UserIO.RETURN_OK) && dialog.isAccepted()) {
-            downloadLink.getDefaultPlugin().setAGBChecked(true);
-            downloadLink.getLinkStatus().reset();
+            if (dialog.isAccepted()) {
+                downloadLink.getDefaultPlugin().setAGBChecked(true);
+                downloadLink.getLinkStatus().reset();
+            }
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
         }
     }
 

@@ -59,6 +59,8 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -141,7 +143,13 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
                                     } catch (final Exception e) {
                                         e.printStackTrace();
-                                        Dialog.getInstance().showErrorDialog(e.getMessage());
+                                        try {
+                                            Dialog.getInstance().showErrorDialog(e.getMessage());
+                                        } catch (DialogClosedException e1) {
+                                            e1.printStackTrace();
+                                        } catch (DialogCanceledException e1) {
+                                            e1.printStackTrace();
+                                        }
                                         RouterSender.getInstance().setRequested(false);
                                         // do not ask in this session again
                                         dosession = false;
@@ -168,7 +176,13 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                         RouterSender.getInstance().run();
 
                     } catch (final Exception e) {
-                        Dialog.getInstance().showErrorDialog(e.getMessage());
+                        try {
+                            Dialog.getInstance().showErrorDialog(e.getMessage());
+                        } catch (DialogClosedException e1) {
+                            e1.printStackTrace();
+                        } catch (DialogCanceledException e1) {
+                            e1.printStackTrace();
+                        }
                     }
                 }
             }.start();
@@ -357,7 +371,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
             public void actionPerformed(final ActionEvent e) {
 
                 final ImportRouterDialog importDialog = new ImportRouterDialog(LiveHeaderReconnect.getLHScripts());
-                if (Dialog.isOK(Dialog.getInstance().showDialog(importDialog))) {
+                try {
+                    Dialog.getInstance().showDialog(importDialog);
                     final String[] data = importDialog.getResult();
 
                     if (data != null) {
@@ -370,6 +385,10 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                         LiveHeaderReconnect.this.setRouterName(data[0] + " - " + data[1]);
 
                     }
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
                 }
 
             }
@@ -381,20 +400,35 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
                 final InputDialog clrDialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "CLR Import", "Please enter a Liveheader script below.", "", null, null, null);
                 clrDialog.setPreferredSize(new Dimension(500, 400));
-                final String clr = Dialog.getInstance().showDialog(clrDialog);
-                if (clr == null) { return; }
+                try {
+                    final String clr = Dialog.getInstance().showDialog(clrDialog);
+                    if (clr == null) { return; }
 
-                final String[] ret = CLRConverter.createLiveHeader(clr);
-                if (ret != null) {
-                    LiveHeaderReconnect.this.setRouterName(ret[0]);
-                    dialog.setDefaultMessage(ret[1]);
+                    final String[] ret = CLRConverter.createLiveHeader(clr);
+                    if (ret != null) {
+                        LiveHeaderReconnect.this.setRouterName(ret[0]);
+                        dialog.setDefaultMessage(ret[1]);
+                    }
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
                 }
+
             }
         });
-        final String newScript = Dialog.getInstance().showDialog(dialog);
-        if (newScript != null) {
-            this.setScript(newScript);
+        String newScript;
+        try {
+            newScript = Dialog.getInstance().showDialog(dialog);
+            if (newScript != null) {
+                this.setScript(newScript);
+            }
+        } catch (DialogClosedException e1) {
+            e1.printStackTrace();
+        } catch (DialogCanceledException e1) {
+            e1.printStackTrace();
         }
+
     }
 
     private void findIP() {
@@ -867,21 +901,28 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                         public Object runSave() {
 
                             final Gui jd = new Gui(LiveHeaderReconnect.this.getRouterIP());
-                            Dialog.getInstance().showDialog(jd);
-                            if (jd.saved) {
-                                LiveHeaderReconnect.this.setRouterIP(jd.ip);
+                            try {
+                                Dialog.getInstance().showDialog(jd);
+                                if (jd.saved) {
+                                    LiveHeaderReconnect.this.setRouterIP(jd.ip);
 
-                                if (jd.user != null) {
-                                    LiveHeaderReconnect.this.setUser(jd.user);
+                                    if (jd.user != null) {
+                                        LiveHeaderReconnect.this.setUser(jd.user);
+                                    }
+                                    if (jd.pass != null) {
+                                        LiveHeaderReconnect.this.setPassword(jd.pass);
+
+                                    }
+                                    LiveHeaderReconnect.this.setScript(jd.methode);
+                                    setName("Router Recorder Custom Script");
+
                                 }
-                                if (jd.pass != null) {
-                                    LiveHeaderReconnect.this.setPassword(jd.pass);
-
-                                }
-                                LiveHeaderReconnect.this.setScript(jd.methode);
-                                setName("Router Recorder Custom Script");
-
+                            } catch (DialogClosedException e) {
+                                e.printStackTrace();
+                            } catch (DialogCanceledException e) {
+                                e.printStackTrace();
                             }
+
                             return null;
                         }
 

@@ -15,6 +15,9 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 
 public class LiveHeaderDetectionWizard {
 
@@ -66,29 +69,32 @@ public class LiveHeaderDetectionWizard {
 
             final ContainerDialog routerInfo = new ContainerDialog(0, "Enter Router Information", p, null, "Continue", null);
 
-            if (Dialog.isOK(Dialog.getInstance().showDialog(routerInfo))) {
+            try {
+                Dialog.getInstance().showDialog(routerInfo);
+            } catch (DialogNoAnswerException e) {
+                e.printStackTrace();
+            }
+            try {
                 if (this.txtUser.getText().trim().length() < 2 || this.txtPass.getText().trim().length() < 2) {
-                    if (!Dialog.isOK(Dialog.getInstance().showConfirmDialog(0, "Warning", "Username and Password are not set. In most cases, \r\nthese information is required for a successfull reconnection.\r\n\r\nContinue anyway?"))) {
-                        continue;
-                    }
+
+                    Dialog.getInstance().showConfirmDialog(0, "Warning", "Username and Password are not set. In most cases, \r\nthese information is required for a successfull reconnection.\r\n\r\nContinue anyway?");
+
                 }
 
                 if (!RouterUtils.checkPort(this.txtIP.getText().trim(), 80)) {
-                    if (!Dialog.isOK(Dialog.getInstance().showConfirmDialog(0, "Warning", "There is no Webinterface at http://" + this.txtIP.getText() + "\r\nAre you sure that the Router IP is correct?\r\nA correct Router IP is required to find the correct settings.\r\n\r\nContinue anyway?"))) {
-                        continue;
-                    }
+                    Dialog.getInstance().showConfirmDialog(0, "Warning", "There is no Webinterface at http://" + this.txtIP.getText() + "\r\nAre you sure that the Router IP is correct?\r\nA correct Router IP is required to find the correct settings.\r\n\r\nContinue anyway?");
                 }
 
                 ret = this.scanOfflineRouters(".*" + this.txtName.getText().trim().toLowerCase().replaceAll("\\W", ".*?") + ".*", ".*" + this.txtManufactor.getText().trim().toLowerCase().replaceAll("\\W", ".*?") + ".*");
                 if (ret <= 0) {
-                    if (Dialog.isOK(Dialog.getInstance().showConfirmDialog(0, "Warning", "Could not find correct settings based on your inputs?\r\n\r\nTry again?"))) {
-                        continue;
-                    } else {
-                        return -1;
-                    }
+                    Dialog.getInstance().showConfirmDialog(0, "Warning", "Could not find correct settings based on your inputs?\r\n\r\nTry again?");
                 } else {
                     return ret;
                 }
+            } catch (DialogClosedException e) {
+                return -1;
+            } catch (DialogCanceledException e) {
+                continue;
             }
             return -1;
 

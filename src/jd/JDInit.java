@@ -62,6 +62,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.lobobrowser.util.OS;
 
 /**
@@ -255,7 +257,13 @@ public class JDInit {
                     }
 
                 });
-                Dialog.getInstance().showDialog(dialog);
+                try {
+                    Dialog.getInstance().showDialog(dialog);
+                } catch (DialogClosedException e1) {
+
+                } catch (DialogCanceledException e1) {
+
+                }
             }
         }
         this.submitVersion();

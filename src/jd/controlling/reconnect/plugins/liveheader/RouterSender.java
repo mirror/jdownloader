@@ -44,6 +44,8 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.locale.Loc;
 import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 
@@ -153,7 +155,13 @@ public class RouterSender {
         but.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
-                Dialog.getInstance().showMessageDialog(0, name + ":" + tooltip, dialog);
+                try {
+                    Dialog.getInstance().showMessageDialog(0, name + ":" + tooltip, dialog);
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
             }
 
         });
@@ -171,7 +179,15 @@ public class RouterSender {
      */
     private String choose(final String routerName2, final String upnpName, final String what) {
         final String[] options = new String[] { routerName2, upnpName };
-        final int ret = Dialog.getInstance().showComboDialog(Dialog.STYLE_HIDE_ICON, "Choose correct " + what, "Please choose the correct " + what, options, 0, null, null, null, null);
+        int ret;
+        try {
+            ret = Dialog.getInstance().showComboDialog(Dialog.STYLE_HIDE_ICON, "Choose correct " + what, "Please choose the correct " + what, options, 0, null, null, null, null);
+        } catch (DialogClosedException e) {
+            return routerName2;
+
+        } catch (DialogCanceledException e) {
+            return routerName2;
+        }
         if (ret < 0) { return routerName2; }
         return options[ret];
 
@@ -473,7 +489,13 @@ public class RouterSender {
                 }
 
             }, 0, Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.title", "UPNP Router Wizard"), Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), null);
-            Dialog.getInstance().showDialog(dialog);
+            try {
+                Dialog.getInstance().showDialog(dialog);
+            } catch (DialogClosedException e) {
+                e.printStackTrace();
+            } catch (DialogCanceledException e) {
+                e.printStackTrace();
+            }
         }
 
         for (final UpnpRouterDevice d : this.devices) {

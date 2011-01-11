@@ -34,6 +34,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 public class UserIO {
 
@@ -256,11 +258,25 @@ public class UserIO {
     }
 
     public String requestCaptchaDialog(final int flag, final String host, final ImageIcon icon, final File captchafile, final String suggestion, final String explain) {
-        return Dialog.getInstance().showDialog(new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain));
+        try {
+            return Dialog.getInstance().showDialog(new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain));
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {
-        return Dialog.getInstance().showDialog(new ClickPositionDialog(0, imagefile, title, explain));
+        try {
+            return Dialog.getInstance().showDialog(new ClickPositionDialog(0, imagefile, title, explain));
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -280,7 +296,14 @@ public class UserIO {
      * @return
      */
     public int requestComboDialog(final int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
-        return Dialog.getInstance().showComboDialog(this.convertFlagToAWDialog(flag), title, question, options, defaultSelection, icon, okText, cancelText, renderer);
+        try {
+            return Dialog.getInstance().showComboDialog(this.convertFlagToAWDialog(flag), title, question, options, defaultSelection, icon, okText, cancelText, renderer);
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     public int requestConfirmDialog(final int flag, final String question) {
@@ -292,7 +315,13 @@ public class UserIO {
     }
 
     public int requestConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
-        return this.convertAWAnswer(Dialog.getInstance().showConfirmDialog(this.convertFlagToAWDialog(flag), title, message, icon, okOption, cancelOption));
+        try {
+            return this.convertAWAnswer(Dialog.getInstance().showConfirmDialog(this.convertFlagToAWDialog(flag), title, message, icon, okOption, cancelOption));
+        } catch (DialogClosedException e) {
+            return UserIO.RETURN_CANCEL;
+        } catch (DialogCanceledException e) {
+            return UserIO.RETURN_CANCEL;
+        }
     }
 
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection) {
@@ -322,7 +351,14 @@ public class UserIO {
      */
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
 
-        return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode == null ? -1 : fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType == null ? -1 : dialogType, null);
+        try {
+            return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode == null ? -1 : fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType == null ? -1 : dialogType, null);
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -340,7 +376,14 @@ public class UserIO {
     }
 
     public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
-        return Dialog.getInstance().showInputDialog(this.convertFlagToAWDialog(flag), title, message, defaultMessage, icon, okOption, cancelOption);
+        try {
+            return Dialog.getInstance().showInputDialog(this.convertFlagToAWDialog(flag), title, message, defaultMessage, icon, okOption, cancelOption);
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public String requestInputDialog(final String message) {
@@ -373,7 +416,14 @@ public class UserIO {
      * @return
      */
     public String requestTextAreaDialog(final String title, final String message, final String def) {
-        return Dialog.getInstance().showTextAreaDialog(title, message, def);
+        try {
+            return Dialog.getInstance().showTextAreaDialog(title, message, def);
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

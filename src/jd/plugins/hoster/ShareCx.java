@@ -30,11 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.cx" }, urls = { "http://[\\w\\.]*?share\\.cx/(files/)?\\d+" }, flags = { 2 })
 public class ShareCx extends PluginForHost {
@@ -65,6 +65,7 @@ public class ShareCx extends PluginForHost {
             requestFileInformation(downloadLink);
             this.setBrowserExclusive();
             br.getPage(downloadLink.getDownloadURL());
+            br.getPage("http://www.share.cx/cms/download");
             br.setFollowRedirects(false);
             Form dlform0 = br.getForm(0);
             if (dlform0 == null) {

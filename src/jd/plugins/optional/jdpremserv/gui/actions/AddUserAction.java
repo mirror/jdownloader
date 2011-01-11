@@ -7,6 +7,8 @@ import javax.swing.AbstractAction;
 import jd.plugins.optional.jdpremserv.controlling.UserController;
 
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 public class AddUserAction extends AbstractAction {
 
@@ -22,9 +24,16 @@ public class AddUserAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent arg0) {
-        String username = Dialog.getInstance().showInputDialog(0, "Username", "");
-        String password = Dialog.getInstance().showInputDialog(0, "Password", "");
-        UserController.getInstance().addUser(username, password);
+        String username;
+        try {
+            username = Dialog.getInstance().showInputDialog(0, "Username", "");
+            String password = Dialog.getInstance().showInputDialog(0, "Password", "");
+            UserController.getInstance().addUser(username, password);
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
     }
 
 }

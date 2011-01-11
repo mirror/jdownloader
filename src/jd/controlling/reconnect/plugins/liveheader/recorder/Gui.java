@@ -47,6 +47,8 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 public class Gui extends AbstractDialog<Object> {
 
@@ -332,7 +334,13 @@ public class Gui extends AbstractDialog<Object> {
                 } catch (final Exception e1) {
                     JDLogger.exception(e1);
                 }
-                Dialog.getInstance().showDialog(new JDRRInfoPopup());
+                try {
+                    Dialog.getInstance().showDialog(new JDRRInfoPopup());
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
                 return;
             }
         }

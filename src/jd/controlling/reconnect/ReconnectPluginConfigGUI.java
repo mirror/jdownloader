@@ -152,6 +152,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
 
     @Override
     protected void onHide() {
+
     }
 
     @Override

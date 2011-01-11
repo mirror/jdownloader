@@ -32,6 +32,8 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 public class InstallerDialog extends AbstractDialog<Object> {
 
@@ -39,9 +41,16 @@ public class InstallerDialog extends AbstractDialog<Object> {
 
     public static boolean showDialog(final File dlFolder) {
         final InstallerDialog dialog = new InstallerDialog(dlFolder);
+        try {
+            Dialog.getInstance().showDialog(dialog);
+            return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null) != null;
 
-        Dialog.getInstance().showDialog(dialog);
-        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null) != null;
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private String     language = null;

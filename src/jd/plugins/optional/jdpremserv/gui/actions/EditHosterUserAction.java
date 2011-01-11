@@ -11,6 +11,8 @@ import jd.plugins.optional.jdpremserv.model.PremServUser;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 public class EditHosterUserAction extends AbstractAction {
 
@@ -38,19 +40,27 @@ public class EditHosterUserAction extends AbstractAction {
             sb.append(SizeFormatter.formatBytes(hoster.getTraffic()));
             sb.append("\r\n");
         }
-        String ret = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "SetHoster for " + obj.getUsername(), "Format: domain.com,trafficpermonth\r\n", sb.toString(), null, null, null);
-        if (ret == null) return;
-        hosters = new HashMap<String, PremServHoster>();
+        String ret;
+        try {
+            ret = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "SetHoster for " + obj.getUsername(), "Format: domain.com,trafficpermonth\r\n", sb.toString(), null, null, null);
 
-        for (String s : Regex.getLines(ret)) {
-            String[] p = s.split("\\,");
+            if (ret == null) return;
+            hosters = new HashMap<String, PremServHoster>();
 
-            if (p.length == 2) {
-                PremServHoster h = new PremServHoster(p[0], SizeFormatter.getSize(p[1].trim()));
-                hosters.put(h.getDomain(), h);
+            for (String s : Regex.getLines(ret)) {
+                String[] p = s.split("\\,");
+
+                if (p.length == 2) {
+                    PremServHoster h = new PremServHoster(p[0], SizeFormatter.getSize(p[1].trim()));
+                    hosters.put(h.getDomain(), h);
+                }
             }
+            obj.setHosters(hosters);
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
         }
-        obj.setHosters(hosters);
 
     }
 }

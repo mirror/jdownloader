@@ -38,6 +38,8 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 
@@ -144,7 +146,13 @@ public class ReconnectPluginController {
             }
 
         });
-        if (!Dialog.isOK(Dialog.getInstance().showDialog(cDialog))) { return; }
+        try {
+            Dialog.getInstance().showDialog(cDialog);
+        } catch (DialogClosedException e2) {
+            return;
+        } catch (DialogCanceledException e2) {
+            return;
+        }
         // save plugin to restore it later
         final RouterPlugin restore = this.getActivePlugin();
         final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
@@ -197,11 +205,23 @@ public class ReconnectPluginController {
 
         }, 0, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressdialog.message", "JDownloader now tries to find the correct settings to perform a reconnect.\r\nThis might take a few minutes. Please be patient!"), null);
 
-        Dialog.getInstance().showDialog(dialog);
+        try {
+            Dialog.getInstance().showDialog(dialog);
+        } catch (DialogClosedException e2) {
+            e2.printStackTrace();
+        } catch (DialogCanceledException e2) {
+            e2.printStackTrace();
+        }
 
         if (this.getActivePlugin() != DummyRouterPlugin.getInstance()) {
 
-            Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.success", "Successfull!\r\nJDownloader performs the reconnect by using '%s'.", this.getActivePlugin().getName()), JDTheme.II("gui.images.ok", 32, 32), null, null);
+            try {
+                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.success", "Successfull!\r\nJDownloader performs the reconnect by using '%s'.", this.getActivePlugin().getName()), JDTheme.II("gui.images.ok", 32, 32), null, null);
+            } catch (DialogClosedException e1) {
+                e1.printStackTrace();
+            } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
+            }
         } else {
 
             this.setActivePlugin(restore);
@@ -221,7 +241,13 @@ public class ReconnectPluginController {
 
             });
 
-            Dialog.getInstance().showDialog(conDialog);
+            try {
+                Dialog.getInstance().showDialog(conDialog);
+            } catch (DialogClosedException e1) {
+                e1.printStackTrace();
+            } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
+            }
         }
     }
 

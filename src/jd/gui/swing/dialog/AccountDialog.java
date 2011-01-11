@@ -35,7 +35,6 @@ import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
-import jd.nutils.JDFlags;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
@@ -45,6 +44,8 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 public class AccountDialog extends AbstractDialog<Integer> {
 
@@ -55,10 +56,17 @@ public class AccountDialog extends AbstractDialog<Integer> {
     public static void showDialog(final PluginForHost pluginForHost) {
         final AccountDialog dialog = new AccountDialog(pluginForHost);
 
-        if (JDFlags.hasAllFlags(Dialog.getInstance().showDialog(dialog), Dialog.RETURN_OK)) {
+        try {
+            Dialog.getInstance().showDialog(dialog);
             final Account ac = new Account(dialog.getUsername(), dialog.getPassword());
             AccountController.getInstance().addAccount(dialog.getHoster().getPlugin(), ac);
+
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
         }
+
     }
 
     private JComboBox           hoster;

@@ -12,6 +12,8 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.locale.Loc;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 /**
  * Checks files and resources, if they are valid. If not, user is asked if he
@@ -31,8 +33,8 @@ public class CodeVerifier {
         TRUSTED;
     }
 
-    private final Storage storage;
-    private final Browser br;
+    private final Storage             storage;
+    private final Browser             br;
 
     private static final CodeVerifier INSTANCE = new CodeVerifier();
 
@@ -89,18 +91,15 @@ public class CodeVerifier {
                 }
             };
 
-            Integer ret = Dialog.getInstance().showDialog(dialog);
-            // ask again!!
-
-            if (Dialog.isOK(ret)) {
+            Integer ret;
+            try {
+                ret = Dialog.getInstance().showDialog(dialog);
                 ret = Dialog.getInstance().showConfirmDialog(0, Loc.LF("jd.controlling.CodeVerifier.isJarAllowed.rlymessage", "The untrusted file %s will be loaded now.\r\nAre you sure that you want to load this file?", file.getName()));
-                if (Dialog.isOK(ret)) {
-                    state = State.USER_DECIDED_TRUSTED;
-                    this.storage.put(hash, state);
-                } else {
-                    state = State.USER_DECIDED_NOT_TRUSTED;
-                }
-            } else {
+
+            } catch (DialogClosedException e) {
+                state = State.USER_DECIDED_NOT_TRUSTED;
+                this.storage.put(hash, state);
+            } catch (DialogCanceledException e) {
                 state = State.USER_DECIDED_NOT_TRUSTED;
                 this.storage.put(hash, state);
             }

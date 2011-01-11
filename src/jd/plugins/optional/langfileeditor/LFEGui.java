@@ -66,6 +66,8 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.table.ExtRowHighlighter;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.SelectionHighlighter;
@@ -174,18 +176,25 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             UserIO.getInstance().requestMessageDialog("Started JDownloader in KEY DEBUG Mode");
         } else if (e.getSource() == this.mnuAdd) {
 
-            final String[] result = Dialog.getInstance().showDialog(new TwoTextFieldDialog(JDL.L(LFEGui.LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LFEGui.LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), "", JDL.L(LFEGui.LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), ""));
-            if (result == null || result[0].equals("")) { return; }
-            result[0] = result[0].toLowerCase();
-            for (final KeyInfo ki : this.data) {
-                if (ki.getKey().equals(result[0])) {
-                    UserIO.getInstance().requestMessageDialog(JDL.LF(LFEGui.LOCALE_PREFIX + "addKey.error.message", "The key '%s' is already in use!", result[0]));
-                    return;
+            String[] result;
+            try {
+                result = Dialog.getInstance().showDialog(new TwoTextFieldDialog(JDL.L(LFEGui.LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LFEGui.LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), "", JDL.L(LFEGui.LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), ""));
+                if (result == null || result[0].equals("")) { return; }
+                result[0] = result[0].toLowerCase();
+                for (final KeyInfo ki : this.data) {
+                    if (ki.getKey().equals(result[0])) {
+                        UserIO.getInstance().requestMessageDialog(JDL.LF(LFEGui.LOCALE_PREFIX + "addKey.error.message", "The key '%s' is already in use!", result[0]));
+                        return;
+                    }
                 }
+                this.data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], this.languageENKeysFromFile.get(result[0].toLowerCase())));
+                this.tableModel.refreshData();
+                this.updateKeyChart();
+            } catch (DialogClosedException e1) {
+                e1.printStackTrace();
+            } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
             }
-            this.data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], this.languageENKeysFromFile.get(result[0].toLowerCase())));
-            this.tableModel.refreshData();
-            this.updateKeyChart();
 
         } else if (e.getSource() == this.mnuDelete || e.getSource() == this.mnuContextDelete) {
 
@@ -751,7 +760,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             out.close();
             if (upload) {
                 String message = UserIO.getInstance().requestInputDialog(0, "Enter change description", "Please enter a short description for your changes (in english).", "", null, null, null);
-                if ((message == null)||(message.trim() == "")) {
+                if ((message == null) || (message.trim() == "")) {
                     message = "Updated language file (" + this.lngKey + ")";
                 }
                 if (!this.commit(file, message, null)) {

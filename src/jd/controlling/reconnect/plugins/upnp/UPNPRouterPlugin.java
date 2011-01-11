@@ -56,6 +56,8 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.w3c.dom.Document;
@@ -111,11 +113,18 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
             Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.actionPerformed.wizard.find.message", "Scanning all network interfaces"), null);
             dialog.setPreferredSize(new Dimension(500, 150));
-            Dialog.getInstance().showDialog(dialog);
-            if (this.devices != null && this.devices.size() > 0) {
+            try {
+                Dialog.getInstance().showDialog(dialog);
+                if (this.devices != null && this.devices.size() > 0) {
 
-                this.autoFind();
+                    this.autoFind();
+                }
+            } catch (DialogClosedException e1) {
+                e1.printStackTrace();
+            } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
             }
+
         } else if (e.getSource() == this.find) {
             final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
 
@@ -157,7 +166,13 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
             }, 0, "Looking for routers", "Wait while JDownloader is looking for router interfaces", null);
 
-            Dialog.getInstance().showDialog(dialog);
+            try {
+                Dialog.getInstance().showDialog(dialog);
+            } catch (DialogClosedException e1) {
+                e1.printStackTrace();
+            } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
+            }
         }
 
     }
