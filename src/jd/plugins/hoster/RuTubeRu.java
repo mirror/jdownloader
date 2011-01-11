@@ -19,14 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html" }, flags = { 0 })
 public class RuTubeRu extends PluginForHost {
@@ -70,9 +71,10 @@ public class RuTubeRu extends PluginForHost {
         linkurl = linkurl + "?referer=" + Encoding.urlEncode(downloadLink.getDownloadURL() + "?v=" + video_id);
         br.getPage(linkurl);
         linkurl = br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (linkurl.startsWith("rtmp:")) {
             dl = new RTMPDownload(this, downloadLink, linkurl);
-            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
             rtmp.setApp("rutube/");
             ((RTMPDownload) dl).startDownload();
         } else {

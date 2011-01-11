@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -51,12 +52,16 @@ public class SourceForgeNet extends PluginForDecrypt {
                 if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
             } else {
                 String continuelink = br.getRegex("\\}\" href=\"(http://sourceforge\\.net/projects/.*?/download)\"").getMatch(0);
-                if (continuelink != null) br.getPage(Encoding.htmlDecode(continuelink));
-                link = br.getRegex("Please use this <a href=\"(http://downloads\\.sourceforge\\.net/project/.*?)\"").getMatch(0);
+                if (continuelink == null) return null;
+                br.getPage(continuelink);
+                link = new Regex(Encoding.htmlDecode(br.toString()), "Please use this <a href=\"(http://.*?)\"").getMatch(0);
             }
             if (link == null) return null;
+            String urlPart = new Regex(link, "(http://downloads\\.sourceforge\\.net/project/.*?)http://sourceforge\\.net/").getMatch(0);
+            String secondUrlPart = new Regex(link, "(\\&ts=\\d+\\&use_mirror=.+)").getMatch(0);
+            if (urlPart == null || secondUrlPart == null) return null;
             br.setFollowRedirects(false);
-            link = Encoding.htmlDecode(link);
+            link = urlPart + secondUrlPart;
             String finallink = null;
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
