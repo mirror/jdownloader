@@ -1464,6 +1464,7 @@ plugins.hoster.shareflarenet.nofreedownloadlink = Solo disponible para usuarios 
 plugins.hoster.sharenownet.errors.servererror = Error del servidor
 plugins.hoster.shareonlinebiz.errors.servernotavailable = Servidor temporalmente no disponible
 plugins.hoster.shareonlinebiz.errors.servernotavailable3 = No hay slots gratuitos disponibles
+plugins.hoster.sharerapidcz.only4downloadmanager = Solo disponible con el admin de descargas Share-Rapid
 plugins.hoster.socifilescom.passwordprotected = Enlace con contraseña
 plugins.hoster.soundcloudcom.status.downloadavailable = Archivo original descargable
 plugins.hoster.soundcloudcom.status.previewavailable = Vista previa descargable
