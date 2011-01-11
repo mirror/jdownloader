@@ -52,22 +52,25 @@ public class EasyShareCom extends PluginForHost {
         return "http://www.easy-share.com/tos.html";
     }
 
+    private static final String MAINPAGE     = "http://www.easy-share.com/";
+    private static final String FILENOTFOUND = "Requested file is deleted";
+
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://www.easy-share.com", "language", "en");
-        br.getPage("http://www.easy-share.com/");
+        br.setCookie(MAINPAGE, "language", "en");
+        br.getPage(MAINPAGE);
         br.setDebug(true);
         br.postPage("http://www.easy-share.com/accounts/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1");
-        String acc = br.getCookie("http://www.easy-share.com/", "ACCOUNT");
-        String prem = br.getCookie("http://www.easy-share.com/", "PREMIUM");
+        String acc = br.getCookie(MAINPAGE, "ACCOUNT");
+        String prem = br.getCookie(MAINPAGE, "PREMIUM");
         if (acc == null && prem == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (acc != null && prem == null) {
             /*
              * buggy easyshare server, login does not work always, it needs
              * PREMIUM cookie
              */
-            br.setCookie("http://www.easy-share.com/", "PREMIUM", acc);
+            br.setCookie(MAINPAGE, "PREMIUM", acc);
         }
     }
 
@@ -107,7 +110,7 @@ public class EasyShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://www.easy-share.com", "language", "en");
+        br.setCookie(MAINPAGE, "language", "en");
         String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)/").getMatch(0);
         br.getPage("http://api.easy-share.com/files/" + fileID);
         if (br.containsHTML("(>errorFileNotFound<|>File Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -123,11 +126,19 @@ public class EasyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        br.setCookie("http://www.easy-share.com", "language", "en");
-        if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.followConnection();
-        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            br.setCookie(MAINPAGE, "language", "en");
+            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         if (br.containsHTML("You need a premium membership to download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         String wait = br.getRegex("w='(\\d+)'").getMatch(0);
@@ -214,13 +225,21 @@ public class EasyShareCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        br.getPage("http://www.easy-share.com");
+        br.getPage(MAINPAGE);
         br.setFollowRedirects(false);
-        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        br.setCookie("http://www.easy-share.com", "language", "en");
-        if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.followConnection();
-        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            br.setCookie(MAINPAGE, "language", "en");
+            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String url = null;
         if (br.getRedirectLocation() == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
