@@ -140,75 +140,24 @@ public class CZShareCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         br.setFollowRedirects(true);
-        String linkurl = null;
         requestFileInformation(downloadLink);
-        br.setDebug(true);
-        Form profidown = br.getFormBySubmitvalue("PROFI+download");
-        if (profidown == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/profi/profi_down.php"));
-        if (profidown == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String id = br.getRegex("type=\"hidden\" name=\"id\" value=\"(.*?)\"").getMatch(0);
-        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         login(account);
         checkPremiumIP();
-        br.getPage("http://czshare.com/profi/index.php");
-        // find premium links
-        String[] links = br.getRegex("<td class=\"table2-black\"><a href=\"(.*?)\"").getColumn(0);
-        /* check if file id already in list */
-        for (String link : links) {
-            if (link.contains("id=" + id)) {
-                linkurl = link;
-                break;
-            }
+        br.getPage(downloadLink.getDownloadURL());
+        String dllink = br.getRegex("id=\"profi_prava\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.czshare\\.com/\\d+/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("dllink is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (linkurl == null) {
-            /* link not in list, readd to list and get downloadlink */
-            requestFileInformation(downloadLink);
-            profidown = br.getFormBySubmitvalue("PROFI+download");
-            if (profidown == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/profi/profi_down.php"));
-            if (profidown == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            id = br.getRegex("type=\"hidden\" name=\"id\" value=\"(.*?)\"").getMatch(0);
-            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.submitForm(profidown);
-            Form login = br.getForm(0);
-            login.put("jmeno", Encoding.urlEncode(account.getUser()));
-            login.put("heslo", Encoding.urlEncode(account.getPass()));
-            login.put("trvale", "0");
-            br.submitForm(login);
-            links = br.getRegex("<td class=\"table2-black\"><a href=\"(.*?)\"").getColumn(0);
-            for (String link : links) {
-                if (link.contains("=" + id + "&")) {
-                    linkurl = link;
-                    break;
-                }
-                if (link.contains("/" + id + "/")) {
-                    linkurl = null;
-                    br.setFollowRedirects(false);
-                    br.getPage(link);
-                    linkurl = br.getRedirectLocation();
-                    if (linkurl == null) linkurl = link;
-                    br.setFollowRedirects(true);
-                    break;
-                }
-            }
-        }
-
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
+        // More chunks are possible but often cause servererrors...
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_PREMIUM);
         }
         dl.startDownload();
-        if (downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-            // Remove link from list if finished
-            String kod = new Regex(linkurl, "kod=([a-zA-Z0-9_]+)&").getMatch(0);
-            if (kod != null) br.postPage("http://czshare.com/profi/smazat_profi.php", "smaz%5B%5D=" + kod);
-        }
-        // Logout, why logout?
-        // br.getPage("http://czshare.com/profi/index.php?odhlasit=ano");
-
     }
 
     @Override

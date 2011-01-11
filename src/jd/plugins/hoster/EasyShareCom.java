@@ -108,17 +108,14 @@ public class EasyShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.easy-share.com", "language", "en");
-        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        br.setCookie("http://www.easy-share.com", "language", "en");
-        if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.followConnection();
-        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("You need a premium membership to download this file")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
-        String filename = br.getRegex(Pattern.compile("You are requesting:</span>(.*?)<span class=\"txtgray\">.*?\\((.*?)\\)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("You are requesting:</span>(.*?)<span class=\"txtgray\">.*?\\((.*?)\\)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)/").getMatch(0);
+        br.getPage("http://api.easy-share.com/files/" + fileID);
+        if (br.containsHTML("(>errorFileNotFound<|>File Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(Pattern.compile("<title>(?!File info)(.*?)</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("rel=\"enclosure\" length=\"(\\d+)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setDownloadSize(Regex.getSize(filesize + "b"));
         return AvailableStatus.TRUE;
     }
 
@@ -126,6 +123,11 @@ public class EasyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+        br.setCookie("http://www.easy-share.com", "language", "en");
+        if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.followConnection();
+        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         if (br.containsHTML("You need a premium membership to download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         String wait = br.getRegex("w='(\\d+)'").getMatch(0);
@@ -214,7 +216,11 @@ public class EasyShareCom extends PluginForHost {
         login(account);
         br.getPage("http://www.easy-share.com");
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+        br.setCookie("http://www.easy-share.com", "language", "en");
+        if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.followConnection();
+        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String url = null;
         if (br.getRedirectLocation() == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
