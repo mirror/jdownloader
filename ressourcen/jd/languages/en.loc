@@ -1464,6 +1464,7 @@ plugins.hoster.shareflarenet.nofreedownloadlink = Only downloadable for premium 
 plugins.hoster.sharenownet.errors.servererror = Server error
 plugins.hoster.shareonlinebiz.errors.servernotavailable = Server temporarily unavailable
 plugins.hoster.shareonlinebiz.errors.servernotavailable3 = No free slots available, retry later
+plugins.hoster.sharerapidcz.only4downloadmanager = Only downloadable with the Share-Rapid download manager
 plugins.hoster.socifilescom.passwordprotected = This link is password protected
 plugins.hoster.soundcloudcom.status.downloadavailable = Original file is downloadable
 plugins.hoster.soundcloudcom.status.previewavailable = Preview is downloadable
