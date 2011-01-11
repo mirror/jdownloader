@@ -34,7 +34,7 @@ public class PldingFldr extends PluginForDecrypt {
         String code = new Regex(parameter.toString(), "linklists/(\\w+)").getMatch(0);
         int page = 1;
         while (true) {
-            br.postPage("http://uploading.com/folders/main//?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "action=get_files&code=" + code + "&pass=&page=" + page);
+            br.postPage("http://uploading.com/linklists/main/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "action=get_files&code=" + code + "&pass=&page=" + page);
             String correctedHTML = br.toString().replace("\\", "");
             String founds[] = new Regex(correctedHTML, "(http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+)").getColumn(0);
             if (founds != null) {

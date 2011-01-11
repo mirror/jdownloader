@@ -65,7 +65,6 @@ public class ShareCx extends PluginForHost {
             requestFileInformation(downloadLink);
             this.setBrowserExclusive();
             br.getPage(downloadLink.getDownloadURL());
-            br.getPage("http://www.share.cx/cms/download");
             br.setFollowRedirects(false);
             Form dlform0 = br.getForm(0);
             if (dlform0 == null) {
