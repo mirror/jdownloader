@@ -19,10 +19,11 @@ public class HTTPProxyHTTPConnection extends HTTPConnection {
     @Override
     public void connect() throws IOException {
         if (proxy == null || !proxy.getType().equals(HTTPProxy.TYPE.HTTP)) { throw new IOException("HTTPProxyHTTPConnection: invalid HTTP Proxy!"); }
-        if (proxy.getPass() == null || proxy.getUser() == null) { throw new IOException("HTTPProxyHTTPConnection: invalid auth info"); }
-        if (proxy.getPass().length() > 0 || proxy.getUser().length() > 0) {
+        if ((proxy.getPass() != null && proxy.getPass().length() > 0) || (proxy.getUser() != null && proxy.getUser().length() > 0)) {
             /* add proxy auth */
-            requestProperties.put("Proxy-Authorization", "Basic " + Encoding.Base64Encode(proxy.getUser() + ":" + proxy.getPass()));
+            String user = proxy.getUser() == null ? "" : proxy.getUser();
+            String pass = proxy.getPass() == null ? "" : proxy.getPass();
+            requestProperties.put("Proxy-Authorization", "Basic " + Encoding.Base64Encode(user + ":" + pass));
         }
         if (isConnected()) return;/* oder fehler */
         httpSocket = createSocket();

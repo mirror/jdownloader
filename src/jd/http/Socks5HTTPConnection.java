@@ -52,9 +52,10 @@ public class Socks5HTTPConnection extends HTTPConnection {
 
     protected void authenticateProxy() throws IOException {
         try {
-            if (proxy.getPass() == null || proxy.getUser() == null) { throw new IOException("Socks5HTTPConnection: invalid auth info"); }
-            byte[] username = proxy.getUser().getBytes("UTF-8");
-            byte[] password = proxy.getPass().getBytes("UTF-8");
+            String user = proxy.getUser() == null ? "" : proxy.getUser();
+            String pass = proxy.getPass() == null ? "" : proxy.getPass();
+            byte[] username = user.getBytes("UTF-8");
+            byte[] password = pass.getBytes("UTF-8");
             /* must be 1 */
             socks5outputstream.write((byte) 1);
             /* send username */
