@@ -29,9 +29,12 @@ public abstract class RouterPlugin {
     /**
      * Finds all settings for a complete reconnect without user interaction
      * 
+     * @param progressGetter
+     * 
      * @return
+     * @throws InterruptedException
      */
-    public int autoDetection() {
+    public int runAutoDetection(ReconnectWizardProgress progressGetter) throws InterruptedException {
         return -1;
     }
 
@@ -132,11 +135,13 @@ public abstract class RouterPlugin {
     /**
      * runs a detection wizard and
      * 
+     * @param progressGetter
+     * 
      * @return returns the time the reconnect took. returns -1 if the action has
      *         not been successfull
      * @throws InterruptedException
      */
-    public int runDetectionWizard() throws InterruptedException {
+    public int runDetectionWizard(ReconnectWizardProgress progressGetter) throws InterruptedException {
         return -1;
     }
 

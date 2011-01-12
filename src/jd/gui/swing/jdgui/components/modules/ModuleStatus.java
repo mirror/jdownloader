@@ -19,18 +19,18 @@ import net.miginfocom.swing.MigLayout;
 
 public class ModuleStatus extends JPanel implements ControlListener, MouseListener {
 
-    private static final long serialVersionUID = 1745881766942067472L;
-    private static final int BARCOUNT = 15;
-    private static final int TOOLTIP_DELAY = 1000;
-    private static final int UPDATE_PAUSE = 250;
+    private static final long                   serialVersionUID    = 1745881766942067472L;
+    private static final int                    BARCOUNT            = 15;
+    private static final int                    TOOLTIP_DELAY       = 1000;
+    private static final int                    UPDATE_PAUSE        = 250;
 
-    private final ArrayList<ProgressController> controllers = new ArrayList<ProgressController>();
-    private final ArrayList<ProgressController> addcontrollers = new ArrayList<ProgressController>();
-    private final ArrayList<ProgressController> removecontrollers = new ArrayList<ProgressController>();
-    private final ProgressCircle[] circles;
-    private transient Thread updateThread = null;
-    private volatile boolean updateThreadWaiting = false;
-    private transient TooltipTimer timer = null;
+    private final ArrayList<ProgressController> controllers         = new ArrayList<ProgressController>();
+    private final ArrayList<ProgressController> addcontrollers      = new ArrayList<ProgressController>();
+    private final ArrayList<ProgressController> removecontrollers   = new ArrayList<ProgressController>();
+    private final ProgressCircle[]              circles;
+    private transient Thread                    updateThread        = null;
+    private volatile boolean                    updateThreadWaiting = false;
+    private transient TooltipTimer              timer               = null;
 
     public ModuleStatus() {
         super(new MigLayout("ins 0", "[fill,grow,align right]", "[::20, center]"));
@@ -45,7 +45,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
         }
         setOpaque(false);
 
-        updateThread = new Thread() {
+        updateThread = new Thread("StatusBarPremiumUpdateThread") {
             @Override
             public void run() {
                 int activecontrollers = 0;
@@ -185,7 +185,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
 
         private static final long serialVersionUID = 2620518234470214757L;
 
-        private ProgressCircle source;
+        private ProgressCircle    source;
 
         public TooltipTimer(ProgressCircle source) {
             super(TOOLTIP_DELAY, null);

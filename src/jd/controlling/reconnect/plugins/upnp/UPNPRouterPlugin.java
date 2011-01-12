@@ -39,10 +39,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectWizardProgress;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
 import jd.controlling.reconnect.ipcheck.InvalidProviderException;
 import jd.gui.UserIO;
@@ -179,9 +181,11 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
     /**
      * sets the correct router settings automatically
+     * 
+     * @throws InterruptedException
      */
     @Override
-    public int autoDetection() {
+    public int runAutoDetection(ReconnectWizardProgress progress) throws InterruptedException {
 
         final long start = System.currentTimeMillis();
 
@@ -189,8 +193,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
             this.devices = this.scanDevices();
 
             for (final UpnpRouterDevice device : this.devices) {
+                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                 try {
                     UPNPRouterPlugin.this.setDevice(device);
+                    IPController.getInstance().invalidate();
                     if (ReconnectPluginController.getInstance().doReconnect(UPNPRouterPlugin.this)) { return (int) (System.currentTimeMillis() - start); }
 
                 } catch (final Exception e) {
@@ -245,6 +251,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                                 this.progress = -1;
                                 try {
                                     UPNPRouterPlugin.this.setDevice(device);
+                                    IPController.getInstance().invalidate();
                                     if (ReconnectPluginController.getInstance().doReconnect(UPNPRouterPlugin.this)) {
                                         this.progress = 100;
                                         return;
@@ -433,12 +440,16 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     }
 
     @Override
-    protected void performReconnect() throws ReconnectException {
+    protected void performReconnect() throws ReconnectException, InterruptedException {
         try {
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "ForceTermination");
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             Thread.sleep(2000);
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             this.runCommand(this.getStorage().get(UpnpRouterDevice.SERVICETYPE, ""), this.getStorage().get(UpnpRouterDevice.CONTROLURL, ""), "RequestConnection");
-
+        } catch (InterruptedException e) {
+            throw e;
         } catch (final Throwable e) {
             throw new ReconnectException(e);
         }

@@ -31,6 +31,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectWizardProgress;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.RouterUtils;
@@ -188,7 +189,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
     }
 
     @Override
-    public int autoDetection() {
+    public int runAutoDetection(ReconnectWizardProgress progress) {
         // final long start = System.currentTimeMillis();
         return -1;
     }
@@ -687,6 +688,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
             final NodeList steps = root.getChildNodes();
 
             for (int step = 0; step < steps.getLength(); step++) {
+                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
 
                 final Node current = steps.item(step);
 
@@ -704,7 +706,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                 final int toDosLength = toDos.getLength();
                 for (int toDoStep = 0; toDoStep < toDosLength; toDoStep++) {
                     final Node toDo = toDos.item(toDoStep);
-
+                    if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
                         final NamedNodeMap attributes = toDo.getAttributes();
@@ -925,8 +927,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
     }
 
     @Override
-    public int runDetectionWizard() throws InterruptedException {
-        final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
+    public int runDetectionWizard(ReconnectWizardProgress progress) throws InterruptedException {
+        final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard(progress);
         int ret = wizard.runOnlineScan();
         if (ret < 0) {
             ret = wizard.runOfflineScan();

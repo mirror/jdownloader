@@ -38,6 +38,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 
+import jd.http.ext.security.JSPermissionRestricter;
 import jd.http.requests.FormData;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostFormDataRequest;
@@ -1287,6 +1288,11 @@ public class Browser {
             }
         };
         HttpsURLConnection.setDefaultHostnameVerifier(hv);
+        try {
+            JSPermissionRestricter.init();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     public void setRequestIntervalLimit(final String host, final int i) {

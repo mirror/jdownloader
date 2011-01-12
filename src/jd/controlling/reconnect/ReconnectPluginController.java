@@ -41,7 +41,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
-import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 
 import com.sun.istack.internal.Nullable;
 
@@ -155,55 +154,70 @@ public class ReconnectPluginController {
         }
         // save plugin to restore it later
         final RouterPlugin restore = this.getActivePlugin();
-        final ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
-
-            private String statusMessage;
-
-            public int getProgress() {
-                return -1;
-            }
-
-            public String getString() {
-                return this.statusMessage;
-            }
+        final ProgressDialog dialog = new ProgressDialog(new ReconnectWizardProgress() {
 
             public void run() throws Exception {
+                try {
 
-                ReconnectPluginController.this.setActivePlugin(DummyRouterPlugin.getInstance());
-                // used for progresscontroll only
-                int fastest = Integer.MAX_VALUE;
-                RouterPlugin fastestPlugin = null;
+                    ReconnectPluginController.this.setActivePlugin(DummyRouterPlugin.getInstance());
+                    // used for progresscontroll only
+                    int fastest = Integer.MAX_VALUE;
+                    RouterPlugin fastestPlugin = null;
+                    this.setProgress(-1);
+                    for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
+                        if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                        if (plg.hasAutoDetection()) {
+                            System.err.println("Start " + plg);
+                            this.setStatusMessage(Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
+                            final int time = plg.runAutoDetection(this);
+                            this.setStatusMessage(Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
 
-                for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
-                    if (plg.hasAutoDetection()) {
-                        this.statusMessage = Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName());
-                        final int time = plg.autoDetection();
-                        if (time >= 0 && time < fastest) {
-                            fastest = time;
-                            fastestPlugin = plg;
+                            this.setProgress(-1);
+                            if (time >= 0 && time < fastest) {
+                                fastest = time;
+                                fastestPlugin = plg;
+                            }
                         }
                     }
-                }
-                // if we find a working reconnect without any interaction, this
-                // is great
-                if (fastestPlugin != null) {
-                    ReconnectPluginController.this.setActivePlugin(fastestPlugin);
-                    return;
-                }
-                for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
-                    if (!plg.hasAutoDetection() && plg.hasDetectionWizard()) {
-                        if (plg.runDetectionWizard() > 0) {
-                            this.statusMessage = Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName());
+                    // if we find a working reconnect without any interaction,
+                    // this
+                    // is great
+                    if (fastestPlugin != null) {
+                        ReconnectPluginController.this.setActivePlugin(fastestPlugin);
+                        return;
+                    }
+                    this.setProgress(-1);
+                    for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
+                        if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                        if (plg.hasDetectionWizard()) {
+                            System.err.println("Start " + plg);
+                            this.setStatusMessage(Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
 
-                            ReconnectPluginController.this.setActivePlugin(plg);
-                            return;
+                            if (plg.runDetectionWizard(this) > 0) {
+
+                                ReconnectPluginController.this.setActivePlugin(plg);
+                                return;
+                            }
+                            this.setStatusMessage(Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressGetter.status", "...testing %s", plg.getName()));
+
+                            this.setProgress(-1);
                         }
                     }
+                } catch (Exception e) {
+                    throw e;
                 }
-
             }
 
-        }, 0, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressdialog.message", "JDownloader now tries to find the correct settings to perform a reconnect.\r\nThis might take a few minutes. Please be patient!"), null);
+        }, 0, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.progressdialog.message", "JDownloader now tries to find the correct settings to perform a reconnect.\r\nThis might take a few minutes. Please be patient!"), null) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            protected void packed() {
+                this.setWaitForTermination(1);
+            }
+        };
 
         try {
             Dialog.getInstance().showDialog(dialog);
@@ -310,7 +324,7 @@ public class ReconnectPluginController {
 
         final int waittime = this.getWaittimeBeforeFirstIPCheck();
         // make sure that we have the current ip
-        IPController.getInstance().getIP();
+        System.out.println("IP Before=" + IPController.getInstance().getIP());
         plg.doReconnect();
 
         ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");

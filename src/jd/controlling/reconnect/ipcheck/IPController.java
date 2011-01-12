@@ -154,6 +154,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     public void invalidate() {
         if (this.invalidated == true) { return; }
+        System.err.println("Invalidated");
         this.invalidated = true;
         this.invalidState = this.getCurrentLog();
     }
@@ -197,7 +198,10 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @throws InterruptedException
      */
     public boolean validate(final int waitForIPTime, final int ipCheckInterval) throws InterruptedException {
-        if (!this.invalidated) { return true; }
+        if (!this.invalidated) {
+            System.out.println(1);
+            return true;
+        }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successfull
@@ -206,7 +210,10 @@ public class IPController extends ArrayList<IPConnectionState> {
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
         while (System.currentTimeMillis() < endTime) {
             /* ip change detected then we can stop */
-            if (!(this.invalidated = !this.changedIP())) { return true; }
+            if (!(this.invalidated = !this.changedIP())) {
+                System.out.println(2);
+                return true;
+            }
             if (this.latestConnectionState.getCause() != null) {
                 try {
                     throw this.latestConnectionState.getCause();

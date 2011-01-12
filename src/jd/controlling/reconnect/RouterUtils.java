@@ -28,6 +28,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.nutils.Threader;
@@ -232,6 +234,14 @@ public class RouterUtils {
         try {
             sock = new Socket(host, port);
             sock.setSoTimeout(200);
+            // some isps or DNS server redirect in case of no server found
+            Browser br = new Browser();
+            br.setFollowRedirects(false);
+            URLConnectionAdapter con = br.openGetConnection("http://" + host);
+            String redirect = br.getRedirectLocation();
+            String domain = Browser.getHost(redirect);
+            con.disconnect();
+            if ("opendns.com".equals(domain)) return false;
             return true;
         } catch (final Exception e) {
         } finally {
