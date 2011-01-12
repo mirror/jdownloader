@@ -3,7 +3,6 @@ package jd.controlling.captcha;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
-import jd.gui.swing.dialog.CaptchaDialog;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
@@ -39,7 +38,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     protected String run() {
         UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         try {
-            return Dialog.getInstance().showDialog(new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, captchaController.getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain()));
+            return UserIO.getInstance().requestCaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, captchaController.getHost(), captchaController.getIcon(), captchaController.getCaptchafile(), def, captchaController.getExplain());
         } catch (DialogNoAnswerException e) {
             if (!e.isCausedByTimeout()) {
                 String[] options = new String[] { JDL.L("captchacontroller.cancel.dialog.allorhost.next", "Show all further pending Captchas"), JDL.LF("captchacontroller.cancel.dialog.allorhost.cancelhost", "Do not show pending Captchas for %s", captchaController.getHost()), JDL.L("captchacontroller.cancel.dialog.allorhost.all", "Cancel all pending Captchas"),

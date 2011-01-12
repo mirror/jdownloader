@@ -24,6 +24,7 @@ import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
+import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.ClickPositionDialog;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
@@ -254,6 +255,12 @@ public class UserIO {
         default:
             return JDTheme.II("gui.images.config.tip", 32, 32);
         }
+    }
+
+    public String requestCaptchaDialog(final int flag, final String host, final ImageIcon icon, final File captchafile, final String suggestion, final String explain) throws DialogClosedException, DialogCanceledException {
+
+        return Dialog.getInstance().showDialog(new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain));
+
     }
 
     public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {
