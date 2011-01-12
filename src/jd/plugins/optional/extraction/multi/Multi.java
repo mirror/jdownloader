@@ -104,12 +104,12 @@ public class Multi implements IExtraction {
         if (file.matches(PatternRarMulti)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+\\.rar$", "")) + "\\.pa?r?t?\\.?[0-9]+\\.rar$";
         } else if (file.matches(PatternRar)) {
-            matches.add(buildDownloadLinkFromFile(file));
+            matches.add(link);
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + "\\.r\\d+$";
         } else if (file.matches(Pattern7zMulti)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z\\.\\d+$", "")) + "\\.7z\\.\\d+$";
         } else {
-            matches.add(buildDownloadLinkFromFile(file));
+            matches.add(link);
         }
 
         // String pattern = file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+.*?.rar$",
