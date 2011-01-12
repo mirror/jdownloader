@@ -58,13 +58,13 @@ public class JDController implements ControlListener {
     private class EventSender extends Eventsender<ControlListener, ControlEvent> {
 
         protected static final long MAX_EVENT_TIME = 10000;
-        private ControlListener currentListener;
-        private ControlEvent event;
-        private long eventStart = 0;
-        public boolean waitFlag = true;
-        private Thread watchDog;
-        private Thread runDog;
-        private final Object LOCK = new Object();
+        private ControlListener     currentListener;
+        private ControlEvent        event;
+        private long                eventStart     = 0;
+        public boolean              waitFlag       = true;
+        private Thread              watchDog;
+        private Thread              runDog;
+        private final Object        LOCK           = new Object();
 
         public Object getLOCK() {
             return LOCK;
@@ -174,25 +174,25 @@ public class JDController implements ControlListener {
      * {@link #fireControlEvent(ControlEvent)} ein Event losgeschickt wird.
      */
 
-    private final ArrayList<ControlEvent> eventQueue = new ArrayList<ControlEvent>();
+    private final ArrayList<ControlEvent> eventQueue       = new ArrayList<ControlEvent>();
 
-    private EventSender eventSender = null;
+    private EventSender                   eventSender      = null;
 
     /**
      * Der Logger
      */
-    private static final Logger LOGGER = JDLogger.getLogger();
+    private static final Logger           LOGGER           = JDLogger.getLogger();
 
-    private boolean alreadyAutostart = false;
+    private boolean                       alreadyAutostart = false;
 
     /**
      * Der Download Watchdog verwaltet die Downloads
      */
 
-    private static ArrayList<String> delayMap = new ArrayList<String>();
-    private static JDController INSTANCE = new JDController();
+    private static ArrayList<String>      delayMap         = new ArrayList<String>();
+    private static JDController           INSTANCE         = new JDController();
 
-    private static final Object SHUTDOWNLOCK = new Object();
+    private static final Object           SHUTDOWNLOCK     = new Object();
 
     /**
      * Private constructor. Use singleton method instead!

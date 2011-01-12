@@ -1,9 +1,9 @@
 package jd.plugins.optional.jdpremclient;
 
 import java.awt.event.ActionEvent;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 
 import javax.swing.ImageIcon;
 
@@ -13,8 +13,6 @@ import jd.controlling.AccountController;
 import jd.controlling.JDPluginLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -27,25 +25,25 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
-public class LinkSnappycom extends PluginForHost implements JDPremInterface {
+public class FastDebridcom extends PluginForHost implements JDPremInterface {
 
-    private boolean                  proxyused    = false;
-    private String                   infostring   = null;
-    private PluginForHost            plugin       = null;
-    private static boolean           counted      = false;
-    private static boolean           enabled      = false;
-    private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object      LOCK         = new Object();
+    private boolean                        proxyused    = false;
+    private String                         infostring   = null;
+    private PluginForHost                  plugin       = null;
+    private static boolean                 enabled      = false;
+    private static ArrayList<String>       premiumHosts = new ArrayList<String>();
+    private static final Object            LOCK         = new Object();
+    private static HashMap<String, String> accDetails   = new HashMap<String, String>();
 
-    public LinkSnappycom(PluginWrapper wrapper) {
+    public FastDebridcom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.linksnappy.com/members/index.php?act=register");
-        infostring = "LinkSnappy.com @ " + wrapper.getHost();
+        this.enablePremium("https://www.fast-debrid.com/");
+        infostring = "Fast-Debrid.com @ " + wrapper.getHost();
     }
 
     @Override
     public String getAGBLink() {
-        if (plugin == null) return "http://www.linksnappy.com/";
+        if (plugin == null) return "https://www.fast-debrid.com/";
         return plugin.getAGBLink();
     }
 
@@ -78,7 +76,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getHost() {
-        if (plugin == null) return "linksnappy.com";
+        if (plugin == null) return "fast-debrid.com";
         return plugin.getHost();
     }
 
@@ -90,7 +88,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getBuyPremiumUrl() {
-        if (plugin == null) return "http://www.linksnappy.com/members/index.php?act=register";
+        if (plugin == null) return "https://www.fast-debrid.com";
         return plugin.getBuyPremiumUrl();
     }
 
@@ -117,11 +115,11 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
             return;
         }
-        /* try linksnappy.com first */
+        /* try fast-debrid.com first */
         if (account == null) {
-            if (handleLinkSnappy(downloadLink)) return;
+            if (handleFastDebrid(downloadLink)) return;
         } else if (!JDPremium.preferLocalAccounts()) {
-            if (handleLinkSnappy(downloadLink)) return;
+            if (handleFastDebrid(downloadLink)) return;
         }
         if (proxyused = true) {
             /* failed, now try normal */
@@ -177,14 +175,14 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         if (plugin != null) plugin.clean();
     }
 
-    private boolean handleLinkSnappy(DownloadLink link) throws Exception {
+    private boolean handleFastDebrid(DownloadLink link) throws Exception {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
             if (!JDPremium.isEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
-            acc = AccountController.getInstance().getValidAccount("linksnappy.com");
+            acc = AccountController.getInstance().getValidAccount("fast-debrid.com");
             /* enabled account found? */
             if (acc == null || !acc.isEnabled()) return false;
         }
@@ -192,85 +190,35 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         resetFavIcon();
+        String user = Encoding.urlEncode(acc.getUser());
+        String pw = Encoding.urlEncode(acc.getPass());
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         br.setDebug(true);
         dl = null;
-        try {
-            login(acc, false);
-        } catch (PluginException e) {
-            resetAvailablePremium();
-            acc.setValid(false);
+        String url = Encoding.urlEncode(link.getDownloadURL());
+        String fastdebdridurl = br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
+        /* TODO: evaluate all possible answers */
+        /* TODO: add link caching if possible, yes is possible so readd */
+        if ("error".equalsIgnoreCase(fastdebdridurl)) return false;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, fastdebdridurl, true, 0);
+        if (dl.getConnection().getResponseCode() == 404) {
+            /* file offline */
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            /* unknown error */
+            br.followConnection();
+            logger.severe("FastDebrid: error!");
+            logger.severe(br.toString());
+            synchronized (LOCK) {
+                premiumHosts.remove(link.getHost());
+            }
             return false;
         }
-        boolean savedLinkValid = false;
-        String genlink = link.getStringProperty("genLink", null);
-        /* remove generated link */
-        link.setProperty("genLink", null);
-        if (genlink != null) {
-            /* try saved link first */
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), 1);
-                if (dl.getConnection().isContentDisposition()) {
-                    savedLinkValid = true;
-                }
-            } catch (final Throwable e) {
-                savedLinkValid = false;
-            } finally {
-                if (savedLinkValid == false) {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (final Throwable e1) {
-                    }
-                }
-            }
-        }
-        if (savedLinkValid == false) {
-            /* generate new downloadlink */
-            String postData = "genLinks={\"links\" : \"" + Encoding.urlEncode(link.getDownloadURL()) + "\", \"Kcookies\" : \"" + br.getCookie("www.linksnappy.com", "lseSavePass") + "\"}";
-            String response = br.postPageRaw("http://linksnappy.com/lseAPI.php", postData);
-            response = response.replaceAll("\\\\/", "/");
-            String status = new Regex(response, "status\":\"(.*?)\"").getMatch(0);
-            // String error = new Regex(response, "error\":(.*?)}").getMatch(0);
-            genlink = new Regex(response, "generated\":\"(http.*?)\"").getMatch(0);
-            if ("FAILED".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if ("OK".equalsIgnoreCase(status) && genlink != null) {
-                br.setFollowRedirects(true);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, resumePossible(this.getHost()), 1);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dl.getConnection().getResponseCode() == 404) {
-                /* file offline */
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!dl.getConnection().isContentDisposition()) {
-                /* unknown error */
-                br.followConnection();
-                if (br.containsHTML("this download server is disabled at the moment")) throw new PluginException(LinkStatus.ERROR_RETRY);
-                if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                logger.severe("LinkSnappy: error!");
-                logger.severe(br.toString());
-                synchronized (LOCK) {
-                    premiumHosts.remove(link.getHost());
-                }
-                return false;
-            }
-        }
-        try {
-            Browser br2 = new Browser();
-            br2.setFollowRedirects(true);
-            if (!counted) br2.getPage("http://www.jdownloader.org/scripts/linksnappy.php?id=" + Encoding.urlEncode(acc.getUser()));
-            counted = true;
-        } catch (Exception e) {
-        }
-        /* save generated link */
-        link.setProperty("genLink", genlink);
-        link.getTransferStatus().usePremium(true);
         dl.startDownload();
         return true;
-
     }
 
     @Override
@@ -301,54 +249,6 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws PluginException, IOException {
-        synchronized (LOCK) {
-            this.setBrowserExclusive();
-            this.br.setDebug(true);
-            final Object ret = account.getProperty("cookies", null);
-            if (ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("lseSavePass") && account.isValid()) {
-                    for (final String key : cookies.keySet()) {
-                        this.br.setCookie("www.linksnappy.com", key, cookies.get(key));
-                    }
-                    return;
-                }
-            }
-            try {
-                br.postPage("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-            } catch (final Exception e) {
-            }
-            boolean invalid = false;
-            final String premCookie = this.br.getCookie("www.linksnappy.com", "lseSavePass");
-            if (this.br.containsHTML("Wrong username and")) {
-                invalid = true;
-            }
-            br.getPage("http://www.linksnappy.com/members/index.php?act=index");
-            if (!br.containsHTML("\">Active<")) {
-                invalid = true;
-            }
-            if (premCookie == null || invalid) {
-                account.setProperty("cookies", null);
-                if (invalid) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-                AccountInfo ai = account.getAccountInfo();
-                if (ai == null) {
-                    ai = new AccountInfo();
-                    account.setAccountInfo(ai);
-                }
-                ai.setStatus("ServerProblems(1), will try again in few minutes!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies("www.linksnappy.com");
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("cookies", cookies);
-        }
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
@@ -357,61 +257,69 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             br.setConnectTimeout(60 * 1000);
             br.setReadTimeout(60 * 1000);
             br.setDebug(true);
+            String username = Encoding.urlEncode(account.getUser());
+            String pass = Encoding.urlEncode(account.getPass());
+            String page = null;
             String hosts = null;
             try {
-                hosts = br.getPage("http://www.linksnappy.com/hosters.html");
-                login(account, true);
+                page = br.getPage("https://www.fast-debrid.com/api_account.php?login=" + username + "&pw=" + pass);
+                hosts = br.getPage("https://www.fast-debrid.com/listhost.php");
             } catch (Exception e) {
-                if (e instanceof PluginException) {
-                    account.setValid(false);
-                    resetAvailablePremium();
-                    ac.setStatus("Invalid Account");
-                    return ac;
-                }
                 account.setTempDisabled(true);
                 account.setValid(true);
                 resetAvailablePremium();
-                ac.setStatus("LinkSnappy Server Error, temp disabled" + restartReq);
+                ac.setStatus("FastDebrid Server Error, temp disabled" + restartReq);
                 return ac;
             }
-            String validUntil = br.getRegex("Expire Date:</strong>(.*?)\\(").getMatch(0);
-            account.setValid(true);
-            ac.setValidUntil(Regex.getMilliSeconds(validUntil, "dd MMM yyyy", null));
-            synchronized (LOCK) {
-                premiumHosts.clear();
-                if (hosts != null) {
-                    String hoster[] = new Regex(hosts, "(.*?)(;|$)").getColumn(0);
-                    if (hosts != null) {
-                        for (String host : hoster) {
-                            if (hosts == null || host.length() == 0) continue;
-                            premiumHosts.add(host.trim());
+            /* parse api response in easy2handle hashmap */
+            String info[][] = new Regex(page, "<([^<>]*?)>([^<]*?)</.*?>").getMatches();
+            synchronized (accDetails) {
+                accDetails.clear();
+                for (String data[] : info) {
+                    accDetails.put(data[0].toLowerCase(Locale.ENGLISH), data[1].toLowerCase(Locale.ENGLISH));
+                }
+                String type = accDetails.get("type");
+                if ("platinium".equals(type) || "premium".equals(type)) {
+                    /* only platinium and premium support */
+                    synchronized (LOCK) {
+                        premiumHosts.clear();
+                        if (hosts != null) {
+                            String hoster[] = new Regex(hosts, "\"(.*?)\"").getColumn(0);
+                            if (hosts != null) {
+                                for (String host : hoster) {
+                                    if (hosts == null || host.length() == 0) continue;
+                                    premiumHosts.add(host.trim());
+                                }
+                            }
                         }
                     }
+                    String daysLeft = accDetails.get("date");
+                    if (daysLeft != null) {
+                        account.setValid(true);
+                        ac.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysLeft) * 1000 * 60 * 60 * 24));
+                    } else {
+                        /* no daysleft available?! */
+                        account.setValid(false);
+                    }
+                } else {
+                    /* all others are invalid */
+                    account.setValid(false);
                 }
-            }
-            if (premiumHosts.size() == 0) {
-                ac.setStatus(restartReq + "Account valid: 0 Hosts via LinkSnappy.com available");
-            } else {
-                ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via LinkSnappy.com available");
+                if (account.isValid()) {
+                    if (premiumHosts.size() == 0) {
+                        ac.setStatus(restartReq + "Account valid: 0 Hosts via Fast-Debrid.com available");
+                    } else {
+                        ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via Fast-Debrid.com available");
+                    }
+                } else {
+                    account.setTempDisabled(false);
+                    resetAvailablePremium();
+                    ac.setStatus("Account invalid");
+                }
             }
             return ac;
         } else
             return plugin.fetchAccountInfo(account);
-    }
-
-    private boolean resumePossible(String hoster) {
-        if (hoster != null) {
-            if (hoster.contains("megaupload.com")) return true;
-            if (hoster.contains("netload.in")) return true;
-            if (hoster.contains("uploaded.to")) return true;
-            if (hoster.contains("x7.to")) return true;
-            if (hoster.contains("shragle.com")) return true;
-            if (hoster.contains("freakshare.")) return true;
-            if (hoster.contains("fileserve.com")) return true;
-            if (hoster.contains("bitshare.com")) return true;
-            if (hoster.contains("hotfile.com")) return true;
-        }
-        return false;
     }
 
     @Override
@@ -449,9 +357,9 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
             } else if (JDPremium.isEnabled() && enabled) {
-                /* OchLoad */
+                /* FastDebrid */
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("linksnappy.com") != null) return Integer.MAX_VALUE;
+                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("fast-debrid.com") != null) return Integer.MAX_VALUE;
                 }
             }
             return plugin.getMaxSimultanDownload(account);
@@ -511,7 +419,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getCustomFavIconURL() {
-        if (proxyused) return "linksnappy.com";
+        if (proxyused) return "fast-debrid.com";
         if (plugin != null) return plugin.getCustomFavIconURL();
         return null;
     }

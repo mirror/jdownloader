@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
@@ -217,8 +217,13 @@ public class LetitBitNet extends PluginForHost {
         Form down = null;
         Form[] allforms = br.getForms();
         if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        boolean skipfirst = false;
         for (Form singleform : allforms) {
             if (singleform.containsHTML("md5crypt")) {
+                if (skipfirst == false) {
+                    skipfirst = true;
+                    continue;
+                }
                 down = singleform;
                 break;
             }
@@ -241,6 +246,13 @@ public class LetitBitNet extends PluginForHost {
         }
         down.setMethod(Form.MethodType.POST);
         if (captchaId != null) down.put("uid2", captchaId);
+        down.setAction("http://letitbit.net/download4.php");
+        br.submitForm(down);
+        down = br.getFormbyProperty("id", "dvifree");
+        if (down == null) {
+            logger.info("Found did not found dvifree!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         down.setAction("http://letitbit.net/download3.php");
         String tmp1 = br.submitForm(down);
         url = br.getRegex("<frame src=\"http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\"").getMatch(0);

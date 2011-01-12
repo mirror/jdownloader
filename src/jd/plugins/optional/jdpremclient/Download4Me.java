@@ -18,11 +18,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class Download4Me extends PluginForHost implements JDPremInterface {
@@ -191,7 +191,13 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Browser br = new Browser();
-        this.login(acc, br, false);
+        try {
+            this.login(acc, br, false);
+        } catch (PluginException e) {
+            resetAvailablePremium();
+            acc.setValid(false);
+            return false;
+        }
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         br.setDebug(true);
