@@ -17,41 +17,53 @@
 package jd.gui.swing;
 
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.swing.dialog.AboutDialog;
+import jd.gui.swing.jdgui.actions.ActionController;
 
+import com.apple.eawt.AboutHandler;
+import com.apple.eawt.AppEvent.AboutEvent;
+import com.apple.eawt.AppEvent.AppReOpenedEvent;
+import com.apple.eawt.AppEvent.PreferencesEvent;
+import com.apple.eawt.AppEvent.QuitEvent;
+import com.apple.eawt.AppReOpenedListener;
 import com.apple.eawt.Application;
-import com.apple.eawt.ApplicationAdapter;
-import com.apple.eawt.ApplicationEvent;
+import com.apple.eawt.PreferencesHandler;
+import com.apple.eawt.QuitHandler;
+import com.apple.eawt.QuitResponse;
 
-public class MacOSApplicationAdapter extends ApplicationAdapter {
+public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, ControlListener {
 
     public static void enableMacSpecial() {
         Application macApplication = Application.getApplication();
-        macApplication.addApplicationListener(new MacOSApplicationAdapter());
+        MacOSApplicationAdapter adapter = new MacOSApplicationAdapter();
+        macApplication.setAboutHandler(adapter);
+        macApplication.setPreferencesHandler(adapter);
+        macApplication.setQuitHandler(adapter);
+        macApplication.addAppEventListener(adapter);
 
-        // need to enable the preferences option manually
-        macApplication.setEnabledPreferencesMenu(true);
     }
+
+    private QuitResponse quitResponse;
 
     private MacOSApplicationAdapter() {
     }
 
-    @Override
-    public void handleQuit(final ApplicationEvent e) {
+    public void handleQuitRequestWith(QuitEvent e, QuitResponse response) {
+        JDController.getInstance().addControlListener(this);
+        quitResponse = response; // we will respond in controlEvent
         JDController.getInstance().exit();
     }
 
-    public void handlePreferences(ApplicationEvent e) {
-        e.setHandled(true);
-        JOptionPane.showMessageDialog(null, "Show Preferences dialog here");
+    public void handlePreferences(PreferencesEvent e) {
+        ActionController.getToolBarAction("action.settings").onAction(null);
+        appReOpened(null);
     }
 
-    @Override
-    public void handleAbout(final ApplicationEvent e) {
-        e.setHandled(true);
+    public void handleAbout(AboutEvent e) {
         new GuiRunnable<Object>() {
 
             @Override
@@ -63,8 +75,7 @@ public class MacOSApplicationAdapter extends ApplicationAdapter {
         }.start();
     }
 
-    @Override
-    public void handleReOpenApplication(final ApplicationEvent e) {
+    public void appReOpened(AppReOpenedEvent e) {
         final SwingGui swingGui = SwingGui.getInstance();
         if (swingGui == null || swingGui.getMainFrame() == null) return;
         final JFrame mainFrame = swingGui.getMainFrame();
@@ -73,4 +84,10 @@ public class MacOSApplicationAdapter extends ApplicationAdapter {
         }
     }
 
+    public void controlEvent(ControlEvent event) {
+        if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
+            JDController.getInstance().removeControlListener(this);
+            quitResponse.performQuit();
+        }
+    }
 }
