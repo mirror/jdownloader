@@ -143,13 +143,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
                                     } catch (final Exception e) {
                                         e.printStackTrace();
-                                        try {
-                                            Dialog.getInstance().showErrorDialog(e.getMessage());
-                                        } catch (DialogClosedException e1) {
-                                            e1.printStackTrace();
-                                        } catch (DialogCanceledException e1) {
-                                            e1.printStackTrace();
-                                        }
+                                        Dialog.getInstance().showErrorDialog(e.getMessage());
+
                                         RouterSender.getInstance().setRequested(false);
                                         // do not ask in this session again
                                         dosession = false;
@@ -176,13 +171,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                         RouterSender.getInstance().run();
 
                     } catch (final Exception e) {
-                        try {
-                            Dialog.getInstance().showErrorDialog(e.getMessage());
-                        } catch (DialogClosedException e1) {
-                            e1.printStackTrace();
-                        } catch (DialogCanceledException e1) {
-                            e1.printStackTrace();
-                        }
+
+                        Dialog.getInstance().showErrorDialog(e.getMessage());
+
                     }
                 }
             }.start();

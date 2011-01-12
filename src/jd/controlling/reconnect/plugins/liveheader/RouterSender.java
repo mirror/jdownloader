@@ -155,13 +155,9 @@ public class RouterSender {
         but.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
-                try {
-                    Dialog.getInstance().showMessageDialog(0, name + ":" + tooltip, dialog);
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
+
+                Dialog.getInstance().showMessageDialog(0, name + ":" + tooltip, dialog);
+
             }
 
         });
