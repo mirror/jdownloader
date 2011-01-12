@@ -84,7 +84,7 @@ public class LarasLevelBaseOrg extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        ai.setStatus("Free (registered) Account");
+        ai.setStatus("Registered (free) User");
         return ai;
     }
 

@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/video/\\w+" }, flags = { 2 })
 public class VideoBbCom extends PluginForHost {
@@ -55,7 +56,7 @@ public class VideoBbCom extends PluginForHost {
             final String balance = this.br.getMatch("content_detail profile.*?\\$([\\d\\.]+)\r\n");
             ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
             ai.setValidUntil(System.currentTimeMillis() + (356 * 24 * 60 * 60 * 1000l));
-            ai.setStatus("Accounttyp: Collectorsaccount");
+            ai.setStatus(JDL.L("plugins.hoster.videobbcom.accounttype", "Accounttype: Collectors Account"));
         } else {
             final String expire = this.br.getRegex("Premium active until.*?<strong>(.*?)</strong>").getMatch(0);
             if (expire != null) {
