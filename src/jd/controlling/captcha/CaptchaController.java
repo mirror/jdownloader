@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.controlling;
+package jd.controlling.captcha;
 
 import java.awt.Image;
 import java.io.File;
@@ -32,20 +32,54 @@ import jd.gui.UserIO;
 
 public class CaptchaController {
 
-    private final String methodname;
-    private final File captchafile;
-    private final String explain;
-    private final String suggest;
-    private final String host;
+    private final String    methodname;
+    private final File      captchafile;
+    private final String    explain;
+    private final String    suggest;
+    private final String    host;
     private final ImageIcon icon;
+    /**
+     * When the plugin calling this contgroller has been initiated
+     */
+    private long            initTime;
 
-    public CaptchaController(final String host, final ImageIcon icon, final String method, final File file, final String suggest, final String explain) {
+    public String getMethodname() {
+        return methodname;
+    }
+
+    public File getCaptchafile() {
+        return captchafile;
+    }
+
+    public String getExplain() {
+        return explain;
+    }
+
+    public String getSuggest() {
+        return suggest;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public ImageIcon getIcon() {
+        return icon;
+    }
+
+    public long getInitTime() {
+        return initTime;
+    }
+
+    public CaptchaController(long initTime, final String host, final ImageIcon icon, final String method, final File file, final String suggest, final String explain) {
         this.host = host;
         this.icon = icon;
         this.methodname = method;
         this.captchafile = file;
         this.explain = explain;
         this.suggest = suggest;
+        this.initTime = initTime;
+
     }
 
     /**
@@ -58,6 +92,7 @@ public class CaptchaController {
     }
 
     public String getCode(final int flag) {
+
         if (!hasMethod()) { return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? null : showDialog(flag, suggest); }
 
         final JAntiCaptcha jac = new JAntiCaptcha(methodname);
@@ -99,9 +134,7 @@ public class CaptchaController {
     }
 
     private String showDialog(final int flag, final String def) {
-        UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
-        final String ret = UserIO.getInstance().requestCaptchaDialog(flag, host, icon, captchafile, def, explain);
-        UserIO.setCountdownTime(-1);
-        return ret;
+        return CaptchaDialogQueue.getInstance().addWait(new CaptchaDialogQueueEntry(this, flag, def));
+
     }
 }

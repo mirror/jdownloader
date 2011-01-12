@@ -30,13 +30,13 @@ import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
-import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
 import jd.controlling.FavIconController;
 import jd.controlling.FavIconRequestor;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.SingleDownloadController;
+import jd.controlling.captcha.CaptchaController;
 import jd.gui.UserIF;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -131,7 +131,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             }
             downloadController.fireDownloadLinkUpdate(link);
 
-            final String cc = new CaptchaController(getHost(), getHosterIconUnscaled(), method, file, defaultValue, explain).getCode(flag);
+            final String cc = new CaptchaController(this.getInitTime(), getHost(), getHosterIconUnscaled(), method, file, defaultValue, explain).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
         } finally {

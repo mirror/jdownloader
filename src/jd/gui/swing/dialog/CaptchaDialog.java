@@ -86,6 +86,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
 
     @Override
     public JComponent layoutDialogContent() {
+
         final JPanel panel = new JPanel(new MigLayout("ins 5,wrap 1", "[fill,grow]"));
 
         ImageIcon imageIcon = null;

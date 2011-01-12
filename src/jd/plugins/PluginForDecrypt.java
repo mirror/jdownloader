@@ -28,11 +28,11 @@ import java.util.HashMap;
 import jd.DecryptPluginWrapper;
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
-import jd.controlling.CaptchaController;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
+import jd.controlling.captcha.CaptchaController;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
@@ -53,6 +53,7 @@ public abstract class PluginForDecrypt extends Plugin {
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
         logger = new JDPluginLogger(wrapper.getHost() + System.currentTimeMillis());
+
     }
 
     public void setBrowser(Browser br) {
@@ -263,7 +264,7 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
         if (link.getProgressController() != null) link.getProgressController().setStatusText(JDL.LF("gui.linkgrabber.waitinguserio2", "Waiting for user input: %s", method));
-        String cc = new CaptchaController(getHost(), null, method, file, defaultValue, explain).getCode(flag);
+        String cc = new CaptchaController(this.getInitTime(), getHost(), null, method, file, defaultValue, explain).getCode(flag);
         if (link.getProgressController() != null) link.getProgressController().setStatusText(null);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return cc;
