@@ -10,6 +10,36 @@ OutFile ".\..\..\dist\JDownloaderSetup_${ADVERTISING_PLUGIN}_optout.exe"
 Page custom FacemoodsPage FacemoodsPageLeave
 !macroend
 
+
+ !define MUI_CUSTOMFUNCTION_ABORT onUserAbort
+   Function onUserAbort
+   StrCmp $R8 2 0 End ;Compare the variable with the
+                     ;page index of your choice
+
+                MessageBox MB_YESNO|MB_ICONQUESTION "$(BUNDLE_PAGE_NO_BUNDLE_RLY)" IDYES continue             
+                    Abort ;                    
+                    continue:
+                      
+                    
+                          
+                     
+    StrCpy $R8 4
+    
+    ;jumps to next page
+StrCpy $R9 1
+  IntCmp $R9 0 0 Move Move
+    StrCmp $R9 "X" 0 Move
+      StrCpy $R9 "120"
+ 
+  Move:
+  SendMessage $HWNDPARENT "0x408" "$R9" ""
+
+      
+    Abort
+  End:   
+  
+  
+  FunctionEnd
 !macro ADVERTISING_GENERAL
 !include "advertising\${ADVERTISING_PLUGIN}\locale.nsh"
 
@@ -29,26 +59,27 @@ ReserveFile "advertising\${ADVERTISING_PLUGIN}\screen.en.bmp"
 ReserveFile "advertising\${ADVERTISING_PLUGIN}\screen.de.bmp"
 Section "-Facemoods" SecAdvertising #Hidden (dialog before)
     SetOutPath $INSTDIR
-    ; Facemoods installation logic.
-    ; Read whether the user kept the "Install Facemoods" radio button selected (default)
-    ; in the Facemoods dialog. If so, install Facemoods silently.
-    !insertmacro INSTALLOPTIONS_READ $R0 "$(BUNDLE_PAGE_DIALOG)" "Field 3" "State"
-  
-    ; If user agrees to install Facemoods  
-    ${If} $R0 == 1
+
+   
+   
+      StrCmp $R9 "120" 0 End
+                   
     
-     MessageBox MB_OK "$(BUNDLE_CLOSE_BROWSER_MESSAGE)"
+   
+   
+  
+        MessageBox MB_OK "$(BUNDLE_CLOSE_BROWSER_MESSAGE)"
         File "advertising\${ADVERTISING_PLUGIN}\installer.exe"
-        ; do a dry run check
         ExecWait '"$INSTDIR\installer.exe" /S /mnt /mhp /mds'     
         Delete $INSTDIR\installer.exe  
 !insertmacro onBundleInstallOK
-${else}
-!insertmacro onBundleInstallFailed
-    ${EndIf}
+
     
+
  
     WriteRegStr SHELL_CONTEXT "${REGKEY}\Components" SecAdvertising 1 
+      End: 
+     !insertmacro onBundleInstallFailed
 SectionEnd
 
 Section "-un.Facemoods" UNSecAdvertising
@@ -58,7 +89,7 @@ SectionEnd
 
 Function FacemoodsPage
   ; Set header text using localized strings.
- 
+ StrCpy $R8 2
 
   
    !insertmacro MUI_HEADER_TEXT "$(BUNDLE_PAGE_TITLE)" "$(BUNDLE_PAGE_SUBTITLE)"
@@ -69,13 +100,7 @@ Function FacemoodsPage
   !insertmacro INSTALLOPTIONS_INITDIALOG "$(BUNDLE_PAGE_DIALOG)"
   Pop $WINDOW_HANDLE  
   
-  ; We want to bold the label identified as "Field 3" in our ini file. 
-  ; Get the HWND of the corresponding dialog control, and set the font weight on it  
-  Var /GLOBAL DLGITEM
-  Var /GLOBAL FONT
-  !insertmacro INSTALLOPTIONS_READ $DLGITEM "$(BUNDLE_PAGE_DIALOG)" "Field 2" "HWND"
-  CreateFont $FONT "$(^Font)" "$(^FontSize)" "700" 
-  SendMessage $DLGITEM ${WM_SETFONT} $FONT 1
+
   
 
   
@@ -87,27 +112,19 @@ FunctionEnd
 
 
 Function FacemoodsPageLeave  
-       
+      
 
-  !insertmacro INSTALLOPTIONS_READ $0 "$(BUNDLE_PAGE_DIALOG)" "Settings" "State"
   
-
-  ${If} $0 == "0"
-        !insertmacro INSTALLOPTIONS_READ $R0 "$(BUNDLE_PAGE_DIALOG)" "Field 3" "State"
-            ${If} $R0 != 1
-                MessageBox MB_YESNO|MB_ICONQUESTION "$(BUNDLE_PAGE_NO_BUNDLE_RLY)" IDYES continue             
-                    Abort ;                    
-                    continue:
-                      
-                    
-            ${EndIf}
-   ${EndIf}
   
   StrCmp $0 0 +2  ; Next button?
 
   Abort
   
 FunctionEnd 
+ 
+ 
+
+ 
  
 !macroend
 
@@ -130,8 +147,8 @@ FunctionEnd
   
 
     
-       WriteINIStr "$PLUGINSDIR\script.de.ini" "Field 1" "Text" "$PLUGINSDIR\screen.de.bmp"
-    WriteINIStr "$PLUGINSDIR\script.en.ini" "Field 1" "Text" "$PLUGINSDIR\screen.en.bmp"
+       WriteINIStr "$PLUGINSDIR\script.de.ini" "Field 2" "Text" "$PLUGINSDIR\screen.de.bmp"
+    WriteINIStr "$PLUGINSDIR\script.en.ini" "Field 2" "Text" "$PLUGINSDIR\screen.en.bmp"
   
 
 !macroend
