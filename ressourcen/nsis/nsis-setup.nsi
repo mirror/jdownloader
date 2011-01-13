@@ -18,6 +18,7 @@ RequestExecutionLevel user
 
 !macroend
 
+
 !define COMPANY "AppWork UG (haftungsbeschränkt)"
 !define URL http://www.jdownloader.org
 !define APPNAME "JDownloader"
@@ -75,8 +76,11 @@ Var ADMINATINSTALL
 !insertmacro MUI_PAGE_LICENSE ${LICENSE}
 #!insertmacro MUI_PAGE_COMPONENTS
 !define MUI_PAGE_CUSTOMFUNCTION_LEAVE dirLeave
+!define MUI_PAGE_CUSTOMFUNCTION_PRE Directory_PreFunction
 !insertmacro MUI_PAGE_DIRECTORY 
-!insertmacro CUSTOM_PAGE_JREINFO
+
+!define MUI_PAGE_CUSTOMFUNCTION_PRE Directory_PreFunction
+  !insertmacro CUSTOM_PAGE_JREINFO
 !insertmacro ADVERTISING_PAGE  
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -94,7 +98,10 @@ Var ADMINATINSTALL
 !insertmacro ADVERTISING_GENERAL
 
 # Installer attributes
-
+Function Directory_PreFunction
+  StrCpy $R8 1 ;This is the third page
+  
+FunctionEnd
 CRCCheck on
 XPStyle on
 ShowInstDetails  hide
