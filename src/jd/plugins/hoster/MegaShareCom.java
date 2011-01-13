@@ -202,7 +202,9 @@ public class MegaShareCom extends PluginForHost {
             postData += "&auth_nm=" + passCode;
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL().toLowerCase(), postData, true, 0);
+        // Unlimited chunks are possible but cause servererrors
+        // ("DOWNLOAD_IMCOMPLETE")
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL().toLowerCase(), postData, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

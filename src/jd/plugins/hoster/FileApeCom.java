@@ -67,7 +67,7 @@ public class FileApeCom extends PluginForHost {
             logger.info("Waittime found, waiting " + waitRegexed + " seconds...");
             wait = Integer.parseInt(waitRegexed);
         }
-        sleep((wait + 3) * 1001l, downloadLink);
+        sleep((wait + 3) * 1000l, downloadLink);
         br.getPage(continuePage);
         String dllink = br.getRegex("<div style=\"text-align:center; font-size: 30px;\"><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://tx\\d+\\.fileape\\.com/[a-z]+/.*?)\"").getMatch(0);
