@@ -36,92 +36,92 @@ public class LinkStatus implements Serializable {
     /**
      * Controlling: Link muß noch bearbeitet werden.
      */
-    public static final int TODO = 1 << 0;
+    public static final int                 TODO                                 = 1 << 0;
 
     /**
      * Controlling & Downloadinterface: Link wurde erfolgreich heruntergeladen
      */
-    public final static int FINISHED = 1 << 1;
+    public final static int                 FINISHED                             = 1 << 1;
 
     /**
      * Plugins: Ein unbekannter Fehler ist aufgetreten
      */
-    public final static int ERROR_RETRY = 1 << 2;
+    public final static int                 ERROR_RETRY                          = 1 << 2;
 
     /**
      * Plugins: Captcha Text war falsch
      */
-    public final static int ERROR_CAPTCHA = 1 << 3;
+    public final static int                 ERROR_CAPTCHA                        = 1 << 3;
 
     /**
      * Plugins: Download Limit wurde erreicht
      */
-    public final static int ERROR_IP_BLOCKED = 1 << 4;
+    public final static int                 ERROR_IP_BLOCKED                     = 1 << 4;
 
     /**
      * Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
      */
-    public final static int ERROR_FILE_NOT_FOUND = 1 << 5;
+    public final static int                 ERROR_FILE_NOT_FOUND                 = 1 << 5;
 
     /**
      * Plugins & Controlling: zeigt einen Premiumspezifischen fehler an
      */
-    public static final int ERROR_PREMIUM = 1 << 8;
+    public static final int                 ERROR_PREMIUM                        = 1 << 8;
 
     /**
      * Downloadinterface: Zeigt an dass der Link nicht vollständig geladen wurde
      */
-    public static final int ERROR_DOWNLOAD_INCOMPLETE = 1 << 9;
+    public static final int                 ERROR_DOWNLOAD_INCOMPLETE            = 1 << 9;
 
     /**
      * Controlling: Zeigt an, dass der Link gerade heruntergeladen wird
      */
-    public static final int DOWNLOADINTERFACE_IN_PROGRESS = 1 << 10;
+    public static final int                 DOWNLOADINTERFACE_IN_PROGRESS        = 1 << 10;
 
     /**
      * Plugins: Der download ist zur Zeit nicht möglich
      */
-    public static final int ERROR_TEMPORARILY_UNAVAILABLE = 1 << 11;
+    public static final int                 ERROR_TEMPORARILY_UNAVAILABLE        = 1 << 11;
 
     /**
      * hoster is temporarily not available, dont try other links for this host
      */
-    public static final int ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
+    public static final int                 ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
 
     /**
      * Controlling & Downloadinterface: Zeigt an, dass die Datei auf der
      * Festplatte schon existiert
      */
-    public static final int ERROR_ALREADYEXISTS = 1 << 13;
+    public static final int                 ERROR_ALREADYEXISTS                  = 1 << 13;
 
     /**
      * Downloadinterface: Zeigt an dass der Eigentliche Download im
      * Downloadinterface fehlgeschlagen ist. z.B. Misslungender Chunkload
      */
-    public static final int ERROR_DOWNLOAD_FAILED = 1 << 14;
+    public static final int                 ERROR_DOWNLOAD_FAILED                = 1 << 14;
 
     /**
      * DownloadInterface: Zeigt an dass es einen Timeout gab und es scheinbar
      * keine Verbindung emhr zum internet gibt
      */
-    public static final int ERROR_NO_CONNECTION = 1 << 15;
+    public static final int                 ERROR_NO_CONNECTION                  = 1 << 15;
 
     /**
      * Controlling: Die AGB wurde noch nicht unterzeichnet.
      */
-    public static final int ERROR_AGB_NOT_SIGNED = 1 << 16;
+    public static final int                 ERROR_AGB_NOT_SIGNED                 = 1 << 16;
 
     /**
      * Plugins & Downloadinterface: Schwerwiegender fehler. Der Download wird
      * sofort abgebrochen. Es werden keine weiteren versuche mehr gestartet
      */
-    public static final int ERROR_FATAL = 1 << 17;
+    public static final int                 ERROR_FATAL                          = 1 << 17;
 
     /**
      * Controlling: Zeigt an, dass das zugehörige Plugin den link gerade
      * bearbeitet
      */
-    public static final int PLUGIN_IN_PROGRESS = 1 << 18;
+    public static final int                 PLUGIN_IN_PROGRESS                   = 1 << 18;
 
     /**
      * Conttrolling, Downloadinterface, Plugins Zeigt an, dass gerade ein
@@ -129,47 +129,47 @@ public class LinkStatus implements Serializable {
      * Controller mitzuteilen, dass bereits ein Mirror dieser Datei geladen
      * wird.
      */
-    public static final int ERROR_LINK_IN_PROGRESS = 1 << 19;
+    public static final int                 ERROR_LINK_IN_PROGRESS               = 1 << 19;
 
     /**
      * DownloadINterface & Controlling zeigt an dass es zu einem plugintimeout
      * gekommen ist
      */
-    public static final int ERROR_TIMEOUT_REACHED = 1 << 20;
+    public static final int                 ERROR_TIMEOUT_REACHED                = 1 << 20;
 
     /**
      * Downloadinterface LOCAL Input output Fehler. Es kann nicht geschrieben
      * werden etc.
      */
-    public static final int ERROR_LOCAL_IO = 1 << 21;
+    public static final int                 ERROR_LOCAL_IO                       = 1 << 21;
 
     /**
      * Plugins Wird bei schweren Parsing Fehler eingesetzt. Über diesen Code
      * kann das Plugin mitteilen dass es defekt ist und aktualisiert werden muss
      */
-    public static final int ERROR_PLUGIN_DEFECT = 1 << 22;
+    public static final int                 ERROR_PLUGIN_DEFECT                  = 1 << 22;
 
     /**
      * Zeigt an, das auf User-Eingaben gewartet wird
      */
-    public static final int WAITING_USERIO = 1 << 23;
+    public static final int                 WAITING_USERIO                       = 1 << 23;
 
-    public static final int ERROR_POST_PROCESS = 1 << 24;
+    public static final int                 ERROR_POST_PROCESS                   = 1 << 24;
 
-    public static final int VALUE_FAILED_HASH = 1 << 27;
+    public static final int                 VALUE_FAILED_HASH                    = 1 << 27;
 
-    public static final int PLUGIN_ACTIVE = 1 << 29;
+    public static final int                 PLUGIN_ACTIVE                        = 1 << 29;
 
     /**
      * Beispiel:HTTP-Plugin Ein als HTTP-Direktlink erkannter Link verweist auf
      * den contenttype text/html was bedeutet, dass es sich wahrscheinlich um
      * ein Hosting Service handelt für das es noch kein Plugin gibt.
      */
-    public static final int ERROR_PLUGIN_NEEDED = 1 << 30;
+    public static final int                 ERROR_PLUGIN_NEEDED                  = 1 << 30;
 
-    public static final int NOT_ENOUGH_HARDDISK_SPACE = 1 << 31;
+    public static final int                 NOT_ENOUGH_HARDDISK_SPACE            = 1 << 31;
 
-    private static HashMap<Integer, String> toStringHelper = new HashMap<Integer, String>();
+    private static HashMap<Integer, String> toStringHelper                       = new HashMap<Integer, String>();
     static {
         final Field[] fields = LinkStatus.class.getDeclaredFields();
         for (final Field field : fields) {
@@ -183,19 +183,19 @@ public class LinkStatus implements Serializable {
         }
     }
 
-    private static final long serialVersionUID = 3885661829491436448L;
+    private static final long               serialVersionUID                     = 3885661829491436448L;
 
-    private final DownloadLink downloadLink;
-    private String errorMessage;
-    private int lastestStatus = TODO;
-    private int status = TODO;
-    private String statusText = null;
-    private long totalWaitTime = 0;
-    private long value = 0;
-    private long waitUntil = 0;
-    private int retryCount = 0;
+    private final DownloadLink              downloadLink;
+    private String                          errorMessage;
+    private int                             lastestStatus                        = TODO;
+    private int                             status                               = TODO;
+    private String                          statusText                           = null;
+    private long                            totalWaitTime                        = 0;
+    private long                            value                                = 0;
+    private long                            waitUntil                            = 0;
+    private int                             retryCount                           = 0;
 
-    private ImageIcon statusIcon;
+    private ImageIcon                       statusIcon;
 
     public LinkStatus(final DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -416,14 +416,18 @@ public class LinkStatus implements Serializable {
         this.status &= mask;
     }
 
-    public void reset() {
+    public void reset(boolean resetRetryCounter) {
         setStatus(TODO);
         setLatestStatus(TODO);
         errorMessage = null;
         statusText = null;
-        retryCount = 0;
+        if (resetRetryCounter) retryCount = 0;
         value = 0;
         resetWaitTime();
+    }
+
+    public void reset() {
+        reset(true);
     }
 
     public void resetWaitTime() {

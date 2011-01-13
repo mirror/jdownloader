@@ -115,7 +115,7 @@ public class ShragleCom extends PluginForHost {
             if (this.br.containsHTML("bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l); }
             if (this.br.containsHTML("The selected file was not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if ((this.br.containsHTML("Die von Ihnen angeforderte Datei") && this.br.containsHTML("Bitte versuchen Sie es")) || mayfail) {
-                if (downloadLink.getLinkStatus().getRetryCount() == 1) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                if (downloadLink.getLinkStatus().getRetryCount() > 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             }
             con.disconnect();
@@ -148,7 +148,7 @@ public class ShragleCom extends PluginForHost {
             if (this.br.containsHTML("bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l); }
             if (this.br.containsHTML("The selected file was not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if ((this.br.containsHTML("Die von Ihnen angeforderte Datei") && this.br.containsHTML("Bitte versuchen Sie es"))) {
-                if (downloadLink.getLinkStatus().getRetryCount() == 1) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                if (downloadLink.getLinkStatus().getRetryCount() > 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             }
             con.disconnect();

@@ -175,6 +175,12 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         if (plugin != null) plugin.clean();
     }
 
+    @Override
+    public int getMaxRetries() {
+        if (plugin != null) return plugin.getMaxRetries();
+        return 3;
+    }
+
     private boolean handleFastDebrid(DownloadLink link) throws Exception {
         Account acc = null;
         synchronized (LOCK) {
@@ -190,34 +196,87 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         resetFavIcon();
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
-        br.setConnectTimeout(90 * 1000);
-        br.setReadTimeout(90 * 1000);
-        br.setDebug(true);
-        dl = null;
-        String url = Encoding.urlEncode(link.getDownloadURL());
-        String fastdebdridurl = br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
-        /* TODO: evaluate all possible answers */
-        /* TODO: add link caching if possible, yes is possible so readd */
-        if ("error".equalsIgnoreCase(fastdebdridurl)) return false;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, fastdebdridurl, true, 0);
-        if (dl.getConnection().getResponseCode() == 404) {
-            /* file offline */
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!dl.getConnection().isContentDisposition()) {
-            /* unknown error */
-            br.followConnection();
-            logger.severe("FastDebrid: error!");
-            logger.severe(br.toString());
-            synchronized (LOCK) {
-                premiumHosts.remove(link.getHost());
+        boolean dofollow = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            br.setConnectTimeout(90 * 1000);
+            br.setReadTimeout(90 * 1000);
+            br.setDebug(true);
+            dl = null;
+            boolean savedLinkValid = false;
+            String genlink = link.getStringProperty("genLinkFastDebrid", null);
+            /* remove generated link */
+            link.setProperty("genLinkFastDebrid", null);
+            if (genlink != null) {
+                /* try saved link first */
+                try {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
+                    if (dl.getConnection().isContentDisposition()) {
+                        savedLinkValid = true;
+                    }
+                } catch (final Throwable e) {
+                    savedLinkValid = false;
+                } finally {
+                    if (savedLinkValid == false) {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (final Throwable e1) {
+                        }
+                    }
+                }
             }
-            return false;
+            if (savedLinkValid == false) {
+                String user = Encoding.urlEncode(acc.getUser());
+                String pw = Encoding.urlEncode(acc.getPass());
+                String url = Encoding.urlEncode(link.getDownloadURL());
+                genlink = br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
+                if (!genlink.startsWith("http://")) {
+                    logger.severe("FastDebrid(Error): " + genlink);
+                    if (genlink.contains("_limit")) {
+                        /* limit reached for this host */
+                        synchronized (LOCK) {
+                            premiumHosts.remove(link.getHost());
+                        }
+                        return false;
+                    }
+                    /*
+                     * after x retries we disable this host and retry with
+                     * normal plugin
+                     */
+                    if (link.getLinkStatus().getRetryCount() >= getMaxRetries()) {
+                        synchronized (LOCK) {
+                            premiumHosts.remove(link.getHost());
+                        }
+                        /* reset retrycounter */
+                        link.getLinkStatus().setRetryCount(0);
+                        return false;
+                    }
+                    String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
+                if (dl.getConnection().getResponseCode() == 404) {
+                    /* file offline */
+                    dl.getConnection().disconnect();
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!dl.getConnection().isContentDisposition()) {
+                    /* unknown error */
+                    br.followConnection();
+                    logger.severe("FastDebrid(Error): " + br.toString());
+                    synchronized (LOCK) {
+                        premiumHosts.remove(link.getHost());
+                    }
+                    return false;
+                }
+            }
+            /* save generated link */
+            link.setProperty("genLinkFastDebrid", genlink);
+            link.getTransferStatus().usePremium(true);
+            dl.startDownload();
+        } finally {
+            br.setFollowRedirects(dofollow);
         }
-        dl.startDownload();
         return true;
     }
 
@@ -288,6 +347,17 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                             if (hosts != null) {
                                 for (String host : hoster) {
                                     if (hosts == null || host.length() == 0) continue;
+                                    host = host.trim();
+                                    try {
+                                        if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) continue;
+                                    } catch (final Throwable e) {
+                                        logger.severe(e.toString());
+                                    }
+                                    try {
+                                        if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) continue;
+                                    } catch (final Throwable e) {
+                                        logger.severe(e.toString());
+                                    }
                                     premiumHosts.add(host.trim());
                                 }
                             }
@@ -324,6 +394,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("genLinkFastDebrid", null);
         if (plugin != null) plugin.resetDownloadlink(link);
     }
 

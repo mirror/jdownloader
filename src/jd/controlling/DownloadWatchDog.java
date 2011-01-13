@@ -793,8 +793,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                         if (linkStatus.hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) || linkStatus.hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
                                             /* download or hoster temp. unavail */
                                             if (linkStatus.getRemainingWaittime() == 0) {
-                                                /* reset if waittime is over */
-                                                linkStatus.reset();
                                                 /*
                                                  * clear blocked accounts for
                                                  * this host
@@ -802,6 +800,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                                 if (linkStatus.hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
                                                     AccountController.getInstance().removeAccountBlocked(link.getHost());
                                                 }
+                                                /* reset if waittime is over */
+                                                linkStatus.reset(false);
                                             } else if (linkStatus.getRemainingWaittime() > 0) {
                                                 /*
                                                  * we have temp. unavail links

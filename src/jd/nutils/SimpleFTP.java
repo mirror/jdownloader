@@ -774,11 +774,8 @@ public class SimpleFTP {
         sendLine("LIST");
         Socket dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
         BufferedReader input = new BufferedReader(new InputStreamReader(dataSocket.getInputStream(), "UTF8"));
-        // DataOutputStream out = new DataOutputStream(new
-        // FileOutputStream(file));
-        //
         StringBuilder sb = new StringBuilder();
-        readLines(new int[] { 150 }, null);
+        readLines(new int[] { 125, 150 }, null);
         char[] buffer = new char[4096];
         int bytesRead = 0;
         while ((bytesRead = input.read(buffer)) != -1) {
@@ -787,10 +784,12 @@ public class SimpleFTP {
         input.close();
         shutDownSocket(dataSocket);
         readLines(new int[] { 226 }, null);
-        // if (!response.startsWith("226")) { throw new
-        // IOException("Download failed: " + response); }
-        // return null;
-        String[][] matches = new Regex(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+([^\r^\n]+)").getMatches();
+        /* permission,type,user,group,size,date,filename */
+        String[][] matches = new Regex(sb.toString(), "([-dxrw]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
+        if (matches == null || matches.length == 0) {
+            /* date,time,size,name */
+            matches = new Regex(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(.*?)[$\r\n]+").getMatches();
+        }
         return matches;
     }
 
@@ -804,9 +803,10 @@ public class SimpleFTP {
     public String[] getFileInfo(String path) throws IOException {
         String name = path.substring(path.lastIndexOf("/") + 1);
         path = path.substring(0, path.lastIndexOf("/"));
-        this.cwd(path);
+        if (!this.cwd(path)) return null;
         for (String[] file : list()) {
-            if (file[6].equals(name)) return file;
+            if (file.length == 4 && file[3].equals(name)) return file;
+            if (file.length == 7 && file[6].equals(name)) return file;
         }
         return null;
     }

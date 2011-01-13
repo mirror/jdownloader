@@ -416,6 +416,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("genLink", null);
         if (plugin != null) plugin.resetDownloadlink(link);
     }
 

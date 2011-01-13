@@ -33,9 +33,9 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettings;
 import jd.http.HTTPProxy;
-import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -139,48 +139,57 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
             currentPlugin.init();
-            try {
+            if ((downloadLink.getLinkStatus().getRetryCount()) <= currentPlugin.getMaxRetries()) {
                 try {
-                    currentPlugin.handle(downloadLink, account);
-                } catch (BrowserException e) {
-                    /* damit browserexceptions korrekt weitergereicht werden */
-                    e.closeConnection();
-                    if (e.getException() != null) {
-                        throw e.getException();
-                    } else {
-                        throw e;
+                    try {
+                        currentPlugin.handle(downloadLink, account);
+                    } catch (BrowserException e) {
+                        /* damit browserexceptions korrekt weitergereicht werden */
+                        e.closeConnection();
+                        if (e.getException() != null) {
+                            throw e.getException();
+                        } else {
+                            throw e;
+                        }
                     }
+                } catch (PluginException e) {
+                    e.fillLinkStatus(downloadLink.getLinkStatus());
+                    if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
+                    logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
+                } catch (UnknownHostException e) {
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.setErrorMessage(JDL.L("plugins.errors.nointernetconn", "No Internet connection?"));
+                    linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("UnknownHostException", 5 * 60 * 1000l));
+                } catch (SocketTimeoutException e) {
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.setErrorMessage(JDL.L("plugins.errors.hosteroffline", "Hoster offline?"));
+                    linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketTimeoutException", 10 * 60 * 1000l));
+                } catch (SocketException e) {
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.setErrorMessage(JDL.L("plugins.errors.disconnect", "Disconnect?"));
+                    linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketException", 5 * 60 * 1000l));
+                } catch (IOException e) {
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.setErrorMessage(JDL.L("plugins.errors.hosterproblem", "Hoster problem?"));
+                    linkStatus.setValue(10 * 60 * 1000l);
+                } catch (InterruptedException e) {
+                    long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
+                    logger.finest("Hoster Plugin Version: " + rev);
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+                } catch (Exception e) {
+                    logger.finest("Hoster Plugin Version: " + downloadLink.getLivePlugin().getVersion());
+                    JDLogger.exception(e);
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
                 }
-            } catch (PluginException e) {
-                e.fillLinkStatus(downloadLink.getLinkStatus());
-                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
-                logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
-            } catch (UnknownHostException e) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDL.L("plugins.errors.nointernetconn", "No Internet connection?"));
-                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("UnknownHostException", 5 * 60 * 1000l));
-            } catch (SocketTimeoutException e) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDL.L("plugins.errors.hosteroffline", "Hoster offline?"));
-                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketTimeoutException", 10 * 60 * 1000l));
-            } catch (SocketException e) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDL.L("plugins.errors.disconnect", "Disconnect?"));
-                linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketException", 5 * 60 * 1000l));
-            } catch (IOException e) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDL.L("plugins.errors.hosterproblem", "Hoster problem?"));
-                linkStatus.setValue(10 * 60 * 1000l);
-            } catch (InterruptedException e) {
-                long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
-                logger.finest("Hoster Plugin Version: " + rev);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
-            } catch (Exception e) {
-                logger.finest("Hoster Plugin Version: " + downloadLink.getLivePlugin().getVersion());
-                JDLogger.exception(e);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+            } else {
+                /*
+                 * we assume the plugin to be broken when download failed too
+                 * often
+                 */
+                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+                downloadLink.getLinkStatus().setErrorMessage("Download failed!");
             }
 
             if (isAborted() && !linkStatus.isFinished()) {

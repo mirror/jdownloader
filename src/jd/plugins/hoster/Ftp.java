@@ -71,7 +71,8 @@ public class Ftp extends PluginForHost {
                     }
                     name = Encoding.urlDecode(name, false);
                     downloadLink.setFinalFileName(name);
-                    downloadLink.setDownloadSize(Long.parseLong(list[4]));
+                    if (list.length == 4) downloadLink.setDownloadSize(Long.parseLong(list[2]));
+                    if (list.length == 7) downloadLink.setDownloadSize(Long.parseLong(list[4]));
                 }
             } else {
                 /* switch binary mode */
@@ -150,7 +151,8 @@ public class Ftp extends PluginForHost {
                     }
                     name = Encoding.urlDecode(name, false);
                     downloadLink.setFinalFileName(name);
-                    downloadLink.setDownloadSize(Long.parseLong(list[4]));
+                    if (list.length == 4) downloadLink.setDownloadSize(Long.parseLong(list[2]));
+                    if (list.length == 7) downloadLink.setDownloadSize(Long.parseLong(list[4]));
                     String path = Encoding.urlDecode(filePath.substring(0, filePath.lastIndexOf("/")), false);
                     if (path.length() > 0) ftp.cwd(path);
                     /* switch binary mode */
