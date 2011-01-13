@@ -17,6 +17,7 @@
 package jd.plugins.optional.jdtrayicon;
 
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.SystemTray;
@@ -63,43 +64,43 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "trayicon", interfaceversion = 7, minJVM = 1.6)
 public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener, LinkGrabberControllerListener, WindowStateListener {
 
-    private SubConfiguration subConfig = null;
+    private SubConfiguration    subConfig                   = null;
 
-    private static final String PROPERTY_START_MINIMIZED = "PROPERTY_START_MINIMIZED";
+    private static final String PROPERTY_START_MINIMIZED    = "PROPERTY_START_MINIMIZED";
 
-    private static final String PROPERTY_CLOSE_TO_TRAY = "PROPERTY_CLOSE_TO_TRAY";
+    private static final String PROPERTY_CLOSE_TO_TRAY      = "PROPERTY_CLOSE_TO_TRAY";
 
-    private static final String PROPERTY_SINGLE_CLICK = "PROPERTY_SINGLE_CLICK";
+    private static final String PROPERTY_SINGLE_CLICK       = "PROPERTY_SINGLE_CLICK";
 
-    private static final String PROPERTY_TOOLTIP = "PROPERTY_TOOLTIP";
+    private static final String PROPERTY_TOOLTIP            = "PROPERTY_TOOLTIP";
 
-    private static final String PROPERTY_SHOW_ON_LINKGRAB = "PROPERTY_SHOW_ON_LINKGRAB";
+    private static final String PROPERTY_SHOW_ON_LINKGRAB   = "PROPERTY_SHOW_ON_LINKGRAB";
 
-    private static final String PROPERTY_SHOW_ON_LINKGRAB2 = "PROPERTY_SHOW_ON_LINKGRAB2";
+    private static final String PROPERTY_SHOW_ON_LINKGRAB2  = "PROPERTY_SHOW_ON_LINKGRAB2";
 
     private static final String PROPERTY_SHOW_INFO_IN_TITLE = "PROPERTY_SHOW_INFO_IN_TITLE";
 
-    private static final String PROPERTY_PASSWORD_REQUIRED = "PROPERTY_PASSWORD_REQUIRED";
+    private static final String PROPERTY_PASSWORD_REQUIRED  = "PROPERTY_PASSWORD_REQUIRED";
 
-    private static final String PROPERTY_PASSWORD = "PROPERTY_PASSWORD";
+    private static final String PROPERTY_PASSWORD           = "PROPERTY_PASSWORD";
 
-    private TrayIconPopup trayIconPopup;
+    private TrayIconPopup       trayIconPopup;
 
-    private TrayIcon trayIcon;
+    private TrayIcon            trayIcon;
 
-    private JFrame guiFrame;
+    private JFrame              guiFrame;
 
-    private TrayIconTooltip trayIconTooltip;
+    private TrayIconTooltip     trayIconTooltip;
 
-    private TrayMouseAdapter ma;
+    private TrayMouseAdapter    ma;
 
-    private Thread updateThread;
+    private Thread              updateThread;
 
-    private boolean shutdown = false;
+    private boolean             shutdown                    = false;
 
-    private boolean iconified = false;
+    private boolean             iconified                   = false;
 
-    private Timer disableAlwaysonTop;
+    private Timer               disableAlwaysonTop;
 
     public JDLightTray(PluginWrapper wrapper) {
         super(wrapper);
@@ -280,22 +281,20 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                     }
                 }
             } else {
-                if (SwingUtilities.isLeftMouseButton(e)) {
-                    if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
-                        miniIt(guiFrame.isVisible());
-                    } else {
-                        if (trayIconPopup != null && trayIconPopup.isShowing()) {
-                            trayIconPopup.dispose();
-                            trayIconPopup = null;
-                        } else if (SwingUtilities.isLeftMouseButton(e)) {
-                            if (!checkPassword()) return;
-                            trayIconPopup = new TrayIconPopup();
-                            Point pointOnScreen = e.getLocationOnScreen();
-                            if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
-                            calcLocation(trayIconPopup, pointOnScreen);
-                            trayIconPopup.setVisible(true);
-                            trayIconPopup.startAutoHide();
-                        }
+                if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
+                    miniIt(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED);
+                } else if (SwingUtilities.isLeftMouseButton(e)) {
+                    if (trayIconPopup != null && trayIconPopup.isShowing()) {
+                        trayIconPopup.dispose();
+                        trayIconPopup = null;
+                    } else if (SwingUtilities.isLeftMouseButton(e)) {
+                        if (!checkPassword()) return;
+                        trayIconPopup = new TrayIconPopup();
+                        Point pointOnScreen = e.getLocationOnScreen();
+                        if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
+                        calcLocation(trayIconPopup, pointOnScreen);
+                        trayIconPopup.setVisible(true);
+                        trayIconPopup.startAutoHide();
                     }
                 }
             }
