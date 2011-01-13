@@ -46,7 +46,7 @@ public class FileApeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This file is either temporarily unavailable or does not exist\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
@@ -67,7 +67,7 @@ public class FileApeCom extends PluginForHost {
             logger.info("Waittime found, waiting " + waitRegexed + " seconds...");
             wait = Integer.parseInt(waitRegexed);
         }
-        sleep(wait * 1001l, downloadLink);
+        sleep((wait + 3) * 1001l, downloadLink);
         br.getPage(continuePage);
         String dllink = br.getRegex("<div style=\"text-align:center; font-size: 30px;\"><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://tx\\d+\\.fileape\\.com/[a-z]+/.*?)\"").getMatch(0);
@@ -75,6 +75,10 @@ public class FileApeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Download ticket expired") || br.getURL().contains("ct=download&expired=true")) {
+                logger.info("Ticket expired, retrying...");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Ticket expired");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
