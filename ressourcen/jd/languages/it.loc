@@ -1409,6 +1409,7 @@ plugins.hoster.shareflarenet.nofreedownloadlink = Scaricabile solo dagli utenti 
 plugins.hoster.sharenownet.errors.servererror = Errore del server
 plugins.hoster.shareonlinebiz.errors.servernotavailable = Server al momento non disponibile
 plugins.hoster.shareonlinebiz.errors.servernotavailable3 = Slot gratuiti terminati! Acquista account Premium o attendi!
+plugins.hoster.sharerapidcz.only4downloadmanager = Scaricabile solo con il download manager RapidShare
 plugins.hoster.socifilescom.passwordprotected = Questo collegamento è protetto da password
 plugins.hoster.soundcloudcom.status.downloadavailable = Il file originale è scaricabile
 plugins.hoster.soundcloudcom.status.previewavailable = Anteprima scaricabile
