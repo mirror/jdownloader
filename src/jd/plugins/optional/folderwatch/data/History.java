@@ -39,10 +39,23 @@ public class History implements Serializable {
     }
 
     public static void updateEntries() {
-        boolean value;
         for (HistoryEntry entry : entries) {
-            value = isFileExisting(entry.getAbsolutePath());
-            entry.setExisting(value);
+            updateEntry(entry);
+        }
+    }
+
+    public static HistoryEntry updateEntry(HistoryEntry entry) {
+        boolean value = isFileExisting(entry.getAbsolutePath());
+        entry.setExisting(value);
+        return entry;
+    }
+
+    public static void updateEntry(String filename) {
+        for (HistoryEntry entry : entries) {
+            if (entry.getFilename().equals(filename)) {
+                updateEntry(entry);
+                break;
+            }
         }
     }
 

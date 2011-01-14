@@ -138,8 +138,8 @@ public class FolderWatchPanel extends SwitchPanel {
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
-                    History.updateEntries();
                     HistoryEntry container = (HistoryEntry) table.getValueAt(table.getSelectedRow(), 3);
+                    container = History.updateEntry(container);
                     // TODO: JDL.L key
                     String info = container.isExisting() ? "File exists" : "File does not exist";
                     updateInfo(JDL.L(JDL_PREFIX + "filestatus", "File status"), info);

@@ -33,12 +33,15 @@ import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.folderwatch.data.History;
 import jd.plugins.optional.folderwatch.data.HistoryEntry;
+import jd.plugins.optional.folderwatch.utils.FileMonitoring;
+import jd.plugins.optional.folderwatch.utils.FileMonitoringListener;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
 import jd.plugins.optional.remotecontrol.helppage.Table;
 import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
@@ -68,6 +71,9 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
     private String folder;
     private String folderOld;
 
+    private boolean isAutoDelete;
+    private boolean isAutoDeleteOld;
+
     // TODO: only import when file creation is done
     private FileMonitoring monitoringThread;
 
@@ -75,11 +81,12 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         super(wrapper);
         subConfig = getPluginConfig();
 
-        isEnabled = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_ENABLED, true);
+        isEnabled = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_ENABLED, false);
         folder = subConfig.getStringProperty(FolderWatchConstants.PROPERTY_FOLDER, "");
+        isAutoDelete = subConfig.getBooleanProperty(FolderWatchConstants.PROPERTY_AUTODELETE, false);
 
         History.setEntries(getHistoryEntriesFromConfig());
-        historyCleanup();
+        historyCleanup(null);
 
         initConfig();
     }
@@ -152,7 +159,6 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
             ce.setDefaultValue(true);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_AUTODELETE, JDL.L(JDL_PREFIX + "autodelete", "Delete container after importing?")).setDefaultValue(false));
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_HISTORYONLY, JDL.L(JDL_PREFIX + "historyonly", "Adds containers to history but doesn't import them.")).setDefaultValue(false));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_DELETECASCADE, JDL.L(JDL_PREFIX + "deletecascade", "Deletes also related history entry when container gets deleted.")).setDefaultValue(false));
     }
 
     private void showGui() {
@@ -166,7 +172,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
                     }
                 }
             });
-            historyCleanup();
+            historyCleanup(null);
             historyGui = new FolderWatchPanel(getPluginConfig());
             view.setContent(historyGui);
             view.setInfoPanel(historyGui.getInfoPanel());
@@ -203,12 +209,30 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
             String absPath = folder + "/" + filename;
             String md5Hash = importContainer(absPath);
             historyAdd(new HistoryEntry(filename, absPath, md5Hash));
-            // TODO: filter doubles
+            // TODO: handle double entries
+
+            if (isAutoDelete) {
+                final String container = absPath;
+                Thread t = new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            while (LinkGrabberPanel.getLinkGrabber().isRunning()) {
+                                Thread.sleep(1000);
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        deleteContainer(container);
+                        logger.info(container + "deleted");
+                    }
+                });
+                t.run();
+            }
         }
     }
 
     public void onMonitoringFileDelete(String filename) {
-        historyCleanup();
+        historyCleanup(filename);
     }
 
     private ArrayList<HistoryEntry> getHistoryEntriesFromConfig() {
@@ -225,8 +249,12 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         if (historyGui != null) historyGui.refresh();
     }
 
-    private void historyCleanup() {
-        History.updateEntries();
+    private void historyCleanup(String filename) {
+
+        if (filename == null)
+            History.updateEntries();
+        else
+            History.updateEntry(filename);
 
         subConfig.setProperty(FolderWatchConstants.PROPERTY_HISTORY, History.getEntries());
         subConfig.save();
@@ -283,14 +311,16 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
     public void onPreSave(SubConfiguration subConfiguration) {
         folderOld = folder;
+        isAutoDeleteOld = isAutoDelete;
     }
 
     public void onPostSave(SubConfiguration subConfiguration) {
         folder = subConfiguration.getStringProperty(FolderWatchConstants.PROPERTY_FOLDER);
+        isAutoDelete = subConfiguration.getBooleanProperty(FolderWatchConstants.PROPERTY_AUTODELETE);
 
         // reset watch service
         // TODO: also check if other options have changed
-        if (!folder.equals(folderOld)) {
+        if (!folder.equals(folderOld) || isAutoDelete != isAutoDeleteOld) {
             startWatching(false);
             startWatching(true);
         }

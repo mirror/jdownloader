@@ -41,7 +41,7 @@ public class FolderWatchView extends ClosableView {
 
     @Override
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "title", "FolderWatch History");
+        return JDL.L(JDL_PREFIX + "title", "FolderWatch");
     }
 
     @Override

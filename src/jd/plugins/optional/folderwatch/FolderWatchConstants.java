@@ -22,7 +22,6 @@ public class FolderWatchConstants {
     public static final String PROPERTY_OPENFOLDER = "OPENFOLDER";
     public static final String PROPERTY_RECURSIVE = "RECURSIVE";
     public static final String PROPERTY_AUTODELETE = "AUTODELETE";
-    public static final String PROPERTY_DELETECASCADE = "DELETECASCADE";
     public static final String PROPERTY_HISTORYONLY = "HISTORYONLY";
 
     public static final String PROPERTY_HISTORY = "HISTORY";
