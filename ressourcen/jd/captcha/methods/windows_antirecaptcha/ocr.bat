@@ -1,1 +1,0 @@
-@php.exe index.php input.jpg

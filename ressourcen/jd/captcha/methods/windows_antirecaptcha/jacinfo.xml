@@ -1,4 +1,0 @@
-<jDownloader>
-  <method name="antirecaptcha by http://wegeneredv.de/arc" type="extern" os="windows" services="365files.com;bitshare.com;combozip.com;cramit.in;cramitin.eu;cramitin.net;cramitin.us;crazyupload.com;drop.io;easy-share.com;enterupload.com;extabit.com;filebling.com;filechip.com;filefactory.com;filter.net;filescloud.com;fileserve.com;filesmonster.com;filesonic.com;filestab.com;filestrack.com;filevo.com;freakshare.net;free-share.ru;hatlimit.com;hidemyass.com;hitfile.net;hostingcup.com;hotfile.com;ifile.it;loadfiles.in;maknyos.com;mediafire.com;oron.com;putshare.com;quickupload.com;slingfile.com;tgf-services.com;turbobit.net;uploaded.to;uploadfloor.com"/>
-  <command cmd="jd\captcha\methods\windows_antirecaptcha\ocr.bat" src="jd\captcha\methods\windows_antirecaptcha\input.jpg" dst="jd\captcha\methods\windows_antirecaptcha\output.txt" />
-</jDownloader>
