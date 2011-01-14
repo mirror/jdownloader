@@ -496,3 +496,5 @@ jd/plugins/decrypter/Lnksfnf.class
 jd/plugins/decrypter/DckLdCm.class
 jd/plugins/decrypter/PrtctThprdxcm.class
 jd/plugins/hoster/SharingMatrixCom.class
+jd/captcha/methods/windows_antirecaptcha
+jd/captcha/methods/recaptcha
