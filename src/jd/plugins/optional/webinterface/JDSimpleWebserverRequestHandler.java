@@ -34,6 +34,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
@@ -361,7 +362,7 @@ public class JDSimpleWebserverRequestHandler {
         if (!fileToRead.exists()) {
             this.response.setNotFound(url);
         } else {
-            if (url.endsWith(".tmpl")) {
+            if (new Regex(url, ".+\\.tmpl").matches()) {
                 JDSimpleWebserverTemplateFileRequestHandler filerequest;
                 filerequest = new JDSimpleWebserverTemplateFileRequestHandler(this.response);
                 filerequest.handleRequest(url, requestParameter);

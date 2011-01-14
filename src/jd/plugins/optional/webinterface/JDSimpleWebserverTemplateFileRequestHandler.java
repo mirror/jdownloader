@@ -35,6 +35,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.Formatter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
@@ -47,11 +48,11 @@ import jd.utils.locale.JDL;
 
 public class JDSimpleWebserverTemplateFileRequestHandler {
 
-    private DecimalFormat f = new DecimalFormat("#0");
+    private DecimalFormat                    f      = new DecimalFormat("#0");
     private JDSimpleWebserverResponseCreator response;
 
-    private Vector<Object> v_info = new Vector<Object>();
-    private LinkGrabberController lgi;
+    private Vector<Object>                   v_info = new Vector<Object>();
+    private LinkGrabberController            lgi;
 
     /**
      * Create a new handler that serves files from a base directory
@@ -415,6 +416,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     @SuppressWarnings("deprecation")
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         try {
+            url = new Regex(url, "(.+\\.tmpl)").getMatch(0);
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
