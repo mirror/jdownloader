@@ -73,36 +73,44 @@ import org.xml.sax.InputSource;
  */
 public class JDUtilities {
 
-    private static final Logger      LOGGER              = JDLogger.getLogger();
+    private static final Logger      LOGGER        = JDLogger.getLogger();
 
     /**
      * Die Konfiguration
      */
-    private static Configuration     CONFIGURATION       = null;
+    private static Configuration     CONFIGURATION = null;
 
-    private static DatabaseConnector DB_CONNECT          = null;
+    private static DatabaseConnector DB_CONNECT    = null;
+
+    /**
+     * @param dB_CONNECT
+     *            the dB_CONNECT to set
+     */
+    public static void setDB_CONNECT(DatabaseConnector dB_CONNECT) {
+        DB_CONNECT = dB_CONNECT;
+    }
 
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
-    private static JDClassLoader     JD_CLASSLOADER      = null;
+    private static JDClassLoader JD_CLASSLOADER      = null;
 
-    public static final int          RUNTYPE_LOCAL       = 1;
+    public static final int      RUNTYPE_LOCAL       = 1;
 
-    public static final int          RUNTYPE_LOCAL_JARED = 2;
+    public static final int      RUNTYPE_LOCAL_JARED = 2;
 
-    private static File              JD_HOME             = null;
+    private static File          JD_HOME             = null;
 
     /**
      * nur 1 UserIO Dialog gleichzeitig (z.b. PW, Captcha)
      */
-    public static final Object       USERIO_LOCK         = new Object();
+    public static final Object   USERIO_LOCK         = new Object();
 
-    private static String            REVISION;
+    private static String        REVISION;
 
-    private static String[]          JD_ARGUMENTS        = new String[1];
+    private static String[]      JD_ARGUMENTS        = new String[1];
 
-    private static long              REVISIONINT         = -1;
+    private static long          REVISIONINT         = -1;
 
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
@@ -348,9 +356,7 @@ public class JDUtilities {
         try {
             HostPluginWrapper.readLock.lock();
             for (final HostPluginWrapper pHost : HostPluginWrapper.getHostWrapper()) {
-                if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))){
-                    return pHost.getPlugin();
-                }
+                if (pHost.getHost().equals(host.toLowerCase(Locale.getDefault()))) { return pHost.getPlugin(); }
             }
         } finally {
             HostPluginWrapper.readLock.unlock();

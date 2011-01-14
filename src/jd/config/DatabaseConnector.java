@@ -40,19 +40,19 @@ import jd.utils.JDUtilities;
 
 public class DatabaseConnector implements Serializable {
 
-    private static final long serialVersionUID = 8074213660382482620L;
+    private static final long             serialVersionUID = 8074213660382482620L;
 
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static Logger                 logger           = jd.controlling.JDLogger.getLogger();
 
-    private static String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
+    private String                        configpath       = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
 
-    private final HashMap<String, Object> dbdata = new HashMap<String, Object>();
+    private final HashMap<String, Object> dbdata           = new HashMap<String, Object>();
 
-    public static final Object LOCK = new Object();
+    public static final Object            LOCK             = new Object();
 
-    private static boolean dbshutdown = false;
+    private static boolean                dbshutdown       = false;
 
-    private static Connection con = null;
+    private static Connection             con              = null;
 
     static {
 
@@ -77,13 +77,8 @@ public class DatabaseConnector implements Serializable {
         return dbshutdown;
     }
 
-    /**
-     * Constructor
-     * 
-     * @throws Exception
-     */
-    public DatabaseConnector() throws SQLException {
-
+    public DatabaseConnector(String config) throws SQLException {
+        if (config != null) this.configpath = config;
         if (con != null) return;
         logger.finer("Loading database");
         if (new File(configpath + "database.script").exists()) {
@@ -125,6 +120,15 @@ public class DatabaseConnector implements Serializable {
             }
         }
 
+    }
+
+    /**
+     * Constructor
+     * 
+     * @throws Exception
+     */
+    public DatabaseConnector() throws SQLException {
+        this(null);
     }
 
     /**
