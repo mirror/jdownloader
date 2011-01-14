@@ -6,13 +6,13 @@ RequestExecutionLevel user
 
 #TODO Better UAC Handling http://nsis.sourceforge.net/UAC_plug-in
 !macro onBundleInstallOK
-      inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=bundleok" ".a.log"
+      inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision$$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=bundleok" ".a.log"
     Delete ".a.log"
 
 !macroend
 
 !macro onBundleInstallFailed
-  inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=bundlefail" ".a.log"
+  inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision$$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=bundlefail" ".a.log"
     Delete ".a.log"
 
 
@@ -250,7 +250,7 @@ Function .onInit
         StrCpy $INSTDIR ${INSTDIR_USER}
         SetShellVarContext current
     ${EndIf}
-        inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=init" ".a.log"
+        inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision$$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=init" ".a.log"
     Delete ".a.log" 
     
     !insertmacro ADVERTISING_ONINIT
@@ -258,7 +258,7 @@ FunctionEnd
 
 Function .onInstSuccess
     !insertmacro ADVERTISING_ONINSTSUCCESS
-          inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=success" ".a.log"
+          inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision$$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=success" ".a.log"
     Delete ".a.log"
     
 
@@ -266,7 +266,7 @@ FunctionEnd
 
 Function .onInstFailed
     !insertmacro ADVERTISING_ONINSTFAILED
-        inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=failed" ".a.log"
+        inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision$$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=failed" ".a.log"
     Delete ".a.log"
         
 FunctionEnd
