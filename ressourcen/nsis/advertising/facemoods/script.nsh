@@ -5,7 +5,7 @@
 
 OutFile ".\..\..\dist\JDownloaderSetup_${ADVERTISING_PLUGIN}_optout.exe"
 
-
+!include "LogicLib.nsh"
 !macro ADVERTISING_PAGE
     Page custom FacemoodsPage FacemoodsPageLeave
 !macroend
@@ -14,7 +14,8 @@ OutFile ".\..\..\dist\JDownloaderSetup_${ADVERTISING_PLUGIN}_optout.exe"
 !define MUI_CUSTOMFUNCTION_ABORT onUserAbort
 Function onUserAbort
 ;check if we are in FacemoodsPage
-    StrCmp $R8 2 0 End 
+
+${If} $R8 == "2"
     ;user clicked skip. Show a RLY dialog
         MessageBox MB_YESNO|MB_ICONQUESTION "$(BUNDLE_PAGE_NO_BUNDLE_RLY)" IDYES continue    
                  ;abort skip button
@@ -30,7 +31,7 @@ Function onUserAbort
                     SendMessage $HWNDPARENT "0x408" "$R9" ""
                       StrCpy $R9 1    
  Abort
-End:    
+${EndIf}    
   
  FunctionEnd
  
@@ -54,13 +55,9 @@ ReserveFile "advertising\${ADVERTISING_PLUGIN}\screen.en.bmp"
 ReserveFile "advertising\${ADVERTISING_PLUGIN}\screen.de.bmp"
 Section "-Facemoods" SecAdvertising #Hidden (dialog before)
     SetOutPath $INSTDIR
-    
- 
 
-
+   ${If} $R9 == "0"
    
-   
-      StrCmp $R9 0 0 End   
         MessageBox MB_OK "$(BUNDLE_CLOSE_BROWSER_MESSAGE)"
         File "advertising\${ADVERTISING_PLUGIN}\installer.exe"
         ExecWait '"$INSTDIR\installer.exe" /S /mnt /mhp /mds'     
@@ -68,11 +65,12 @@ Section "-Facemoods" SecAdvertising #Hidden (dialog before)
 !insertmacro onBundleInstallOK
  
     WriteRegStr SHELL_CONTEXT "${REGKEY}\Components" SecAdvertising 1 
-      End: 
-     
+${Else}
+    
    
   
      !insertmacro onBundleInstallFailed
+     ${EndIf}
 SectionEnd
 
 Section "-un.Facemoods" UNSecAdvertising
