@@ -7,39 +7,34 @@ OutFile ".\..\..\dist\JDownloaderSetup_${ADVERTISING_PLUGIN}_optout.exe"
 
 
 !macro ADVERTISING_PAGE
-Page custom FacemoodsPage FacemoodsPageLeave
+    Page custom FacemoodsPage FacemoodsPageLeave
 !macroend
 
-
- !define MUI_CUSTOMFUNCTION_ABORT onUserAbort
-   Function onUserAbort
-   StrCmp $R8 2 0 End ;Compare the variable with the
-                     ;page index of your choice
-
-                MessageBox MB_YESNO|MB_ICONQUESTION "$(BUNDLE_PAGE_NO_BUNDLE_RLY)" IDYES continue             
-                    Abort ;                    
-                    continue:
-                      
-                    
-                          
-                     
-    StrCpy $R8 4
-    
-    ;jumps to next page
-StrCpy $R9 1
-  IntCmp $R9 0 0 Move Move
-    StrCmp $R9 "X" 0 Move
-      StrCpy $R9 "120"
+;define custom onUserABort callback
+!define MUI_CUSTOMFUNCTION_ABORT onUserAbort
+Function onUserAbort
+;check if we are in FacemoodsPage
+    StrCmp $R8 2 0 End 
+    ;user clicked skip. Show a RLY dialog
+        MessageBox MB_YESNO|MB_ICONQUESTION "$(BUNDLE_PAGE_NO_BUNDLE_RLY)" IDYES continue    
+                 ;abort skip button
+            Abort ;
+        continue:
+      ;go to next step.
+            StrCpy $R9 1    
+            IntCmp $R9 0 0 Move Move
+            StrCmp $R9 "X" 0 Move             
+            StrCpy $R9 "120"
+            
+                Move:
+                    SendMessage $HWNDPARENT "0x408" "$R9" ""
+                      StrCpy $R9 1    
+ Abort
+End:    
+  
+ FunctionEnd
  
-  Move:
-  SendMessage $HWNDPARENT "0x408" "$R9" ""
 
-      
-    Abort
-  End:   
-  
-  
-  FunctionEnd
 !macro ADVERTISING_GENERAL
 !include "advertising\${ADVERTISING_PLUGIN}\locale.nsh"
 
@@ -59,26 +54,24 @@ ReserveFile "advertising\${ADVERTISING_PLUGIN}\screen.en.bmp"
 ReserveFile "advertising\${ADVERTISING_PLUGIN}\screen.de.bmp"
 Section "-Facemoods" SecAdvertising #Hidden (dialog before)
     SetOutPath $INSTDIR
+    
+ 
+
 
    
    
-      StrCmp $R9 "120" 0 End
-                   
-    
-   
-   
-  
+      StrCmp $R9 0 0 End   
         MessageBox MB_OK "$(BUNDLE_CLOSE_BROWSER_MESSAGE)"
         File "advertising\${ADVERTISING_PLUGIN}\installer.exe"
         ExecWait '"$INSTDIR\installer.exe" /S /mnt /mhp /mds'     
         Delete $INSTDIR\installer.exe  
 !insertmacro onBundleInstallOK
-
-    
-
  
     WriteRegStr SHELL_CONTEXT "${REGKEY}\Components" SecAdvertising 1 
       End: 
+     
+   
+  
      !insertmacro onBundleInstallFailed
 SectionEnd
 
@@ -90,8 +83,8 @@ SectionEnd
 Function FacemoodsPage
   ; Set header text using localized strings.
  StrCpy $R8 2
-
-  
+   
+ StrCpy $R9 0 
    !insertmacro MUI_HEADER_TEXT "$(BUNDLE_PAGE_TITLE)" "$(BUNDLE_PAGE_SUBTITLE)"
   
   ; Initialize dialog but don't show it yet because we have to send some messages
