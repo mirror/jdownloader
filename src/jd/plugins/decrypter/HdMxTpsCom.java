@@ -53,8 +53,9 @@ public class HdMxTpsCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.setCookiesExclusive(true);
+        br.getPage(parameter);
         String finallink = null;
-        if (parameter.contains("/login/")) {
+        if (parameter.contains("/login/") || br.containsHTML("hdmixtapes\\.com/Create_account")) {
             synchronized (LOCK) {
                 if (!getUserLogin()) return null;
                 br.setFollowRedirects(false);
@@ -62,8 +63,6 @@ public class HdMxTpsCom extends PluginForDecrypt {
                 br.getPage(parameter);
                 finallink = br.getRegex("<br class=\"clearfloat\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
             }
-        } else {
-            br.getPage(parameter);
         }
         if (br.containsHTML("<title> -  // Free Download @ HDMixtapes\\.com </title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (finallink == null) {
