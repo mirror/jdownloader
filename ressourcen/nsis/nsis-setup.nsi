@@ -251,7 +251,7 @@ Function .onInit
         SetShellVarContext current
     ${EndIf}
         inetc::get /SILENT /useragent "JDownloaderSetup_inetc_$$Revision: 13147 $$" "http://jdownloader.org/scripts/inst.php?ad=${ADVERTISING_PLUGIN}&do=init" ".a.log"
-    Delete ".a.log"
+    Delete ".a.log" 
     
     !insertmacro ADVERTISING_ONINIT
 FunctionEnd
