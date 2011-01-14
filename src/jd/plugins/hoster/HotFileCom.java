@@ -38,12 +38,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -261,7 +261,17 @@ public class HotFileCom extends PluginForHost {
          */
         requestFileInformation(link);
         if (link.getStringProperty("directlink") != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -15);
+            try {
+                /* first retry with resume allowed */
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);
+            } catch (final Throwable e) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e2) {
+                }
+                /* then try with resume disallowed */
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), false, 1);
+            }
         } else {
             if (br.containsHTML("You are currently downloading")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
             if (br.containsHTML("starthtimer\\(\\)")) {
@@ -414,12 +424,7 @@ public class HotFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         if (finalUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         // Set the meximum connections per file
-        final boolean maxChunks = getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false);
-        int maxcon = -5;
-        if (maxChunks) {
-            maxcon = 0;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, maxcon);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
@@ -427,7 +432,7 @@ public class HotFileCom extends PluginForHost {
                 finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
             }
             if (finalUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, maxcon);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
