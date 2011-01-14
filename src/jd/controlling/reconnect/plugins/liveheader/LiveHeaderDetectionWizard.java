@@ -86,7 +86,7 @@ public class LiveHeaderDetectionWizard {
 
                 }
 
-                if (!RouterUtils.checkPort(this.txtIP.getText().trim(), 80)) {
+                if (!RouterUtils.checkPort(this.txtIP.getText().trim())) {
                     Dialog.getInstance().showConfirmDialog(0, "Warning", "There is no Webinterface at http://" + this.txtIP.getText() + "\r\nAre you sure that the Router IP is correct?\r\nA correct Router IP is required to find the correct settings.\r\n\r\nContinue anyway?");
                 }
                 String man = this.txtManufactor.getText().trim();

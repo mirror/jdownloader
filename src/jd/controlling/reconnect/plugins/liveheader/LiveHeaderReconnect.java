@@ -433,7 +433,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                 LiveHeaderReconnect.this.txtIP.setText(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
 
                 progress.setStatus(80);
-                final InetAddress ia = RouterUtils.getAddress(false);
+                final InetAddress ia = RouterUtils.getAddress(true);
                 if (ia != null) {
 
                     LiveHeaderReconnect.this.setRouterIP(ia.getHostAddress());

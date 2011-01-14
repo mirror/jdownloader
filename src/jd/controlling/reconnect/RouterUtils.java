@@ -54,15 +54,11 @@ public class RouterUtils {
         }
 
         public void go() throws Exception {
-            try {
-                final InetAddress ia = InetAddress.getByName(this.host);
-                if (ia.isReachable(1500)) {
-                    if (RouterUtils.checkPort(this.host, 80)) {
-                        this.address = ia;
-                    }
-                }
-            } catch (final IOException e) {
+
+            if (RouterUtils.checkPort(this.host) || checkPort(host)) {
+                address = InetAddress.getByName(this.host);
             }
+
         }
     }
 
@@ -226,14 +222,19 @@ public class RouterUtils {
      * webserverr unning on this port
      * 
      * @param host
-     * @param port
      * @return
      */
-    public static boolean checkPort(final String host, final int port) {
+    public static boolean checkPort(final String host) {
+        return (checkPort(host, 80) || checkPort(host, 443));
+    }
+
+    private static boolean checkPort(String host, int port) {
         Socket sock = null;
         try {
+
             sock = new Socket(host, port);
             sock.setSoTimeout(200);
+
             // some isps or DNS server redirect in case of no server found
             Browser br = new Browser();
             br.setFollowRedirects(false);
@@ -241,6 +242,7 @@ public class RouterUtils {
             String redirect = br.getRedirectLocation();
             String domain = Browser.getHost(redirect);
             con.disconnect();
+            if ("t-online.de".equals(domain)) return false;
             if ("opendns.com".equals(domain)) return false;
             return true;
         } catch (final Exception e) {
@@ -276,6 +278,11 @@ public class RouterUtils {
         }
     }
 
+    /**
+     * Chekcs a Host table
+     * 
+     * @return
+     */
     public static InetAddress getIpFormHostTable() {
         RouterUtils.updateHostTable();
         RouterUtils.ASYNCH_RETURN = null;
@@ -324,8 +331,8 @@ public class RouterUtils {
             for (final String string : out) {
                 final String m = new Regex(string, pat).getMatch(0);
                 if (m != null) {
-                    final InetAddress ia = InetAddress.getByName(m);
-                    if (ia.isReachable(1500)) { return ia; }
+                    if (checkPort(m) || checkPort(m)) { return InetAddress.getByName(m); }
+
                 }
             }
         } catch (final Exception e) {
@@ -359,9 +366,10 @@ public class RouterUtils {
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
                                 final InetAddress ia = InetAddress.getByName(hostname);
-                                if (ia.isReachable(1500)) {
-                                    if (RouterUtils.checkPort(hostname, 80)) { return ia; }
-                                }
+                                /* first we try to connect to http */
+                                if (RouterUtils.checkPort(hostname)) { return ia; }
+                                /* then lets try https */
+                                if (RouterUtils.checkPort(hostname)) { return ia; }
                             } catch (final Exception e) {
                                 JDLogger.exception(e);
                             }
@@ -390,9 +398,9 @@ public class RouterUtils {
                             try {
                                 final InetAddress ia = InetAddress.getByName(hostname);
                                 /* first we try to connect to http */
-                                if (RouterUtils.checkPort(hostname, 80)) { return ia; }
+                                if (RouterUtils.checkPort(hostname)) { return ia; }
                                 /* then lets try https */
-                                if (RouterUtils.checkPort(hostname, 443)) { return ia; }
+                                if (RouterUtils.checkPort(hostname)) { return ia; }
                             } catch (final Exception e) {
                                 JDLogger.exception(e);
                             }
