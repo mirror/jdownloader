@@ -18,17 +18,17 @@ import net.miginfocom.swing.MigLayout;
 
 public class FolderWatchPanel extends SwitchPanel {
 
-    private static final long serialVersionUID = -4451556977039313203L;
+    private static final long           serialVersionUID = -4451556977039313203L;
 
-    private static final String JDL_PREFIX = "plugins.optional.folderwatch.gui.";
+    private static final String         JDL_PREFIX       = "plugins.optional.folderwatch.gui.";
 
-    private final JDFolderWatch fwInstance = (JDFolderWatch) JDUtilities.getOptionalPlugin("folderwatch").getPlugin();
+    private final JDFolderWatch         fwInstance       = (JDFolderWatch) JDUtilities.getOptionalPlugin("folderwatch").getPlugin();
 
-    private static FolderWatchTable table;
+    private static FolderWatchTable     table;
     private static FolderWatchInfoPanel infoPanel;
-    private static SubConfiguration config;
+    private static SubConfiguration     config;
 
-    private static FolderWatchPanel INSTANCE;
+    private static FolderWatchPanel     INSTANCE;
 
     private FolderWatchPanel() {
     }
@@ -48,13 +48,12 @@ public class FolderWatchPanel extends SwitchPanel {
 
     private void initGUI() {
         this.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[][grow,fill]"));
-        this.add(new ViewToolbar(JDL_PREFIX + "action.clear", JDL_PREFIX + "action.reimport"));
+        this.add(new ViewToolbar("action.folderwatch.clear", "action.folderwatch.reimport"));
         this.add(new JScrollPane(table), "grow");
     }
 
     private void initActions() {
-        new ThreadedAction(JDL_PREFIX + "action.clear", "gui.images.clear") {
-
+        new ThreadedAction("action.folderwatch.clear", "gui.images.clear") {
             private static final long serialVersionUID = 3349495273700955040L;
 
             @Override
@@ -76,8 +75,7 @@ public class FolderWatchPanel extends SwitchPanel {
             }
         };
 
-        new ThreadedAction(JDL_PREFIX + "action.reimport", "gui.images.add") {
-
+        new ThreadedAction("action.folderwatch.reimport", "gui.images.add") {
             private static final long serialVersionUID = 9034432457172125570L;
 
             @Override
@@ -115,13 +113,18 @@ public class FolderWatchPanel extends SwitchPanel {
     }
 
     public FolderWatchInfoPanel getInfoPanel() {
-        if (infoPanel == null) infoPanel = new FolderWatchInfoPanel("gui.images.addons.unrar");
+        if (infoPanel == null) {
+            infoPanel = new FolderWatchInfoPanel("gui.images.addons.unrar");
+        }
+
         return infoPanel;
     }
 
     public void refresh() {
         table.getModel().refreshModel();
         table.getModel().fireTableDataChanged();
+
+        getInfoPanel().update();
     }
 
     public class FolderWatchInfoPanel extends InfoPanel {
@@ -139,10 +142,21 @@ public class FolderWatchPanel extends SwitchPanel {
                 @Override
                 public Object runSave() {
                     HistoryEntry container = (HistoryEntry) table.getValueAt(table.getSelectedRow(), 3);
-                    container = History.updateEntry(container);
-                    // TODO: JDL.L key
-                    String info = container.isExisting() ? "File exists" : "File does not exist";
+
+                    String info = "";
+
+                    if (container != null) {
+                        container = History.updateEntry(container);
+
+                        if (container.isExisting()) {
+                            info = JDL.L(JDL_PREFIX + "filestatus.exists", "File exists");
+                        } else {
+                            info = JDL.L(JDL_PREFIX + "filestatus.notexists", "File does not exist");
+                        }
+                    }
+
                     updateInfo(JDL.L(JDL_PREFIX + "filestatus", "File status"), info);
+
                     return null;
                 }
             }.start();
