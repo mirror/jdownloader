@@ -55,9 +55,9 @@
 	<!-- Compiles the code -->
 	<target name="compile" depends="clean">
 		<mkdir dir="${cls}" />
-		<javac srcdir="${src}" excludes="jd/plugins/optional/neembuu/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="${src}" excludes="jd/plugins/optional/neembuu/**/*,jd/plugins/optional/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
 			<classpath refid="classpath" />
-			
+
 		</javac>
 		<echo message="Finished." />
 	</target>
@@ -245,6 +245,15 @@
 		<sequential>
 			<echo message="Creating @{package}" />
 			<mkdir dir="${pluginres}/@{number}__@{package}/plugins" />
+			<mkdir dir="${res}/pluginressourcen/@{number}__@{package}" />
+			<copy todir="${pluginres}/@{number}__@{package}">
+						<fileset dir="${res}/pluginressourcen/@{number}__@{package}" >
+							
+										<include name="*/**" />
+										
+									</fileset>
+			</copy>
+			
 			<jar jarfile="${pluginres}/@{number}__@{package}/plugins/@{package}.jar" manifest="${dist}/Manifest.MF">
 				<fileset dir="${cls}">
 					<include name="jd/plugins/optional/@{include}" />
@@ -385,9 +394,9 @@
 			<define name="ADVERTISING_OPTOUT" value="1" />
 		</nsis>
 		<echo message="OpenCandy Windows Setup..." />
-	    <nsis script="${exe.windows.script}" verbosity="2">
-	            <define name="ADVERTISING_PLUGIN" value="OpenCandy" />
-	    </nsis>
+		<nsis script="${exe.windows.script}" verbosity="2">
+			<define name="ADVERTISING_PLUGIN" value="OpenCandy" />
+		</nsis>
 		<echo message="NSIS Finished." />
 		<!-- <nsis script="${exe.web.script}" verbosity="2" /> -->
 		<move todir="${jd}">
