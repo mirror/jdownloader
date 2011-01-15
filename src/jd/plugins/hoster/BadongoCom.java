@@ -43,7 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+/?\\d?/?\\w?\\w?" }, flags = { PluginWrapper.LOAD_ON_INIT })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.*(audio|file|vid)/[0-9]+/?\\d?/?\\w?\\w?" }, flags = { PluginWrapper.LOAD_ON_INIT })
 public class BadongoCom extends PluginForHost {
 
     private static final String FILETEMPLATE = "http://www.badongo.com/ajax/prototype/ajax_api_filetemplate.php";
@@ -103,93 +103,108 @@ public class BadongoCom extends PluginForHost {
         this.br.setCookiesExclusive(true);
         this.br.setFollowRedirects(false);
         this.br.setCustomCharset("utf-8");
-        /* Get CaptchaCode */
-        this.br.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + System.currentTimeMillis());
-        final String cid = this.br.getRegex("cid=(\\d+)").getMatch(0);
-        final String fileID = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(1);
-        final String filetype = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(0);
-        String filepart = new Regex(realURL, "/([a-z]+)$").getMatch(0);
-        final String capSecret = this.br.getRegex("cap_secret value=(.*?)>").getMatch(0);
-        final String action = this.br.getRegex("action=\\\\\"(.*?)\\\\\"").getMatch(0);
-        if ((cid == null) || (fileID == null) || (capSecret == null) || (action == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        final String code = this.getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
-        String postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
-        this.br.getHeaders().put("Referer", realURL);
-        this.br.postPage(action, postData);
-        if (this.br.getRequest().getHttpConnection().getResponseCode() != 200) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        if (filepart == null) {
-            filepart = "";
-        }
-        /* packed JS in ArrayList */
-        final ArrayList<String> packedJS = new ArrayList<String>();
-        packedJS.add(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0, 2));
-        packedJS.add(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0, 7));
-        if (packedJS.get(1) == null) {
-            packedJS.set(1, "{:'#':'#':'#':'" + this.br.getRegex("dlUrl \\+ \"(.*?)\"").getMatch(0, 1) + "'");
-        }
-        String[] plainJS = this.unpackJS(packedJS.get(0));
-        /* DOWNLOAD:INIT */
-        postData = "id=" + fileID + "&type=" + filetype + "&ext=" + filepart + "&f=download:init&z=" + plainJS[1] + "&h=" + plainJS[2];
-        this.br.getHeaders().put("Referer", action);
-        this.br.postPage(BadongoCom.FILETEMPLATE, postData);
-        /* DOWNLOAD:CHECK#1 */
-        plainJS = this.unpackJS(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0));
-        postData = "id=" + plainJS[4] + "&type=" + plainJS[5] + "&ext=" + plainJS[6] + "&f=download:check" + "&z=" + plainJS[1] + "&h=" + plainJS[2] + "&t=" + plainJS[3];
-        /* Timer */
-        int waitThis = 59;
-        String wait = plainJS[7].toString().replaceAll("\\D", "");
-        if (wait != null) {
-            waitThis = Integer.parseInt(wait);
-        }
-        this.sleep(waitThis * 1001l, downloadLink);
-        /* DOWNLOAD:CHECK#2 + additional wait time */
-        do {
+        this.br.setDebug(true);
+        if (!realURL.contains("/audio/")) {
+            /* Get CaptchaCode */
+            this.br.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + System.currentTimeMillis());
+            final String cid = this.br.getRegex("cid=(\\d+)").getMatch(0);
+            final String fileID = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(1);
+            final String filetype = new Regex(realURL, "(file|vid)/(\\d+)").getMatch(0);
+            String filepart = new Regex(realURL, "/([a-z]+)$").getMatch(0);
+            final String capSecret = this.br.getRegex("cap_secret value=(.*?)>").getMatch(0);
+            final String action = this.br.getRegex("action=\\\\\"(.*?)\\\\\"").getMatch(0);
+            if ((cid == null) || (fileID == null) || (capSecret == null) || (action == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            final String code = this.getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
+            String postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
+            this.br.getHeaders().put("Referer", realURL);
+            this.br.postPage(action, postData);
+            if (this.br.getRequest().getHttpConnection().getResponseCode() != 200) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (filepart == null) {
+                filepart = "";
+            }
+            /* packed JS in ArrayList */
+            final ArrayList<String> packedJS = new ArrayList<String>();
+            packedJS.add(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0, 2));
+            packedJS.add(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0, 7));
+            if (packedJS.get(1) == null) {
+                packedJS.set(1, "{:'#':'#':'#':'" + this.br.getRegex("dlUrl \\+ \"(.*?)\"").getMatch(0, 1) + "'");
+            }
+            String[] plainJS = this.unpackJS(packedJS.get(0));
+            if (plainJS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            /* DOWNLOAD:INIT */
+            postData = "id=" + fileID + "&type=" + filetype + "&ext=" + filepart + "&f=download:init&z=" + plainJS[1] + "&h=" + plainJS[2];
+            this.br.getHeaders().put("Referer", action);
             this.br.postPage(BadongoCom.FILETEMPLATE, postData);
+            /* DOWNLOAD:CHECK#1 */
             plainJS = this.unpackJS(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0));
-            if ((plainJS[0] != null) && plainJS[0].contains("check_n")) {
-                wait = plainJS[0].replaceAll("\\D", "");
-                if (wait != null) {
-                    waitThis = Integer.parseInt(wait);
-                }
-                this.sleep(waitThis * 1001l, downloadLink, "Waiting for host: ");
+            if (plainJS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            postData = "id=" + plainJS[4] + "&type=" + plainJS[5] + "&ext=" + plainJS[6] + "&f=download:check" + "&z=" + plainJS[1] + "&h=" + plainJS[2] + "&t=" + plainJS[3];
+            /* Timer */
+            int waitThis = 59;
+            String wait = plainJS[7].toString().replaceAll("\\D", "");
+            if (wait != null) {
+                waitThis = Integer.parseInt(wait);
             }
-        } while (plainJS[0] != null);
-        /* File or Video Link */
-        String fileOrVid = "";
-        if (realURL.contains("file/")) {
-            fileOrVid = "getFileLink";
+            this.sleep(waitThis * 1001l, downloadLink);
+            /* DOWNLOAD:CHECK#2 + additional wait time */
+            do {
+                this.br.postPage(BadongoCom.FILETEMPLATE, postData);
+                plainJS = this.unpackJS(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0));
+                if ((plainJS[0] != null) && plainJS[0].contains("ck_[0-9a-f]+")) {
+                    wait = plainJS[0].replaceAll("\\D", "");
+                    if (wait != null) {
+                        waitThis = Integer.parseInt(wait);
+                    }
+                    this.sleep(waitThis * 1001l, downloadLink, "Waiting for host: ");
+                }
+            } while (plainJS[0] != null);
+            /* File or Video Link */
+            String fileOrVid = "";
+            if (realURL.contains("file/")) {
+                fileOrVid = "getFileLink";
+            } else {
+                fileOrVid = "getVidLink";
+            }
+            /* Next Request. Response part of final link */
+            final String pathData = "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=0&rsargs[]=yellow&rsargs[]=" + plainJS[1] + "&rsargs[]=" + plainJS[2] + "&rsargs[]=" + plainJS[3] + "&rsargs[]=" + plainJS[5] + "&rsargs[]=" + plainJS[4] + "&rsargs[]=" + filepart;
+            this.br.getPage(action + pathData).trim();
+            plainJS = this.unpackJS(packedJS.get(1));
+            String link = null;
+            final String returnVar = this.br.getRegex("return (.*?)\\(").getMatch(0);
+            final String[] alllink = this.br.getRegex(returnVar + "\\(.'(.*?).'\\)").getColumn(0);
+            if (((returnVar != null) && (alllink != null)) || (alllink.length > 0)) {
+                for (final String tmplink : alllink) {
+                    if (tmplink.contains("www.badongo.com")) {
+                        link = tmplink;
+                        break;
+                    }
+                }
+            }
+            if ((link == null) || (packedJS.get(1) == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            /* Click button. Next Request. Response new packed JS */
+            this.br.getPage(link + plainJS[4] + "?zenc=");
+            this.handleErrors(this.br);
+            packedJS.add(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0, 4));
+            if (packedJS.get(2) == null) {
+                packedJS.set(2, "{:'" + this.br.getRegex("window\\.location\\.href = '(.*?)\\?pr=").getMatch(0) + "?pr='");
+            }
+            plainJS = this.unpackJS(packedJS.get(2));
+            /* Test */
+            if (plainJS[1] == null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l); }
+            /* Next Request. Response final link as redirect */
+            this.br.getPage("http://www.badongo.com" + plainJS[1]);
+            this.dl = BrowserAdapter.openDownload(this.br, downloadLink, this.br.getRedirectLocation(), true, 1);
         } else {
-            fileOrVid = "getVidLink";
-        }
-        /* Next Request. Response part of final link */
-        final String pathData = "?rs=" + fileOrVid + "&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=0&rsargs[]=yellow&rsargs[]=" + plainJS[1] + "&rsargs[]=" + plainJS[2] + "&rsargs[]=" + plainJS[3] + "&rsargs[]=" + plainJS[5] + "&rsargs[]=" + plainJS[4] + "&rsargs[]=" + filepart;
-        this.br.getPage(action + pathData).trim();
-        plainJS = this.unpackJS(packedJS.get(1));
-        String link = null;
-        final String returnVar = this.br.getRegex("return (.*?)\\(").getMatch(0);
-        final String[] alllink = this.br.getRegex(returnVar + "\\(.'(.*?).'\\)").getColumn(0);
-        if (((returnVar != null) && (alllink != null)) || (alllink.length > 0)) {
-            for (final String tmplink : alllink) {
-                if (tmplink.contains("www.badongo.com")) {
-                    link = tmplink;
-                    break;
-                }
+            // this.br.getPage(realURL);
+            String dllink = this.br.getRegex("songFileSrc\",\"(.*?)\"\\)").getMatch(0);
+            final String filename = this.br.getRegex("songFileName\",\"(.*?)\"\\)").getMatch(0);
+            if ((dllink == null) || (filename == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (!filename.contains("Unknown")) {
+                downloadLink.setName(filename);
             }
+            dllink = Encoding.urlDecode(dllink, true);
+            this.dl = BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
         }
-        if ((link == null) || (packedJS.get(1) == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        /* Click button. Next Request. Response new packed JS */
-        this.br.getPage(link + plainJS[4] + "?zenc=");
-        this.handleErrors(this.br);
-        packedJS.add(this.br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0, 4));
-        if (packedJS.get(2) == null) {
-            packedJS.set(2, "{:'" + this.br.getRegex("window\\.location\\.href = '(.*?)\\?pr=").getMatch(0) + "?pr='");
-        }
-        plainJS = this.unpackJS(packedJS.get(2));
-        /* Test */
-        if (plainJS[1] == null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l); }
-        /* Next Request. Response final link as redirect */
-        this.br.getPage("http://www.badongo.com" + plainJS[1]);
-        this.dl = BrowserAdapter.openDownload(this.br, downloadLink, this.br.getRedirectLocation(), true, 1);
         if (!this.dl.getConnection().isContentDisposition()) {
             final String page = this.br.loadConnection(this.dl.getConnection()) + "";
             this.br.getRequest().setHtmlCode(page);
@@ -326,11 +341,18 @@ public class BadongoCom extends PluginForHost {
                 e.printStackTrace();
             }
         } else {
-            result = this.br.getRegex("window.getFileLinkInitOpt =(.*?)\n|\r\rb").getMatch(0, 1);
+            result = null;
+            if (!this.br.containsHTML("'ext': ''")) {
+                final String[] InitOpt = this.br.getRegex("getFileLinkInitOpt(\\.z)? = (.*?)\n|\r\rb").getColumn(1);
+                if (InitOpt.length > 0) {
+                    final String z = new Regex(InitOpt[InitOpt.length - 1], "'(.*?)'").getMatch(-1);
+                    result = InitOpt[InitOpt.length - 2].replaceAll("z':(.*),'h", "z':" + z + ",'h");
+                }
+            }
             if ((result == null) && this.br.containsHTML("getFileLinkInitOpt")) {
                 result = this.br.toString();
             }
-            if ((result == null) && this.br.containsHTML("check_n")) {
+            if ((result == null) && this.br.containsHTML("ck_[0-9a-f]+")) {
                 result = this.br.toString();
             }
             if (result == null) {

@@ -33,48 +33,51 @@ import jd.plugins.PluginForDecrypt;
 public class BdngCm extends PluginForDecrypt {
     static private String host = "badongo.com";
 
-    public BdngCm(PluginWrapper wrapper) {
+    public BdngCm(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setCookiesExclusive(true);
-        br.clearCookies(host);
-        br.setCookie("http://www.badongo.com", "badongoL", "de");
-        br.setFollowRedirects(false);
-        br.getPage(parameter);
+        this.br.setCookiesExclusive(true);
+        this.br.clearCookies(BdngCm.host);
+        this.br.setCookie("http://www.badongo.com", "badongoL", "de");
+        this.br.setFollowRedirects(false);
+        this.br.getPage(parameter);
         parameter = parameter.replaceFirst("badongo\\.com", "badongo.viajd");
-        if (!br.containsHTML("Diese Datei wurde gesplittet")) {
+        if (!this.br.containsHTML("Diese Datei wurde gesplittet")) {
             /* For single video links */
-            //if (!parameter.endsWith("/1")) parameter = parameter + "/1";
+            // if (!parameter.endsWith("/1")) parameter = parameter + "/1";
             /* For audio files */
-            if (parameter.contains("audio/")) parameter = parameter.replace("audio/", "file/");
-            DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter));
+            // if (parameter.contains("audio/")) parameter =
+            // parameter.replace("audio/", "file/");
+            final DownloadLink dlLink = this.createDownloadlink(Encoding.htmlDecode(parameter));
             dlLink.setProperty("type", "single");
             decryptedLinks.add(dlLink);
         } else {
             /* Get CaptchaCode */
             for (int i = 0; i <= 5; i++) {
-                br.getPage(param.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
-                Form form = br.getForm(0);
-                String cid = br.getRegex("cid\\=(\\d+)").getMatch(0);
-                String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, param);
-                form.setAction(br.getRegex("action=.\"(.+?).\"").getMatch(0));
+                this.br.getPage(param.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
+                final Form form = this.br.getForm(0);
+                final String cid = this.br.getRegex("cid\\=(\\d+)").getMatch(0);
+                final String code = this.getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, param);
+                form.setAction(this.br.getRegex("action=.\"(.+?).\"").getMatch(0));
                 form.put("user_code", code);
-                form.put("cap_id", br.getRegex("cap_id.\"\\svalue=.\"(\\d+).\"").getMatch(0));
-                form.put("cap_secret", br.getRegex("cap_secret.\"\\svalue=.\"([a-z0-9]+).\"").getMatch(0));
-                br.submitForm(form);
-                if (br.getRedirectLocation() == null) break;
+                form.put("cap_id", this.br.getRegex("cap_id.\"\\svalue=.\"(\\d+).\"").getMatch(0));
+                form.put("cap_secret", this.br.getRegex("cap_secret.\"\\svalue=.\"([a-z0-9]+).\"").getMatch(0));
+                this.br.submitForm(form);
+                if (this.br.getRedirectLocation() == null) {
+                    break;
+                }
             }
             /* Collect Splitfiles */
-            String[] partLinks = br.getRegex("<a\\shref=\"(http://www\\.badongo\\.com/de/c?(vid|file)/\\d+(/\\d)?/\\w\\w)\"").getColumn(0);
-            if (partLinks == null || partLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String[] partLinks = this.br.getRegex("<a\\shref=\"(http://www\\.badongo\\.com/de/c?(vid|file)/\\d+(/\\d)?/\\w\\w)\"").getColumn(0);
+            if ((partLinks == null) || (partLinks.length == 0)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             progress.setRange(partLinks.length);
             for (int i = 0; i <= partLinks.length - 1; i++) {
-                DownloadLink dlLink = createDownloadlink(partLinks[i].replaceFirst("badongo\\.com", "badongo.viajd"));
+                final DownloadLink dlLink = this.createDownloadlink(partLinks[i].replaceFirst("badongo\\.com", "badongo.viajd"));
                 dlLink.setName(dlLink.getName() + "." + (i + 1));
                 dlLink.setProperty("type", "split");
                 dlLink.setProperty("part", i + 1);
