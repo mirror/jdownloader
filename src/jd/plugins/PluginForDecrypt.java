@@ -49,6 +49,16 @@ import jd.utils.locale.JDL;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
+    /**
+     * timestamp when user last used the "do not show further captchas" option
+     * after canceling a captcha dialog
+     */
+    private static long                  ALL_BLOCK;
+    /**
+     * Store the timestamps when user decided to choose the
+     * "do not show further captchas of this host" after canceling a captcha
+     */
+    private static HashMap<String, Long> HOST_BLOCK_MAP = new HashMap<String, Long>();
 
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
@@ -271,6 +281,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     public ArrayList<DownloadLink> decryptLinks(CryptedLink[] cryptedLinks) {
+        if (isAborted(this.getInitTime(), this.getHost())) return new ArrayList<DownloadLink>();
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         Jobber decryptJobbers = new Jobber(4);
@@ -280,13 +291,17 @@ public abstract class PluginForDecrypt extends Plugin {
             private PluginForDecrypt plg             = null;
 
             public DThread(CryptedLink decryptableLink, PluginForDecrypt plg) {
+
                 this.decryptableLink = decryptableLink;
                 this.plg = plg.getWrapper().getNewPluginInstance();
+                // DThreads inittime should be derived from master plugin
+                this.plg.setInitTime(plg.getInitTime());
                 this.plg.setBrowser(new Browser());
             }
 
             @Override
             public void run() {
+                if (isAborted(getInitTime(), getHost())) return;
                 if (LinkGrabberController.isFiltered(decryptableLink)) return;
                 ArrayList<DownloadLink> links = plg.decryptLink(decryptableLink);
                 for (DownloadLink link : links) {
@@ -303,6 +318,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
 
         for (int b = cryptedLinks.length - 1; b >= 0; b--) {
+            if (isAborted(this.getInitTime(), this.getHost())) return new ArrayList<DownloadLink>();
             DThread dthread = new DThread(cryptedLinks[b], getWrapper().getPlugin());
             decryptJobbers.add(dthread);
         }
@@ -381,6 +397,48 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     protected String getInitials() {
         return null;
+    }
+
+    /**
+     * aborts all decrypters for host which have been started until now
+     * 
+     * @param host
+     */
+    public static void abortQueuedByHost(String host) {
+        synchronized (HOST_BLOCK_MAP) {
+            HOST_BLOCK_MAP.put(host, System.currentTimeMillis());
+        }
+
+    }
+
+    /**
+     * Aborts all decrypter which have been initiated until now
+     */
+    public static void abortQueued() {
+        synchronized (HOST_BLOCK_MAP) {
+            ALL_BLOCK = System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * checks if host decrypter has been aborted before initTime
+     * 
+     * @param initTime
+     * @param host
+     * @return
+     */
+    public static boolean isAborted(long initTime, String host) {
+        synchronized (HOST_BLOCK_MAP) {
+            // block dialog, because the rquest is older than the block
+            if (initTime < ALL_BLOCK) return true;
+            // bolc host request, becasue the requesting plugin is older than
+            // the
+            // block
+            Long hostBlockTime = HOST_BLOCK_MAP.get(host);
+
+            if (hostBlockTime != null && initTime < hostBlockTime) return true;
+            return false;
+        }
     }
 
 }

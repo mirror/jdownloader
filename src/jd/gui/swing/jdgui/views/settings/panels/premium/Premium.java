@@ -40,12 +40,12 @@ import jd.utils.locale.JDL;
 
 public class Premium extends ConfigPanel implements ActionListener, AccountControllerListener {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.premium.Premium.";
+    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.premium.Premium.";
 
-    private static final long serialVersionUID = -7685744533817989161L;
-    private PremiumTable internalTable;
-    private JScrollPane scrollPane;
-    private Timer updateAsync;
+    private static final long   serialVersionUID = -7685744533817989161L;
+    private PremiumTable        internalTable;
+    private JScrollPane         scrollPane;
+    private Timer               updateAsync;
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "title2", "Accounts");

@@ -241,7 +241,12 @@ public abstract class Plugin implements ActionListener {
      * ignore further captcha questions if the user decided not to continue
      * decrypting
      */
-    final private long              initTime;
+    private long                    initTime;
+
+    public void setInitTime(long initTime) {
+        System.out.println("Set " + this + " " + initTime);
+        this.initTime = initTime;
+    }
 
     /**
      * returns the init time of this plugin. this can be used, for example to
@@ -257,6 +262,7 @@ public abstract class Plugin implements ActionListener {
     public Plugin(final PluginWrapper wrapper) {
         this.wrapper = wrapper;
         initTime = System.currentTimeMillis();
+        System.out.println("Init plugin: " + this + " " + initTime);
         if (wrapper instanceof HostPluginWrapper) {
             this.config = new ConfigContainer(this.getHost()) {
                 private static final long serialVersionUID = -30947319320765343L;

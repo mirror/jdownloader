@@ -37,7 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 12797 $", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://listen\\.grooveshark\\.com/(#/)?.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://listen\\.grooveshark\\.com/(#/)?.+" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
     private static final String LISTEN = "http://listen.grooveshark.com/";

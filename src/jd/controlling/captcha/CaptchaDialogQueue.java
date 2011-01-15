@@ -1,6 +1,6 @@
 package jd.controlling.captcha;
 
-import java.util.HashMap;
+import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
@@ -13,36 +13,21 @@ public class CaptchaDialogQueue extends Queue {
         return INSTANCE;
     }
 
-    /**
-     * timestamp when user last used the "do not show further captchas" option
-     * after canceling a captcha dialog
-     */
-    private long                  allBlock;
-    /**
-     * Store the timestamps when user decided to choose the
-     * "do not show further captchas of this host" after canceling a captcha
-     */
-    private HashMap<String, Long> hostBlockMap;
-
     private CaptchaDialogQueue() {
         super("CaptchaDialogQueue");
-        hostBlockMap = new HashMap<String, Long>();
 
     }
 
     public String addWait(final CaptchaDialogQueueEntry item) {
-        // block dialog, because the rquest is older than the block
-        if (item.getInitTime() < allBlock) return null;
-        // bolc host request, becasue the requesting plugin is older than the
-        // block
-        Long hostBlockTime = hostBlockMap.get(item.getHost());
-        if (hostBlockTime != null && item.getInitTime() < hostBlockTime) return null;
+        if (PluginForDecrypt.isAborted(item.getInitTime(), item.getHost())) return null;
+
         return super.addWait(item);
 
     }
 
     public void blockByHost(String host) {
-        hostBlockMap.put(host, System.currentTimeMillis());
+        PluginForDecrypt.abortQueuedByHost(host);
+
         synchronized (queueLock) {
             for (final QueuePriority prio : prios) {
                 for (final QueueAction<?, ? extends Throwable> item : queue.get(prio)) {
@@ -62,7 +47,7 @@ public class CaptchaDialogQueue extends Queue {
     }
 
     public void blockAll() {
-        allBlock = System.currentTimeMillis();
+        PluginForDecrypt.abortQueued();
         this.killQueue();
 
     }
