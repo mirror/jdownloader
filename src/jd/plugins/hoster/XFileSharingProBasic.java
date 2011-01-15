@@ -141,7 +141,6 @@ public class XFileSharingProBasic extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Ticket Time
         long timeBefore = System.currentTimeMillis();
         boolean password = false;
         boolean recaptcha = false;
