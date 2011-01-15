@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com" }, urls = { "http://[\\w\\.]*?shragle\\.(com|de)/files/[\\w]+/.*" }, flags = { 2 })
 public class ShragleCom extends PluginForHost {
@@ -49,6 +50,8 @@ public class ShragleCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.de/", "\\.com/"));
     }
+
+    private String AGENT = RandomUserAgent.generate();
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -164,6 +167,7 @@ public class ShragleCom extends PluginForHost {
 
     private void login(final Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", AGENT);
         this.br.setFollowRedirects(true);
         this.br.getPage("http://www.shragle.com/index.php?p=login");
         this.br.postPage("http://www.shragle.com/index.php?p=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&cookie=1&submit=Login");
@@ -180,6 +184,7 @@ public class ShragleCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", AGENT);
         final String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);
         final String[] data = org.appwork.utils.Regex.getLines(this.br.getPage("http://www.shragle.com/api.php?key=" + ShragleCom.apikey + "&action=getStatus&fileID=" + id));
         if (data.length != 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
