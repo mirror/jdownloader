@@ -59,6 +59,7 @@ public class DuckLoad extends PluginForHost {
                 String result = results[i];
                 DownloadLink dllink = urls[i];
                 String[] values = result.split("\\;\\s*");
+                trim(values);
                 if ("SUCCESS".equals(values[0])) {
                     dllink.setAvailable(true);
                     if (values.length > 2) {
@@ -87,6 +88,7 @@ public class DuckLoad extends PluginForHost {
         this.setBrowserExclusive();
         br.postPage("http://www.duckload.com/jDownloader/getAccountDetails.php", "jd_uname=" + Encoding.urlEncode(account.getUser()) + "&jd_pass=" + Encoding.urlEncode(account.getPass()));
         String[] data = br.toString().split("\\;\\s*");
+        trim(data);
         if (data.length != 5 || !"SUCCESS".equals(data[0])) {
             ai.setStatus("Invalid");
             account.setValid(false);
@@ -121,6 +123,7 @@ public class DuckLoad extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.requestFileInformation(downloadLink);
         String[] values = br.postPage("http://www.duckload.com/jDownloader/getFree.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL())).toString().split("\\;\\s*");
+        trim(values);
         if (values.length != 3 || !"SUCCESS".equals(values[0])) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, values[0]);
         this.sleep(Long.parseLong(values[1]) * 1000l, downloadLink);
         String finallink = br.postPage("http://www.duckload.com/jDownloader/getFreeEncrypt.php", "crypt=" + values[2]);
@@ -131,6 +134,12 @@ public class DuckLoad extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
+    }
+
+    private void trim(String[] values) {
+        for (int i = 0; i < values.length; i++) {
+            values[i] = values[i].trim();
+        }
     }
 
     @Override
