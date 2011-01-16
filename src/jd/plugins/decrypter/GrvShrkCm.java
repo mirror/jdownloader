@@ -59,9 +59,8 @@ public class GrvShrkCm extends PluginForDecrypt {
         return res;
     }
 
-    private ArrayList<DownloadLink> decryptFavourites(final CryptedLink param, final ProgressController progress) throws IOException {
+    private ArrayList<DownloadLink> decryptFavourites(final String parameter, final ProgressController progress) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         this.userID = new Regex(parameter, "listen.grooveshark.com/#/user/.*?/(\\d+)/").getMatch(0);
         this.userName = new Regex(parameter, "listen.grooveshark.com/#/user/(.*?)/(\\d+)/").getMatch(0);
         this.br.getPage(parameter);
@@ -97,45 +96,6 @@ public class GrvShrkCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // private boolean login(Account account) throws IOException {
-    // this.br.getPage(LISTEN);
-    // final String c = this.br.getRegex(Pattern.compile("\"country(.*?)}",
-    // Pattern.UNICODE_CASE)).getMatch(-1);
-    // br.postPage("https://listen.grooveshark.com/empty.php", "username=" +
-    // account.getUser() + "&password=" + account.getPass());
-    //
-    // Browser ajax = br.cloneBrowser();
-    // // get SongID
-    // ajax.getHeaders().put("Content-Type", "application/json");
-    // ajax.getHeaders().put("Referer",
-    // "http://listen.grooveshark.com/JSQueue.swf?20101203.14");
-    // ajax.getHeaders().put("x-flash-version", "10,1,53,64");
-    //
-    // final String sid = br.getCookie("http://listen.grooveshark.com/",
-    // "PHPSESSID");
-    // // https://cowbell.grooveshark.com/more.php?authenticateUser
-    //
-    // String loginJSon = "{\"parameters\":{\"savePassword\":0,\"password\":\""
-    // + account.getPass() + "\",\"username\":\"" + account.getUser() +
-    // "\"},\"header\":" + "{\"token\":\"token\"," +
-    // "\"clientRevision\":\"20101012.36\"," + "\"client\":\"htmlshark\"," +
-    // "\"session\":\"" + sid + "\",\"privacy\":0," + c + ",\"uuid\":\"" +
-    // USERID + "\"},\"method\":\"authenticateUser\"}";
-    //
-    // // this.br.getHeaders().put("x-flash-version", "10,1,53,64");
-    // final String token = this.getSecretToken("authenticateUser",
-    // JDHash.getMD5(sid), sid);
-    //
-    // ajax.postPageRaw("https://cowbell.grooveshark.com/more.php?authenticateUser",
-    // loginJSon.replace("\"token\":\"token\"", "\"token\":\"" + token + "\""));
-    // userID = ajax.getRegex("\"userID\"\\:(\\d+)").getMatch(0);
-    // userName = ajax.getRegex("\"username\"\\:\"(.*?)\"").getMatch(0);
-    // isPremium =
-    // "1".equals(ajax.getRegex("\"isPremium\"\\:\"(\\d)\"").getMatch(0));
-    // authCode = ajax.getRegex("\"authToken\"\\:\"(.*?)\"").getMatch(0);
-    // return userID != null;
-    // }
-
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -153,9 +113,15 @@ public class GrvShrkCm extends PluginForDecrypt {
             decryptedLinks.add(dlLink);
             return decryptedLinks;
         }
-        // favourites
+        // Adding '#' for json content in responsemessage
+        if (!parameter.contains("/#/")) {
+            parameter = parameter.replaceFirst(GrvShrkCm.LISTEN, GrvShrkCm.LISTEN + "#/");
+        }
         // login
-        if (new Regex(param, ".*?listen.grooveshark.com/\\#/user/.*?/\\d+/music/favorites").matches()) { return this.decryptFavourites(param, progress); }
+        // favourites
+        if (new Regex(parameter, GrvShrkCm.LISTEN + "#/user/.*?/\\d+/music/favorites").matches()) { return this.decryptFavourites(parameter, progress); }
+        // playlists
+        if (new Regex(parameter, GrvShrkCm.LISTEN + "#/playlist/.*?/\\d+").matches()) { return this.decryptPlaylists(parameter, progress); }
         // album
         this.br.getPage(parameter);
         final String country = this.br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
@@ -233,6 +199,88 @@ public class GrvShrkCm extends PluginForDecrypt {
             this.logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
+        return decryptedLinks;
+    }
+
+    // private boolean login(Account account) throws IOException {
+    // this.br.getPage(LISTEN);
+    // final String c = this.br.getRegex(Pattern.compile("\"country(.*?)}",
+    // Pattern.UNICODE_CASE)).getMatch(-1);
+    // br.postPage("https://listen.grooveshark.com/empty.php", "username=" +
+    // account.getUser() + "&password=" + account.getPass());
+    //
+    // Browser ajax = br.cloneBrowser();
+    // // get SongID
+    // ajax.getHeaders().put("Content-Type", "application/json");
+    // ajax.getHeaders().put("Referer",
+    // "http://listen.grooveshark.com/JSQueue.swf?20101203.14");
+    // ajax.getHeaders().put("x-flash-version", "10,1,53,64");
+    //
+    // final String sid = br.getCookie("http://listen.grooveshark.com/",
+    // "PHPSESSID");
+    // // https://cowbell.grooveshark.com/more.php?authenticateUser
+    //
+    // String loginJSon = "{\"parameters\":{\"savePassword\":0,\"password\":\""
+    // + account.getPass() + "\",\"username\":\"" + account.getUser() +
+    // "\"},\"header\":" + "{\"token\":\"token\"," +
+    // "\"clientRevision\":\"20101012.36\"," + "\"client\":\"htmlshark\"," +
+    // "\"session\":\"" + sid + "\",\"privacy\":0," + c + ",\"uuid\":\"" +
+    // USERID + "\"},\"method\":\"authenticateUser\"}";
+    //
+    // // this.br.getHeaders().put("x-flash-version", "10,1,53,64");
+    // final String token = this.getSecretToken("authenticateUser",
+    // JDHash.getMD5(sid), sid);
+    //
+    // ajax.postPageRaw("https://cowbell.grooveshark.com/more.php?authenticateUser",
+    // loginJSon.replace("\"token\":\"token\"", "\"token\":\"" + token + "\""));
+    // userID = ajax.getRegex("\"userID\"\\:(\\d+)").getMatch(0);
+    // userName = ajax.getRegex("\"username\"\\:\"(.*?)\"").getMatch(0);
+    // isPremium =
+    // "1".equals(ajax.getRegex("\"isPremium\"\\:\"(\\d)\"").getMatch(0));
+    // authCode = ajax.getRegex("\"authToken\"\\:\"(.*?)\"").getMatch(0);
+    // return userID != null;
+    // }
+
+    private ArrayList<DownloadLink> decryptPlaylists(final String parameter, final ProgressController progress) throws IOException {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        this.br.getPage(parameter);
+        final String playlistID = parameter.substring(parameter.lastIndexOf("/") + 1);
+        final String country = this.br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
+        final String method = "playlistGetSongs";
+        final String paramString = this.getPostParameterString(GrvShrkCm.LISTEN, method, country) + "\"parameters\":{\"playlistID\":" + playlistID + "}}";
+        this.br.getHeaders().put("Content-Type", "application/json");
+        this.br.postPageRaw(GrvShrkCm.LISTEN + "more.php?" + method, paramString);
+        final String result = this.br.getRegex("\"result\"\\:.*?\\[(.*)\\]").getMatch(0);
+        final String[][] songs = new Regex(result, "\\{.*?\\}").getMatches();
+        // setup fp-Title
+        this.br.getPage(parameter.replace("#/", ""));
+        String title = this.br.getRegex("<title>(.*?)\\s\\|").getMatch(0);
+        if (title == null) {
+            title = Encoding.htmlDecode(new Regex(parameter, GrvShrkCm.LISTEN + "#/playlist/(.*?)/").getMatch(0));
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName("GrooveShark Playlists - " + title);
+        progress.increase(1);
+        for (final String[] s : songs) {
+            final HashMap<String, String> ret = new HashMap<String, String>();
+            for (final String[] ss : new Regex(s[0], "\"(.*?)\"\\s*:\\s*\"(.*?)\"").getMatches()) {
+                ret.put(ss[0], ss[1]);
+
+            }
+            final DownloadLink dlLink = this.createDownloadlink("http://grooveshark.viajd/song/" + ret.get("SongID"));
+            for (final Entry<String, String> next : ret.entrySet()) {
+                dlLink.setProperty(next.getKey(), this.decodeUnicode(next.getValue()));
+            }
+            final String filename = dlLink.getProperty("ArtistName", "UnknownArtist") + " - " + dlLink.getProperty("AlbumName", "UnkownAlbum") + " - " + dlLink.getProperty("Name", "UnknownSong") + ".mp3";
+            dlLink.setName(filename.trim());
+            try {
+                dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
+            } catch (final Exception e) {
+            }
+            decryptedLinks.add(dlLink);
+            dlLink.setFilePackage(fp);
+        }
+        progress.setFinished();
         return decryptedLinks;
     }
 
