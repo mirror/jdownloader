@@ -23,11 +23,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.Regex;
 
@@ -49,23 +49,25 @@ public class DuckLoad extends PluginForHost {
             this.setBrowserExclusive();
             this.br.getHeaders().put("User-Agent", UA);
             final StringBuilder sb = new StringBuilder();
-            for (DownloadLink d : urls) {
-                if (sb.length() > 0) sb.append(";");
+            for (final DownloadLink d : urls) {
+                if (sb.length() > 0) {
+                    sb.append(";");
+                }
                 sb.append(d.getDownloadURL());
             }
-            br.postPage("http://www.duckload.com/jDownloader/checkOnlineStatus.php", "list=" + Encoding.urlEncode(sb.toString()));
-            String[] results = Regex.getLines(br.toString());
+            this.br.postPage("http://www.duckload.com/jDownloader/checkOnlineStatus.php", "list=" + Encoding.urlEncode(sb.toString()));
+            final String[] results = Regex.getLines(this.br.toString());
             for (int i = 0; i < results.length; i++) {
-                String result = results[i];
-                DownloadLink dllink = urls[i];
-                String[] values = result.split("\\;\\s*");
-                trim(values);
+                final String result = results[i];
+                final DownloadLink dllink = urls[i];
+                final String[] values = result.split("\\;\\s*");
+                this.trim(values);
                 if ("SUCCESS".equals(values[0])) {
                     dllink.setAvailable(true);
                     if (values.length > 2) {
-                        long size = Long.parseLong(values[2]);
-                        String name = values[3];
-                        String md5 = values[4];
+                        final long size = Long.parseLong(values[2]);
+                        final String name = values[3];
+                        final String md5 = values[4];
                         dllink.setMD5Hash(md5);
                         dllink.setFinalFileName(name);
                         dllink.setDownloadSize(size);
@@ -86,17 +88,17 @@ public class DuckLoad extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        br.postPage("http://www.duckload.com/jDownloader/getAccountDetails.php", "jd_uname=" + Encoding.urlEncode(account.getUser()) + "&jd_pass=" + Encoding.urlEncode(account.getPass()));
-        String[] data = br.toString().split("\\;\\s*");
-        trim(data);
+        this.br.postPage("http://www.duckload.com/jDownloader/getAccountDetails.php", "jd_uname=" + Encoding.urlEncode(account.getUser()) + "&jd_pass=" + Encoding.urlEncode(account.getPass()));
+        final String[] data = this.br.toString().split("\\;\\s*");
+        this.trim(data);
         if (data.length != 5 || !"SUCCESS".equals(data[0])) {
             ai.setStatus("Invalid");
             account.setValid(false);
             return ai;
         }
         // int accountID = Integer.parseInt(data[1]);
-        boolean isPremium = "true".equals(data[3]);
-        long validUntil = Long.parseLong(data[4]);
+        final boolean isPremium = "true".equals(data[3]);
+        final long validUntil = Long.parseLong(data[4]);
         ai.setValidUntil(validUntil * 1000);
         if (isPremium && !ai.isExpired()) {
             account.setValid(true);
@@ -122,24 +124,19 @@ public class DuckLoad extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.requestFileInformation(downloadLink);
-        String[] values = br.postPage("http://www.duckload.com/jDownloader/getFree.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL())).toString().split("\\;\\s*");
-        trim(values);
-        if (values.length != 3 || !"SUCCESS".equals(values[0])) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, values[0]);
+        final String[] values = this.br.postPage("http://www.duckload.com/jDownloader/getFree.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL())).toString().split("\\;\\s*");
+        this.trim(values);
+        if (values.length != 3 || !"SUCCESS".equals(values[0])) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, values[0]); }
         this.sleep(Long.parseLong(values[1]) * 1000l, downloadLink);
-        String finallink = br.postPage("http://www.duckload.com/jDownloader/getFreeEncrypt.php", "crypt=" + values[2]);
+        final String finallink = this.br.postPage("http://www.duckload.com/jDownloader/getFreeEncrypt.php", "crypt=" + values[2]);
         if (!finallink.startsWith("http://") || finallink.startsWith("ERROR; ")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, finallink); }
         this.dl = BrowserAdapter.openDownload(this.br, downloadLink, finallink, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!this.dl.getConnection().isContentDisposition()) {
             this.br.followConnection();
+            if (this.br.getRequest().getUrl().toString().contentEquals("http://" + this.br.getHost() + "/")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
-    }
-
-    private void trim(String[] values) {
-        for (int i = 0; i < values.length; i++) {
-            values[i] = values[i].trim();
-        }
     }
 
     @Override
@@ -147,7 +144,7 @@ public class DuckLoad extends PluginForHost {
         this.requestFileInformation(downloadLink);
         this.br.forceDebug(true);
         this.br.setFollowRedirects(true);
-        String link = downloadLink.getDownloadURL();
+        final String link = downloadLink.getDownloadURL();
         String finalLink = downloadLink.getStringProperty("finallink", null);
         downloadLink.setProperty("finallink", null);
         boolean usedCachedLink = false;
@@ -167,7 +164,7 @@ public class DuckLoad extends PluginForHost {
             } finally {
                 if (usedCachedLink == false) {
                     try {
-                        dl.getConnection().disconnect();
+                        this.dl.getConnection().disconnect();
                     } catch (final Throwable e2) {
                     }
                 }
@@ -176,11 +173,12 @@ public class DuckLoad extends PluginForHost {
         }
         if (usedCachedLink == false) {
             /* create new link */
-            finalLink = br.postPage("http://www.duckload.com/jDownloader/getPremium.php", "link=" + Encoding.urlEncode(link) + "&jd_uname=" + Encoding.urlEncode(account.getUser()) + "&jd_pass=" + Encoding.urlEncode(account.getPass()));
+            finalLink = this.br.postPage("http://www.duckload.com/jDownloader/getPremium.php", "link=" + Encoding.urlEncode(link) + "&jd_uname=" + Encoding.urlEncode(account.getUser()) + "&jd_pass=" + Encoding.urlEncode(account.getPass()));
             if (!finalLink.startsWith("http:") || finalLink.startsWith("ERROR; ")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, finalLink); }
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, finalLink, true, 0);
             if (!this.dl.getConnection().isContentDisposition()) {
                 this.br.followConnection();
+                if (this.br.getRequest().getUrl().toString().contentEquals("http://" + this.br.getHost() + "/")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -190,9 +188,9 @@ public class DuckLoad extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKABLE;
-        if (!link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        this.checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKABLE; }
+        if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return link.getAvailableStatus();
     }
 
@@ -203,5 +201,11 @@ public class DuckLoad extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         link.setProperty("finallink", null);
+    }
+
+    private void trim(final String[] values) {
+        for (int i = 0; i < values.length; i++) {
+            values[i] = values[i].trim();
+        }
     }
 }
