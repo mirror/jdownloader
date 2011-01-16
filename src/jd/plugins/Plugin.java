@@ -262,7 +262,7 @@ public abstract class Plugin implements ActionListener {
     public Plugin(final PluginWrapper wrapper) {
         this.wrapper = wrapper;
         initTime = System.currentTimeMillis();
-        System.out.println("Init plugin: " + this + " " + initTime);
+
         if (wrapper instanceof HostPluginWrapper) {
             this.config = new ConfigContainer(this.getHost()) {
                 private static final long serialVersionUID = -30947319320765343L;

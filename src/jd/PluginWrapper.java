@@ -191,7 +191,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
                 if (CL == null) {
                     CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL() }, Thread.currentThread().getContextClassLoader());
                 }
-                logger.finer("load plugin: " + getClassName());
+
                 Class<?> plgClass;
                 try {
                     plgClass = CL.loadClass(getClassName());

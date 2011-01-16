@@ -183,7 +183,7 @@ public class WebUpdate {
         }
         final ProgressController guiPrgs;
         if (forceguiCall) {
-            guiPrgs = new ProgressController(ProgressController.Type.DIALOG, JDL.L("init.webupdate.progress.0_title", "Webupdate"), 9, "gui.images.update");
+            guiPrgs = new ProgressController(ProgressController.Type.DIALOG, JDL.L("init.webupdate.progress.0_title", "Webupdate"), JDL.L("init.webupdate.progress.0_title", "Webupdate"), 9, "gui.images.update");
             guiPrgs.setStatus(3);
         } else {
             guiPrgs = null;

@@ -70,6 +70,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     private transient ProgressControllerBroadcaster broadcaster   = new ProgressControllerBroadcaster();
     private boolean                                 abort         = false;
     private Type                                    type;
+    private String                                  name;
 
     public Type getType() {
         return type;
@@ -84,11 +85,11 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     }
 
     public ProgressController(String statusText, long max, String iconKey) {
-        this(Type.NORMAL, statusText, max, iconKey);
+        this(Type.NORMAL, statusText, statusText, max, iconKey);
     }
 
-    public ProgressController(Type type, String statusText, long max, String iconKey) {
-
+    public ProgressController(Type type, String name, String statusText, long max, String iconKey) {
+        this.name = name;
         this.type = type;
         id = idCounter++;
         this.max = max;
@@ -99,6 +100,14 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         this.icon = JDTheme.II(iconKey, ICONSIZE, ICONSIZE);
         fireChanges();
         broadcaster = new ProgressControllerBroadcaster();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Eventsender<ProgressControllerListener, ProgressControllerEvent> getBroadcaster() {
@@ -179,9 +188,9 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
         return max;
     }
 
-    public int getPercent() {
-        if (Math.min(currentValue, max) <= 0) return 0;
-        return (int) (10000 * currentValue / Math.max(1, Math.max(currentValue, max)));
+    public float getPercent() {
+        if (Math.min(currentValue, max) <= 0) return 0.0f;
+        return ((10000 * currentValue / Math.max(1, Math.max(currentValue, max)))) / 100.0f;
     }
 
     public Object getSource() {
@@ -278,7 +287,7 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
 
     public int compareTo(ProgressController o) {
         if (isFinalizing()) return 1;
-        return ((Integer) o.getPercent()).compareTo(getPercent());
+        return ((Float) o.getPercent()).compareTo(getPercent());
     }
 
 }

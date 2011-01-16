@@ -88,9 +88,7 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
         synchronized (addcontrollers) {
             if (!addcontrollers.contains(source)) {
                 addcontrollers.add(0, source);
-                if (source.getType() == Type.DIALOG) {
-                    ProgressControllerDialog.show(source);
-                }
+
             }
         }
     }
@@ -105,7 +103,15 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
         synchronized (controllers) {
             synchronized (addcontrollers) {
                 for (ProgressController add : addcontrollers) {
-                    if (!controllers.contains(add)) controllers.add(add);
+                    if (!controllers.contains(add)) {
+
+                        controllers.add(add);
+                        System.out.println("Dialog");
+                        if (add.getType() == Type.DIALOG) {
+                            ProgressControllerDialog.show(add);
+                        }
+
+                    }
                 }
                 addcontrollers.clear();
             }

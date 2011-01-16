@@ -8,10 +8,10 @@ import jd.gui.swing.components.JWindowTooltip;
 
 public class ProgressCircleTooltip extends JWindowTooltip {
 
-    private static final long serialVersionUID = -3242288593937020385L;
+    private static final long  serialVersionUID = -3242288593937020385L;
 
-    private ProgressController controller = null;
-    private JLabel toolTip;
+    private ProgressController controller       = null;
+    private JLabel             toolTip;
 
     public ProgressController getController() {
         return controller;
@@ -39,7 +39,7 @@ public class ProgressCircleTooltip extends JWindowTooltip {
                     sb.append(' ');
                 }
                 sb.append('[');
-                sb.append(controller.getPercent() / 100);
+                sb.append(controller.getPercent());
                 sb.append(new char[] { '%', ']' });
                 toolTip.setText(sb.toString());
             }

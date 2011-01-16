@@ -83,20 +83,6 @@ public class JDClassLoader extends ClassLoader {
     private final String          rootDir;
 
     private final ArrayList<File> lafs;
-    private static final byte[]   S        = new byte[] { (byte) 2, (byte) 1, (byte) 1, (byte) 49, (byte) 11, (byte) 48, (byte) 9, (byte) 6, (byte) 5, (byte) 43, (byte) 14, (byte) 3, (byte) 2, (byte) 26, (byte) 5, (byte) 0, (byte) 48, (byte) 11, (byte) 6, (byte) 9, (byte) 42, (byte) -122, (byte) 72, (byte) -122, (byte) -9, (byte) 13, (byte) 1, (byte) 7, (byte) 1, (byte) -96, (byte) -126, (byte) 2, (byte) -111, (byte) 48, (byte) -126, (byte) 2, (byte) -115, (byte) 48, (byte) -126, (byte) 2, (byte) 75, (byte) 2, (byte) 4, (byte) 70, (byte) -60, (byte) 21, (byte) -27, (byte) 48, (byte) 11, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 3, (byte) 5, (byte) 0, (byte) 48, (byte) 44, (byte) 49, (byte) 24, (byte) 48, (byte) 22, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 10, (byte) 19, (byte) 15, (byte) 103, (byte) 117, (byte) 108, (byte) 108,
-            (byte) 105, (byte) 32, (byte) 67, (byte) 111, (byte) 109, (byte) 109, (byte) 117, (byte) 110, (byte) 105, (byte) 116, (byte) 121, (byte) 49, (byte) 16, (byte) 48, (byte) 14, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 3, (byte) 19, (byte) 7, (byte) 97, (byte) 115, (byte) 116, (byte) 97, (byte) 108, (byte) 100, (byte) 111, (byte) 48, (byte) 30, (byte) 23, (byte) 13, (byte) 48, (byte) 55, (byte) 48, (byte) 56, (byte) 49, (byte) 54, (byte) 48, (byte) 57, (byte) 49, (byte) 54, (byte) 50, (byte) 49, (byte) 90, (byte) 23, (byte) 13, (byte) 48, (byte) 57, (byte) 48, (byte) 56, (byte) 48, (byte) 53, (byte) 48, (byte) 57, (byte) 49, (byte) 54, (byte) 50, (byte) 49, (byte) 90, (byte) 48, (byte) 44, (byte) 49, (byte) 24, (byte) 48, (byte) 22, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 10, (byte) 19, (byte) 15, (byte) 103, (byte) 117, (byte) 108, (byte) 108, (byte) 105,
-            (byte) 32, (byte) 67, (byte) 111, (byte) 109, (byte) 109, (byte) 117, (byte) 110, (byte) 105, (byte) 116, (byte) 121, (byte) 49, (byte) 16, (byte) 48, (byte) 14, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 3, (byte) 19, (byte) 7, (byte) 97, (byte) 115, (byte) 116, (byte) 97, (byte) 108, (byte) 100, (byte) 111, (byte) 48, (byte) -126, (byte) 1, (byte) -72, (byte) 48, (byte) -126, (byte) 1, (byte) 44, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 1, (byte) 48, (byte) -126, (byte) 1, (byte) 31, (byte) 2, (byte) -127, (byte) -127, (byte) 0, (byte) -3, (byte) 127, (byte) 83, (byte) -127, (byte) 29, (byte) 117, (byte) 18, (byte) 41, (byte) 82, (byte) -33, (byte) 74, (byte) -100, (byte) 46, (byte) -20, (byte) -28, (byte) -25, (byte) -10, (byte) 17, (byte) -73, (byte) 82, (byte) 60, (byte) -17, (byte) 68, (byte) 0, (byte) -61,
-            (byte) 30, (byte) 63, (byte) -128, (byte) -74, (byte) 81, (byte) 38, (byte) 105, (byte) 69, (byte) 93, (byte) 64, (byte) 34, (byte) 81, (byte) -5, (byte) 89, (byte) 61, (byte) -115, (byte) 88, (byte) -6, (byte) -65, (byte) -59, (byte) -11, (byte) -70, (byte) 48, (byte) -10, (byte) -53, (byte) -101, (byte) 85, (byte) 108, (byte) -41, (byte) -127, (byte) 59, (byte) -128, (byte) 29, (byte) 52, (byte) 111, (byte) -14, (byte) 102, (byte) 96, (byte) -73, (byte) 107, (byte) -103, (byte) 80, (byte) -91, (byte) -92, (byte) -97, (byte) -97, (byte) -24, (byte) 4, (byte) 123, (byte) 16, (byte) 34, (byte) -62, (byte) 79, (byte) -69, (byte) -87, (byte) -41, (byte) -2, (byte) -73, (byte) -58, (byte) 27, (byte) -8, (byte) 59, (byte) 87, (byte) -25, (byte) -58, (byte) -88, (byte) -90, (byte) 21, (byte) 15, (byte) 4, (byte) -5, (byte) -125, (byte) -10, (byte) -45, (byte) -59, (byte) 30,
-            (byte) -61, (byte) 2, (byte) 53, (byte) 84, (byte) 19, (byte) 90, (byte) 22, (byte) -111, (byte) 50, (byte) -10, (byte) 117, (byte) -13, (byte) -82, (byte) 43, (byte) 97, (byte) -41, (byte) 42, (byte) -17, (byte) -14, (byte) 34, (byte) 3, (byte) 25, (byte) -99, (byte) -47, (byte) 72, (byte) 1, (byte) -57, (byte) 2, (byte) 21, (byte) 0, (byte) -105, (byte) 96, (byte) 80, (byte) -113, (byte) 21, (byte) 35, (byte) 11, (byte) -52, (byte) -78, (byte) -110, (byte) -71, (byte) -126, (byte) -94, (byte) -21, (byte) -124, (byte) 11, (byte) -16, (byte) 88, (byte) 28, (byte) -11, (byte) 2, (byte) -127, (byte) -127, (byte) 0, (byte) -9, (byte) -31, (byte) -96, (byte) -123, (byte) -42, (byte) -101, (byte) 61, (byte) -34, (byte) -53, (byte) -68, (byte) -85, (byte) 92, (byte) 54, (byte) -72, (byte) 87, (byte) -71, (byte) 121, (byte) -108, (byte) -81, (byte) -69, (byte) -6, (byte) 58,
-            (byte) -22, (byte) -126, (byte) -7, (byte) 87, (byte) 76, (byte) 11, (byte) 61, (byte) 7, (byte) -126, (byte) 103, (byte) 81, (byte) 89, (byte) 87, (byte) -114, (byte) -70, (byte) -44, (byte) 89, (byte) 79, (byte) -26, (byte) 113, (byte) 7, (byte) 16, (byte) -127, (byte) -128, (byte) -76, (byte) 73, (byte) 22, (byte) 113, (byte) 35, (byte) -24, (byte) 76, (byte) 40, (byte) 22, (byte) 19, (byte) -73, (byte) -49, (byte) 9, (byte) 50, (byte) -116, (byte) -56, (byte) -90, (byte) -31, (byte) 60, (byte) 22, (byte) 122, (byte) -117, (byte) 84, (byte) 124, (byte) -115, (byte) 40, (byte) -32, (byte) -93, (byte) -82, (byte) 30, (byte) 43, (byte) -77, (byte) -90, (byte) 117, (byte) -111, (byte) 110, (byte) -93, (byte) 127, (byte) 11, (byte) -6, (byte) 33, (byte) 53, (byte) 98, (byte) -15, (byte) -5, (byte) 98, (byte) 122, (byte) 1, (byte) 36, (byte) 59, (byte) -52, (byte) -92,
-            (byte) -15, (byte) -66, (byte) -88, (byte) 81, (byte) -112, (byte) -119, (byte) -88, (byte) -125, (byte) -33, (byte) -31, (byte) 90, (byte) -27, (byte) -97, (byte) 6, (byte) -110, (byte) -117, (byte) 102, (byte) 94, (byte) -128, (byte) 123, (byte) 85, (byte) 37, (byte) 100, (byte) 1, (byte) 76, (byte) 59, (byte) -2, (byte) -49, (byte) 73, (byte) 42, (byte) 3, (byte) -127, (byte) -123, (byte) 0, (byte) 2, (byte) -127, (byte) -127, (byte) 0, (byte) -116, (byte) 41, (byte) 78, (byte) 97, (byte) 29, (byte) -39, (byte) -6, (byte) -125, (byte) -99, (byte) -18, (byte) -77, (byte) 120, (byte) 40, (byte) 126, (byte) -104, (byte) 69, (byte) -60, (byte) -33, (byte) 40, (byte) 9, (byte) 11, (byte) -48, (byte) 85, (byte) -62, (byte) -93, (byte) 100, (byte) 38, (byte) 106, (byte) 74, (byte) -116, (byte) 0, (byte) 123, (byte) -11, (byte) -122, (byte) 125, (byte) 127, (byte) 2, (byte) 21,
-            (byte) -77, (byte) 18, (byte) -53, (byte) -85, (byte) 48, (byte) 118, (byte) 56, (byte) 80, (byte) -38, (byte) 67, (byte) -56, (byte) -96, (byte) 122, (byte) 66, (byte) 9, (byte) -7, (byte) -124, (byte) -90, (byte) -3, (byte) 115, (byte) 122, (byte) -128, (byte) -32, (byte) -31, (byte) -22, (byte) -12, (byte) 1, (byte) 76, (byte) 102, (byte) -54, (byte) 124, (byte) -112, (byte) 0, (byte) -55, (byte) -11, (byte) -101, (byte) -69, (byte) -19, (byte) 77, (byte) -65, (byte) -86, (byte) 61, (byte) 111, (byte) 119, (byte) -107, (byte) -56, (byte) 110, (byte) -116, (byte) -39, (byte) -9, (byte) 46, (byte) 18, (byte) -106, (byte) -28, (byte) 23, (byte) 113, (byte) -39, (byte) -12, (byte) 41, (byte) 47, (byte) -79, (byte) -72, (byte) 125, (byte) -84, (byte) -120, (byte) -115, (byte) 125, (byte) -95, (byte) 111, (byte) -44, (byte) 125, (byte) -77, (byte) 45, (byte) 10, (byte) -5,
-            (byte) -104, (byte) 47, (byte) -41, (byte) -119, (byte) 106, (byte) 97, (byte) -95, (byte) -9, (byte) 80, (byte) -29, (byte) 26, (byte) -111, (byte) -102, (byte) -109, (byte) -116, (byte) 48, (byte) 11, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 3, (byte) 5, (byte) 0, (byte) 3, (byte) 47, (byte) 0, (byte) 48, (byte) 44, (byte) 2, (byte) 20, (byte) 31, (byte) 93, (byte) -31, (byte) 109, (byte) -22, (byte) -112, (byte) -62, (byte) 99, (byte) -20, (byte) -5, (byte) 17, (byte) -9, (byte) 123, (byte) 116, (byte) 1, (byte) -78, (byte) 3, (byte) 60, (byte) 122, (byte) 60, (byte) 2, (byte) 20, (byte) 48, (byte) -86, (byte) 15, (byte) 10, (byte) 63, (byte) -70, (byte) -20, (byte) 37, (byte) -16, (byte) -79, (byte) 19, (byte) 58, (byte) 104, (byte) -122, (byte) 26, (byte) -85, (byte) -49, (byte) 63, (byte) 104, (byte) 49, (byte) 49,
-            (byte) -127                   };
-
-    private static final int      S_LENGTH = JDClassLoader.S.length; // at now
-                                                                     // equals
-                                                                     // 692
 
     /**
      * 
@@ -144,11 +130,6 @@ public class JDClassLoader extends ClassLoader {
                         absolutePath = file.getAbsolutePath();
                         name = file.getName();
                         if (!absolutePath.endsWith("webupdater.jar") || !absolutePath.endsWith("jdupdate.jar")) {
-                            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !this.comp(JDClassLoader.getSig(absolutePath))) {
-                                // JDClassLoader.logger.severe("Not loaded due to sig violation: "
-                                // + file);
-                                // continue;
-                            }
 
                             if (names.contains(name)) {
                                 JDClassLoader.logger.severe("Duplicate Jars found: " + absolutePath);
@@ -177,10 +158,7 @@ public class JDClassLoader extends ClassLoader {
                         name = file.getName();
                         absolutePath = file.getAbsolutePath();
                         if (!absolutePath.endsWith("webupdater.jar") && !absolutePath.endsWith("jdupdate.jar")) {
-                            if (!this.comp(JDClassLoader.getSig(absolutePath))) {
-                                JDClassLoader.logger.severe("Not loaded due to sig violation: " + file);
-                                // continue;
-                            }
+
                             if (names.contains(name)) {
                                 JDClassLoader.logger.severe("Duplicate Jars found: " + absolutePath);
                             } else {
@@ -213,10 +191,7 @@ public class JDClassLoader extends ClassLoader {
                         name = file.getName();
                         absolutePath = file.getAbsolutePath();
                         if (!absolutePath.endsWith("webupdater.jar") && !absolutePath.endsWith("jdupdate.jar")) {
-                            if (!comp(getSig(files[i].getAbsolutePath()))) {
-                                logger.severe("Not loaded due to sig violation: " + files[i]);
-                                // continue;
-                            }
+
                             if (names.contains(name)) {
                                 JDClassLoader.logger.severe("Duplicate Jars found: " + absolutePath);
                             } else {
@@ -238,23 +213,6 @@ public class JDClassLoader extends ClassLoader {
         this.jars = jars;
         this.jarFile = jarFile;
         this.lafs = lafs;
-    }
-
-    private boolean comp(final byte[] sig) {
-        // if (sig == null) return false;
-        // for (int i = 0; i < S.length; i++) {
-        // byte a = S[i];
-        // byte b = sig[i];
-        // if (a != b) return false;
-        // }
-        // return true;
-        if (sig == null) { return false; }
-        final int length = JDClassLoader.S_LENGTH;
-        for (int i = 0; i < length; i++) {
-            if (JDClassLoader.S[i] != sig[i]) { return false; }
-        }
-        return true;
-        // May be Arrays.equals(S, sig) ?
     }
 
     @Override
@@ -363,7 +321,6 @@ public class JDClassLoader extends ClassLoader {
                 if ((entry = element.getJarEntry(name.replace('.', '/') + ".class")) != null) {
                     try {
                         final byte data[] = this.loadClassData(element, entry);
-                        System.out.println("Loaded class " + name + " from " + element.getName());
                         c = this.defineClass(name, data, 0, data.length, this.getClass().getProtectionDomain());
                         if (c == null) { throw new ClassNotFoundException(name); }
                     } catch (final VerifyError e) {

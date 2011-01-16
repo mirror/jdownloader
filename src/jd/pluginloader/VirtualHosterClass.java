@@ -130,6 +130,11 @@ public class VirtualHosterClass {
     }
 
     public boolean isValid() {
+        if (vClass.getSimpleName().contains("$")) {
+            // inner classes
+            return false;
+        }
+
         if (isOutdated()) return false;
         return true;
     }
