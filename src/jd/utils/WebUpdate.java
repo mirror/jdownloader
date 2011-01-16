@@ -19,12 +19,14 @@ package jd.utils;
 import java.awt.Color;
 import java.awt.HeadlessException;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
 import jd.HostPluginWrapper;
+import jd.JDInit;
 import jd.JDInitFlags;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -51,12 +53,12 @@ import jd.update.WebUpdater;
 import jd.utils.locale.JDL;
 
 public class WebUpdate {
-    private static final Logger LOG = JDLogger.getLogger();
-    private static int waitingUpdates = 0;
+    private static final Logger LOG                      = JDLogger.getLogger();
+    private static int          waitingUpdates           = 0;
     //
     //
-    private static boolean DYNAMIC_PLUGINS_FINISHED = false;
-    private static boolean UPDATE_IN_PROGRESS = false;
+    private static boolean      DYNAMIC_PLUGINS_FINISHED = false;
+    private static boolean      UPDATE_IN_PROGRESS       = false;
 
     public static void dynamicPluginsFinished() {
         DYNAMIC_PLUGINS_FINISHED = true;
@@ -181,7 +183,7 @@ public class WebUpdate {
         }
         final ProgressController guiPrgs;
         if (forceguiCall) {
-            guiPrgs = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 9, "gui.images.update");
+            guiPrgs = new ProgressController(ProgressController.Type.DIALOG, JDL.L("init.webupdate.progress.0_title", "Webupdate"), 9, "gui.images.update");
             guiPrgs.setStatus(3);
         } else {
             guiPrgs = null;
@@ -227,7 +229,7 @@ public class WebUpdate {
                         }
 
                     }
-                    if (coreUp2Date) {
+                    if (coreUp2Date && !checkIfRestartRequired(tmpfiles)) {
                         doPluginUpdate(updater, tmpfiles);
                         for (FileUpdate f : tmpfiles) {
                             if (f.equals()) {
@@ -370,6 +372,56 @@ public class WebUpdate {
                 JDController.releaseDelayExit(id);
             }
         }.start();
+    }
+
+    /**
+     * checks the files to update and returns true if we can do a silent
+     * pluginupdate.
+     * 
+     * @param tmpfiles
+     * @return
+     */
+    protected static boolean checkIfRestartRequired(ArrayList<FileUpdate> tmpfiles) {
+        for (FileUpdate f : tmpfiles) {
+            String path = f.getLocalPath();
+            if (path.endsWith(".class")) {
+                if (classIsLoaded(path.replace("/", ".").substring(1, path.length() - 6))) return true;
+            }
+
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the class (a plugin) already has been loaded)
+     * 
+     * @param clazz
+     * @return
+     */
+    private static boolean classIsLoaded(String clazz) {
+
+        java.lang.reflect.Method m;
+        try {
+
+            m = ClassLoader.class.getDeclaredMethod("findLoadedClass", new Class[] { String.class });
+
+            m.setAccessible(true);
+
+            Object test1 = m.invoke(JDInit.getPluginClassLoader(), clazz);
+            return test1 != null;
+
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private static void doPluginUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {

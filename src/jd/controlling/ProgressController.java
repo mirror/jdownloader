@@ -20,13 +20,13 @@ import java.awt.Color;
 
 import javax.swing.Icon;
 
-import org.appwork.utils.event.Eventsender;
-
 import jd.event.ControlEvent;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.event.Eventsender;
 
 class ProgressControllerBroadcaster extends Eventsender<ProgressControllerListener, ProgressControllerEvent> {
 
@@ -47,23 +47,33 @@ class ProgressControllerBroadcaster extends Eventsender<ProgressControllerListen
 public class ProgressController implements MessageListener, Comparable<ProgressController> {
 
     private static final int ICONSIZE = 19;
-    private static int idCounter = 0;
-    private long currentValue;
-    private boolean finished;
-    private boolean finalizing = false;
 
-    private int id;
-    private boolean indeterminate = false;
-    private long max;
+    public static enum Type {
+        DIALOG, NORMAL
+    }
 
-    private Object source;
-    private String statusText;
-    private Color progresscolor = null;
-    private Icon icon = null;
-    private String initials = null;
+    private static int                              idCounter     = 0;
+    private long                                    currentValue;
+    private boolean                                 finished;
+    private boolean                                 finalizing    = false;
 
-    private transient ProgressControllerBroadcaster broadcaster = new ProgressControllerBroadcaster();
-    private boolean abort = false;
+    private int                                     id;
+    private boolean                                 indeterminate = false;
+    private long                                    max;
+
+    private Object                                  source;
+    private String                                  statusText;
+    private Color                                   progresscolor = null;
+    private Icon                                    icon          = null;
+    private String                                  initials      = null;
+
+    private transient ProgressControllerBroadcaster broadcaster   = new ProgressControllerBroadcaster();
+    private boolean                                 abort         = false;
+    private Type                                    type;
+
+    public Type getType() {
+        return type;
+    }
 
     public ProgressController(String name, String iconKey) {
         this(name, 100l, iconKey);
@@ -74,6 +84,12 @@ public class ProgressController implements MessageListener, Comparable<ProgressC
     }
 
     public ProgressController(String statusText, long max, String iconKey) {
+        this(Type.NORMAL, statusText, max, iconKey);
+    }
+
+    public ProgressController(Type type, String statusText, long max, String iconKey) {
+
+        this.type = type;
         id = idCounter++;
         this.max = max;
         this.statusText = statusText;

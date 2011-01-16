@@ -31,6 +31,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.ClassFinder;
+import jd.pluginloader.VirtualClass;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
@@ -62,8 +63,11 @@ public class Schedule extends PluginOptional {
         modules = new ArrayList<SchedulerModuleInterface>();
         try {
             ArrayList<String> added = new ArrayList<String>();
-            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", JDUtilities.getJDClassLoader())) {
+            for (final VirtualClass vc : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", JDUtilities.getJDClassLoader())) {
                 try {
+                    // uncached plugin loading
+                    Class<?> c = vc.loadClass();
+
                     final SchedulerModule help = c.getAnnotation(SchedulerModule.class);
                     if (help == null) {
                         logger.info("Scheduler: Skipped " + c + " due to missing annotation!");

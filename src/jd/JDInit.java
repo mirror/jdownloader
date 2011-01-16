@@ -48,12 +48,14 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.HTTPProxy;
 import jd.nutils.ClassFinder;
-import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.HostPlugin;
+import jd.pluginloader.DecrypterPluginCache;
+import jd.pluginloader.HosterPluginCache;
+import jd.pluginloader.VirtualClass;
+import jd.pluginloader.VirtualDecrypterClass;
+import jd.pluginloader.VirtualHosterClass;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
@@ -112,120 +114,59 @@ public class JDInit {
     }
 
     public static void loadPluginForDecrypt() {
-        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
 
         try {
-            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.decrypter", JDInit.getPluginClassLoader())) {
+            for (final VirtualClass c : ClassFinder.getClasses("jd.plugins.decrypter", JDInit.getPluginClassLoader())) {
                 try {
-                    final DecrypterPlugin help = c.getAnnotation(DecrypterPlugin.class);
-                    if (help == null) {
+                    VirtualDecrypterClass vc = VirtualDecrypterClass.create(c);
+                    if (!vc.isValid()) {
                         continue;
                     }
 
-                    if (help.interfaceVersion() != DecrypterPlugin.INTERFACE_VERSION) {
-                        JDInit.LOG.warning("Outdated Plugin found: " + help);
-                        continue;
-                    }
+                    vc.initWrapper();
 
-                    final String simpleName = c.getSimpleName();
-                    String[] names = help.names();
-                    String[] patterns = help.urls();
-                    int[] flags = help.flags();
-                    final String revision = help.revision();
-                    JDInit.LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-
-                    // See if there are cached annotations
-                    if (names.length == 0) {
-                        names = cfg.getGenericProperty(c.getName() + "_names_" + JDInit.PLUGIN_DUMP + revision, names);
-                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + JDInit.PLUGIN_DUMP + revision, patterns);
-                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + JDInit.PLUGIN_DUMP + revision, flags);
-
-                        // if not, try to load them from static functions
-                        if (names.length == 0) {
-                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
-                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
-                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
-
-                            cfg.setProperty(c.getName() + "_names_" + revision, names);
-                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
-                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
-                            cfg.save();
-                        }
-                    }
-
-                    for (int i = 0; i < names.length; i++) {
-                        try {
-                            new DecryptPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
-                        } catch (final Throwable e) {
-                            JDInit.LOG.severe("Could not load " + c);
-                            JDLogger.exception(e);
-                        }
-                    }
                 } catch (final Throwable e) {
                     JDLogger.exception(e);
                 }
             }
         } catch (final Throwable e) {
             JDLogger.exception(e);
+        } finally {
+            try {
+                DecrypterPluginCache.getInstance().save();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public static void loadPluginForHost() {
-        final SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForHost");
-
         try {
-            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", JDInit.getPluginClassLoader())) {
+            // find all classfiles in package jd.plugins.hoster
+            for (final VirtualClass c : ClassFinder.getClasses("jd.plugins.hoster", JDInit.getPluginClassLoader())) {
                 try {
-                    final HostPlugin help = c.getAnnotation(HostPlugin.class);
-                    if (help == null) {
+                    // create a virtualhoster classfile.
+                    VirtualHosterClass vc = VirtualHosterClass.create(c);
+                    // ignore it if it is not valid. outdated or anything like
+                    // hits
+                    if (!vc.isValid()) {
                         continue;
                     }
+                    // initclass. create Hostwrapper
+                    vc.initWrapper();
 
-                    if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
-                        JDInit.LOG.warning("Outdated Plugin found: " + help);
-                        continue;
-                    }
-
-                    final String simpleName = c.getSimpleName();
-                    String[] names = help.names();
-                    String[] patterns = help.urls();
-                    int[] flags = help.flags();
-                    final String revision = help.revision();
-                    JDInit.LOG.finest("Try to load " + c + " Revision: " + Formatter.getRevision(revision));
-
-                    // See if there are cached annotations
-                    if (names.length == 0) {
-                        names = cfg.getGenericProperty(c.getName() + "_names_" + JDInit.PLUGIN_DUMP + revision, names);
-                        patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + JDInit.PLUGIN_DUMP + revision, patterns);
-                        flags = cfg.getGenericProperty(c.getName() + "_flags_" + JDInit.PLUGIN_DUMP + revision, flags);
-
-                        // if not, try to load them from static functions
-                        if (names.length == 0) {
-                            names = (String[]) c.getMethod("getAnnotationNames").invoke(null);
-                            patterns = (String[]) c.getMethod("getAnnotationUrls").invoke(null);
-                            flags = (int[]) c.getMethod("getAnnotationFlags").invoke(null);
-
-                            cfg.setProperty(c.getName() + "_names_" + revision, names);
-                            cfg.setProperty(c.getName() + "_pattern_" + revision, patterns);
-                            cfg.setProperty(c.getName() + "_flags_" + revision, flags);
-                            cfg.save();
-                        }
-                    }
-
-                    for (int i = 0; i < names.length; i++) {
-                        try {
-                            new HostPluginWrapper(names[i], simpleName, patterns[i], flags[i], revision);
-                        } catch (final Throwable e) {
-                            JDInit.LOG.severe("Could not load " + c);
-                            JDLogger.exception(e);
-                        }
-                    }
                 } catch (final Throwable e) {
                     JDLogger.exception(e);
                 }
             }
         } catch (final Throwable e) {
             JDLogger.exception(e);
+        } finally {
+            try {
+                HosterPluginCache.getInstance().save();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -473,10 +414,14 @@ public class JDInit {
     }
 
     public void loadPluginOptional() {
+
         final ArrayList<String> list = new ArrayList<String>();
         try {
-            for (final Class<?> c : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
+            for (final VirtualClass vc : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
                 try {
+
+                    Class<?> c = vc.loadClass();
+
                     final String cName = c.getName();
                     if (list.contains(cName)) {
                         System.out.println("Already loaded: " + c);
@@ -488,7 +433,7 @@ public class JDInit {
                         continue;
                     }
 
-                    if (help.windows() && OSDetector.isWindows() || help.linux() && OSDetector.isLinux() || help.mac() && OSDetector.isMac()) {
+                    if (help.windows() && OSDetector.isWindows() || (help.linux() && OSDetector.isLinux()) || help.mac() && OSDetector.isMac()) {
                         if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
                             new OptionalPluginWrapper(c, help);
                             list.add(cName);

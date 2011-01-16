@@ -12,6 +12,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.controlling.ProgressController;
+import jd.controlling.ProgressController.Type;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.utils.JDUtilities;
@@ -85,7 +86,12 @@ public class ModuleStatus extends JPanel implements ControlListener, MouseListen
 
     private void addController(ProgressController source) {
         synchronized (addcontrollers) {
-            if (!addcontrollers.contains(source)) addcontrollers.add(0, source);
+            if (!addcontrollers.contains(source)) {
+                addcontrollers.add(0, source);
+                if (source.getType() == Type.DIALOG) {
+                    ProgressControllerDialog.show(source);
+                }
+            }
         }
     }
 

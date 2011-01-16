@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import jd.pluginloader.VirtualClass;
+
+
 public final class ClassFinder {
 
     /**
@@ -35,7 +38,7 @@ public final class ClassFinder {
     private ClassFinder() {
     }
 
-    public static ArrayList<Class<?>> getClasses(final String packageName) throws ClassNotFoundException, IOException {
+    public static ArrayList<VirtualClass> getClasses(final String packageName) throws ClassNotFoundException, IOException {
         return getClasses(packageName, Thread.currentThread().getContextClassLoader());
     }
 
@@ -49,10 +52,10 @@ public final class ClassFinder {
      * @throws ClassNotFoundException
      * @throws IOException
      */
-    public static ArrayList<Class<?>> getClasses(String packageName, ClassLoader classLoader) throws ClassNotFoundException, IOException {
+    public static ArrayList<VirtualClass> getClasses(String packageName, ClassLoader classLoader) throws ClassNotFoundException, IOException {
         final Enumeration<URL> resources = classLoader.getResources(packageName.replace('.', '/'));
 
-        final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+        final ArrayList<VirtualClass> classes = new ArrayList<VirtualClass>();
         while (resources.hasMoreElements()) {
             try {
                 classes.addAll(findPlugins(resources.nextElement(), packageName, classLoader));
@@ -74,8 +77,8 @@ public final class ClassFinder {
      * @return
      * @throws ClassNotFoundException
      */
-    private static List<Class<?>> findPlugins(final URL directory, final String packageName, final ClassLoader classLoader) throws ClassNotFoundException {
-        final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+    private static List<VirtualClass> findPlugins(final URL directory, final String packageName, final ClassLoader classLoader) throws ClassNotFoundException {
+        final ArrayList<VirtualClass> classes = new ArrayList<VirtualClass>();
         File[] files = null;
 
         try {
@@ -101,7 +104,7 @@ public final class ClassFinder {
                     if (jarName.startsWith(splitted[1])) {
                         Class<?> c = classLoader.loadClass(jarName.substring(0, jarName.length() - 6).replace("/", "."));
                         if (c != null) {
-                            classes.add(c);
+                            classes.add(new VirtualClass(c));
                         }
                     }
                 }
@@ -120,7 +123,7 @@ public final class ClassFinder {
                             e.printStackTrace();
                         }
                     } else if (fileName.endsWith(".class")) {
-                        classes.add(classLoader.loadClass(packageName + '.' + fileName.substring(0, fileName.length() - 6)));
+                        classes.add(new VirtualClass(classLoader, file, packageName, fileName.substring(0, fileName.length() - 6)));
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
