@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/[a-z0-9]+(/.+)?|(divx|play|dl)/[a-zA-Z0-9\\.-]+|[a-zA-Z0-9\\.]+\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?duckload\\.com/(download/[a-z0-9]+(/.+)?|(divx|play|dl)/[a-zA-Z0-9\\.-]+|[a-zA-Z0-9\\.]+\\.html)" }, flags = { 2 })
 public class DuckLoad extends PluginForHost {
 
     private static final String UA = RandomUserAgent.generate();
@@ -123,16 +123,24 @@ public class DuckLoad extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        br.forceDebug(true);
         this.requestFileInformation(downloadLink);
         final String[] values = this.br.postPage("http://www.duckload.com/jDownloader/getFree.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL())).toString().split("\\;\\s*");
         this.trim(values);
         if (values.length != 3 || !"SUCCESS".equals(values[0])) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, values[0]); }
         this.sleep(Long.parseLong(values[1]) * 1000l, downloadLink);
+
         final String finallink = this.br.postPage("http://www.duckload.com/jDownloader/getFreeEncrypt.php", "crypt=" + values[2]);
         if (!finallink.startsWith("http://") || finallink.startsWith("ERROR; ")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, finallink); }
         this.dl = BrowserAdapter.openDownload(this.br, downloadLink, finallink, true, 1);
         if (!this.dl.getConnection().isContentDisposition()) {
             this.br.followConnection();
+            if ("http://www.duckload.com/".equals(br.getURL())) {
+                br.postPage("http://www.duckload.com/jDownloader/reportError.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&premium=false&msg=redirectToHome");
+
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror. Try later!");
+
+            }
             if (this.br.getRequest().getUrl().toString().contentEquals("http://" + this.br.getHost() + "/")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -178,7 +186,12 @@ public class DuckLoad extends PluginForHost {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, finalLink, true, 0);
             if (!this.dl.getConnection().isContentDisposition()) {
                 this.br.followConnection();
-                if (this.br.getRequest().getUrl().toString().contentEquals("http://" + this.br.getHost() + "/")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                if ("http://www.duckload.com/".equals(br.getURL())) {
+                    br.postPage("http://www.duckload.com/jDownloader/reportError.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&premium=false&msg=redirectToHome");
+
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror. Try later!");
+
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
