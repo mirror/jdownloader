@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -78,11 +80,15 @@ public class UlozTo extends PluginForHost {
         String filename = br.getRegex(Pattern.compile("\\&t=(.*?)\"")).getMatch(0);
         if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("style=\"top:-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
-        if (filesize == null) filesize = br.getRegex("class=\"info_velikost\" style=\"top:-55px;\"><div>(.*?)</div></div>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"info_velikost\" style=\"top:-55px;\"><div>(.*?)</div></div>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("class=\"info_velikost\" style=\"top:-55px;\">[\t\n\r ]+<div>[\t\n\r ]+\\d{2}:\\d{2} \\| (.*?)</div>").getMatch(0);
+            }
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
-
         return AvailableStatus.TRUE;
     }
 
@@ -90,6 +96,8 @@ public class UlozTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = null;
+        Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
         boolean failed = true;
         for (int i = 0; i <= 5; i++) {
             String captchaUrl = br.getRegex(Pattern.compile("style=\"width:175px; height:70px;\" width=\"175\" height=\"70\" src=\"(http://.*?)\"")).getMatch(0);
@@ -98,15 +106,28 @@ public class UlozTo extends PluginForHost {
             if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaForm.put("captcha_user", code);
+            captchaForm.remove(null);
             br.submitForm(captchaForm);
             dllink = br.getRedirectLocation();
-            if (dllink != null && dllink.contains("no#cpt")) {
-                br.clearCookies("http://www.uloz.to/");
-                handleDownloadUrl(downloadLink);
-                continue;
+            if (dllink == null) break;
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    failed = false;
+                    break;
+                } else {
+                    br.clearCookies("http://www.uloz.to/");
+                    handleDownloadUrl(downloadLink);
+                    continue;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
-            failed = false;
-            break;
+
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.contains("/error404/?fid=file_not_found")) {

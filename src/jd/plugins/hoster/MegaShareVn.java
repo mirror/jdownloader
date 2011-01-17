@@ -17,7 +17,11 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -25,12 +29,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?(megashare\\.vn/(download\\.php\\?uid=[0-9]+\\&id=[0-9]+|dl\\.php/\\d+)|share\\.megaplus\\.vn/dl\\.php/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?(megashare\\.vn/(download\\.php\\?uid=[0-9]+\\&id=[0-9]+|dl\\.php/\\d+)|share\\.megaplus\\.vn/dl\\.php/\\d+)" }, flags = { 2 })
 public class MegaShareVn extends PluginForHost {
 
     public MegaShareVn(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://share.megaplus.vn/vip.php");
     }
+
+    private static final String PREMIUMHOST = "id.megaplus.vn";
+    private static final String ACCESSURL   = "https://id.megaplus.vn/login?service=http%3A%2F%2Fshare.megaplus.vn%2Fmegavnnplus.php%3Fservice%3Dlogin&locale=en";
 
     public void correctDownloadLink(DownloadLink link) {
         String theLink = link.getDownloadURL();
@@ -79,6 +87,73 @@ public class MegaShareVn extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        // Complicated login, needs time...
+        br.setFollowRedirects(true);
+        br.setCookie(PREMIUMHOST, "lang", "en");
+        br.getPage(ACCESSURL);
+        Form loginform = br.getFormbyProperty("id", "fm1");
+        if (loginform == null) loginform = br.getForm(0);
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.setAction(ACCESSURL);
+        loginform.put("username", Encoding.urlEncode(account.getUser()));
+        loginform.put("password", Encoding.urlEncode(account.getPass()));
+        br.submitForm(loginform);
+        if (br.getCookie(PREMIUMHOST, "CASTGC") == null || br.getCookie(PREMIUMHOST, "CASPRIVACY") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://share.megaplus.vn/userinfo.php");
+        if (!br.containsHTML("\">MegaShare VIP</a>")) {
+            account.setValid(false);
+            logger.info("This account is no premiumaccount!");
+            return ai;
+        }
+        account.setValid(true);
+        String availabletraffic = br.getRegex(">Thời hạn VIP còn lại:</td>[\t\n\r ]+<td colspan=\"2\" class=\"content_tx\">(.*?) ngày</td>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(Regex.getSize(availabletraffic + "GB"));
+        } else {
+            account.setValid(false);
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRegex("height=\"40\" align=\"center\" valign=\"bottom\"><a href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/dl\\d+/\\d+/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
