@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.1fichier\\.com/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(1fichier\\.com/|dl4free\\.com/.+)" }, flags = { 0 })
 public class OneFichierCom extends PluginForHost {
 
     public OneFichierCom(PluginWrapper wrapper) {
@@ -43,7 +43,14 @@ public class OneFichierCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Prefer english language
-        link.setUrlDownload(link.getDownloadURL() + "en/en");
+        if (!link.getDownloadURL().contains("dl4free.com")) {
+            link.setUrlDownload(link.getDownloadURL() + "en/en");
+        } else {
+            if (!link.getDownloadURL().contains("/en/")) {
+                Regex idandName = new Regex(link.getDownloadURL(), "http://(.*?)\\.dl4free\\.com/(.+)");
+                link.setUrlDownload("http://" + idandName.getMatch(0) + ".dl4free.com/en/" + idandName.getMatch(1));
+            }
+        }
     }
 
     private static final String PASSWORDTEXT = "(Accessing this file is protected by password|Please put it on the box bellow)";
@@ -54,7 +61,7 @@ public class OneFichierCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(The requested file could not be found|The file may has been deleted by its owner|Le fichier demandé n'existe pas\\.|Il a pu être supprimé par son propriétaire\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(The requested file could not be found|The file may has been deleted by its owner|Le fichier demandé n\\'existe pas\\.|Il a pu être supprimé par son propriétaire\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Téléchargement du fichier : (.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("content=\"Téléchargement du fichier (.*?)\">").getMatch(0);
