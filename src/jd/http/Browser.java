@@ -1373,11 +1373,15 @@ public class Browser {
      * @param url
      * @return
      */
-    public static String correctURL(final String url) {
+    public static String correctURL(String url) {
+        if (url == null) return url;
         /* check if we need to correct url */
-        int begin;
-        begin = url.indexOf("://");
-        if (url == null || ((begin > 0) && !url.substring(begin).contains("//")) || !url.contains("./")) return url;
+        int begin = url.indexOf("://");
+        if (begin > 0 && url.indexOf("/", begin + 3) < 0) {
+            /* check for missing first / in url */
+            url = url + "/";
+        }
+        if (begin > 0 && (!url.substring(begin + 3).contains("//") || !url.contains("./"))) return url;
         String ret = url;
         String end = null;
         String tmp = null;

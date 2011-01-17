@@ -87,7 +87,6 @@ public class HotFileCom extends PluginForHost {
             }
         }
         tbr.postPage("http://api.hotfile.com", post);
-
         final HashMap<String, String> ret = new HashMap<String, String>();
         ret.put("httpresponse", tbr.toString());
         final String vars[][] = tbr.getRegex("(.*?)=(.*?)(&|$)").getMatches();

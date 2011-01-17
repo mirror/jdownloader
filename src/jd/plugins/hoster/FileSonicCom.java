@@ -171,7 +171,8 @@ public class FileSonicCom extends PluginForHost {
                 ai.setStatus("Premium User");
                 // it seems expire date is still wrong for many users
                 account.setValid(true);
-                ai.setValidUntil(Regex.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", null));
+                ai.setUnlimitedTraffic();
+                ai.setValidUntil(Regex.getMilliSeconds(expiredate.trim(), "yyyy-MM-dd HH:mm:ss", null));
                 return ai;
             }
             account.setValid(false);

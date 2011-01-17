@@ -25,11 +25,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://[\\w\\.]*?4fastfile\\.com(/[a-z]+)?/abv-fs/\\d+-\\d+(/\\d+-\\d+)?/.+" }, flags = { 2 })
 public class FourFastFileCom extends PluginForHost {
@@ -88,7 +88,7 @@ public class FourFastFileCom extends PluginForHost {
         loginform.put("name", Encoding.urlEncode(account.getUser()));
         loginform.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
-        if (!br.containsHTML("<dd>This role will expire on")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("<dd>Your Premium Membership will expire on")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class FourFastFileCom extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        String expire = br.getRegex("<dd>This role will expire on (\\d+/\\d+/\\d+ - \\d+:\\d+)</dd>").getMatch(0);
+        String expire = br.getRegex("<dd>Your Premium Membership will expire on (\\d+/\\d+/\\d+ - \\d+:\\d+)</dd>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);

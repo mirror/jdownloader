@@ -88,7 +88,7 @@ public abstract class Request {
     private long                   readTime       = -1;
     private boolean                requested      = false;
 
-    private HTTPProxy                proxy;
+    private HTTPProxy              proxy;
     private URL                    orgURL;
     private String                 customCharset  = null;
     private byte[]                 byteArray;
@@ -99,7 +99,7 @@ public abstract class Request {
     }
 
     public Request(final String url) throws MalformedURLException {
-        this.orgURL = new URL(url);
+        this.orgURL = new URL(Browser.correctURL(url));
         initDefaultHeader();
     }
 
