@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com" }, urls = { "http://[\\w\\.]*?shragle\\.(com|de)/files/[\\w]+/.*" }, flags = { 2 })
 public class ShragleCom extends PluginForHost {
@@ -132,8 +132,8 @@ public class ShragleCom extends PluginForHost {
         this.requestFileInformation(downloadLink);
         this.login(account);
         this.br.setCookie("http://www.shragle.com", "lang", "de_DE");
-        this.br.getPage(downloadLink.getDownloadURL());
         this.br.setFollowRedirects(false);
+        this.br.getPage(downloadLink.getDownloadURL());
         if ((this.br.getRedirectLocation() != null) && this.br.getRedirectLocation().contains("index.php")) {
             this.br.getPage(this.br.getRedirectLocation());
         }
