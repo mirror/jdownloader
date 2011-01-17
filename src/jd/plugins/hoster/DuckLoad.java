@@ -187,7 +187,7 @@ public class DuckLoad extends PluginForHost {
             if (!this.dl.getConnection().isContentDisposition()) {
                 this.br.followConnection();
                 if ("http://www.duckload.com/".equals(br.getURL())) {
-                    br.postPage("http://www.duckload.com/jDownloader/reportError.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&premium=false&msg=redirectToHome");
+                    br.postPage("http://www.duckload.com/jDownloader/reportError.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&premium=true&msg=redirectToHome");
 
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror. Try later!");
 
