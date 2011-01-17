@@ -42,6 +42,7 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDFlags;
@@ -263,7 +264,7 @@ public class WebUpdate {
                 }
 
                 // only ignore updaterequest of all plugins are present
-                if (HostPluginWrapper.getHostWrapper().size() > 50 && !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE && !forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+                if (HostPluginWrapper.getHostWrapper().size() > 50 && !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE && !forceguiCall && JSonWrapper.get("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     LOG.severe("Webupdater disabled");
                     /*
                      * autostart downloads if not autostarted yet and
@@ -290,9 +291,9 @@ public class WebUpdate {
                             return;
                         }
                     }
-                    if (updater.getBetaBranch() != null && !SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(updater.getBetaBranch(), false)) {
-                        SubConfiguration.getConfig("WEBUPDATE").setProperty(updater.getBetaBranch(), true);
-                        SubConfiguration.getConfig("WEBUPDATE").save();
+                    if (updater.getBetaBranch() != null && !JSonWrapper.get("WEBUPDATE").getBooleanProperty(updater.getBetaBranch(), false)) {
+                        JSonWrapper.get("WEBUPDATE").setProperty(updater.getBetaBranch(), true);
+                        JSonWrapper.get("WEBUPDATE").save();
 
                         final int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("updater.newbeta.title", "New BETA available"), JDL.L("updater.newbeta.message", "Do you want to try the new BETA?\r\nClick OK to get more Information."));
                         if (UserIO.isOK(ret)) {

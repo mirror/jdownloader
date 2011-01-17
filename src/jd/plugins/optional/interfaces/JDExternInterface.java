@@ -29,7 +29,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -37,6 +36,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
@@ -236,9 +236,9 @@ public class JDExternInterface extends PluginOptional {
                     }.waitForEDT();
 
                     if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
-                        SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
-                        SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
-                        SubConfiguration.getConfig("WEBUPDATE").save();
+                        JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
+                        JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
+                        JSonWrapper.get("WEBUPDATE").save();
                         WebUpdate.doUpdateCheck(false);
                     }
 

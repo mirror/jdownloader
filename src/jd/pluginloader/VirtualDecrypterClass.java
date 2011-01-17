@@ -124,6 +124,7 @@ public class VirtualDecrypterClass {
     }
 
     public boolean isValid() {
+        if (vClass != null && vClass.getSimpleName().contains("$")) return false;
         if (isOutdated()) return false;
         return true;
     }

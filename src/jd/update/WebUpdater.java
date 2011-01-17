@@ -28,11 +28,11 @@ import java.util.Vector;
 
 import javax.swing.JProgressBar;
 
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -82,7 +82,7 @@ public class WebUpdater implements Serializable {
             final WebUpdater updater = new WebUpdater();
 
             // if
-            // (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
+            // (JSonWrapper.get("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
             // false)) {
             updater.ignorePlugins(false);
             // }
@@ -131,6 +131,7 @@ public class WebUpdater implements Serializable {
      * branch settings
      */
     private String                                               branch;
+    private static ArrayList<Server>                             SERVER_LIST;
 
     /**
      * @param path
@@ -211,7 +212,7 @@ public class WebUpdater implements Serializable {
 
     private ArrayList<Server> getAvailableServers() {
         if (Main.clone) { return Main.clonePrefix; }
-        return SubConfiguration.getConfig("WEBUPDATE").getGenericProperty("SERVERLIST", new ArrayList<Server>());
+        return SERVER_LIST;
     }
 
     public String getBetaBranch() {
@@ -228,14 +229,14 @@ public class WebUpdater implements Serializable {
             if (this.branch != null) { return this.branch; }
             final String latestBranch = this.getLatestBranch();
 
-            String ret = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
+            String ret = JSonWrapper.get("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
             if (ret == null) {
                 ret = latestBranch;
             }
 
-            SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, ret);
-            SubConfiguration.getConfig("WEBUPDATE").save();
+            JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, ret);
+            JSonWrapper.get("WEBUPDATE").save();
             return ret;
         } catch (final Exception e) {
             return null;
@@ -275,13 +276,13 @@ public class WebUpdater implements Serializable {
                     this.branches = ret.toArray(new String[] {});
                     System.out.println("Found branches on " + serv + ":\r\n" + this.br);
 
-                    final String savedBranch = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
+                    final String savedBranch = JSonWrapper.get("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
                     if (this.branches.length > 0 && savedBranch != null && WebUpdater.isBetaBranch(savedBranch)) {
 
                         if (this.betaBranch == null || !savedBranch.equals(this.betaBranch)) {
-                            SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, this.branches[0]);
-                            SubConfiguration.getConfig("WEBUPDATE").save();
+                            JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, this.branches[0]);
+                            JSonWrapper.get("WEBUPDATE").save();
                             JDLogger.getLogger().severe("RESETTED BRANCH; SINCE BETA branch " + savedBranch + " is not available any more");
                         }
 
@@ -585,7 +586,8 @@ public class WebUpdater implements Serializable {
 
                 }
                 if (servers.size() > 0) {
-                    SubConfiguration.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
+                    SERVER_LIST = servers;
+
                 }
                 return this.getAvailableServers();
             } catch (final Exception e) {
@@ -598,10 +600,10 @@ public class WebUpdater implements Serializable {
                 continue;
             }
         }
-        if (fnf && SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) != null) {
-            System.err.println("Branch " + SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) + " is not available any more. Reset to default");
-            SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, null);
-            SubConfiguration.getConfig("WEBUPDATE").save();
+        if (fnf && JSonWrapper.get("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) != null) {
+            System.err.println("Branch " + JSonWrapper.get("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) + " is not available any more. Reset to default");
+            JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, null);
+            JSonWrapper.get("WEBUPDATE").save();
             return this.updateAvailableServers();
         }
         return this.getAvailableServers();

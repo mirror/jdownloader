@@ -26,7 +26,6 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
@@ -35,7 +34,7 @@ import jd.gui.userio.DummyFrame;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.nutils.io.JDIO;
-import jd.update.WebUpdater;
+import jd.updater.UpdaterController;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -52,7 +51,8 @@ public class AboutDialog extends JDialog {
         JLabel lbl = new JLabel("JDownloader");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
-        String branch = SubConfiguration.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE, null);
+        String branch = UpdaterController.getInstance().getBranch();
+
         final String version;
         if (branch == null) {
             version = "JDownloader Build " + JDUtilities.getRevision();

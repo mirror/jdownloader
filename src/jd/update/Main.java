@@ -46,6 +46,7 @@ import jd.config.SubConfiguration;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
@@ -62,7 +63,7 @@ public class Main {
     private static int              NORTHWEST   = GridBagConstraints.NORTHWEST;
     private static int              REL         = GridBagConstraints.RELATIVE;
     private static int              REM         = GridBagConstraints.REMAINDER;
-    private static SubConfiguration guiConfig;
+    private static JSonWrapper      guiConfig;
     private static StringBuilder    log;
     private static JFrame           frame;
     private static JTextArea        logWindow;
@@ -124,8 +125,8 @@ public class Main {
                 } else if (p.trim().equalsIgnoreCase("-branch")) {
                     String br = args[++i];
                     if (br.equalsIgnoreCase("reset")) br = null;
-                    SubConfiguration.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, br);
-                    SubConfiguration.getConfig("WEBUPDATE").save();
+                    JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, br);
+                    JSonWrapper.get("WEBUPDATE").save();
                     System.out.println("Switched branch: " + br);
                 } else if (p.trim().equalsIgnoreCase("-clone")) {
 
@@ -138,11 +139,11 @@ public class Main {
 
             Browser.init();
 
-            guiConfig = SubConfiguration.getConfig("WEBUPDATE");
+            guiConfig = JSonWrapper.get("WEBUPDATE");
 
             log.append("Update JDownloader  at " + JDUtilities.getResourceFile(".") + "\r\n");
-            log.append(SubConfiguration.getConfig("WEBUPDATE").getProperties() + "\r\n");
-            System.out.println(SubConfiguration.getConfig("WEBUPDATE").getProperties() + "\r\n");
+            log.append(JSonWrapper.get("WEBUPDATE").getProperties() + "\r\n");
+            System.out.println(JSonWrapper.get("WEBUPDATE").getProperties() + "\r\n");
             System.out.println(SubConfiguration.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
             log.append(SubConfiguration.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
 

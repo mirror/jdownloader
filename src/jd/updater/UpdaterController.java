@@ -17,9 +17,19 @@ public class UpdaterController {
 
     private UpdaterController() {
         eventSender = new DefaultEventSender<UpdaterEvent>();
+
     }
 
     public void requestExit() {
         eventSender.fireEvent(new UpdaterEvent(this, UpdaterEvent.Types.EXIT_REQUEST, null));
+    }
+
+    public void start() {
+    }
+
+    public String getBranch() {
+        // (JSonWrapper.get("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE,
+        // null);)
+        return null;
     }
 }

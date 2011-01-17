@@ -37,7 +37,6 @@ import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
-import jd.config.SubConfiguration;
 import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -48,6 +47,7 @@ import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.JDImage;
@@ -74,6 +74,7 @@ public class Main {
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
 
     private static boolean          Init_Complete              = false;
+    private static JSonWrapper      webConfig;
 
     /**
      * Sets special Properties for MAC
@@ -275,7 +276,7 @@ public class Main {
         for (int i = 0; i < args.length; i++) {
 
             if (args[i].equalsIgnoreCase("-branch")) {
-                final SubConfiguration webConfig = SubConfiguration.getConfig("WEBUPDATE");
+                webConfig = JSonWrapper.get("WEBUPDATE");
                 if (args[i + 1].equalsIgnoreCase("reset")) {
                     webConfig.setProperty(WebUpdater.PARAM_BRANCH, null);
                     if (webConfig.hasChanges()) {

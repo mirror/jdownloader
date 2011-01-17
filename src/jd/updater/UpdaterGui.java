@@ -1,17 +1,28 @@
 package jd.updater;
 
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Image;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+
+import jd.updater.panel.UpdaterGuiPanel;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
@@ -19,15 +30,19 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.swing.dialog.Dialog;
 
-public class UpdaterGui implements DefaultEventListener<UpdaterEvent> {
+public class UpdaterGui implements DefaultEventListener<UpdaterEvent>, ActionListener {
     private static final UpdaterGui INSTANCE = new UpdaterGui();
 
     public static UpdaterGui getInstance() {
         return UpdaterGui.INSTANCE;
     }
 
-    private JFrame  frame;
-    private Storage storage;
+    private JFrame          frame;
+    private Storage         storage;
+    private UpdaterGuiPanel panel;
+    private JButton         btnDetails;
+    private JScrollPane     scrollPane;
+    private JTextPane       logField;
 
     private UpdaterGui() {
         setLaf();
@@ -74,12 +89,12 @@ public class UpdaterGui implements DefaultEventListener<UpdaterEvent> {
 
         // Set Application dimensions and locations
 
-        final Dimension dim = new Dimension(storage.get("DIMENSION_WIDTH", 1000), storage.get("DIMENSION_HEIGHT", 600));
+        final Dimension dim = new Dimension(storage.get("DIMENSION_WIDTH", 300), storage.get("DIMENSION_HEIGHT", 60));
         // restore size
         this.frame.setSize(dim);
-        this.frame.setPreferredSize(dim);
+        // this.frame.setPreferredSize(dim);
 
-        this.frame.setMinimumSize(new Dimension(100, 100));
+        this.frame.setMinimumSize(new Dimension(100, 60));
         this.layoutGUI();
         // restore location. use center of screen as default.
         final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -93,6 +108,35 @@ public class UpdaterGui implements DefaultEventListener<UpdaterEvent> {
     }
 
     private void layoutGUI() {
+        frame.setLayout(new MigLayout("ins ,wrap 1", "[]", " [][grow,fill]"));
+        panel = new UpdaterGuiPanel();
+        frame.getContentPane().add(new JLabel(ImageProvider.getImageIcon("logo", 32, 32)), "split 2,gapright 10");
+        frame.getContentPane().add(panel, "growx,pushx");
+
+        btnDetails = new JButton("Details");
+        btnDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnDetails.setFocusable(false);
+        btnDetails.setContentAreaFilled(false);
+        btnDetails.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, panel.getBackground().darker()));
+        btnDetails.addActionListener(this);
+        logField = new JTextPane();
+        logField.setEditable(true);
+        logField.setAutoscrolls(true);
+        scrollPane = new JScrollPane(logField);
+        scrollPane.setVisible(false);
+        frame.getContentPane().add(btnDetails, "hidemode 3,alignx right");
+
+        frame.getContentPane().add(scrollPane, "hidemode 3,height 100:300:n,pushx,growx,pushy,growy");
+
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnDetails) {
+            btnDetails.setVisible(false);
+            scrollPane.setVisible(true);
+            frame.pack();
+
+        }
     }
 
     private void setLaf() {
