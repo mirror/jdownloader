@@ -25,102 +25,102 @@ import jd.plugins.DownloadLink;
  * Contains information about the archivefile.
  * 
  * @author botzi
- *
+ * 
  */
 public class Archive {
     /**
      * Is a single file archive.
      */
-    public static final int SINGLE_FILE = 0;
+    public static final int         SINGLE_FILE    = 0;
     /**
      * Is a 7zip or HJSplit multipar archive.
      */
-    public static final int MULTI = 1;
+    public static final int         MULTI          = 1;
     /**
      * Is a multipart rar archive.
      */
-    public static final int MULTI_RAR = 2;
-    
+    public static final int         MULTI_RAR      = 2;
+
     /**
      * Extractionpath
      */
-    private File extractTo;
+    private File                    extractTo;
 
     /**
      * Encrypted archive
      */
-    private boolean protect = false;
-    
+    private boolean                 protect        = false;
+
     /**
      * DownloadLinks of the archive.
      */
     private ArrayList<DownloadLink> archives;
-    
+
     /**
      * First part of the archives.
      */
-    private DownloadLink firstDownloadLink;
-    
+    private DownloadLink            firstDownloadLink;
+
     /**
      * Overwrite existing files.
      */
-    private boolean overwriteFiles = false;
-    
+    private boolean                 overwriteFiles = false;
+
     /**
      * Password for the archive.
      */
-    private String password = "";
-    
+    private String                  password       = "";
+
     /**
      * Exitcode of the extrraction.
      */
-    private int exitCode = 0;
-    
+    private int                     exitCode       = 0;
+
     /**
      * Status of the extraction.
      */
-    private int status = -1;
-    
+    private int                     status         = -1;
+
     /**
      * Extractionprocress got interrupted
      */
-    private boolean gotInterrupted = false;
-    
+    private boolean                 gotInterrupted = false;
+
     /**
      * Total size of the extracted ffiles.
      */
-    private long size = 0;
-    
+    private long                    size           = 0;
+
     /**
      * Size of the corrent extracted files.
      */
-    private long extracted = 0;
-    
+    private long                    extracted      = 0;
+
     /**
      * Is extraction process active.
      */
-    private boolean active = false;
-    
+    private boolean                 active         = false;
+
     /**
      * Type of the archive.
      */
-    private int type = 0;
-    
+    private int                     type           = 0;
+
     /**
      * Number of files in the archive.
      */
-    private int numberOfFiles = 0;
-    
+    private int                     numberOfFiles  = 0;
+
     /**
      * Downloadlinks CRC error.
      */
     private ArrayList<DownloadLink> crcError;
-    
+
     /**
      * List of the extracted files.
      */
-    private ArrayList<File> extractedFiles;
-    
+    private ArrayList<File>         extractedFiles;
+
     public Archive() {
         archives = new ArrayList<DownloadLink>();
         crcError = new ArrayList<DownloadLink>();
@@ -134,63 +134,63 @@ public class Archive {
     public void setProtected(final boolean b) {
         this.protect = b;
     }
-    
+
     public boolean isOverwriteFiles() {
         return overwriteFiles;
     }
-    
+
     public void setOverwriteFiles(boolean overwriteFiles) {
         this.overwriteFiles = overwriteFiles;
     }
-    
+
     public String getPassword() {
         return password;
     }
-    
+
     public void setPassword(String password) {
         this.password = password;
     }
-    
+
     public File getExtractTo() {
         return extractTo;
     }
-    
+
     public void setExtractTo(File extractTo) {
         this.extractTo = extractTo;
     }
-    
+
     public int getExitCode() {
         return exitCode;
     }
-    
+
     public void setExitCode(int exitCode) {
         this.exitCode = exitCode;
     }
-    
+
     public int getStatus() {
         return status;
     }
-    
+
     public void setStatus(int status) {
         this.status = status;
     }
-    
+
     public ArrayList<DownloadLink> getDownloadLinks() {
         return archives;
     }
-    
+
     public void setDownloadLinks(ArrayList<DownloadLink> archives) {
         this.archives = archives;
     }
-    
+
     public void addDownloadLink(DownloadLink link) {
         archives.add(link);
     }
-    
+
     public void setGotInterrupted(final boolean gotInterrupted) {
         this.gotInterrupted = gotInterrupted;
     }
-    
+
     public boolean getGotInterrupted() {
         return gotInterrupted;
     }
@@ -218,15 +218,18 @@ public class Archive {
     public long getExtracted() {
         return extracted;
     }
-    
+
     public boolean isComplete() {
-       for(DownloadLink l: archives) {
-           if(!l.getLinkStatus().isFinished()) { //&& !l.getFilePackage().isPostProcessing()) {
-               return false;
-           }
-       }
-       
-       return true;
+        for (DownloadLink l : archives) {
+            System.out.println(l.getLinkStatus());
+            if (!l.getLinkStatus().isFinished()) { // &&
+                                                   // !l.getFilePackage().isPostProcessing())
+                                                   // {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void setActive(boolean active) {

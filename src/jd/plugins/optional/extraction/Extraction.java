@@ -728,6 +728,27 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         case ExtractionConstants.REMOVE_ARCHIVE_METADATA:
             archives.remove(controller.getArchiv());
             break;
+        case ExtractionConstants.WRAPPER_FILE_NOT_FOUND:
+            if (controller.getArchiv().getCrcError().size() != 0) {
+                for (DownloadLink link : controller.getArchiv().getCrcError()) {
+                    if (link == null) continue;
+                    link.getLinkStatus().removeStatus(LinkStatus.FINISHED);
+                    link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                    link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                    link.getLinkStatus().setErrorMessage(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
+                    link.requestGuiUpdate();
+                }
+            } else {
+                for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
+                    if (link == null) continue;
+                    link.getLinkStatus().setErrorMessage(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
+                    link.requestGuiUpdate();
+                }
+            }
+
+            controller.getArchiv().setActive(false);
+            this.onFinished(controller);
+            break;
         }
     }
 
@@ -853,6 +874,12 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             break;
         case ExtractionConstants.REMOVE_ARCHIVE_METADATA:
             archives.remove(controller.getArchiv());
+            break;
+        case ExtractionConstants.WRAPPER_FILE_NOT_FOUND:
+            pc.setStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+            pc.setStatusText(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
+            controller.getArchiv().setActive(false);
+            this.onFinished(controller);
             break;
         }
     }

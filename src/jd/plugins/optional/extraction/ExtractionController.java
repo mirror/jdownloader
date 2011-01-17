@@ -115,6 +115,18 @@ public class ExtractionController extends Thread implements JDRunnable {
         try {
             fireEvent(ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE);
             logger.info("Start unpacking of " + archive.getFirstDownloadLink().getFileOutput());
+
+            for (DownloadLink l : archive.getDownloadLinks()) {
+                if (!new File(l.getFileOutput()).exists()) {
+                    logger.info("Could not find archive file " + l.getFileOutput());
+                    archive.addCrcError(l);
+                }
+            }
+            if (archive.getCrcError().size() > 0) {
+                fireEvent(ExtractionConstants.WRAPPER_FILE_NOT_FOUND);
+                return;
+            }
+
             if (extractor.prepare()) {
                 if (!checkSize()) {
                     fireEvent(ExtractionConstants.NOT_ENOUGH_SPACE);
