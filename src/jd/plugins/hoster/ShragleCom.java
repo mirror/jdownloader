@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com" }, urls = { "http://[\\w\\.]*?shragle\\.(com|de)/files/[\\w]+/.*" }, flags = { 2 })
 public class ShragleCom extends PluginForHost {
@@ -48,7 +48,7 @@ public class ShragleCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.de/", "\\.com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.de/", "\\.com/").replace("http://shragle", "http://www.shragle"));
     }
 
     private String AGENT = RandomUserAgent.generate();
@@ -91,6 +91,7 @@ public class ShragleCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        this.correctDownloadLink(downloadLink);
         this.br.setFollowRedirects(true);
         this.requestFileInformation(downloadLink);
         this.br.setCookie("http://www.shragle.com", "lang", "de_DE");
@@ -129,8 +130,10 @@ public class ShragleCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        this.correctDownloadLink(downloadLink);
         this.requestFileInformation(downloadLink);
         this.login(account);
+        br.forceDebug(true);
         this.br.setCookie("http://www.shragle.com", "lang", "de_DE");
         this.br.setFollowRedirects(false);
         this.br.getPage(downloadLink.getDownloadURL());
@@ -148,8 +151,12 @@ public class ShragleCom extends PluginForHost {
         final URLConnectionAdapter con = this.dl.getConnection();
         if ((con.getContentType() != null) && con.getContentType().contains("html")) {
             this.br.followConnection();
+            System.out.println(br);
             if (this.br.containsHTML("bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l); }
             if (this.br.containsHTML("The selected file was not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (this.br.containsHTML("tige Session-ID.")) { throw new PluginException(LinkStatus.ERROR_RETRY);
+
+            }
             if ((this.br.containsHTML("Die von Ihnen angeforderte Datei") && this.br.containsHTML("Bitte versuchen Sie es"))) {
                 if (downloadLink.getLinkStatus().getRetryCount() > 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
