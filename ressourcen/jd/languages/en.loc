@@ -1663,6 +1663,7 @@ plugins.optional.webinterface.refresh_interval = Refresh Interval
 plugins.trayicon.popup.bottom.simchunks = Concurrent Connections
 plugins.trayicon.popup.bottom.simdls = Simultaneous Downloads
 plugins.trayicon.popup.bottom.speed = Speed limit (KiB/s)
+progresscontrollerdialog.minimize = Minimize
 reconnect.retries = Max repeats (-1 = no limit)
 reconnect.waitforip = Timeout for IP change (sec)
 reconnect.waittimetofirstipcheck = First IP check wait time (sec)
