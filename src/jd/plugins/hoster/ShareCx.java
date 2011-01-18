@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -35,6 +34,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.cx" }, urls = { "http://[\\w\\.]*?share\\.cx/(files/)?\\d+" }, flags = { 2 })
 public class ShareCx extends PluginForHost {
@@ -187,7 +190,7 @@ public class ShareCx extends PluginForHost {
         if (usedSpace != null) ai.setUsedSpace(usedSpace);
         String expireDate = br.getRegex("ltig bis</TD><TD>(\\d+\\.\\d+\\.\\d+)</TD>").getMatch(0);
         if (expireDate != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
         } else {
             account.setValid(false);
             return ai;
@@ -283,7 +286,7 @@ public class ShareCx extends PluginForHost {
                     } else {
                         if (infos[hit][1] != null && infos[hit][1].length() > 0) {
                             dl.setFinalFileName(infos[hit][1].trim());
-                            dl.setDownloadSize(Regex.getSize(infos[hit][2]));
+                            dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
                             dl.setAvailable(true);
                         } else {
                             dl.setAvailable(false);

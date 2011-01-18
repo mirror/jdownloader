@@ -39,8 +39,9 @@ import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 
 import jd.controlling.JDLogger;
-import jd.parser.Regex;
 import jd.utils.StringUtil;
+
+import org.appwork.utils.Regex;
 
 public final class JDIO {
     /**

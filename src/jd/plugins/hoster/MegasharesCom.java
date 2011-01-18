@@ -24,19 +24,22 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 /**
  * TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw)
@@ -122,7 +125,7 @@ public class MegasharesCom extends PluginForHost {
                 account.setValid(true);
                 ai.setStatus("Account ok");
                 /* the whole day valid? */
-                ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null) + (1000l * 60 * 60 * 24));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null) + (1000l * 60 * 60 * 24));
             }
             /* TODO: there can be many different kind of linkcards */
             return ai;
@@ -345,7 +348,7 @@ public class MegasharesCom extends PluginForHost {
             }
             return AvailableStatus.TRUE;
         } finally {
-            if (dsize != null) downloadLink.setDownloadSize(Regex.getSize(dsize));
+            if (dsize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(dsize));
             if (fln != null) downloadLink.setName(fln.trim());
         }
     }

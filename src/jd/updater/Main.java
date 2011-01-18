@@ -1,24 +1,21 @@
 package jd.updater;
 
 import jd.http.Browser;
-import jd.update.WebUpdater;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
 
 public class Main {
-    private static boolean NO_RESTART;
-    private static boolean GUILESS = false;
-    private static boolean DISABLE_OSFILTER;
-    private static boolean RESTORE;
+
+    private static WebUpdaterOptions OPTIONS;
 
     public static void main(String[] args) {
         Application.setApplication(".jd_home");
         init();
+
         parseParams(args);
-        UpdaterController.getInstance().start();
-        if (!GUILESS) {
+        UpdaterController.getInstance().start(OPTIONS);
+        if (!OPTIONS.isGuiless()) {
             new EDTRunner() {
 
                 @Override
@@ -35,27 +32,24 @@ public class Main {
     }
 
     private static void parseParams(String[] args) {
+        OPTIONS = new WebUpdaterOptions();
         for (int i = 0; i < args.length; i++) {
             String p = args[i];
             if (p.trim().equalsIgnoreCase("-norestart")) {
-                NO_RESTART = true;
+                OPTIONS.setRestart(false);
             } else if (p.trim().equalsIgnoreCase("-guiless")) {
-                GUILESS = true;
+                OPTIONS.setGuiless(true);
             } else if (p.trim().equalsIgnoreCase("-noosfilter")) {
-                DISABLE_OSFILTER = false;
-
+                OPTIONS.setDisableOsfilter(true);
             } else if (p.trim().equalsIgnoreCase("-brdebug")) {
                 Browser.setGlobalVerbose(true);
             } else if (p.trim().equalsIgnoreCase("-restore")) {
-                RESTORE = true;
-
+                OPTIONS.setRestore(true);
             } else if (p.trim().equalsIgnoreCase("-branch")) {
                 String br = args[++i];
                 if (br.equalsIgnoreCase("reset")) br = null;
+                OPTIONS.setBranch(br);
 
-                JSonStorage.getPlainStorage("WEBUPDATE").put(WebUpdater.PARAM_BRANCH, br);
-                JSonStorage.getPlainStorage("WEBUPDATE").save();
-                System.out.println("Switched branch: " + br);
             }
         }
     }

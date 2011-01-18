@@ -18,17 +18,19 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tab.net.ua" }, urls = { "http://[\\w\\.]*?tab\\.net\\.ua/sites/files/site_name\\..*?/id\\.\\d+/" }, flags = { 2 })
 public class TabNetUa extends PluginForHost {
@@ -82,7 +84,7 @@ public class TabNetUa extends PluginForHost {
             if (filesize.contains("Gб") || filesize.contains("Гб"))
                 filesize = filesize.replaceAll("(Gб|Гб)", "GB");
             else if (filesize.contains("")) filesize = filesize.replace("Мб", "MB");
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }

@@ -17,13 +17,14 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://[\\w\\.]*?sharex\\.xpg\\.com\\.br/files/[0-9]+" }, flags = { 0 })
 public class ShareXXpgComBr extends PluginForHost {
@@ -53,7 +54,7 @@ public class ShareXXpgComBr extends PluginForHost {
         String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

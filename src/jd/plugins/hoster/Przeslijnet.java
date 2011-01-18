@@ -20,13 +20,14 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "przeslij.net" }, urls = { "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)" }, flags = { 0 })
 public class Przeslijnet extends PluginForHost {
@@ -46,7 +47,7 @@ public class Przeslijnet extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             if (!br.containsHTML("Invalid download link")) {
                 downloadLink.setName(Encoding.htmlDecode(br.getRegex("<font color=#000000>(.*?)</font>").getMatch(0)));
-                downloadLink.setDownloadSize(Regex.getSize(br.getRegex("File Size:</td><td bgcolor=\\#EEF4FB background=\"img\\/button03.gif\"><font color=#000080>(.*?)</td>").getMatch(0)));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("File Size:</td><td bgcolor=\\#EEF4FB background=\"img\\/button03.gif\"><font color=#000080>(.*?)</td>").getMatch(0)));
                 return AvailableStatus.TRUE;
             }
         } catch (IOException e) {

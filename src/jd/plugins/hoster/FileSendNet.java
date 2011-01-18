@@ -21,16 +21,19 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesend.net" }, urls = { "http://[\\w\\.]*?filesend\\.net/download\\.php\\?f=[a-z0-9]+" }, flags = { 2 })
 public class FileSendNet extends PluginForHost {
@@ -55,7 +58,7 @@ public class FileSendNet extends PluginForHost {
         String filesize = br.getRegex("File Size:</strong>\\s+(.*?)\\s+</td>").getMatch(0);
         if (filename == null || filesize == null || filename.matches("") || filesize.length() > 30) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
@@ -82,7 +85,7 @@ public class FileSendNet extends PluginForHost {
         }
         String expires = br.getRegex("<b>Expires:</b>(.*?)<br>").getMatch(0);
         if (expires != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(expires.trim(), "MMM dd, yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires.trim(), "MMM dd, yyyy", null));
             account.setValid(true);
         } else {
             account.setValid(false);

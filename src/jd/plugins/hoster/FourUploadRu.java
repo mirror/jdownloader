@@ -20,14 +20,15 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4upload.ru" }, urls = { "http://[\\w\\.]*?(4upload\\.ru|box4upload\\.com)/(file|wait)/[0-9a-z]+/.*?\\.html" }, flags = { 0 })
 public class FourUploadRu extends PluginForHost {
@@ -71,7 +72,7 @@ public class FourUploadRu extends PluginForHost {
             filesize = filesize.replaceAll("к", "k");
             filesize = filesize.replace("б", "");
             filesize = filesize + "b";
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }

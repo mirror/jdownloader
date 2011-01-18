@@ -19,16 +19,17 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megafileupload.com" }, urls = { "http://[\\w\\.]*?megafileupload.com/en/file/[0-9]+/" }, flags = { 0 })
 public class MegaFileUploadCom extends PluginForHost {
@@ -60,7 +61,7 @@ public class MegaFileUploadCom extends PluginForHost {
         // This hoster taggs the files (filenames) and by setting this name as
         // the final filename no one will ever see these tags again
         link.setFinalFileName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

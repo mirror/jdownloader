@@ -59,12 +59,12 @@ import jd.nutils.JDFlags;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;
-import jd.parser.Regex;
 import jd.utils.JDGeoCode;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;

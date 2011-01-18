@@ -21,16 +21,17 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedy-share.com" }, urls = { "http://[\\w\\.]*?speedy\\-share\\.com/[\\w]+/(.*)" }, flags = { 0 })
 public class Speedy_ShareCom extends PluginForHost {
@@ -51,7 +52,7 @@ public class Speedy_ShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("File Not Found")) {
             downloadLink.setName(Encoding.htmlDecode(br.getRegex("File Name:</span>(.*?)</span>").getMatch(0)));
-            downloadLink.setDownloadSize(Regex.getSize(br.getRegex("File Size:</span>(.*?)</span>").getMatch(0)));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("File Size:</span>(.*?)</span>").getMatch(0)));
             return AvailableStatus.TRUE;
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

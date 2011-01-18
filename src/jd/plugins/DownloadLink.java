@@ -30,8 +30,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
-import org.appwork.utils.event.Eventsender;
-
 import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
@@ -41,11 +39,13 @@ import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.event.Eventsender;
 
 class DownloadLinkBroadcaster extends Eventsender<DownloadLinkListener, DownloadLinkEvent> {
 

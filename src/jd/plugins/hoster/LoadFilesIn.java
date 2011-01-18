@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -37,6 +36,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loadfiles.in" }, urls = { "http://[\\w\\.]*?loadfiles\\.in/[a-z0-9]{12}" }, flags = { 2 })
 public class LoadFilesIn extends PluginForHost {
@@ -96,7 +98,7 @@ public class LoadFilesIn extends PluginForHost {
         link.setFinalFileName((filename.trim()));
         if (filesize != null) {
             logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -356,7 +358,7 @@ public class LoadFilesIn extends PluginForHost {
         // premiumusers but in case they have, this helps^^
         String trafficleft = br.getRegex("Your traffic left:</TD><TD><b>(.*?)</b>").getMatch(0);
         if (trafficleft != null) {
-            ai.setTrafficLeft(Regex.getSize(trafficleft));
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         } else {
             ai.setUnlimitedTraffic();
         }

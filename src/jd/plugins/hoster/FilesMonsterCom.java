@@ -24,17 +24,20 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?(filesmonsterdecrypted\\.com/download.php\\?id=|filesmonster(decrypted)?\\.com/dl/.*?/free/(2|1)/).+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
@@ -82,9 +85,9 @@ public class FilesMonsterCom extends PluginForHost {
         String expires = br.getRegex("\">Valid until: <span class=\\'green\\'>(.*?)</span>").getMatch(0);
         long ms = 0;
         if (expires != null) {
-            ms = Regex.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
+            ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
             if (ms <= 0) {
-                ms = Regex.getMilliSeconds(expires, "MM/dd/yy", null);
+                ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", null);
             }
             ai.setValidUntil(ms);
             account.setValid(true);
@@ -149,7 +152,7 @@ public class FilesMonsterCom extends PluginForHost {
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setName(Encoding.htmlDecode(filename.trim()));
             if (filesize != null) {
-                downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             }
         }
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));

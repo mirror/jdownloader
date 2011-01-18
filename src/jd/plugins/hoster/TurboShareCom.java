@@ -22,16 +22,17 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turboshare.com" }, urls = { "http://[\\w\\.]*?turboshare\\.com/files/[0-9]+/.+" }, flags = { 2 })
 public class TurboShareCom extends PluginForHost {
@@ -90,7 +91,7 @@ public class TurboShareCom extends PluginForHost {
         link.setName(filename.trim());
         if (filesize != null) {
             logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }

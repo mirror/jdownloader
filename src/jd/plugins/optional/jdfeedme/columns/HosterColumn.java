@@ -25,24 +25,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
 import jd.HostPluginWrapper;
-
-/* CODE_FOR_INTERFACE_5_START
-import jd.config.container.JDLabelContainer;
-CODE_FOR_INTERFACE_5_END */
-/* CODE_FOR_INTERFACE_7_START */
 import jd.gui.swing.components.JDLabelContainer;
-/* CODE_FOR_INTERFACE_7_END */
-
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-
-/* CODE_FOR_INTERFACE_5_START
-import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
-CODE_FOR_INTERFACE_5_END */
-/* CODE_FOR_INTERFACE_7_START */
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
-/* CODE_FOR_INTERFACE_7_END */
-
 import jd.plugins.optional.jdfeedme.JDFeedMeFeed;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;

@@ -19,8 +19,9 @@ package jd.controlling;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
-import jd.parser.Regex;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.Regex;
 
 public class LinkGrabberPackager {
     public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)$", Pattern.CASE_INSENSITIVE);

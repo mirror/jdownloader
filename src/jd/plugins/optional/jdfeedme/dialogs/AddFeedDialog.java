@@ -8,16 +8,10 @@ import javax.swing.JPanel;
 
 import jd.gui.UserIO;
 import jd.gui.swing.components.JDTextField;
-
-/* CODE_FOR_INTERFACE_5_START
-import jd.gui.swing.dialog.AbstractDialog;
-CODE_FOR_INTERFACE_5_END */
-/* CODE_FOR_INTERFACE_7_START */
-import org.appwork.utils.swing.dialog.AbstractDialog;
-/* CODE_FOR_INTERFACE_7_END */
-
 import jd.plugins.optional.jdfeedme.JDFeedMeFeed;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.swing.dialog.AbstractDialog;
 
 /* CODE_FOR_INTERFACE_5_START
 public class AddFeedDialog extends AbstractDialog {

@@ -40,10 +40,11 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.plugins.optional.interfaces.HttpServer;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 public class JDSimpleWebserver extends Thread {
 

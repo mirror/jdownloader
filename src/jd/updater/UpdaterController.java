@@ -1,5 +1,6 @@
 package jd.updater;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.event.DefaultEventSender;
 
 public class UpdaterController {
@@ -10,6 +11,7 @@ public class UpdaterController {
     }
 
     private DefaultEventSender<UpdaterEvent> eventSender;
+    private WebUpdaterOptions                options;
 
     public DefaultEventSender<UpdaterEvent> getEventSender() {
         return eventSender;
@@ -24,12 +26,23 @@ public class UpdaterController {
         eventSender.fireEvent(new UpdaterEvent(this, UpdaterEvent.Types.EXIT_REQUEST, null));
     }
 
-    public void start() {
+    public void start(WebUpdaterOptions options) {
+        this.options = options;
+        setBranch(options.getBranch());
+        this.waitDelay();
+    }
+
+    private void waitDelay() {
+    }
+
+    private void setBranch(String branch) {
+        JSonStorage.getPlainStorage("WEBUPDATE").put("BRANCHINUSE", branch);
+        JSonStorage.getPlainStorage("WEBUPDATE").save();
+        System.out.println("Switched branch: " + branch);
     }
 
     public String getBranch() {
-        // (JSonWrapper.get("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE,
-        // null);)
-        return null;
+        return JSonStorage.getPlainStorage("WEBUPDATE").get("BRANCHINUSE", (String) null);
+
     }
 }

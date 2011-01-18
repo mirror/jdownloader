@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesplash.com" }, urls = { "http://[\\w\\.]*?(filesplash|hitlisted)\\.com/[0-9a-z]{12}" }, flags = { 0 })
 public class FileSplashCom extends PluginForHost {
@@ -51,7 +52,7 @@ public class FileSplashCom extends PluginForHost {
         String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

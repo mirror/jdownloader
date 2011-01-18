@@ -20,13 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fullshare.net" }, urls = { "http://[\\w\\.]*?fullshare\\.net/show/[a-z0-9]+/.+" }, flags = { 0 })
 public class FullShareNet extends PluginForHost {
@@ -55,7 +57,7 @@ public class FullShareNet extends PluginForHost {
         Regex filesize = br.getRegex("<td>GR\\&Ouml;SSE <b>(.*?)</b>(.*?)</td>");
         if (filesize.getMatch(0) != null && filesize.getMatch(1) != null) {
             String fsize = filesize.getMatch(0) + filesize.getMatch(1);
-            downloadLink.setDownloadSize(Regex.getSize(fsize.trim()));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(fsize.trim()));
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);

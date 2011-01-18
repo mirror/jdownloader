@@ -24,6 +24,8 @@ import java.util.SimpleTimeZone;
 
 import jd.nutils.encoding.Encoding;
 
+import org.appwork.utils.formatter.StringFormatter;
+
 public class Formatter {
 
     /**
@@ -107,16 +109,11 @@ public class Formatter {
         return fileSize + " B";
     }
 
+    /**
+     * @deprecated Use {@link StringFormatter#fillString(String,String,String,int)} instead
+     */
     public static String fillString(String binaryString, String pre, String post, int length) {
-        while (binaryString.length() < length) {
-            if (binaryString.length() < length) {
-                binaryString = pre + binaryString;
-            }
-            if (binaryString.length() < length) {
-                binaryString = binaryString + post;
-            }
-        }
-        return binaryString;
+        return StringFormatter.fillString(binaryString, pre, post, length);
     }
 
     /**

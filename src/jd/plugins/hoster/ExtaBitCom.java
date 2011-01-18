@@ -22,17 +22,19 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://[\\w\\.]*?extabit\\.com/file/[a-z0-9]+" }, flags = { 2 })
 public class ExtaBitCom extends PluginForHost {
@@ -69,7 +71,7 @@ public class ExtaBitCom extends PluginForHost {
         String filesize = br.getRegex("class=\"download_filesize(_en)\">.*?\\[(.*?)\\]").getMatch(1);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY))
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
         else if (br.containsHTML(NOTAVAILABLETEXT))
@@ -169,7 +171,7 @@ public class ExtaBitCom extends PluginForHost {
         if (downloadsLeft != null) {
             ai.setStatus("Premium User" + downloadsLeft);
         } else if (expire != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null));
             ai.setStatus("Premium User");
         } else {
             ai.setStatus("Account invalid");

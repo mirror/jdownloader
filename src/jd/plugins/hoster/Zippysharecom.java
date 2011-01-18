@@ -22,13 +22,14 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
@@ -51,7 +52,7 @@ public class Zippysharecom extends PluginForHost {
             if (!br.containsHTML(">Share movie:")) {
                 String filesize = br.getRegex(Pattern.compile("Size:</font>            <font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
             }
             String u = getURL();
             con = br.openGetConnection(u);

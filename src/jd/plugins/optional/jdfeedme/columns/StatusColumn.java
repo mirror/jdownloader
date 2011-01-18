@@ -1,7 +1,7 @@
 package jd.plugins.optional.jdfeedme.columns;
 
-import jd.gui.swing.components.table.JDTextEditorTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
+import jd.gui.swing.components.table.JDTextEditorTableColumn;
 import jd.plugins.optional.jdfeedme.JDFeedMeFeed;
 
 public class StatusColumn extends JDTextEditorTableColumn {

@@ -33,8 +33,9 @@ import jd.nutils.JDImage;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.Regex;
 
 public final class JDTheme {
 

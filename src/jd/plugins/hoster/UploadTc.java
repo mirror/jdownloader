@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.tc" }, urls = { "http://[\\w\\.]*?upload\\.tc/download/\\d+/.*?\\.html" }, flags = { 0 })
 public class UploadTc extends PluginForHost {
@@ -49,7 +50,7 @@ public class UploadTc extends PluginForHost {
         String filesize = br.getRegex("><b>File Size :<b></td>[\t\n\r ]+<td class=\"content\" width=\"211\" align=\"left\" valign=\"top\"  style=\"color:#678197;[\t\n\r ]+border:1px solid #e5eff8; padding:.3em 1em;\">(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

@@ -20,14 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minoshare.com" }, urls = { "http://(www\\.)?minoshare\\.com/file/.*?\\.html" }, flags = { 0 })
 public class MinoShareCom extends PluginForHost {
@@ -56,7 +57,7 @@ public class MinoShareCom extends PluginForHost {
         // Set final filename here because server sometimes gives us buggy
         // filenames
         link.setFinalFileName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

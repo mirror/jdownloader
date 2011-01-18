@@ -34,11 +34,12 @@ import jd.nutils.ProcessListener;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import jd.nutils.jobber.JDRunnable;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.utils.EditDistance;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 /**
  * Die klasse dient zum verpacken der Unrar binary.

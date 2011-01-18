@@ -33,7 +33,6 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -42,6 +41,7 @@ import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 
 /**

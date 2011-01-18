@@ -19,8 +19,8 @@ package jd.plugins.optional.jdfeedme.posts.columns;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.event.MouseEvent;
+
 import javax.swing.SwingConstants;
-import org.jdesktop.swingx.renderer.JRendererLabel;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -29,6 +29,8 @@ import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 import jd.utils.JDTheme;
+
+import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class VisitColumn extends JDTableColumn {
 

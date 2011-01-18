@@ -19,13 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefront.com" }, urls = { "http://[\\w\\.]*?filefront\\.com/[0-9]+" }, flags = { 0 })
 public class FileFrontCom extends PluginForHost {
@@ -59,7 +61,7 @@ public class FileFrontCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.trim();
         downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 

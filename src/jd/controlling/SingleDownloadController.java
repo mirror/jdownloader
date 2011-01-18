@@ -33,12 +33,11 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
+import jd.http.BrowserException;
 import jd.http.BrowserSettings;
 import jd.http.HTTPProxy;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -48,6 +47,8 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet

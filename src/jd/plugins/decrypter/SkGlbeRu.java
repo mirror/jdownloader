@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -28,6 +27,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "skyglobe.ru" }, urls = { "http://[\\w\\.]*?skyglobe\\.ru/mp3/album/\\d+" }, flags = { 0 })
 public class SkGlbeRu extends PluginForDecrypt {
@@ -62,7 +64,7 @@ public class SkGlbeRu extends PluginForDecrypt {
                 if (dlink == null) return null;
                 DownloadLink aLink = createDownloadlink("http://skyglobe.ru" + dlink);
                 if (filename != null) aLink.setName(filename.trim() + ".mp3");
-                if (filesize != null) aLink.setDownloadSize(Regex.getSize(filesize));
+                if (filesize != null) aLink.setDownloadSize(SizeFormatter.getSize(filesize));
                 if (filename != null && filesize != null) aLink.setAvailable(true);
                 decryptedLinks.add(aLink);
             }

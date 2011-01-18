@@ -22,16 +22,17 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://[\\w\\.]*?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
@@ -88,7 +89,7 @@ public class UlozTo extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -181,7 +182,7 @@ public class UlozTo extends PluginForHost {
         String trafficleft = br.getRegex("<td>Kredit:</td><td style=\"text-align: right; font-weight: bold;\">(.*?)</td></tr>").getMatch(0);
         if (trafficleft == null) trafficleft = br.getRegex("class=\"credit\"><a href=\"/kredit/\" class=\"coins\" title=\"(.*?) = ").getMatch(0);
         if (trafficleft != null) {
-            ai.setTrafficLeft(Regex.getSize(trafficleft));
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         }
         ai.setStatus("Premium User");
         account.setValid(true);

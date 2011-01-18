@@ -25,17 +25,20 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*" }, flags = { 2 })
 public class EasyShareCom extends PluginForHost {
@@ -93,11 +96,11 @@ public class EasyShareCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        ai.setValidUntil(Regex.getMilliSeconds(ends.replaceAll(", in", "").trim(), "dd MMM yyyy HH:mm:ss", null));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(ends.replaceAll(", in", "").trim(), "dd MMM yyyy HH:mm:ss", null));
         String trafficLeft = br.getRegex("Traffic left:(.*?)<").getMatch(0);
         if (trafficLeft != null) {
             /* it seems they have unlimited traffic */
-            // ai.setTrafficLeft(Regex.getSize(trafficLeft));
+            // ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft));
             ai.setUnlimitedTraffic();
         } else {
             ai.setUnlimitedTraffic();
@@ -118,7 +121,7 @@ public class EasyShareCom extends PluginForHost {
         String filesize = br.getRegex(Pattern.compile("rel=\"enclosure\" length=\"(\\d+)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize + "b"));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         return AvailableStatus.TRUE;
     }
 

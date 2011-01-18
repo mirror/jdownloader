@@ -18,16 +18,18 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vn" }, urls = { "http://[\\w\\.]*?(megashare\\.vn/(download\\.php\\?uid=[0-9]+\\&id=[0-9]+|dl\\.php/\\d+)|share\\.megaplus\\.vn/dl\\.php/\\d+)" }, flags = { 2 })
 public class MegaShareVn extends PluginForHost {
@@ -63,7 +65,7 @@ public class MegaShareVn extends PluginForHost {
         String filesize = br.getRegex("\">Dung lượng:</td>[\r\t\n ]+<td class=\"content_tx\">(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize));
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -123,7 +125,7 @@ public class MegaShareVn extends PluginForHost {
         account.setValid(true);
         String availabletraffic = br.getRegex(">Thời hạn VIP còn lại:</td>[\t\n\r ]+<td colspan=\"2\" class=\"content_tx\">(.*?) ngày</td>").getMatch(0);
         if (availabletraffic != null) {
-            ai.setTrafficLeft(Regex.getSize(availabletraffic + "GB"));
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic + "GB"));
         } else {
             account.setValid(false);
         }

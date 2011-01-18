@@ -22,16 +22,17 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "remixshare.com" }, urls = { "http://[\\w\\.]*?remixshare\\.com/(.*?\\?file=|download/)[a-z0-9]+" }, flags = { 0 })
 public class RemixShareCom extends PluginForHost {
@@ -69,7 +70,7 @@ public class RemixShareCom extends PluginForHost {
         downloadLink.setName(filename.trim());
         if (filesize != null) {
             filesize = filesize.replace("&nbsp;", " ");
-            downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         }
         String md5Hash = br.getRegex("/>MD5:(.*?)</span>").getMatch(0);
         if (md5Hash != null) {

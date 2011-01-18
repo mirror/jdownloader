@@ -19,13 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadmb.com" }, urls = { "http://[\\w\\.]*?uploadmb\\.com/dw\\.php\\?id=\\d+" }, flags = { 0 })
 public class UploadMbCom extends PluginForHost {
@@ -57,7 +59,7 @@ public class UploadMbCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Because server often gives back wrong names
         link.setFinalFileName(filename.trim());
-        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

@@ -19,14 +19,16 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onlinedisk.ru" }, urls = { "http://[\\w\\.]*?onlinedisk\\.ru/(file|view)/[0-9]+" }, flags = { 0 })
 public class OnlineDiskRu extends PluginForHost {
@@ -63,7 +65,7 @@ public class OnlineDiskRu extends PluginForHost {
             fileSize = fileSize + "b";
             fileSize = fileSize.replace("айт", "");
             downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(Regex.getSize(fileSize));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
         }
         return AvailableStatus.TRUE;
     }

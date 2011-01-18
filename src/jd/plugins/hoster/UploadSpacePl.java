@@ -20,16 +20,18 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadspace.pl" }, urls = { "http://[\\w\\.]*?uploadspace\\.pl/plik[a-zA-Z0-9]+(/.+)?\\.htm" }, flags = { 0 })
 public class UploadSpacePl extends PluginForHost {
@@ -52,7 +54,7 @@ public class UploadSpacePl extends PluginForHost {
         if (info != null && info.length == 1 && info[0].length == 3) {
             if ("0".equals(info[0][0])) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             link.setFinalFileName(info[0][1]);
-            link.setDownloadSize(Regex.getSize(info[0][2]));
+            link.setDownloadSize(SizeFormatter.getSize(info[0][2]));
             return AvailableStatus.TRUE;
         }
         br.setFollowRedirects(true);

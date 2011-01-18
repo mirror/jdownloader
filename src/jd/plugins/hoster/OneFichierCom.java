@@ -19,15 +19,17 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(1fichier\\.com/|dl4free\\.com/.+)" }, flags = { 0 })
 public class OneFichierCom extends PluginForHost {
@@ -78,7 +80,7 @@ public class OneFichierCom extends PluginForHost {
         link.setName(filename.trim());
         if (filesize != null) {
             filesize = filesize.replace("Go", "Gb").replace("Mo", "Mb").replace("Ko", "Kb");
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         if (br.containsHTML(PASSWORDTEXT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
         return AvailableStatus.TRUE;

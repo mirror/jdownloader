@@ -20,14 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loshare.com" }, urls = { "http://[\\w\\.]*?loshar(e|a)\\.com/download\\.php\\?id=[a-zA-Z0-9_-]+" }, flags = { 0 })
 public class LoShareCom extends PluginForHost {
@@ -61,7 +62,7 @@ public class LoShareCom extends PluginForHost {
         String filesize = br.getRegex("File size:</span>(.*?)</p>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 

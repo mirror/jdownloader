@@ -25,7 +25,6 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -38,6 +37,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netload.in" }, urls = { "http://[\\w\\.]*?netload\\.in/[^(http://)].+" }, flags = { 2 })
 public class Netloadin extends PluginForHost {
@@ -298,7 +301,7 @@ public class Netloadin extends PluginForHost {
             } else {
                 /* normal premium */
                 ai.setStatus("Premium");
-                ai.setValidUntil(Regex.getMilliSeconds(res, "yyyy-MM-dd HH:mm", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(res, "yyyy-MM-dd HH:mm", null));
                 if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
@@ -458,7 +461,7 @@ public class Netloadin extends PluginForHost {
         String filesize = br.getRegex("<div class=\"dl_first_filename\">.*?style=.*?>.*?(\\d+.*?)<").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -504,7 +507,7 @@ public class Netloadin extends PluginForHost {
                         dl.setAvailable(false);
                     } else {
                         dl.setFinalFileName(infos[hit][1].trim());
-                        dl.setDownloadSize(Regex.getSize(infos[hit][2]));
+                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
                         if (infos[hit][3].trim().equalsIgnoreCase("online")) {
                             dl.setAvailable(true);
                             dl.setMD5Hash(infos[hit][4].trim());

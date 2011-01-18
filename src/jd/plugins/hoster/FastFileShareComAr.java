@@ -20,16 +20,18 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastfileshare.com.ar" }, urls = { "http://[\\w\\.]*?fastfileshare\\.com\\.ar/index\\.php\\?p=download\\&hash=[A-Za-z0-9]+" }, flags = { 2 })
 public class FastFileShareComAr extends PluginForHost {
@@ -63,7 +65,7 @@ public class FastFileShareComAr extends PluginForHost {
         String md5 = br.getRegex("<strong>Suma MD5: </strong></div></td>.*?<td width=\"\\d+%\"><div align=\"left\" class=\"style47\">(.*?)</div>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -131,7 +133,7 @@ public class FastFileShareComAr extends PluginForHost {
         String expires = br.getRegex("Your Account Expires on (.*?, \\d+), ").getMatch(0);
         if (expires != null) {
             // Your Account Expires on July 3, 2010, 1:26 pm<br>
-            ai.setValidUntil(Regex.getMilliSeconds(expires, "MMMM d, yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "MMMM d, yyyy", null));
         }
         ai.setStatus("Premium User");
         account.setValid(true);

@@ -34,11 +34,12 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 public class JDSimpleWebserverRequestHandler {
 

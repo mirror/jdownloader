@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exfile.ru" }, urls = { "http://(www\\.)?exfile\\.ru/\\d+" }, flags = { 0 })
 public class ExFileRu extends PluginForHost {
@@ -54,7 +55,7 @@ public class ExFileRu extends PluginForHost {
         filesize = filesize.replaceAll("(к|К)", "k");
         filesize = filesize.replaceAll("(Б|б)", "");
         filesize = filesize + "b";
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

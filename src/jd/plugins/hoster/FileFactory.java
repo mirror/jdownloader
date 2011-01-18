@@ -26,7 +26,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -34,12 +33,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -102,7 +102,7 @@ public class FileFactory extends PluginForHost {
                     final String name = br.getRegex("<a href=.*?" + dl.getDownloadURL() + ".*?\">(.*?)<").getMatch(0);
                     if (name != null && size != null) {
                         dl.setName(name.trim());
-                        dl.setDownloadSize(Regex.getSize(size.trim()));
+                        dl.setDownloadSize(SizeFormatter.getSize(size.trim()));
                         dl.setAvailable(true);
                     } else {
                         dl.setAvailable(false);
@@ -140,15 +140,15 @@ public class FileFactory extends PluginForHost {
             return ai;
         }
         expire = expire.replaceFirst("([^\\d].*?) ", " ");
-        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
         final String loaded = this.br.getRegex("You have downloaded(.*?)out").getMatch(0);
         String max = this.br.getRegex("limit of(.*?\\. )").getMatch(0);
         if (max != null && loaded != null) {
-            ai.setTrafficMax(Regex.getSize(max));
-            ai.setTrafficLeft(ai.getTrafficMax() - Regex.getSize(loaded));
+            ai.setTrafficMax(SizeFormatter.getSize(max));
+            ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
         } else {
             max = this.br.getRegex("You can now download up to(.*?)in").getMatch(0);
-            ai.setTrafficMax(Regex.getSize(max));
+            ai.setTrafficMax(SizeFormatter.getSize(max));
         }
         this.br.getPage("http://www.filefactory.com/reward/summary.php");
         final String points = this.br.getMatch("Available reward points.*?class=\"amount\">(.*?) points");
@@ -382,7 +382,7 @@ public class FileFactory extends PluginForHost {
                 final String fileSize = this.br.getRegex(FileFactory.FILESIZE).getMatch(0);
                 if (fileName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 downloadLink.setName(fileName.trim());
-                if (fileSize != null) downloadLink.setDownloadSize(Regex.getSize(fileSize));
+                if (fileSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
             }
 
         }

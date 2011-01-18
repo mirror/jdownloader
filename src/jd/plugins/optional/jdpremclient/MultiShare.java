@@ -11,17 +11,19 @@ import jd.controlling.AccountController;
 import jd.controlling.JDPluginLogger;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 public class MultiShare extends PluginForHost implements JDPremInterface {
 
@@ -190,7 +192,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
             trafficleft = trafficleft.replace(" ", "");
             AccountInfo ai = acc.getAccountInfo();
             synchronized (LOCK) {
-                if (ai != null) ai.setTrafficLeft(Regex.getSize(trafficleft));
+                if (ai != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
             }
         }
         Form form = br.getForm(0);

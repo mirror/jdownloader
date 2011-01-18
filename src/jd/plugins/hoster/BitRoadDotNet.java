@@ -19,14 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitroad.net" }, urls = { "http://[\\w\\.]*?(bitroad\\.net|filemashine\\.com|friendlyfiles\\.net|vip4sms\\.com|manuls\\.ru)/download/[A-Fa-f0-9]+" }, flags = { 0 })
 public class BitRoadDotNet extends PluginForHost {
@@ -51,7 +52,7 @@ public class BitRoadDotNet extends PluginForHost {
         String size = br.getRegex("<h1>.*\\[\\s(.*?)\\s\\]</h1>").getMatch(0);
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(size));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
         return AvailableStatus.TRUE;
     }
 

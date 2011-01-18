@@ -20,11 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nareey.com" }, urls = { "http://[\\w\\.]*?nareey\\.com/(\\d\\.php\\?\\d+|\\d+/)" }, flags = { 0 })
 public class NrCm extends PluginForDecrypt {

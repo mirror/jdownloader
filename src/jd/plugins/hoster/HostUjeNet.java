@@ -19,15 +19,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" }, flags = { 0 })
 public class HostUjeNet extends PluginForHost {
@@ -49,7 +50,7 @@ public class HostUjeNet extends PluginForHost {
         String[] infos = br.getRegex("<b>Plik:</b> (.*?)<br><b>Rozmiar:</b> (.*?)<br>").getRow(0);
         if (infos == null || infos[0] == null || infos[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(infos[0].trim());
-        downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim()));
         return AvailableStatus.TRUE;
     }
 

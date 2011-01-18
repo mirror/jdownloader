@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.to" }, urls = { "http://[\\w\\.]*?files\\.to/get/[0-9]+/[\\w]+" }, flags = { 0 })
 public class FilesTo extends PluginForHost {
@@ -45,7 +46,7 @@ public class FilesTo extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             if (!br.containsHTML("Die angeforderte Datei konnte nicht gefunden werden")) {
                 downloadLink.setName(Encoding.htmlDecode(br.getRegex("<p>Name: <span id=\"downloadname\">(.*?)</span></p>").getMatch(0)));
-                downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B))</p>").getMatch(0)));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B))</p>").getMatch(0)));
                 return AvailableStatus.TRUE;
             }
         } catch (Exception e) {

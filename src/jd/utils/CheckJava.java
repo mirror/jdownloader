@@ -18,8 +18,9 @@ package jd.utils;
 
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
-import jd.parser.Regex;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 public class CheckJava {
 

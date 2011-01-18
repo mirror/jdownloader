@@ -35,8 +35,9 @@ import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 public class RouterUtils {
 

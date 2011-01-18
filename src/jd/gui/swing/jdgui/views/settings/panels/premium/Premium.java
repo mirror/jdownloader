@@ -25,8 +25,8 @@ import javax.swing.Timer;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
 import jd.config.ConfigEntry.PropertyType;
+import jd.config.ConfigGroup;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;

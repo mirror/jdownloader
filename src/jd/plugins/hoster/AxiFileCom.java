@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -27,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://[\\w\\.]*?axifile\\.com/(\\?|mydownload\\.php\\?file=)\\d+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
@@ -54,7 +55,7 @@ public class AxiFileCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String filesize = br.getRegex(">You have request \".*?\" file \\((.*?)\\)</DIV>").getMatch(0);
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }

@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,6 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "http://[\\w\\.]*?xup\\.(in/dl,\\d+/?.+?|raidrush\\.ws/ndl_[a-z0-9]+)" }, flags = { 0 })
 public class XupIn extends PluginForHost {
@@ -60,7 +61,7 @@ public class XupIn extends PluginForHost {
             filesize = br.getRegex("File Size:(.*?)</li>").getMatch(0);
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }

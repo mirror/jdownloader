@@ -20,7 +20,8 @@ import java.io.File;
 import java.lang.reflect.Field;
 
 import jd.controlling.JDLogger;
-import jd.nutils.Formatter;
+
+import org.appwork.utils.formatter.StringFormatter;
 
 public class ContainerStatus {
 
@@ -98,7 +99,7 @@ public class ContainerStatus {
         Class<? extends ContainerStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
         StringBuilder sb = new StringBuilder();
-        sb.append(Formatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
+        sb.append(StringFormatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
         String latest = "";
         for (Field field : fields) {
             if (field.getModifiers() == 25) {
@@ -108,11 +109,11 @@ public class ContainerStatus {
                     if (hasStatus(value)) {
                         if (value == latestStatus) {
                             latest = "latest:" + field.getName() + "\r\n";
-                            sb.append(Formatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
+                            sb.append(StringFormatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
 
                         } else {
 
-                            sb.append(Formatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
+                            sb.append(StringFormatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
                         }
                     }
                 } catch (IllegalArgumentException e) {

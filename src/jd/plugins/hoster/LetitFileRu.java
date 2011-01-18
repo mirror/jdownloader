@@ -19,14 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitfile.ru" }, urls = { "http://[\\w\\.]*?letitfile\\.(ru|com)/download/id\\d+" }, flags = { 0 })
 public class LetitFileRu extends PluginForHost {
@@ -61,7 +62,7 @@ public class LetitFileRu extends PluginForHost {
         filesize = filesize.replace("к", "k");
         filesize = filesize.replaceAll("(Б|б)", "");
         filesize = filesize + "b";
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML("Владелец данного файла разрешил скачивать файл только пользователям")) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.LetitFileRu.Only4Premium", "This file is only downloadable for premium users!"));
         return AvailableStatus.TRUE;
     }

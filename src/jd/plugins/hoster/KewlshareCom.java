@@ -20,16 +20,18 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/(dl/[\\w]+/.*?\\.html|share/[a-z0-9]+)" }, flags = { 2 })
 public class KewlshareCom extends PluginForHost {
@@ -73,7 +75,7 @@ public class KewlshareCom extends PluginForHost {
         String expires = br.getRegex("Expire Date.*?>.*?class=.*?>.*?>(.*?)<").getMatch(0);
         if (expires != null) {
             /* FIXME: days and months right? */
-            ai.setValidUntil(Regex.getMilliSeconds(expires, "MM-dd-yy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "MM-dd-yy", null));
             account.setValid(true);
         } else {
             account.setValid(false);

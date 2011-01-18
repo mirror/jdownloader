@@ -21,13 +21,15 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?files\\.mail\\.ru/[A-Z0-9]{6}" }, flags = { 0 })
 public class FlsMailRu extends PluginForDecrypt {
@@ -78,7 +80,7 @@ public class FlsMailRu extends PluginForDecrypt {
                     filesize = filesize.replaceAll("(Б|б)", "");
                     filesize = filesize + "b";
                 }
-                finallink.setDownloadSize(Regex.getSize(filesize));
+                finallink.setDownloadSize(SizeFormatter.getSize(filesize));
             }
             finallink.setFinalFileName(filename);
             finallink.setAvailable(true);

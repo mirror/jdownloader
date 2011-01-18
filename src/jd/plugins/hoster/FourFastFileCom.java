@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -30,6 +29,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://[\\w\\.]*?4fastfile\\.com(/[a-z]+)?/abv-fs/\\d+-\\d+(/\\d+-\\d+)?/.+" }, flags = { 2 })
 public class FourFastFileCom extends PluginForHost {
@@ -59,7 +62,7 @@ public class FourFastFileCom extends PluginForHost {
         String filesize = br.getRegex("<td class=\"file-size\">(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -107,7 +110,7 @@ public class FourFastFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yyyy - HH:mm", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy - HH:mm", null));
         }
         ai.setStatus("Premium User");
         return ai;

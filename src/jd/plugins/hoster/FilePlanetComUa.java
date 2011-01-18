@@ -24,7 +24,6 @@ import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -34,6 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileplanet.com.ua" }, urls = { "http://[\\w\\.]*?fileplanet\\.com\\.ua/[a-z0-9]{12}" }, flags = { 0 })
 public class FilePlanetComUa extends PluginForHost {
@@ -103,7 +105,7 @@ public class FilePlanetComUa extends PluginForHost {
         link.setName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }

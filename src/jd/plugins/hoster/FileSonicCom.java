@@ -25,7 +25,6 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -38,6 +37,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.(com|net)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
@@ -86,7 +89,7 @@ public class FileSonicCom extends PluginForHost {
                     final String hit[] = br.getRegex("source\">.*?<span>.*?filesonic.com/file/" + id + ".*?fileName\">.*?<span>(.*?)<.*?fileSize\">.*?<span>(.*?)<").getRow(0);
                     if (hit != null && hit.length == 2 && hit[1].length() > 2) {
                         dllink.setFinalFileName(hit[0].trim());
-                        dllink.setDownloadSize(Regex.getSize(hit[1]));
+                        dllink.setDownloadSize(SizeFormatter.getSize(hit[1]));
                         dllink.setAvailable(true);
                     } else {
                         dllink.setAvailable(false);
@@ -172,7 +175,7 @@ public class FileSonicCom extends PluginForHost {
                 // it seems expire date is still wrong for many users
                 account.setValid(true);
                 ai.setUnlimitedTraffic();
-                ai.setValidUntil(Regex.getMilliSeconds(expiredate.trim(), "yyyy-MM-dd HH:mm:ss", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "yyyy-MM-dd HH:mm:ss", null));
                 return ai;
             }
             account.setValid(false);
@@ -455,7 +458,7 @@ public class FileSonicCom extends PluginForHost {
         }
         filesize = filesize.replace("&nbsp;", "");
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 

@@ -17,13 +17,14 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "good.net" }, urls = { "http://[\\w\\.]*?gjerzu4zr4jk555hd/.+" }, flags = { 0 })
 public class GoodNet extends PluginForHost {
@@ -52,7 +53,7 @@ public class GoodNet extends PluginForHost {
         parameter.setName(filename.trim());
         if (filesize != null) {
             filesize = filesize.replace("i", "");
-            parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         }
         return AvailableStatus.TRUE;
     }

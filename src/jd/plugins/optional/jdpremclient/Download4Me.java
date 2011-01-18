@@ -14,7 +14,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -24,6 +23,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.TimeFormatter;
 
 public class Download4Me extends PluginForHost implements JDPremInterface {
 
@@ -370,7 +372,7 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
                 return ac;
             }
             String validUntil = br.getRegex("Account expires on</b></td><td>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-            if (validUntil != null) ac.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm:ss", null));
+            if (validUntil != null) ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm:ss", null));
             ac.setStatus("Valid Account");
             synchronized (LOCK) {
                 premiumHosts.clear();

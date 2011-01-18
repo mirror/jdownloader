@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -37,6 +36,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filevo.com" }, urls = { "http://[\\w\\.]*?filevo\\.com/[a-z0-9]{12}\\.html" }, flags = { 2 })
 public class FileVoCom extends PluginForHost {
@@ -104,7 +107,7 @@ public class FileVoCom extends PluginForHost {
         link.setName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -316,7 +319,7 @@ public class FileVoCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(brbefore, "Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("unlimited")) {
-            ai.setTrafficLeft(Regex.getSize(availabletraffic));
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -328,7 +331,7 @@ public class FileVoCom extends PluginForHost {
                 return ai;
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
             ai.setStatus("Premium User");
         } else {

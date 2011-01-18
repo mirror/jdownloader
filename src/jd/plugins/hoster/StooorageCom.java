@@ -17,13 +17,14 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stooorage.com" }, urls = { "http://[\\w\\.]*?stooorage\\.com/(show|images)/\\d+/.+" }, flags = { 0 })
 public class StooorageCom extends PluginForHost {

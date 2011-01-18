@@ -20,17 +20,19 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.com.ua" }, urls = { "http://(www\\.)?(beta\\.upload|upload)\\.com\\.ua/(link|get)/[0-9]+" }, flags = { 2 })
 public class UploadComUa extends PluginForHost {
@@ -64,7 +66,7 @@ public class UploadComUa extends PluginForHost {
             link.setMD5Hash(md5.trim());
         }
         link.setFinalFileName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -125,7 +127,7 @@ public class UploadComUa extends PluginForHost {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm:ss", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm:ss", null));
         }
         ai.setStatus("Premium User");
         return ai;

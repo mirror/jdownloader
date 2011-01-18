@@ -21,12 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wii-reloaded.info" }, urls = { "http://[\\w\\.]*?(protect\\.wii|wii)-reloaded\\.(info|org)(/protect)?/get\\.php\\?i=[a-zA-Z-0-9]+" }, flags = { 0 })
 public class Wrldd extends PluginForDecrypt {

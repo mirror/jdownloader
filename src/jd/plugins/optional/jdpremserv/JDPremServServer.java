@@ -13,7 +13,6 @@ import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.optional.interfaces.Handler;
@@ -23,6 +22,8 @@ import jd.plugins.optional.interfaces.Response;
 import jd.plugins.optional.jdpremserv.controlling.UserController;
 import jd.plugins.optional.jdpremserv.model.PremServUser;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 public class JDPremServServer implements Handler, ControlListener {
 

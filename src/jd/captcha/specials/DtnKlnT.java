@@ -17,6 +17,7 @@
 package jd.captcha.specials;
 
 import java.awt.image.BufferedImage;
+
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;

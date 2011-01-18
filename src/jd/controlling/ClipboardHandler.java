@@ -32,8 +32,9 @@ import jd.config.Configuration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.nutils.OSDetector;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 /**
  * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen

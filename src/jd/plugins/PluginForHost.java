@@ -46,10 +46,11 @@ import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien
@@ -488,6 +489,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 transferStatus.usePremium(true);
                 handlePremium(downloadLink, account);
             } catch (PluginException e) {
+                e.printStackTrace();
                 e.fillLinkStatus(downloadLink.getLinkStatus());
                 if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());

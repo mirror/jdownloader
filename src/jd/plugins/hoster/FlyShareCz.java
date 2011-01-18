@@ -20,14 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 //flyshare by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flyshare.cz" }, urls = { "http://[\\w\\.]*?(new\\.flyshare|flyshare)\\.cz/stahni/[0-9]+/.{1,}" }, flags = { 0 })
@@ -51,7 +52,7 @@ public class FlyShareCz extends PluginForHost {
         String filesize = br.getRegex("</span> ((.*?))</p>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

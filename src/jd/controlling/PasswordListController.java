@@ -26,7 +26,8 @@ import java.util.Set;
 import javax.swing.Timer;
 
 import jd.config.SubConfiguration;
-import jd.parser.Regex;
+
+import org.appwork.utils.Regex;
 
 public class PasswordListController implements ActionListener, ListController {
     private transient static SubConfiguration CONFIG = null;

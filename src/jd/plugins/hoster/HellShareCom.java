@@ -20,17 +20,19 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de)/((.+/[0-9]+)|(/[0-9]+/.+/.+))" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
@@ -89,7 +91,7 @@ public class HellShareCom extends PluginForHost {
         if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
         String trafficleft = br.getRegex("id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>").getMatch(0);
         if (trafficleft != null) {
-            ai.setTrafficLeft(Regex.getSize(trafficleft));
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         }
         ai.setStatus("Premium User");
         account.setValid(true);
@@ -159,7 +161,7 @@ public class HellShareCom extends PluginForHost {
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize.replace("&nbsp;", "")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("&nbsp;", "")));
         link.setUrlDownload(br.getURL());
         return AvailableStatus.TRUE;
     }

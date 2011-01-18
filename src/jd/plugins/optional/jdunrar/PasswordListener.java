@@ -22,7 +22,8 @@ import jd.controlling.JDLogger;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
-import jd.parser.Regex;
+
+import org.appwork.utils.Regex;
 
 public class PasswordListener implements ProcessListener {
 

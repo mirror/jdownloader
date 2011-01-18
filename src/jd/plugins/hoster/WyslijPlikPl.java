@@ -20,13 +20,14 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wyslijplik.pl" }, urls = { "http://[\\w\\.]*?wyslijplik\\.pl/download\\.php\\?sid=\\w{8}" }, flags = { 2 })
 public class WyslijPlikPl extends PluginForHost {
@@ -53,7 +54,7 @@ public class WyslijPlikPl extends PluginForHost {
             String filesize = br.getRegex("<table class='showfiles'>.*?<td>(.*?)</td>").getMatch(0);
             if ((filename != null && filesize != null)) {
                 downloadLink.setName(filename);
-                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
             }
         }

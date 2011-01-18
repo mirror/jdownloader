@@ -20,16 +20,18 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mujsoubor.cz" }, urls = { "http://[\\w\\.]*?mujsoubor\\.cz/file/[a-z0-9]+-[a-z0-9_-]+" }, flags = { 2 })
 public class MujSouborCz extends PluginForHost {
@@ -54,7 +56,7 @@ public class MujSouborCz extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (filename.equals("") || filesize.equals("0 B")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize.replace(" ", "")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(" ", "")));
         return AvailableStatus.TRUE;
     }
 
@@ -83,7 +85,7 @@ public class MujSouborCz extends PluginForHost {
         account.setValid(true);
         String availabletraffic = br.getRegex("Kredit: <strong>([0-9 ]+)</strong>").getMatch(0);
         if (availabletraffic != null) {
-            ai.setTrafficLeft(Regex.getSize(availabletraffic.replace(" ", "") + " MB"));
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic.replace(" ", "") + " MB"));
         } else {
             ai.setExpired(true);
             return ai;

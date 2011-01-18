@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -25,6 +24,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madshare.com" }, urls = { "http://[\\w\\.]*?madshare\\.com/(en/)?download/[a-zA-Z0-9]+/" }, flags = { 0 })
 public class MadShareCom extends PluginForHost {
@@ -49,7 +50,7 @@ public class MadShareCom extends PluginForHost {
         String filesize = br.getRegex("class=\"size\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize + "Bytes"));
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize + "Bytes"));
         return AvailableStatus.TRUE;
     }
 

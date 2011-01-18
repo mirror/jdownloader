@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 import jd.nutils.Executer;
-
 import jd.nutils.OutdatedParser;
 import jd.nutils.zip.UnZip;
 

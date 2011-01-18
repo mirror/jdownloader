@@ -20,13 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.am" }, urls = { "http://(www\\.)?([0-9]+\\.)?file\\.am/\\d+" }, flags = { 0 })
 public class FileAm extends PluginForHost {
@@ -56,7 +58,7 @@ public class FileAm extends PluginForHost {
         // Set the final filename here, server sometimes gives us strange
         // filenames...
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

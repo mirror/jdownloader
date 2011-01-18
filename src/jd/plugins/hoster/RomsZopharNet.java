@@ -18,9 +18,9 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://[\\w\\.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}" }, flags = { 0 })
 public class RomsZopharNet extends PluginForHost {

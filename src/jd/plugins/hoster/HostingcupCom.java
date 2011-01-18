@@ -23,7 +23,6 @@ import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -33,6 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hostingcup.com" }, urls = { "http://www\\.hostingcup\\.com/[0-9a-zA-Z]{12}" }, flags = { 2 })
 public class HostingcupCom extends PluginForHost {
@@ -57,7 +59,7 @@ public class HostingcupCom extends PluginForHost {
         String filesize = br.getRegex("<SMALL>\\(([\\d]+) bytes\\)</SMALL>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 

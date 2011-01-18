@@ -23,13 +23,14 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "googlegroups.com" }, urls = { "http://[\\w\\.]*?googlegroups.com/web/.*" }, flags = { 0 })
 public class GoogleGroups extends PluginForHost {
@@ -74,7 +75,7 @@ public class GoogleGroups extends PluginForHost {
 
                             downloadLink.setAvailable(true);
                             downloadLink.setFinalFileName(strings[1]);
-                            downloadLink.setDownloadSize(Regex.getSize(strings[2]));
+                            downloadLink.setDownloadSize(SizeFormatter.getSize(strings[2]));
                             break;
                         }
                     }

@@ -24,7 +24,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -36,6 +35,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.(net|com)/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
 public class Freaksharenet extends PluginForHost {
@@ -112,7 +114,7 @@ public class Freaksharenet extends PluginForHost {
             if (validUntil == null) {
                 account.setValid(false);
             } else {
-                ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd.MM.yyyy - HH:mm", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy - HH:mm", null));
                 account.setValid(true);
             }
             try {
@@ -190,7 +192,7 @@ public class Freaksharenet extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         String filesize = br.getRegex("\"box_heading\" style=\"text-align:center;\">.*?- (.*?)</h1>").getMatch(0);
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

@@ -19,13 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareua.com" }, urls = { "http://[\\w\\.]*?shareua.com/get_file/.*?/\\d+" }, flags = { 0 })
 public class ShareUaCom extends PluginForHost {
@@ -57,7 +59,7 @@ public class ShareUaCom extends PluginForHost {
         String filesize = br.getRegex("You requested.*?\\(((\\d+\\.\\d+|\\d+) .*?)\\)").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

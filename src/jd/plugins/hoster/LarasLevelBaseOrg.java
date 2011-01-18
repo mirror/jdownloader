@@ -19,15 +19,16 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "laraslevelbase.org" }, urls = { "http://(www\\.)?laraslevelbase\\.org/box_download\\.asp\\?Id=\\d+" }, flags = { 2 })
 public class LarasLevelBaseOrg extends PluginForHost {
@@ -59,7 +60,7 @@ public class LarasLevelBaseOrg extends PluginForHost {
         String filesize = br.getRegex("<dt><font face=\"Verdana\" size=\"1\">\\( (.*?) \\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 

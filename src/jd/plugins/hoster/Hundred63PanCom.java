@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "163pan.com" }, urls = { "http://[\\w\\.]*?163pan\\.com/files/[a-z0-9]+\\.html" }, flags = { 0 })
 public class Hundred63PanCom extends PluginForHost {
@@ -51,7 +52,7 @@ public class Hundred63PanCom extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         filesize = filesize.replace("字节", "bytes").replace(",", "");
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         String md5 = br.getRegex("<span>MD5值：</span>(.*?)</li>").getMatch(0);
         String sh1 = br.getRegex("<span>SHA1值：</span>(.*?)</li>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);

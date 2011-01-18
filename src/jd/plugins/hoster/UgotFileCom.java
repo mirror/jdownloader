@@ -22,17 +22,20 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugotfile.com" }, urls = { "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+" }, flags = { 2 })
 public class UgotFileCom extends PluginForHost {
@@ -81,14 +84,14 @@ public class UgotFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
             account.setValid(true);
         }
         br.getPage("http://ugotfile.com/traffic/summary");
         String trafficleft = br.getRegex("Remaining Downloads</h3>.*?>((\\d+.*?)/.*?\\d+.*?)<").getMatch(1);
         if (trafficleft != null) ai.setTrafficLeft(Encoding.htmlDecode(trafficleft));
         String trafficmax = br.getRegex("Remaining Downloads</h3>.*?>(\\d+.*?/(.*?\\d+.*?))<").getMatch(1);
-        if (trafficmax != null) ai.setTrafficMax(Regex.getSize(Encoding.htmlDecode(trafficmax)));
+        if (trafficmax != null) ai.setTrafficMax(SizeFormatter.getSize(Encoding.htmlDecode(trafficmax)));
         return ai;
     }
 
@@ -206,7 +209,7 @@ public class UgotFileCom extends PluginForHost {
                         dl.setAvailable(true);
                     }
                     dl.setName(filename);
-                    dl.setDownloadSize(Regex.getSize(filesize));
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
                 if (index == urls.length) break;
             }

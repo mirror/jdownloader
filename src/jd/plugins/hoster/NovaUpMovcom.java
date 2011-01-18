@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://[\\w\\.]*?nova(up|mov)\\.com/(download|sound|video)/[a-z|0-9]+" }, flags = { 0 })
 public class NovaUpMovcom extends PluginForHost {
@@ -104,7 +105,7 @@ public class NovaUpMovcom extends PluginForHost {
             String filesize = br.getRegex("strong>File size :</strong>(.*?)</div>").getMatch(0);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             parameter.setName(filename.trim());
-            parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "")));
         }
 
         return AvailableStatus.TRUE;

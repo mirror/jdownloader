@@ -18,10 +18,10 @@ package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.locale.JDL;
 

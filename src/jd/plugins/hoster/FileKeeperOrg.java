@@ -21,14 +21,15 @@ import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filekeeper.org" }, urls = { "http://[\\w\\.]*?filekeeper\\.org/download/[0-9a-zA-Z]+/([\\(\\)0-9A-Za-z.-_% ]+|[/]+/[\\(\\)0-9A-Za-z.-_% ])" }, flags = { 0 })
 public class FileKeeperOrg extends PluginForHost {
@@ -59,7 +60,7 @@ public class FileKeeperOrg extends PluginForHost {
         String filesize = br.getRegex("</a>.*?dash;(.*?)<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(Plugin.getFileNameFromURL(new URL(filename)));
-        link.setDownloadSize(Regex.getSize(filesize.replace("&nbsp;", "")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("&nbsp;", "")));
         return AvailableStatus.TRUE;
     }
 

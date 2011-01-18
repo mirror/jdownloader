@@ -17,29 +17,30 @@
 package jd.plugins;
 
 import jd.config.Property;
-import jd.parser.Regex;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 public class AccountInfo extends Property {
 
-    private static final long serialVersionUID = 1825140346023286206L;
+    private static final long serialVersionUID         = 1825140346023286206L;
 
-    private long account_validUntil = -1;
-    private long account_trafficLeft = -1;
-    private long account_trafficMax = -1;
-    private long account_filesNum = -1;
-    private long account_premiumPoints = -1;
-    private long account_accountBalance = -1;
-    private long account_usedSpace = -1;
-    private long account_trafficShareLeft = -1;
-    private boolean unlimitedTraffic = true;
-    private boolean account_expired = false;
-    private String account_status;
-    private long account_createTime = 0;
+    private long              account_validUntil       = -1;
+    private long              account_trafficLeft      = -1;
+    private long              account_trafficMax       = -1;
+    private long              account_filesNum         = -1;
+    private long              account_premiumPoints    = -1;
+    private long              account_accountBalance   = -1;
+    private long              account_usedSpace        = -1;
+    private long              account_trafficShareLeft = -1;
+    private boolean           unlimitedTraffic         = true;
+    private boolean           account_expired          = false;
+    private String            account_status;
+    private long              account_createTime       = 0;
     /**
      * indicator that host, account has special traffic handling, do not temp
      * disable if traffic =0
      */
-    private boolean specialTraffic = false;
+    private boolean           specialTraffic           = false;
 
     public long getCreateTime() {
         return account_createTime;
@@ -184,7 +185,7 @@ public class AccountInfo extends Property {
     }
 
     public void setTrafficLeft(final String freeTraffic) {
-        this.setTrafficLeft(Regex.getSize(freeTraffic));
+        this.setTrafficLeft(SizeFormatter.getSize(freeTraffic));
     }
 
     public void setTrafficMax(final long trafficMax) {
@@ -200,7 +201,7 @@ public class AccountInfo extends Property {
     }
 
     public void setUsedSpace(final String string) {
-        this.setUsedSpace(Regex.getSize(string));
+        this.setUsedSpace(SizeFormatter.getSize(string));
     }
 
     /**

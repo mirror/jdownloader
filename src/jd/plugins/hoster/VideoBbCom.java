@@ -19,16 +19,17 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/video/\\w+" }, flags = { 2 })
 public class VideoBbCom extends PluginForHost {
@@ -60,7 +61,7 @@ public class VideoBbCom extends PluginForHost {
         } else {
             final String expire = this.br.getRegex("Premium active until.*?<strong>(.*?)</strong>").getMatch(0);
             if (expire != null) {
-                ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", null) + (1000l * 60 * 60 * 24));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null) + (1000l * 60 * 60 * 24));
             } else {
                 this.logger.warning("Couldn't get the expire date, stopping premium!");
                 ai.setExpired(true);

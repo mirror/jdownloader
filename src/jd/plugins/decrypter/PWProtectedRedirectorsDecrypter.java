@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -28,6 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliccami.info", "lempar.co.tv", "mylink4u.info", "linkoculto.com", "urlaxe.net", "dwarfurl.com", "skracaj.org", "l-x.pl", "xlurl.com", "cbuz.com", "shorten.ws", "smallizer.com", "zi.ma" }, urls = { "http://[\\w\\.]*?cliccami\\.info/[0-9a-z]+", "http://[\\w\\.]*?lempar\\.co\\.tv/[0-9a-z]+", "http://[\\w\\.]*?mylink4u\\.info/[a-z0-9]+", "http://[\\w\\.]*?linkoculto\\.com/[a-z0-9]+", "http://[\\w\\.]*?urlaxe\\.net/[0-9]+", "http://[\\w\\.]*?dwarfurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?skracaj\\.org/[a-z0-9]+", "http://[\\w\\.]*?l-x\\.pl/[a-z0-9]+", "http://[\\w\\.]*?xlurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?cbuz\\.com/[a-z0-9]+", "http://[\\w\\.]*?shorten\\.ws/[a-z0-9]+", "http://[\\w\\.]*?smallizer\\.com/[a-z0-9]+", "http://[\\w\\.]*?zi\\.ma/[a-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {

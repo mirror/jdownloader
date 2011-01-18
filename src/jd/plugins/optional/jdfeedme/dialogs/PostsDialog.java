@@ -9,18 +9,12 @@ import javax.swing.JScrollPane;
 
 import jd.gui.UserIO;
 import jd.gui.swing.components.table.JDRowHighlighter;
-
-/* CODE_FOR_INTERFACE_5_START
-import jd.gui.swing.dialog.AbstractDialog;
-CODE_FOR_INTERFACE_5_END */
-/* CODE_FOR_INTERFACE_7_START */
-import org.appwork.utils.swing.dialog.AbstractDialog;
-/* CODE_FOR_INTERFACE_7_END */
-
 import jd.plugins.optional.jdfeedme.JDFeedMeFeed;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 import jd.plugins.optional.jdfeedme.posts.PostsTable;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.swing.dialog.AbstractDialog;
 
 /* CODE_FOR_INTERFACE_5_START
 public class PostsDialog extends AbstractDialog

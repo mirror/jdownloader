@@ -4,7 +4,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.gui.swing.components.table.JDTableModel;
-import jd.plugins.optional.jdfeedme.columns.*;
+import jd.plugins.optional.jdfeedme.columns.AddressColumn;
+import jd.plugins.optional.jdfeedme.columns.DescriptionColumn;
+import jd.plugins.optional.jdfeedme.columns.EnabledColumn;
+import jd.plugins.optional.jdfeedme.columns.FiltersColumn;
+import jd.plugins.optional.jdfeedme.columns.HosterColumn;
+import jd.plugins.optional.jdfeedme.columns.PostsColumn;
+import jd.plugins.optional.jdfeedme.columns.SkipColumn;
+import jd.plugins.optional.jdfeedme.columns.StatusColumn;
+import jd.plugins.optional.jdfeedme.columns.TimestampColumn;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 
 

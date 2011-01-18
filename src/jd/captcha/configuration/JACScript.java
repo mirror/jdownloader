@@ -28,8 +28,9 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 /**
  * Diese Klasse parsed das JAC Script

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -28,6 +27,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/folder/[A-Z|0-9]+" }, flags = { 0 })
 public class Mg1280CmFldr extends PluginForDecrypt {
@@ -59,7 +61,7 @@ public class Mg1280CmFldr extends PluginForDecrypt {
                 if (dlink == null) return null;
                 DownloadLink aLink = createDownloadlink(dlink);
                 if (filename != null) aLink.setName(filename.trim());
-                if (filesize != null) aLink.setDownloadSize(Regex.getSize(filesize));
+                if (filesize != null) aLink.setDownloadSize(SizeFormatter.getSize(filesize));
                 if (filename != null && filesize != null) aLink.setAvailable(true);
                 decryptedLinks.add(aLink);
             }

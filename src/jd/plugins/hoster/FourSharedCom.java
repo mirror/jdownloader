@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -33,6 +32,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 //http://www.4shared.com/file/<FILEID[a-70-9]>/<FILENAME>.html
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
@@ -121,7 +124,7 @@ public class FourSharedCom extends PluginForHost {
             if (size==null) size=br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-            if (size != null) downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
+            if (size != null) downloadLink.setDownloadSize(SizeFormatter.getSize(size.replace(",", "")));
             return AvailableStatus.TRUE;
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -137,12 +140,12 @@ public class FourSharedCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(redirect);
         String[] dat = br.getRegex("Bandwidth\\:.*?<div class=\"quotacount\">(.+?)\\% of (.*?)</div>").getRow(0);
-        ai.setTrafficMax(Regex.getSize(dat[1]));
+        ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
         ai.setTrafficLeft((long) (ai.getTrafficMax() * ((100.0 - Float.parseFloat(dat[0])) / 100.0)));
         String accountDetails = br.getRegex("(/account/myAccount.jsp\\?sId=[^\"]+)").getMatch(0);
         br.getPage(accountDetails);
         String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0).trim();
-        ai.setValidUntil(Regex.getMilliSeconds(expire, "yyyy-MM-dd", Locale.UK));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.UK));
         return ai;
     }
 

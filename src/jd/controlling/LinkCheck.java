@@ -25,14 +25,14 @@ import java.util.Iterator;
 
 import javax.swing.Timer;
 
-import org.appwork.utils.event.Eventsender;
-
 import jd.http.Browser;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.event.Eventsender;
 
 class LinkCheckBroadcaster extends Eventsender<LinkCheckListener, LinkCheckEvent> {
 

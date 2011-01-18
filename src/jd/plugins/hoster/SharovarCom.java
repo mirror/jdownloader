@@ -22,11 +22,11 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharovar.com" }, urls = { "http://[\\w\\.]*?(sharovar\\.com/files/.+|mp3zr\\.com/file/.+/.+)" }, flags = { 0 })
 public class SharovarCom extends PluginForHost {

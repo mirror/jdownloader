@@ -21,11 +21,13 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://[\\w\\.]*?roms\\.zophar\\.net/(.+)/(.+\\.7z)" }, flags = { 0 })
 public class RmsZphrNt extends PluginForDecrypt {
@@ -46,7 +48,7 @@ public class RmsZphrNt extends PluginForDecrypt {
 
         String filename = new Regex(parameter, patternSupported).getMatch(1);
         String file = br.getRegex(patternDownload).getMatch(0);
-        long filesize = Regex.getSize(br.getRegex(patternFilesize).getMatch(0));
+        long filesize = SizeFormatter.getSize(br.getRegex(patternFilesize).getMatch(0));
         DownloadLink dlLink = createDownloadlink("http://roms.zophar.net/download-file/" + file);
         dlLink.setDownloadSize(filesize);
         dlLink.setName(filename);

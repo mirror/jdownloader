@@ -23,13 +23,15 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebomb.com" }, urls = { "http://[\\w\\.]*?sharebomb\\.com/[0-9]+.*" }, flags = { 0 })
 public class ShareBombCom extends PluginForHost {
@@ -66,7 +68,7 @@ public class ShareBombCom extends PluginForHost {
             if (!(downloadName == null || downloadSize == null)) {
                 if (downloadName.length() == 0) downloadName = br.getRegex("<title>sharebomb.com - (.*?)</title>").getMatch(0);
                 downloadLink.setName(downloadName.trim());
-                downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
             }
         }

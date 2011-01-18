@@ -55,7 +55,6 @@ import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -63,6 +62,7 @@ import jd.plugins.PluginsC;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.Regex;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;

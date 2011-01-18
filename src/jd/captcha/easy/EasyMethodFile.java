@@ -35,9 +35,10 @@ import jd.gui.swing.components.JDLabelContainer;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 public class EasyMethodFile implements JDLabelContainer, Serializable {
     /**

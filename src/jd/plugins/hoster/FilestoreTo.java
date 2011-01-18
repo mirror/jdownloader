@@ -22,13 +22,15 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://[\\w\\.]*?filestore\\.to/\\?d=[A-Z0-9]+" }, flags = { 0 })
 public class FilestoreTo extends PluginForHost {
@@ -67,7 +69,7 @@ public class FilestoreTo extends PluginForHost {
                 downloadSize = (br.getRegex("\">Dateigr\\&ouml;\\&szlig;e:</td>.*?<td width=\"\\d+\" style=\".*?\">(.*?)</td>").getMatch(0));
                 if (downloadName != null) {
                     downloadLink.setName(downloadName);
-                    if (downloadSize != null) downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+                    if (downloadSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
                     return AvailableStatus.TRUE;
                 }
             }

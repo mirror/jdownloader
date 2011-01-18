@@ -38,12 +38,10 @@ import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.nutils.Formatter;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -57,6 +55,9 @@ import jd.plugins.optional.hjsplit.jaxe.ProgressEventListener;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.StringFormatter;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "hjsplit", interfaceversion = 7)
 public class JDHJSplit extends PluginOptional {
@@ -403,7 +404,7 @@ public class JDHJSplit extends PluginOptional {
         int c = 1;
         ArrayList<File> ret = new ArrayList<File>();
         for (int i = 0; i < files.length; i++) {
-            String volume = Formatter.fillString(c + "", "0", "", 3);
+            String volume = StringFormatter.fillString(c + "", "0", "", 3);
             File newFile;
             if ((newFile = new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1"))).exists()) {
                 c++;
@@ -416,7 +417,7 @@ public class JDHJSplit extends PluginOptional {
          * securitycheck for missing file on disk but in downloadlist, will
          * check for next possible filename
          */
-        String volume = Formatter.fillString(c + "", "0", "", 3);
+        String volume = StringFormatter.fillString(c + "", "0", "", 3);
         if (JDUtilities.getController().getDownloadLinkByFileOutput(new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1")), null) != null) return null;
         return ret;
     }

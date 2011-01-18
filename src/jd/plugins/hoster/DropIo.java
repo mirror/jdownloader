@@ -22,14 +22,16 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 //drop.io by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drop.io" }, urls = { "http://[\\w\\.]*?drop\\.io/[0-9-zA-Z\\._#]+" }, flags = { 0 })
@@ -65,7 +67,7 @@ public class DropIo extends PluginForHost {
         // is null
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename);
-        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

@@ -27,8 +27,8 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
-import jd.parser.Regex;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.swing.dialog.Dialog;
 
 import edu.stanford.ejalbert.BrowserLauncher;

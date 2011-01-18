@@ -20,13 +20,14 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.qj.net" }, urls = { "http://[\\w\\.]*?dl\\.qj\\.net/.*?/.*?\\.html" }, flags = { 0 })
 public class QJNet extends PluginForHost {
@@ -48,7 +49,7 @@ public class QJNet extends PluginForHost {
             String filesize = br.getRegex("File Size.*?<td class=\"odd\">(.*?)</td>").getMatch(0);
             if (!(filename == null || filesize == null)) {
                 downloadLink.setName(filename);
-                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
             }
         }

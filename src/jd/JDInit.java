@@ -47,6 +47,7 @@ import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.HTTPProxy;
+import jd.http.ext.security.JSPermissionRestricter;
 import jd.nutils.ClassFinder;
 import jd.nutils.OSDetector;
 import jd.nutils.encoding.Encoding;
@@ -73,12 +74,14 @@ import org.lobobrowser.util.OS;
  */
 
 public class JDInit {
+    static {
+        try {
+            JSPermissionRestricter.init();
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
 
-    /**
-     * TODO: Change this String to test the changes from plugins with public
-     * static methods instead of annotation, e.g. CMS or Wordpress
-     */
-    private static final String  PLUGIN_DUMP    = "";
+    }
 
     private static final boolean TEST_INSTALLER = false;
 

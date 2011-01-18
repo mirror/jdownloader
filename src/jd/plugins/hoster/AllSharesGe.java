@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -27,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allshares.ge" }, urls = { "http://[\\w\\.]*?allshares\\.ge/(\\?d|download\\.php\\?id)=[A-Z0-9]+" }, flags = { 0 })
 public class AllSharesGe extends PluginForHost {
@@ -65,7 +66,7 @@ public class AllSharesGe extends PluginForHost {
         String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

@@ -20,13 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archiv.to" }, urls = { "http://[\\w\\.]*?archiv\\.to/(\\?Module\\=Details\\&HashID\\=|GET/)FILE[A-Z0-9]+" }, flags = { 0 })
 public class ArchivTo extends PluginForHost {
@@ -53,7 +55,7 @@ public class ArchivTo extends PluginForHost {
         if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), ".*?FILE([A-Z0-9]+)").getMatch(0) + ".flv";
         downloadLink.setFinalFileName(filename);
         if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 

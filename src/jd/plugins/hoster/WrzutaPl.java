@@ -23,13 +23,15 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\._-]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+" }, flags = { 0 })
 public class WrzutaPl extends PluginForHost {
@@ -56,7 +58,7 @@ public class WrzutaPl extends PluginForHost {
         String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         if (downloadLink.getIntegerProperty("nameextra", -1) != -1) filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
         // Set the ending if the file doesn't have it but don't set it as a
         // final filename as it could be wrong!

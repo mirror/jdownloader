@@ -44,7 +44,6 @@ import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -60,6 +59,7 @@ import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
+import org.appwork.utils.Regex;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

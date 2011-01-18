@@ -20,17 +20,20 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "http://[\\w\\.]*?gigapeta\\.com/dl/\\w+" }, flags = { 2 })
 public class GigaPetaCom extends PluginForHost {
@@ -58,7 +61,7 @@ public class GigaPetaCom extends PluginForHost {
         String fileSize = infos.getMatch(1);
         if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(fileName.trim());
-        downloadLink.setDownloadSize(Regex.getSize(fileSize.trim()));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim()));
 
         return AvailableStatus.TRUE;
     }
@@ -116,7 +119,7 @@ public class GigaPetaCom extends PluginForHost {
                 account.setValid(false);
                 return ai;
             } else {
-                ai.setValidUntil(Regex.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm", null));
             }
             ai.setStatus("Premium User");
         } else {

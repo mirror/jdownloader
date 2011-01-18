@@ -21,16 +21,18 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megarapid.eu" }, urls = { "(http://[\\w\\.]*?megarapid\\.eu/files/\\d+/.+)|(http://[\\w\\.]*?megarapid\\.eu/\\?e=403\\&m=captcha\\&file=\\d+/.+)" }, flags = { 2 })
 public class MegaRapidEu extends PluginForHost {
@@ -165,7 +167,7 @@ public class MegaRapidEu extends PluginForHost {
         account.setValid(true);
         String availabletraffic = br.getRegex("<p>Kredity: <strong>([0-9,]+)</strong>").getMatch(0);
         if (availabletraffic != null) {
-            ai.setTrafficLeft(Regex.getSize(availabletraffic.replace(",", ".") + "GB"));
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic.replace(",", ".") + "GB"));
         } else {
             account.setValid(false);
         }

@@ -21,13 +21,15 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuc.to" }, urls = { "http://[\\w\\.]*?wrzuc\\.to/([a-zA-Z0-9]+(\\.wt|\\.html)|(en/)?linki/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class WrzucTo extends PluginForHost {
@@ -63,7 +65,7 @@ public class WrzucTo extends PluginForHost {
         String md5 = br.getRegex("md5: \"(.*?)\"").getMatch(0);
         if (md5 != null) downloadLink.setMD5Hash(md5.trim());
         downloadLink.setName(name.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 

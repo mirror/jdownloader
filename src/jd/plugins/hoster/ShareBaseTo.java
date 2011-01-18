@@ -22,17 +22,19 @@ import java.net.MalformedURLException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebase.to" }, urls = { "http://[\\w\\.]*?sharebase\\.(de|to)/(files/|1,)[\\w]+\\.html" }, flags = { 2 })
 public class ShareBaseTo extends PluginForHost {
@@ -62,7 +64,7 @@ public class ShareBaseTo extends PluginForHost {
         String[] info = Regex.getLines(br.toString());
         if (info.length < 3 || info[0].matches("NONE")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(info[0]);
-        downloadLink.setDownloadSize(Regex.getSize(info[1]));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(info[1]));
         if (info[2].matches("OFFLINE")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (!info[2].matches("ONLINE")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         return AvailableStatus.TRUE;

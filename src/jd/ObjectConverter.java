@@ -23,13 +23,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 
-import jd.parser.Regex;
+import org.appwork.utils.Regex;
 
 public class ObjectConverter {
 
     protected Exception exception;
-    private String pre;
-    private String post;
+    private String      pre;
+    private String      post;
 
     public String toString(final Object obj) throws Exception {
         final ByteArrayOutputStream ba = new ByteArrayOutputStream();

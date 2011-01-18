@@ -20,12 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://[\\w\\.]*?ifile\\.it/_[a-z0-9]+" }, flags = { 0 })
 public class IFileItFldr extends PluginForDecrypt {
@@ -54,7 +56,7 @@ public class IFileItFldr extends PluginForDecrypt {
             if (fail) filelink = info;
             DownloadLink dl = createDownloadlink(filelink);
             if (filename != null && filesize != null) dl.setAvailable(true);
-            if (filesize != null) dl.setDownloadSize(Regex.getSize(filesize.trim()));
+            if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             if (filename != null) dl.setName(filename.trim());
             if (filelink != null) {
                 decryptedLinks.add(dl);

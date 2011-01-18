@@ -10,8 +10,8 @@ import jd.http.ext.events.ExtBrowserListener;
 import jd.http.ext.events.JSInteraction;
 import jd.http.ext.interfaces.BrowserEnviroment;
 import jd.http.ext.security.JSPermissionRestricter;
-import jd.parser.Regex;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.UserAgentContext;
 import org.lobobrowser.html.domimpl.HTMLDocumentImpl;

@@ -17,14 +17,15 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesurf.ru" }, urls = { "http://[\\w\\.]*?(filesurf|4ppl|files\\.youmama)\\.ru/[0-9]+" }, flags = { 0 })
 public class FileSurfRu extends PluginForHost {
@@ -50,7 +51,7 @@ public class FileSurfRu extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filesize = filesize.replace("Кб", "KB").replace("байт", "byte");
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replace(",", "")));
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         return AvailableStatus.TRUE;
     }
 

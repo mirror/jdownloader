@@ -23,7 +23,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -33,6 +32,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://[\\w\\.]*?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
@@ -87,7 +89,7 @@ public class LetitBitNet extends PluginForHost {
         }
         String validUntil = br.getRegex("Up to (\\d+-\\d+-\\d+ \\d+:\\d+:\\d+)").getMatch(0);
         account.setValid(true);
-        if (validUntil != null) ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd-MM-yyyy HH:mm:ss", null));
+        if (validUntil != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy HH:mm:ss", null));
         return ai;
     }
 
@@ -126,7 +128,7 @@ public class LetitBitNet extends PluginForHost {
         // that when in the filenames from other hosting services there are
         // "-"'s, letitbit uses "_"'s so let's correct this here ;)
         downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -328,9 +330,9 @@ public class LetitBitNet extends PluginForHost {
         if (expireDate != null || points != null) {
             AccountInfo accInfo = new AccountInfo();
             // 1 point = 1 GB
-            if (points != null) accInfo.setTrafficLeft(Regex.getSize(points.trim() + "GB"));
+            if (points != null) accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
             if (expireDate != null) {
-                accInfo.setValidUntil(Regex.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
+                accInfo.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
             } else {
                 expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
                 if (expireDate == null) expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);

@@ -8,11 +8,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.io.JDIO;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 public class LecturnityLoader extends PluginForHost {
 

@@ -27,7 +27,6 @@ import jd.controlling.JDLogger;
 import jd.http.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -36,6 +35,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
 
 public class RAFDownload extends DownloadInterface {
 

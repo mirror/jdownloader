@@ -25,8 +25,9 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 public class JDSimpleWebserverStaticFileRequestHandler {
 

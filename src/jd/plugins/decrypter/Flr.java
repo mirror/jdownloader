@@ -20,11 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://[\\w\\.]*?filer.net/folder/.+/.*" }, flags = { 0 })
 public class Flr extends PluginForDecrypt {
@@ -45,7 +46,7 @@ public class Flr extends PluginForDecrypt {
         for (String element[] : links) {
             DownloadLink link = createDownloadlink("http://www.filer.net" + element[2]);
             link.setFinalFileName(element[0]);
-            link.setDownloadSize(Regex.getSize(element[1]));
+            link.setDownloadSize(SizeFormatter.getSize(element[1]));
             decryptedLinks.add(link);
             progress.increase(1);
         }

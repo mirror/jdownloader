@@ -4,13 +4,15 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\.com/.*?folder/[0-9a-z]+" }, flags = { 0 })
 public class FlsncCm extends PluginForDecrypt {
@@ -48,7 +50,7 @@ public class FlsncCm extends PluginForDecrypt {
                 if (dlink == null) return null;
                 DownloadLink aLink = createDownloadlink(dlink);
                 if (filename != null) aLink.setName(filename.trim());
-                if (filesize != null) aLink.setDownloadSize(Regex.getSize(filesize.trim()));
+                if (filesize != null) aLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
                 if (filename != null && filesize != null) aLink.setAvailable(true);
                 if (!dlink.contains("/folder/")) decryptedLinks.add(createDownloadlink(dlink));
             }

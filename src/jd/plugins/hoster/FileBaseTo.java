@@ -23,19 +23,22 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebase.to" }, urls = { "http://[\\w\\.]*?filebase\\.to/(files|download)/\\d{1,}/.*" }, flags = { 2 })
 public class FileBaseTo extends PluginForHost {
@@ -82,7 +85,7 @@ public class FileBaseTo extends PluginForHost {
         String time = dateAndTime.getMatch(1);
         if (date != null || time != null) {
             expires = date.trim() + "|" + time.trim();
-            ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yyyy|HH:mm", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yyyy|HH:mm", null));
             account.setValid(true);
             return ai;
         }
@@ -139,7 +142,7 @@ public class FileBaseTo extends PluginForHost {
             filesize = br.getRegex("<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>.*?</strong></center>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<center><strong>(.*?)</strong></center>").getMatch(0);
             if (filesize == null) filesize = br.getRegex("<h1><b>Download: </b>.*? <b>\\((.*?)\\)</b>").getMatch(0);
         }
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
 
     }

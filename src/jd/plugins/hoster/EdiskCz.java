@@ -20,15 +20,17 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://[\\w\\.]*?edisk\\.(cz|sk|eu)/stahni/[0-9]+/.+\\.html" }, flags = { 2 })
 public class EdiskCz extends PluginForHost {
@@ -68,7 +70,7 @@ public class EdiskCz extends PluginForHost {
         // Set the final filename here because server gives us filename +
         // ".html" which is bad
         link.setFinalFileName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -117,7 +119,7 @@ public class EdiskCz extends PluginForHost {
         String availabletraffic = br.getRegex("id=\"usercredit\">(\\d+)</span> MB</a>").getMatch(0);
         if (availabletraffic == null) availabletraffic = br.getRegex("<strong>Kredit: </strong>(\\d+)</span>").getMatch(0);
         if (availabletraffic != null) {
-            ai.setTrafficLeft(Regex.getSize(availabletraffic + "MB"));
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic + "MB"));
         } else {
             account.setValid(false);
         }

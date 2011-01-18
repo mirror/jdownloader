@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataup.de", "dataup.to" }, urls = { "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)", "http://[\\w\\.]*?dataup\\.to/\\d+/." }, flags = { 0, 0 })
 public class Dataupde extends PluginForHost {
@@ -53,7 +54,7 @@ public class Dataupde extends PluginForHost {
         String filesize = br.getRegex(FILESIZEREGEX).getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -66,7 +67,7 @@ public class Dataupde extends PluginForHost {
         // Often the download can't be started because of timeouts but at least
         // we can find the filesize here
         String filesize = br.getRegex(FILESIZEREGEX).getMatch(0);
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         String dllink = br.getRegex("class=\"download\" href=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://q\\d+\\.dataup\\.to:\\d+/download/\\d+/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);

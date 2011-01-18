@@ -16,12 +16,12 @@
 
 package jd.plugins.optional.langfileeditor.columns;
 
-import jd.parser.Regex;
 import jd.plugins.optional.langfileeditor.KeyInfo;
 import jd.plugins.optional.langfileeditor.LFEGui;
 import jd.plugins.optional.langfileeditor.LFETableModel;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
 

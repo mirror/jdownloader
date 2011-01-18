@@ -23,7 +23,6 @@ import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,6 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "azsharing.com" }, urls = { "http://[\\w\\.]*?azsharing\\.com/[a-z0-9]{12}/" }, flags = { 0 })
 public class AzSharingCom extends PluginForHost {
@@ -91,7 +93,7 @@ public class AzSharingCom extends PluginForHost {
         link.setName(filename.trim());
         if (filesize != null) {
             logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }

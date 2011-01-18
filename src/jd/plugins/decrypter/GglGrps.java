@@ -20,11 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "googlegroups.com" }, urls = { "http://groups.google.com/group/[^/]+/files/?" }, flags = { 0 })
 public class GglGrps extends PluginForDecrypt {
@@ -42,7 +43,7 @@ public class GglGrps extends PluginForDecrypt {
         for (String[] strings : infos) {
             DownloadLink dl = createDownloadlink(strings[0]);
             dl.setName(strings[1]);
-            dl.setDownloadSize(Regex.getSize(strings[2]));
+            dl.setDownloadSize(SizeFormatter.getSize(strings[2]));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }

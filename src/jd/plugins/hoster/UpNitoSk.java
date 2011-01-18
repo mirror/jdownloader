@@ -26,7 +26,6 @@ import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -36,6 +35,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upnito.sk" }, urls = { "http://[\\w\\.]*?upnito\\.sk/(download\\.php\\?(dwToken=[a-z0-9]+|file=.+)|subor/[a-z0-9]+\\.html)" }, flags = { 2 })
 public class UpNitoSk extends PluginForHost {
@@ -78,7 +80,7 @@ public class UpNitoSk extends PluginForHost {
                 int traffic = Integer.parseInt(trafficLeft);
                 traffic = traffic * 1024;
                 trafficLeft = traffic + "KB";
-                ai.setTrafficLeft(Regex.getSize(trafficLeft));
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft));
             }
         }
         ai.setStatus("Premium User");
@@ -237,7 +239,7 @@ public class UpNitoSk extends PluginForHost {
         final String filesize = this.br.getRegex("Veľkosť:</strong>(.*?)<br>").getMatch(0);
         if ((filename == null) || (filesize == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

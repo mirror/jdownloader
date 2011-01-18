@@ -31,9 +31,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.table.TableCellRenderer;
 
-import org.appwork.utils.event.DefaultEvent;
-import org.appwork.utils.event.Eventsender;
-
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.swing.components.JDUnderlinedText;
@@ -41,7 +38,10 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.Executer;
 import jd.nutils.nativeintegration.LocalBrowser;
-import jd.parser.Regex;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.Eventsender;
 
 class JLinkButtonRenderer implements TableCellRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

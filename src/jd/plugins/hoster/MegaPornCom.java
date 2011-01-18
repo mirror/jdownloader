@@ -33,12 +33,11 @@ import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
+import jd.http.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -50,6 +49,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaporn.com" }, urls = { "http://[\\w\\.]*?(megaporn|megarotic|sexuploader)\\.com/.*?(\\?|&)d=[0-9A-Za-z]+" }, flags = { 2 })
 public class MegaPornCom extends PluginForHost {
@@ -1011,7 +1012,7 @@ public class MegaPornCom extends PluginForHost {
                 /* maybe api check failed, then set name,size here */
                 if (l.getBooleanProperty("webcheck", false) == false) {
                     l.setName(filename.trim());
-                    l.setDownloadSize(Regex.getSize(filesize.trim()));
+                    l.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
                     l.setProperty("webcheck", true);
                 }
                 l.setAvailable(true);

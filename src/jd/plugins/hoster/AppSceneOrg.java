@@ -20,17 +20,18 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org" }, urls = { "http://[\\w\\.]*?(appscene\\.org|filedude\\.com)/(download/[0-9a-zA-Z]+|download\\.php\\?id=\\d+)" }, flags = { 2 })
 public class AppSceneOrg extends PluginForHost {
@@ -117,7 +118,7 @@ public class AppSceneOrg extends PluginForHost {
         account.setValid(true);
         String trafficleft = br.getRegex("\\(( [0-9]+ B )\\)").getMatch(0);
         if (trafficleft == null) trafficleft = br.getRegex("Bandwidth remaining:(.*? GB)").getMatch(0);
-        if (trafficleft != null) ai.setTrafficLeft(Regex.getSize(trafficleft));
+        if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         ai.setStatus("Premium User");
         return ai;
     }

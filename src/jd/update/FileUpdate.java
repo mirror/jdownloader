@@ -26,9 +26,9 @@ import jd.event.MessageListener;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 
 public class FileUpdate {

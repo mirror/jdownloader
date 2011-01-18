@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import jd.parser.Regex;
+import org.appwork.utils.Regex;
 
 public class Zip {
     private File destinationFile;

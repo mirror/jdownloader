@@ -22,11 +22,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wisevid.com" }, urls = { "http://(www\\.)?wisevid\\.com/((play|gate-way)\\?v=[A-Za-z0-9_-]+|gateway\\.php\\?viewkey=[A-Za-z0-9_-]+)" }, flags = { 0 })
 public class WiseVidCom extends PluginForHost {

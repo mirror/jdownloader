@@ -21,13 +21,15 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html" }, flags = { 0 })
 public class RuTubeRu extends PluginForHost {
@@ -115,7 +117,7 @@ public class RuTubeRu extends PluginForHost {
         final String filesize = this.br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
         if ((filename == null) || (filesize == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim() + ".flv");
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 

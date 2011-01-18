@@ -11,8 +11,9 @@ import javax.swing.TransferHandler;
 import jd.OptionalPluginWrapper;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 public class DragDropHandler extends TransferHandler {
 

@@ -4,7 +4,11 @@ import java.util.ArrayList;
 
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.jdfeedme.JDFeedMeFeed;
-import jd.plugins.optional.jdfeedme.posts.columns.*;
+import jd.plugins.optional.jdfeedme.posts.columns.DownloadColumn;
+import jd.plugins.optional.jdfeedme.posts.columns.StatusColumn;
+import jd.plugins.optional.jdfeedme.posts.columns.TimestampColumn;
+import jd.plugins.optional.jdfeedme.posts.columns.TitleColumn;
+import jd.plugins.optional.jdfeedme.posts.columns.VisitColumn;
 
 public class PostsTableModel extends JDTableModel 
 {

@@ -22,7 +22,8 @@ import java.util.Vector;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.parser.Regex;
+
+import org.appwork.utils.Regex;
 
 public class ReconnectRecorder {
 

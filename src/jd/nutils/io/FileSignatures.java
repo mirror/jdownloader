@@ -20,8 +20,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 public class FileSignatures {
 

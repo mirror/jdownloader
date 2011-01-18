@@ -22,16 +22,18 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/.+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
@@ -61,7 +63,7 @@ public class DataHu extends PluginForHost {
         String filename = br.getRegex("<div class=\"download_filename\">(.*?)</div>").getMatch(0);
         String filesize = br.getRegex(", fájlméret: ([0-9\\.]+ [A-Za-z]{1,5})").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
@@ -97,7 +99,7 @@ public class DataHu extends PluginForHost {
 
         String days = br.getRegex("<td><a href=\"/premium\\.php\">(.*?)<span").getMatch(0);
         if (days != null && !days.equals("0")) {
-            ai.setValidUntil(Regex.getMilliSeconds(days, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(days, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
         } else {
             logger.warning("Couldn't get the expire date, stopping premium!");
             ai.setExpired(true);

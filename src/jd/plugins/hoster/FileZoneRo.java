@@ -17,13 +17,14 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filezone.ro" }, urls = { "http://[\\w\\.]*?filezone\\.ro/(files/[0-9a-z_]+/[0-9a-zA-Z_.]+|public.php\\?action=viewfile&file_id=\\d+|public/viewset/\\d+)" }, flags = { 0 })
 public class FileZoneRo extends PluginForHost {
@@ -63,7 +64,7 @@ public class FileZoneRo extends PluginForHost {
         filesize = br.getRegex("<span style=\"font-size:1.2em;font-weight:bold;color:#FFF\">(.*?) <br>Size: (.*?)</span><br />").getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename);
-        parameter.setDownloadSize(Regex.getSize(filesize));
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

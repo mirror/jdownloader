@@ -19,15 +19,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 //rghost.ru by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://[\\w\\.]*?(rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/(download/[0-9]+|[0-9]+/private/[a-z0-9]+|[0-9]+)" }, flags = { 0 })
@@ -58,7 +59,7 @@ public class RGhostRu extends PluginForHost {
         String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
         if (sha1 != null) link.setSha1Hash(sha1.trim());
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PWTEXT)) link.getLinkStatus().setStatusText("This file is password protected");
         return AvailableStatus.TRUE;
     }

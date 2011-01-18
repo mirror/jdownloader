@@ -20,14 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://[\\w\\.]*?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 0 })
 public class SlingFileCom extends PluginForHost {
@@ -72,7 +73,7 @@ public class SlingFileCom extends PluginForHost {
         String filesize = br.getRegex("class=\"maintitle\">Downloading</span><span class=\"title\">.*?</span></div>[\n\r\t ]+<p>(.*?)\\. File uploaded ").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

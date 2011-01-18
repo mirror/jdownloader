@@ -28,18 +28,21 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
@@ -183,7 +186,7 @@ public class DepositFiles extends PluginForHost {
         if (br.containsHTML("You cannot download more than one file in parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);
         /* unknown error, try again */
         String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
-        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
+        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, TimeFormatter.getMilliSeconds(wait));
         /* You have exceeded the 15 GB 24-hour limit */
         if (br.containsHTML("GOLD users can download no more than")) {
             logger.info("GOLD users can download no more than 15 GB for the last 24 hours");
@@ -251,7 +254,7 @@ public class DepositFiles extends PluginForHost {
                     } else {
                         dl.setAvailable(true);
                         dl.setFinalFileName(infos[hit][1].trim());
-                        dl.setDownloadSize(Regex.getSize(infos[hit][2]));
+                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
                     }
                 }
                 if (index == urls.length) break;
@@ -389,7 +392,7 @@ public class DepositFiles extends PluginForHost {
         String fileSizeString = br.getRegex(FILE_INFO_SIZE).getMatch(0);
         if (fileName == null || fileSizeString == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(fileName);
-        downloadLink.setDownloadSize(Regex.getSize(fileSizeString));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSizeString));
         return AvailableStatus.TRUE;
     }
 

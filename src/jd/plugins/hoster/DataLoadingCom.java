@@ -23,7 +23,6 @@ import java.util.GregorianCalendar;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -33,6 +32,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://[\\w\\.]*?data-loading\\.com/.{2}/file/\\d+/\\w+" }, flags = { 2 })
 public class DataLoadingCom extends PluginForHost {
@@ -181,7 +182,7 @@ public class DataLoadingCom extends PluginForHost {
             String filesize = br.getRegex("<td align=left id=filezize>(.*?)</td>").getMatch(0);
             if (!(filename == null || filesize == null)) {
                 downloadLink.setName(filename);
-                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
             }
         }

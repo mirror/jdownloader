@@ -25,18 +25,20 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -176,7 +178,7 @@ public class ShareOnlineBiz extends PluginForHost {
              * they only say the day, so we need to make it work the whole last
              * day
              */
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null) + (1000l * 60 * 60 * 24));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null) + (1000l * 60 * 60 * 24));
         }
         account.setValid(true);
         return ai;
@@ -199,7 +201,7 @@ public class ShareOnlineBiz extends PluginForHost {
             br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
             String[] strings = br.getRegex("</font> \\((.*?)\\) \\.</b></div></td>.*?<b>File name:</b>.*?<b>(.*?)</b></div></td>").getRow(0);
             if (strings == null || strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setDownloadSize(Regex.getSize(strings[0].trim()));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(strings[0].trim()));
             downloadLink.setName(strings[1].trim());
             return AvailableStatus.TRUE;
         }
@@ -251,7 +253,7 @@ public class ShareOnlineBiz extends PluginForHost {
                         dl.setAvailable(false);
                     } else {
                         dl.setFinalFileName(infos[hit][2].trim());
-                        dl.setDownloadSize(Regex.getSize(infos[hit][3]));
+                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][3]));
                         if (infos[hit][1].trim().equalsIgnoreCase("OK")) {
                             dl.setAvailable(true);
                             dl.setMD5Hash(infos[hit][4].trim());

@@ -6,16 +6,11 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
+
 import jd.gui.UserIO;
-
-/* CODE_FOR_INTERFACE_5_START
-import jd.gui.swing.dialog.AbstractDialog;
-CODE_FOR_INTERFACE_5_END */
-/* CODE_FOR_INTERFACE_7_START */
-import org.appwork.utils.swing.dialog.AbstractDialog;
-/* CODE_FOR_INTERFACE_7_END */
-
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.swing.dialog.AbstractDialog;
 
 /* CODE_FOR_INTERFACE_5_START
 public class ComboDialog extends AbstractDialog {

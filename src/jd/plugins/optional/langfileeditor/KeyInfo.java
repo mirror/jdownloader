@@ -16,7 +16,7 @@
 
 package jd.plugins.optional.langfileeditor;
 
-import jd.parser.Regex;
+import org.appwork.utils.Regex;
 
 public class KeyInfo implements Comparable<KeyInfo> {
 

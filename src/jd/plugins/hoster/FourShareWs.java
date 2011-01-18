@@ -17,13 +17,15 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.ws" }, urls = { "http://[\\w\\.]*?4share\\.ws/file/.*?/.{1}" }, flags = { 0 })
 public class FourShareWs extends PluginForHost {
@@ -47,7 +49,7 @@ public class FourShareWs extends PluginForHost {
         String filesize = br.getRegex(">File Size: </span>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null || filesize.trim().equals("Byte")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 

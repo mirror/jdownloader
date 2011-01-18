@@ -14,7 +14,6 @@ import jd.controlling.JDPluginLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -24,6 +23,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.utils.Regex;
 
 public class FastDebridcom extends PluginForHost implements JDPremInterface {
 

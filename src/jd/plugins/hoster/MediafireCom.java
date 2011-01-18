@@ -29,21 +29,22 @@ import jd.http.URLConnectionAdapter;
 import jd.http.ext.BasicBrowserEnviroment;
 import jd.http.ext.ExtBrowser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
 import org.lobobrowser.html.style.AbstractCSS2Properties;
@@ -211,7 +212,7 @@ public class MediafireCom extends PluginForHost {
         }
         final String trafficleft = this.br.getRegex("Available Bandwidth </div> <div style=.*?<div style=\"font-size.*?\">(.*?)</div").getMatch(0);
         if (trafficleft != null) {
-            ai.setTrafficLeft(Regex.getSize(trafficleft.trim()));
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft.trim()));
         }
         ai.setStatus("Premium User");
         return ai;
@@ -546,7 +547,7 @@ public class MediafireCom extends PluginForHost {
         }
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setFinalFileName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         status = AvailableStatus.TRUE;
         return status;
     }

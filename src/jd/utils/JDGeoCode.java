@@ -20,7 +20,8 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import jd.controlling.JDLogger;
-import jd.parser.Regex;
+
+import org.appwork.utils.Regex;
 
 /**
  * Language and COUNRTYCode database

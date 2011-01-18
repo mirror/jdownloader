@@ -37,11 +37,12 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.SwingGui;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 public class LinkGrabberTableTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 2560352681437669412L;

@@ -20,15 +20,17 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "http://[\\w\\.]*?multishare\\.cz/stahnout/[0-9]+/" }, flags = { 2 })
 public class MultiShareCz extends PluginForHost {
@@ -56,7 +58,7 @@ public class MultiShareCz extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
         filesize = filesize.replace("&nbsp;", "");
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -100,7 +102,7 @@ public class MultiShareCz extends PluginForHost {
         if (trafficleft != null) {
             trafficleft = trafficleft.replace("&nbsp;", "");
             trafficleft = trafficleft.replace(" ", "");
-            ai.setTrafficLeft(Regex.getSize(trafficleft));
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         }
         String hostedFiles = br.getRegex("Počet nahraných souborů:</span>.*?<strong>(\\d+)</strong>").getMatch(0);
         if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));

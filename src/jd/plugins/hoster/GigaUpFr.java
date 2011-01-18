@@ -19,15 +19,16 @@ import java.io.InterruptedIOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigaup.fr" }, urls = { "http://[\\w\\.]*?gigaup\\.fr/(\\?g=[A-Z|0-9]+|get_file/[A-Z|0-9]+/.+\\.html)" }, flags = { 0 })
 public class GigaUpFr extends PluginForHost {
@@ -55,7 +56,7 @@ public class GigaUpFr extends PluginForHost {
         link.setName(filename);
         if (filesize != null) {
             filesize = filesize.replace("Mo", "Mb");
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         String md5 = br.getRegex("Md5Sum : ([a-z0-9]+)").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);

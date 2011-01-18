@@ -20,17 +20,19 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-now.net" }, urls = { "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html" }, flags = { 0 })
 public class ShareNownet extends PluginForHost {
@@ -56,7 +58,7 @@ public class ShareNownet extends PluginForHost {
         if (filename == null || filename.equals("")) filename = br.getRegex("class=\"style.*?>.*?<br />(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("content=\".*?Filesize:(.*?)-").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
     }

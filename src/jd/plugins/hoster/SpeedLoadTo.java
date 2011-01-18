@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.to" }, urls = { "http://[\\w\\.]*?speedload\\.to/FILE[A-Z0-9]+" }, flags = { 0 })
 public class SpeedLoadTo extends PluginForHost {
@@ -56,7 +57,7 @@ public class SpeedLoadTo extends PluginForHost {
         filename = filename.trim();
         downloadLink.setFinalFileName(filename);
         String filesize = br.getRegex("class=\"Label\">Größe:</td>[\t\n\r ]+<td class=\"ValueX\">(.*?)</td>").getMatch(0);
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
 

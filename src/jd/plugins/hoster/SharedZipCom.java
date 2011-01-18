@@ -23,18 +23,21 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharedzip.com" }, urls = { "http://[\\w\\.]*?(sharedzip)\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class SharedZipCom extends PluginForHost {
@@ -144,7 +147,7 @@ public class SharedZipCom extends PluginForHost {
         link.setName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(Regex.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -169,7 +172,7 @@ public class SharedZipCom extends PluginForHost {
         }
         String validUntil = br.getRegex("Premium-Account expire:</TD><TD><b>(.*?)</b><").getMatch(0);
         if (validUntil == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd MMMM yyyy", Locale.GERMANY));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd MMMM yyyy", Locale.GERMANY));
         String trafficAvail = br.getRegex("Traffic available today:</TD><TD><b>(.*?)<").getMatch(0);
         if (trafficAvail != null) {
             /* only unlimited accounts dont have a limit */

@@ -35,10 +35,11 @@ import jd.http.Browser;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können

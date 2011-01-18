@@ -20,15 +20,17 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigafoundation.de" }, urls = { "http://[\\w\\.]*?gigafoundationdecrypted\\.de/features/downloads/details/\\d+" }, flags = { 2 })
 public class GigaFoundationDe extends PluginForHost {
@@ -59,7 +61,7 @@ public class GigaFoundationDe extends PluginForHost {
         String filesize = br.getRegex("align=\"right\">Dateigröße:</div>[\t\n\r ]+<div class=\"small\" align=\"right\">(.*?)</div").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize.replace(",", ".")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         String md5 = br.getRegex("align=\"right\">MD5 Checksumme <a href=\"/features/downloads/faq/#md5sum\">\\[\\?\\]</a>:</div>[\t\n\r ]+<div class=\"small\" align=\"right\">(.*?)</div>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5.trim());
         return AvailableStatus.TRUE;

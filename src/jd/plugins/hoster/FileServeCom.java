@@ -25,18 +25,21 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
@@ -113,7 +116,7 @@ public class FileServeCom extends PluginForHost {
                         dl.setAvailable(true);
                     }
                     dl.setName(filename);
-                    dl.setDownloadSize(Regex.getSize(filesize));
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
                 if (index == urls.length) {
                     break;
@@ -258,7 +261,7 @@ public class FileServeCom extends PluginForHost {
         }
         final String expires = this.br.getRegex("<h4>Premium Until</h4></th> <td><h5>(.*?) EST</h5>").getMatch(0);
         if (expires != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(expires, "dd MMMM yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd MMMM yyyy", null));
         }
         account.setValid(true);
         return ai;

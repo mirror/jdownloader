@@ -40,8 +40,9 @@ import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
-import jd.parser.Regex;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können

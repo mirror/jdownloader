@@ -20,15 +20,17 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://[\\w\\.]*?narod\\.ru/disk/(\\d+/.*|start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/[a-zA-Z0-9%.]+)" }, flags = { 0 })
 public class NarodRu extends PluginForHost {
@@ -75,7 +77,7 @@ public class NarodRu extends PluginForHost {
         fileSize = fileSize + "b";
         downloadLink.setMD5Hash(md5Hash.trim());
         downloadLink.setName(name.trim());
-        downloadLink.setDownloadSize(Regex.getSize(fileSize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
         return AvailableStatus.TRUE;
     }
 

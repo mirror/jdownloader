@@ -24,16 +24,19 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x7.to" }, urls = { "http://[\\w\\.]*?x7\\.to/(?!list)[a-zA-Z0-9]+(/(?!inList)[^/\r\n]+)?" }, flags = { 2 })
 public class XSevenTo extends PluginForHost {
@@ -81,7 +84,7 @@ public class XSevenTo extends PluginForHost {
         if (this.getPluginConfig().getStringProperty("freeaccount") == null) {
             String validUntil = br.getRegex("Premium member until (.*?)\"").getMatch(0);
             if (validUntil != null) {
-                ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
             } else {
                 if (!br.containsHTML("img/sym/crown.png")) {
                     ai.setExpired(true);
@@ -108,8 +111,8 @@ public class XSevenTo extends PluginForHost {
         if (remaining != null && (remaining.contains("unlimited") || remaining.equals(""))) {
             ai.setSpecialTraffic(true);
         } else {
-            long t1 = remaining != null ? Regex.getSize(remaining) : 0;
-            long t2 = trafficNow != null ? Regex.getSize(trafficNow) : 0;
+            long t1 = remaining != null ? SizeFormatter.getSize(remaining) : 0;
+            long t2 = trafficNow != null ? SizeFormatter.getSize(trafficNow) : 0;
             ai.setTrafficLeft(t1 + t2);
         }
         return ai;
@@ -170,7 +173,7 @@ public class XSevenTo extends PluginForHost {
             String filesize = br.getRegex("<b>(Download|Stream)</b>.*?\\((.*?)\\)").getMatch(1);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", ".")));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", ".")));
             if (br.containsHTML(PREMIUMONLYTEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
         } else {
             downloadLink.getLinkStatus().setStatusText("Direct link");
@@ -294,7 +297,7 @@ public class XSevenTo extends PluginForHost {
                     } else {
                         dl.setAvailable(true);
                         dl.setName(info[2]);
-                        dl.setDownloadSize(Regex.getSize(info[3]));
+                        dl.setDownloadSize(SizeFormatter.getSize(info[3]));
                     }
                 }
                 if (index == urls.length) break;

@@ -19,13 +19,15 @@ package jd.plugins.hoster;
 import java.net.MalformedURLException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swoopshare.com" }, urls = { "http://[\\w\\.]*?swoopshare\\.com/file/[a-z0-9]+" }, flags = { 0 })
 public class SwoopshareCom extends PluginForHost {
@@ -56,7 +58,7 @@ public class SwoopshareCom extends PluginForHost {
         }
         if (name == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(name.trim().replace("Download ", ""));
-        downloadLink.setDownloadSize(Regex.getSize(size));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
         return AvailableStatus.TRUE;
     }
 

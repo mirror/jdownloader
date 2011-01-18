@@ -19,13 +19,14 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fisierulmeu.ro" }, urls = { "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html" }, flags = { 0 })
 public class FisierulMeuRo extends PluginForHost {
@@ -51,7 +52,7 @@ public class FisierulMeuRo extends PluginForHost {
         String filesize = br.getRegex(Pattern.compile("<div class=\"dwn_text\"><b>Marimea Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();
         if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(name);
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
 
         return AvailableStatus.TRUE;
     }

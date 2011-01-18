@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loaded.it" }, urls = { "http://[\\w\\.]*?loaded\\.it/show/[a-z|0-9]+/.+" }, flags = { 0 })
 public class LoadedIt extends PluginForHost {

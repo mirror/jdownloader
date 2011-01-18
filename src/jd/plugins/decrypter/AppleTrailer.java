@@ -4,12 +4,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/[a-zA-Z0-9_/]+/" }, flags = { 0 })
 public class AppleTrailer extends PluginForDecrypt {
@@ -53,7 +55,7 @@ public class AppleTrailer extends PluginForDecrypt {
             /* correct url if its relative */
             if (!url.startsWith("http")) url = "http://trailers.apple.com" + url;
             DownloadLink dlLink = createDownloadlink(url);
-            if (size != null) dlLink.setDownloadSize(Regex.getSize(size));
+            if (size != null) dlLink.setDownloadSize(SizeFormatter.getSize(size));
             dlLink.setAvailable(true);
             dlLink.setProperty("customHeader", customHeaders);
             decryptedLinks.add(dlLink);

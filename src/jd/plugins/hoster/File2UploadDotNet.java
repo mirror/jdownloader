@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -30,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://[\\w\\.]*?file2upload\\.(net|com)/download/[0-9]+/" }, flags = { 2 })
 public class File2UploadDotNet extends PluginForHost {
@@ -73,7 +75,7 @@ public class File2UploadDotNet extends PluginForHost {
         account.setValid(true);
         if (expired != null && expired.contains("No")) {
             String expireDate = br.getRegex("<td><b>Package Expire Date</b></td>.*?<table.*?</table>.*?<span>(.*?)</span>").getMatch(0);
-            ai.setValidUntil(Regex.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
         } else {
             ai.setExpired(true);
         }
@@ -133,7 +135,7 @@ public class File2UploadDotNet extends PluginForHost {
         String filesize = Encoding.htmlDecode(br.getRegex("<tr><td><b>File size</b>:</td><td>(.*?)</td></tr>").getMatch(0));
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

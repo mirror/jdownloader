@@ -31,6 +31,8 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.StringFormatter;
+
 public class LinkStatus implements Serializable {
 
     /**
@@ -494,13 +496,13 @@ public class LinkStatus implements Serializable {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append(Formatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " < Statuscode\r\n");
+        sb.append(StringFormatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " < Statuscode\r\n");
         String latest = "";
         for (Entry<Integer, String> entry : toStringHelper.entrySet()) {
             int value = entry.getKey();
             if (hasStatus(value)) {
                 if (value == lastestStatus) latest = "Latest: " + entry.getValue() + "\r\n";
-                sb.append(Formatter.fillString(Integer.toBinaryString(value), "0", "", 32)).append(" | ").append(entry.getValue()).append("\r\n");
+                sb.append(StringFormatter.fillString(Integer.toBinaryString(value), "0", "", 32)).append(" | ").append(entry.getValue()).append("\r\n");
             }
         }
 

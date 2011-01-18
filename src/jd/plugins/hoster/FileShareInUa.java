@@ -23,17 +23,19 @@ import jd.captcha.specials.FsIuA;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshare.in.ua" }, urls = { "http://[\\w\\.]*?fileshare\\.in\\.ua/[0-9]+" }, flags = { 2 })
 public class FileShareInUa extends PluginForHost {
@@ -78,7 +80,7 @@ public class FileShareInUa extends PluginForHost {
             return ai;
         }
         expires = expires.trim();
-        ai.setValidUntil(Regex.getMilliSeconds(expires, "dd.MM.yy", null));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy", null));
         account.setValid(true);
         ai.setUnlimitedTraffic();
         return ai;
@@ -128,7 +130,7 @@ public class FileShareInUa extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileShareInUa.errors.temporaryunavailable", "This file is temporary unavailable"));
         link.setFinalFileName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

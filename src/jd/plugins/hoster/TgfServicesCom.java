@@ -20,14 +20,16 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tgf-services.com" }, urls = { "http://[\\w\\.]*?tgf-services\\.com/UserDownloads/.+" }, flags = { 0 })
 public class TgfServicesCom extends PluginForHost {
@@ -57,7 +59,7 @@ public class TgfServicesCom extends PluginForHost {
         if (ext != null) filename += "." + ext;
         link.setName(filename.trim());
         String filesize = br.getRegex("<h2>File size:</h2></td>[\t\n\r ]+<td><h2>(.*?)</h2></td>").getMatch(0);
-        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize.trim()));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 

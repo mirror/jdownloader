@@ -27,9 +27,7 @@ import javax.script.ScriptException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -42,6 +40,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.StringFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.*(audio|file|vid)/[0-9]+/?\\d?/?\\w?\\w?" }, flags = { PluginWrapper.LOAD_ON_INIT })
 public class BadongoCom extends PluginForHost {
@@ -301,12 +303,12 @@ public class BadongoCom extends PluginForHost {
         if ((filesize == null) || (filename == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("single")) {
             downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         } else {
-            final String parts = Formatter.fillString(downloadLink.getIntegerProperty("part", 1) + "", "0", "", 3);
+            final String parts = StringFormatter.fillString(downloadLink.getIntegerProperty("part", 1) + "", "0", "", 3);
             downloadLink.setName(filename.trim() + "." + parts);
             if (downloadLink.getIntegerProperty("part", 1) == downloadLink.getIntegerProperty("parts", 1)) {
-                final long bytes = Regex.getSize(filesize);
+                final long bytes = SizeFormatter.getSize(filesize);
                 downloadLink.setDownloadSize(bytes - (downloadLink.getIntegerProperty("parts", 1) - 1) * 102400000l);
             } else {
                 downloadLink.setDownloadSize(102400000);

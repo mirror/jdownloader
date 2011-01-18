@@ -25,7 +25,8 @@ import javax.swing.Timer;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+
+import org.appwork.utils.Regex;
 
 public class HTACCESSController implements ActionListener, ListController {
     private transient static SubConfiguration CONFIG = null;

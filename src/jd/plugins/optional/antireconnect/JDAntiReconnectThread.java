@@ -25,8 +25,9 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
 
 public class JDAntiReconnectThread extends Thread implements Runnable {
 

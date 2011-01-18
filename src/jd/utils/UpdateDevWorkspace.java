@@ -18,12 +18,12 @@ package jd.utils;
 
 import java.io.File;
 
-import org.appwork.utils.Application;
-
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
+
+import org.appwork.utils.Application;
 
 public class UpdateDevWorkspace {
 

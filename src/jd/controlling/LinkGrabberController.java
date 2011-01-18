@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -35,6 +34,7 @@ import jd.plugins.LinkGrabberFilePackageEvent;
 import jd.plugins.LinkGrabberFilePackageListener;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 
 class LinkGrabberControllerBroadcaster extends Eventsender<LinkGrabberControllerListener, LinkGrabberControllerEvent> {

@@ -23,10 +23,8 @@ import java.util.ArrayList;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.nutils.Formatter;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -40,6 +38,9 @@ import jd.plugins.optional.extraction.hjsplit.jaxe.ProgressEvent;
 import jd.plugins.optional.extraction.hjsplit.jaxe.ProgressEventListener;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.StringFormatter;
 
 public class HJSplt implements IExtraction {
     private static final String DUMMY_HOSTER = "dum.my";
@@ -295,7 +296,7 @@ public class HJSplt implements IExtraction {
         int c = 1;
         ArrayList<File> ret = new ArrayList<File>();
         for (int i = 0; i < files.length; i++) {
-            String volume = Formatter.fillString(c + "", "0", "", 3);
+            String volume = StringFormatter.fillString(c + "", "0", "", 3);
             File newFile;
             if ((newFile = new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1"))).exists()) {
                 c++;
@@ -308,7 +309,7 @@ public class HJSplt implements IExtraction {
          * securitycheck for missing file on disk but in downloadlist, will
          * check for next possible filename
          */
-        String volume = Formatter.fillString(c + "", "0", "", 3);
+        String volume = StringFormatter.fillString(c + "", "0", "", 3);
         if (JDUtilities.getController().getDownloadLinkByFileOutput(new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1")), null) != null) return null;
         return ret;
     }

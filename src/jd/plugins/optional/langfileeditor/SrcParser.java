@@ -26,9 +26,9 @@ import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 
 public class SrcParser {

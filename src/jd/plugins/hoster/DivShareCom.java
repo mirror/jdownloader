@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,6 +28,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginUtils;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "http://[\\w\\.]*?divshare\\.com/(download|image|direct)/\\d+-.+" }, flags = { 0 })
 public class DivShareCom extends PluginForHost {
@@ -161,7 +163,7 @@ public class DivShareCom extends PluginForHost {
             String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.replaceAll("(\\)|\\()", "").replace("_", "."));
-            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         }
         return AvailableStatus.TRUE;
     }

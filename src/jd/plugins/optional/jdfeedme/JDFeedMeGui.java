@@ -35,17 +35,10 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-
-/* CODE_FOR_INTERFACE_5_START
-import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
-CODE_FOR_INTERFACE_5_END */
-/* CODE_FOR_INTERFACE_7_START */
 import jd.gui.swing.jdgui.views.ViewToolbar;
-/* CODE_FOR_INTERFACE_7_END */
-
 import jd.nutils.JDFlags;
-import jd.plugins.optional.jdfeedme.dialogs.ComboDialog;
 import jd.plugins.optional.jdfeedme.dialogs.AddFeedDialog;
+import jd.plugins.optional.jdfeedme.dialogs.ComboDialog;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 import net.miginfocom.swing.MigLayout;
 

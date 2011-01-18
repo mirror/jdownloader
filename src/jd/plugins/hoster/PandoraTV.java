@@ -25,7 +25,6 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,6 +32,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://channel\\.pandora\\.tv/channel/video\\.ptv?.+" }, flags = { 0 })
 public class PandoraTV extends PluginForHost {
@@ -60,7 +61,7 @@ public class PandoraTV extends PluginForHost {
         if (filesize == null) filesize = br.getRegex("\"filesize\":\"(.*?)\"").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim() + ".flv");
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 

@@ -23,15 +23,17 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kickload.com" }, urls = { "http://[\\w\\.]*?kickload\\.com/(file/\\d+/.+|get/[A-Za-z0-9]+/.+)" }, flags = { 2 })
 public class KickLoadCom extends PluginForHost {
@@ -110,7 +112,7 @@ public class KickLoadCom extends PluginForHost {
             return ai;
         } else {
             ai.setStatus("Premium User");
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM-dd-yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM-dd-yyyy", null));
         }
         return ai;
     }
@@ -176,7 +178,7 @@ public class KickLoadCom extends PluginForHost {
                     } else {
                         if ("OK".equals(infos[i][2])) {
                             dL.setFinalFileName(infos[i][3].trim());
-                            dL.setDownloadSize(Regex.getSize(infos[i][4]));
+                            dL.setDownloadSize(SizeFormatter.getSize(infos[i][4]));
                             dL.setAvailable(true);
                         } else {
                             dL.setAvailable(false);

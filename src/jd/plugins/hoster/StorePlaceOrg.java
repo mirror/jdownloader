@@ -20,15 +20,16 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storeplace.org" }, urls = { "http://[\\w\\.]*?storeplace\\.(org|to)/\\?d=[A-Z0-9]+" }, flags = { 0 })
 public class StorePlaceOrg extends PluginForHost {
@@ -60,7 +61,7 @@ public class StorePlaceOrg extends PluginForHost {
         String filesize = br.getRegex("File size:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
 
         return AvailableStatus.TRUE;
     }

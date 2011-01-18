@@ -33,7 +33,6 @@ import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -46,6 +45,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)?" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
@@ -216,7 +219,7 @@ public class HotFileCom extends PluginForHost {
             validUntil = validUntil.replaceAll(":|T", "");
             validUntil = validUntil.replaceFirst("-", "");
             validUntil = validUntil.replaceFirst("-", "");
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyyMMddHHmmssZ", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyyMMddHHmmssZ", null));
             ai.setStatus("Premium");
         }
         return ai;
@@ -240,7 +243,7 @@ public class HotFileCom extends PluginForHost {
                 account.setValid(false);
             } else {
                 final String valid = validUntil[0].trim() + " " + validUntil[1].trim() + " CDT";
-                ai.setValidUntil(Regex.getMilliSeconds(valid, "yyyy-MM-dd HH:mm:ss zzz", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(valid, "yyyy-MM-dd HH:mm:ss zzz", null));
                 account.setValid(true);
             }
         }
@@ -563,7 +566,7 @@ public class HotFileCom extends PluginForHost {
         }
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 

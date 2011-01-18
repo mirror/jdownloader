@@ -21,13 +21,16 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zetshare.com" }, urls = { "http://[\\w\\.]*?zetshare\\.com/(download/|url/)?download\\.php\\?file=[0-9a-zA-Z]+" }, flags = { 0 })
 public class ZetshareCom extends PluginForHost {
@@ -60,7 +63,7 @@ public class ZetshareCom extends PluginForHost {
         String downloadSize = (br.getRegex(Pattern.compile("File Size : </b>(.*?)<br />", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (downloadSize == null || downloadName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(downloadName.trim());
-        downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
@@ -71,7 +74,7 @@ public class ZetshareCom extends PluginForHost {
         String waittime = null;
         while ((waittime = ((br.getRegex(Pattern.compile("trying to download again too soon![ ]*Wait (.*?)\\.<BR>"))).getMatch(0))) != null) {
             if (waittime != null) {
-                this.sleep(Regex.getMilliSeconds(waittime), downloadLink);
+                this.sleep(TimeFormatter.getMilliSeconds(waittime), downloadLink);
                 requestFileInformation(downloadLink);
             }
         }

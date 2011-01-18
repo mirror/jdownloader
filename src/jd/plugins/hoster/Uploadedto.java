@@ -26,19 +26,22 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
@@ -170,14 +173,14 @@ public class Uploadedto extends PluginForHost {
             String points = br.getMatch("Your point account is:</span>.*?<span class=.*?>(\\d*?)</span>");
             String traffic = br.getMatch("Traffic left: </span><span class=.*?>(.*?)</span> ");
             String expire = br.getMatch("Valid until: </span> <span class=.*?>(.*?)</span>");
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "dd-MM-yyyy HH:mm", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy HH:mm", null));
             if (opencredits != null) {
                 double b = (Double.parseDouble(balance) + Double.parseDouble(opencredits)) * 100;
                 ai.setAccountBalance((long) b);
             } else {
                 ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
             }
-            ai.setTrafficLeft(Regex.getSize(traffic));
+            ai.setTrafficLeft(SizeFormatter.getSize(traffic));
             ai.setTrafficMax(50 * 1024 * 1024 * 1024l);
             ai.setPremiumPoints(Long.parseLong(points));
         }
@@ -333,7 +336,7 @@ public class Uploadedto extends PluginForHost {
             long wait = 0;
             if (wTime != null) {
                 logger.info("Traffic Limit reached...." + wTime);
-                wait = Regex.getMilliSeconds(wTime);
+                wait = TimeFormatter.getMilliSeconds(wTime);
             } else {
                 logger.info("Traffic Limit reached...." + br);
             }
@@ -354,7 +357,7 @@ public class Uploadedto extends PluginForHost {
             if (error.contains("error_traffic")) {
                 if (wTime != null) {
                     logger.info("Traffic Limit reached...." + wTime);
-                    wait = Regex.getMilliSeconds(wTime);
+                    wait = TimeFormatter.getMilliSeconds(wTime);
                 } else {
                     logger.info("Traffic Limit reached...." + br);
                 }

@@ -29,8 +29,9 @@ import javax.swing.KeyStroke;
 import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.gui.swing.ShortCuts;
-import jd.parser.Regex;
 import jd.utils.JDTheme;
+
+import org.appwork.utils.Regex;
 
 /**
  * This abstract class is the parent class for all actions in JDownloader

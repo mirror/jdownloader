@@ -53,8 +53,8 @@ import java.util.StringTokenizer;
 
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
-import jd.parser.Regex;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;

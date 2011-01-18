@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "furk.net" }, urls = { "http(s)?://[\\w\\.]*?furk\\.net/(.*?\\.html|df/[a-z0-9]+)" }, flags = { 0 })
 public class FurkNet extends PluginForHost {
@@ -59,7 +60,7 @@ public class FurkNet extends PluginForHost {
         if (filesize == null) filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

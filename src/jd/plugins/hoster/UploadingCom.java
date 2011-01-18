@@ -25,7 +25,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -36,6 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
@@ -159,7 +162,7 @@ public class UploadingCom extends PluginForHost {
         ai.setStatus("Premium Membership");
         String validUntil = br.getRegex("Valid Until:(.*?)<").getMatch(0);
         if (validUntil != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
         } else {
             /* fallback */
             ai.setValidUntil(br.getCookies("http://www.uploading.com/").get("remembered_user").getExpireDate());
@@ -353,7 +356,7 @@ public class UploadingCom extends PluginForHost {
                     filename = Encoding.htmlDecode(filename.trim());
                     filename = Encoding.urlDecode(filename, false);
                     dl.setName(filename);
-                    dl.setDownloadSize(Regex.getSize(filesize));
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
                 if (index == urls.length) break;
             }

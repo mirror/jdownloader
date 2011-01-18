@@ -23,8 +23,6 @@ import java.util.ArrayList;
 
 import javax.swing.SwingConstants;
 
-import org.jdesktop.swingx.renderer.JRendererLabel;
-
 import jd.gui.UserIO;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
@@ -35,6 +33,8 @@ import jd.plugins.optional.jdfeedme.JDFeedMeTableModel;
 import jd.plugins.optional.jdfeedme.dialogs.PostsDialog;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 import jd.utils.JDTheme;
+
+import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class PostsColumn extends JDTableColumn {
 

@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 //nahraj.cz by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nahraj.cz" }, urls = { "http://[\\w\\.]*?nahraj\\.cz/content/(view|download)/[a-z|0-9]+-[a-z|0-9]+-[a-z|0-9]+-[a-z|0-9]+-[a-z|0-9]+" }, flags = { 0 })
@@ -58,7 +59,7 @@ public class NahrajCz extends PluginForHost {
         String filesize = br.getRegex("class=\"size\">(.*?)</span>").getMatch(0);
         if (filename0 == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

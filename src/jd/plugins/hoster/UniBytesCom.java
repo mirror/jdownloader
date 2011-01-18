@@ -21,15 +21,17 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://[\\w\\.]*?unibytes\\.com/.+" }, flags = { 2 })
 public class UniBytesCom extends PluginForHost {
@@ -67,7 +69,7 @@ public class UniBytesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -158,7 +160,7 @@ public class UniBytesCom extends PluginForHost {
             AccountInfo ai = new AccountInfo();
             String expireDate = br.getRegex("Ваш VIP-аккаунт действителен до ([0-9\\.]+)\\.<br/><br/><a").getMatch(0);
             if (expireDate != null)
-                ai.setValidUntil(Regex.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
             else
                 ai.setExpired(true);
             account.setAccountInfo(ai);

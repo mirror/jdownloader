@@ -19,14 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "http://[\\w\\.]*?sharecash\\.org/download.php\\?(file|id)=\\d+" }, flags = { 0 })
 public class SharecashDotOrg2 extends PluginForHost {
@@ -46,7 +47,7 @@ public class SharecashDotOrg2 extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             String filename = br.getRegex("<td width=\"120\"><strong>(.*?)</strong></td>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            long size = Regex.getSize(br.getRegex("<b>Size:</b>(.*?)</td>").getMatch(0));
+            long size = SizeFormatter.getSize(br.getRegex("<b>Size:</b>(.*?)</td>").getMatch(0));
             String md5hash = br.getRegex("<b>MD5:</b>(.*?)<div").getMatch(0);
             if (md5hash != null) downloadLink.setMD5Hash(md5hash);
             downloadLink.setFinalFileName(filename.trim());

@@ -1,14 +1,15 @@
 package jd.plugins.optional.jdfeedme.posts.columns;
 
 import java.awt.Component;
-import javax.swing.SwingConstants;
 
-import org.jdesktop.swingx.renderer.JRendererLabel;
+import javax.swing.SwingConstants;
 
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 import jd.utils.JDTheme;
+
+import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class StatusColumn extends JDTableColumn {
 

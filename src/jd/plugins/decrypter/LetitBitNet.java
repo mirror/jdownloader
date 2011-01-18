@@ -20,13 +20,15 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.)?letitbit\\.net//page/folder/\\d+\\|.+" }, flags = { 0 })
 public class LetitBitNet extends PluginForDecrypt {
@@ -52,7 +54,7 @@ public class LetitBitNet extends PluginForDecrypt {
             String filename = new Regex(singleInfo, "target=\"_blank\"><font size=\"4\">(.*?)</font>").getMatch(0);
             if (filename != null) dl.setFinalFileName(filename.trim());
             String filesize = new Regex(singleInfo, "<b></b>(.*?)<br />").getMatch(0);
-            if (filesize != null && !filesize.equals(" ")) dl.setDownloadSize(Regex.getSize(filesize));
+            if (filesize != null && !filesize.equals(" ")) dl.setDownloadSize(SizeFormatter.getSize(filesize));
             if (singleInfo.contains(">OK</font>")) {
                 dl.setAvailable(true);
             } else if (singleInfo.contains("<b>BAD</b>")) {

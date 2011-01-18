@@ -60,9 +60,9 @@ import jd.http.Browser;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Regex;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;

@@ -19,8 +19,8 @@ package jd.plugins.optional.jdfeedme.columns;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.event.MouseEvent;
+
 import javax.swing.SwingConstants;
-import org.jdesktop.swingx.renderer.JRendererLabel;
 
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
@@ -28,6 +28,8 @@ import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.plugins.optional.jdfeedme.JDFeedMeFeed;
 import jd.plugins.optional.jdfeedme.dialogs.FiltersDialog;
 import jd.utils.JDTheme;
+
+import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class FiltersColumn extends JDTableColumn {
 

@@ -20,15 +20,17 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freespace.by" }, urls = { "http://[\\w\\.]*?freespace\\.by/download/[a-z0-9]+" }, flags = { 2 })
 public class FreeSpaceBy extends PluginForHost {
@@ -62,7 +64,7 @@ public class FreeSpaceBy extends PluginForHost {
         if (filesize != null) filesize = br.getRegex("<td>Размер:</td><td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
-        link.setDownloadSize(Regex.getSize(filesize.replace(",", ".").replace(" ", "")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
         String sh1 = br.getRegex("SHA1</a>:</td> <td>(.*?)</td>").getMatch(0);
         if (sh1 != null) link.setSha1Hash(sh1.trim());
         String md5 = br.getRegex("MD5</a>:</td> <td>(.*?)</td>").getMatch(0);

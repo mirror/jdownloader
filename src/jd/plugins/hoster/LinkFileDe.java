@@ -20,15 +20,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 /**
  * @author zdolny fixed by djuzi
@@ -54,7 +55,7 @@ public class LinkFileDe extends PluginForHost {
         if (size == null) size = br.getRegex("&nbsp; \\((.*?)\\)").getMatch(0);
         String name = br.getRegex("Datei: <b>(.*?)</b>").getMatch(0);
         if (size == null || name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setDownloadSize(Regex.getSize(size));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
         downloadLink.setName(name.trim());
         return AvailableStatus.TRUE;
     }

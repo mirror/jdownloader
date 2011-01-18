@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "http://[\\w\\.]*?free-loops\\.com/(download-free-loop-[0-9]+|download\\.php\\?id=[0-9]+|audio\\.php\\?term=((bass|drum kit|drum loop|instrument|midi|pad|sound effect|synth|vocal)&page=[0-9]+|(bass|drum kit|drum loop|instrument|midi|pad|sound effect|synth|vocal)))" }, flags = { 0 })
 public class FreeLoopsCom extends PluginForDecrypt {

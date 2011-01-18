@@ -22,13 +22,14 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filezzz.com" }, urls = { "http://[\\w\\.]*?filezzz\\.com/download/[0-9]+/" }, flags = { 0 })
 public class FilezzzCom extends PluginForHost {
@@ -54,7 +55,7 @@ public class FilezzzCom extends PluginForHost {
         String downloadSize = (br.getRegex(Pattern.compile("file size (.*?)\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(downloadName.trim());
-        downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 

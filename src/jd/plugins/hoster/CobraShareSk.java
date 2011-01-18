@@ -20,16 +20,19 @@ import java.net.MalformedURLException;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobrashare.sk" }, urls = { "http://[\\w\\.]*?cobrashare\\.sk(/downloadFile\\.php\\?id=.+|:[0-9]+/CobraShare-v.0.9/download/.+id=.+)" }, flags = { 2 })
 public class CobraShareSk extends PluginForHost {
@@ -62,7 +65,7 @@ public class CobraShareSk extends PluginForHost {
         String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
         if (filename == null || (filesize == null || filesize.contains("null"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -122,7 +125,7 @@ public class CobraShareSk extends PluginForHost {
         String availableTraffic = br.getRegex(">Do vyèerpania 7 dòového limitu Vám ete ostáva: </td>.*?<td style=\".*?\" align=\"right\">(.*?)</td>").getMatch(0);
         if (availableTraffic != null) {
             availableTraffic = availableTraffic.replace("&nbsp;", "");
-            ai.setTrafficLeft(Regex.getSize(availableTraffic.replace("&nbsp;", "")));
+            ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic.replace("&nbsp;", "")));
         }
         String validUntil = br.getRegex(">Vá premium account je platný do:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(.*?)</td>").getMatch(0);
         String points = br.getRegex(">Premium points:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(\\d+)</td>").getMatch(0);
@@ -131,7 +134,7 @@ public class CobraShareSk extends PluginForHost {
             ai.setPremiumPoints(Integer.parseInt(points.trim()));
         }
         if (validUntil != null) {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", null));
             ai.setStatus("Premium User");
             account.setValid(true);
         } else {

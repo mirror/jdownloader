@@ -21,17 +21,19 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.pl" }, urls = { "http://[\\w\\.]*?uploader.pl/([a-z]{2}/)?file/\\d+/" }, flags = { 2 })
 public class UploaderPl extends PluginForHost {
@@ -113,7 +115,7 @@ public class UploaderPl extends PluginForHost {
         }
         String expires = br.getRegex("<b>Package Expire Date</b></td>\\s*<td[^>]*>(.*?)</td>").getMatch(0);
         expires = expires.trim();
-        if (!expires.equalsIgnoreCase("Never")) ai.setValidUntil(Regex.getMilliSeconds(expires, "mm/dd/yy", Locale.UK));
+        if (!expires.equalsIgnoreCase("Never")) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "mm/dd/yy", Locale.UK));
         return ai;
     }
 
@@ -171,7 +173,7 @@ public class UploaderPl extends PluginForHost {
         String filesize = br.getRegex("File size:</b></td>\\s*<td[^>]*>\\s*(.+?)\\s*</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName((filename));
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

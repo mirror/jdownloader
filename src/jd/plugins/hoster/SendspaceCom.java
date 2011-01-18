@@ -24,19 +24,20 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -92,9 +93,9 @@ public class SendspaceCom extends PluginForHost {
         if (left != null) {
             if (left.contains("TB")) {
                 left = left.replaceAll("(TB|\\.)", "") + "0 GB";
-                ai.setTrafficLeft(Regex.getSize(left));
+                ai.setTrafficLeft(SizeFormatter.getSize(left));
             } else
-                ai.setTrafficLeft(8l * 1024l * 1024l * 1024l - Regex.getSize(left));
+                ai.setTrafficLeft(8l * 1024l * 1024l * 1024l - SizeFormatter.getSize(left));
         }
         String days = br.getRegex("Your membership is valid for[ ]+(\\d+)[ ]+days").getMatch(0);
         if (days == null) days = br.getRegex("Your account needs to be renewed in  (\\d+) days").getMatch(0);
@@ -133,7 +134,7 @@ public class SendspaceCom extends PluginForHost {
                 String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);
                 if (infos != null) {
                     downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
-                    downloadLink.setDownloadSize(Regex.getSize(infos[1].trim().replaceAll(",", "\\.")));
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
                     return AvailableStatus.TRUE;
                 } else
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

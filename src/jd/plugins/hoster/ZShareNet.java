@@ -20,16 +20,17 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zshare.net" }, urls = { "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*" }, flags = { 2 })
 public class ZShareNet extends PluginForHost {
@@ -149,7 +150,7 @@ public class ZShareNet extends PluginForHost {
         if (filesize == null) filesize = br.getRegex("Image Size:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
         if (filename == null || filesize == null || filename.trim().equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "")));
 
         return AvailableStatus.TRUE;
     }

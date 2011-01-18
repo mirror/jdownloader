@@ -16,7 +16,6 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -26,6 +25,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.TimeFormatter;
 
 public class LinkSnappycom extends PluginForHost implements JDPremInterface {
 
@@ -376,7 +378,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             }
             String validUntil = br.getRegex("Expire Date:</strong>(.*?)\\(").getMatch(0);
             account.setValid(true);
-            ac.setValidUntil(Regex.getMilliSeconds(validUntil, "dd MMM yyyy", null));
+            ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd MMM yyyy", null));
             synchronized (LOCK) {
                 premiumHosts.clear();
                 if (hosts != null) {

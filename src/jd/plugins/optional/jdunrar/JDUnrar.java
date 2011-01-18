@@ -43,11 +43,9 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
-import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
 import jd.nutils.jobber.Jobber;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -59,6 +57,8 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Files;
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.StringFormatter;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "unrar", interfaceversion = 7)
 public class JDUnrar extends PluginOptional implements UnrarListener, ActionListener {
@@ -1077,7 +1077,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
             if ((test = new Regex(downloadLink.getName(), "\\.pa?r?t?\\.?(\\d+)\\.").getMatch(0)) != null) {
                 nums = test.length();
                 i = 1;
-                while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + partid + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + partid + StringFormatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                     DownloadLink dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
                     if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.ERROR_ALREADYEXISTS);
                     if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, null);
@@ -1100,7 +1100,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                     }
                 }
                 if (nums != -1) {
-                    while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".r" + Formatter.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                    while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".r" + StringFormatter.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                         DownloadLink dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
                         if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.ERROR_ALREADYEXISTS);
                         if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, null);
@@ -1136,7 +1136,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
             if ((test = new Regex(filepath, "\\.pa?r?t?\\.?(\\d+)\\.").getMatch(0)) != null) {
                 nums = test.length();
                 i = 1;
-                while ((file = new File(new File(filepath).getParentFile(), name + partid + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                while ((file = new File(new File(filepath).getParentFile(), name + partid + StringFormatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                     ret.add(file.toString());
                     i++;
                 }
@@ -1156,7 +1156,7 @@ public class JDUnrar extends PluginOptional implements UnrarListener, ActionList
                     }
                 }
                 if (nums != -1) {
-                    while ((file = new File(new File(filepath).getParentFile(), name + ".r" + Formatter.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
+                    while ((file = new File(new File(filepath).getParentFile(), name + ".r" + StringFormatter.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                         ret.add(file.toString());
                         i++;
                     }

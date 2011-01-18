@@ -22,15 +22,16 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.parser.html.Form.MethodType;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drei.to" }, urls = { "http://[\\w\\.]*?drei\\.to/link/[a-zA-Z0-9]+|http://[\\w\\.]*?drei\\.to/download/start/[0-9]+/|http://[\\w\\.]*?drei\\.to/download/[0-9]+/.+\\.html|http://[\\w\\.]*?drei\\.to/\\?action=entrydetail&entry_id=[0-9]+" }, flags = { 0 })
 public class DrDlm extends PluginForDecrypt {

@@ -1,6 +1,7 @@
 package jd.plugins.optional.awesomebar.awesome;
 
-import java.util.*;
+import java.util.EventListener;
+import java.util.List;
 
 
 public interface AwesomeProposalRequestListener extends EventListener
