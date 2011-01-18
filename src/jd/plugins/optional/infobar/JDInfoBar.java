@@ -117,7 +117,6 @@ public class JDInfoBar extends PluginOptional {
 
             @Override
             public void onAction(ActionEvent e) {
-                System.out.println(activateAction.isSelected());
                 setGuiEnable(activateAction.isSelected());
             }
         };

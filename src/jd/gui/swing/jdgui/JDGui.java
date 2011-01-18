@@ -308,6 +308,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             KeyStroke closeKey = KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
             this.mainTabbedPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(closeKey, "closeWindow");
             this.mainTabbedPane.getActionMap().put("closeWindow", new AbstractAction() {
+                private static final long serialVersionUID = 9149139888018750308L;
+
                 public void actionPerformed(ActionEvent e) {
                     new GuiRunnable<Object>() {
                         @Override

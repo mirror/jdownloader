@@ -86,7 +86,6 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
 
     }
 
-    @SuppressWarnings("unchecked")
     public <E> E getGenericProperty(final String key, final E def) {
         return storage.get(key, def);
     }
@@ -117,7 +116,6 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
 
     public HashMap<String, Object> getProperties() {
         throw new RuntimeException("no Implemented");
-
     }
 
     public Object getProperty(final String key) {
@@ -150,13 +148,10 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
      * @param key
      * @param value
      */
-    @SuppressWarnings("unchecked")
     public void setProperty(final String key, final Object value) {
-
         if (value == null) {
             storage.remove(key);
         } else {
-
             if (value instanceof Boolean) {
                 storage.put(key, (Boolean) value);
             } else if (value instanceof Long) {

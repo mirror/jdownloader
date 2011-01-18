@@ -32,7 +32,6 @@ public class ExtractionConstants {
     public static final int    NOT_ENOUGH_SPACE                                = 19;
     public static final int    WRAPPER_FILE_NOT_FOUND                          = 20;
     public static final int    REMOVE_ARCHIVE_METADATA                         = 98;
-    public static final int    INVALID_BINARY                                  = 99;
     public static final String CONFIG_KEY_UNPACKPATH                           = "UNPACKPATH";
     public static final String CONFIG_KEY_USE_SUBPATH                          = "USE_SUBPATH";
     public static final String CONFIG_KEY_SUBPATH                              = "SUBPATH";

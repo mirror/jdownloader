@@ -82,11 +82,11 @@ public class Multi implements IExtraction {
 
     private Logger                   logger;
 
-    // For 7z
+    /** For 7z */
     private MultiOpener              multiopener;
-    // For rar
+    /** For rar */
     private RarOpener                raropener;
-    // For all single files
+    /** For all single files */
     private RandomAccessFileInStream stream;
 
     public Multi() {

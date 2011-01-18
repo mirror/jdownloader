@@ -17,11 +17,9 @@
 package jd.gui.swing.jdgui.views.settings.panels.addons;
 
 import jd.OptionalPluginWrapper;
-import jd.config.Configuration;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.swing.table.ExtTableModel;
@@ -30,13 +28,11 @@ import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 public class ActivateColumn extends ExtCheckColumn<OptionalPluginWrapper> {
 
     private static final long       serialVersionUID = 658156218405204887L;
-    private final Configuration     config;
     private final ConfigPanelAddons addons;
 
     public ActivateColumn(String name, ExtTableModel<OptionalPluginWrapper> table, ConfigPanelAddons addons) {
         super(name, table);
 
-        this.config = JDUtilities.getConfiguration();
         this.addons = addons;
     }
 

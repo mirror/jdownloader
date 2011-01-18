@@ -120,6 +120,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
     /**
      * das controllevent fängt heruntergeladene file ab und wertet sie aus
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void onControlEvent(ControlEvent event) {
         DownloadLink link;
@@ -587,10 +588,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
-        case ExtractionConstants.INVALID_BINARY:
-            logger.severe("Invalid extraction binary!");
-            controller.getArchiv().setActive(false);
-            break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
             for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
                 if (link == null) continue;
@@ -804,10 +801,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         switch (id) {
         case ExtractionConstants.WRAPPER_STARTED:
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));
-            break;
-        case ExtractionConstants.INVALID_BINARY:
-            logger.severe("Invalid extraction binary!");
-            controller.getArchiv().setActive(false);
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
             if (controller.getException() != null) {

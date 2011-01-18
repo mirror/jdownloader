@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeSet;
 
 /**
@@ -71,7 +72,8 @@ import java.util.TreeSet;
  * <ul>
  * <li>An extra <code>,</code>&nbsp;<small>(comma)</small> may appear just
  * before the closing brace.</li>
- * <li>Strings may be quoted with <code>'</code>&nbsp;<small>(single quote)</small>.</li>
+ * <li>Strings may be quoted with <code>'</code>&nbsp;<small>(single
+ * quote)</small>.</li>
  * <li>Strings do not need to be quoted at all if they do not begin with a quote
  * or single quote, and if they do not contain leading or trailing spaces, and
  * if they do not contain any of these characters:
@@ -132,7 +134,7 @@ public class JSONObject {
     /**
      * The map where the JSONObject's properties are kept.
      */
-    private Map                map;
+    private Map<String, Object> map;
 
     /**
      * It is sometimes more convenient and less ambiguous to have a
@@ -140,13 +142,13 @@ public class JSONObject {
      * <code>JSONObject.NULL.equals(null)</code> returns <code>true</code>.
      * <code>JSONObject.NULL.toString()</code> returns <code>"null"</code>.
      */
-    public static final Object NULL = new Null();
+    public static final Object  NULL = new Null();
 
     /**
      * Construct an empty JSONObject.
      */
     public JSONObject() {
-        this.map = new HashMap();
+        this.map = new HashMap<String, Object>();
     }
 
     /**
@@ -238,12 +240,12 @@ public class JSONObject {
      *            the JSONObject.
      * @throws JSONException
      */
-    public JSONObject(Map map) {
-        this.map = new HashMap();
+    public JSONObject(Map<String, Object> map) {
+        this.map = new HashMap<String, Object>();
         if (map != null) {
-            Iterator i = map.entrySet().iterator();
+            Iterator<Entry<String, Object>> i = map.entrySet().iterator();
             while (i.hasNext()) {
-                Map.Entry e = (Map.Entry) i.next();
+                Entry<String, Object> e = (Entry<String, Object>) i.next();
                 this.map.put(e.getKey(), wrap(e.getValue()));
             }
         }
@@ -291,7 +293,7 @@ public class JSONObject {
      */
     public JSONObject(Object object, String names[]) {
         this();
-        Class c = object.getClass();
+        Class<?> c = object.getClass();
         for (int i = 0; i < names.length; i += 1) {
             String name = names[i];
             try {
@@ -526,7 +528,7 @@ public class JSONObject {
     public static String[] getNames(JSONObject jo) {
         int length = jo.length();
         if (length == 0) { return null; }
-        Iterator i = jo.keys();
+        Iterator<String> i = jo.keys();
         String[] names = new String[length];
         int j = 0;
         while (i.hasNext()) {
@@ -543,7 +545,7 @@ public class JSONObject {
      */
     public static String[] getNames(Object object) {
         if (object == null) { return null; }
-        Class klass = object.getClass();
+        Class<?> klass = object.getClass();
         Field[] fields = klass.getFields();
         int length = fields.length;
         if (length == 0) { return null; }
@@ -628,7 +630,7 @@ public class JSONObject {
      * 
      * @return An iterator of the keys.
      */
-    public Iterator keys() {
+    public Iterator<String> keys() {
         return this.map.keySet().iterator();
     }
 
@@ -650,7 +652,7 @@ public class JSONObject {
      */
     public JSONArray names() {
         JSONArray ja = new JSONArray();
-        Iterator keys = keys();
+        Iterator<String> keys = keys();
         while (keys.hasNext()) {
             ja.put(keys.next());
         }
@@ -878,7 +880,7 @@ public class JSONObject {
     }
 
     private void populateMap(Object bean) {
-        Class klass = bean.getClass();
+        Class<?> klass = bean.getClass();
 
         // If klass is a System class then set includeSuperClass to false.
 
@@ -944,7 +946,7 @@ public class JSONObject {
      * @return this.
      * @throws JSONException
      */
-    public JSONObject put(String key, Collection value) throws JSONException {
+    public JSONObject put(String key, Collection<String> value) throws JSONException {
         put(key, new JSONArray(value));
         return this;
     }
@@ -1008,7 +1010,7 @@ public class JSONObject {
      * @return this.
      * @throws JSONException
      */
-    public JSONObject put(String key, Map value) throws JSONException {
+    public JSONObject put(String key, Map<String, Object> value) throws JSONException {
         put(key, new JSONObject(value));
         return this;
     }
@@ -1160,8 +1162,8 @@ public class JSONObject {
      * 
      * @return An iterator of the keys.
      */
-    public Iterator sortedKeys() {
-        return new TreeSet(this.map.keySet()).iterator();
+    public Iterator<String> sortedKeys() {
+        return new TreeSet<String>(this.map.keySet()).iterator();
     }
 
     /**
@@ -1263,7 +1265,7 @@ public class JSONObject {
      */
     public String toString() {
         try {
-            Iterator keys = keys();
+            Iterator<String> keys = keys();
             StringBuffer sb = new StringBuffer("{");
 
             while (keys.hasNext()) {
@@ -1320,7 +1322,7 @@ public class JSONObject {
         int j;
         int n = length();
         if (n == 0) { return "{}"; }
-        Iterator keys = sortedKeys();
+        Iterator<String> keys = sortedKeys();
         StringBuffer sb = new StringBuffer("{");
         int newindent = indent + indentFactor;
         Object o;
@@ -1379,6 +1381,7 @@ public class JSONObject {
      * @throws JSONException
      *             If the value is or contains an invalid number.
      */
+    @SuppressWarnings("unchecked")
     static String valueToString(Object value) throws JSONException {
         if (value == null || value.equals(null)) { return "null"; }
         if (value instanceof JSONString) {
@@ -1393,8 +1396,8 @@ public class JSONObject {
         }
         if (value instanceof Number) { return numberToString((Number) value); }
         if (value instanceof Boolean || value instanceof JSONObject || value instanceof JSONArray) { return value.toString(); }
-        if (value instanceof Map) { return new JSONObject((Map) value).toString(); }
-        if (value instanceof Collection) { return new JSONArray((Collection) value).toString(); }
+        if (value instanceof Map) { return new JSONObject((Map<String, Object>) value).toString(); }
+        if (value instanceof Collection) { return new JSONArray((Collection<String>) value).toString(); }
         if (value.getClass().isArray()) { return new JSONArray(value).toString(); }
         return quote(value.toString());
     }
@@ -1417,6 +1420,7 @@ public class JSONObject {
      * @throws JSONException
      *             If the object contains an invalid number.
      */
+    @SuppressWarnings("unchecked")
     static String valueToString(Object value, int indentFactor, int indent) throws JSONException {
         if (value == null || value.equals(null)) { return "null"; }
         try {
@@ -1430,8 +1434,8 @@ public class JSONObject {
         if (value instanceof Boolean) { return value.toString(); }
         if (value instanceof JSONObject) { return ((JSONObject) value).toString(indentFactor, indent); }
         if (value instanceof JSONArray) { return ((JSONArray) value).toString(indentFactor, indent); }
-        if (value instanceof Map) { return new JSONObject((Map) value).toString(indentFactor, indent); }
-        if (value instanceof Collection) { return new JSONArray((Collection) value).toString(indentFactor, indent); }
+        if (value instanceof Map) { return new JSONObject((Map<String, Object>) value).toString(indentFactor, indent); }
+        if (value instanceof Collection) { return new JSONArray((Collection<String>) value).toString(indentFactor, indent); }
         if (value.getClass().isArray()) { return new JSONArray(value).toString(indentFactor, indent); }
         return quote(value.toString());
     }
@@ -1448,14 +1452,15 @@ public class JSONObject {
      *            The object to wrap
      * @return The wrapped value
      */
+    @SuppressWarnings("unchecked")
     static Object wrap(Object object) {
         try {
             if (object == null) { return NULL; }
             if (object instanceof JSONObject || object instanceof JSONArray || NULL.equals(object) || object instanceof JSONString || object instanceof Byte || object instanceof Character || object instanceof Short || object instanceof Integer || object instanceof Long || object instanceof Boolean || object instanceof Float || object instanceof Double || object instanceof String) { return object; }
 
-            if (object instanceof Collection) { return new JSONArray((Collection) object); }
+            if (object instanceof Collection) { return new JSONArray((Collection<String>) object); }
             if (object.getClass().isArray()) { return new JSONArray(object); }
-            if (object instanceof Map) { return new JSONObject((Map) object); }
+            if (object instanceof Map) { return new JSONObject((Map<String, Object>) object); }
             Package objectPackage = object.getClass().getPackage();
             String objectPackageName = (objectPackage != null ? objectPackage.getName() : "");
             if (objectPackageName.startsWith("java.") || objectPackageName.startsWith("javax.") || object.getClass().getClassLoader() == null) { return object.toString(); }
@@ -1477,7 +1482,7 @@ public class JSONObject {
     public Writer write(Writer writer) throws JSONException {
         try {
             boolean b = false;
-            Iterator keys = keys();
+            Iterator<String> keys = keys();
             writer.write('{');
 
             while (keys.hasNext()) {

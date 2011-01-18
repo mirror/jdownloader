@@ -135,7 +135,6 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String dlUrl = null;
-        int uu = 1;
         requestFileInformation(downloadLink);
         br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {

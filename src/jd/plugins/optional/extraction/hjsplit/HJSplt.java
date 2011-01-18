@@ -24,7 +24,6 @@ import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.nutils.io.FileSignatures;
-import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -221,31 +220,6 @@ public class HJSplt implements IExtraction {
     }
 
     /**
-     * Validiert ein Archiv. Archive haben zwei formen: unix: *.aa..*.ab..*.ac .
-     * das zweite a wird hochgezählt normal: *.001...*.002
-     * 
-     * Die Funktion versucht zu prüfen ob das Archiv komplett heruntergeladen
-     * wurde und ob es ein gültoges Archiv ist.
-     * 
-     * @param file
-     * @return
-     */
-    private boolean validateArchive(File file) {
-        File startFile = getStartFile(file);
-        if (startFile == null || !startFile.exists() || !startFile.isFile()) return false;
-        ARCHIV_TYPE type = getArchiveType(file);
-
-        switch (type) {
-        case UNIX:
-            return typeCrossCheck(validateUnixType(startFile)) != null;
-        case NORMAL:
-            return typeCrossCheck(validateNormalType(startFile)) != null;
-        default:
-            return false;
-        }
-    }
-
-    /**
      * Gibt alle files die zum Archiv von file gehören zurück
      * 
      * @param file
@@ -312,28 +286,6 @@ public class HJSplt implements IExtraction {
         String volume = StringFormatter.fillString(c + "", "0", "", 3);
         if (JDUtilities.getController().getDownloadLinkByFileOutput(new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1")), null) != null) return null;
         return ret;
-    }
-
-    private ArrayList<File> typeCrossCheck(ArrayList<File> files) {
-        if (files == null) return null;
-        int ArchiveCheckFailed = 0;
-        for (File file : files) {
-            try {
-                Signature fs = FileSignatures.getFileSignature(file);
-                if (fs != null && (fs.getId().equals("RAR") || fs.getId().equals("﻿7Z"))) {
-                    ArchiveCheckFailed++;
-                }
-            } catch (IOException e) {
-            }
-        }
-        if (ArchiveCheckFailed > 1) {
-            /*
-             * mehr als 1 mal sollte kein Rar oder 7zip header signatur gefunden
-             * werden
-             */
-            return null;
-        }
-        return files;
     }
 
     /**
