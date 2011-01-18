@@ -19,7 +19,6 @@ package jd.plugins.optional.extraction.hjsplit;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
@@ -46,10 +45,8 @@ public class HJSplt implements IExtraction {
     private static final String DUMMY_HOSTER = "dum.my";
 
     private Archive             archive;
-    private List<String>        postprocessing;
 
     public HJSplt() {
-        postprocessing = new ArrayList<String>();
     }
 
     public Archive buildArchive(DownloadLink link) {
@@ -138,7 +135,7 @@ public class HJSplt implements IExtraction {
             return;
         }
 
-        postprocessing.add(getOutputFile(first).getAbsolutePath());
+        archive.addExtractedFiles(getOutputFile(first));
     }
 
     public boolean checkCommand() {
@@ -189,10 +186,6 @@ public class HJSplt implements IExtraction {
 
     public boolean isArchivSupportedFileFilter(String file) {
         return isStartVolume(new File(file));
-    }
-
-    public List<String> filesForPostProcessing() {
-        return postprocessing;
     }
 
     public void setConfig(SubConfiguration config) {

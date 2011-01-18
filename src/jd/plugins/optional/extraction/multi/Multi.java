@@ -74,7 +74,6 @@ public class Multi implements IExtraction {
     private int                      crack;
     private ExtractionController     con;
     private ISevenZipInArchive       inArchive;
-    private List<String>             postprocessing;
     private SubConfiguration         conf;
     private ArchiveFormat            format;
 
@@ -89,7 +88,6 @@ public class Multi implements IExtraction {
 
     public Multi() {
         crack = 0;
-        postprocessing = new ArrayList<String>();
         inArchive = null;
         logger = JDLogger.getLogger();
     }
@@ -300,6 +298,8 @@ public class Multi implements IExtraction {
                     }
                 }
 
+                archive.addExtractedFiles(extractTo);
+
                 MultiCallback call = new MultiCallback(extractTo, con, priority, item.getCRC() > 0 ? true : false);
                 ExtractOperationResult res;
                 try {
@@ -350,8 +350,6 @@ public class Multi implements IExtraction {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                     return;
                 }
-
-                postprocessing.add(extractTo.getAbsolutePath());
             }
         } catch (SevenZipException e) {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
@@ -550,10 +548,6 @@ public class Multi implements IExtraction {
         if (file.matches("(?i).*\\.tar\\.gz$")) return true;
         if (file.matches("(?i).*\\.tar\\.bz2$")) return true;
         return false;
-    }
-
-    public List<String> filesForPostProcessing() {
-        return postprocessing;
     }
 
     public void setConfig(SubConfiguration config) {

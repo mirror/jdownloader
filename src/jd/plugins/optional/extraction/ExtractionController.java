@@ -18,7 +18,6 @@ package jd.plugins.optional.extraction;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.logging.Logger;
 
@@ -131,6 +130,7 @@ public class ExtractionController extends Thread implements JDRunnable {
                 if (!checkSize()) {
                     fireEvent(ExtractionConstants.NOT_ENOUGH_SPACE);
                     logger.info("Not enough space for unpacking of " + archive.getFirstDownloadLink().getFileOutput());
+                    extractor.close();
                     return;
                 }
 
@@ -152,6 +152,7 @@ public class ExtractionController extends Thread implements JDRunnable {
                         if (!extractor.findPassword(archive.getPassword())) {
                             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                             logger.info("No password found for " + archive.getFirstDownloadLink().getFileOutput());
+                            extractor.close();
                             return;
                         }
                         PasswordListController.getInstance().addPassword(archive.getPassword(), true);
@@ -234,6 +235,7 @@ public class ExtractionController extends Thread implements JDRunnable {
                 }
                 return;
             } else {
+                extractor.close();
                 fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
             }
         } catch (Exception e) {
@@ -355,15 +357,6 @@ public class ExtractionController extends Thread implements JDRunnable {
      */
     public SubConfiguration getConfig() {
         return config;
-    }
-
-    /**
-     * Returns the extracted files.
-     * 
-     * @return
-     */
-    List<String> getPostProcessingFiles() {
-        return extractor.filesForPostProcessing();
     }
 
     /**

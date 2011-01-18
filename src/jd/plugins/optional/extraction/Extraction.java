@@ -607,6 +607,14 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 }
             }
 
+            for (File f : controller.getArchiv().getExtractedFiles()) {
+                if (f.exists()) {
+                    if (!f.delete()) {
+                        logger.warning("Could not delete file " + f.getAbsolutePath());
+                    }
+                }
+            }
+
             controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
@@ -677,14 +685,22 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 }
             }
 
+            for (File f : controller.getArchiv().getExtractedFiles()) {
+                if (f.exists()) {
+                    if (!f.delete()) {
+                        logger.warning("Could not delete file " + f.getAbsolutePath());
+                    }
+                }
+            }
+
             controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
         case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL:
-            File[] files = new File[controller.getPostProcessingFiles().size()];
+            File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
             int i = 0;
-            for (String f : controller.getPostProcessingFiles()) {
-                files[i++] = new File(f);
+            for (File f : controller.getArchiv().getExtractedFiles()) {
+                files[i++] = f;
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(wrapper, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
 
@@ -800,6 +816,14 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailed", "Extract failed"));
             }
 
+            for (File f : controller.getArchiv().getExtractedFiles()) {
+                if (f.exists()) {
+                    if (!f.delete()) {
+                        logger.warning("Could not delete file " + f.getAbsolutePath());
+                    }
+                }
+            }
+
             controller.getArchiv().setActive(false);
             this.onFinished(controller);
 
@@ -838,14 +862,23 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED_CRC:
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailedcrc", "Extract failed (CRC error)"));
+
+            for (File f : controller.getArchiv().getExtractedFiles()) {
+                if (f.exists()) {
+                    if (!f.delete()) {
+                        logger.warning("Could not delete file " + f.getAbsolutePath());
+                    }
+                }
+            }
+
             controller.getArchiv().setActive(false);
             this.onFinished(controller);
             break;
         case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL:
-            File[] files = new File[controller.getPostProcessingFiles().size()];
+            File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
             int i = 0;
-            for (String f : controller.getPostProcessingFiles()) {
-                files[i++] = new File(f);
+            for (File f : controller.getArchiv().getExtractedFiles()) {
+                files[i++] = f;
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(wrapper, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
 

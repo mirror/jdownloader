@@ -16,8 +16,6 @@
 
 package jd.plugins.optional.extraction;
 
-import java.util.List;
-
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.plugins.DownloadLink;
@@ -140,14 +138,6 @@ public interface IExtraction {
      * @return
      */
     public boolean isArchivSupportedFileFilter(String file);
-
-    /**
-     * Returns the files which should be postprocessed, like additional
-     * extraction.
-     * 
-     * @return The files for postprocessing.
-     */
-    public List<String> filesForPostProcessing();
 
     /**
      * Sets the pluginconfiguration.
