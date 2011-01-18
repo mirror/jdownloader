@@ -30,6 +30,8 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.nutils.io.FileSignatures;
+import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -239,9 +241,30 @@ public class Multi implements IExtraction {
                 size += item.getSize();
                 if (!passwordfound.getBoolean()) {
                     try {
+                        final String path = item.getPath();
                         item.extractSlow(new ISequentialOutStream() {
                             public int write(byte[] data) throws SevenZipException {
-                                passwordfound.found();
+                                byte[] buffer = new byte[32];
+
+                                for (int i = 0; i < buffer.length; i++) {
+                                    buffer[i] = data[i];
+                                }
+
+                                StringBuilder sigger = new StringBuilder();
+                                for (byte f : buffer) {
+                                    String s = Integer.toHexString(f);
+                                    s = (s.length() < 2 ? "0" + s : s);
+                                    s = s.substring(s.length() - 2);
+                                    sigger.append(s);
+                                }
+                                String sig = sigger.toString();
+                                Signature signature = FileSignatures.getSignature(sig);
+
+                                if (signature != null) {
+                                    if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
+                                        passwordfound.found();
+                                    }
+                                }
                                 return 0;
                             }
                         }, password);
