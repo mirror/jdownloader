@@ -20,18 +20,19 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -57,13 +58,14 @@ public class PrzeklejPl extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("_", "-"));
     }
 
-    private static final String REGISTEREDONLY = "<span>200MB za darmo na starcie\\!</span>";
+    private static final String REGISTEREDONLY = "> możesz pobrać, jeżeli jesteś zalogowany";
     private static final String NOFREEMESSAGE  = "Only downloadable for registered users";
     private static final String FINALLINKREGEX = "class=\"download\" href=\"(.*?)\"";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<h1 style=\"font-size: 40px;\">Podana strona nie istnieje</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(REGISTEREDONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.PrzeklejPl.errors.nofreedownloadlink", NOFREEMESSAGE));
@@ -89,6 +91,9 @@ public class PrzeklejPl extends PluginForHost {
             String linkurl = br.getRegex(FINALLINKREGEX).getMatch(0);
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             linkurl = "http://www.przeklej.pl" + linkurl;
+            br.getPage(linkurl);
+            linkurl = br.getRedirectLocation();
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, resumable, maxchunks);
             handleErrors();
@@ -130,9 +135,11 @@ public class PrzeklejPl extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("Referer", "");
+        br.setCustomCharset("utf-8");
         br.postPage("http://www.przeklej.pl/loguj", "login%5Blogin%5D=" + account.getUser() + "&login%5Bpass%5D=" + account.getPass());
-        if (!br.containsHTML("<html><head><meta http-equiv=\"refresh\" content=\"0;url=http://www.przeklej.pl/\"/></head></html>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("<html><head><meta http-equiv=\"refresh\" content=\"0;url=http://www\\.przeklej\\.pl/\"/></head></html>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
