@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -461,33 +460,39 @@ public class File4SafeCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            while (CONNECTIONS.get() >= this.getMaxConnections()) {
-                link.getLinkStatus().setStatusText("Wait for free connection");
-                sleep(5000, link);
+            int chunks = 1;
+            synchronized (CONNECTIONS) {
+
+                while (this.getMaxConnections() - CONNECTIONS.get() < 1) {
+
+                    link.getLinkStatus().setStatusText("Wait for free connection ");
+                    sleep(5000, link);
+                }
+                if (link.getChunksProgress() != null) {
+                    if (this.getMaxConnections() - CONNECTIONS.get() < link.getChunksProgress().length) {
+                        link.setChunksProgress(null);
+                    }
+
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -1 * (this.getMaxConnections() - CONNECTIONS.get()));
+                chunks = link.getChunksProgress() != null ? link.getChunksProgress().length : dl.getChunkNum();
+                CONNECTIONS.set(CONNECTIONS.get() + chunks);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -4);
             try {
-                CONNECTIONS.set(CONNECTIONS.get() + dl.getChunkNum());
+
                 if (passCode != null) {
                     link.setProperty("pass", passCode);
                 }
                 if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                     logger.warning("The final dllink seems not to be a file!");
-                    try {
-                        br.followConnection();
-                    } catch (BrowserException e) {
-                        if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
-                            logger.warning("Too many connections. decrease simultane downloads or connections");
-                            throw e;
-                        } else {
-                            throw e;
-                        }
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+                    br.followConnection();
+
                 }
                 dl.startDownload();
+
             } finally {
-                CONNECTIONS.set(Math.max(0, CONNECTIONS.get() - dl.getChunkNum()));
+                CONNECTIONS.set(Math.max(0, CONNECTIONS.get() - chunks));
             }
         }
     }
