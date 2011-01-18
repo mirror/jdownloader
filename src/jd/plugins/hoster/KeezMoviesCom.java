@@ -22,11 +22,13 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision: 10931 $", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://[\\w\\.]*?keezmovies\\.com/video/[\\w-]+" }, flags = { 2 })
 public class KeezMoviesCom extends PluginForHost {
@@ -46,15 +48,17 @@ public class KeezMoviesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        // Set cookie so we can watch all videos ;)
+        br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.getRegex("(<form action=\"/age_verification\" method=\"post\">)").getMatch(0) != null) {
-            br.postPage("http://www.keezmovies.com/age_verification", "age_verified=1");
-            br.getPage(downloadLink.getDownloadURL());
-        }
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("flashvars\\.video_url = \\'(http.*?)\\';").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) - KeezMovies\\.com</title>").getMatch(0);
+        String flashVars = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
+        if (flashVars == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        flashVars = Encoding.htmlDecode(flashVars);
+        DLLINK = new Regex(flashVars, "video_url=(http://.*?)\\&postroll_url").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(filename.trim() + ".flv");
         DLLINK = Encoding.htmlDecode(DLLINK);
         URLConnectionAdapter con = br.openGetConnection(DLLINK);
