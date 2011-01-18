@@ -91,5 +91,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jpathwatch-0-93-rc1.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/AppleJavaExtensions.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JDBrowser"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JDUpdater"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
