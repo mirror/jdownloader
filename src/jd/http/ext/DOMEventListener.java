@@ -2,6 +2,7 @@ package jd.http.ext;
 
 import java.net.URL;
 
+import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.domimpl.NodeImpl;
 import org.lobobrowser.html.js.Executor;
 import org.lobobrowser.html.js.Window;

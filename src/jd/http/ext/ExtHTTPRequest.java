@@ -15,23 +15,24 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 
+import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.HttpRequest;
 import org.lobobrowser.html.ReadyStateChangeListener;
 import org.w3c.dom.Document;
 
 public class ExtHTTPRequest implements HttpRequest {
 
-    private ExtBrowser browser;
+    private ExtBrowser                          browser;
 
     private ArrayList<ReadyStateChangeListener> listener;
 
-    private int readyState = NetworkRequest.STATE_UNINITIALIZED;
+    private int                                 readyState = NetworkRequest.STATE_UNINITIALIZED;
 
-    private Request request;
+    private Request                             request;
 
-    private boolean asyncFlag;
+    private boolean                             asyncFlag;
 
-    private Browser br;
+    private Browser                             br;
 
     public ExtHTTPRequest(ExtBrowser browser) {
         this.browser = browser;
@@ -108,9 +109,9 @@ public class ExtHTTPRequest implements HttpRequest {
 
     }
 
-    public int getStatus() {        
-            if (request == null || request.getHttpConnection() == null) return 403;
-            return request.getHttpConnection().getResponseCode();
+    public int getStatus() {
+        if (request == null || request.getHttpConnection() == null) return 403;
+        return request.getHttpConnection().getResponseCode();
     }
 
     public String getStatusText() {
