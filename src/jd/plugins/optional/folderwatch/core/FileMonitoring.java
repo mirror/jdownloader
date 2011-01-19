@@ -14,7 +14,7 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.folderwatch.utils;
+package jd.plugins.optional.folderwatch.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +30,7 @@ import name.pachler.nio.file.StandardWatchEventKind;
 import name.pachler.nio.file.WatchEvent;
 import name.pachler.nio.file.WatchKey;
 import name.pachler.nio.file.WatchService;
+import name.pachler.nio.file.ext.ExtendedWatchEventModifier;
 
 public class FileMonitoring extends Thread {
 
@@ -58,9 +59,9 @@ public class FileMonitoring extends Thread {
         instanceNr++;
     }
 
-    public FileMonitoring(String path) {
+    public FileMonitoring(String path, boolean isRecursive) {
         this();
-        register(path);
+        register(path, isRecursive);
     }
 
     public ArrayList<FileMonitoringListener> getListeners() {
@@ -75,13 +76,19 @@ public class FileMonitoring extends Thread {
         listeners.add(listener);
     }
 
-    public void register(String path) {
+    public void register(String path, boolean isRecursive) {
         Path watchedPath = Paths.get(path);
         @SuppressWarnings("unused")
         WatchKey key = null;
 
         try {
-            key = watchedPath.register(watchService, StandardWatchEventKind.ENTRY_CREATE, StandardWatchEventKind.ENTRY_MODIFY, StandardWatchEventKind.ENTRY_DELETE);
+            WatchEvent.Kind<?>[] events = { StandardWatchEventKind.ENTRY_CREATE, StandardWatchEventKind.ENTRY_MODIFY, StandardWatchEventKind.ENTRY_DELETE };
+
+            if (isRecursive) {
+                key = watchedPath.register(watchService, events, ExtendedWatchEventModifier.FILE_TREE);
+            }
+
+            key = watchedPath.register(watchService, events);
         } catch (UnsupportedOperationException uox) {
             logger.warning(LOGGER_PREFIX + "File watching not supported");
             // handle this error here

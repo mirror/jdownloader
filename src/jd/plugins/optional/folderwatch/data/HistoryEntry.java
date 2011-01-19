@@ -22,26 +22,26 @@ import java.util.Date;
 
 public class HistoryEntry implements Serializable {
 
-    private static final long serialVersionUID = -8824175672927232845L;
+    private static final long       serialVersionUID = -8824175672927232845L;
 
-    private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static SimpleDateFormat DATE_FORMAT      = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    private String filename;
+    private String                  filename;
 
-    private String absolutePath;
+    private String                  absolutePath;
 
-    private String md5Hash;
+    private String                  md5Hash;
 
-    private String importDate;
+    private String                  importDate;
 
-    private boolean isExisting;
+    private boolean                 isExisting;
 
     public HistoryEntry(String filename, String absolutePath, String md5Hash, boolean isExisting) {
         set(filename, absolutePath, md5Hash, isExisting);
     }
 
     public HistoryEntry(String filename, String absolutePath, String md5Hash) {
-        set(filename, absolutePath, md5Hash, true);
+        this(filename, absolutePath, md5Hash, true);
     }
 
     public void set(String filename, String absolutePath, String md5Hash, boolean isExisting) {
@@ -78,6 +78,14 @@ public class HistoryEntry implements Serializable {
 
     private void setImportDate() {
         importDate = DATE_FORMAT.format(new Date());
+    }
+
+    public void setImportDate(String mssg) {
+        if (mssg == null) {
+            importDate = "N/A";
+        } else {
+            importDate = mssg;
+        }
     }
 
     public String getImportDate() {
