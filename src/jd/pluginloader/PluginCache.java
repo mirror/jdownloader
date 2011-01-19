@@ -75,7 +75,7 @@ public abstract class PluginCache<T> {
         if (data == null) { throw IllegalStateException("Do not call This method twice"); }
         if (changed) {
             try {
-                String txt = JSonStorage.toString(data);
+                String txt = JSonStorage.serializeToJson(data);
                 file.delete();
                 IO.writeStringToFile(file, txt);
             } catch (JsonGenerationException e) {

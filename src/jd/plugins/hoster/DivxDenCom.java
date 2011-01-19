@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,7 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://[\\w\\.]*?(divxden|vidxden)\\.com/[a-z0-9]{12}" }, flags = { 0 })

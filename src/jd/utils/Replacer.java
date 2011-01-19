@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IPController;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;
@@ -108,7 +108,7 @@ public final class Replacer {
         }
 
         if (key.equalsIgnoreCase("SYSTEM.IP")) {
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                 return "IPCheck disabled";
             } else {
                 return IPController.getInstance().getIP().toString();

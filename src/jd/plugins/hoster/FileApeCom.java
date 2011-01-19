@@ -19,14 +19,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileape.com" }, urls = { "http://(www\\.)?fileape\\.com/(index\\.php\\?act=download\\&id=|dl/)\\w+" }, flags = { 0 })
 public class FileApeCom extends PluginForHost {

@@ -62,7 +62,7 @@ import jd.plugins.PluginsC;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -327,8 +327,8 @@ public class JDUtilities {
     public static String getContainerExtensions(final String filter) {
         StringBuilder sb = new StringBuilder("");
         for (final CPluginWrapper act : CPluginWrapper.getCWrapper()) {
-            if (filter != null && !new Regex(act.getHost(), filter).matches()) continue;
-            String exs[] = new Regex(act.getPattern().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
+            if (filter != null && !new AwReg(act.getHost(), filter).matches()) continue;
+            String exs[] = new AwReg(act.getPattern().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
             for (String ex : exs) {
                 if (sb.length() > 0) sb.append("|");
                 sb.append(".").append(ex);

@@ -19,7 +19,6 @@ import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.CodeVerifier;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IPController;
@@ -27,6 +26,7 @@ import jd.controlling.reconnect.plugins.batch.ExternBatchReconnectPlugin;
 import jd.controlling.reconnect.plugins.extern.ExternReconnectPlugin;
 import jd.controlling.reconnect.plugins.liveheader.CLRConverter;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -361,7 +361,7 @@ public class ReconnectPluginController {
      * @return
      */
     private int getIpCheckInterval() {
-        if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (!JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             // use own ipcheck if possible
             if (this.getActivePlugin().getIPCheckProvider() != null) { return this.getActivePlugin().getIPCheckProvider().getIpCheckInterval(); }
             return 5;
@@ -404,7 +404,7 @@ public class ReconnectPluginController {
     }
 
     private int getWaittimeBeforeFirstIPCheck() {
-        if (!SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (!JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
 
             // use own ipcheck if possible
             if (this.getActivePlugin().getIPCheckProvider() != null) { return this.getActivePlugin().getWaittimeBeforeFirstIPCheck(); }

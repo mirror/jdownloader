@@ -3,9 +3,9 @@ package jd.controlling.reconnect.ipcheck;
 import java.util.ArrayList;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectPluginController;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 
 import com.sun.istack.internal.Nullable;
 
@@ -137,7 +137,7 @@ public class IPController extends ArrayList<IPConnectionState> {
     private IPCheckProvider getIPCheckProvider() {
         IPCheckProvider p = ReconnectPluginController.getInstance().getActivePlugin().getIPCheckProvider();
         if (p == null || this.badProviders.contains(p)) {
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
+            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
                 p = BalancedWebIPCheck.getInstance();
             } else {
                 p = CustomWebIpCheck.getInstance();
@@ -177,7 +177,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     public boolean validate() {
         if (!this.invalidated) { return true; }
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             // IP check disabled. each validate request is successfull
             return !(this.invalidated = false);
         }
@@ -202,7 +202,7 @@ public class IPController extends ArrayList<IPConnectionState> {
             System.out.println(1);
             return true;
         }
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successfull
             return !(this.invalidated = false);

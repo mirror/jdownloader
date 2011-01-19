@@ -82,7 +82,7 @@ public class ProxyRotation extends RouterPlugin {
     @Override
     protected void performReconnect() throws ReconnectException {
         try {
-            final String[] lines = org.appwork.utils.Regex.getLines(this.getProxyList());
+            final String[] lines = org.appwork.utils.AwReg.getLines(this.getProxyList());
             // get next line in list;
             String next = null;
             int i;

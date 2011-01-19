@@ -28,7 +28,6 @@ import javax.swing.ImageIcon;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.DownloadController;
 import jd.controlling.FavIconController;
@@ -42,6 +41,7 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
@@ -50,7 +50,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien
@@ -332,7 +332,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
         ArrayList<DownloadLink> links = null;
 
-        final String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
+        final String[] hits = new AwReg(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
             links = new ArrayList<DownloadLink>();
             for (String file : hits) {
@@ -402,7 +402,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public int getMaxRetries() {
-        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_RETRIES, 3);
+        return JSonWrapper.get("DOWNLOAD").getIntegerProperty(PARAM_MAX_RETRIES, 3);
     }
 
     public int getMaxSimultanFreeDownloadNum() {

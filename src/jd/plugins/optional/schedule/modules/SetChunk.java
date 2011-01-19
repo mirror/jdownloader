@@ -17,7 +17,7 @@
 package jd.plugins.optional.schedule.modules;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.optional.schedule.SchedulerModule;
 import jd.plugins.optional.schedule.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
@@ -38,8 +38,8 @@ public class SetChunk implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, Integer.parseInt(parameter));
-        SubConfiguration.getConfig("DOWNLOAD").save();
+        JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, Integer.parseInt(parameter));
+        JSonWrapper.get("DOWNLOAD").save();
     }
 
     public String getTranslation() {

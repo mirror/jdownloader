@@ -23,7 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class ObjectConverter {
 
@@ -47,7 +47,7 @@ public class ObjectConverter {
         out.close();
         if (exception != null) { throw exception; }
 
-        final String[] ret = new Regex(new String(ba.toByteArray()), "(<java .*?>)(.*?)(</java>)").getRow(0);
+        final String[] ret = new AwReg(new String(ba.toByteArray()), "(<java .*?>)(.*?)(</java>)").getRow(0);
         this.pre = ret[0];
         this.post = ret[2];
         ret[1] = ret[1].replace(" ", "   ");

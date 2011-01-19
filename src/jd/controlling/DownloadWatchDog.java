@@ -23,13 +23,13 @@ import java.util.Iterator;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -112,7 +112,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private DownloadWatchDog() {
         this.connectionManager = new ThrottledConnectionManager();
-        this.connectionManager.setIncommingBandwidthLimit(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
+        this.connectionManager.setIncommingBandwidthLimit(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
         this.dlc = DownloadController.getInstance();
         this.dlc.addListener(this);
     }
@@ -479,7 +479,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return
      */
     public int getSimultanDownloadNum() {
-        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
+        return JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
     }
 
     /**
@@ -489,8 +489,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return
      */
     public int getSimultanDownloadNumPerHost() {
-        if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0) == 0) { return Integer.MAX_VALUE; }
-        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0);
+        if (JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0) == 0) { return Integer.MAX_VALUE; }
+        return JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0);
     }
 
     public Object getStopMark() {
@@ -519,7 +519,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         if (this.paused) { return false; }
         if (Reconnecter.getInstance().isReconnectInProgress()) { return false; }
         if (this.aborting || this.aborted) { return false; }
-        if (Reconnecter.getInstance().isAutoReconnectEnabled() && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && IPController.getInstance().isInvalidated()) { return false; }
+        if (Reconnecter.getInstance().isAutoReconnectEnabled() && JSonWrapper.get("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && IPController.getInstance().isInvalidated()) { return false; }
 
         return true;
     }
@@ -542,16 +542,16 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         this.paused = value;
         if (value) {
             ActionController.getToolBarAction("toolbar.control.pause").setSelected(true);
-            SubConfiguration.getConfig("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
-            DownloadWatchDog.LOG.info("Pause enabled: Reducing downloadspeed to " + SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + " KiB/s");
+            JSonWrapper.get("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
+            JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
+            DownloadWatchDog.LOG.info("Pause enabled: Reducing downloadspeed to " + JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + " KiB/s");
         } else {
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
-            SubConfiguration.getConfig("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
+            JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JSonWrapper.get("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
+            JSonWrapper.get("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
             DownloadWatchDog.LOG.info("Pause disabled: Switch back to old downloadspeed");
             ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
         }
-        SubConfiguration.getConfig("DOWNLOAD").save();
+        JSonWrapper.get("DOWNLOAD").save();
     }
 
     private boolean reachedStopMark() {
@@ -708,11 +708,11 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         this.setStopMark(DownloadWatchDog.nostopMark);
                     }
                     /* restore speed limit */
-                    if (SubConfiguration.getConfig("DOWNLOAD").getProperty("MAXSPEEDBEFOREPAUSE", null) != null) {
+                    if (JSonWrapper.get("DOWNLOAD").getProperty("MAXSPEEDBEFOREPAUSE", null) != null) {
                         DownloadWatchDog.LOG.info("Restoring old speedlimit");
-                        SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
-                        SubConfiguration.getConfig("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
-                        SubConfiguration.getConfig("DOWNLOAD").save();
+                        JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JSonWrapper.get("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
+                        JSonWrapper.get("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
+                        JSonWrapper.get("DOWNLOAD").save();
                     }
                     /* full start reached */
                     DownloadWatchDog.LOG.info("DownloadWatchDog: start");

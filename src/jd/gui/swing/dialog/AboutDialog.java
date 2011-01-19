@@ -34,11 +34,13 @@ import jd.gui.userio.DummyFrame;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.nutils.io.JDIO;
-import jd.updater.UpdaterController;
+import jd.updater.UpdaterConstants;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.storage.JSonStorage;
 
 public class AboutDialog extends JDialog {
 
@@ -51,7 +53,7 @@ public class AboutDialog extends JDialog {
         JLabel lbl = new JLabel("JDownloader");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
-        String branch = UpdaterController.getInstance().getBranch();
+        String branch = JSonStorage.getPlainStorage("WEBUPDATE").get(UpdaterConstants.BRANCHINUSE, (String) null);
 
         final String version;
         if (branch == null) {

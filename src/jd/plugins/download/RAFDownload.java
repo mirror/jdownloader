@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class RAFDownload extends DownloadInterface {
 
@@ -77,7 +77,7 @@ public class RAFDownload extends DownloadInterface {
             /*
              * CRC/SFV Check
              */
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, true)) {
+            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, true)) {
                 synchronized (HASHCHECKLOCK) {
                     /*
                      * we only want one hashcheck running at the same time. many
@@ -98,7 +98,7 @@ public class RAFDownload extends DownloadInterface {
                             String crc = Long.toHexString(Hash.getCRC32(outputFile));
 
                             hashType = "CRC32";
-                            success = new Regex(sfvText, outputFile.getName() + "\\s*" + crc).matches();
+                            success = new AwReg(sfvText, outputFile.getName() + "\\s*" + crc).matches();
                         } else {
                             downloadLink.getLinkStatus().setStatusText(null);
                             downloadLink.requestGuiUpdate();
@@ -293,9 +293,9 @@ public class RAFDownload extends DownloadInterface {
         if (plugin != null) plugin.setDownloadInterface(dl);
         dl.setResume(b);
         if (i == 0) {
-            dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+            dl.setChunkNum(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         } else {
-            dl.setChunkNum(i < 0 ? Math.min(i * -1, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) : i);
+            dl.setChunkNum(i < 0 ? Math.min(i * -1, JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) : i);
         }
 
         return dl;

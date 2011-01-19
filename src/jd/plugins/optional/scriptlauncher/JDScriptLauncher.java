@@ -35,7 +35,7 @@ import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -155,7 +155,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
 
         while ((line = in.readLine()) != null) {
             if (line.matches(".*?__LAUNCHER__:[A-Z_]+")) {
-                scriptconfig.add(new Regex(line, ".*?__LAUNCHER__:([A-Z_]+)").getMatch(0));
+                scriptconfig.add(new AwReg(line, ".*?__LAUNCHER__:([A-Z_]+)").getMatch(0));
             }
         }
 
@@ -219,7 +219,7 @@ public class JDScriptLauncher extends PluginOptional implements RemoteSupport {
             }
 
         } else if (cmd.matches("(?is).*/addon/scriptlauncher/launch/.+")) {
-            String scriptname = new Regex(cmd, "(?is).*/addon/scriptlauncher/launch/(.+)").getMatch(0);
+            String scriptname = new AwReg(cmd, "(?is).*/addon/scriptlauncher/launch/(.+)").getMatch(0);
 
             if (launch(scriptname)) {
                 return "Script " + scriptname + " has been executed.";

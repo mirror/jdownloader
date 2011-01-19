@@ -208,7 +208,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                     output.write("cd " + executeIn + "\r\n");
                 }
                 final String parameter = this.getParameterString();
-                final String[] params = org.appwork.utils.Regex.getLines(parameter);
+                final String[] params = org.appwork.utils.AwReg.getLines(parameter);
                 final StringBuilder sb = new StringBuilder(" ");
                 for (final String param : params) {
                     sb.append(param);
@@ -229,7 +229,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
         } else {
             /* other os, normal handling */
             final String parameter = this.getParameterString();
-            RouterPlugin.LOG.finer("Execute Returns: " + JDUtilities.runCommand(command, org.appwork.utils.Regex.getLines(parameter), executeIn, waitForReturn));
+            RouterPlugin.LOG.finer("Execute Returns: " + JDUtilities.runCommand(command, org.appwork.utils.AwReg.getLines(parameter), executeIn, waitForReturn));
         }
     }
 

@@ -20,14 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://[\\w\\.]*?((zero10\\.info|save-link\\.info|share-link\\.info|h-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short|angel-tears\\.com/short|imzdb\\.com|(dvd4arablinks|hmylinks)\\.com|lionzlinks\\.com|mazajna\\.com/links|tvegy\\.info|shortus\\.com|forexurls\\.net)/[0-9]+|url-2\\.com/[A-Z]+/|h-url\\.in/[A-Z0-9]+)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {

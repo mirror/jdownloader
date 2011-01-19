@@ -54,7 +54,7 @@ import java.util.StringTokenizer;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
@@ -176,7 +176,7 @@ public class SimpleFTP {
         if (!response.startsWith("257 ")) { throw new IOException("PWD COmmand not understood " + response); }
 
         // Response: 257 "/" is the current directory
-        dir = new Regex(response, "\"(.*)\"").getMatch(0);
+        dir = new AwReg(response, "\"(.*)\"").getMatch(0);
         // dir = dir;
         // Now logged in.
     }
@@ -785,10 +785,10 @@ public class SimpleFTP {
         shutDownSocket(dataSocket);
         readLines(new int[] { 226 }, null);
         /* permission,type,user,group,size,date,filename */
-        String[][] matches = new Regex(sb.toString(), "([-dxrw]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
+        String[][] matches = new AwReg(sb.toString(), "([-dxrw]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
         if (matches == null || matches.length == 0) {
             /* date,time,size,name */
-            matches = new Regex(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(.*?)[$\r\n]+").getMatches();
+            matches = new AwReg(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(.*?)[$\r\n]+").getMatches();
         }
         return matches;
     }

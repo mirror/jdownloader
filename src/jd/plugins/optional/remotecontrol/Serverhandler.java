@@ -59,7 +59,7 @@ import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -188,7 +188,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/ip")) {
             // Get IP
 
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                 response.addContent("IPCheck disabled");
             } else {
                 response.addContent(IPController.getInstance().getIP());
@@ -205,7 +205,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/speedlimit")) {
             // Get speed limit
 
-            final int value = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            final int value = JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
             response.addContent(value);
         } else if (requestUrl.equals("/get/downloadstatus")) {
             // Get download status
@@ -340,7 +340,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/set/reconnect/(true|false)")) {
             // Set Reconnect enabled
 
-            final boolean newrc = Boolean.parseBoolean(new Regex(requestUrl, ".*/set/reconnect/(true|false)").getMatch(0));
+            final boolean newrc = Boolean.parseBoolean(new AwReg(requestUrl, ".*/set/reconnect/(true|false)").getMatch(0));
 
             Serverhandler.logger.fine("RemoteControl - Set ReConnect: " + newrc);
 
@@ -353,7 +353,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/set/premium/(true|false)")) {
             // Set Use premium
 
-            final boolean newuseprem = Boolean.parseBoolean(new Regex(requestUrl, ".*/set/premium/(true|false)").getMatch(0));
+            final boolean newuseprem = Boolean.parseBoolean(new AwReg(requestUrl, ".*/set/premium/(true|false)").getMatch(0));
             Serverhandler.logger.fine("RemoteControl - Set Premium: " + newuseprem);
 
             if (newuseprem != JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
@@ -363,33 +363,33 @@ public class Serverhandler implements Handler {
 
             response.addContent("PARAM_USE_GLOBAL_PREMIUM=" + newuseprem);
         } else if (requestUrl.matches("(?is).*/set/downloaddir/general/.+")) {
-            final String dir = new Regex(requestUrl, ".*/set/downloaddir/general/(.+)").getMatch(0);
+            final String dir = new AwReg(requestUrl, ".*/set/downloaddir/general/(.+)").getMatch(0);
 
             // TODO: Doesn't seem to work but I really don't know why :-/
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
-            SubConfiguration.getConfig("DOWNLOAD").save();
+            JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
+            JSonWrapper.get("DOWNLOAD").save();
 
             response.addContent("PARAM_DOWNLOAD_DIRECTORY=" + dir);
         } else if (requestUrl.matches("(?is).*/set/download/limit/[0-9]+")) {
             // Set download limit
 
-            final Integer newdllimit = Integer.parseInt(new Regex(requestUrl, ".*/set/download/limit/([0-9]+)").getMatch(0));
+            final Integer newdllimit = Integer.parseInt(new AwReg(requestUrl, ".*/set/download/limit/([0-9]+)").getMatch(0));
             Serverhandler.logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
-            SubConfiguration.getConfig("DOWNLOAD").save();
+            JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
+            JSonWrapper.get("DOWNLOAD").save();
 
             response.addContent("PARAM_DOWNLOAD_MAX_SPEED=" + newdllimit);
         } else if (requestUrl.matches("(?is).*/set/download/max/[0-9]+")) {
             // Set max. sim. downloads
 
-            final Integer newsimdl = Integer.parseInt(new Regex(requestUrl, ".*/set/download/max/([0-9]+)").getMatch(0));
+            final Integer newsimdl = Integer.parseInt(new AwReg(requestUrl, ".*/set/download/max/([0-9]+)").getMatch(0));
             Serverhandler.logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
-            SubConfiguration.getConfig("DOWNLOAD").save();
+            JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
+            JSonWrapper.get("DOWNLOAD").save();
 
             response.addContent("PARAM_DOWNLOAD_MAX_SIMULTAN=" + newsimdl);
         } else if (requestUrl.matches("(?is).*/set/grabber/startafteradding/(true|false)")) {
-            final boolean value = Boolean.parseBoolean(new Regex(requestUrl, ".*/set/grabber/startafteradding/(true|false)").getMatch(0));
+            final boolean value = Boolean.parseBoolean(new AwReg(requestUrl, ".*/set/grabber/startafteradding/(true|false)").getMatch(0));
 
             Serverhandler.logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
 
@@ -400,7 +400,7 @@ public class Serverhandler implements Handler {
 
             response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
         } else if (requestUrl.matches("(?is).*/set/grabber/autoadding/(true|false)")) {
-            final boolean value = Boolean.parseBoolean(new Regex(requestUrl, ".*/set/grabber/autoadding/(true|false)").getMatch(0));
+            final boolean value = Boolean.parseBoolean(new AwReg(requestUrl, ".*/set/grabber/autoadding/(true|false)").getMatch(0));
 
             Serverhandler.logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS_AUTO: " + value);
 
@@ -479,7 +479,7 @@ public class Serverhandler implements Handler {
             // Add link(s)
 
             final ArrayList<String> links = new ArrayList<String>();
-            String link = new Regex(requestUrl, ".*/action/add/links/(.+)").getMatch(0);
+            String link = new AwReg(requestUrl, ".*/action/add/links/(.+)").getMatch(0);
 
             for (final String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                 links.add(tlink);
@@ -514,13 +514,13 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/action/add/container/.+")) {
             // Open a local or remote DLC-container
 
-            String dlcfilestr = new Regex(requestUrl, ".*/action/add/container/(.+)").getMatch(0);
+            String dlcfilestr = new AwReg(requestUrl, ".*/action/add/container/(.+)").getMatch(0);
             dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
             // import dlc
             if (dlcfilestr.matches("http://.*?\\.(dlc|ccf|rsdf)")) {
                 // remote container file
-                final String containerFormat = new Regex(dlcfilestr, ".+\\.((dlc|ccf|rsdf))").getMatch(0);
+                final String containerFormat = new AwReg(dlcfilestr, ".+\\.((dlc|ccf|rsdf))").getMatch(0);
                 final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
 
                 try {
@@ -548,10 +548,10 @@ public class Serverhandler implements Handler {
 
             ArrayList<DownloadLink> dllinks = new ArrayList<DownloadLink>();
 
-            String dlcfilestr = new Regex(requestUrl, ".*/action/save/container(/fromgrabber)/?(.+)").getMatch(1);
+            String dlcfilestr = new AwReg(requestUrl, ".*/action/save/container(/fromgrabber)/?(.+)").getMatch(1);
             dlcfilestr = Encoding.htmlDecode(dlcfilestr);
 
-            final boolean savefromGrabber = new Regex(requestUrl, ".+/fromgrabber/.+").matches();
+            final boolean savefromGrabber = new AwReg(requestUrl, ".+/fromgrabber/.+").matches();
 
             if (savefromGrabber) {
                 if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
@@ -596,8 +596,8 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/action/grabber/set/archivepassword/.+/.+")) {
             // Add an archive password to package
 
-            final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/set/archivepassword/(.+)/.+").getMatch(0).split("/"));
-            final String password = new Regex(requestUrl, ".*/action/grabber/set/archivepassword/.+/(.+)").getMatch(0);
+            final String[] packagenames = this.getHTMLDecoded(new AwReg(requestUrl, "(?is).*/action/grabber/set/archivepassword/(.+)/.+").getMatch(0).split("/"));
+            final String password = new AwReg(requestUrl, ".*/action/grabber/set/archivepassword/.+/(.+)").getMatch(0);
 
             final ArrayList<LinkGrabberFilePackage> packages = LinkGrabberController.getInstance().getPackages();
             final ArrayList<LinkGrabberFilePackage> packagesWithPW = new ArrayList<LinkGrabberFilePackage>();
@@ -638,7 +638,7 @@ public class Serverhandler implements Handler {
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                 response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                final String[] params = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/set/downloaddir/(.+)").getMatch(0).split("/"));
+                final String[] params = this.getHTMLDecoded(new AwReg(requestUrl, "(?is).*/action/grabber/set/downloaddir/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     final LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(params[0]);
@@ -658,7 +658,7 @@ public class Serverhandler implements Handler {
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                 response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                final String[] params = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/set/comment/(.+)").getMatch(0).split("/"));
+                final String[] params = this.getHTMLDecoded(new AwReg(requestUrl, "(?is).*/action/grabber/set/comment/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     final LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(params[0]);
@@ -679,7 +679,7 @@ public class Serverhandler implements Handler {
                 response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
                 final ArrayList<LinkGrabberFilePackage> srcPackages = new ArrayList<LinkGrabberFilePackage>();
-                final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, ".*/action/grabber/join/(.+)").getMatch(0).split("/"));
+                final String[] packagenames = this.getHTMLDecoded(new AwReg(requestUrl, ".*/action/grabber/join/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     final LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
@@ -729,7 +729,7 @@ public class Serverhandler implements Handler {
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                 response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/rename/(.+)").getMatch(0).split("/"));
+                final String[] packagenames = this.getHTMLDecoded(new AwReg(requestUrl, "(?is).*/action/grabber/rename/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     final LinkGrabberFilePackage destPackage = LinkGrabberController.getInstance().getFPwithName(packagenames[0]);
@@ -771,7 +771,7 @@ public class Serverhandler implements Handler {
                 final ArrayList<LinkGrabberFilePackage> addedlist = new ArrayList<LinkGrabberFilePackage>();
                 final ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
 
-                final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/confirm/(.+)").getMatch(0).split("/"));
+                final String[] packagenames = this.getHTMLDecoded(new AwReg(requestUrl, "(?is).*/action/grabber/confirm/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     packages.addAll(LinkGrabberController.getInstance().getPackages());
@@ -807,7 +807,7 @@ public class Serverhandler implements Handler {
                 final ArrayList<String> delLinks = new ArrayList<String>();
                 final ArrayList<String> delPackages = new ArrayList<String>();
 
-                final String[] types = this.getHTMLDecoded(new Regex(requestUrl, "(?is).*/action/grabber/removetype/(.+)").getMatch(0).split("/"));
+                final String[] types = this.getHTMLDecoded(new AwReg(requestUrl, "(?is).*/action/grabber/removetype/(.+)").getMatch(0).split("/"));
 
                 synchronized (LinkGrabberController.ControllerLock) {
                     final ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
@@ -867,7 +867,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/action/grabber/remove/.+")) {
             // remove denoted packages from grabber
 
-            final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, ".*/action/grabber/remove/(.+)").getMatch(0).split("/"));
+            final String[] packagenames = this.getHTMLDecoded(new AwReg(requestUrl, ".*/action/grabber/remove/(.+)").getMatch(0).split("/"));
 
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                 response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
@@ -905,7 +905,7 @@ public class Serverhandler implements Handler {
             if (LinkGrabberPanel.getLinkGrabber().isRunning()) {
                 response.addContent(Serverhandler.ERROR_LINK_GRABBER_RUNNING);
             } else {
-                final Regex reg = new Regex(requestUrl, ".*/action/grabber/move/([^/]+)/(.+)");
+                final AwReg reg = new AwReg(requestUrl, ".*/action/grabber/move/([^/]+)/(.+)");
 
                 if (reg.getMatch(0) == null || reg.getMatch(1) == null) {
                     response.addContent(Serverhandler.ERROR_MALFORMED_REQUEST);
@@ -995,7 +995,7 @@ public class Serverhandler implements Handler {
 
             final ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
             final ArrayList<FilePackage> removelist = new ArrayList<FilePackage>();
-            final String[] packagenames = this.getHTMLDecoded(new Regex(requestUrl, ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
+            final String[] packagenames = this.getHTMLDecoded(new AwReg(requestUrl, ".*/action/downloads/remove/(.+)").getMatch(0).split("/"));
 
             packages.addAll(DownloadController.getInstance().getPackages());
 
@@ -1024,7 +1024,7 @@ public class Serverhandler implements Handler {
 
             final ArrayList<String> links = new ArrayList<String>();
 
-            final String link = new Regex(requestUrl, ".*/special/check/(.+)").getMatch(0);
+            final String link = new AwReg(requestUrl, ".*/special/check/(.+)").getMatch(0);
 
             for (final String tlink : HTMLParser.getHttpLinks(Encoding.urlDecode(link, false), null)) {
                 links.add(tlink);

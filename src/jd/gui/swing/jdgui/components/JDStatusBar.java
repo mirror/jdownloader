@@ -28,13 +28,13 @@ import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.components.modules.ModuleStatus;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -42,18 +42,18 @@ import net.miginfocom.swing.MigLayout;
 
 public class JDStatusBar extends JPanel implements ChangeListener, ControlListener {
 
-    private static final long      serialVersionUID = 3676496738341246846L;
+    private static final long serialVersionUID = 3676496738341246846L;
 
-    private final SubConfiguration dlConfig;
+    private final JSonWrapper dlConfig;
 
-    private JDSpinner              spMaxChunks;
+    private JDSpinner         spMaxChunks;
 
-    private JDSpinner              spMaxDls;
+    private JDSpinner         spMaxDls;
 
-    private JDSpinner              spMaxSpeed;
+    private JDSpinner         spMaxSpeed;
 
     public JDStatusBar() {
-        dlConfig = SubConfiguration.getConfig("DOWNLOAD");
+        dlConfig = JSonWrapper.get("DOWNLOAD");
 
         initGUI();
     }

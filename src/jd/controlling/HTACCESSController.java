@@ -26,7 +26,7 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class HTACCESSController implements ActionListener, ListController {
     private transient static SubConfiguration CONFIG = null;
@@ -70,9 +70,9 @@ public class HTACCESSController implements ActionListener, ListController {
 
     public static String[] getUserDatafromBasicauth(String basicauth) {
         if (basicauth == null || basicauth.length() == 0) return null;
-        if (basicauth.startsWith("Basic")) basicauth = new Regex(basicauth, "Basic (.*?)$").getMatch(0);
+        if (basicauth.startsWith("Basic")) basicauth = new AwReg(basicauth, "Basic (.*?)$").getMatch(0);
         basicauth = Encoding.Base64Decode(basicauth);
-        final String[] dat = new Regex(basicauth, ("(.*?):(.*?)$")).getRow(0);
+        final String[] dat = new AwReg(basicauth, ("(.*?):(.*?)$")).getRow(0);
         return new String[] { dat[0], dat[1] };
     }
 
@@ -113,11 +113,11 @@ public class HTACCESSController implements ActionListener, ListController {
     }
 
     public void setList(final String list) {
-        final String[] pws = Regex.getLines(list);
+        final String[] pws = AwReg.getLines(list);
         synchronized (LIST) {
             LIST.clear();
             for (final String pw : pws) {
-                final String[] dat = new Regex(pw, "(.*?)%%%%(.*?)%%%%(.*?)$").getRow(0);
+                final String[] dat = new AwReg(pw, "(.*?)%%%%(.*?)%%%%(.*?)$").getRow(0);
                 if (dat != null) {
                     add(dat[0], dat[1], dat[2]);
                 }

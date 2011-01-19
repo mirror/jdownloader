@@ -32,6 +32,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.http.BrowserException;
 import jd.http.BrowserSettings;
@@ -48,7 +49,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
@@ -322,7 +323,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
         // - prerequisite: 'skip link' option selected
         // TODO WORKAROUND FOR NOW.. WILL BE HANDLED BY A MIRROR MANAGER IN THE
         // FUTURE
-        if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 1) {
+        if (JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 1) {
             ArrayList<DownloadLink> links = DownloadController.getInstance().getAllDownloadLinks();
             for (DownloadLink link : links) {
                 if (downloadLink != link && downloadLink.getFileOutput().equals(link.getFileOutput())) {
@@ -436,7 +437,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
         String[] fileExists = new String[] { JDL.L("system.download.triggerfileexists.overwrite", "Overwrite"), JDL.L("system.download.triggerfileexists.skip", "Skip Link"), JDL.L("system.download.triggerfileexists.rename", "Auto rename") };
         String title = JDL.L("jd.controlling.SingleDownloadController.askexists.title", "File exists");
         String msg = JDL.LF("jd.controlling.SingleDownloadController.askexists", "The file \r\n%s\r\n already exists. What do you want to do?", downloadLink.getFileOutput());
-        int doit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1);
+        int doit = JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1);
         if (doit == 4) {
 
             // ask
@@ -476,7 +477,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
             String name = filename.substring(0, filename.length() - extension.length() - 1);
             int copy = 2;
             try {
-                String[] num = new Regex(name, "(.*)_(\\d+)").getRow(0);
+                String[] num = new AwReg(name, "(.*)_(\\d+)").getRow(0);
                 copy = Integer.parseInt(num[1]) + 1;
                 downloadLink.forceFileName(name + "_" + copy + "." + extension);
                 while (new File(downloadLink.getFileOutput()).exists()) {
@@ -520,7 +521,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
     private void onErrorNoConnection(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         logger.severe("Error occurred: No Server connection");
-        long milliSeconds = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
+        long milliSeconds = JSonWrapper.get("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         linkStatus.setWaitTime(milliSeconds);
         if (linkStatus.getErrorMessage() == null) {

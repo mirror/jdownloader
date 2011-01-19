@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
@@ -30,7 +31,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadspace.pl" }, urls = { "http://[\\w\\.]*?uploadspace\\.pl/plik[a-zA-Z0-9]+(/.+)?\\.htm" }, flags = { 0 })

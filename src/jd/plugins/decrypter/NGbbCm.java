@@ -21,12 +21,11 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"1gabba.com"}, urls = {"http://[\\w\\.]*?1gabba\\.com/node/[\\d]{4}"}, flags = {0})
 public class NGbbCm extends PluginForDecrypt {

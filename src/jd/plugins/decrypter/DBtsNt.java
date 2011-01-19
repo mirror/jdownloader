@@ -24,14 +24,13 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist)\\?id=\\d+" }, flags = { 0 })
 public class DBtsNt extends PluginForDecrypt implements ProgressControllerListener {

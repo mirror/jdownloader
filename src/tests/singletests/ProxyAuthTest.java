@@ -32,7 +32,7 @@ public class ProxyAuthTest {
 
     @Test
     public void proxyAuthTest() {
-        Browser.init();
+
         TestUtils.log("init Proxy");
 
         final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.HTTP, TestUtils.getStringProperty("proxy_ip"), TestUtils.getIntegerProperty("proxy_port"));

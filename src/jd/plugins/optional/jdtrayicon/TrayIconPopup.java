@@ -42,13 +42,14 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
+import jd.config.Property;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -57,7 +58,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     private static final long        serialVersionUID  = 2623190748929934409L;
 
-    private SubConfiguration         config;
+    private Property                 config;
     private JPanel                   entryPanel;
     private JPanel                   quickConfigPanel;
     private JPanel                   bottomPanel;
@@ -75,7 +76,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     public TrayIconPopup() {
         // required. JWindow needs a parent to grant a nested Component focus
         super(JDGui.getInstance().getMainFrame());
-        config = SubConfiguration.getConfig("DOWNLOAD");
+        config = JSonWrapper.get("DOWNLOAD");
         resizecomps = new ArrayList<JToggleButton>();
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
@@ -279,7 +280,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
             if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)) {
                 config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
-                config.save();
+                ((JSonWrapper) config).save();
             }
             colorizeSpinnerSpeed();
         } else if (e.getSource() == spMaxDls.getSpinner()) {
@@ -287,14 +288,14 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
             if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2)) {
                 config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
-                config.save();
+                ((JSonWrapper) config).save();
             }
         } else if (e.getSource() == spMaxChunks.getSpinner()) {
             int value = spMaxChunks.getValue();
 
             if (value != config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) {
                 config.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, value);
-                config.save();
+                ((JSonWrapper) config).save();
             }
         }
     }

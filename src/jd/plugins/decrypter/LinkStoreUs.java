@@ -31,6 +31,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -43,8 +44,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkstore.us" }, urls = { "http://(www\\.)?linkstore\\.us/(load\\?[a-z0-9]+|[a-z0-9]+(-m\\d+)?)" }, flags = { 0 })
 public class LinkStoreUs extends PluginForDecrypt {

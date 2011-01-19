@@ -3,8 +3,8 @@ package jd.controlling.reconnect.ipcheck;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 
 public class IP {
     private static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
@@ -48,7 +48,7 @@ public class IP {
     }
 
     public static String getIPPattern() {
-        return SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, IP.IP_PATTERN);
+        return JSonWrapper.get("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, IP.IP_PATTERN);
     }
 
     /**
@@ -88,7 +88,7 @@ public class IP {
     }
 
     public String toString() {
-        return this.ip!=null?this.ip:"unknown";
+        return this.ip != null ? this.ip : "unknown";
     }
 
 }

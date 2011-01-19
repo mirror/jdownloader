@@ -21,7 +21,7 @@ import jd.plugins.optional.langfileeditor.LFEGui;
 import jd.plugins.optional.langfileeditor.LFETableModel;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtTextEditorColumn;
 
@@ -38,7 +38,7 @@ public class LanguageColumn extends ExtTextEditorColumn<KeyInfo> {
     protected void prepareLabel(KeyInfo value) {
         if (value.hasWrongParameterCount()) {
             label.setBackground(LFEGui.COLOR_MISSING);
-        } else if (new Regex(value.getKey(), "gui\\.menu\\.(.*?)\\.accel").matches() && new Regex(value.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
+        } else if (new AwReg(value.getKey(), "gui\\.menu\\.(.*?)\\.accel").matches() && new AwReg(value.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
             label.setBackground(LFEGui.COLOR_MISSING);
         }
     }
@@ -47,11 +47,11 @@ public class LanguageColumn extends ExtTextEditorColumn<KeyInfo> {
     public String getToolTip(KeyInfo obj) {
         if (obj.hasWrongParameterCount()) return JDL.L(JDL_PREFIX + "tooltip.wrongParameterCount", "Your translated String contains a wrong count of placeholders!");
 
-        String match = new Regex(((KeyInfo) obj).getKey(), "gui\\.menu\\.(.*?)\\.accel").getMatch(0);
+        String match = new AwReg(((KeyInfo) obj).getKey(), "gui\\.menu\\.(.*?)\\.accel").getMatch(0);
         if (match != null) {
             StringBuilder toolTip = new StringBuilder();
             toolTip.append(JDL.LF(JDL_PREFIX + "tooltip.accelerator", "Insert the hotkey for the action %s here. Allowed modifiers are CTRL, ALTGR, ALT, META, SHIFT", match));
-            if (new Regex(obj.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
+            if (new AwReg(obj.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
                 toolTip.append(new char[] { ' ', '[' }).append(JDL.LF(JDL_PREFIX + "tooltip.accelerator.wrong", "The modifier %s isn't allowed!")).append(']');
             }
             return toolTip.toString();

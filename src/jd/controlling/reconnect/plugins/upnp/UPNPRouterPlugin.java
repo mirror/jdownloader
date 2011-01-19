@@ -52,7 +52,7 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.locale.Loc;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
@@ -530,7 +530,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
             Log.L.fine(response);
             URL url;
-            for (final String location : new Regex(response, "LOCATION\\s*:\\s*([^\\s]+)").getColumn(0)) {
+            for (final String location : new AwReg(response, "LOCATION\\s*:\\s*([^\\s]+)").getColumn(0)) {
                 try {
                     url = new URL(location);
                     // put(UPNPRouterPlugin.LOCATION, location);

@@ -34,7 +34,7 @@ import jd.event.ControlListener;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 /**
  * Diese Klasse ist dafür da, zeitverzögert die Zwischenablage zu untersuchen
@@ -140,7 +140,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                 if (htmlFlavor != null) {
                     htmlFlavor = flav;
                 }
-                final String charSet = new Regex(flav.toString(), "charset=(.*?)]").getMatch(0);
+                final String charSet = new AwReg(flav.toString(), "charset=(.*?)]").getMatch(0);
                 if (charSet != null && charSet.equalsIgnoreCase("UTF-8")) {
                     /* we found utf-8 encoding, so lets use that */
                     htmlFlavor = flav;
@@ -293,7 +293,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                             currentString = ((String) cur.getTransferData(stringFlavor));
                         } else if (what == htmlFlavor) {
                             try {
-                                final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
+                                final String charSet = new AwReg(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
                                 byte[] html = (byte[]) cur.getTransferData(htmlFlavor);
                                 if (OSDetector.isLinux()) {
                                     /*

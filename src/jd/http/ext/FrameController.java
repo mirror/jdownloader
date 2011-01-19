@@ -16,7 +16,7 @@ import jd.http.Request;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.BrowserFrame;
 import org.lobobrowser.html.FormInput;
@@ -525,9 +525,9 @@ public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement
         return null;
     }
 
-    public Regex getRegex(String pattern) {
+    public AwReg getRegex(String pattern) {
         // TODO Auto-generated method stub
-        return new Regex(htmlDocument.getInnerHTML(), pattern);
+        return new AwReg(htmlDocument.getInnerHTML(), pattern);
     }
 
     public String getFrameBorder() {

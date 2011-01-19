@@ -24,6 +24,7 @@ import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -35,7 +36,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "6ybh-upload.com" }, urls = { "http://[\\w\\.]*?6ybh-upload\\.com/[a-z0-9]{12}" }, flags = { 0 })

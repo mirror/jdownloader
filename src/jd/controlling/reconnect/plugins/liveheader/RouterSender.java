@@ -535,7 +535,7 @@ public class RouterSender {
         }
         this.collectData();
 
-        final String dataString = JSonStorage.toString(this);
+        final String dataString = JSonStorage.serializeToJson(this);
 
         br.forceDebug(true);
         final String data = URLEncoder.encode(dataString, "UTF-8");

@@ -30,7 +30,6 @@ import javax.swing.AbstractAction;
 
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.GarbageController;
 import jd.controlling.JDController;
@@ -44,6 +43,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.HTTPProxy;
@@ -59,6 +59,7 @@ import jd.pluginloader.VirtualDecrypterClass;
 import jd.pluginloader.VirtualHosterClass;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.updater.UpdaterConstants;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -220,19 +221,19 @@ public class JDInit {
 
     public void initBrowser() {
         Browser.setGlobalLogger(JDLogger.getLogger());
-        Browser.init();
-        /* init default global Timeouts */
-        Browser.setGlobalReadTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000));
-        Browser.setGlobalConnectTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000));
 
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            final String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
-            final int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080);
-            final String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
-            final String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
+        /* init default global Timeouts */
+        Browser.setGlobalReadTimeout(JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_READ_TIMEOUT, 100000));
+        Browser.setGlobalConnectTimeout(JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000));
+
+        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
+            final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_HOST, "");
+            final int port = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PROXY_PORT, 8080);
+            final String user = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_USER, "");
+            final String pass = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_PASS, "");
             if ("".equals(host.trim())) {
                 JDInit.LOG.warning("Proxy disabled. No host");
-                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_PROXY, false);
+                JSonWrapper.get("DOWNLOAD").setProperty(UpdaterConstants.USE_PROXY, false);
                 return;
             }
 
@@ -245,14 +246,14 @@ public class JDInit {
             }
             Browser.setGlobalProxy(pr);
         }
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            final String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
-            final String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
-            final String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
-            final int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
+        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_SOCKS, false)) {
+            final String user = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_USER_SOCKS, "");
+            final String pass = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_PASS_SOCKS, "");
+            final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.SOCKS_HOST, "");
+            final int port = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.SOCKS_PORT, 1080);
             if ("".equals(host.trim())) {
                 JDInit.LOG.warning("Socks Proxy disabled. No host");
-                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_SOCKS, false);
+                JSonWrapper.get("DOWNLOAD").setProperty(UpdaterConstants.USE_SOCKS, false);
                 return;
             }
 
@@ -265,7 +266,7 @@ public class JDInit {
             }
             Browser.setGlobalProxy(pr);
         }
-        Browser.init();
+
     }
 
     public void initControllers() {

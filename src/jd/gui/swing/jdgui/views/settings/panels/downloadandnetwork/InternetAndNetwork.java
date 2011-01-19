@@ -20,16 +20,17 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
+import jd.config.Property;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.updater.UpdaterConstants;
 import jd.utils.locale.JDL;
 
 public class InternetAndNetwork extends ConfigPanel {
 
-    private static final long serialVersionUID = -7292287136387344296L;
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.";
-    private SubConfiguration config;
+    private static final long   serialVersionUID = -7292287136387344296L;
+    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.";
+    private Property            config;
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "download.internetandnetwork.title", "Internet & Network");
@@ -42,7 +43,7 @@ public class InternetAndNetwork extends ConfigPanel {
     public InternetAndNetwork() {
         super();
 
-        config = SubConfiguration.getConfig("DOWNLOAD");
+        config = JSonWrapper.get("DOWNLOAD");
 
         init();
     }
@@ -58,36 +59,36 @@ public class InternetAndNetwork extends ConfigPanel {
 
         network.setGroup(new ConfigGroup(JDL.L("gui.config.download.timeout", "Timeout & Connection loss"), "gui.images.networkerror"));
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDL.L("gui.config.download.timeout.read", "Read Timeout (ms)"), 20000, 120000, 500));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, UpdaterConstants.PARAM_DOWNLOAD_READ_TIMEOUT, JDL.L("gui.config.download.timeout.read", "Read Timeout (ms)"), 20000, 120000, 500));
         ce.setDefaultValue(100000);
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDL.L("gui.config.download.timeout.connect", "Connect Timeout (Request) (ms)"), 20000, 120000, 500));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, UpdaterConstants.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDL.L("gui.config.download.timeout.connect", "Connect Timeout (Request) (ms)"), 20000, 120000, 500));
         ce.setDefaultValue(100000);
 
         network.setGroup(new ConfigGroup(JDL.L("gui.config.download.proxy", "Proxy Settings"), "gui.images.proxy"));
-        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDL.L("gui.config.download.use_proxy", "Use proxy") + " (" + JDL.L("gui.warning.restartneeded", "JD-Restart needed after changes!") + ")"));
+        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, UpdaterConstants.USE_PROXY, JDL.L("gui.config.download.use_proxy", "Use proxy") + " (" + JDL.L("gui.warning.restartneeded", "JD-Restart needed after changes!") + ")"));
 
         conditionEntry.setDefaultValue(false);
         conditionEntry.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_HOST, JDL.L("gui.config.download.proxy.host", "Host/IP")));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, UpdaterConstants.PROXY_HOST, JDL.L("gui.config.download.proxy.host", "Host/IP")));
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDL.L("gui.config.download.proxy.port", "Port"), 1, 65535, 1));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, UpdaterConstants.PROXY_PORT, JDL.L("gui.config.download.proxy.port", "Port"), 1, 65535, 1));
         ce.setDefaultValue(8080);
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER, JDL.L("gui.config.download.proxy.user", "User")));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, UpdaterConstants.PROXY_USER, JDL.L("gui.config.download.proxy.user", "User")));
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, config, Configuration.PROXY_PASS, JDL.L("gui.config.download.proxy.pass", "Pass")));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, config, UpdaterConstants.PROXY_PASS, JDL.L("gui.config.download.proxy.pass", "Pass")));
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         network.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDL.L("gui.config.download.use_socks", "Use Socks-Proxy") + " (" + JDL.L("gui.warning.restartneeded", "JD-Restart needed after changes!") + ")"));
+        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, UpdaterConstants.USE_SOCKS, JDL.L("gui.config.download.use_socks", "Use Socks-Proxy") + " (" + JDL.L("gui.warning.restartneeded", "JD-Restart needed after changes!") + ")"));
         conditionEntry.setDefaultValue(false);
         conditionEntry.setPropertyType(PropertyType.NEEDS_RESTART);
 
@@ -101,19 +102,19 @@ public class InternetAndNetwork extends ConfigPanel {
         // ce.setEnabledCondidtion(conditionEntry, "==", true);
         // ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.SOCKS_HOST, JDL.L("gui.config.download.socks.host", "Host/IP")));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, UpdaterConstants.SOCKS_HOST, JDL.L("gui.config.download.socks.host", "Host/IP")));
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDL.L("gui.config.download.socks.port", "Port"), 1, 65535, 1));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, UpdaterConstants.SOCKS_PORT, JDL.L("gui.config.download.socks.port", "Port"), 1, 65535, 1));
         ce.setDefaultValue(1080);
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER_SOCKS, JDL.L("gui.config.download.proxy.user", "User")));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, UpdaterConstants.PROXY_USER_SOCKS, JDL.L("gui.config.download.proxy.user", "User")));
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, config, Configuration.PROXY_PASS_SOCKS, JDL.L("gui.config.download.proxy.pass", "Pass")));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, config, UpdaterConstants.PROXY_PASS_SOCKS, JDL.L("gui.config.download.proxy.pass", "Pass")));
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);

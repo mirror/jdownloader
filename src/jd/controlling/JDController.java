@@ -30,6 +30,7 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
@@ -41,7 +42,7 @@ import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.event.Eventsender;
 
 /**
@@ -452,7 +453,7 @@ public class JDController implements ControlListener {
     }
 
     public int getForbiddenReconnectDownloadNum() {
-        final boolean allowinterrupt = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
+        final boolean allowinterrupt = JSonWrapper.get("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
 
         int ret = 0;
         final ArrayList<DownloadLink> links = DownloadWatchDog.getInstance().getRunningDownloads();
@@ -675,7 +676,7 @@ public class JDController implements ControlListener {
             for (final FilePackage fp : packages) {
                 for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                     final String name = new File(nextDownloadLink.getFileOutput()).getName();
-                    if (new Regex(name, matcher, Pattern.CASE_INSENSITIVE).matches()) {
+                    if (new AwReg(name, matcher, Pattern.CASE_INSENSITIVE).matches()) {
                         ret.add(nextDownloadLink);
                     }
                 }
@@ -694,7 +695,7 @@ public class JDController implements ControlListener {
             for (final FilePackage fp : packages) {
                 for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                     final String path = nextDownloadLink.getFileOutput();
-                    if (new Regex(path, matcher, Pattern.CASE_INSENSITIVE).matches()) {
+                    if (new AwReg(path, matcher, Pattern.CASE_INSENSITIVE).matches()) {
                         ret.add(nextDownloadLink);
                     }
                 }

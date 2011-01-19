@@ -2,7 +2,7 @@ package jd.http.ext;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.style.AbstractCSS2Properties;
 
@@ -49,7 +49,7 @@ public class RendererUtilities {
     private static int covertToPixel(String top) {
         if (top == null) return 0;
         if (top.toLowerCase().trim().endsWith("px")) { return Integer.parseInt(top.substring(0, top.length() - 2)); }
-        String value = new Regex(top, "([\\-\\+]?\\s*\\d+)").getMatch(0);
+        String value = new AwReg(top, "([\\-\\+]?\\s*\\d+)").getMatch(0);
         if (value == null) return 0;
         return Integer.parseInt(value);
     }

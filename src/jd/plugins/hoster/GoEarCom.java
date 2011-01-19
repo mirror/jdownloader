@@ -17,14 +17,13 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
 
 //goear.com hoster plugin by HerrDaur
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goear.com" }, urls = { "http://[\\w\\.]*?goear\\.com/listen/[0-9a-f]+/.+" }, flags = { 0 })

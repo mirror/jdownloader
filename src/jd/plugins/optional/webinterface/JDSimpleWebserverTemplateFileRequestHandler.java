@@ -28,12 +28,12 @@ import java.util.Vector;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -45,7 +45,7 @@ import jd.plugins.optional.webinterface.template.Template;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class JDSimpleWebserverTemplateFileRequestHandler {
 
@@ -386,8 +386,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         }
         t.setParam("config_current_speed", "" + (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() / 1024));
 
-        t.setParam("config_max_downloads", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
-        t.setParam("config_max_speed", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
+        t.setParam("config_max_downloads", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
+        t.setParam("config_max_speed", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
             t.setParam("config_autoreconnect", "checked");
@@ -417,7 +417,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     @SuppressWarnings("deprecation")
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         try {
-            url = new Regex(url, "(.+\\.tmpl)").getMatch(0);
+            url = new AwReg(url, "(.+\\.tmpl)").getMatch(0);
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());

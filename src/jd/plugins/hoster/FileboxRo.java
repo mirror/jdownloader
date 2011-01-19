@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.ro" }, urls = { "(http://[\\w\\.]*?(filebox|fbx)\\.ro/(download|down)\\.php\\?k=[0-9a-z]{16})|(http://[\\w\\.]*?(filebox|fbx)\\.ro/video/play_video\\.php\\?k=[0-9a-z]{16})|(http://[\\w\\.]*?fbx\\.ro/[0-9a-z]{16})|(http://[\\w\\.]*?fbx\\.ro/v/[0-9a-z]{16})" }, flags = { 0 })

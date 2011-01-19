@@ -53,7 +53,7 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -130,7 +130,7 @@ public class JDExternInterface extends PluginOptional {
         byte[] baseDecoded = Base64.decode(crypted);
         String decryted = decrypt(baseDecoded, key).trim();
 
-        String passwords[] = Regex.getLines(password);
+        String passwords[] = AwReg.getLines(password);
         /* links were not encoded, so we dont have to htmlDecode them again */
         ArrayList<DownloadLink> links = new DistributeData(decryted).findLinks();
         for (DownloadLink link : links)
@@ -247,8 +247,8 @@ public class JDExternInterface extends PluginOptional {
                         if (splitPath[1].equalsIgnoreCase("add")) {
                             askPermission(request);
                             /* parse the post data */
-                            String urls[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("urls")));
-                            String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
+                            String urls[] = AwReg.getLines(Encoding.htmlDecode(request.getParameters().get("urls")));
+                            String passwords[] = AwReg.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
                             String source = Encoding.urlDecode(request.getParameters().get("source"), false);
                             String comment = Encoding.urlDecode(request.getParameters().get("comment"), false);
                             if (urls.length != 0) {
@@ -357,8 +357,8 @@ public class JDExternInterface extends PluginOptional {
                     } else {
                         JDLogger.getLogger().info("Valid FlashGot Referer found, skipping AskPermission");
                     }
-                    String urls[] = Regex.getLines(Encoding.urlDecode(request.getParameters().get("urls"), false));
-                    String desc[] = Regex.getLines(Encoding.urlDecode(request.getParameters().get("descriptions"), false));
+                    String urls[] = AwReg.getLines(Encoding.urlDecode(request.getParameters().get("urls"), false));
+                    String desc[] = AwReg.getLines(Encoding.urlDecode(request.getParameters().get("descriptions"), false));
                     String dir = null;
                     FilePackage fp = FilePackage.getInstance();
                     String packname = Encoding.urlDecode(request.getParameters().get("package"), false);

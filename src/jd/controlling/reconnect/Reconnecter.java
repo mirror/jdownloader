@@ -83,7 +83,7 @@ public final class Reconnecter implements StateMachineInterface {
     // */
     // if (System.currentTimeMillis() - Reconnecter.LAST_UP_UPDATE_TIME > 1000 *
     // 60 *
-    // SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2",
+    // JSonWrapper.get("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2",
     // 10)) { return Reconnecter.checkExternalIPChange(); }
     // return false;
     //

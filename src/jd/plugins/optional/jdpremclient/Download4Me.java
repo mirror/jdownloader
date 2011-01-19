@@ -24,7 +24,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.formatter.TimeFormatter;
 
 public class Download4Me extends PluginForHost implements JDPremInterface {
@@ -378,7 +378,7 @@ public class Download4Me extends PluginForHost implements JDPremInterface {
                 premiumHosts.clear();
                 String hosts = "rapidshare.com;hotfile.com;megaupload.com";
                 if (hosts != null) {
-                    String hoster[] = new Regex(hosts, "(.*?)(;|$)").getColumn(0);
+                    String hoster[] = new AwReg(hosts, "(.*?)(;|$)").getColumn(0);
                     if (hosts != null) {
                         for (String host : hoster) {
                             if (hosts == null || host.length() == 0) continue;

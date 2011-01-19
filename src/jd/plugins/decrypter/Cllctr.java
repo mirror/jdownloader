@@ -21,14 +21,13 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "collectr.net" }, urls = { "http://[\\w\\.]*?collectr\\.net/(out/(\\d+/)?\\d+|links/\\w+)" }, flags = { 0 })
 public class Cllctr extends PluginForDecrypt {

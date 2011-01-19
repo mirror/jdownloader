@@ -15,13 +15,13 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -218,7 +218,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
             public void run() {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RETRIES, 0);
                 if (Reconnecter.getInstance().forceReconnect()) {
-                    if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                    if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                         progress.setStatusText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
                     } else {
                         progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
@@ -227,7 +227,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
 
                         @Override
                         protected void runInEDT() {
-                            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
                             } else {
                                 ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
@@ -235,7 +235,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setIcon(JDTheme.II("gui.images.selected", 32, 32));
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setEnabled(true);
                             ReconnectPluginConfigGUI.this.lblStatusMessage.setEnabled(true);
-                            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText("?");
                             } else {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());
@@ -253,7 +253,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                             ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setEnabled(true);
-                            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                            if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText("?");
                             } else {
                                 ReconnectPluginConfigGUI.this.lblCurrentIP.setText(IPController.getInstance().fetchIP().toString());

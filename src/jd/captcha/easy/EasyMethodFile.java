@@ -38,7 +38,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class EasyMethodFile implements JDLabelContainer, Serializable {
     /**
@@ -271,7 +271,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
         String ret = null;
         try {
             if (infoxml.exists()) {
-                ret = new Regex(JDIO.readFileToString(infoxml), "name=\"([^\"]*)").getMatch(0);
+                ret = new AwReg(JDIO.readFileToString(infoxml), "name=\"([^\"]*)").getMatch(0);
             }
         } catch (final Exception e) {
             // e.printStackTrace();

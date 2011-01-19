@@ -18,11 +18,11 @@ package tests.singletests;
 
 import static org.junit.Assert.assertTrue;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 
@@ -77,7 +77,7 @@ public class Gui {
 
         Thread.sleep(3000);
 
-        assertTrue(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) == SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
+        assertTrue(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) == JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class Gui {
 
         Thread.sleep(3000);
 
-        assertTrue(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
+        assertTrue(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
     }
 
     @Test

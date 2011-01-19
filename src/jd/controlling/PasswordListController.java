@@ -27,7 +27,7 @@ import javax.swing.Timer;
 
 import jd.config.SubConfiguration;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class PasswordListController implements ActionListener, ListController {
     private transient static SubConfiguration CONFIG = null;
@@ -95,7 +95,7 @@ public class PasswordListController implements ActionListener, ListController {
 
     public void setList(String list) {
         if (list == null) list = "";
-        String[] spl = Regex.getLines(list);
+        String[] spl = AwReg.getLines(list);
         synchronized (LIST2) {
             LIST2.clear();
             addPasswords(spl);

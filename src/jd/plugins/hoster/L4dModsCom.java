@@ -19,14 +19,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmods.com" }, urls = { "http://[\\w\\.]*?l4dmods\\.com/index\\.php\\?option=com_joomloads(2)?\\&(view=package|controller=package&task=download)\\&(Itemid=[0-9]\\&packageId=[0-9]+|pid=\\d+\\&Itemid=\\d+)" }, flags = { 2 })
 public class L4dModsCom extends PluginForHost {

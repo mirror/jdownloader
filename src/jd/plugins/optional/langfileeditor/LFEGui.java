@@ -64,7 +64,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -249,8 +249,8 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 svn.resolveConflicts(file, new ResolveHandler() {
 
                     public String resolveConflict(final SVNInfo info, final File file, final String contents, final int startMine, final int endMine, final int startTheirs, final int endTheirs) {
-                        final String[] mine = Regex.getLines(contents.substring(startMine, endMine).trim());
-                        final String[] theirs = Regex.getLines(contents.substring(startTheirs, endTheirs).trim());
+                        final String[] mine = AwReg.getLines(contents.substring(startMine, endMine).trim());
+                        final String[] theirs = AwReg.getLines(contents.substring(startTheirs, endTheirs).trim());
                         final StringBuilder sb = new StringBuilder();
                         final ArrayList<String> keys = new ArrayList<String>();
                         for (final String m : mine) {

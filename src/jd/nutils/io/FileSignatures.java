@@ -22,7 +22,7 @@ import java.io.IOException;
 
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class FileSignatures {
 
@@ -68,7 +68,7 @@ public class FileSignatures {
      */
     public static Signature[] getSignatureList() {
         if (SIGNATURES != null) return SIGNATURES;
-        String[] m = Regex.getLines(JDIO.readFileToString(JDUtilities.getResourceFile("jd/mime.type")));
+        String[] m = AwReg.getLines(JDIO.readFileToString(JDUtilities.getResourceFile("jd/mime.type")));
         SIGNATURES = new Signature[m.length];
         int i = 0;
         for (String e : m) {

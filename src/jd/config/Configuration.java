@@ -43,8 +43,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_DO_CRC                           = "DO_CRC";
 
-    public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT         = "DOWNLOAD_CONNECT_TIMEOUT_V3";
-
     public static final String PARAM_DOWNLOAD_DIRECTORY               = "DOWNLOAD_DIRECTORY";
 
     public static final String PARAM_DOWNLOAD_MAX_CHUNKS              = "DOWNLOAD_MAX_CHUNKS";
@@ -56,8 +54,6 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST   = "DOWNLOAD_MAX_SIMULTAN_PER_HOST";
 
     public static final String PARAM_DOWNLOAD_MAX_SPEED               = "DOWNLOAD_MAX_SPEED_V2";
-
-    public static final String PARAM_DOWNLOAD_READ_TIMEOUT            = "DOWNLOAD_READ_TIMEOUT_V3";
 
     public static final String PARAM_FILE_EXISTS                      = "FILE_EXISTS";
 
@@ -100,26 +96,6 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_WEBUPDATE_AUTO_RESTART           = "WEBUPDATE_AUTO_RESTART";
 
     public static final String PARAM_WEBUPDATE_DISABLE                = "WEBUPDATE_DISABLE";
-
-    public static final String PROXY_HOST                             = "PROXY_HOST";
-
-    public static final String PROXY_PASS                             = "PROXY_PASS";
-
-    public static final String PROXY_PASS_SOCKS                       = "PROXY_PASS_SOCKS";
-
-    public static final String PROXY_PORT                             = "PROXY_PORT";
-
-    public static final String PROXY_USER                             = "PROXY_USER";
-
-    public static final String PROXY_USER_SOCKS                       = "PROXY_USER_SOCKS";
-
-    public static final String SOCKS_HOST                             = "SOCKS_HOST";
-
-    public static final String SOCKS_PORT                             = "SOCKS_PORT";
-
-    public static final String USE_PROXY                              = "USE_PROXY";
-
-    public static final String USE_SOCKS                              = "USE_SOCKS";
 
     private static final long  serialVersionUID                       = -2709887320616014389L;
 

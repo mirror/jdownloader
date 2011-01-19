@@ -13,7 +13,7 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class DragDropHandler extends TransferHandler {
 
@@ -54,7 +54,7 @@ public class DragDropHandler extends TransferHandler {
             if (t.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) t.getTransferData(DataFlavor.stringFlavor);
 
-                String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
+                String linuxfiles[] = new AwReg(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
                 if (linuxfiles != null && linuxfiles.length > 0) {
                     for (String file : linuxfiles) {
                         JDController.loadContainerFile(new File(file.trim()));

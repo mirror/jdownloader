@@ -28,13 +28,13 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-import org.appwork.utils.Regex;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;

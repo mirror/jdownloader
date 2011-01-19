@@ -30,12 +30,12 @@ import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.ByteArray;
 import jd.controlling.ByteBufferController;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -47,10 +47,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.updater.UpdaterConstants;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
@@ -114,7 +115,7 @@ abstract public class DownloadInterface {
             this.clonedconnection = false;
             this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
-            MAX_BUFFERSIZE = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(ByteBufferController.MAXBUFFERSIZE, 1000) * 1024;
+            MAX_BUFFERSIZE = JSonWrapper.get("DOWNLOAD").getIntegerProperty(ByteBufferController.MAXBUFFERSIZE, 1000) * 1024;
         }
 
         private void addChunkBytesLoaded(long limit) {
@@ -530,7 +531,7 @@ abstract public class DownloadInterface {
 
                 // Content-Range=[133333332-199999999/200000000]}
                 if (startByte > 0) {
-                    String[] range = new Regex(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
+                    String[] range = new AwReg(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
                     if (speedDebug) {
                         logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
                     }
@@ -539,7 +540,7 @@ abstract public class DownloadInterface {
                         if (dl.fakeContentRangeHeader()) {
                             logger.severe("Using fakeContentRangeHeader");
                             // logger.finest(connection.toString());
-                            String[] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getRow(0);
+                            String[] fixrange = new AwReg(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getRow(0);
 
                             long gotSB = Formatter.filterLong(fixrange[0]);
                             long gotEB;
@@ -768,8 +769,8 @@ abstract public class DownloadInterface {
         linkStatus.setStatusText(JDL.L("download.connection.normal", "Download"));
         browser = plugin.getBrowser().cloneBrowser();
         downloadLink.setDownloadInstance(this);
-        requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
-        readTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
+        requestTimeout = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
+        readTimeout = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
@@ -1206,7 +1207,7 @@ abstract public class DownloadInterface {
             }
         }
         if (fileOutput.exists()) {
-            if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 0) {
+            if (JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 0) {
                 if (!new File(downloadLink.getFileOutput()).delete()) {
                     linkstatus.addStatus(LinkStatus.ERROR_FATAL);
                     linkstatus.setErrorMessage(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));

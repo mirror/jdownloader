@@ -25,7 +25,6 @@ import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
@@ -46,6 +45,7 @@ import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
 import jd.nutils.JDFlags;
@@ -180,7 +180,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
                     @Override
                     public void onPropertyChanged(final Property source, final String key) {
-                        setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s KiB/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                        setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s KiB/s", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
                     }
                 });
             }
@@ -189,7 +189,7 @@ public class ActionController {
             public void initDefaults() {
                 this.setEnabled(false);
                 this.setType(ToolBarAction.Types.TOGGLE);
-                this.setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s KiB/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                this.setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s KiB/s", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
             }
 
             @Override

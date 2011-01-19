@@ -21,14 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http://(www\\.)?(r\\.)?musicore\\.net/(forums/index\\.php\\?/topic/\\d+-|forums/index\\.php\\?showtopic=\\d+|url\\.php\\?id=[A-Za-z0-9]+\\&url=[a-zA-Z0-9=\\+/\\-]+)" }, flags = { 0 })
 public class MsCreNt extends PluginForDecrypt {

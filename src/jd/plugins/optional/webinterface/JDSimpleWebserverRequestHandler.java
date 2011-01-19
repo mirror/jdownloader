@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
@@ -32,6 +31,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -39,7 +39,7 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class JDSimpleWebserverRequestHandler {
 
@@ -119,7 +119,7 @@ public class JDSimpleWebserverRequestHandler {
                     if (setspeed < 0) {
                         setspeed = 0;
                     }
-                    SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, setspeed);
+                    JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, setspeed);
                 }
 
                 if (requestParameter.containsKey("maxdls")) {
@@ -130,7 +130,7 @@ public class JDSimpleWebserverRequestHandler {
                     if (maxdls > 20) {
                         maxdls = 20;
                     }
-                    SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls);
+                    JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls);
                 }
 
                 if (!requestParameter.containsKey("selected_dowhat_link_adder")) {
@@ -338,7 +338,7 @@ public class JDSimpleWebserverRequestHandler {
                 if (requestParameter.containsKey("password_list")) {
                     final String passwordList = Encoding.htmlDecode(requestParameter.get("password_list"));
                     final ArrayList<String> pws = new ArrayList<String>();
-                    for (final String pw : org.appwork.utils.Regex.getLines(passwordList)) {
+                    for (final String pw : org.appwork.utils.AwReg.getLines(passwordList)) {
                         pws.add(0, pw);
                     }
                     PasswordListController.getInstance().setPasswordList(pws);
@@ -363,7 +363,7 @@ public class JDSimpleWebserverRequestHandler {
         if (!fileToRead.exists()) {
             this.response.setNotFound(url);
         } else {
-            if (new Regex(url, ".+\\.tmpl").matches()) {
+            if (new AwReg(url, ".+\\.tmpl").matches()) {
                 JDSimpleWebserverTemplateFileRequestHandler filerequest;
                 filerequest = new JDSimpleWebserverTemplateFileRequestHandler(this.response);
                 filerequest.handleRequest(url, requestParameter);

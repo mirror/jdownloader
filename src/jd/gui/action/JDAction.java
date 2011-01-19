@@ -31,7 +31,7 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.ShortCuts;
 import jd.utils.JDTheme;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 /**
  * This abstract class is the parent class for all actions in JDownloader
@@ -156,15 +156,15 @@ public abstract class JDAction extends AbstractAction {
             try {
                 final int splitLength = split.length;
                 for (int i = 0; i < splitLength - 1; ++i) {
-                    if (new Regex(split[i], "^CTRL$").matches()) {
+                    if (new AwReg(split[i], "^CTRL$").matches()) {
                         mod = mod | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-                    } else if (new Regex(split[i], "^SHIFT$").matches()) {
+                    } else if (new AwReg(split[i], "^SHIFT$").matches()) {
                         mod = mod | KeyEvent.SHIFT_DOWN_MASK;
-                    } else if (new Regex(split[i], "^ALTGR$").matches()) {
+                    } else if (new AwReg(split[i], "^ALTGR$").matches()) {
                         mod = mod | KeyEvent.ALT_GRAPH_DOWN_MASK;
-                    } else if (new Regex(split[i], "^ALT$").matches()) {
+                    } else if (new AwReg(split[i], "^ALT$").matches()) {
                         mod = mod | KeyEvent.ALT_DOWN_MASK;
-                    } else if (new Regex(split[i], "^META$").matches()) {
+                    } else if (new AwReg(split[i], "^META$").matches()) {
                         mod = mod | KeyEvent.META_DOWN_MASK;
                     } else {
                         JDLogger.getLogger().info(this.getTitle() + " Shortcuts: skipping wrong modifier " + mod + " in " + accelerator);

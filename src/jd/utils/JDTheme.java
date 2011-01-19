@@ -35,7 +35,7 @@ import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public final class JDTheme {
 
@@ -165,7 +165,7 @@ public final class JDTheme {
         currentTheme = themeID;
         data = new HashMap<String, String>();
         String str = JDIO.readFileToString(file);
-        String[] lines = Regex.getLines(str);
+        String[] lines = AwReg.getLines(str);
         for (final String element : lines) {
             int split = element.indexOf("=");
             if (split <= 0 || element.startsWith("#")) {

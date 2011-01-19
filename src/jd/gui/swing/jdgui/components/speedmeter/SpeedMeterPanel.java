@@ -41,10 +41,10 @@ import javax.swing.plaf.FontUIResource;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -121,7 +121,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
         int id = SpeedMeterCache.getInstance().getIndex();
         int[] cache = SpeedMeterCache.getInstance().getCache();
-        int limit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
+        int limit = JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
         int max = Math.max(10, limit);
         for (int element : cache) {
             max = Math.max(element, max);

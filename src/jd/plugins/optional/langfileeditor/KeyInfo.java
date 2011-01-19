@@ -16,7 +16,7 @@
 
 package jd.plugins.optional.langfileeditor;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class KeyInfo implements Comparable<KeyInfo> {
 
@@ -67,14 +67,14 @@ public class KeyInfo implements Comparable<KeyInfo> {
     public void setLanguage(String language) {
         if (language != null) {
             this.language = language;
-            this.languageParameterCount = language.equals("") ? -1 : new Regex(language, "\\%s").count();
+            this.languageParameterCount = language.equals("") ? -1 : new AwReg(language, "\\%s").count();
         }
     }
 
     public void setSource(String source) {
         if (source != null) {
             this.source = source;
-            this.sourceParameterCount = source.equals("") ? -1 : new Regex(source, "\\%s").count();
+            this.sourceParameterCount = source.equals("") ? -1 : new AwReg(source, "\\%s").count();
         }
     }
 

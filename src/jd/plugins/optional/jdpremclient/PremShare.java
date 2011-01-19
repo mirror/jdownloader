@@ -24,7 +24,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 public class PremShare extends PluginForHost implements JDPremInterface {
 
@@ -237,7 +237,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 return false;
             }
             if (status.contains("ERROR: -50")) {
-                String reason = new Regex(status, "\\|\\|(.+)").getMatch(0);
+                String reason = new AwReg(status, "\\|\\|(.+)").getMatch(0);
                 if (reason != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, reason);
                 throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
             }
@@ -255,7 +255,7 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 /* download in progress */
                 /* update premium flag */
                 link.getTransferStatus().usePremium(premium);
-                String ints[] = new Regex(status, "(\\d+)/(\\d+)/(\\d+)").getRow(0);
+                String ints[] = new AwReg(status, "(\\d+)/(\\d+)/(\\d+)").getRow(0);
                 Long size = Long.parseLong(ints[1]);
                 Long current = Long.parseLong(ints[0]);
                 Long speed = Long.parseLong(ints[2]);
@@ -362,11 +362,11 @@ public class PremShare extends PluginForHost implements JDPremInterface {
 
             if (page.contains("OK: USER")) {
                 /* parse available premium hosts */
-                String supportedHosts = new Regex(page, "HOSTS:(.+)").getMatch(0);
+                String supportedHosts = new AwReg(page, "HOSTS:(.+)").getMatch(0);
                 synchronized (LOCK) {
                     premiumHosts.clear();
                     if (supportedHosts != null) {
-                        String hosts[] = new Regex(supportedHosts, "(.*?)\\|\\|").getColumn(0);
+                        String hosts[] = new AwReg(supportedHosts, "(.*?)\\|\\|").getColumn(0);
                         if (hosts != null) {
                             for (String host : hosts) {
                                 premiumHosts.add(host.trim());

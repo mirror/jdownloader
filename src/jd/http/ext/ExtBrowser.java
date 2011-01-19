@@ -11,7 +11,7 @@ import jd.http.ext.events.JSInteraction;
 import jd.http.ext.interfaces.BrowserEnviroment;
 import jd.http.ext.security.JSPermissionRestricter;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.UserAgentContext;
 import org.lobobrowser.html.domimpl.HTMLDocumentImpl;
@@ -32,7 +32,6 @@ public class ExtBrowser {
         ExtBrowser br = new ExtBrowser();
         br.setBrowserEnviroment(new FullBrowserEnviroment());
 
-        Browser.init();
         Browser.setGlobalLogger(Log.L);
         Browser.setGlobalVerbose(true);
         br.getCommContext().forceDebug(true);
@@ -194,7 +193,7 @@ public class ExtBrowser {
     // this.inputController = inputController;
     // }
 
-    public Regex getRegex(final String pattern) {
+    public AwReg getRegex(final String pattern) {
         return htmlFrameController.getRegex(pattern);
     }
 

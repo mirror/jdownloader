@@ -8,7 +8,7 @@ import javax.swing.AbstractAction;
 import jd.plugins.optional.jdpremserv.model.PremServHoster;
 import jd.plugins.optional.jdpremserv.model.PremServUser;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -47,7 +47,7 @@ public class EditHosterUserAction extends AbstractAction {
             if (ret == null) return;
             hosters = new HashMap<String, PremServHoster>();
 
-            for (String s : Regex.getLines(ret)) {
+            for (String s : AwReg.getLines(ret)) {
                 String[] p = s.split("\\,");
 
                 if (p.length == 2) {

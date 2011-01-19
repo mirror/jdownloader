@@ -24,6 +24,7 @@ import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -33,8 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com" }, urls = { "http://[\\w\\.]*?shragle\\.(com|de)/files/[\\w]+/.*" }, flags = { 2 })
 public class ShragleCom extends PluginForHost {
@@ -194,7 +193,7 @@ public class ShragleCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", AGENT);
         final String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);
-        final String[] data = org.appwork.utils.Regex.getLines(this.br.getPage("http://www.shragle.com/api.php?key=" + ShragleCom.apikey + "&action=getStatus&fileID=" + id));
+        final String[] data = Regex.getLines(this.br.getPage("http://www.shragle.com/api.php?key=" + ShragleCom.apikey + "&action=getStatus&fileID=" + id));
         if (data.length != 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String name = data[0];
         final String size = data[1];

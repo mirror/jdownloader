@@ -18,7 +18,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 
 @OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 7)
 public class LecturnityDownloader extends PluginOptional {
@@ -109,7 +109,7 @@ public class LecturnityDownloader extends PluginOptional {
                  */
                 dLink = new DownloadLink(hpw.getPlugin(), link, hpw.getHost(), source + link, true);
                 dLink.setFinalFileName(link);
-                dLink.setDownloadSize(getSize(new Regex(page, link + "</a>[ ]+.*?[ ].*?[ ]+(\\d+\\.?\\d?[K|M|G]?)").getMatch(0)));
+                dLink.setDownloadSize(getSize(new AwReg(page, link + "</a>[ ]+.*?[ ].*?[ ]+(\\d+\\.?\\d?[K|M|G]?)").getMatch(0)));
                 dLink.setBrowserUrl(source);
                 dLink.setAvailable(true);
                 dLink.setProperty(PROPERTY_DOWNLOADDIR, downloadDir);

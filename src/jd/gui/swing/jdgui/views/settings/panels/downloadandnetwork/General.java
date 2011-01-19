@@ -20,11 +20,12 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
+import jd.config.Property;
 import jd.controlling.ByteBufferController;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -49,7 +50,7 @@ public class General extends ConfigPanel {
 
     @Override
     protected ConfigContainer setupContainer() {
-        SubConfiguration config = SubConfiguration.getConfig("DOWNLOAD");
+        Property config = JSonWrapper.get("DOWNLOAD");
 
         ConfigContainer container = new ConfigContainer();
         ConfigEntry ce, cond;
@@ -80,7 +81,7 @@ public class General extends ConfigPanel {
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, GUIUtils.getConfig(), JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDL.L("gui.config.download.startdownloadsonstartUp", "Start Downloads on Startup")).setDefaultValue(false));
 
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in KiB/s"), 10, 500, 10).setDefaultValue(10));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JSonWrapper.get("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in KiB/s"), 10, 500, 10).setDefaultValue(10));
 
         /* File Writing */
         container.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), "gui.images.save"));

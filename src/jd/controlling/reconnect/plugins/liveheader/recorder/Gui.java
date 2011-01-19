@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.Regex;
+import org.appwork.utils.AwReg;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -274,8 +274,8 @@ public class Gui extends AbstractDialog<Object> {
             this.methode = b.toString().trim();
 
             if (ReconnectRecorder.AUTH != null) {
-                this.user = new Regex(ReconnectRecorder.AUTH, "(.+?):").getMatch(0);
-                this.pass = new Regex(ReconnectRecorder.AUTH, ".+?:(.+)").getMatch(0);
+                this.user = new AwReg(ReconnectRecorder.AUTH, "(.+?):").getMatch(0);
+                this.pass = new AwReg(ReconnectRecorder.AUTH, ".+?:(.+)").getMatch(0);
 
                 ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setUser(this.user);
                 ((LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID)).setPassword(this.pass);

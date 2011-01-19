@@ -22,9 +22,10 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
+import jd.config.Property;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -49,7 +50,7 @@ public class Advanced extends ConfigPanel {
 
     @Override
     protected ConfigContainer setupContainer() {
-        final SubConfiguration config = SubConfiguration.getConfig("DOWNLOAD");
+        final Property config = JSonWrapper.get("DOWNLOAD");
 
         ConfigEntry ce, cond;
         final ConfigContainer container = new ConfigContainer();

@@ -29,14 +29,13 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.jobber.JDRunnable;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.EditDistance;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/(df[_-]|st[_-]|so[_-]|hf[_-]|fs[_-]|mu[_-]|rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]|fc[_-]).*" }, flags = { 0 })
 public class Srnnks extends PluginForDecrypt {
