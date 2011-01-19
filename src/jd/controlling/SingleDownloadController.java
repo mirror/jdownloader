@@ -34,7 +34,7 @@ import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
-import jd.http.BrowserException;
+import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettings;
 import jd.http.HTTPProxy;
 import jd.nutils.Formatter;
