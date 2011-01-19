@@ -167,11 +167,11 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
             config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_RECURSIVE, JDL.L(JDL_PREFIX + "recursive", "Watch registered folders recursively")).setDefaultValue(false));
         }
 
-        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT, JDL.L(JDL_PREFIX + "option.import", "Import container when found")).setDefaultValue(false));
+        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT, JDL.L(JDL_PREFIX + "option.import", "Import container when found")).setDefaultValue(true));
 
         config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT_DELETE, JDL.L(JDL_PREFIX + "option.importdelete", "Import container when found and delete it afterwards")).setDefaultValue(false));
 
-        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_HISTORY, JDL.L(JDL_PREFIX + "option.history", "Add history entry for every found container")).setDefaultValue(false));
+        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_HISTORY, JDL.L(JDL_PREFIX + "option.history", "Add history entry for every found container")).setDefaultValue(true));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
