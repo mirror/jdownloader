@@ -5,11 +5,13 @@ import java.awt.event.ActionEvent;
 import javax.swing.JScrollPane;
 
 import jd.config.SubConfiguration;
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
+import jd.nutils.JDFlags;
 import jd.plugins.optional.folderwatch.data.History;
 import jd.plugins.optional.folderwatch.data.HistoryEntry;
 import jd.utils.JDUtilities;
@@ -65,10 +67,13 @@ public class FolderWatchPanel extends SwitchPanel {
                 new GuiRunnable<Object>() {
                     @Override
                     public Object runSave() {
-                        History.clear();
-                        config.setProperty(FolderWatchConstants.PROPERTY_HISTORY, null);
-                        config.save();
-                        refresh();
+                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("action.folderwatch.clear.message", "Are you sure you want to clear the history?")), UserIO.RETURN_OK)) {
+                            History.clear();
+                            config.setProperty(FolderWatchConstants.PROPERTY_HISTORY, null);
+                            config.save();
+                            refresh();
+                        }
+
                         return null;
                     }
                 }.start();
