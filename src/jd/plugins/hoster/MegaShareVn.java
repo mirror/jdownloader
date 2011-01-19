@@ -23,11 +23,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -123,13 +123,8 @@ public class MegaShareVn extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        String availabletraffic = br.getRegex(">Thời hạn VIP còn lại:</td>[\t\n\r ]+<td colspan=\"2\" class=\"content_tx\">(.*?) ngày</td>").getMatch(0);
-        if (availabletraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic + "GB"));
-        } else {
-            account.setValid(false);
-        }
         ai.setStatus("Premium User");
+        ai.setUnlimitedTraffic();
         return ai;
     }
 
