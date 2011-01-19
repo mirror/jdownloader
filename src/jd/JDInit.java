@@ -426,6 +426,10 @@ public class JDInit {
                     Class<?> c = vc.loadClass();
 
                     final String cName = c.getName();
+                    if (c.getSimpleName().contains("$")) {
+                        /* do not load inner classes */
+                        continue;
+                    }
                     if (list.contains(cName)) {
                         System.out.println("Already loaded: " + c);
                         continue;

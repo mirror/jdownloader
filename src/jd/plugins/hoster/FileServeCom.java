@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -232,6 +232,7 @@ public class FileServeCom extends PluginForHost {
             logger.warning("Unexpected error at the last step...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(true);
         this.dl.startDownload();
     }
 
@@ -350,6 +351,7 @@ public class FileServeCom extends PluginForHost {
                 this.handleErrors(br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl.setFilenameFix(true);
             this.dl.startDownload();
         }
     }

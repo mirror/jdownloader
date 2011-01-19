@@ -37,12 +37,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -59,6 +59,8 @@ public class HotFileCom extends PluginForHost {
 
     private static final String TRY_IWL_BYPASS  = "TRY_IWL_BYPASS";
     private static final String CAPTCHARETRIES  = "CAPTCHARETRIES";
+
+    private boolean             directDownload  = false;
 
     public HotFileCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -257,12 +259,15 @@ public class HotFileCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        directDownload = false;
         /*
          * for free users we dont use api filecheck, cause we have to call
          * website anyway
          */
         requestFileInformation(link);
-        if (link.getStringProperty("directlink") != null) {
+        if (directDownload) {
+            /* use directDownloadLink */
+            br.setFollowRedirects(true);
             try {
                 /* first retry with resume allowed */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);
@@ -272,9 +277,12 @@ public class HotFileCom extends PluginForHost {
                 } catch (final Throwable e2) {
                 }
                 /* then try with resume disallowed */
+                /* reset chunks */
+                link.setChunksProgress(null);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), false, 1);
             }
         } else {
+            /* fetch link from website */
             if (br.containsHTML("You are currently downloading")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
             if (br.containsHTML("starthtimer\\(\\)")) {
                 final String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
@@ -531,7 +539,7 @@ public class HotFileCom extends PluginForHost {
         try {
             con = br.openGetConnection(parameter.getDownloadURL());
             if (!con.getContentType().contains("html")) {
-                parameter.setProperty("directlink", "true");
+                directDownload = true;
                 parameter.setDownloadSize(con.getLongContentLength());
                 parameter.setFinalFileName(getFileNameFromHeader(con));
                 return AvailableStatus.TRUE;

@@ -19,9 +19,9 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,7 +74,11 @@ public class GrvShrkCm extends PluginForDecrypt {
         final String[][] songs = new Regex(result, "\\{.*?\\}").getMatches();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(this.userName + "'s GrooveShark Favourites");
-        progress.increase(1);
+        try {
+            progress.increase(1);
+        } catch (final Throwable e) {
+            /* not available in public 0.9580 */
+        }
         for (final String[] s : songs) {
             final HashMap<String, String> ret = new HashMap<String, String>();
             for (final String[] ss : new Regex(s[0], "\"(.*?)\"\\s*:\\s*\"(.*?)\"").getMatches()) {
@@ -93,6 +97,11 @@ public class GrvShrkCm extends PluginForDecrypt {
             }
             decryptedLinks.add(dlLink);
             dlLink.setFilePackage(fp);
+        }
+        try {
+            progress.setFinished();
+        } catch (final Throwable e) {
+            /* not available in public 0.9580 */
         }
         return decryptedLinks;
     }
@@ -261,7 +270,11 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("GrooveShark Playlists - " + title);
-        progress.increase(1);
+        try {
+            progress.increase(1);
+        } catch (final Throwable e) {
+            /* not available in public 0.9580 */
+        }
         for (final String[] s : songs) {
             final HashMap<String, String> ret = new HashMap<String, String>();
             for (final String[] ss : new Regex(s[0], "\"(.*?)\"\\s*:\\s*\"(.*?)\"").getMatches()) {
@@ -281,7 +294,11 @@ public class GrvShrkCm extends PluginForDecrypt {
             decryptedLinks.add(dlLink);
             dlLink.setFilePackage(fp);
         }
-        progress.setFinished();
+        try {
+            progress.setFinished();
+        } catch (final Throwable e) {
+            /* not available in public 0.9580 */
+        }
         return decryptedLinks;
     }
 
