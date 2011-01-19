@@ -708,7 +708,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         this.setStopMark(DownloadWatchDog.nostopMark);
                     }
                     /* restore speed limit */
-                    if (JSonWrapper.get("DOWNLOAD").getProperty("MAXSPEEDBEFOREPAUSE", null) != null) {
+                    if (JSonWrapper.get("DOWNLOAD").hasProperty("MAXSPEEDBEFOREPAUSE")) {
                         DownloadWatchDog.LOG.info("Restoring old speedlimit");
                         JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JSonWrapper.get("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
                         JSonWrapper.get("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);

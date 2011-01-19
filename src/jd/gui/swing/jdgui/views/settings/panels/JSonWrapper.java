@@ -119,6 +119,11 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     }
 
     public Object getProperty(final String key) {
+        try {
+            if (this.hasProperty(key)) return this.storage.get(key, (String) null);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         throw new RuntimeException("no Implemented");
     }
 
