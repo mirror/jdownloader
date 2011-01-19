@@ -290,6 +290,7 @@
 		<buildAddon number="140" package="JDFeedMe" include="jdfeedme/**" />
 		<buildAddon number="141" package="AntiReconnect" include="antireconnect/**" />
 		<buildAddon number="142" package="Extraction" include="extraction/**" />
+		<buildAddon number="143" package="folderwatch" include="folderwatch/**" />
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
