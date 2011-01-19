@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.BrowserException;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;

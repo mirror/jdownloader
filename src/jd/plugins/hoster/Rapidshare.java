@@ -33,7 +33,7 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
-import jd.http.BrowserException;
+import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;

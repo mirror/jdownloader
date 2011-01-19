@@ -33,7 +33,7 @@ import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.BrowserException;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
