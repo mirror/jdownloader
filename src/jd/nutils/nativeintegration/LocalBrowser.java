@@ -28,7 +28,7 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.swing.dialog.Dialog;
 
 import edu.stanford.ejalbert.BrowserLauncher;
@@ -201,7 +201,7 @@ public abstract class LocalBrowser implements Serializable {
             final Executer exec = new Executer(cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER));
             exec.setLogger(JDLogger.getLogger());
             final String params = cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
-            exec.addParameters(AwReg.getLines(params));
+            exec.addParameters(Regex.getLines(params));
             exec.start();
             exec.setWaitTimeout(5);
             exec.waitTimeout();

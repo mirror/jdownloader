@@ -49,7 +49,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
@@ -477,7 +477,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
             String name = filename.substring(0, filename.length() - extension.length() - 1);
             int copy = 2;
             try {
-                String[] num = new AwReg(name, "(.*)_(\\d+)").getRow(0);
+                String[] num = new Regex(name, "(.*)_(\\d+)").getRow(0);
                 copy = Integer.parseInt(num[1]) + 1;
                 downloadLink.forceFileName(name + "_" + copy + "." + extension);
                 while (new File(downloadLink.getFileOutput()).exists()) {

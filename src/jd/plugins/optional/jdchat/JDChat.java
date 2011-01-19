@@ -74,7 +74,7 @@ import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
 import org.schwering.irc.lib.IRCConnection;
@@ -943,7 +943,7 @@ public class JDChat extends PluginOptional {
             public void hyperlinkUpdate(final HyperlinkEvent e) {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     if (e.getDescription().startsWith("intern")) {
-                        final String[][] m = new AwReg(e.getDescription() + "?", "intern:([\\w]*?)\\|(.*?)\\?").getMatches();
+                        final String[][] m = new Regex(e.getDescription() + "?", "intern:([\\w]*?)\\|(.*?)\\?").getMatches();
                         if (m.length == 1) {
                             JDChat.this.doAction(m[0][0], m[0][1]);
                             return;
@@ -1257,7 +1257,7 @@ public class JDChat extends PluginOptional {
     }
 
     public void perform() {
-        final String[] perform = org.appwork.utils.AwReg.getLines(this.subConfig.getStringProperty(JDChat.PARAM_PERFORM));
+        final String[] perform = org.appwork.utils.Regex.getLines(this.subConfig.getStringProperty(JDChat.PARAM_PERFORM));
         if (perform == null) { return; }
         for (final String cmd : perform) {
             if (cmd.trim().length() > 0) {
@@ -1336,7 +1336,7 @@ public class JDChat extends PluginOptional {
             }
             final String cmd = text.substring(1, end).trim();
             final String rest = text.substring(end).trim();
-            if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_PM)) {
+            if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_PM)) {
                 new GuiRunnable<Object>() {
 
                     @Override
@@ -1355,29 +1355,29 @@ public class JDChat extends PluginOptional {
                 this.conn.doPrivmsg(rest.substring(0, end).trim(), this.prepareToSend(rest.substring(end).trim()));
                 this.lastCommand = "/msg " + rest.substring(0, end).trim() + " ";
                 this.addToText(this.getUser(this.conn.getNick()), JDChat.STYLE_SELF, Utils.prepareMsg(rest.substring(end).trim()), this.pms.get(rest.substring(0, end).trim().toLowerCase()).getTextArea(), this.pms.get(rest.substring(0, end).trim().toLowerCase()).getSb());
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_SLAP)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_SLAP)) {
                 this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + " slaps " + rest + " with the whole Javadocs" + new String(new byte[] { 1 }));
                 this.addToText(null, JDChat.STYLE_ACTION, this.conn.getNick() + " slaps " + rest + " with the whole Javadocs");
 
                 this.lastCommand = "/slap ";
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_ACTION)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_ACTION)) {
                 this.lastCommand = "/me ";
                 this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + this.prepareToSend(rest.trim()) + new String(new byte[] { 1 }));
                 this.addToText(null, JDChat.STYLE_ACTION, this.conn.getNick() + " " + Utils.prepareMsg(rest.trim()));
 
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_VERSION)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_VERSION)) {
 
                 final String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + CrossSystem.getOSString() + " system";
                 this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + this.prepareToSend(msg) + new String(new byte[] { 1 }));
                 this.addToText(null, JDChat.STYLE_ACTION, this.conn.getNick() + " " + Utils.prepareMsg(msg));
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_MODE)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_MODE)) {
                 end = rest.indexOf(" ");
                 if (end < 0) {
                     end = rest.length();
                 }
                 this.lastCommand = "/mode ";
                 this.conn.doMode(JDChat.CHANNEL, rest.trim());
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_TRANSLATE)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_TRANSLATE)) {
                 end = rest.indexOf(" ");
                 if (end < 0) {
                     end = rest.length();
@@ -1398,10 +1398,10 @@ public class JDChat extends PluginOptional {
                         return null;
                     }
                 }.invokeLater();
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_TOPIC)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_TOPIC)) {
                 this.conn.doTopic(JDChat.CHANNEL, this.prepareToSend(rest));
                 this.lastCommand = "/topic ";
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_JOIN)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_JOIN)) {
                 this.NAMES.clear();
                 if (this.conn != null) {
                     this.addToText(null, JDChat.STYLE_NOTICE, "Change channel to: " + rest);
@@ -1417,21 +1417,21 @@ public class JDChat extends PluginOptional {
                 this.lastCommand = "/join " + rest;
                 this.setLoggedIn(true);
                 this.perform();
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_NICK)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_NICK)) {
                 this.conn.doNick(rest.trim());
                 this.lastCommand = "/nick ";
                 this.subConfig.setProperty(JDChat.PARAM_NICK, rest.trim());
                 this.subConfig.save();
 
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_CONNECT)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_CONNECT)) {
                 if (this.conn == null || !this.conn.isConnected()) {
                     this.initIRC();
                 }
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_DISCONNECT)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_DISCONNECT)) {
                 if (this.conn != null && this.conn.isConnected()) {
                     this.conn.close();
                 }
-            } else if (org.appwork.utils.AwReg.matches(cmd, JDChat.CMD_EXIT)) {
+            } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_EXIT)) {
                 this.setGuiEnable(false);
             } else {
                 this.addToText(null, JDChat.STYLE_ERROR, "Command /" + cmd + " is not available");

@@ -44,7 +44,7 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins
@@ -100,16 +100,16 @@ public abstract class Plugin implements ActionListener {
                  * ?=
                  */
                 contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
-                final String format = new AwReg(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
+                final String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
                 if (format == null) {
                     JDLogger.getLogger().severe("Content-Disposition: invalid format: " + header);
                     filename = null;
                     return filename;
                 }
                 contentdisposition = contentdisposition.replaceAll(format + "''", "");
-                filename = new AwReg(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
+                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
                 if (filename == null) {
-                    filename = new AwReg(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
+                    filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
                 }
                 if (filename == null) {
                     header = header.replaceAll("=", "=\"") + "\"";
@@ -124,12 +124,12 @@ public abstract class Plugin implements ActionListener {
                         return filename;
                     }
                 }
-            } else if (new AwReg(contentdisposition, "=\\?.*?\\?.*?\\?.*?\\?=").matches()) {
+            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?.*?\\?=").matches()) {
                 /*
                  * Codierung Encoded Words, TODO: Q-Encoding und mehrfach
                  * tokens, aber noch nicht in freier Wildbahn gesehen
                  */
-                final String tokens[][] = new AwReg(contentdisposition, "=\\?(.*?)\\?(.*?)\\?(.*?)\\?=").getMatches();
+                final String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?(.*?)\\?=").getMatches();
                 if (tokens.length == 1 && tokens[0].length == 3 && tokens[0][1].trim().equalsIgnoreCase("B")) {
                     /* Base64 Encoded */
                     try {
@@ -140,9 +140,9 @@ public abstract class Plugin implements ActionListener {
                         return filename;
                     }
                 }
-            } else if (new AwReg(contentdisposition, "=\\?.*?\\?.*?\\?=").matches()) {
+            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?=").matches()) {
                 /* Unicode Format wie es 4Shared nutzt */
-                final String tokens[][] = new AwReg(contentdisposition, "=\\?(.*?)\\?(.*?)\\?=").getMatches();
+                final String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?=").getMatches();
                 if (tokens.length == 1 && tokens[0].length == 2) {
                     try {
                         contentdisposition = new String(tokens[0][1].trim().getBytes("ISO-8859-1"), tokens[0][0].trim());
@@ -155,9 +155,9 @@ public abstract class Plugin implements ActionListener {
                 }
             } else {
                 /* ohne Codierung */
-                filename = new AwReg(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
+                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
                 if (filename == null) {
-                    filename = new AwReg(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
+                    filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
                 }
                 if (filename == null) {
                     header = header.replaceAll("=", "=\"") + "\"";

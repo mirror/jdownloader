@@ -39,7 +39,7 @@ import jd.utils.EditDistance;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * Die klasse dient zum verpacken der Unrar binary.
@@ -457,10 +457,10 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         final int maximumCheckSize = 2097152;
         final int minimumCheckSize;
         /* set max minimumCheckSize for signature checks */
-        if (new AwReg(biggestFile.getFilepath(), ".+\\.iso").matches()) {
+        if (new Regex(biggestFile.getFilepath(), ".+\\.iso").matches()) {
             /* for iso images we need more data for signature check */
             minimumCheckSize = 37000;
-        } else if (new AwReg(biggestFile.getFilepath(), ".+\\.mp3").matches()) {
+        } else if (new Regex(biggestFile.getFilepath(), ".+\\.mp3").matches()) {
             /* for mp3 images we need more data for signature check */
             minimumCheckSize = 512;
         } else {
@@ -520,7 +520,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     }
 
                     public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
-                        if ((new AwReg(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
+                        if ((new Regex(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
                             exec.interrupt();
                             System.out.println("loaded enough.... one file is enough");
                             totalBuffer.put("All OK".getBytes(), 6);
@@ -589,7 +589,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     // wurde
                     exec.waitTimeout();
                     String res = exec.getErrorStream();
-                    if (new AwReg(res, "(CRC failed|Total errors: )").matches() || res.contains("the file header is corrupt")) {
+                    if (new Regex(res, "(CRC failed|Total errors: )").matches() || res.contains("the file header is corrupt")) {
                         break;
                     }
 
@@ -679,12 +679,12 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             exec.waitTimeout();
             String ret = exec.getErrorStream() + " " + exec.getOutputStream();
 
-            if (new AwReg(ret, "RAR.*?Alexander").matches()) {
+            if (new Regex(ret, "RAR.*?Alexander").matches()) {
                 return true;
-            } else if (new AwReg(ret, "RAR.*?3\\.").matches()) {
+            } else if (new Regex(ret, "RAR.*?3\\.").matches()) {
                 return true;
             } else {
-                System.err.println("Wrong unrar: " + AwReg.getLines(exec.getErrorStream())[0]);
+                System.err.println("Wrong unrar: " + Regex.getLines(exec.getErrorStream())[0]);
                 return false;
             }
         } catch (Exception e) {
@@ -742,19 +742,19 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
             logger.finest(res);
             String match;
-            if ((match = new AwReg(res, Pattern.compile("Bad archive (.{5,})")).getMatch(0)) != null) {
+            if ((match = new Regex(res, Pattern.compile("Bad archive (.{5,})")).getMatch(0)) != null) {
                 statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
                 String filename = match;
                 currentVolume = 0;
-                match = new AwReg(filename, "\\.part(\\d+)\\.").getMatch(0);
+                match = new Regex(filename, "\\.part(\\d+)\\.").getMatch(0);
                 if (match != null) {
                     currentVolume = Integer.parseInt(match.trim());
                 } else {
-                    match = new AwReg(filename, "(.*?)\\.rar").getMatch(0);
+                    match = new Regex(filename, "(.*?)\\.rar").getMatch(0);
                     if (match != null) {
                         currentVolume = 1;
                     } else {
-                        match = new AwReg(filename, "\\.r(\\d+)").getMatch(0);
+                        match = new Regex(filename, "\\.r(\\d+)").getMatch(0);
                         if (match != null) currentVolume = Integer.parseInt(match.trim()) + 2;
                     }
                 }
@@ -762,7 +762,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             }
             if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
             if (res.contains("is not RAR archive")) {
-                String message = new AwReg(res, Pattern.compile("(^.*?is not RAR archive)", Pattern.MULTILINE)).getMatch(0);
+                String message = new Regex(res, Pattern.compile("(^.*?is not RAR archive)", Pattern.MULTILINE)).getMatch(0);
                 throw new UnrarException(message);
             }
             if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt") || pwl.pwerror()) {
@@ -770,7 +770,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 continue;
             } else {
                 if (res.indexOf("Cannot find volume") != -1) {
-                    String message = new AwReg(res, Pattern.compile("(^.*?Cannot find volume.*?$)", Pattern.MULTILINE)).getMatch(0);
+                    String message = new Regex(res, Pattern.compile("(^.*?Cannot find volume.*?$)", Pattern.MULTILINE)).getMatch(0);
                     throw new UnrarException(message);
                 }
                 String[] volumes = Pattern.compile("Volume (.*?)Pathname/Comment", Pattern.DOTALL).split(res);
@@ -784,7 +784,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     Pattern patternvolumes = Pattern.compile("(.+)\\s*?([\\d]+).*?[\\d]+\\-[\\d]+\\-[\\d]+.*?[\\d]+:[\\d]+.*?(.{1})(.{1})(.{1})", Pattern.CASE_INSENSITIVE);
                     Matcher matchervolumes = patternvolumes.matcher(res);
 
-                    String vol = new AwReg(res, "       volume (\\d+)").getMatch(0);
+                    String vol = new Regex(res, "       volume (\\d+)").getMatch(0);
                     if (vol != null) {
                         volumeNum = Integer.parseInt(vol.trim());
                     }
@@ -958,7 +958,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 JDLogger.exception(e);
                 lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
             }
-            if (new AwReg(lastLine, Pattern.compile("Write error.*?bort ", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (new Regex(lastLine, Pattern.compile("Write error.*?bort ", Pattern.CASE_INSENSITIVE)).matches()) {
                 exec.writetoOutputStream("A");
             }
         }
@@ -968,15 +968,15 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             String match = null;
             if (latestLine.length() > 0) {
                 // Neue Datei wurde angefangen
-                if ((match = new AwReg(latestLine, "Extracting  (.*)").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "Extracting  (.*)").getMatch(0)) != null) {
                     String currentWorkingFile = match.trim();
                     currentlyWorkingOn = getArchivFile(currentWorkingFile);
                     fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_NEW_SINGLE_FILE_STARTED);
                 }
-                if ((match = new AwReg(latestLine, "Extracting from(.*)").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "Extracting from(.*)").getMatch(0)) != null) {
                     archiveParts.add(match.trim());
                 }
-                if ((match = new AwReg(latestLine, "Extracting from.*part(\\d+)\\.").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "Extracting from.*part(\\d+)\\.").getMatch(0)) != null) {
                     currentVolume = Integer.parseInt(match.trim());
                     long ext = totalSize / volumeNum * (currentVolume - 1);
                     if (ext == 0) { return; }
@@ -986,7 +986,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     }
                 }
                 // ruft die prozentangaben der aktuellen datei
-                if ((match = new AwReg(latestLine, "(\\d+)\\%").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "(\\d+)\\%").getMatch(0)) != null) {
                     if (currentlyWorkingOn != null) {
                         exactProgress = true;
                         currentlyWorkingOn.setPercent(Integer.parseInt(match));
@@ -996,7 +996,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 }
 
                 // datei ok
-                if ((match = new AwReg(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
                     if (currentlyWorkingOn != null) {
                         currentlyWorkingOn.setPercent(100);
                         fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
@@ -1004,54 +1004,54 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     }
                 }
 
-                if ((match = new AwReg(latestLine, "Bad archive (.{5,})").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "Bad archive (.{5,})").getMatch(0)) != null) {
                     statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
                     String currentWorkingFile = match.trim();
                     currentlyWorkingOn = getArchivFile(currentWorkingFile);
                     String filename = latestLine;
-                    match = new AwReg(filename, "\\.part(\\d+)\\.").getMatch(0);
+                    match = new Regex(filename, "\\.part(\\d+)\\.").getMatch(0);
                     if (match != null) {
                         currentVolume = Integer.parseInt(match.trim());
                     } else {
-                        match = new AwReg(filename, "(.*?)\\.rar").getMatch(0);
+                        match = new Regex(filename, "(.*?)\\.rar").getMatch(0);
                         if (match != null) {
                             currentVolume = 1;
                         } else {
-                            match = new AwReg(filename, "\\.r(\\d+)").getMatch(0);
+                            match = new Regex(filename, "\\.r(\\d+)").getMatch(0);
                             if (match != null) currentVolume = Integer.parseInt(match.trim()) + 2;
                         }
                     }
                     exec.interrupt();
                 }
 
-                if ((match = new AwReg(latestLine, " Total errors:").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, " Total errors:").getMatch(0)) != null) {
                     statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED;
                     exec.interrupt();
                 }
 
-                if ((match = new AwReg(latestLine, "(No files to extract)").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "(No files to extract)").getMatch(0)) != null) {
                     exception = new Exception("Files already exist!");
                 }
-                if ((match = new AwReg(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
                     statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
                     exec.interrupt();
                 }
 
-                if ((match = new AwReg(latestLine, "packed data CRC failed in volume(.{5,})").getMatch(0)) != null) {
+                if ((match = new Regex(latestLine, "packed data CRC failed in volume(.{5,})").getMatch(0)) != null) {
                     statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
-                    String currentWorkingFile = new AwReg(latestLine, "(.*?): packed").getMatch(0);
+                    String currentWorkingFile = new Regex(latestLine, "(.*?): packed").getMatch(0);
                     currentlyWorkingOn = getArchivFile(currentWorkingFile.trim());
                     currentVolume = 0;
                     String filename = match;
-                    match = new AwReg(filename, "\\.part(\\d+)\\.").getMatch(0);
+                    match = new Regex(filename, "\\.part(\\d+)\\.").getMatch(0);
                     if (match != null) {
                         currentVolume = Integer.parseInt(match.trim());
                     } else {
-                        match = new AwReg(filename, "(.*?)\\.rar").getMatch(0);
+                        match = new Regex(filename, "(.*?)\\.rar").getMatch(0);
                         if (match != null) {
                             currentVolume = 1;
                         } else {
-                            match = new AwReg(filename, "\\.r(\\d+)").getMatch(0);
+                            match = new Regex(filename, "\\.r(\\d+)").getMatch(0);
                             if (match != null) currentVolume = Integer.parseInt(match.trim()) + 2;
                         }
                     }

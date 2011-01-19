@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class JDSimpleWebserverStaticFileRequestHandler {
 
@@ -63,7 +63,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
             if (!headers.containsKey("range")) {
                 response.setFileServe(fileToRead.toString(), 0, -1, fileToRead.length(), false);
             } else {
-                String[] dat = new AwReg(headers.get("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
+                String[] dat = new Regex(headers.get("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
                 if (dat[1] == null) {
                     response.setFileServe(fileToRead.toString(), Long.parseLong(dat[0]), -1, fileToRead.length(), true);
                 } else {

@@ -52,7 +52,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 @OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 7)
 public class JDFolderWatch extends PluginOptional implements FileMonitoringListener, ConfigurationListener, RemoteSupport {
@@ -395,7 +395,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
             return "JD FolderWatch has been stopped.";
         } else if (cmd.matches("(?is).*/addon/folderwatch/register/.+")) {
-            String folder = new AwReg(cmd, "(?is).*/addon/folderwatch/register/(.+)").getMatch(0);
+            String folder = new Regex(cmd, "(?is).*/addon/folderwatch/register/(.+)").getMatch(0);
             monitoringThread.register(folder, isOption_recursive);
 
             return folder + " has been registered to be watched.";

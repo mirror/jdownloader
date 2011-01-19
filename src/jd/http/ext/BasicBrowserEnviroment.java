@@ -5,7 +5,7 @@ import java.security.Policy;
 import jd.http.Request;
 import jd.http.ext.interfaces.BrowserEnviroment;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;
 
 public class BasicBrowserEnviroment implements BrowserEnviroment {
@@ -34,7 +34,7 @@ public class BasicBrowserEnviroment implements BrowserEnviroment {
         boolean ret = false;
         if (whiteList != null) {
             for (String b : whiteList) {
-                String m = new AwReg(request.getUrl().toString(), b).getMatch(-1);
+                String m = new Regex(request.getUrl().toString(), b).getMatch(-1);
                 if (m != null && m.equals(request.getUrl().toString())) {
                     ret = true;
                     System.out.println("WHITE: " + b);
@@ -48,7 +48,7 @@ public class BasicBrowserEnviroment implements BrowserEnviroment {
             if (blackList != null) {
 
                 for (String b : blackList) {
-                    String m = new AwReg(request.getUrl().toString(), b).getMatch(-1);
+                    String m = new Regex(request.getUrl().toString(), b).getMatch(-1);
                     if (m != null && m.equals(request.getUrl().toString())) {
                         ret = false;
                         System.out.println("BLACK: " + b);

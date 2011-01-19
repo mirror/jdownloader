@@ -41,7 +41,7 @@ import javax.swing.JFileChooser;
 import jd.controlling.JDLogger;
 import jd.utils.StringUtil;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public final class JDIO {
     /**
@@ -422,7 +422,7 @@ public final class JDIO {
 
             @Override
             public boolean doIt(final File file) {
-                return AwReg.matches(file.getAbsolutePath(), pattern);
+                return Regex.matches(file.getAbsolutePath(), pattern);
             }
 
         });

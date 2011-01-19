@@ -21,7 +21,7 @@ import java.util.Map.Entry;
 
 import jd.controlling.JDLogger;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * Language and COUNRTYCode database
@@ -557,9 +557,9 @@ public class JDGeoCode {
     }
 
     public static String longToShort(final String lng) {
-        String[] row = new AwReg(lng, "(.*?)\\[(.*)\\|(.*?)\\]").getRow(0);
+        String[] row = new Regex(lng, "(.*?)\\[(.*)\\|(.*?)\\]").getRow(0);
         if (row != null) { return JDGeoCode.getLanguageCode(row[0].trim()) + "-" + JDGeoCode.getCountryCode(row[1].trim()) + "-" + JDGeoCode.getExtensionCode(row[2].trim()); }
-        row = new AwReg(lng, "(.*?)\\[(.*)\\]").getRow(0);
+        row = new Regex(lng, "(.*?)\\[(.*)\\]").getRow(0);
         if (row != null) {
             final String countryCode = JDGeoCode.getCountryCode(row[1].trim());
 

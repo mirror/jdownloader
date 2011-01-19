@@ -42,7 +42,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -344,7 +344,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return
      */
     public CryptedLink[] getDecryptableLinks(String data) {
-        String[] hits = new AwReg(data, getSupportedLinks()).getColumn(-1);
+        String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         ArrayList<CryptedLink> chits = new ArrayList<CryptedLink>();
         if (hits != null && hits.length > 0) {
 

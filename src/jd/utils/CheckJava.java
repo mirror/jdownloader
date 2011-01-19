@@ -20,7 +20,7 @@ import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class CheckJava {
 
@@ -30,7 +30,7 @@ public class CheckJava {
         if (runtimeName == null || runtimeVersion == null) return false;
         runtimeName = runtimeName.toLowerCase();
         runtimeVersion = runtimeVersion.toLowerCase();
-        if (!new AwReg(runtimeVersion, "1\\.(5|6|7)").matches()) {
+        if (!new Regex(runtimeVersion, "1\\.(5|6|7)").matches()) {
             String html = JDL.LF("gui.javacheck.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>", runtimeName, runtimeVersion);
             return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, JDL.L("gui.javacheck.title", "Wrong Java Version"), html), UserIO.RETURN_OK);
         }

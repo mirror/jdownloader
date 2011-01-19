@@ -56,7 +56,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "hjsplit", interfaceversion = 7)
@@ -611,11 +611,11 @@ public class JDHJSplit extends PluginOptional {
             JDLogger.exception(e);
             return null;
         }
-        if (new AwReg(sig, "[\\w]{3}  \\d+").matches()) {
-            String count = new AwReg(sig, ".*?  (\\d+)").getMatch(0);
+        if (new Regex(sig, "[\\w]{3}  \\d+").matches()) {
+            String count = new Regex(sig, ".*?  (\\d+)").getMatch(0);
             if (count == null) return null;
             if (filecount != Integer.parseInt(count)) return null;
-            String ext = new AwReg(sig, "(.*?) ").getMatch(0);
+            String ext = new Regex(sig, "(.*?) ").getMatch(0);
             logger.info("CutKiller Header found! Ext: ." + ext + " Parts: " + filecount);
             return ext;
         }

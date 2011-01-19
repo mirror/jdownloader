@@ -28,7 +28,7 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 
 public class SrcParser {
@@ -138,7 +138,7 @@ public class SrcParser {
         currentContent = Pattern.compile("\\/\\*(.*?)\\*\\/", Pattern.DOTALL).matcher(currentContent).replaceAll("[[/*.....*/]]");
         currentContent = Pattern.compile("[^:]//(.*?)[\n|\r]", Pattern.DOTALL).matcher(currentContent).replaceAll("[[\\.....]]");
         currentContent = Pattern.compile("JDL\\s*?\\.\\s*?L", Pattern.DOTALL).matcher(currentContent).replaceAll("JDL.L");
-        String[] matches = new AwReg(currentContent, "([^;^{^}]*JDL\\.LF?\\s*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
+        String[] matches = new Regex(currentContent, "([^;^{^}]*JDL\\.LF?\\s*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
 
         for (String match : matches) {
             // splitting all calls.
@@ -168,7 +168,7 @@ public class SrcParser {
         currentContent = currentContent.replace("getClass().getSimpleName()", "\"" + simple + "\"");
         currentContent = currentContent.replace("\"+\"", "");
         if (this.currentContent.contains("jd.gui.swing.jdgui.menu.actions;")) {
-            String menukey = new AwReg(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
+            String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             if (menukey != null) {
                 currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
                 currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".name\",\"" + menukey + "\");";
@@ -178,12 +178,12 @@ public class SrcParser {
             }
         }
         if (this.currentContent.contains("jd.gui.swing.jdgui.menu;")) {
-            String menukey = new AwReg(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
+            String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
             currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
         }
         if (this.currentContent.contains(" ThreadedAction") || this.currentContent.contains(" ToolBarAction") || this.currentContent.contains(" MenuAction")) {
-            String[] keys = new AwReg(currentContent, " (Threaded|ToolBar|Menu)Action\\s*\\(\"(.*?)\"").getColumn(1);
+            String[] keys = new Regex(currentContent, " (Threaded|ToolBar|Menu)Action\\s*\\(\"(.*?)\"").getColumn(1);
 
             for (String k : keys) {
                 currentContent += "\r\nJDL.L(\"gui.menu." + k + ".name\",\"gui.menu." + k + ".name\");";
@@ -245,7 +245,7 @@ public class SrcParser {
             m = orgm;
             m = m.trim();
             if (m.startsWith("L")) {
-                strings = new AwReg(m, pat_string).getColumn(0);
+                strings = new Regex(m, pat_string).getColumn(0);
 
                 m = m.replace("\r", "");
                 m = m.replace("\n", "");
@@ -297,7 +297,7 @@ public class SrcParser {
                      */
                     while (parameter[0].contains("+")) {
                         try {
-                            String[][] matches = new AwReg(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
+                            String[][] matches = new Regex(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
@@ -313,7 +313,7 @@ public class SrcParser {
                         }
 
                         try {
-                            String[][] matches = new AwReg(parameter[0], "(\\+?([^%]+)\\+)").getMatches();
+                            String[][] matches = new Regex(parameter[0], "(\\+?([^%]+)\\+)").getMatches();
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
@@ -336,7 +336,7 @@ public class SrcParser {
                     }
 
                     String error;
-                    if ((error = new AwReg(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
+                    if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
                             JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
@@ -378,7 +378,7 @@ public class SrcParser {
                      */
                     while (parameter[0].contains("+")) {
                         try {
-                            String[][] matches = new AwReg(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
+                            String[][] matches = new Regex(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
@@ -394,7 +394,7 @@ public class SrcParser {
                         }
 
                         try {
-                            String[][] matches = new AwReg(parameter[0], "(\\+?([^%]+)\\+)").getMatches();
+                            String[][] matches = new Regex(parameter[0], "(\\+?([^%]+)\\+)").getMatches();
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
@@ -417,7 +417,7 @@ public class SrcParser {
                     }
 
                     String error;
-                    if ((error = new AwReg(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
+                    if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
                             JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
@@ -465,7 +465,7 @@ public class SrcParser {
          */
         variable = variable.replace(currentFileName + ".", "");
 
-        String[] matches = new AwReg(currentContent, variable + "\\s*=(.*?);").getColumn(0);
+        String[] matches = new Regex(currentContent, variable + "\\s*=(.*?);").getColumn(0);
         String ret = matches[matches.length - 1].trim();
         while (ret.startsWith("\"")) {
             ret = ret.substring(1);

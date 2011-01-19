@@ -39,7 +39,7 @@ import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.Executer;
 import jd.nutils.nativeintegration.LocalBrowser;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEvent;
 import org.appwork.utils.event.Eventsender;
 
@@ -74,7 +74,7 @@ public class JLink extends JLabel {
             Executer exec = new Executer(cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER));
             exec.setLogger(JDLogger.getLogger());
             String params = cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
-            exec.addParameters(AwReg.getLines(params));
+            exec.addParameters(Regex.getLines(params));
             exec.start();
             exec.setWaitTimeout(1);
             exec.waitTimeout();

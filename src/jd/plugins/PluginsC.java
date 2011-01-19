@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -80,7 +80,7 @@ public abstract class PluginsC extends Plugin {
     // @Override
     public synchronized boolean canHandle(final String data) {
         if (data == null) { return false; }
-        final String match = new AwReg(data, this.getSupportedLinks()).getMatch(-1);
+        final String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
 
         return match != null && match.equalsIgnoreCase(data);
     }

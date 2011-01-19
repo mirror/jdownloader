@@ -23,7 +23,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
 
@@ -308,13 +308,13 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
                 resetAvailablePremium();
                 MAXDOWNLOADS = 5;
             } else {
-                String infos[] = new AwReg(page, "(.*?);(.+)").getRow(0);
+                String infos[] = new Regex(page, "(.*?);(.+)").getRow(0);
                 ac.setValidUntil(Long.parseLong(infos[0]) * 1000);
                 MAXDOWNLOADS = Integer.parseInt(infos[1]);
                 synchronized (LOCK) {
                     premiumHosts.clear();
                     if (hosts != null) {
-                        String hoster[] = new AwReg(hosts, "(.*?)(;|$)").getColumn(0);
+                        String hoster[] = new Regex(hosts, "(.*?)(;|$)").getColumn(0);
                         if (hosts != null) {
                             for (String host : hoster) {
                                 if (hosts == null || host.length() == 0) continue;

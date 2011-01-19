@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class Zip {
     private File destinationFile;
@@ -70,7 +70,7 @@ public class Zip {
     	ArrayList<File> ret = new ArrayList<File>();
             if (srcFile.endsWith("Thumbs.db")) { return null; }
             if (excludeFilter != null) {
-                if (AwReg.matches(srcFile, excludeFilter)) {
+                if (Regex.matches(srcFile, excludeFilter)) {
 
                     System.out.println("Filtered: " + srcFile);
                     return ret;
@@ -108,7 +108,7 @@ public class Zip {
         if (excludeFiles.contains(folder)) { return ret; }
         for (String fileName : folder.list()) {
             if (excludeFilter != null) {
-                if (AwReg.matches(fileName, excludeFilter)) {
+                if (Regex.matches(fileName, excludeFilter)) {
                     System.out.println("Filtered: " + fileName);
                     continue;
                 }

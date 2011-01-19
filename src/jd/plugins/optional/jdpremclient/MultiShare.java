@@ -22,7 +22,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 public class MultiShare extends PluginForHost implements JDPremInterface {
@@ -314,7 +314,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
                     if (account.isValid()) {
                         try {
                             String hostsSup = br.getPage("http://www.multishare.cz/html/mms_support.php");
-                            String[] hosts = AwReg.getLines(hostsSup);
+                            String[] hosts = Regex.getLines(hostsSup);
                             if (hosts != null) {
                                 for (String host : hosts) {
                                     premiumHosts.add(host);

@@ -30,7 +30,7 @@ import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * Diese Klasse parsed das JAC Script
@@ -1057,20 +1057,20 @@ public class JACScript {
         String[] ret = new String[3];
         String[] matches;
         cmd = "#" + cmd + "#";
-        if ((matches = new AwReg(cmd, "#(.*?)=(.*?)#").getRow(0)) != null) {
+        if ((matches = new Regex(cmd, "#(.*?)=(.*?)#").getRow(0)) != null) {
 
             ret[0] = "parameter";
             ret[1] = matches[0].trim();
             ret[2] = matches[1].replaceAll("\\\"", "").trim();
 
-        } else if ((matches = new AwReg(cmd, "#(.*?)\\((.*?)\\)#").getRow(0)) != null) {
+        } else if ((matches = new Regex(cmd, "#(.*?)\\((.*?)\\)#").getRow(0)) != null) {
             ret[0] = "function";
             ret[1] = matches[0].trim();
             ret[2] = matches[1].replaceAll("\\\"", "").trim();
             if (ret[2].length() == 0) {
                 ret[2] = null;
             }
-        } else if ((matches = new AwReg(cmd, "#(.*?)\\((.*?)\\)#").getRow(0)) != null) {
+        } else if ((matches = new Regex(cmd, "#(.*?)\\((.*?)\\)#").getRow(0)) != null) {
             ret[0] = "function";
             ret[1] = matches[0].trim();
             ret[2] = null;
@@ -1097,7 +1097,7 @@ public class JACScript {
             return;
 
         }
-        String[] lines = AwReg.getLines(script);
+        String[] lines = Regex.getLines(script);
         Vector<String[]> localCaptchaPrepareCommands = new Vector<String[]>();
         Vector<String[]> localJacCommands = new Vector<String[]>();
         Vector<String[]> localLetterCommands = new Vector<String[]>();

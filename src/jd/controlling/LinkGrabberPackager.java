@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import jd.config.SubConfiguration;
 import jd.plugins.hoster.DirectHTTP;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class LinkGrabberPackager {
     public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)$", Pattern.CASE_INSENSITIVE);
@@ -122,7 +122,7 @@ public class LinkGrabberPackager {
     }
 
     private static String getNameMatch(String name, Pattern pattern) {
-        String match = new AwReg(name, pattern).getMatch(0);
+        String match = new Regex(name, pattern).getMatch(0);
         if (match != null) return match;
         return name;
     }
@@ -142,7 +142,7 @@ public class LinkGrabberPackager {
 
     private static String cutNameMatch(String name, Pattern pattern) {
         if (name == null) return null;
-        String match = new AwReg(name, pattern).getMatch(0);
+        String match = new Regex(name, pattern).getMatch(0);
         if (match != null) {
             int firstpos = name.indexOf(match);
             String tmp = name.substring(0, firstpos);

@@ -62,7 +62,7 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -710,7 +710,7 @@ public class JAntiCaptcha {
     }
 
     public String getCodeFromFileName(String name) {
-        return new AwReg(name, "captcha_(.*?)_code(.*?)\\.(.*?)").getMatch(1);
+        return new Regex(name, "captcha_(.*?)_code(.*?)\\.(.*?)").getMatch(1);
     }
 
     /**
@@ -1320,7 +1320,7 @@ public class JAntiCaptcha {
             letter.setGrid(cap.grid);
             letter.setSourcehash(JDHash.getMD5(element));
 
-            String let = new AwReg(element.getName(), pattern).getMatch(0);
+            String let = new Regex(element.getName(), pattern).getMatch(0);
 
             letter.setDecodedValue(let);
             letter.clean();

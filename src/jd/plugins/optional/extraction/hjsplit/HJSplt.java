@@ -38,7 +38,7 @@ import jd.plugins.optional.extraction.hjsplit.jaxe.ProgressEventListener;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 
 public class HJSplt implements IExtraction {
@@ -399,11 +399,11 @@ public class HJSplt implements IExtraction {
             JDLogger.exception(e);
             return null;
         }
-        if (new AwReg(sig, "[\\w]{3}  \\d+").matches()) {
-            String count = new AwReg(sig, ".*?  (\\d+)").getMatch(0);
+        if (new Regex(sig, "[\\w]{3}  \\d+").matches()) {
+            String count = new Regex(sig, ".*?  (\\d+)").getMatch(0);
             if (count == null) return null;
             if (filecount != Integer.parseInt(count)) return null;
-            String ext = new AwReg(sig, "(.*?) ").getMatch(0);
+            String ext = new Regex(sig, "(.*?) ").getMatch(0);
             return ext;
         }
         return null;

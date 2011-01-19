@@ -23,7 +23,7 @@ import java.util.Vector;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class ReconnectRecorder {
 
@@ -44,9 +44,9 @@ public class ReconnectRecorder {
             Server_Socket_HTTP = new ServerSocket(SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972));
             Server_Socket_HTTPS = new ServerSocket(SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + 1);
             if (serverip.contains(":")) {
-                final String ports = new AwReg(serverip, ".*?:(\\d+)").getMatch(0);
+                final String ports = new Regex(serverip, ".*?:(\\d+)").getMatch(0);
                 port = Integer.parseInt(ports);
-                serverip = new AwReg(serverip, "(.*?):").getMatch(0);
+                serverip = new Regex(serverip, "(.*?):").getMatch(0);
             }
             new JDRRServer(Server_Socket_HTTP, serverip, port, false, rawmode).start();
             new JDRRServer(Server_Socket_HTTPS, serverip, 443, true, rawmode).start();

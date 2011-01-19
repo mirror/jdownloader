@@ -42,7 +42,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -302,14 +302,14 @@ public class DistributeData extends Thread {
         /*
          * multiple links without new line
          */
-        if (new AwReg(data, " http").count() > 1) return null;
-        String[] res = AwReg.getLines(data);
+        if (new Regex(data, " http").count() > 1) return null;
+        String[] res = Regex.getLines(data);
         if (res != null && res.length > 1 && res[0].contains("http") && res[1].contains("http")) return null;
         for (final HostPluginWrapper pw : HostPluginWrapper.getHostWrapper()) {
             final Pattern pattern = pw.getPattern();
 
             if (lowercasedata.contains(pw.getHost().toLowerCase())) {
-                final String match = new AwReg(data, pattern).getMatch(-1);
+                final String match = new Regex(data, pattern).getMatch(-1);
                 if (match != null && (match.equals(data) || (match.length() > 10 + pw.getHost().length() && data.startsWith(match) && (match.length() * 2) > data.length()))) {
                     final DownloadLink dl = new DownloadLink(pw.getPlugin(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
                     final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -482,7 +482,7 @@ public class DistributeData extends Thread {
          * check if there are any links (we need at least a domain and
          * protocoll)
          */
-        if (data == null || data.length() == 0 || (!new AwReg(data, "//.*?\\.").matches() && !new AwReg(data, "jdlist://").matches())) return;
+        if (data == null || data.length() == 0 || (!new Regex(data, "//.*?\\.").matches() && !new Regex(data, "jdlist://").matches())) return;
         ArrayList<DownloadLink> links = findLinks();
 
         if (links.isEmpty() && !disableDeepEmergencyScan) {

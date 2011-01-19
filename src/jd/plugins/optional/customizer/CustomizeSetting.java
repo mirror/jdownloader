@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class CustomizeSetting implements Serializable, Comparable<CustomizeSetting> {
 
@@ -75,7 +75,7 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
     public boolean matches(String fileName) {
         if (regex == null || regex.length() == 0) return false;
         try {
-            return new AwReg(fileName, regex).matches();
+            return new Regex(fileName, regex).matches();
         } catch (Exception e) {
             return false;
         }

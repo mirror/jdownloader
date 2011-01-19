@@ -42,7 +42,7 @@ import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 
 /**
@@ -676,7 +676,7 @@ public class JDController implements ControlListener {
             for (final FilePackage fp : packages) {
                 for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                     final String name = new File(nextDownloadLink.getFileOutput()).getName();
-                    if (new AwReg(name, matcher, Pattern.CASE_INSENSITIVE).matches()) {
+                    if (new Regex(name, matcher, Pattern.CASE_INSENSITIVE).matches()) {
                         ret.add(nextDownloadLink);
                     }
                 }
@@ -695,7 +695,7 @@ public class JDController implements ControlListener {
             for (final FilePackage fp : packages) {
                 for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
                     final String path = nextDownloadLink.getFileOutput();
-                    if (new AwReg(path, matcher, Pattern.CASE_INSENSITIVE).matches()) {
+                    if (new Regex(path, matcher, Pattern.CASE_INSENSITIVE).matches()) {
                         ret.add(nextDownloadLink);
                     }
                 }

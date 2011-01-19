@@ -51,7 +51,7 @@ import jd.updater.UpdaterConstants;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
@@ -531,7 +531,7 @@ abstract public class DownloadInterface {
 
                 // Content-Range=[133333332-199999999/200000000]}
                 if (startByte > 0) {
-                    String[] range = new AwReg(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
+                    String[] range = new Regex(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
                     if (speedDebug) {
                         logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
                     }
@@ -540,7 +540,7 @@ abstract public class DownloadInterface {
                         if (dl.fakeContentRangeHeader()) {
                             logger.severe("Using fakeContentRangeHeader");
                             // logger.finest(connection.toString());
-                            String[] fixrange = new AwReg(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getRow(0);
+                            String[] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getRow(0);
 
                             long gotSB = Formatter.filterLong(fixrange[0]);
                             long gotEB;

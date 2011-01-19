@@ -44,7 +44,7 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 
 class DownloadLinkBroadcaster extends Eventsender<DownloadLinkListener, DownloadLinkEvent> {
@@ -979,12 +979,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             partnum2 = null;
             return;
         }
-        partnum2 = new AwReg(name2, ".*\\.pa?r?t?(\\d+)").getMatch(0);
+        partnum2 = new Regex(name2, ".*\\.pa?r?t?(\\d+)").getMatch(0);
         if (partnum2 == null) {
-            partnum2 = new AwReg(name2, ".*\\.r(\\d+)").getMatch(0);
+            partnum2 = new Regex(name2, ".*\\.r(\\d+)").getMatch(0);
         }
         if (partnum2 == null) {
-            partnum2 = new AwReg(name2, ".*\\.(\\d+)").getMatch(0);
+            partnum2 = new Regex(name2, ".*\\.(\\d+)").getMatch(0);
         }
         if (partnum2 == null) {
             partnum2 = "";
@@ -1025,9 +1025,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setFinalFileName(String newfinalFileName) {
         setName(newfinalFileName);
         if (newfinalFileName != null && newfinalFileName.length() > 0) {
-            if (new AwReg(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
                 logger.info("Use Workaround for stupid >>rar.html<< uploaders!");
-                newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new AwReg(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
+                newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
             }
             finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));
         } else {

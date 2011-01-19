@@ -54,7 +54,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.StorageEvent;
 import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
@@ -241,7 +241,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                 br.setHeaders(new RequestHeader());
             }
             String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
-            final String[] params = new AwReg(request, "%%%(.*?)%%%").getColumn(0);
+            final String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
             if (params.length > 0) {
                 final StringBuilder req;
                 if (request.startsWith(params[0])) {
@@ -714,7 +714,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                             final String key = attributes.item(attribute).getNodeName();
                             String value = attributes.item(attribute).getNodeValue();
                             final String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
-                            final String[] params = new AwReg(value, "%%%(.*?)%%%").getColumn(-1);
+                            final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
                             if (params.length > 0) {
                                 final StringBuilder req;
                                 if (value.startsWith(params[0])) {
@@ -759,8 +759,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                     if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
                         final String[] parseLines = LiveHeaderReconnect.splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
                         for (final String parseLine : parseLines) {
-                            String varname = new AwReg(parseLine, "(.*?):").getMatch(0);
-                            String pattern = new AwReg(parseLine, ".*?:(.+)").getMatch(0);
+                            String varname = new Regex(parseLine, "(.*?):").getMatch(0);
+                            String pattern = new Regex(parseLine, ".*?:(.+)").getMatch(0);
                             if (varname != null && pattern != null) {
                                 varname = varname.trim();
                                 pattern = pattern.trim();

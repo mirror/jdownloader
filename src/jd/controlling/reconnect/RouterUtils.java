@@ -37,7 +37,7 @@ import jd.nutils.Threader.WorkerListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class RouterUtils {
 
@@ -194,7 +194,7 @@ public class RouterUtils {
                     if (!out.matches("(?is).*((" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ").*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?|.*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?.*(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")).*")) {
                         out = null;
                     } else {
-                        out = new AwReg(out, "(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")[^\r\n]*").getMatch(-1);
+                        out = new Regex(out, "(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")[^\r\n]*").getMatch(-1);
                     }
                 }
             } catch (final Exception e) {
@@ -328,9 +328,9 @@ public class RouterUtils {
             exec.start();
             exec.waitTimeout();
 
-            final String[] out = AwReg.getLines(exec.getOutputStream());
+            final String[] out = Regex.getLines(exec.getOutputStream());
             for (final String string : out) {
-                final String m = new AwReg(string, pat).getMatch(0);
+                final String m = new Regex(string, pat).getMatch(0);
                 if (m != null) {
                     if (checkPort(m) || checkPort(m)) { return InetAddress.getByName(m); }
 
@@ -418,7 +418,7 @@ public class RouterUtils {
     public static String getMacAddress(final InetAddress hostAddress) throws IOException, InterruptedException {
         final String resultLine = RouterUtils.callArpTool(hostAddress.getHostAddress());
         if (resultLine == null) { return null; }
-        String rd = new AwReg(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
+        String rd = new Regex(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
         if (rd == null) { return null; }
         rd = rd.replaceAll("\\s", "0");
         final String[] d = rd.split("[:\\-]");

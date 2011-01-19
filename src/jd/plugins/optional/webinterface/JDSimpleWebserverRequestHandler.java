@@ -39,7 +39,7 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class JDSimpleWebserverRequestHandler {
 
@@ -338,7 +338,7 @@ public class JDSimpleWebserverRequestHandler {
                 if (requestParameter.containsKey("password_list")) {
                     final String passwordList = Encoding.htmlDecode(requestParameter.get("password_list"));
                     final ArrayList<String> pws = new ArrayList<String>();
-                    for (final String pw : org.appwork.utils.AwReg.getLines(passwordList)) {
+                    for (final String pw : org.appwork.utils.Regex.getLines(passwordList)) {
                         pws.add(0, pw);
                     }
                     PasswordListController.getInstance().setPasswordList(pws);
@@ -363,7 +363,7 @@ public class JDSimpleWebserverRequestHandler {
         if (!fileToRead.exists()) {
             this.response.setNotFound(url);
         } else {
-            if (new AwReg(url, ".+\\.tmpl").matches()) {
+            if (new Regex(url, ".+\\.tmpl").matches()) {
                 JDSimpleWebserverTemplateFileRequestHandler filerequest;
                 filerequest = new JDSimpleWebserverTemplateFileRequestHandler(this.response);
                 filerequest.handleRequest(url, requestParameter);

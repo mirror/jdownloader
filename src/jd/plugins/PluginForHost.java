@@ -50,7 +50,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien
@@ -332,7 +332,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
         ArrayList<DownloadLink> links = null;
 
-        final String[] hits = new AwReg(data, getSupportedLinks()).getColumn(-1);
+        final String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
             links = new ArrayList<DownloadLink>();
             for (String file : hits) {

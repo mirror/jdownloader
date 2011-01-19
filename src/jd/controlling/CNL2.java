@@ -37,7 +37,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -132,7 +132,7 @@ public final class CNL2 {
         final byte[] baseDecoded = Base64.decode(crypted);
         final String decryted = decrypt(baseDecoded, key).trim();
 
-        final String passwords[] = AwReg.getLines(password);
+        final String passwords[] = Regex.getLines(password);
 
         final ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
         for (final DownloadLink link : links) {

@@ -23,7 +23,7 @@ import jd.plugins.optional.jdpremserv.controlling.UserController;
 import jd.plugins.optional.jdpremserv.model.PremServUser;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class JDPremServServer implements Handler, ControlListener {
 
@@ -129,7 +129,7 @@ public class JDPremServServer implements Handler, ControlListener {
                         if (request.getHeader("range") == null) {
                             response.setFileServe(ret.getFileOutput(), 0, -1, new File(ret.getFileOutput()).length(), false);
                         } else {
-                            String[] dat = new AwReg(request.getHeader("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
+                            String[] dat = new Regex(request.getHeader("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
                             if (dat[1] == null) {
                                 response.setFileServe(ret.getFileOutput(), Long.parseLong(dat[0]), -1, new File(ret.getFileOutput()).length(), true);
                             } else {

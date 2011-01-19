@@ -45,7 +45,7 @@ import jd.plugins.optional.webinterface.template.Template;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class JDSimpleWebserverTemplateFileRequestHandler {
 
@@ -417,7 +417,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     @SuppressWarnings("deprecation")
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         try {
-            url = new AwReg(url, "(.+\\.tmpl)").getMatch(0);
+            url = new Regex(url, "(.+\\.tmpl)").getMatch(0);
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());

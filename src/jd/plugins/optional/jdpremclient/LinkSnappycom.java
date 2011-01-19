@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.TimeFormatter;
 
 public class LinkSnappycom extends PluginForHost implements JDPremInterface {
@@ -232,9 +232,9 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             String postData = "genLinks={\"links\" : \"" + Encoding.urlEncode(link.getDownloadURL()) + "\", \"Kcookies\" : \"" + br.getCookie("www.linksnappy.com", "lseSavePass") + "\"}";
             String response = br.postPageRaw("http://linksnappy.com/lseAPI.php", postData);
             response = response.replaceAll("\\\\/", "/");
-            String status = new AwReg(response, "status\":\"(.*?)\"").getMatch(0);
+            String status = new Regex(response, "status\":\"(.*?)\"").getMatch(0);
             // String error = new Regex(response, "error\":(.*?)}").getMatch(0);
-            genlink = new AwReg(response, "generated\":\"(http.*?)\"").getMatch(0);
+            genlink = new Regex(response, "generated\":\"(http.*?)\"").getMatch(0);
             if ("FAILED".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if ("OK".equalsIgnoreCase(status) && genlink != null) {
                 br.setFollowRedirects(true);
@@ -382,7 +382,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             synchronized (LOCK) {
                 premiumHosts.clear();
                 if (hosts != null) {
-                    String hoster[] = new AwReg(hosts, "(.*?)(;|$)").getColumn(0);
+                    String hoster[] = new Regex(hosts, "(.*?)(;|$)").getColumn(0);
                     if (hosts != null) {
                         for (String host : hoster) {
                             if (hosts == null || host.length() == 0) continue;

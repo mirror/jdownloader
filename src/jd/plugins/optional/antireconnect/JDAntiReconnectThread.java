@@ -27,7 +27,7 @@ import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class JDAntiReconnectThread extends Thread implements Runnable {
 
@@ -61,7 +61,7 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
                 } else {
                     final Pattern IP_PATTERN = Pattern.compile("(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
                     if (IP_PATTERN.matcher(iparray[i]).matches()) {
-                        AwReg paramid = new AwReg(iparray[i], "(\\d+\\.\\d+\\.\\d+)\\.(\\d+)-(\\d+)");
+                        Regex paramid = new Regex(iparray[i], "(\\d+\\.\\d+\\.\\d+)\\.(\\d+)-(\\d+)");
                         for (int u = Integer.valueOf(paramid.getMatch(1)); u < Integer.valueOf(paramid.getMatch(2)); u++) {
                             iplist.add(paramid.getMatch(0) + "." + u);
                         }
@@ -245,7 +245,7 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
                     if (!out.matches("(?is).*((" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ").*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?|.*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?.*(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")).*")) {
                         out = null;
                     } else {
-                        out = new AwReg(out, "(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")[^\r\n]*").getMatch(-1);
+                        out = new Regex(out, "(" + hostAddress.getHostName() + "|" + hostAddress.getHostAddress() + ")[^\r\n]*").getMatch(-1);
                     }
                 }
             } catch (final Exception e) {

@@ -23,7 +23,7 @@ import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class PasswordListener implements ProcessListener {
 
@@ -52,20 +52,20 @@ public class PasswordListener implements ProcessListener {
             JDLogger.exception(e);
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
         }
-        if (new AwReg(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
-            if (!new AwReg(lastLine, Pattern.compile("CRC failed in")).matches()) {
+        if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (!new Regex(lastLine, Pattern.compile("CRC failed in")).matches()) {
                 exec.writetoOutputStream(this.password);
             }
         }
-        if (new AwReg(lastLine, Pattern.compile(".*?ERROR: Passwords do not match", Pattern.CASE_INSENSITIVE)).matches()) {
+        if (new Regex(lastLine, Pattern.compile(".*?ERROR: Passwords do not match", Pattern.CASE_INSENSITIVE)).matches()) {
             /* unar binary cannot handle this password, so skip it */
             pwnotmatch = true;
             JDLogger.getLogger().severe("JDUnrar: cannot handle password \"" + password + "\"");
             password = "";
         }
-        if (new AwReg(lastLine, Pattern.compile(".*?password incorrect", Pattern.CASE_INSENSITIVE)).matches()) {
-            if (!new AwReg(lastLine, Pattern.compile("CRC failed in")).matches()) exec.interrupt();
-        } else if (new AwReg(lastLine, ".*?current.*?password.*?ll ").matches()) {
+        if (new Regex(lastLine, Pattern.compile(".*?password incorrect", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (!new Regex(lastLine, Pattern.compile("CRC failed in")).matches()) exec.interrupt();
+        } else if (new Regex(lastLine, ".*?current.*?password.*?ll ").matches()) {
             exec.writetoOutputStream("A");
         }
 

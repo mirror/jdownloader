@@ -154,7 +154,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
             final String batch = this.getBatchText();
 
-            final String[] lines = org.appwork.utils.AwReg.getLines(batch);
+            final String[] lines = org.appwork.utils.Regex.getLines(batch);
             RouterPlugin.LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
             for (final String element : lines) {
                 cmds[cmdsLength1] = element;

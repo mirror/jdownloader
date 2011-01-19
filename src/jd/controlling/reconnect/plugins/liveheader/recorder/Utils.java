@@ -32,7 +32,7 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public final class Utils {
     /**
@@ -116,7 +116,7 @@ public final class Utils {
     }
 
     public static void createStep(LinkedHashMap<String, String> headers, String postdata, Vector<String> steps, boolean ishttps, boolean rawmode) {
-        if (!new AwReg(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css).*?").matches()) {
+        if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css).*?").matches()) {
             String httpstrue = "";
             String rawtrue = "";
             if (ishttps) {
@@ -152,7 +152,7 @@ public final class Utils {
                 hlh.append("        " + headers.get(null) + "\r\n");
                 hlh.append("        Host: %%%routerip%%%" + "\r\n");
                 if (headers.containsKey("authorization")) {
-                    String auth = new AwReg(headers.get("authorization"), "Basic (.+)").getMatch(0);
+                    String auth = new Regex(headers.get("authorization"), "Basic (.+)").getMatch(0);
                     if (auth != null) ReconnectRecorder.AUTH = Encoding.Base64Decode(auth.trim());
                     hlh.append("        Authorization: Basic %%%basicauth%%%" + "\r\n");
                 }
@@ -169,11 +169,11 @@ public final class Utils {
     }
 
     public static void rewriteLocationHeader(final ProxyThread instance) {
-        String location = JDHexUtils.toString(new AwReg(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Location: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        String location = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Location: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (location != null) {
-            if (new AwReg(location, "https?://(.*?)/?").getMatch(0) != null) {
+            if (new Regex(location, "https?://(.*?)/?").getMatch(0) != null) {
                 final String oldlocation = location;
-                location = new AwReg(location, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
+                location = new Regex(location, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldlocation.startsWith("https")) {
                     if (location != null) {
                         location = "http://localhost:" + SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + "/" + location;
@@ -194,9 +194,9 @@ public final class Utils {
     }
 
     public static void rewriteHostHeader(final ProxyThread instance) {
-        String host = JDHexUtils.toString(new AwReg(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Host: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        String host = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Host: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (host != null) {
-            if (new AwReg(host, "(.*?):?").getMatch(0) != null) {
+            if (new Regex(host, "(.*?):?").getMatch(0) != null) {
                 final String oldhost = host;
                 host = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Host: " + oldhost), JDHexUtils.getHexString("Host: " + host));
@@ -206,9 +206,9 @@ public final class Utils {
     }
 
     public static void rewriteConnectionHeader(final ProxyThread instance) {
-        String con = JDHexUtils.toString(new AwReg(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Connection: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        String con = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Connection: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (con != null) {
-            final String type = new AwReg(con, "(.+)").getMatch(0);
+            final String type = new Regex(con, "(.+)").getMatch(0);
             if (type != null && !type.equalsIgnoreCase("close")) {
                 final String oldcon = con;
                 con = "close";
@@ -219,16 +219,16 @@ public final class Utils {
     }
 
     public static void rewriteRefererHeader(final ProxyThread instance) {
-        String ref = JDHexUtils.toString(new AwReg(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Referer: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        String ref = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Referer: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (ref != null) {
-            if (new AwReg(ref, "https?://(.*?)/?").getMatch(0) != null) {
+            if (new Regex(ref, "https?://(.*?)/?").getMatch(0) != null) {
                 String oldref = ref;
-                String ref2 = new AwReg(ref, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
+                String ref2 = new Regex(ref, "https?://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (!oldref.startsWith("https")) {
                     if (ref2 != null) {
                         ref = "http://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/" + ref2.trim();
                     } else {
-                        if (new AwReg(ref, "https?://.*?/", Pattern.DOTALL).matches()) {
+                        if (new Regex(ref, "https?://.*?/", Pattern.DOTALL).matches()) {
                             ref = "http://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/";
                         } else {
                             ref = "http://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
@@ -238,7 +238,7 @@ public final class Utils {
                     if (ref2 != null) {
                         ref = "https://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/" + ref2.trim();
                     } else {
-                        if (new AwReg(ref, "https?://.*?/", Pattern.DOTALL).matches()) {
+                        if (new Regex(ref, "https?://.*?/", Pattern.DOTALL).matches()) {
                             ref = "https://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/";
                         } else {
                             ref = "https://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);

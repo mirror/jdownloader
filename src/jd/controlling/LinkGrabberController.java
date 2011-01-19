@@ -34,7 +34,7 @@ import jd.plugins.LinkGrabberFilePackageEvent;
 import jd.plugins.LinkGrabberFilePackageListener;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 
 class LinkGrabberControllerBroadcaster extends Eventsender<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
@@ -210,7 +210,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public String[] getLinkFilterPattern() {
         String filter = SubConfiguration.getConfig(CONFIG).getStringProperty(IGNORE_LIST, null);
         if (filter == null || filter.length() == 0) return null;
-        String[] lines = AwReg.getLines(filter);
+        String[] lines = Regex.getLines(filter);
         ArrayList<String> ret = new ArrayList<String>();
         for (String line : lines) {
             if (line.trim().startsWith("#") || line.trim().length() == 0) continue;

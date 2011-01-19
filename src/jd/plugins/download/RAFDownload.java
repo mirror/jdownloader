@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Hash;
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class RAFDownload extends DownloadInterface {
 
@@ -98,7 +98,7 @@ public class RAFDownload extends DownloadInterface {
                             String crc = Long.toHexString(Hash.getCRC32(outputFile));
 
                             hashType = "CRC32";
-                            success = new AwReg(sfvText, outputFile.getName() + "\\s*" + crc).matches();
+                            success = new Regex(sfvText, outputFile.getName() + "\\s*" + crc).matches();
                         } else {
                             downloadLink.getLinkStatus().setStatusText(null);
                             downloadLink.requestGuiUpdate();

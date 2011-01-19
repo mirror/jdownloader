@@ -24,7 +24,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class FastDebridcom extends PluginForHost implements JDPremInterface {
 
@@ -332,7 +332,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                 return ac;
             }
             /* parse api response in easy2handle hashmap */
-            String info[][] = new AwReg(page, "<([^<>]*?)>([^<]*?)</.*?>").getMatches();
+            String info[][] = new Regex(page, "<([^<>]*?)>([^<]*?)</.*?>").getMatches();
             synchronized (accDetails) {
                 accDetails.clear();
                 for (String data[] : info) {
@@ -344,7 +344,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                     synchronized (LOCK) {
                         premiumHosts.clear();
                         if (hosts != null) {
-                            String hoster[] = new AwReg(hosts, "\"(.*?)\"").getColumn(0);
+                            String hoster[] = new Regex(hosts, "\"(.*?)\"").getColumn(0);
                             if (hosts != null) {
                                 for (String host : hoster) {
                                     if (hosts == null || host.length() == 0) continue;

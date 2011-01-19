@@ -42,7 +42,7 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.AwReg;
+import org.appwork.utils.Regex;
 
 public class LinkGrabberTableTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 2560352681437669412L;
@@ -232,7 +232,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 }
             } else if (tr.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
-                String linuxfiles[] = new AwReg(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
+                String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
                 if (linuxfiles != null && linuxfiles.length > 0) {
                     for (String file : linuxfiles) {
                         JDController.loadContainerFile(new File(file.trim()));
