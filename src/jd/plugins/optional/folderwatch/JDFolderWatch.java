@@ -155,33 +155,31 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
     }
 
     private void initConfigGui() {
-        ConfigEntry entry = null;
-
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
 
-        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, FolderWatchConstants.PROPERTY_FOLDER, JDL.L(JDL_PREFIX + "option.folder", "Folder to watch:")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, FolderWatchConstants.PROPERTY_FOLDER, JDL.L(JDL_PREFIX + "option.folder", "Folder to watch:")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
         if (OSDetector.isWindows()) {
-            config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_RECURSIVE, JDL.L(JDL_PREFIX + "recursive", "Watch registered folders recursively")).setDefaultValue(false));
+            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_RECURSIVE, JDL.L(JDL_PREFIX + "recursive", "Watch registered folders recursively")).setDefaultValue(false));
         }
 
-        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT, JDL.L(JDL_PREFIX + "option.import", "Import container when found")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT, JDL.L(JDL_PREFIX + "option.import", "Import container when found")).setDefaultValue(true));
 
-        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT_DELETE, JDL.L(JDL_PREFIX + "option.importdelete", "Import container when found and delete it afterwards")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT_DELETE, JDL.L(JDL_PREFIX + "option.importdelete", "Import container when found and delete it afterwards")).setDefaultValue(false));
 
-        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_HISTORY, JDL.L(JDL_PREFIX + "option.history", "Add history entry for every found container")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_HISTORY, JDL.L(JDL_PREFIX + "option.history", "Add history entry for every found container")).setDefaultValue(true));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
-        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 openInFilebrowser(folder);
             }
         }, JDL.L(JDL_PREFIX + "openfolder", "open folder"), JDL.L(JDL_PREFIX + "openfolder.long", "Open folder in local file manager:"), JDTheme.II("gui.images.package", 16, 16)));
 
-        config.addEntry(entry = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "option.emptyfolder.message", "Are you sure you want to delete all container files?")), UserIO.RETURN_OK)) {
                     emptyFolder(folder);

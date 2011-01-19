@@ -26,9 +26,9 @@ import org.appwork.utils.Hash;
  */
 public class JDHash {
 
-    public static String HASH_TYPE_MD5  = "md5";
+    public static String HASH_TYPE_MD5  = Hash.HASH_TYPE_MD5;
 
-    public static String HASH_TYPE_SHA1 = "SHA-1";
+    public static String HASH_TYPE_SHA1 = Hash.HASH_TYPE_SHA1;
 
     public static String getMD5(String arg) {
         return Hash.getStringHash(arg, HASH_TYPE_MD5);

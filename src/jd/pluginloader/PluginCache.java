@@ -72,7 +72,7 @@ public abstract class PluginCache<T> {
      * @throws Exception
      */
     public void save() throws Exception {
-        if (data == null) { throw IllegalStateException("Do not call This method twice"); }
+        if (data == null) throw new IllegalStateException("Do not call This method twice");
         if (changed) {
             try {
                 String txt = JSonStorage.serializeToJson(data);
@@ -89,7 +89,4 @@ public abstract class PluginCache<T> {
         data = null;
     }
 
-    private Exception IllegalStateException(String string) {
-        return null;
-    }
 }
