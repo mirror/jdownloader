@@ -1,6 +1,5 @@
 package jd.http.ext.security;
 
-import org.appwork.utils.logging.Log;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;

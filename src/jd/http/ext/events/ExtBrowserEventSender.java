@@ -1,6 +1,5 @@
 package jd.http.ext.events;
 
-import org.appwork.utils.event.Eventsender;
 
 public class ExtBrowserEventSender extends Eventsender<ExtBrowserListener, ExtBrowserEvent> {
 

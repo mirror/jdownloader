@@ -15,7 +15,6 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 
-import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.HttpRequest;
 import org.lobobrowser.html.ReadyStateChangeListener;
 import org.w3c.dom.Document;

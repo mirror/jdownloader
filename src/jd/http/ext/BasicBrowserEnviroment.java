@@ -4,8 +4,8 @@ import java.security.Policy;
 
 import jd.http.Request;
 import jd.http.ext.interfaces.BrowserEnviroment;
+import jd.parser.Regex;
 
-import org.appwork.utils.Regex;
 import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;
 
 public class BasicBrowserEnviroment implements BrowserEnviroment {

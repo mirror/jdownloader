@@ -5,8 +5,6 @@ import java.util.regex.Pattern;
 
 import jd.http.Request;
 
-import org.appwork.utils.logging.Log;
-
 public class AdBlocker implements AdBlockerInterface {
     private static final AdBlocker INSTANCE = new AdBlocker();
 

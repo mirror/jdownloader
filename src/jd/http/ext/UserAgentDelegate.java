@@ -6,7 +6,6 @@ import java.security.Policy;
 import jd.http.Cookie;
 import jd.http.Cookies;
 
-import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.HttpRequest;
 import org.lobobrowser.html.UserAgentContext;
 import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;

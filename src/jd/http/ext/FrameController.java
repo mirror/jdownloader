@@ -13,11 +13,10 @@ import java.util.Iterator;
 
 import jd.http.Browser;
 import jd.http.Request;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.logging.Log;
 import org.lobobrowser.html.BrowserFrame;
 import org.lobobrowser.html.FormInput;
 import org.lobobrowser.html.HtmlObject;

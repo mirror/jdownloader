@@ -2,7 +2,8 @@ package jd.http.ext;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
+import jd.parser.Regex;
+
 import org.lobobrowser.html.domimpl.HTMLElementImpl;
 import org.lobobrowser.html.style.AbstractCSS2Properties;
 
