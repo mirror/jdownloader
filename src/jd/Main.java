@@ -28,10 +28,10 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,12 +53,11 @@ import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.OutdatedParser;
-import jd.update.FileUpdate;
 import jd.update.WebUpdater;
+import jd.updater.FileUpdate;
 import jd.utils.CheckJava;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
@@ -514,21 +513,21 @@ public class Main {
          */
         Main.LOG.info("update start");
 
-        new Thread("Update and dynamics") {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(5000);
-                    WebUpdate.doUpdateCheck(false);
-
-                    Main.loadDynamics();
-
-                    WebUpdate.dynamicPluginsFinished();
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
+        // new Thread("Update and dynamics") {
+        // @Override
+        // public void run() {
+        // try {
+        // Thread.sleep(5000);
+        // WebUpdate.doUpdateCheck(false);
+        //
+        // Main.loadDynamics();
+        //
+        // WebUpdate.dynamicPluginsFinished();
+        // } catch (final Exception e) {
+        // e.printStackTrace();
+        // }
+        // }
+        // }.start();
 
         Main.LOG.info("update end");
     }
