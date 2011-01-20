@@ -57,8 +57,7 @@ public class PremiumColumn extends ExtIconColumn<HostPluginWrapper> {
 
     @Override
     public boolean isSortable(HostPluginWrapper obj) {
-        /* TODO: There is a bug with sorting the column */
-        return false;
+        return true;
     }
 
     @Override

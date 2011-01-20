@@ -43,6 +43,8 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_DO_CRC                           = "DO_CRC";
 
+    public static final String PARAM_PROXIES                          = "PARAM_PROXIES";
+
     public static final String PARAM_DOWNLOAD_DIRECTORY               = "DOWNLOAD_DIRECTORY";
 
     public static final String PARAM_DOWNLOAD_MAX_CHUNKS              = "DOWNLOAD_MAX_CHUNKS";

@@ -70,7 +70,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         public InternalTableModel() {
             super("hosterTable");
-
             tableData = new ArrayList<HostPluginWrapper>(pluginsForHost);
         }
 
@@ -151,8 +150,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
                 @Override
                 public boolean isSortable(HostPluginWrapper obj) {
-                    /* TODO: There is a bug with sorting the column */
-                    return false;
+                    return true;
                 }
 
                 @Override

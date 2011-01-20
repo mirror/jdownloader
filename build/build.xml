@@ -155,8 +155,7 @@
 			<!-- Put all plugins which should included in here -->
 			<fileset dir="${cls}">
 				<include name="jd/controlling/reconnect/plugins/extern/**" />
-				<include name="jd/controlling/reconnect/plugins/liveheader/**" />
-				<include name="jd/controlling/reconnect/plugins/proxyrot/**" />
+				<include name="jd/controlling/reconnect/plugins/liveheader/**" />				
 				<include name="jd/controlling/reconnect/plugins/upnp/**" />
 
 				<include name="jd/plugins/hoster/DirectHTTP*" />
