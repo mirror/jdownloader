@@ -223,7 +223,7 @@ public class MediafireCom extends PluginForHost {
         return "http://www.mediafire.com/terms_of_service.php";
     }
 
-    private String getDownloadUrl() throws Exception {
+    private String getDownloadUrl(DownloadLink downloadLink) throws Exception {
         // if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) <
         // 10000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT,
         // "Use Nightly"); }
@@ -236,7 +236,7 @@ public class MediafireCom extends PluginForHost {
             // we enable css evaluation, because we need this to find invisible
             // links
             // internal css is enough.
-            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*pmsrvr.com.*", ".*yahoo.com.*", ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null) {
+            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*facebook.*?", ".*pmsrvr.com.*", ".*yahoo.com.*", ".*templates/linkto.*", ".*cdn.mediafire.com/css/.*", ".*/blank.html" }, null) {
 
                 @Override
                 public boolean isInternalCSSEnabled() {
@@ -248,6 +248,9 @@ public class MediafireCom extends PluginForHost {
             eb.eval(this.br);
             // wait for workframe2, but max 30 seconds
             eb.waitForFrame("workframe2", 30000);
+            // dummy waittime. sometimes it seems that wiat for frame is not
+            // enough
+            sleep(5000, downloadLink);
             // get all links now
             final HTMLCollection links = eb.getDocument().getLinks();
 
@@ -336,7 +339,7 @@ public class MediafireCom extends PluginForHost {
                 url = this.br.getRedirectLocation();
             } else {
                 this.handlePW(downloadLink);
-                url = this.getDownloadUrl();
+                url = this.getDownloadUrl(downloadLink);
             }
         }
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -409,7 +412,7 @@ public class MediafireCom extends PluginForHost {
         // http://support.mediafire.com/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=68
         this.br.getPage(downloadLink.getDownloadURL());
         this.handlePW(downloadLink);
-        final String url = this.getDownloadUrl();
+        final String url = this.getDownloadUrl(downloadLink);
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         this.br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
