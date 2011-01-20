@@ -24,7 +24,7 @@ public abstract class PluginCache<T> {
 
     public PluginCache(String tmpPlugincacheJson) {
         try {
-            file = Application.getRessource(tmpPlugincacheJson);
+            file = Application.getResource(tmpPlugincacheJson);
             String cachedString = null;
             if (file.exists()) cachedString = IO.readFileToString(file);
             data = restore(cachedString);

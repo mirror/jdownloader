@@ -30,7 +30,7 @@ public class UpdateDevWorkspace {
     private static void updateSVN(final String svnUrl, final String path) throws Exception {
         final Subversion svn = new Subversion(svnUrl);
 
-        final File dir = Application.getRessource(path);
+        final File dir = Application.getResource(path);
         if (!dir.exists()) dir.mkdirs();
         try {
             svn.cleanUp(dir, true);
@@ -59,7 +59,7 @@ public class UpdateDevWorkspace {
     public static void main(String[] args) {
         /*this sets correct homedirectory*/
         JDUtilities.getJDHomeDirectoryFromEnvironment();
-        System.out.println("Update resources at " +  Application.getRessource(""));
+        System.out.println("Update resources at " +  Application.getResource(""));
 
         try {
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/libs/", "libs");

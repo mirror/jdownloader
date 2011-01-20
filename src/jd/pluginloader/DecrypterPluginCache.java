@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.type.TypeReference;
 
 /**
  * Caches all plugin info in a JSON File.
@@ -32,7 +32,7 @@ public class DecrypterPluginCache extends PluginCache<CachedDecrypter> {
     @Override
     protected HashMap<String, CachedDecrypter> restore(String cachedString) {
         try {
-            return JSonStorage.restoreFromString(cachedString, new TypeReference<HashMap<String, CachedDecrypter>>() {
+            return JSonStorage.restoreFromString(cachedString, new TypeRef<HashMap<String, CachedDecrypter>>() {
             }, new HashMap<String, CachedDecrypter>());
         } catch (JsonParseException e) {
             e.printStackTrace();

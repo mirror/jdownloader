@@ -8,18 +8,18 @@ import jd.plugins.optional.jdpremserv.model.PremServUser;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.event.BasicEvent;
 import org.appwork.utils.event.BasicEventSender;
-import org.codehaus.jackson.type.TypeReference;
 
 public class UserController implements ControlListener {
 
-    private static final UserController INSTANCE = new UserController();
-    public static final int USER_ADDED = 0;
-    public static final int LOADED = 1;
-    public static final int REMOVED_USER = 2;
-    public static final int UPDATE = 3;
-    private static final String STORAGEPATH = "cfg/premserv/Users2.json";
+    private static final UserController INSTANCE     = new UserController();
+    public static final int             USER_ADDED   = 0;
+    public static final int             LOADED       = 1;
+    public static final int             REMOVED_USER = 2;
+    public static final int             UPDATE       = 3;
+    private static final String         STORAGEPATH  = "cfg/premserv/Users2.json";
 
     public static UserController getInstance() {
         // TODO Auto-generated method stub
@@ -27,7 +27,7 @@ public class UserController implements ControlListener {
     }
 
     private BasicEventSender<PremServUser> eventSender;
-    private ArrayList<PremServUser> premServUsers;
+    private ArrayList<PremServUser>        premServUsers;
 
     public BasicEventSender<PremServUser> getEventSender() {
         return eventSender;
@@ -35,7 +35,7 @@ public class UserController implements ControlListener {
 
     private UserController() {
         this.eventSender = new BasicEventSender<PremServUser>();
-        premServUsers = JSonStorage.restoreFrom(STORAGEPATH, new TypeReference<ArrayList<PremServUser>>() {
+        premServUsers = JSonStorage.restoreFrom(STORAGEPATH, new TypeRef<ArrayList<PremServUser>>() {
         }, new ArrayList<PremServUser>());
 
         JDUtilities.getController().addControlListener(this);
