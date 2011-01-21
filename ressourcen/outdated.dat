@@ -498,3 +498,4 @@ jd/plugins/decrypter/PrtctThprdxcm.class
 jd/plugins/hoster/SharingMatrixCom.class
 jd/captcha/methods/windows_antirecaptcha
 jd/captcha/methods/recaptcha
+jd/plugins/decrypter/Xa.class
