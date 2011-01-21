@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -129,11 +128,10 @@ public class FilesMailRu extends PluginForHost {
         goToSleep(downloadLink);
         // Errorhandling, sometimes the link which is usually renewed by the
         // linkgrabber doesn't work and needs to be refreshed again!
-        URLConnectionAdapter con = br.openGetConnection(finallink);
-        if (con.getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
             logger.info("Renewing dllink, seems like we had a broken link here!");
-            br.followConnection();
-            con.disconnect();
+            dl.getConnection().disconnect();
             if (br.containsHTML("\\?trycount=")) {
                 logger.info("files.mail.ru page showed the \"trycount\" link. Trying to open the mainpage of the link to find a new dllink...");
                 br.getPage(downloadLink.getStringProperty("folderID", null));
@@ -147,23 +145,23 @@ public class FilesMailRu extends PluginForHost {
             }
             finallink = fixLink(finallink);
             downloadLink.setUrlDownload(finallink);
+            logger.info("dllink = " + downloadLink.getDownloadURL());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+            if ((dl.getConnection().getContentType().contains("html"))) {
+                logger.warning("The finallink doesn't seem to be a file, following connection...");
+                logger.warning("finallink = " + downloadLink.getDownloadURL());
+                br.followConnection();
+                if (br.getURL().equals(downloadLink.getStringProperty("folderID"))) {
+                    logger.warning("Retrying...");
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else {
             logger.info("dllink seems to be okay (checked in handleFree)");
             logger.info("dllink = " + downloadLink.getDownloadURL());
         }
         logger.info("Starting download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-        logger.info("Checking for downloaderrors...");
-        if ((dl.getConnection().getContentType().contains("html"))) {
-            logger.warning("The finallink doesn't seem to be a file, following connection...");
-            logger.warning("finallink = " + downloadLink.getDownloadURL());
-            br.followConnection();
-            if (br.getURL().equals(downloadLink.getStringProperty("folderID"))) {
-                logger.warning("Retrying...");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         dl.startDownload();
     }
 
