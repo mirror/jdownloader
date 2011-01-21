@@ -1,12 +1,9 @@
 package jd.pluginloader;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.type.TypeReference;
 
 /**
  * Caches all plugin info in a JSON File.
@@ -31,17 +28,9 @@ public class HosterPluginCache extends PluginCache<CachedHoster> {
 
     @Override
     protected HashMap<String, CachedHoster> restore(String cachedString) {
-        try {
-            return JSonStorage.restoreFromString(cachedString, new TypeRef<HashMap<String, CachedHoster>>() {
-            }, new HashMap<String, CachedHoster>());
-        } catch (JsonParseException e) {
-            e.printStackTrace();
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new HashMap<String, CachedHoster>();
+
+        return JSonStorage.restoreFromString(cachedString, new TypeReference<HashMap<String, CachedHoster>>() {
+        }, new HashMap<String, CachedHoster>());
 
     }
 
