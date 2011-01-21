@@ -74,16 +74,19 @@ public class GameTrailersCom extends PluginForDecrypt {
                     finallink = br.getRegex("<src>(.*?)</src>").getMatch(0);
                     if (finallink == null) return null;
                 }
-                String[] extensions = { "flv", "mov", "wmv" };
+                String[] extensions = { "flv", "mov", "wmv", "mp4" };
                 for (String ext : extensions) {
+
+                    if (ext.equals("mp4") && finallink.contains("_hd")) continue;
+
                     DownloadLink dl = createDownloadlink("directhttp://" + finallink.replace(".flv", "." + ext));
                     if (videoTitle != null) {
                         // correct title without "HD" or "SD"
                         videoTitle = videoTitle.trim().replaceAll(" [SH]D ", " ");
                         if (finallink.contains("_hd")) {
-                            dl.setFinalFileName("HD - " + videoTitle + "." + ext);
+                            dl.setFinalFileName(videoTitle + "[HD-" + ext.toUpperCase() + "]." + ext);
                         } else {
-                            dl.setFinalFileName("SD - " + videoTitle + "." + ext);
+                            dl.setFinalFileName(videoTitle + "[SD-" + ext.toUpperCase() + "]." + ext);
                         }
                     }
                     decryptedLinks.add(dl);
