@@ -30,10 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://(beta\\.iload|iload)\\.to/((go/\\d+/merged|go/\\d+)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://((beta|de)\\.iload|iload)\\.to/((go/\\d+/merged|go/\\d+)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
 public class LdT extends PluginForDecrypt implements ProgressControllerListener {
     private boolean abort                 = false;
-    private String  patternSupported_Info = ".*?(beta\\.iload|iload)\\.to/(view|title|release)/.*?/";
+    private String  patternSupported_Info = ".*?((beta|de)\\.iload|iload)\\.to/(view|title|release)/.*?/";
 
     public LdT(PluginWrapper wrapper) {
         super(wrapper);
@@ -91,7 +91,7 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
         } else {
             br.getPage(parameter);
             DownloadLink dl;
-            if (br.getRedirectLocation().equalsIgnoreCase(parameter)) br.getPage(parameter);
+            if (br.getRedirectLocation().equalsIgnoreCase(parameter) || br.getRedirectLocation().equalsIgnoreCase(parameter + "/")) br.getPage(parameter);
             if (br.getRedirectLocation().equalsIgnoreCase(parameter)) return null;
             String url = br.getRedirectLocation();
             decryptedLinks.add(dl = createDownloadlink(url));
