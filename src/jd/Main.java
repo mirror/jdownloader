@@ -28,7 +28,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
@@ -54,7 +53,6 @@ import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.OutdatedParser;
 import jd.update.WebUpdater;
-import jd.updater.FileUpdate;
 import jd.utils.CheckJava;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -184,26 +182,29 @@ public class Main {
         } else {
 
             /* dynamics in der public laden */
-            Main.LOG.finest("Run dynamics");
-            if (WebUpdater.getPluginList() == null) { return; }
-            for (final Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
-                System.out.println("Plugins: " + entry.getKey());
-                if (entry.getKey().startsWith("/jd/dynamics/") && !entry.getKey().contains("DynamicPluginInterface")) {
-                    Main.LOG.finest("Found dynamic: " + entry.getKey());
-                    if (!entry.getValue().equals()) {
-
-                        if (!new WebUpdater().updateUpdatefile(entry.getValue())) {
-                            Main.LOG.warning("Could not update " + entry.getValue());
-                            continue;
-                        } else {
-                            Main.LOG.finest("Update OK!");
-                        }
-                    }
-                    if (!entry.getKey().contains("$") && !classes.contains(entry.getKey())) {
-                        classes.add(entry.getKey());
-                    }
-                }
-            }
+            // Main.LOG.finest("Run dynamics");
+            // if (WebUpdater.getPluginList() == null) { return; }
+            // for (final Entry<String, FileUpdate> entry :
+            // WebUpdater.PLUGIN_LIST.entrySet()) {
+            // System.out.println("Plugins: " + entry.getKey());
+            // if (entry.getKey().startsWith("/jd/dynamics/") &&
+            // !entry.getKey().contains("DynamicPluginInterface")) {
+            // Main.LOG.finest("Found dynamic: " + entry.getKey());
+            // if (!entry.getValue().equals()) {
+            //
+            // if (!new WebUpdater().updateUpdatefile(entry.getValue())) {
+            // Main.LOG.warning("Could not update " + entry.getValue());
+            // continue;
+            // } else {
+            // Main.LOG.finest("Update OK!");
+            // }
+            // }
+            // if (!entry.getKey().contains("$") &&
+            // !classes.contains(entry.getKey())) {
+            // classes.add(entry.getKey());
+            // }
+            // }
+            // }
         }
         for (final String clazz : classes) {
             try {
