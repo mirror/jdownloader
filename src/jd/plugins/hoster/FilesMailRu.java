@@ -128,10 +128,11 @@ public class FilesMailRu extends PluginForHost {
         goToSleep(downloadLink);
         // Errorhandling, sometimes the link which is usually renewed by the
         // linkgrabber doesn't work and needs to be refreshed again!
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!");
             logger.info("Renewing dllink, seems like we had a broken link here!");
+            br.followConnection();
             dl.getConnection().disconnect();
             if (br.containsHTML("\\?trycount=")) {
                 logger.info("files.mail.ru page showed the \"trycount\" link. Trying to open the mainpage of the link to find a new dllink...");
@@ -147,7 +148,7 @@ public class FilesMailRu extends PluginForHost {
             finallink = fixLink(finallink);
             downloadLink.setUrlDownload(finallink);
             logger.info("dllink = " + downloadLink.getDownloadURL());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
             if ((dl.getConnection().getContentType().contains("html"))) {
                 logger.warning("The finallink doesn't seem to be a file, following connection...");
                 logger.warning("finallink = " + downloadLink.getDownloadURL());
