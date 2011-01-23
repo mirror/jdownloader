@@ -27,12 +27,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -63,6 +63,20 @@ public class Usershare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+        Form freeform = null;
+        Form[] allForms = br.getForms();
+        if (allForms != null && allForms.length != 0) {
+            for (Form singleForm : allForms) {
+                if (singleForm.containsHTML("download1")) {
+                    freeform = singleForm;
+                    break;
+                }
+            }
+        }
+        if (freeform != null) {
+            freeform.remove("method_premium");
+            br.submitForm(freeform);
+        }
         String passCode = null;
         String linkurl = null;
         checkErrors(link, false, passCode, false);
@@ -240,12 +254,22 @@ public class Usershare extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<b>Filename:</b></td><td nowrap>(.*?)</b>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<h3>Download File:(.*?)</h3>").getMatch(0);
-                if (filename == null) filename = br.getRegex("<title>Download(.*?)</title>").getMatch(0);
+                filename = br.getRegex("<h2>Download File: </font> <font style=\"font-size:17px;\">(.*?)</h2><br></font>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("name=\"fname\" value=\"(.*?)\">").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<title>Download(.*?)</title>").getMatch(0);
+                    }
+                }
             }
         }
         String filesize = br.getRegex("Size:</b></td><td>(.*?)<small>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("label>Size:</label> <span>(.*?)</span>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("label>Size:</label> <span>(.*?)</span>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("You have requested <font color=\"red\">http://(www\\.)?usershare\\.net/[a-z0-9]{12}/.*?</font> \\((.*?)\\)</font>").getMatch(1);
+            }
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));

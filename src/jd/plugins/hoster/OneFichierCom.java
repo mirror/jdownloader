@@ -21,17 +21,17 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(1fichier\\.com/|dl4free\\.com/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 0 })
 public class OneFichierCom extends PluginForHost {
 
     public OneFichierCom(PluginWrapper wrapper) {
@@ -44,14 +44,13 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
+        // Note: We cannot replace all domains with "1fichier.com" because the
+        // downloadlinks are always bind to a domains
         // Prefer english language
-        if (!link.getDownloadURL().contains("dl4free.com")) {
-            link.setUrlDownload(link.getDownloadURL() + "en/en");
-        } else {
-            if (!link.getDownloadURL().contains("/en/")) {
-                Regex idandName = new Regex(link.getDownloadURL(), "http://(.*?)\\.dl4free\\.com/(.+)");
-                link.setUrlDownload("http://" + idandName.getMatch(0) + ".dl4free.com/en/" + idandName.getMatch(1));
-            }
+        if (!link.getDownloadURL().contains("/en/")) {
+            // /en/index.html
+            Regex idhostandName = new Regex(link.getDownloadURL(), "http://(.*?)\\.(.*?)/");
+            link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1) + "/en/index.html");
         }
     }
 

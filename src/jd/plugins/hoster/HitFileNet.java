@@ -20,26 +20,31 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://[\\w\\.]*?hitfile\\.net/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://[\\w\\.]*?hitfile\\.net/[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     public HitFileNet(PluginWrapper wrapper) {
         super(wrapper);
         // Use this if we ever have a premium implementation for this host
         // this.setStartIntervall(3000l);
+        this.enablePremium("http://hitfile.net/premium/emoney/5");
     }
 
     @Override
@@ -52,6 +57,8 @@ public class HitFileNet extends PluginForHost {
     private static final String WAITTIMEREGEX1 = "limit: (\\d+)";
     private static final String WAITTIMEREGEX2 = "id=\\'timeout\\'>(\\d+)</span>";
     public static final Object  LOCK           = new Object();
+    private static final String MAINPAGE       = "http://hitfile.net/";
+    private static final String ENPAGE         = "http://hitfile.net/en";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException, InterruptedException {
@@ -63,7 +70,7 @@ public class HitFileNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", link.getDownloadURL());
-        br.getPage("http://hitfile.net/en");
+        br.getPage(ENPAGE);
         if (!br.getURL().equals(link.getDownloadURL())) br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<h1>File was not found|It could possibly be deleted\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex fileInfo = br.getRegex("class=\\'file-icon1 archive\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font-weight: bold; font-size: 14px;\">\\((.*?)\\)</span>");
@@ -140,6 +147,70 @@ public class HitFileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(ENPAGE);
+        br.postPage("http://hitfile.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=");
+        if (br.getCookie(MAINPAGE, "kohanasession") == null || br.getCookie(MAINPAGE, "sid") == null || !br.containsHTML("Account: <b>premium</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("Account: <b>premium</b> \\(<a href=\\'/premium\\'>(.*?)</a>\\)").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRegex("<h1><a href=\\'(http://.*?)\\'><b>").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(http://hitfile\\.net//download/redirect/[a-z0-9]+/[A-Za-z0-9]+)\\'").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                logger.info("No traffic left...");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            if (br.containsHTML("Вы превысили лимит скачки за эти сутки\\.")) {
+                logger.info("No traffic left...");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
