@@ -18,17 +18,18 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://[\\w\\.]*?nova(up|mov)\\.com/(download|sound|video)/[a-z|0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://(www\\.)?(nova(up|mov)\\.com/(download|sound|video)/[a-z0-9]+|embed\\.novamov\\.com/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=[a-z0-9]+)" }, flags = { 0 })
 public class NovaUpMovcom extends PluginForHost {
 
     public NovaUpMovcom(PluginWrapper wrapper) {
@@ -44,6 +45,11 @@ public class NovaUpMovcom extends PluginForHost {
     private static final String VIDEOREGEX2                  = "\"(http://s\\d+\\.novamov\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"";
     private static final String TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
     private static final String TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
+
+    public void correctDownloadLink(DownloadLink link) {
+        String videoID = new Regex(link.getDownloadURL(), "embed\\.novamov\\.com/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=([a-z0-9]+)").getMatch(0);
+        if (videoID != null) link.setUrlDownload("http://www.novamov.com/video/" + videoID);
+    }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {

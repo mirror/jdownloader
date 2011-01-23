@@ -28,11 +28,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -53,6 +53,10 @@ public class XSevenTo extends PluginForHost {
 
     public static final Object  LOCK            = new Object();
     private static final String PREMIUMONLYTEXT = "(only premium members will be able to download the file|The requested file is larger than|und kann nur von Premium-Benutzern herunter geladen werden)";
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/player", ""));
+    }
 
     public void login(Account account) throws Exception {
         synchronized (LOCK) {

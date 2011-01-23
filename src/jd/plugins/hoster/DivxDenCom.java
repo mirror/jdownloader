@@ -23,15 +23,15 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://[\\w\\.]*?(divxden|vidxden)\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://(www\\.)?(divxden|vidxden)\\.com/(embed-)?[a-z0-9]{12}" }, flags = { 0 })
 public class DivxDenCom extends PluginForHost {
 
     public DivxDenCom(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class DivxDenCom extends PluginForHost {
     private static final String INMAINTENANCE = ">This server is in maintenance mode, please try again later.<";
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("divxden.com", "vidxden.com"));
+        link.setUrlDownload(link.getDownloadURL().replace("divxden.com", "vidxden.com").replace("embed-", ""));
     }
 
     @Override

@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muchshare.net" }, urls = { "http://(www\\.)?muchshare\\.net/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muchshare.net" }, urls = { "http://(www\\.)?muchshare\\.net/(embed-)?[a-z0-9]{12}" }, flags = { 0 })
 public class MuchShareNet extends PluginForHost {
 
     public MuchShareNet(PluginWrapper wrapper) {
@@ -60,6 +60,10 @@ public class MuchShareNet extends PluginForHost {
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private static final String COOKIE_HOST   = "http://muchshare.net";
     public boolean              NOPREMIUM     = false;
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("embed-", ""));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
