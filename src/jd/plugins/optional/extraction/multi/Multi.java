@@ -244,21 +244,28 @@ public class Multi implements IExtraction {
                         final String path = item.getPath();
                         item.extractSlow(new ISequentialOutStream() {
                             public int write(byte[] data) throws SevenZipException {
-                                byte[] buffer = new byte[32];
+                                int length = 0;
+                                if (new Regex(path, ".+\\.iso").matches()) {
+                                    length = 37000;
+                                } else if (new Regex(path, ".+\\.mp3").matches()) {
+                                    length = 512;
+                                } else {
+                                    length = 32;
+                                }
 
-                                for (int i = 0; i < buffer.length; i++) {
-                                    buffer[i] = data[i];
+                                if (length > data.length) {
+                                    length = data.length;
                                 }
 
                                 StringBuilder sigger = new StringBuilder();
-                                for (byte f : buffer) {
-                                    String s = Integer.toHexString(f);
+                                for (int i = 0; i < length - 1; i++) {
+                                    String s = Integer.toHexString(data[i]);
                                     s = (s.length() < 2 ? "0" + s : s);
                                     s = s.substring(s.length() - 2);
                                     sigger.append(s);
                                 }
-                                String sig = sigger.toString();
-                                Signature signature = FileSignatures.getSignature(sig);
+
+                                Signature signature = FileSignatures.getSignature(sigger.toString());
 
                                 if (signature != null) {
                                     if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
