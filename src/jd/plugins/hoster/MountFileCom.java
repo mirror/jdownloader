@@ -22,17 +22,17 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.com" }, urls = { "http://[\\w\\.]*?mountfile\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 0 })
 public class MountFileCom extends PluginForHost {
-
+    // YunFileCom uses the same script
     public MountFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
