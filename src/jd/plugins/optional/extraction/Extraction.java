@@ -54,7 +54,7 @@ import jd.plugins.optional.extraction.multi.Multi;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision: 10523 $", defaultEnabled = false, id = "extraction", interfaceversion = 7)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "extraction", interfaceversion = 7)
 public class Extraction extends PluginOptional implements ControlListener, ExtractionListener, ActionListener {
     private static final String    DUMMY_HOSTER            = "dum.my";
 
