@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import flex.messaging.io.amf.ASObject;
 import flex.messaging.io.amf.client.AMFConnection;
 
-@HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
 public class UstreamTv extends PluginForHost {
 
     public UstreamTv(final PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class UstreamTv extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        this.requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         // Setup Gateway
         final String url = "http://216.52.240.138/gateway.php";
         // Generate Parameter
@@ -93,22 +93,22 @@ public class UstreamTv extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporary offline!");
         }
-        this.dl = BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, chunk);
-        if (this.dl.getConnection().getContentType().contains("html")) {
-            this.br.followConnection();
+        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunk);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl.startDownload();
+        dl.startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        this.br.getPage(downloadLink.getDownloadURL());
-        if (this.br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = this.br.getRegex("VideoTitle\">(.*?)<").getMatch(0);
+        setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("VideoTitle\">(.*?)<").getMatch(0);
         if (filename == null) {
-            filename = this.br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (downloadLink.getDownloadURL().contains("highlight")) {
