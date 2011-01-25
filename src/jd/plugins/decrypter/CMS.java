@@ -39,7 +39,20 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
-    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "turk-crew.com", "uwarez.ws", "oxygen-warez.com", "filefox.in", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "oneload.org", "1dl.in", "oneload.org", "saugking.net", "dark-load.net", "crimeland.de", "musik.am", "spreaded.net", "relfreaks.com", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "gamegalaxy.ws", "ddl.byte.to", "jokermovie.org", "top-hitz.com", "sound-load.com", "toxic.to", "sound-load.net", "sfulc.exofire.net/cms", "dream-team.bz/cms", "titanload.to", "gate-warez.com", "hot-porn-ddl.com", "defrap.org", "defrap.biz", "dream.loadz.biz", "ebook-hell.me" };
+    public static final String[] ANNOTATION_NAMES = new String[] { "romhood.com", "turk-crew.com", "uwarez.ws", "oxygen-warez.com", "filefox.in", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "oneload.org", "1dl.in", "oneload.org", "saugking.net", "dark-load.net", "crimeland.de", "musik.am", "spreaded.net", "relfreaks.com", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "ddl-base.ws", "sauggirls.com", "pornfox.in", "xflat24.com", "gamegalaxy.ws", "ddl.byte.to", "jokermovie.org", "top-hitz.com", "sound-load.com", "toxic.to", "sound-load.net", "sfulc.exofire.net/cms", "dream-team.bz/cms", "titanload.to", "gate-warez.com", "hot-porn-ddl.com", "defrap.org", "defrap.biz", "dream.loadz.biz", "ebook-hell.me" };
+
+    /**
+     * Returns the annotations flags array
+     */
+    public static int[] getAnnotationFlags() {
+        final String[] names = getAnnotationNames();
+
+        final int[] ret = new int[names.length];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = 0;
+        }
+        return ret;
+    }
 
     /**
      * Returns the annotations names array
@@ -52,45 +65,34 @@ public class CMS extends PluginForDecrypt {
      * Returns the annotation pattern array
      */
     public static String[] getAnnotationUrls() {
-        String[] names = getAnnotationNames();
+        final String[] names = getAnnotationNames();
 
-        String[] ret = new String[names.length];
+        final String[] ret = new String[names.length];
         for (int i = 0; i < ret.length; i++) {
             ret[i] = "http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)";
         }
         return ret;
     }
 
-    /**
-     * Returns the annotations flags array
-     */
-    public static int[] getAnnotationFlags() {
-        String[] names = getAnnotationNames();
+    private final Pattern PAT_CAPTCHA    = Pattern.compile("<IMG SRC=\".*?/gfx/secure/", Pattern.CASE_INSENSITIVE);
 
-        int[] ret = new int[names.length];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = 0;
-        }
-        return ret;
-    }
+    private final Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\".*?Download.*?\".*?Click)", Pattern.CASE_INSENSITIVE);
 
-    private Pattern PAT_CAPTCHA    = Pattern.compile("<IMG SRC=\".*?/gfx/secure/", Pattern.CASE_INSENSITIVE);
-
-    private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\".*?Download.*?\".*?Click)", Pattern.CASE_INSENSITIVE);
-
-    public CMS(PluginWrapper wrapper) {
+    public CMS(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        this.setBrowserExclusive();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         try {
             br.getPage(parameter);
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
             String capTxt = "";
             String host = br.getHost();
 
@@ -98,37 +100,43 @@ public class CMS extends PluginForDecrypt {
                 host = "http://" + host;
             }
             String pass = br.getRegex(Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (pass == null) pass = br.getRegex("<B>Passwort:</B> <input value=\"(.*?)\".*?<").getMatch(0);
+            if (pass == null) {
+                pass = br.getRegex("<B>Passwort:</B> <input value=\"(.*?)\".*?<").getMatch(0);
+            }
 
-            if (pass == null) pass = br.getRegex("<p><b>Passwort:</b>\\s*(.*?)\\s*</p>").getMatch(0);
-            if (pass == null) pass = br.getRegex("<dt class=\"\">Passwort:</dt>.*?<dd class=\"\">(.*?)</dd>").getMatch(0);
+            if (pass == null) {
+                pass = br.getRegex("<p><b>Passwort:</b>\\s*(.*?)\\s*</p>").getMatch(0);
+            }
+            if (pass == null) {
+                pass = br.getRegex("<dt class=\"\">Passwort:</dt>.*?<dd class=\"\">(.*?)</dd>").getMatch(0);
+            }
             if (pass != null) {
                 if (pass.equals("keins ben&ouml;tigt") || pass.equals("kein pw") || pass.equals("N/A") || pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-") || pass.equals("-No Pass-") || pass.equals("ohne PW")) {
                     pass = null;
                 }
             }
 
-            String forms[][] = br.getRegex(Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+            final String forms[][] = br.getRegex(Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
             if (forms.length != 0) {
-                for (String[] element : forms) {
+                for (final String[] element : forms) {
                     for (int retry = 0; retry < 5; retry++) {
-                        Matcher matcher = PAT_CAPTCHA.matcher(element[2]);
+                        final Matcher matcher = PAT_CAPTCHA.matcher(element[2]);
                         if (matcher.find()) {
                             logger.finest("Captcha Protected");
-                            String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                            final String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             capTxt = getCaptchaCode("ucms", captchaAdress, param);
 
-                            String posthelp = HTMLParser.getFormInputHidden(element[2]);
+                            final String posthelp = HTMLParser.getFormInputHidden(element[2]);
                             if (element[0].startsWith("http")) {
                                 br.postPage(element[0], posthelp + "&code=" + capTxt);
                             } else {
                                 br.postPage(host + element[0], posthelp + "&code=" + capTxt);
                             }
                         } else {
-                            Matcher matcher_no = PAT_NO_CAPTCHA.matcher(element[2]);
+                            final Matcher matcher_no = PAT_NO_CAPTCHA.matcher(element[2]);
                             if (matcher_no.find()) {
                                 logger.finest("Not Captcha protected");
-                                String posthelp = HTMLParser.getFormInputHidden(element[2]);
+                                final String posthelp = HTMLParser.getFormInputHidden(element[2]);
                                 if (element[0].startsWith("http")) {
                                     br.postPage(element[0], posthelp);
                                 } else {
@@ -152,10 +160,10 @@ public class CMS extends PluginForDecrypt {
                      * DLC-Container angeboten! Workaround für diese Seite
                      */
                     if (br.containsHTML("ACTION=\"/download\\.php\"")) {
-                        Form forms2[] = br.getForms();
-                        for (Form form : forms2) {
+                        final Form forms2[] = br.getForms();
+                        for (final Form form : forms2) {
                             if (form.containsHTML("dlc")) {
-                                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+                                final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                                 Browser.download(container, br.openFormConnection(form));
                                 decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                                 break;
@@ -164,18 +172,18 @@ public class CMS extends PluginForDecrypt {
                     } else {
                         String links[] = null;
                         if (br.containsHTML("unescape\\(unescape\\(unescape")) {
-                            String temp = br.getRegex(Pattern.compile("unescape\\(unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                            String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(temp)));
+                            final String temp = br.getRegex(Pattern.compile("unescape\\(unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                            final String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(temp)));
                             links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
                         } else if (br.containsHTML("unescape\\(unescape")) {
-                            String temp = br.getRegex(Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                            String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(temp));
+                            final String temp = br.getRegex(Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                            final String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(temp));
                             links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
                         } else {
                             links = br.getRegex(Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
                         }
-                        for (String element2 : links) {
-                            DownloadLink link = createDownloadlink(Encoding.htmlDecode(element2));
+                        for (final String element2 : links) {
+                            final DownloadLink link = createDownloadlink(Encoding.htmlDecode(element2));
                             link.addSourcePluginPassword(pass);
                             decryptedLinks.add(link);
                         }
@@ -183,11 +191,11 @@ public class CMS extends PluginForDecrypt {
                 }
             } else {
                 /* workaround for java ucms */
-                String[] forms2 = br.getRegex("document.writeln\\('(<form.*?'</form>)").getColumn(0);
-                ArrayList<Form> forms3 = new ArrayList<Form>();
-                for (String form : forms2) {
-                    String temp = form.replaceAll("(document\\.writeln\\('|'\\);)", "");
-                    Form tform = new Form(temp);
+                final String[] forms2 = br.getRegex("document.writeln\\('(<form.*?'</form>)").getColumn(0);
+                final ArrayList<Form> forms3 = new ArrayList<Form>();
+                for (final String form : forms2) {
+                    final String temp = form.replaceAll("(document\\.writeln\\('|'\\);)", "");
+                    final Form tform = new Form(temp);
                     tform.setAction(param.getCryptedUrl());
                     tform.remove(null);
                     tform.remove(null);
@@ -195,13 +203,13 @@ public class CMS extends PluginForDecrypt {
                 }
                 boolean cont = false;
                 Browser brc = null;
-                for (Form tform : forms3) {
+                for (final Form tform : forms3) {
                     for (int retry = 0; retry < 5; retry++) {
                         brc = br.cloneBrowser();
                         cont = false;
                         if (tform.containsHTML("<img src=")) {
                             logger.finest("Captcha Protected");
-                            String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                            final String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             capTxt = getCaptchaCode("ucms", captchaAdress, param);
 
                             tform.put("code", capTxt);
@@ -216,20 +224,20 @@ public class CMS extends PluginForDecrypt {
                         }
                     }
                     if (cont) {
-                        String[] links2 = brc.getRegex("href=\\\\\"(.*?)\\\\\"").getColumn(0);
+                        final String[] links2 = brc.getRegex("href=\\\\\"(.*?)\\\\\"").getColumn(0);
                         for (String dl : links2) {
                             dl = dl.replaceAll("\\\\/", "/");
                             if (!dl.startsWith("http")) {
-                                Browser br2 = br.cloneBrowser();
+                                final Browser br2 = br.cloneBrowser();
                                 br2.getPage(dl);
-                                String flink = br2.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
+                                final String flink = br2.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
                                 if (flink == null && br2.getRedirectLocation() != null) {
                                     dl = br2.getRedirectLocation();
                                 } else {
                                     dl = flink;
                                 }
                             }
-                            DownloadLink link = createDownloadlink(dl);
+                            final DownloadLink link = createDownloadlink(dl);
                             link.addSourcePluginPassword(pass);
                             decryptedLinks.add(link);
                         }
@@ -238,16 +246,16 @@ public class CMS extends PluginForDecrypt {
 
             }
             if (decryptedLinks.size() == 0) {
-                String[] links2 = br.getRegex("onclick=\"window.open\\(\\'([^']*)\\'\\)\\;\" value=\"Download\"").getColumn(0);
-                for (String dl : links2) {
-                    DownloadLink link = createDownloadlink(dl);
+                final String[] links2 = br.getRegex("onclick=\"window.open\\(\\'([^']*)\\'\\)\\;\" value=\"Download\"").getColumn(0);
+                for (final String dl : links2) {
+                    final DownloadLink link = createDownloadlink(dl);
                     link.addSourcePluginPassword(pass);
                     decryptedLinks.add(link);
                 }
             }
-        } catch (PluginException e2) {
+        } catch (final PluginException e2) {
             throw e2;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             return null;
         }

@@ -27,53 +27,21 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeload.to" }, urls = { "http://[\\w\\.]*?(freeload|mcload)\\.to/(divx\\.php\\?file_id=|\\?Mod=Divx\\&Hash=)[a-z0-9]+" }, flags = { 0 })
 public class FreeLoadTo extends PluginForHost {
 
-    public FreeLoadTo(PluginWrapper wrapper) {
+    public FreeLoadTo(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fileid = new Regex(link.getDownloadURL(), "divx\\.php\\?file_id=([a-z0-9]+)").getMatch(0);
+        if (fileid != null) {
+            link.setUrlDownload("http://freeload.to/?Mod=Divx&Hash=" + fileid);
+        }
     }
 
     @Override
     public String getAGBLink() {
         return "http://freeload.to/disclaimer.php";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        String fileid = new Regex(link.getDownloadURL(), "divx\\.php\\?file_id=([a-z0-9]+)").getMatch(0);
-        if (fileid != null) link.setUrlDownload("http://freeload.to/?Mod=Divx&Hash=" + fileid);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        br.getPage(downloadLink.getDownloadURL());
-        // String jscookiepage =
-        // br.getRegex("javascript\" src=\"(.*?)\"").getMatch(0);
-        // String cookie = br.getRegex("onload=.*?'(.*?)'").getMatch(0);
-        // String onload = br.getRegex("onload=.*?'(/.*?)'").getMatch(0);
-        // if (jscookiepage != null) {
-        // /* this cookie is needed to reach the site */
-        // Browser brc = br.cloneBrowser();
-        // brc.getPage("http://freeload.to" + jscookiepage);
-        // String cookie2 = brc.getRegex("escape.*?\"(.*?)\"").getMatch(0);
-        // br.setCookie("http://freeload.to", "sitechrx", cookie + cookie2);
-        // }
-        // br.getPage(onload);
-        if (br.containsHTML("player_not_found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\".*?/uploads/.*?/.*?/.*?/(.*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
     }
 
     @Override
@@ -82,14 +50,44 @@ public class FreeLoadTo extends PluginForHost {
     }
 
     @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
+        }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("player_not_found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex(">\"(.*?)\" jetzt kostenlos downloaden").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\".*?/uploads/.*?/.*?/.*?/(.*?)\"").getMatch(0);
+        } else {
+            final String ext = br.getRegex("name=\"src\" value=\"(.*?)\"").getMatch(0);
+            filename = filename + ext.substring(ext.lastIndexOf("."));
+        }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(filename.trim());
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

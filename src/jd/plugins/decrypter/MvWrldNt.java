@@ -33,28 +33,32 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net" }, urls = { "http://[\\w\\.]*?mov-world\\.net/.*?/.*?.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://[\\w\\.]*?mov-world\\.net/(\\?id=\\d+|.*?/.*?.html)", "http://[\\w\\.]*?xxx-4-free\\.net/.*?/.*?.html" }, flags = { 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
-    private static String MAINPAGE = "http://mov-world.net";
-
-    public MvWrldNt(PluginWrapper wrapper) {
+    public MvWrldNt(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        String MAINPAGE = "http://mov-world.net";
+        if (!parameter.contains(MAINPAGE)) {
+            MAINPAGE = "http://xxx-4-free.net";
+        }
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
-        String captchaUrl = br.getRegex("\"(/captcha/-[a-zA-Z0-9]+\\.gif)\"").getMatch(0);
-        Form captchaForm = br.getForm(0);
-        if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) return null;
+        if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        final String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
+        String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
+        final Form captchaForm = br.getForm(0);
+        if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) { return null; }
         captchaUrl = captchaForm.getRegex("img src=\"(.*?)\"").getMatch(0);
-        Browser brc = br.cloneBrowser();
+        final Browser brc = br.cloneBrowser();
         captchaUrl = MAINPAGE + captchaUrl;
-        File captchaFile = getLocalCaptchaFile();
+        final File captchaFile = getLocalCaptchaFile();
         brc.getDownload(captchaFile, captchaUrl);
         String code = null;
         for (int i = 0; i <= 5; i++) {
@@ -62,27 +66,31 @@ public class MvWrldNt extends PluginForDecrypt {
                 // Recognition failed, ask the user!
                 code = getCaptchaCode(null, captchaFile, param);
             } else {
-                code = getCaptchaCode("mov-world.net", captchaFile, param);
+                code = getCaptchaCode(Browser.getHost(parameter), captchaFile, param);
             }
             captchaForm.put("code", code);
             br.submitForm(captchaForm);
-            if (br.containsHTML("\"Der Sicherheits Code")) continue;
+            if (br.containsHTML("\"Der Sicherheits Code")) {
+                continue;
+            }
             break;
         }
-        if (br.containsHTML("\"Der Sicherheits Code")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (br.containsHTML("\"Der Sicherheits Code")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         /* Base64 Decode */
-        byte[] cDecode = Base64.decodeFast(br.getRegex("html\":\"(.*?)\"").getMatch(0).replace("\\", "").toCharArray());
-        if (cDecode == null || cDecode.length == 0) return null;
-        StringBuilder sb = new StringBuilder();
+        final byte[] cDecode = Base64.decodeFast(br.getRegex("html\":\"(.*?)\"").getMatch(0).replace("\\", "").toCharArray());
+        if (cDecode == null || cDecode.length == 0) { return null; }
+        final StringBuilder sb = new StringBuilder();
         for (int e : cDecode) {
             // Abweichung vom Standard Base64 Decoder
-            if (e < 0) e = e + 256;
-            sb.append(String.valueOf((char)e));
+            if (e < 0) {
+                e = e + 256;
+            }
+            sb.append(String.valueOf((char) e));
         }
         /* lzw Decompress */
-        String result = lzwDecompress(sb.toString());
-        String[] links = new Regex(result, "href=\"(/.*?)\" target.*?>\\d+</a>").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        final String result = lzwDecompress(sb.toString());
+        final String[] links = new Regex(result, "href=\"(/.*?)\" target.*?>\\d+</a>").getColumn(0);
+        if (links == null || links.length == 0) { return null; }
         progress.setRange(links.length);
         for (String dl : links) {
             brc.getPage(MAINPAGE + dl);
@@ -92,18 +100,22 @@ public class MvWrldNt extends PluginForDecrypt {
                 dl = brc.getRegex("iframe src=\"(.*?)\"").getMatch(0);
             }
             progress.increase(1);
-            if (dl == null) continue;
-            DownloadLink downLink = createDownloadlink(dl);
-            downLink.addSourcePluginPassword("mov-world.net");
-            if (password != null && !password.equals("")) downLink.addSourcePluginPassword(password.trim());
+            if (dl == null) {
+                continue;
+            }
+            final DownloadLink downLink = createDownloadlink(dl);
+            downLink.addSourcePluginPassword(Browser.getHost(parameter));
+            if (password != null && !password.equals("")) {
+                downLink.addSourcePluginPassword(password.trim());
+            }
             decryptedLinks.add(downLink);
         }
         return decryptedLinks;
     }
 
-    public String lzwDecompress(String a) throws Exception {
-        List<Integer> b = new ArrayList<Integer>();
-        for (int i = 0, dict_count = 256, bits = 8, rest =0, rest_length = 0; i < a.length(); i++) {
+    public String lzwDecompress(final String a) throws Exception {
+        final List<Integer> b = new ArrayList<Integer>();
+        for (int i = 0, dict_count = 256, bits = 8, rest = 0, rest_length = 0; i < a.length(); i++) {
             rest = (rest << 8) + a.codePointAt(i);
             rest_length += 8;
             if (rest_length >= bits) {
@@ -116,11 +128,11 @@ public class MvWrldNt extends PluginForDecrypt {
                 }
             }
         }
-        List<String> c = new ArrayList<String>();
+        final List<String> c = new ArrayList<String>();
         for (int i = 0; i <= 255; i++) {
-            c.add(String.valueOf((char)i));
+            c.add(String.valueOf((char) i));
         }
-        List<String> d = new ArrayList<String>();
+        final List<String> d = new ArrayList<String>();
         String element = new String();
         String word = "";
         for (int i = 0; i <= b.size() - 1; i++) {
@@ -135,8 +147,8 @@ public class MvWrldNt extends PluginForDecrypt {
             }
             word = element;
         }
-        StringBuilder sb = new StringBuilder();
-        for (String e : d) {
+        final StringBuilder sb = new StringBuilder();
+        for (final String e : d) {
             sb.append(e);
         }
         return sb.toString();

@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="mov-world.net" author="DwD" />
-<format type="gif" letterNum="3" />
+<method name="mov-world.net" author="DwD" services="mov-world.net;xxx-4-free.net"/>
+<format type="gif" letterNum="3"/>
 </jDownloader>
