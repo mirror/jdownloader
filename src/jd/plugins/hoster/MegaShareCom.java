@@ -24,17 +24,18 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+
+import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
@@ -44,10 +45,6 @@ public class MegaShareCom extends PluginForHost {
         this.setStartIntervall(2000l);
         this.enablePremium("http://www.megashare.com/premium.php");
     }
-
-    private static final String FILEIDREGEX      = "megashare.com/(\\d+)";
-    private static final String TIMEDIFFVARREGEX = "name=\"time_diff\" value=\"(\\d+)\"";
-    private static final String PRVALREGEX       = "name=\"\\d+prVal\" value=\"(\\d+)\"";
 
     @Override
     public String getAGBLink() {
@@ -129,18 +126,9 @@ public class MegaShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex specialstuff = br.getRegex("name=\"(\\d+prVal)\" value=\"(\\d+)\">");
-        String fileId = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
-        String freeDz = br.getRegex("\"(FreeDz\\d+)\"").getMatch(0);
-        if (!br.containsHTML("free premium") && !br.containsHTML("FREE") || fileId == null || specialstuff.getMatch(0) == null || specialstuff.getMatch(1) == null || freeDz == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String preferThat = "free+premium";
-        String preferThat2 = "FreePremDz";
-        if (!br.containsHTML("free premium")) {
-            preferThat = "FREE";
-            preferThat2 = freeDz;
-        }
-        String post = specialstuff.getMatch(0) + "=" + specialstuff.getMatch(1) + "&" + preferThat2 + ".x=" + new Random().nextInt(10) + "&" + preferThat2 + ".y=" + new Random().nextInt(10) + "&" + preferThat2 + "=" + preferThat;
-        br.postPage(downloadLink.getDownloadURL(), post);
+        Form freeForm = br.getForm(1);
+        if (freeForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(freeForm);
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("addthis_open\\(this, \\'\\', \\'http://(www\\.)?MegaShare\\.com\\d+\\', \\'(.*?)\\'\\)").getMatch(1);
         if (filename != null) downloadLink.setName(filename);
@@ -154,23 +142,29 @@ public class MegaShareCom extends PluginForHost {
         if (reconnectWaittime != null) {
             if (Integer.parseInt(reconnectWaittime) > 320) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l);
         }
-        String timeDiffVar = br.getRegex(TIMEDIFFVARREGEX).getMatch(0);
-        String fileId = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
-        String prVal = br.getRegex(PRVALREGEX).getMatch(0);
-        if (timeDiffVar == null || fileId == null || prVal == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String postData = "wComp=1&" + fileId + "prVal=" + prVal + "&id=" + fileId + "&time_diff=" + timeDiffVar + "&req_auth=n";
+        Regex valRegex = br.getRegex("name=\"(\\d+prVal)\" value=\"(.*?)\"");
+        Form dlForm = br.getFormbyProperty("name", "downloader");
+        if (dlForm == null || valRegex.getMatch(0) == null || valRegex.getMatch(1) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlForm.remove("yesss");
+        dlForm.remove("yesss");
+        dlForm.remove("yesss");
+        dlForm.put("wComp", "1");
+        dlForm.put(valRegex.getMatch(0), valRegex.getMatch(1));
+        dlForm.setAction(downloadLink.getDownloadURL());
         int wait = 10;
         if (reconnectWaittime != null) wait = Integer.parseInt(reconnectWaittime);
         sleep(wait * 1001l, downloadLink);
-        br.postPage(downloadLink.getDownloadURL(), postData);
+        br.submitForm(dlForm);
+        dlForm = br.getForm(1);
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         File captchaFile = getLocalCaptchaFile();
         int i = 15;
         while (i-- > 0) {
             if (!br.containsHTML("security\\.php\\?i=")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String captchaimg = br.getRegex("id=\"cimg\" src=\"(.*?)\"").getMatch(0);
-            if (captchaimg == null) captchaimg = br.getRegex("\"(security\\.php\\?i=\\d+)\"").getMatch(0);
+            String captchaimg = br.getRegex("security\\.php\\?i=(\\d+)(\"|\\')").getMatch(0);
+            if (captchaimg == null) captchaimg = br.getRegex("src=\\'security\\.php\\?i=(.*?)\\&").getMatch(0);
             if (captchaimg == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaimg = "http://www.megashare.com/" + captchaimg;
+            captchaimg = "http://www.megashare.com/security.php?i=" + captchaimg;
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaimg));
             String hash = JDHash.getMD5(captchaFile);
             // Seems to be a captchaerror (captcahs without any letters)
@@ -186,11 +180,7 @@ public class MegaShareCom extends PluginForHost {
             if (captchaCode.length() == 5) break;
         }
         if (captchaCode.length() != 5) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String userVal = br.getRegex("name=\"user_val\" value=\"(\\d+)\"").getMatch(0);
-        prVal = br.getRegex(PRVALREGEX).getMatch(0);
-        timeDiffVar = br.getRegex(TIMEDIFFVARREGEX).getMatch(0);
-        if (userVal == null || timeDiffVar == null || prVal == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        postData = "wComp=&" + fileId + "prVal=" + prVal + "&captcha_code=" + captchaCode + "&email=&yesss.x=" + String.valueOf(new Random().nextInt(100)) + "&yesss.y=" + String.valueOf(new Random().nextInt(100)) + "&yesss=Download&user_val=" + userVal + "&id=" + fileId + "&time_diff=" + timeDiffVar + "&req_auth=n";
+        dlForm.put("captcha_code", captchaCode);
         String passCode = null;
         if (br.containsHTML("This file is password protected.")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -199,12 +189,12 @@ public class MegaShareCom extends PluginForHost {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);
             }
-            postData += "&auth_nm=" + passCode;
+            dlForm.put("auth_nm", passCode);
         }
         br.setFollowRedirects(true);
         // Unlimited chunks are possible but cause servererrors
         // ("DOWNLOAD_IMCOMPLETE")
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL().toLowerCase(), postData, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

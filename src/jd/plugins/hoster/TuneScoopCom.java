@@ -19,16 +19,18 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tunescoop.com" }, urls = { "http://[\\w\\.]*?tunescoop\\.com/play/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tunescoop.com" }, urls = { "http://[\\w\\.]*?tunescoop\\.com/play/\\d+/.{1}" }, flags = { 0 })
 public class TuneScoopCom extends PluginForHost {
 
     public TuneScoopCom(PluginWrapper wrapper) {
@@ -43,19 +45,21 @@ public class TuneScoopCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("class=\"thickbox\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) - TuneScoop - Free music hosting and Sharing</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<div style=\"font-size:24px\"><b>(.*?)</b></div>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("name=\"description\" content=\"(.*?) - TuneScoop\\.com, enjoy the Tune Sharing - TuneScoop - Free music hosting and Sharing\">").getMatch(0);
-
-                if (filename == null) {
-                    filename = br.getRegex("name=\"keywords\" content=\"(.*?),audio,sharing,script,youtube,clone,TuneScoop - Free music hosting and Sharing\">").getMatch(0);
-                }
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getContentType().contains("html")) {
+                if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
             }
         }
+        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<b>Song Name:</b>(.*?)</font>").getMatch(0);
         String filesize = br.getRegex("color=\"#000000\"><b>Size:</b>(.*?)</font>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
@@ -66,11 +70,15 @@ public class TuneScoopCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.postPage(downloadLink.getDownloadURL(), "dl=1");
-        String dllink = br.getRegex("<div style=\"color:#000000; font-weight:bold\">Click the \"download\" button to download this Tune</div>[\n\r ]+<br /><br />[\n\r ]+<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\.tunescoop\\.com/download/\\d+/\\d+/[a-z0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        br.setFollowRedirects(true);
+        Form dlForm = br.getFormbyProperty("name", "dform");
+        if (dlForm == null) dlForm = br.getFormbyProperty("name", "dform");
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(dlForm);
+        dlForm = br.getFormbyProperty("name", "dform");
+        if (dlForm == null) dlForm = br.getFormbyProperty("name", "dform");
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

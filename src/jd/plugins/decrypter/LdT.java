@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://((beta|de)\\.iload|iload)\\.to/((go/\\d+/merged|go/\\d+)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://((beta|de)\\.iload|iload)\\.to/(de/)?((go/\\d+/merged|go/\\d+)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
 public class LdT extends PluginForDecrypt implements ProgressControllerListener {
     private boolean abort                 = false;
     private String  patternSupported_Info = ".*?((beta|de)\\.iload|iload)\\.to/(view|title|release)/.*?/";
@@ -52,7 +52,6 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
-            System.out.print(br.toString());
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             String hosterlinks[] = br.getRegex("href=\"(/go/\\d+-.*?/)\"").getColumn(0);
             String streamlinks[] = br.getRegex("\"(/go/\\d+-[a-z0-9\\.-]+/streaming/.*?)\"").getColumn(0);
