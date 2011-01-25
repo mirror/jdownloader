@@ -52,7 +52,7 @@ public class SupaShareNet extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://supashare.net";
-    public boolean nopremium = false;
+    public boolean              nopremium   = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -87,7 +87,7 @@ public class SupaShareNet extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("<h2>.*?\\((.*?)\\)</h2>").getMatch(0);
+                filesize = br.getRegex("<h2>.*?\\((.*?)\\).*?</h2>").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {

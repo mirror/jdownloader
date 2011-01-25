@@ -51,7 +51,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/(files/\\d+/.+|\\#\\!download\\|\\d+.*?\\|\\d+\\|.+?($|\\|\\d+))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/(files/\\d+/[^\" ]+|\\#\\!download\\|\\d+.*?\\|\\d+\\|.+?($|\\|\\d+))" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
 
     public static class RSLink {

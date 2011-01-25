@@ -281,6 +281,8 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
         if (plugin == null) {
             String restartReq = enabled == false ? "(Restart required) " : "";
             AccountInfo ac = new AccountInfo();
+            final boolean follow = br.isFollowingRedirects();
+            br.setFollowRedirects(true);
             br.setConnectTimeout(60 * 1000);
             br.setReadTimeout(60 * 1000);
             br.setDebug(true);
@@ -300,6 +302,8 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
                 }
                 ac.setStatus("SpeedLoad Server Error, temp disabled" + restartReq);
                 return ac;
+            } finally {
+                br.setFollowRedirects(follow);
             }
             if (page.startsWith("-1") || page.startsWith("0")) {
                 account.setValid(false);

@@ -167,7 +167,7 @@ public class UpNitoSk extends PluginForHost {
         // Downloadbutton
         dlform = this.br.getForm(0);
         dlform.put("tahaj", "Stiahnut");
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dlform, true, 1);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dlform, false, 1);
         if (this.dl.getConnection().getContentType().contains("html")) {
             this.br.followConnection();
             if (this.br.containsHTML("Neplatne GWT overenie!")) {

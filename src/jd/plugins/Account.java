@@ -21,24 +21,24 @@ import jd.controlling.AccountController;
 
 public class Account extends Property {
 
-    private static final long serialVersionUID      = -7578649066389032068L;
+    private static final long           serialVersionUID      = -7578649066389032068L;
 
-    private String            user;
-    private String            pass;
+    private String                      user;
+    private String                      pass;
 
-    private boolean           enabled               = true;
-    private boolean           valid                 = true;
+    private boolean                     enabled               = true;
+    private boolean                     valid                 = true;
 
-    private transient long    tmpDisabledIntervalv3 = 10 * 60 * 1000;
-    private transient boolean tempDisabled          = false;
-    private transient long    tmpDisabledTime       = 0;
+    private transient long              tmpDisabledIntervalv3 = 10 * 60 * 1000;
+    private transient boolean           tempDisabled          = false;
+    private transient long              tmpDisabledTime       = 0;
 
-    private String            hoster                = null;
-    private AccountInfo       accinfo               = null;
+    private String                      hoster                = null;
+    private AccountInfo                 accinfo               = null;
 
-    private long              updatetime            = 0;
+    private long                        updatetime            = 0;
 
-    private int               maxDownloads          = 0;
+    private int                         maxDownloads          = 0;
 
     private transient AccountController ac                    = null;
 

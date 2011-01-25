@@ -404,7 +404,13 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
-        if (br.containsHTML("Server Info: no slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 5 * 60 * 1000l);
+        if (br.containsHTML("Server Info: no slots available")) {
+            if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
+                /* reset counter this error does not cause plugin to stop */
+                downloadLink.getLinkStatus().setRetryCount(0);
+            }
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 5 * 60 * 1000l);
+        }
 
         /* CaptchaCode holen */
         String captchaCode = getCaptchaCode("http://www.share-online.biz/captcha.php", downloadLink);
@@ -453,7 +459,13 @@ public class ShareOnlineBiz extends PluginForHost {
             if (cx != null) Context.exit();
         }
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
-        if (br.containsHTML("Server Info: no slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 5 * 60 * 1000l);
+        if (br.containsHTML("Server Info: no slots available")) {
+            if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
+                /* reset counter this error does not cause plugin to stop */
+                downloadLink.getLinkStatus().setRetryCount(0);
+            }
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 5 * 60 * 1000l);
+        }
 
         // Keine Zwangswartezeit, deswegen auskommentiert
         // sleep(15000, downloadLink);

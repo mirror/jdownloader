@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -42,6 +43,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oron.com" }, urls = { "http://[\\w\\.]*?oron\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class OronCom extends PluginForHost {
+
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     public OronCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -102,8 +105,18 @@ public class OronCom extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
             ai.setStatus("Premium User");
+            try {
+                maxPrem.set(5);
+                account.setMaxSimultanDownloads(5);
+            } catch (final Throwable e) {
+            }
         } else {
             ai.setStatus("Registered (free) User");
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+            }
         }
         return ai;
     }
@@ -223,7 +236,8 @@ public class OronCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 5;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override

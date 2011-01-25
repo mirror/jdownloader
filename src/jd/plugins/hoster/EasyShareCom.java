@@ -116,6 +116,7 @@ public class EasyShareCom extends PluginForHost {
         br.setCookie(MAINPAGE, "language", "en");
         String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)/").getMatch(0);
         br.getPage("http://api.easy-share.com/files/" + fileID);
+        if (!br.containsHTML("ed:status>O<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("(>errorFileNotFound<|>File Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("<title>(?!File info)(.*?)</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("rel=\"enclosure\" length=\"(\\d+)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -131,8 +132,8 @@ public class EasyShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
             br.setCookie(MAINPAGE, "language", "en");
+            con = br.openGetConnection(downloadLink.getDownloadURL());
             if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.followConnection();
         } finally {
@@ -232,8 +233,8 @@ public class EasyShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
             br.setCookie(MAINPAGE, "language", "en");
+            con = br.openGetConnection(downloadLink.getDownloadURL());
             if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.followConnection();
         } finally {
@@ -243,14 +244,10 @@ public class EasyShareCom extends PluginForHost {
             }
         }
         if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String url = null;
-        if (br.getRedirectLocation() == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            url = br.getRedirectLocation();
-        }
+        String url = br.getRedirectLocation();
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        /* limited easyshare to max 5 chunks cause too much can create issues */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -5);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
