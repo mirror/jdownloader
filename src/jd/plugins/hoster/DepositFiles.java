@@ -50,7 +50,6 @@ public class DepositFiles extends PluginForHost {
     static private final String FILE_NOT_FOUND           = "Dieser File existiert nicht";
 
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-    public String               DLLINKREGEX              = "action =  \\'(.*?)\\';";
     public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private Pattern             FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
 
@@ -81,7 +80,7 @@ public class DepositFiles extends PluginForHost {
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         }
         checkErrors();
-        String dllink = br.getRegex(DLLINKREGEX).getMatch(0);
+        String dllink = getDllink();
         if (dllink != null && !dllink.equals("")) {
             // handling for txt file downloadlinks, dunno why they made a
             // completely different page for txt files
@@ -121,7 +120,7 @@ public class DepositFiles extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
-            dllink = br.getRegex(DLLINKREGEX).getMatch(0);
+            dllink = getDllink();
             String icid = br.getRegex("get_download_img_code\\.php\\?icid=(.*?)\"").getMatch(0);
             /* check for captcha */
             if ((dllink == null || dllink.equals("")) && icid != null) {
@@ -142,8 +141,6 @@ public class DepositFiles extends PluginForHost {
 
             }
             if (dllink == null || dllink.equals("")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dllink = dllink.trim().replaceAll("(\\'|\\+|\\n|\\t|\\r| )", "");
-            // sleep(60 * 1001l, downloadLink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
@@ -165,6 +162,13 @@ public class DepositFiles extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private String getDllink() {
+        String dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("action =  \\'(.*?)\\';").getMatch(0);
+        if (dllink != null) dllink.trim().replaceAll("(\\'|\\+|\\n|\\t|\\r| )", "");
+        return dllink;
     }
 
     public void checkErrors() throws NumberFormatException, PluginException {

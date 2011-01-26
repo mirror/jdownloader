@@ -319,7 +319,6 @@ public class LetitBitNet extends PluginForHost {
     private String getUrl(Account account) throws IOException {
         // This information can only be found before each download so lets set
         // it here
-        System.out.print(br.toString());
         String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
         String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
         if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);

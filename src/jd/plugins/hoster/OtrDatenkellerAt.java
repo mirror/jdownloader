@@ -21,15 +21,15 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://[\\w\\.]*?otr\\.datenkeller\\.at/\\?(file|getFile)=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://(www\\.)?otr\\.datenkeller\\.at/\\?(file|getFile)=.+" }, flags = { 0 })
 public class OtrDatenkellerAt extends PluginForHost {
 
     public OtrDatenkellerAt(PluginWrapper wrapper) {
@@ -51,10 +51,10 @@ public class OtrDatenkellerAt extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (!br.containsHTML("id=\"reqFile\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
-        String filesize = br.getRegex("Gr.{1,5}e: </td><td align='center'>(.*?)<td").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("Gr\\.{1,5}e: </td><td align=\\'center\\'>(.*?)<td").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
         return AvailableStatus.TRUE;
     }
 
@@ -70,6 +70,8 @@ public class OtrDatenkellerAt extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             for (int i = 0; i <= 25; i++) {
                 sleep(28 * 1000l, downloadLink);
+                String position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
+                if (position != null) downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
                 br.getPage(dlPage);
                 if (br.containsHTML("klicken um den Download zu starten")) {
                     br.getPage(dlPage);
@@ -77,7 +79,7 @@ public class OtrDatenkellerAt extends PluginForHost {
                     break;
                 }
                 if (i > 24) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
-                logger.info("Didn't get a ticket on try " + i + ". Retrying...");
+                logger.info("Didn't get a ticket on try " + i + ". Retrying...Position: " + position);
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
