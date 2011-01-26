@@ -27,11 +27,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -61,16 +61,11 @@ public class LetitBitNet extends PluginForHost {
 
     private void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
-        br.getPage("http://letitbit.net/");
-        br.postPage("http://letitbit.net/", "England.x=10&England.y=9&vote_cr=en");
-        br.postPage("http://letitbit.net/iframe/iframe_git.php?action=login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&txtcheck=login&txtlogin=");
-        String check = br.getCookie("http://letitbit.net/", "pzddlk");
+        br.setCookie("http://letitbit.net/", "lang", "en");
+        br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
+        String check = br.getCookie("http://letitbit.net/", "log");
         if (check == null) check = br.getCookie("http://letitbit.net/", "pas");
         if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.setFollowRedirects(true);
-        br.getPage("http://premium.letitbit.net/index.php");
-        br.getPage("http://premium.letitbit.net/mydata.php");
-        if (!br.containsHTML("<strong>Premium</strong>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -170,6 +165,7 @@ public class LetitBitNet extends PluginForHost {
         } else {
             /* account login */
             login(account);
+            br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             dlUrl = getUrl(account);
             if (dlUrl == null) {
@@ -323,15 +319,16 @@ public class LetitBitNet extends PluginForHost {
     private String getUrl(Account account) throws IOException {
         // This information can only be found before each download so lets set
         // it here
+        System.out.print(br.toString());
         String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
         String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
-        if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
+        if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
         if (expireDate != null || points != null) {
             AccountInfo accInfo = new AccountInfo();
             // 1 point = 1 GB
             if (points != null) accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
             if (expireDate != null) {
-                accInfo.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
+                accInfo.setValidUntil(TimeFormatter.getMilliSeconds(expireDate.trim(), "yyyy-MM-dd", null));
             } else {
                 expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
                 if (expireDate == null) expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);
@@ -340,8 +337,16 @@ public class LetitBitNet extends PluginForHost {
             account.setAccountInfo(accInfo);
         }
         String iFrame = br.getRegex("<iframe src=\"(/sms/.*?)\"").getMatch(0);
-        if (iFrame == null) iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=[0-9_]+\\&emergency_mode=)\"").getMatch(0);
-        if (iFrame != null) br.getPage("http://letitbit.net" + iFrame);
+        if (iFrame == null) {
+            iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=[0-9_]+\\&emergency_mode=)\"").getMatch(0);
+            if (iFrame == null) iFrame = br.getRegex("\"(http://s\\d+\\.letitbit\\.net/sms/check2_iframe\\.php\\?ac_syml_uid=.*?)\"").getMatch(0);
+        }
+        if (iFrame != null) {
+            if (!iFrame.startsWith("http://"))
+                br.getPage("http://letitbit.net" + iFrame);
+            else
+                br.getPage(iFrame);
+        }
         String url = br.getRegex("(http://[^/;(images) ]*?/download.*?/[^/; ]+?)(\"|')[^(Download Master)]*?(http://[^/; ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(2);
         if (url == null) {
             url = br.getRegex("(http://[^/;(images) ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(0);

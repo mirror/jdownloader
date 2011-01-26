@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileape.com" }, urls = { "http://(www\\.)?fileape\\.com/(index\\.php\\?act=download\\&id=|dl/)\\w+" }, flags = { 0 })
 public class FileApeCom extends PluginForHost {
@@ -49,6 +49,7 @@ public class FileApeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This file is either temporarily unavailable or does not exist\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "download\\&id=(.+)").getMatch(0));
         return AvailableStatus.TRUE;
     }
 
@@ -56,6 +57,7 @@ public class FileApeCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML("Free users can only download <em>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+        br.getPage(downloadLink.getDownloadURL() + "&g=1");
         String continuePage = br.getRegex("window\\.location = \\'(http://.*?)\\'").getMatch(0);
         if (continuePage == null) continuePage = br.getRegex("\\'(http://fileape\\.com/\\?act=download\\&t=[A-Za-z0-9_-]+)\\'").getMatch(0);
         if (continuePage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -33,12 +33,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -50,7 +50,7 @@ public class DepositFiles extends PluginForHost {
     static private final String FILE_NOT_FOUND           = "Dieser File existiert nicht";
 
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-    public String               DLLINKREGEX              = "download_url\".*?<form action=\"(.*?)\"";
+    public String               DLLINKREGEX              = "action =  \\'(.*?)\\';";
     public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private Pattern             FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
 
@@ -142,6 +142,8 @@ public class DepositFiles extends PluginForHost {
 
             }
             if (dllink == null || dllink.equals("")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = dllink.trim().replaceAll("(\\'|\\+|\\n|\\t|\\r| )", "");
+            // sleep(60 * 1001l, downloadLink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
@@ -150,10 +152,16 @@ public class DepositFiles extends PluginForHost {
             }
             if (!con.isContentDisposition()) {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             }
             if (passCode != null) {
                 downloadLink.setProperty("pass", passCode);
+            }
+            if (con.getContentType().contains("html")) {
+                logger.warning("The finallink doesn't lead to a file, following connection...");
+                br.followConnection();
+                if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
