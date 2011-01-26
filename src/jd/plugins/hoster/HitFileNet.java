@@ -73,7 +73,7 @@ public class HitFileNet extends PluginForHost {
         br.getPage(ENPAGE);
         if (!br.getURL().equals(link.getDownloadURL())) br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<h1>File was not found|It could possibly be deleted\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("class=\\'file-icon1 archive\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font-weight: bold; font-size: 14px;\">\\((.*?)\\)</span>");
+        Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font-weight: bold; font-size: 14px;\">\\((.*?)\\)</span>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

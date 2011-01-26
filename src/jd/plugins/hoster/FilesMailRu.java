@@ -46,10 +46,12 @@ public class FilesMailRu extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
     }
 
-    private static final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
-    private static final String UNAVAILABLE1 = ">В обработке<";
-    private static final String UNAVAILABLE2 = ">In process<";
-    private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    private static final String  DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+    private static final String  UNAVAILABLE1 = ">В обработке<";
+    private static final String  UNAVAILABLE2 = ">In process<";
+    private static final String  INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    private static final boolean RESUME       = true;
+    private static final int     MAXCHUNKS    = -10;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
@@ -128,7 +130,7 @@ public class FilesMailRu extends PluginForHost {
         goToSleep(downloadLink);
         // Errorhandling, sometimes the link which is usually renewed by the
         // linkgrabber doesn't work and needs to be refreshed again!
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), RESUME, MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!");
             logger.info("Renewing dllink, seems like we had a broken link here!");
@@ -148,7 +150,7 @@ public class FilesMailRu extends PluginForHost {
             finallink = fixLink(finallink);
             downloadLink.setUrlDownload(finallink);
             logger.info("dllink = " + downloadLink.getDownloadURL());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), RESUME, MAXCHUNKS);
             if ((dl.getConnection().getContentType().contains("html"))) {
                 logger.warning("The finallink doesn't seem to be a file, following connection...");
                 logger.warning("finallink = " + downloadLink.getDownloadURL());
@@ -189,7 +191,7 @@ public class FilesMailRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return -1;
     }
 
     @Override
