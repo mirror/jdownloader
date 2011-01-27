@@ -2,8 +2,6 @@ package jd.plugins.optional.jdpremclient;
 
 import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
@@ -25,6 +23,8 @@ import jd.plugins.TransferStatus;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.utils.Hash;
+
 import com.sun.net.ssl.internal.ssl.Debug;
 
 public class PremGet extends PluginForHost implements JDPremInterface {
@@ -40,32 +40,6 @@ public class PremGet extends PluginForHost implements JDPremInterface {
     private String                   validUntil   = null;
     private boolean                  expired      = false;
 
-    private String MD5(String s) throws Exception {
-        {
-
-            MessageDigest m = MessageDigest.getInstance("MD5");
-            m.update(s.getBytes(), 0, s.length());
-            String wynik = new BigInteger(1, m.digest()).toString(16);
-            while (wynik.length() < 32) {
-                wynik = '0' + wynik;
-            }
-            return wynik;
-        }
-    }
-
-    private String SHA1(String s) throws Exception {
-        {
-
-            MessageDigest m = MessageDigest.getInstance("SHA1");
-            m.update(s.getBytes(), 0, s.length());
-            String wynik = new BigInteger(1, m.digest()).toString(16);
-            while (wynik.length() < 40) {
-                wynik = '0' + wynik;
-            }
-            return wynik;
-        }
-    }
-
     private long ZwrocRozmiar(String wynik) {
         String[] temp = wynik.split(" ");
         String[] tab = temp[0].split("=");
@@ -73,26 +47,6 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         rozmiar *= 1024;
         rozmiar *= 1024;
         return rozmiar;
-
-    }
-
-    private void OdswiezTransfer(AccountInfo acc, Account account) throws PluginException, IOException {
-        synchronized (LOCK) {
-            this.setBrowserExclusive();
-            this.br.setDebug(true);
-        }
-        try {
-           
-            br.postPage("http://crypt.premget.pl", "username=" + account.getUser() + "&password=" + SHA1(MD5
-
-            (account.getPass())) + "&info=1&site=premget");
-            String adres = br.toString();
-            br.getPage(adres);
-            adres = br.getRedirectLocation();
-            br.getPage(adres);
-            acc.setTrafficLeft(ZwrocRozmiar(br.toString()));
-        } catch (Exception e) {
-        }
 
     }
 
@@ -261,12 +215,12 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         login(acc, false);
         /* generate new downloadlink */
 
-        String postData = "username=" + acc.getUser() + "&password=" + SHA1(MD5(acc.getPass())) + "&info=0&url=" + link.getDownloadURL() + "&site=premget";
-        String checkData = "username=" + acc.getUser() + "&password=" + SHA1(MD5(acc.getPass())) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=premget";
+        String postData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&url=" + link.getDownloadURL() + "&site=premget";
+        String checkData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=premget";
         response = br.postPage("http://crypt.premget.pl", postData);
 
         link.setProperty("apilink", response);
-      
+
         String genlink = response;
 
         if (genlink != null) {
@@ -351,8 +305,8 @@ public class PremGet extends PluginForHost implements JDPremInterface {
             this.br.setDebug(true);
         }
         try {
-           
-            br.postPage("http://crypt.premget.pl", "username=" + account.getUser() + "&password=" + SHA1(MD5(account.getPass())) + "&info=1&site=premget");
+
+            br.postPage("http://crypt.premget.pl", "username=" + account.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(account.getPass())) + "&info=1&site=premget");
             String adres = br.toString();
             br.getPage(adres);
             adres = br.getRedirectLocation();
