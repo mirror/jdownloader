@@ -2,8 +2,6 @@ package jd.plugins.optional.jdpremclient;
 
 import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
@@ -25,6 +23,8 @@ import jd.plugins.TransferStatus;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.utils.Hash;
+
 import com.sun.net.ssl.internal.ssl.Debug;
 
 public class NoPremium extends PluginForHost implements JDPremInterface {
@@ -40,32 +40,7 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
     private String                   validUntil   = null;
     private boolean                  expired      = false;
 
-    private String MD5(String s) throws Exception {
-        {
-
-            MessageDigest m = MessageDigest.getInstance("MD5");
-            m.update(s.getBytes(), 0, s.length());
-            String wynik = new BigInteger(1, m.digest()).toString(16);
-            while (wynik.length() < 32) {
-                wynik = '0' + wynik;
-            }
-            return wynik;
-        }
-    }
-
-    private String SHA1(String s) throws Exception {
-        {
-
-            MessageDigest m = MessageDigest.getInstance("SHA1");
-            m.update(s.getBytes(), 0, s.length());
-            String wynik = new BigInteger(1, m.digest()).toString(16);
-            while (wynik.length() < 40) {
-                wynik = '0' + wynik;
-            }
-            return wynik;
-        }
-    }
-
+    /* function returns transfer left */
     private long ZwrocRozmiar(String wynik) {
         String[] temp = wynik.split(" ");
         String[] tab = temp[0].split("=");
@@ -241,8 +216,8 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
         login(acc, false);
         /* generate new downloadlink */
 
-        String postData = "username=" + acc.getUser() + "&password=" + SHA1(MD5(acc.getPass())) + "&info=0&url=" + link.getDownloadURL() + "&site=nopremium";
-        String checkData = "username=" + acc.getUser() + "&password=" + SHA1(MD5(acc.getPass())) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=nopremium";
+        String postData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&url=" + link.getDownloadURL() + "&site=nopremium";
+        String checkData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=nopremium";
         response = br.postPage("http://crypt.nopremium.pl", postData);
 
         link.setProperty("apilink", response);
@@ -332,7 +307,7 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
         }
         try {
 
-            br.postPage("http://crypt.nopremium.pl", "username=" + account.getUser() + "&password=" + SHA1(MD5(account.getPass())) + "&info=1&site=nopremium");
+            br.postPage("http://crypt.nopremium.pl", "username=" + account.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(account.getPass())) + "&info=1&site=nopremium");
             String adres = br.toString();
             br.getPage(adres);
             adres = br.getRedirectLocation();
