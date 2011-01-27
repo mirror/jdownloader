@@ -18,6 +18,7 @@ package jd.plugins.optional.folderwatch.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -45,6 +46,8 @@ public class FileMonitoring extends Thread {
     private final String                      LOGGER_PREFIX;
 
     private MonitoringScheduler               importScheduler = null;
+
+    private HashMap<WatchKey, String>         keypathMap      = new HashMap<WatchKey, String>();
 
     public class FileEntry {
         public String filename;
@@ -78,7 +81,6 @@ public class FileMonitoring extends Thread {
 
     public void register(String path, boolean isRecursive) {
         Path watchedPath = Paths.get(path);
-        @SuppressWarnings("unused")
         WatchKey key = null;
 
         try {
@@ -86,9 +88,11 @@ public class FileMonitoring extends Thread {
 
             if (isRecursive) {
                 key = watchedPath.register(watchService, events, ExtendedWatchEventModifier.FILE_TREE);
+            } else {
+                key = watchedPath.register(watchService, events);
             }
 
-            key = watchedPath.register(watchService, events);
+            keypathMap.put(key, path);
         } catch (UnsupportedOperationException uox) {
             logger.warning(LOGGER_PREFIX + "File watching not supported");
             // handle this error here
@@ -146,29 +150,26 @@ public class FileMonitoring extends Thread {
                 signalledKey.reset();
 
                 for (WatchEvent<?> e : list) {
-                    if (e.kind() == StandardWatchEventKind.ENTRY_CREATE) {
-                        Path context = (Path) e.context();
-                        String filename = context.toString();
+                    Path context = (Path) e.context();
+                    String filename = context.toString();
 
+                    String path = keypathMap.get(signalledKey);
+                    String absPath = path + "/" + filename;
+
+                    if (e.kind() == StandardWatchEventKind.ENTRY_CREATE) {
                         logger.info(LOGGER_PREFIX + filename + " created");
 
-                        importScheduler.schedule(filename);
+                        importScheduler.schedule(absPath);
                     } else if (e.kind() == StandardWatchEventKind.ENTRY_DELETE) {
-                        Path context = (Path) e.context();
-                        String filename = context.toString();
-
                         logger.info(LOGGER_PREFIX + filename + " deleted");
 
                         for (FileMonitoringListener listener : listeners) {
-                            listener.onMonitoringFileDelete(filename);
+                            listener.onMonitoringFileDelete(absPath);
                         }
                     } else if (e.kind() == StandardWatchEventKind.ENTRY_MODIFY) {
-                        Path context = (Path) e.context();
-                        String filename = context.toString();
-
                         logger.info(LOGGER_PREFIX + filename + " modified");
 
-                        importScheduler.schedule(filename);
+                        importScheduler.schedule(absPath);
                     } else if (e.kind() == StandardWatchEventKind.OVERFLOW) {
                         logger.info(LOGGER_PREFIX + "Overflow - More changes happened than we could retreive");
                     }

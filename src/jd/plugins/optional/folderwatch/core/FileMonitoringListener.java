@@ -18,8 +18,8 @@ package jd.plugins.optional.folderwatch.core;
 
 public interface FileMonitoringListener {
 
-    public void onMonitoringFileCreate(String filename);
+    public void onMonitoringFileCreate(String absPath);
 
-    public void onMonitoringFileDelete(String filename);
+    public void onMonitoringFileDelete(String absPath);
 
 }

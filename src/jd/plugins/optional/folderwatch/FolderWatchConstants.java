@@ -19,7 +19,7 @@ package jd.plugins.optional.folderwatch;
 public class FolderWatchConstants {
     public static final String PROPERTY_ENABLED              = "ENABLED";
 
-    public static final String PROPERTY_FOLDER               = "FOLDER";
+    public static final String PROPERTY_FOLDER_LIST          = "FOLDER_LIST";
     public static final String PROPERTY_HISTORY              = "HISTORY";
 
     public static final String PROPERTY_OPTION_RECURSIVE     = "OPTION_RECURSIVE";

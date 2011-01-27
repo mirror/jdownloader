@@ -26,7 +26,7 @@ public class MonitoringScheduler extends Thread {
 
     private class ScheduleEntry {
 
-        private String  filename;
+        private String  absPath;
 
         private long    milliseconds;
 
@@ -40,17 +40,9 @@ public class MonitoringScheduler extends Thread {
             this.isExpired = isExpired;
         }
 
-        public ScheduleEntry(String filename, long milliseconds) {
-            setFilename(filename);
+        public ScheduleEntry(String path, long milliseconds) {
+            setAbsolutePath(path);
             setMilliseconds(milliseconds);
-        }
-
-        public String getFilename() {
-            return filename;
-        }
-
-        public void setFilename(String filename) {
-            this.filename = filename;
         }
 
         public long getMilliseconds() {
@@ -59,6 +51,14 @@ public class MonitoringScheduler extends Thread {
 
         public void setMilliseconds(long milliseconds) {
             this.milliseconds = milliseconds;
+        }
+
+        public String getAbsolutePath() {
+            return absPath;
+        }
+
+        public void setAbsolutePath(String absPath) {
+            this.absPath = absPath;
         }
     }
 
@@ -83,7 +83,7 @@ public class MonitoringScheduler extends Thread {
         this.LOGGER_PREFIX = loggerprefix;
     }
 
-    public synchronized void schedule(String filename) {
+    public synchronized void schedule(String absPath) {
         if (!allExpired()) {
             try {
                 wait();
@@ -91,12 +91,12 @@ public class MonitoringScheduler extends Thread {
             }
         }
 
-        ScheduleEntry entry = findByFilename(filename);
+        ScheduleEntry entry = findByAbsolutePath(absPath);
 
         if (entry != null) {
             entry.setMilliseconds(new Date().getTime());
         } else {
-            entry = new ScheduleEntry(filename, new Date().getTime());
+            entry = new ScheduleEntry(absPath, new Date().getTime());
         }
 
         entries.add(entry);
@@ -104,9 +104,9 @@ public class MonitoringScheduler extends Thread {
         notify();
     }
 
-    private ScheduleEntry findByFilename(String filename) {
+    private ScheduleEntry findByAbsolutePath(String absPath) {
         for (ScheduleEntry entry : entries) {
-            if (entry.getFilename().equals(filename)) { return entry; }
+            if (entry.getAbsolutePath().equals(absPath)) { return entry; }
         }
 
         return null;
@@ -147,12 +147,12 @@ public class MonitoringScheduler extends Thread {
                     if (!entry.isExpired() && ((entry.getMilliseconds() + (long) (timeout * 1000)) < new Date().getTime())) {
                         entry.setExpired(true);
 
-                        String filename = entry.getFilename();
+                        String file = entry.getAbsolutePath();
 
-                        logger.info(LOGGER_PREFIX + filename + " ready");
+                        logger.info(LOGGER_PREFIX + file + " ready");
 
                         for (FileMonitoringListener listener : listeners) {
-                            listener.onMonitoringFileCreate(filename);
+                            listener.onMonitoringFileCreate(file);
                         }
                     }
                 }

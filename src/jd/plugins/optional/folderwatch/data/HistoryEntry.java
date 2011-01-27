@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.folderwatch.data;
 
+import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,17 +37,17 @@ public class HistoryEntry implements Serializable {
 
     private boolean                 isExisting;
 
-    public HistoryEntry(String filename, String absolutePath, String md5Hash, boolean isExisting) {
-        set(filename, absolutePath, md5Hash, isExisting);
+    public HistoryEntry(File file, String md5Hash, boolean isExisting) {
+        set(file, md5Hash, isExisting);
     }
 
-    public HistoryEntry(String filename, String absolutePath, String md5Hash) {
-        this(filename, absolutePath, md5Hash, true);
+    public HistoryEntry(File file, String md5Hash) {
+        this(file, md5Hash, true);
     }
 
-    public void set(String filename, String absolutePath, String md5Hash, boolean isExisting) {
-        this.setFilename(filename);
-        this.setAbsolutePath(absolutePath);
+    public void set(File file, String md5Hash, boolean isExisting) {
+        this.setFilename(file.getName());
+        this.setAbsolutePath(file.getAbsolutePath());
         this.setMd5Hash(md5Hash);
         this.setImportDate();
         this.setExisting(isExisting);
