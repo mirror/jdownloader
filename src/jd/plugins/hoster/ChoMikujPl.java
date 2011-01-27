@@ -19,16 +19,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 //This plugin gets all its links from a decrypter!
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "\\&id=.*?\\&gallerylink=.*?60423fhrzisweguikipo9re.*?\\&" }, flags = { 0 })
@@ -43,7 +43,9 @@ public class ChoMikujPl extends PluginForHost {
         return "http://chomikuj.pl/Regulamin.aspx";
     }
 
-    public String DLLINK = null;
+    private String              DLLINK              = null;
+    private static final String PREMIUMONLY         = "Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS.";
+    private static final String PREMIUMONLYUSERTEXT = "Download is only available for registered/premium users!";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("60423fhrzisweguikipo9re", "chomikuj.pl").replace("amp;", ""));
@@ -53,6 +55,11 @@ public class ChoMikujPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         getDllink(link);
+        if (br.containsHTML("Najprawdopodobniej plik został w miedzyczasie usunięty z konta")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(PREMIUMONLY)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+            return AvailableStatus.TRUE;
+        }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
@@ -77,6 +84,7 @@ public class ChoMikujPl extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
         getDllink(downloadLink);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
@@ -88,13 +96,12 @@ public class ChoMikujPl extends PluginForHost {
     }
 
     public void getDllink(DownloadLink theLink) throws NumberFormatException, PluginException, IOException {
-        Browser br2 = br.cloneBrowser();
-        String id = new Regex(theLink.getDownloadURL(), "\\&id=(.*?)\\&").getMatch(0);
+        final String id = new Regex(theLink.getDownloadURL(), "\\&id=(.*?)\\&").getMatch(0);
         String tmp = "http://chomikuj.pl/Chomik/License/Download";
-        br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage(tmp, "fileId=" + id);
-        DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage(tmp, "fileId=" + id);
+        DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
         if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
     }
 

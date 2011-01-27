@@ -50,6 +50,7 @@ public class HdMxTpsCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setReadTimeout(60 * 1000);
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.setCookiesExclusive(true);
