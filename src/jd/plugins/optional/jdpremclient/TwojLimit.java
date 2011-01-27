@@ -2,8 +2,6 @@ package jd.plugins.optional.jdpremclient;
 
 import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
@@ -25,6 +23,8 @@ import jd.plugins.TransferStatus;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.utils.Hash;
+
 import com.sun.net.ssl.internal.ssl.Debug;
 
 public class TwojLimit extends PluginForHost implements JDPremInterface {
@@ -39,32 +39,6 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
     private String                   Info         = null;
     private String                   validUntil   = null;
     private boolean                  expired      = false;
-
-    private String MD5(String s) throws Exception {
-        {
-
-            MessageDigest m = MessageDigest.getInstance("MD5");
-            m.update(s.getBytes(), 0, s.length());
-            String wynik = new BigInteger(1, m.digest()).toString(16);
-            while (wynik.length() < 32) {
-                wynik = '0' + wynik;
-            }
-            return wynik;
-        }
-    }
-
-    private String SHA1(String s) throws Exception {
-        {
-
-            MessageDigest m = MessageDigest.getInstance("SHA1");
-            m.update(s.getBytes(), 0, s.length());
-            String wynik = new BigInteger(1, m.digest()).toString(16);
-            while (wynik.length() < 40) {
-                wynik = '0' + wynik;
-            }
-            return wynik;
-        }
-    }
 
     private long ZwrocRozmiar(String wynik) {
         String[] temp = wynik.split(" ");
@@ -241,12 +215,11 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
         login(acc, false);
         /* generate new downloadlink */
 
-        String postData = "username=" + acc.getUser() + "&password=" + MD5(acc.getPass()) + "&info=0&url=" + link.getDownloadURL() + "&site=twojlimit";
-        String checkData = "username=" + acc.getUser() + "&password=" + MD5(acc.getPass()) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=twojlimit";
+        String postData = "username=" + acc.getUser() + "&password=" + Hash.getMD5(acc.getPass()) + "&info=0&url=" + link.getDownloadURL() + "&site=twojlimit";
+        String checkData = "username=" + acc.getUser() + "&password=" + Hash.getMD5(acc.getPass()) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=twojlimit";
         response = br.postPage("http://crypt.twojlimit.pl", postData);
 
         link.setProperty("apilink", response);
-       
 
         String genlink = response;
 
@@ -256,7 +229,6 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
 
-           
             try {
                 link.getTransferStatus().usePremium(true);
 
@@ -290,8 +262,6 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
                 if (br.containsHTML("ddfddfdsfs")) {
 
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Konto Wygasło!"); }
-
-               
 
             }
 
@@ -344,8 +314,8 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
             this.br.setDebug(true);
         }
         try {
-           
-            br.postPage("http://crypt.twojlimit.pl", "username=" + account.getUser() + "&password=" + MD5(account.getPass()) + "&info=1&site=twojlimit");
+
+            br.postPage("http://crypt.twojlimit.pl", "username=" + account.getUser() + "&password=" + Hash.getMD5(account.getPass()) + "&info=1&site=twojlimit");
             String adres = br.toString();
             br.getPage(adres);
             adres = br.getRedirectLocation();
