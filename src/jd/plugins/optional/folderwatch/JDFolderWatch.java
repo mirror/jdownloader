@@ -86,6 +86,8 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
     private boolean                isOption_importAndDelete;
     private boolean                isOption_history;
 
+    private JList                  guiFolderList;
+
     private FileMonitoring         monitoringThread;
 
     public JDFolderWatch(PluginWrapper wrapper) {
@@ -174,17 +176,25 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         return menu;
     }
 
-    private void addListModelEntry(JList list, String folder) {
-        DefaultListModel listModel = (DefaultListModel) list.getModel();
+    private void addListModelEntry(String folder) {
+        DefaultListModel listModel = (DefaultListModel) guiFolderList.getModel();
 
         listModel.addElement(folder + " (" + getNumberOfContainerFiles(folder) + ")");
     }
 
-    private void updateSelectedListEntry(JList list) {
-        DefaultListModel listModel = (DefaultListModel) list.getModel();
-        String folder = folderlist.get(list.getSelectedIndex());
+    private void updateListModelSelection() {
+        if (!guiFolderList.isSelectionEmpty()) {
+            for (int index : guiFolderList.getSelectedIndices()) {
+                updateListModelEntry(index);
+            }
+        }
+    }
 
-        listModel.set(list.getSelectedIndex(), folder + " (" + getNumberOfContainerFiles(folder) + ")");
+    private void updateListModelEntry(int index) {
+        DefaultListModel listModel = (DefaultListModel) guiFolderList.getModel();
+
+        String folder = folderlist.get(index);
+        listModel.set(index, folder + " (" + getNumberOfContainerFiles(folder) + ")");
     }
 
     private void initConfigGui() {
@@ -199,11 +209,11 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         filechooser.setMultiSelectionEnabled(true);
 
         final DefaultListModel listModel = new DefaultListModel();
-        final JList list = new JList(listModel);
-        list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        guiFolderList = new JList(listModel);
+        guiFolderList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         for (String folder : folderlist)
-            addListModelEntry(list, folder);
+            addListModelEntry(folder);
 
         config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "gui.label.folderlist", "Folder list"), getIconKey()));
 
@@ -216,7 +226,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
                 for (File file : filechooser.getSelectedFiles()) {
                     if (!folderlist.contains(file.getAbsolutePath())) {
                         folderlist.add(file.getAbsolutePath());
-                        addListModelEntry(list, file.getAbsolutePath());
+                        addListModelEntry(file.getAbsolutePath());
 
                         folderlistHasChanged = true;
                     }
@@ -228,9 +238,9 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         removeButton.setIcon(JDTheme.II("gui.images.delete", 16, 16));
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                while (!list.isSelectionEmpty()) {
-                    folderlist.remove(list.getSelectedIndex());
-                    listModel.remove(list.getSelectedIndex());
+                while (!guiFolderList.isSelectionEmpty()) {
+                    folderlist.remove(guiFolderList.getSelectedIndex());
+                    listModel.remove(guiFolderList.getSelectedIndex());
 
                     folderlistHasChanged = true;
                 }
@@ -242,7 +252,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         p.add(addButton, "span,split,align center");
         p.add(removeButton, "");
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(list), "growx,pushx"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(guiFolderList), "growx,pushx"));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, p, ""));
 
@@ -250,8 +260,8 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (!list.isSelectionEmpty()) {
-                    String folder = folderlist.get(list.getSelectedIndex());
+                if (!guiFolderList.isSelectionEmpty()) {
+                    String folder = folderlist.get(guiFolderList.getSelectedIndex());
                     openInFilebrowser(folder);
                 }
             }
@@ -259,13 +269,11 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (!list.isSelectionEmpty()) {
-                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "gui.action.emptyfolder.message", "Are you sure you want to delete all container files?")), UserIO.RETURN_OK)) {
-                        String folder = folderlist.get(list.getSelectedIndex());
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "gui.action.emptyfolder.message", "Are you sure you want to delete all container files?")), UserIO.RETURN_OK)) {
+                    String folder = folderlist.get(guiFolderList.getSelectedIndex());
 
-                        emptyFolder(folder);
-                        updateSelectedListEntry(list);
-                    }
+                    emptyFolder(folder);
+                    updateListModelSelection();
                 }
             }
         }, JDL.L(JDL_PREFIX + "gui.action.emptyfolder", "empty folder"), JDL.L(JDL_PREFIX + "gui.action.emptyfolder.long", "Delete all container files within selected folder"), JDTheme.II("gui.images.clear", 16, 16)));
@@ -341,6 +349,9 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
     public void onMonitoringFileCreate(String absPath) {
         if (isContainer(absPath)) {
+            File file = new File(absPath);
+            updateListModelEntry(folderlist.indexOf(file.getParent()));
+
             if (isOption_import || isOption_importAndDelete) {
                 importContainer(absPath);
             }
