@@ -49,9 +49,9 @@ public class FolderWatchPanel extends SwitchPanel {
     }
 
     private void initGUI() {
-        this.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[][grow,fill]"));
-        this.add(new ViewToolbar("action.folderwatch.clear", "action.folderwatch.reimport"));
-        this.add(new JScrollPane(table), "grow");
+        this.setLayout(new MigLayout("", "[]min[][grow,fill]min[grow, fill]"));
+        this.add(new JScrollPane(table), "width max,wrap");
+        this.add(new ViewToolbar("action.folderwatch.clear", "action.folderwatch.reimport"), "align center");
     }
 
     private void initActions() {

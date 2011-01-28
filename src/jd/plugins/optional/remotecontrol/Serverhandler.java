@@ -21,8 +21,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
@@ -46,11 +46,11 @@ import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
@@ -395,7 +395,7 @@ public class Serverhandler implements Handler {
 
             if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
                 GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
-                JDUtilities.getConfiguration().save();
+                GUIUtils.getConfig().save();
             }
 
             response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
@@ -406,7 +406,7 @@ public class Serverhandler implements Handler {
 
             if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true)) {
                 GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, value);
-                JDUtilities.getConfiguration().save();
+                GUIUtils.getConfig().save();
             }
 
             response.addContent("PARAM_START_AFTER_ADDING_LINKS_AUTO=" + value);

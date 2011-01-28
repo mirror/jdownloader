@@ -25,8 +25,10 @@ import java.util.Vector;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JList;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -59,6 +61,7 @@ import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 @OptionalPlugin(rev = "$Revision$", id = "folderwatch", hasGui = false, interfaceversion = 7)
 public class JDFolderWatch extends PluginOptional implements FileMonitoringListener, ConfigurationListener, RemoteSupport {
@@ -172,6 +175,12 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
     }
 
     private void initConfigGui() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
+
         final DefaultListModel listModel = new DefaultListModel();
         for (String folder : folderlist) {
             listModel.addElement(folder);
@@ -184,11 +193,10 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         filechooser.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         filechooser.setMultiSelectionEnabled(true);
 
-        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L(JDL_PREFIX + "option.label.folders", "Folder list:")));
+        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "option.label.folderlist", "Folder list"), getIconKey()));
 
         JButton addButton = new JButton("add");
+        addButton.setIcon(JDTheme.II("gui.images.add", 16, 16));
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 filechooser.showOpenDialog(null);
@@ -202,7 +210,8 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
             }
         });
 
-        JButton removeButton = new JButton("remove (selected)");
+        JButton removeButton = new JButton("remove");
+        removeButton.setIcon(JDTheme.II("gui.images.delete", 16, 16));
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 while (!list.isSelectionEmpty()) {
@@ -214,20 +223,23 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
             }
         });
 
+        JPanel p = new JPanel(new MigLayout("", "[]min[][grow,fill]min[grow, fill]"));
+
+        p.add(addButton, "span,split,align center");
+        p.add(removeButton, "");
+
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(list), "growx,pushx"));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, addButton, "growx,pushx"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, p, ""));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, removeButton, "growx,pushx"));
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "option.label.otheractions", "Actions"), getIconKey()));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String folder = (String) list.getSelectedValue();
                 if (folder != null) openInFilebrowser(folder);
             }
-        }, JDL.L(JDL_PREFIX + "openfolder", "open folder"), JDL.L(JDL_PREFIX + "openfolder.long", "Open folder in local file manager:"), JDTheme.II("gui.images.package", 16, 16)));
+        }, JDL.L(JDL_PREFIX + "openfolder", "open folder"), JDL.L(JDL_PREFIX + "openfolder.long", "Open selected folder with file manager:"), JDTheme.II("gui.images.package", 16, 16)));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -236,9 +248,9 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
                     if (folder != null) emptyFolder(folder);
                 }
             }
-        }, JDL.L(JDL_PREFIX + "emptyfolder", "empty folder"), JDL.L(JDL_PREFIX + "emptyfolder.long", "Delete all container files:"), JDTheme.II("gui.images.clear", 16, 16)));
+        }, JDL.L(JDL_PREFIX + "emptyfolder", "empty folder"), JDL.L(JDL_PREFIX + "emptyfolder.long", "Delete all container files within sel. folder"), JDTheme.II("gui.images.clear", 16, 16)));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "option.label.options", "Options"), getIconKey()));
 
         if (OSDetector.isWindows()) {
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_RECURSIVE, JDL.L(JDL_PREFIX + "recursive", "Watch registered folders recursively")).setDefaultValue(false));
