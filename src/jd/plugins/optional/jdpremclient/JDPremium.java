@@ -24,9 +24,9 @@ import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
@@ -178,7 +178,13 @@ public class JDPremium extends PluginOptional {
                 premShareHosts.put("multishare.cz", "MultiShare");
                 premShareHosts.put("dwnld4me.com", "Download4Me");
                 premShareHosts.put("linksnappy.com", "LinkSnappycom");
+
+                premShareHosts.put("nopremium.pl", "NoPremium");
+                premShareHosts.put("premget.pl", "PremGet");
+                premShareHosts.put("twojlimit.pl", "TwojLimit");
+
                 premShareHosts.put("fast-debrid.com", "FastDebridcom");
+
                 int replaceIndex = 0;
                 for (String key : premShareHosts.keySet()) {
                     /* init replacePlugin */
