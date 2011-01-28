@@ -22,7 +22,7 @@ public class FolderWatchPanel extends SwitchPanel {
 
     private static final long           serialVersionUID = -4451556977039313203L;
 
-    private static final String         JDL_PREFIX       = "plugins.optional.folderwatch.gui.";
+    private static final String         JDL_PREFIX       = "plugins.optional.folderwatch.panel.";
 
     private final JDFolderWatch         fwInstance       = (JDFolderWatch) JDUtilities.getOptionalPlugin("folderwatch").getPlugin();
 
@@ -51,11 +51,11 @@ public class FolderWatchPanel extends SwitchPanel {
     private void initGUI() {
         this.setLayout(new MigLayout("", "[]min[][grow,fill]min[grow, fill]"));
         this.add(new JScrollPane(table), "width max,wrap");
-        this.add(new ViewToolbar("action.folderwatch.clear", "action.folderwatch.reimport"), "align center");
+        this.add(new ViewToolbar("action.folderwatch.history.clear", "action.folderwatch.history.reimport"), "align center");
     }
 
     private void initActions() {
-        new ThreadedAction("action.folderwatch.clear", "gui.images.clear") {
+        new ThreadedAction("action.folderwatch.history.clear", "gui.images.clear") {
             private static final long serialVersionUID = 3349495273700955040L;
 
             @Override
@@ -80,7 +80,7 @@ public class FolderWatchPanel extends SwitchPanel {
             }
         };
 
-        new ThreadedAction("action.folderwatch.reimport", "gui.images.add") {
+        new ThreadedAction("action.folderwatch.history.reimport", "gui.images.add") {
             private static final long serialVersionUID = 9034432457172125570L;
 
             @Override

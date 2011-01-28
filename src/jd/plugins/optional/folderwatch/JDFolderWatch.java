@@ -193,9 +193,9 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         filechooser.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         filechooser.setMultiSelectionEnabled(true);
 
-        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "option.label.folderlist", "Folder list"), getIconKey()));
+        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "gui.label.folderlist", "Folder list"), getIconKey()));
 
-        JButton addButton = new JButton("add");
+        JButton addButton = new JButton(JDL.L(JDL_PREFIX + "gui.folderlist.add", "add"));
         addButton.setIcon(JDTheme.II("gui.images.add", 16, 16));
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -210,7 +210,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
             }
         });
 
-        JButton removeButton = new JButton("remove");
+        JButton removeButton = new JButton(JDL.L(JDL_PREFIX + "gui.folderlist.remove", "remove"));
         removeButton.setIcon(JDTheme.II("gui.images.delete", 16, 16));
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -232,35 +232,35 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, p, ""));
 
-        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "option.label.otheractions", "Actions"), getIconKey()));
+        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "gui.label.actions", "Actions"), getIconKey()));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String folder = (String) list.getSelectedValue();
                 if (folder != null) openInFilebrowser(folder);
             }
-        }, JDL.L(JDL_PREFIX + "openfolder", "open folder"), JDL.L(JDL_PREFIX + "openfolder.long", "Open selected folder with file manager:"), JDTheme.II("gui.images.package", 16, 16)));
+        }, JDL.L(JDL_PREFIX + "gui.action.openfolder", "open folder"), JDL.L(JDL_PREFIX + "gui.action.openfolder.long", "Open selected folder with file manager"), JDTheme.II("gui.images.package", 16, 16)));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "option.emptyfolder.message", "Are you sure you want to delete all container files?")), UserIO.RETURN_OK)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "gui.action.emptyfolder.message", "Are you sure you want to delete all container files?")), UserIO.RETURN_OK)) {
                     String folder = (String) list.getSelectedValue();
                     if (folder != null) emptyFolder(folder);
                 }
             }
-        }, JDL.L(JDL_PREFIX + "emptyfolder", "empty folder"), JDL.L(JDL_PREFIX + "emptyfolder.long", "Delete all container files within sel. folder"), JDTheme.II("gui.images.clear", 16, 16)));
+        }, JDL.L(JDL_PREFIX + "gui.action.emptyfolder", "empty folder"), JDL.L(JDL_PREFIX + "gui.action.emptyfolder.long", "Delete all container files within selected folder"), JDTheme.II("gui.images.clear", 16, 16)));
 
-        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "option.label.options", "Options"), getIconKey()));
+        config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "gui.label.options", "Options"), getIconKey()));
 
         if (OSDetector.isWindows()) {
-            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_RECURSIVE, JDL.L(JDL_PREFIX + "recursive", "Watch registered folders recursively")).setDefaultValue(false));
+            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_RECURSIVE, JDL.L(JDL_PREFIX + "gui.option.recursive", "Watch registered folders recursively")).setDefaultValue(false));
         }
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT, JDL.L(JDL_PREFIX + "option.import", "Import container when found")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT, JDL.L(JDL_PREFIX + "gui.option.import", "Import container when found")).setDefaultValue(true));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT_DELETE, JDL.L(JDL_PREFIX + "option.importdelete", "Import container when found and delete it afterwards")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_IMPORT_DELETE, JDL.L(JDL_PREFIX + "gui.option.importdelete", "Delete container after import")).setDefaultValue(false));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_HISTORY, JDL.L(JDL_PREFIX + "option.history", "Add history entry for every found container")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, FolderWatchConstants.PROPERTY_OPTION_HISTORY, JDL.L(JDL_PREFIX + "gui.option.history", "Add history entry for every found container")).setDefaultValue(true));
     }
 
     private void showGui() {

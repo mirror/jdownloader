@@ -29,8 +29,8 @@ import jd.utils.locale.JDL;
 
 public class FolderWatchTableModel extends JDTableModel {
 
-    private static final long serialVersionUID = 5047870839332563506L;
-    private static final String JDL_PREFIX = "jd.plugins.optional.folderwatch.gui.FolderWatchTableModel.";
+    private static final long   serialVersionUID = 5047870839332563506L;
+    private static final String JDL_PREFIX       = "jd.plugins.optional.folderwatch.tablemodel.";
 
     public FolderWatchTableModel(String configname) {
         super(configname);
