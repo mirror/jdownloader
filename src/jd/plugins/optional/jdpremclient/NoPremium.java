@@ -226,10 +226,16 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
         link.getTransferStatus().usePremium(true);
+        /*
+         * I realy wanted to use Content Disposition below, but it just don't
+         * work for resume at hotfile
+         */
+        if (dl.getConnection().getContentType().equalsIgnoreCase("text/html"))
 
-        if (!dl.getConnection().isContentDisposition()) // unknown error
         {
+
             br.followConnection();
+
             if (br.containsHTML("Brak")) {
                 /* No transfer left */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Brak transferu!");
@@ -247,6 +253,7 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
                 /* Account Expired */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Konto Wygasło!");
             }
+
         }
 
         if (dl.getConnection().getResponseCode() == 404) {
@@ -255,7 +262,11 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        dl.startDownload();
+        try {
+            dl.startDownload();
+        } catch (Throwable e) {
+            link.getLinkStatus().setStatusText("Content Disposition");
+        }
         return true;
 
     }

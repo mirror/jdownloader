@@ -224,8 +224,12 @@ public class PremGet extends PluginForHost implements JDPremInterface {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
         link.getTransferStatus().usePremium(true);
-
-        if (!dl.getConnection().isContentDisposition()) // unknown error
+        /*
+         * I realy wanted to use Content Disposition below, but it just don't
+         * work for resume at hotfile
+         */
+        if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
+        // error
         {
             br.followConnection();
             if (br.containsHTML("Brak")) {
