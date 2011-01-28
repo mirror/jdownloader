@@ -27,11 +27,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -124,10 +124,9 @@ public class ShareBaseTo extends PluginForHost {
         br.getPage(url);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         Browser ajax = br.cloneBrowser();
-        ajax.getPage("/ajax/download.php?a=1&f=undefined&s=undefined");
+        ajax.getPage("http://sharebase.to/ajax/download.php?p=I&f=undefined&s=undefined");
         Form form = ajax.getForm(0);
         br.submitForm(form);
-
         if (br.containsHTML("Von deinem Computer ist noch ein Download aktiv.")) {
             logger.severe("ShareBaseTo Error: Too many downloads");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);

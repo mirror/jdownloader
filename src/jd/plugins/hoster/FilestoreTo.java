@@ -24,11 +24,11 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -85,7 +85,7 @@ public class FilestoreTo extends PluginForHost {
         // String ajaxFun = "http://filestore.to/ajax/download.php?a=1&f=" + fid
         // + "&s=" + sid;
         // br.getPage(ajaxFun);
-        String ajaxDownload = "http://filestore.to/ajax/download.php?f=" + fid + "&s=" + sid;
+        String ajaxDownload = "http://filestore.to/ajax/download.php?d=" + fid + "&s=" + sid;
         br.getPage(ajaxDownload);
         br.setFollowRedirects(true);
         String dllink = br.toString().trim();
