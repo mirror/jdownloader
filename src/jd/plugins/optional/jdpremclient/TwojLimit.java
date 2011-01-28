@@ -24,15 +24,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Hash;
-
-import com.sun.net.ssl.internal.ssl.Debug;
+import org.appwork.utils.formatter.TimeFormatter;
 
 public class TwojLimit extends PluginForHost implements JDPremInterface {
 
     private boolean                  proxyused    = false;
     private String                   infostring   = null;
     private PluginForHost            plugin       = null;
-    private static boolean           counted      = false;
     private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object      LOCK         = new Object();
@@ -40,7 +38,8 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
     private String                   validUntil   = null;
     private boolean                  expired      = false;
 
-    private long ZwrocRozmiar(String wynik) {
+    /* function returns transfer left */
+    private long GetTrasferLeft(String wynik) {
         String[] temp = wynik.split(" ");
         String[] tab = temp[0].split("=");
         long rozmiar = Long.parseLong(tab[1]);
@@ -216,65 +215,49 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
         /* generate new downloadlink */
 
         String postData = "username=" + acc.getUser() + "&password=" + Hash.getMD5(acc.getPass()) + "&info=0&url=" + link.getDownloadURL() + "&site=twojlimit";
-        String checkData = "username=" + acc.getUser() + "&password=" + Hash.getMD5(acc.getPass()) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=twojlimit";
+
         response = br.postPage("http://crypt.twojlimit.pl", postData);
 
         link.setProperty("apilink", response);
 
         String genlink = response;
 
-        if (genlink != null) {
+        br.setFollowRedirects(true);
 
-            br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
+        link.getTransferStatus().usePremium(true);
 
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
+        if (!dl.getConnection().isContentDisposition()) // unknown error
+        {
+            br.followConnection();
+            if (br.getBaseURL().contains("notransfer")) {
+                /* No transfer left */
 
-            try {
-                link.getTransferStatus().usePremium(true);
-
-                dl.startDownload();
-                br.followConnection();
-
-            } catch (Throwable e) {
-                link.getLinkStatus().setStatusText("");
-                response = br.postPage("http://crypt.twojlimit.pl", checkData);
-                br.getPage(response);
-                Debug.println("\n\n\n", br.toString());
-
-                if (br.getBaseURL().contains("notransfer")) {
-                    Debug.println("Wyjatek", "Transfer");
-
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Brak transferu!");
-
-                }
-                if (br.getBaseURL().contains("serviceunavailable")) {
-
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5); }
-                if (br.getBaseURL().contains("connecterror")) {
-
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Błąd Połączenia"); }
-                if (br.getBaseURL().contains("invaliduserpass")) {
-
-                throw new PluginException(LinkStatus.ERROR_AGB_NOT_SIGNED, "Błędny Login!"); }
-                if (br.getBaseURL().contains("notfound")) {
-
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Nie znaleziono pliku!"); }
-                if (br.containsHTML("ddfddfdsfs")) {
-
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Konto Wygasło!"); }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Brak transferu!");
 
             }
+            if (br.getBaseURL().contains("serviceunavailable")) {
 
-        } else {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5); }
+            if (br.getBaseURL().contains("connecterror")) {
 
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Błąd Połączenia"); }
+            if (br.getBaseURL().contains("invaliduserpass")) {
+                /* Invalid username or pass */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Błędny Login!");
+            }
+            if (br.getBaseURL().contains("notfound")) {
+
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Nie znaleziono pliku!"); }
         }
+
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
+        dl.startDownload();
         return true;
 
     }
@@ -386,11 +369,11 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
                 }
                 ac.setStatus("Nieprawidłowe dane lub brak odpowiedzi serwera" + restartReq);
                 ac.setExpired(true);
-                // ac.setStatus( + "cos");
+
                 return ac;
             }
 
-            ac.setTrafficLeft(ZwrocRozmiar(Info));
+            ac.setTrafficLeft(GetTrasferLeft(Info));
 
             synchronized (LOCK) {
                 premiumHosts.clear();
@@ -412,7 +395,7 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
             } else {
                 ac.setExpired(false);
                 if (validUntil != null) {
-                    ac.setValidUntil(Regex.getMilliSeconds(validUntil));
+                    ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil));
 
                 }
 
@@ -461,7 +444,7 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
         if (plugin != null) {
             if (JDPremium.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
-                // return plugin.getMaxSimultanDownload(account);
+
                 return Integer.MAX_VALUE;
             } else if (JDPremium.isEnabled() && enabled) {
                 /* OchLoad */
@@ -471,7 +454,7 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
                     ("TwojLimit.pl") != null) return Integer.MAX_VALUE;
                 }
             }
-            // return plugin.getMaxSimultanDownload(account);
+
             return Integer.MAX_VALUE;
         }
         return 0;
