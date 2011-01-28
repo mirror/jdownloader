@@ -24,15 +24,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Hash;
-
-import com.sun.net.ssl.internal.ssl.Debug;
+import org.appwork.utils.formatter.TimeFormatter;
 
 public class NoPremium extends PluginForHost implements JDPremInterface {
 
     private boolean                  proxyused    = false;
     private String                   infostring   = null;
     private PluginForHost            plugin       = null;
-    private static boolean           counted      = false;
     private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object      LOCK         = new Object();
@@ -41,7 +39,7 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
     private boolean                  expired      = false;
 
     /* function returns transfer left */
-    private long ZwrocRozmiar(String wynik) {
+    private long GetTrasferLeft(String wynik) {
         String[] temp = wynik.split(" ");
         String[] tab = temp[0].split("=");
         long rozmiar = Long.parseLong(tab[1]);
@@ -193,6 +191,7 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
 
     private boolean handleNoPremium(DownloadLink link) throws Exception {
         Account acc = null;
+
         synchronized (LOCK) {
             /* jdpremium enabled */
             if (!JDPremium.isEnabled() || !enabled) return false;
@@ -202,6 +201,7 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
             /* enabled account found? */
             if (acc == null || !acc.isEnabled()) return false;
         }
+        link.getTransferStatus().usePremium(true);
         if (expired) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Konto wygasło"); }
         proxyused = true;
         requestFileInformation(link);
@@ -217,56 +217,45 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
         /* generate new downloadlink */
 
         String postData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&url=" + link.getDownloadURL() + "&site=nopremium";
-        String checkData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=nopremium";
-        response = br.postPage("http://crypt.nopremium.pl", postData);
 
-        link.setProperty("apilink", response);
+        response = br.postPage("http://crypt.nopremium.pl", postData);
 
         String genlink = response;
 
-        if (genlink != null) {
+        br.setFollowRedirects(true);
 
-            br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
+        link.getTransferStatus().usePremium(true);
 
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
-
-            try {
-                link.getTransferStatus().usePremium(true);
-                dl.startDownload();
-                br.followConnection();
-            } catch (Throwable e) {
-                link.getLinkStatus().setStatusText("");
-                response = br.postPage("http://crypt.nopremium.pl", checkData);
-                br.getPage(response);
-                Debug.println("\n\n\n", br.toString());
-                if (br.containsHTML("Brak")) {
-                    Debug.println("Wyjatek", "Transfer");
-
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Brak transferu!");
-
-                }
-                if (br.containsHTML("Nieprawidlowa")) {
-
-                throw new PluginException(LinkStatus.ERROR_AGB_NOT_SIGNED, "Błędny Login!"); }
-                if (br.containsHTML("Niepoprawny")) {
-
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Nie znaleziono pliku!"); }
-                if (br.containsHTML("Konto")) {
-
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Konto Wygasło!"); }
+        if (!dl.getConnection().isContentDisposition()) // unknown error
+        {
+            br.followConnection();
+            if (br.containsHTML("Brak")) {
+                /* No transfer left */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Brak transferu!");
 
             }
-
-        } else {
-
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("Nieprawidlowa")) {
+                /* Wrong username/password */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Błędny Login!");
+            }
+            if (br.containsHTML("Niepoprawny")) {
+                /* File not found */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Nie znaleziono pliku!");
+            }
+            if (br.containsHTML("Konto")) {
+                /* Account Expired */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Konto Wygasło!");
+            }
         }
+
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
+        dl.startDownload();
         return true;
 
     }
@@ -376,13 +365,14 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
                 synchronized (LOCK) {
                     premiumHosts.clear();
                 }
+                /* login failed */
                 ac.setStatus("Nieprawidłowe dane lub brak odpowiedzi serwera" + restartReq);
                 ac.setExpired(true);
-                // ac.setStatus( + "cos");
+
                 return ac;
             }
 
-            ac.setTrafficLeft(ZwrocRozmiar(Info));
+            ac.setTrafficLeft(GetTrasferLeft(Info));
 
             synchronized (LOCK) {
                 premiumHosts.clear();
@@ -404,7 +394,7 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
             } else {
                 ac.setExpired(false);
                 if (validUntil != null) {
-                    ac.setValidUntil(Regex.getMilliSeconds(validUntil));
+                    ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil));
 
                 }
 
