@@ -24,15 +24,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Hash;
-
-import com.sun.net.ssl.internal.ssl.Debug;
+import org.appwork.utils.formatter.TimeFormatter;
 
 public class PremGet extends PluginForHost implements JDPremInterface {
 
     private boolean                  proxyused    = false;
     private String                   infostring   = null;
     private PluginForHost            plugin       = null;
-    private static boolean           counted      = false;
     private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object      LOCK         = new Object();
@@ -40,7 +38,8 @@ public class PremGet extends PluginForHost implements JDPremInterface {
     private String                   validUntil   = null;
     private boolean                  expired      = false;
 
-    private long ZwrocRozmiar(String wynik) {
+    /* function returns transfer left */
+    private long GetTransferLeft(String wynik) {
         String[] temp = wynik.split(" ");
         String[] tab = temp[0].split("=");
         long rozmiar = Long.parseLong(tab[1]);
@@ -216,56 +215,45 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         /* generate new downloadlink */
 
         String postData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&url=" + link.getDownloadURL() + "&site=premget";
-        String checkData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&check=1&url=" + link.getDownloadURL() + "&site=premget";
-        response = br.postPage("http://crypt.premget.pl", postData);
 
-        link.setProperty("apilink", response);
+        response = br.postPage("http://crypt.premget.pl", postData);
 
         String genlink = response;
 
-        if (genlink != null) {
+        br.setFollowRedirects(true);
 
-            br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
+        link.getTransferStatus().usePremium(true);
 
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
-            // dl.setChunkNum(getMaxConnections());
-            try {
-                link.getTransferStatus().usePremium(true);
-                dl.startDownload();
-                br.followConnection();
-            } catch (Throwable e) {
-                link.getLinkStatus().setStatusText("");
-                response = br.postPage("http://crypt.premget.pl", checkData);
-                br.getPage(response);
-                Debug.println("\n\n\n", br.toString());
-                if (br.containsHTML("Brak")) {
-                    Debug.println("Wyjatek", "Transfer");
-
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Brak transferu!");
-
-                }
-                if (br.containsHTML("Nieprawidlowa")) {
-
-                throw new PluginException(LinkStatus.ERROR_AGB_NOT_SIGNED, "Błędny Login!"); }
-                if (br.containsHTML("Niepoprawny")) {
-
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Nie znaleziono pliku!"); }
-                if (br.containsHTML("Konto")) {
-
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Konto Wygasło!"); }
+        if (!dl.getConnection().isContentDisposition()) // unknown error
+        {
+            br.followConnection();
+            if (br.containsHTML("Brak")) {
+                /* No transfer left */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Brak transferu!");
 
             }
-
-        } else {
-
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("Nieprawidlowa")) {
+                /* Wrong username/password */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Błędny Login!");
+            }
+            if (br.containsHTML("Niepoprawny")) {
+                /* File not found */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Nie znaleziono pliku!");
+            }
+            if (br.containsHTML("Konto")) {
+                /* Account Expired */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Konto Wygasło!");
+            }
         }
+
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
+        dl.startDownload();
         return true;
 
     }
@@ -377,11 +365,10 @@ public class PremGet extends PluginForHost implements JDPremInterface {
                 }
                 ac.setStatus("Nieprawidłowe dane lub brak odpowiedzi serwera" + restartReq);
                 ac.setExpired(true);
-                // ac.setStatus( + "cos");
                 return ac;
             }
 
-            ac.setTrafficLeft(ZwrocRozmiar(Info));
+            ac.setTrafficLeft(GetTransferLeft(Info));
 
             synchronized (LOCK) {
                 premiumHosts.clear();
@@ -403,9 +390,8 @@ public class PremGet extends PluginForHost implements JDPremInterface {
             } else {
                 ac.setExpired(false);
                 if (validUntil != null) {
-                    long data = Long.parseLong(validUntil);
 
-                    ac.setValidUntil(Regex.getMilliSeconds(validUntil));
+                    ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil));
 
                 }
 
@@ -454,7 +440,7 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         if (plugin != null) {
             if (JDPremium.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
-                // return plugin.getMaxSimultanDownload(account);
+
                 return Integer.MAX_VALUE;
             } else if (JDPremium.isEnabled() && enabled) {
                 /* OchLoad */
@@ -464,7 +450,7 @@ public class PremGet extends PluginForHost implements JDPremInterface {
                     ("PremGet.pl") != null) return Integer.MAX_VALUE;
                 }
             }
-            // return plugin.getMaxSimultanDownload(account);
+
             return Integer.MAX_VALUE;
         }
         return 0;
