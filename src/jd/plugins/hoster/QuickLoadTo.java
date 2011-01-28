@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickload.to" }, urls = { "http://[\\w\\.]*?quickload\\.to/\\?Go=Player\\&HashID=FILE[A-Z0-9]+" }, flags = { 0 })
 public class QuickLoadTo extends PluginForHost {
@@ -48,9 +48,17 @@ public class QuickLoadTo extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("custommode=\"none\" movietitle=\"(.*?)\"").getMatch(0);
-        dllink = br.getRegex("\"(http://DIVX\\d+\\.quickload\\.to/\\d+/[a-z0-9]+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("movietitle=\"(.*?)\" src=\"(http://.*?)\"").getMatch(0);
+        String filename = br.getRegex("quickload\\.to/click\\.php\\?id=1\" target=\"_blank\" title=\"(.*?) - 14 Tage kostenlos downloaden").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("14 Tage kostenlos downloaden\" class=\"vtip\">(.*?) - 14 Tage kostenlos downloaden</a>").getMatch(0);
+        }
+        dllink = br.getRegex("name=\"src\" value=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("type=\"video/divx\" src=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://DIVX\\d+\\.quickload.to/\\d+/[a-z0-9]+)\"").getMatch(0);
+            }
+        }
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".avi");

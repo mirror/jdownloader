@@ -23,11 +23,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -42,6 +42,8 @@ public class EuroShareEu extends PluginForHost {
     public String getAGBLink() {
         return "http://euroshare.eu/terms";
     }
+
+    private static final String TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("euroshare.sk", "euroshare.eu"));
@@ -60,13 +62,15 @@ public class EuroShareEu extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(TOOMANYSIMULTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("Neobmedzene<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://s\\d+\\.euroshare\\.eu/download/\\d+/[A-Za-z0-9]+/\\d+/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("iba jeden súbor\\.<a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://euroshare\\.eu/download/\\d+/.*?/\\d+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(TOOMANYSIMULTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -104,16 +108,16 @@ public class EuroShareEu extends PluginForHost {
                 for (DownloadLink dl : links) {
                     String linkWithoutHttp = new Regex(dl.getDownloadURL(), "euroshare\\.eu(/file/\\d+/.+)").getMatch(0);
                     if (linkWithoutHttp == null) {
-                        logger.warning("Ugotfile availablecheck is broken!");
+                        logger.warning("Euroshare.eu availablecheck is broken!");
                         return false;
                     }
-                    String regexForThisLink = "(" + linkWithoutHttp + "<br /><div class=\"small\">(Súbor existuje \\| .*?|Súbor neexistuje)</div>)";
+                    String regexForThisLink = "(" + linkWithoutHttp + "</a><br /><div class=\"small\">(Súbor existuje \\| .*?|Súbor neexistuje)</div>)";
                     String theData = br.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
                         logger.warning("Euroshare.eu availablecheck is broken!");
                         return false;
                     }
-                    String filename = new Regex(theData, "/file/\\d+/(.*?)<br />").getMatch(0);
+                    String filename = new Regex(theData, "/file/\\d+/(.*?)(</a>)?<br />").getMatch(0);
                     String filesize = new Regex(theData, "class=\"small\">Súbor existuje \\| Veľkosť (.*?)</div>").getMatch(0);
                     if (!theData.contains("Súbor existuje") || theData.contains("Súbor neexistuje")) {
                         dl.setAvailable(false);
