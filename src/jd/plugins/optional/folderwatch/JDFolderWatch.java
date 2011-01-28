@@ -174,6 +174,19 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         return menu;
     }
 
+    private void addListModelEntry(JList list, String folder) {
+        DefaultListModel listModel = (DefaultListModel) list.getModel();
+
+        listModel.addElement(folder + " (" + getNumberOfContainerFiles(folder) + ")");
+    }
+
+    private void updateSelectedListEntry(JList list) {
+        DefaultListModel listModel = (DefaultListModel) list.getModel();
+        String folder = folderlist.get(list.getSelectedIndex());
+
+        listModel.set(list.getSelectedIndex(), folder + " (" + getNumberOfContainerFiles(folder) + ")");
+    }
+
     private void initConfigGui() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -181,17 +194,16 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
             e1.printStackTrace();
         }
 
-        final DefaultListModel listModel = new DefaultListModel();
-        for (String folder : folderlist) {
-            listModel.addElement(folder);
-        }
-
-        final JList list = new JList(listModel);
-        list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
         final JDFileChooser filechooser = new JDFileChooser();
         filechooser.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         filechooser.setMultiSelectionEnabled(true);
+
+        final DefaultListModel listModel = new DefaultListModel();
+        final JList list = new JList(listModel);
+        list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+        for (String folder : folderlist)
+            addListModelEntry(list, folder);
 
         config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "gui.label.folderlist", "Folder list"), getIconKey()));
 
@@ -202,10 +214,12 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
                 filechooser.showOpenDialog(null);
 
                 for (File file : filechooser.getSelectedFiles()) {
-                    folderlist.add(file.getAbsolutePath());
-                    listModel.addElement(file.getAbsolutePath());
+                    if (!folderlist.contains(file.getAbsolutePath())) {
+                        folderlist.add(file.getAbsolutePath());
+                        addListModelEntry(list, file.getAbsolutePath());
 
-                    folderlistHasChanged = true;
+                        folderlistHasChanged = true;
+                    }
                 }
             }
         });
@@ -236,19 +250,31 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String folder = (String) list.getSelectedValue();
-                if (folder != null) openInFilebrowser(folder);
+                if (!list.isSelectionEmpty()) {
+                    String folder = folderlist.get(list.getSelectedIndex());
+                    openInFilebrowser(folder);
+                }
             }
         }, JDL.L(JDL_PREFIX + "gui.action.openfolder", "open folder"), JDL.L(JDL_PREFIX + "gui.action.openfolder.long", "Open selected folder with file manager"), JDTheme.II("gui.images.package", 16, 16)));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "gui.action.emptyfolder.message", "Are you sure you want to delete all container files?")), UserIO.RETURN_OK)) {
-                    String folder = (String) list.getSelectedValue();
-                    if (folder != null) emptyFolder(folder);
+                if (!list.isSelectionEmpty()) {
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "gui.action.emptyfolder.message", "Are you sure you want to delete all container files?")), UserIO.RETURN_OK)) {
+                        String folder = folderlist.get(list.getSelectedIndex());
+
+                        emptyFolder(folder);
+                        updateSelectedListEntry(list);
+                    }
                 }
             }
         }, JDL.L(JDL_PREFIX + "gui.action.emptyfolder", "empty folder"), JDL.L(JDL_PREFIX + "gui.action.emptyfolder.long", "Delete all container files within selected folder"), JDTheme.II("gui.images.clear", 16, 16)));
+
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                showGui();
+            }
+        }, JDL.L(JDL_PREFIX + "gui.action.showhistory", "show history"), JDL.L(JDL_PREFIX + "gui.action.showhistory.long", "Show all (imported) containers found by FolderWatch"), JDTheme.II("gui.images.config.eventmanager", 16, 16)));
 
         config.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "gui.label.options", "Options"), getIconKey()));
 
@@ -400,11 +426,19 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
     }
 
     private void deleteContainer(File container) {
-        if (isContainer(container)) container.delete();
+        if (isContainer(container)) {
+            container.delete();
+        }
     }
 
     private void openInFilebrowser(String path) {
-        JDUtilities.openExplorer(new File(path));
+        File dir = new File(path);
+
+        if (dir.exists()) {
+            JDUtilities.openExplorer(dir);
+        } else {
+            UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "action.openfolder.errormessage", "Could not open folder. Folder does not exist!"));
+        }
     }
 
     private boolean emptyFolder(String path) {
@@ -412,7 +446,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
     }
 
     private boolean emptyFolder(File folder) {
-        if (folder.isDirectory()) {
+        if (folder.exists() && folder.isDirectory()) {
             for (File file : folder.listFiles()) {
                 if (isContainer(file)) {
                     file.delete();
@@ -424,12 +458,30 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         return false;
     }
 
+    private boolean isContainer(File file) {
+        if (!file.exists()) return false;
+
+        return isContainer(file.getName());
+    }
+
     private boolean isContainer(String path) {
         return path.matches(".+\\.(dlc|ccf|rsdf)");
     }
 
-    private boolean isContainer(File file) {
-        return isContainer(file.getName());
+    private int getNumberOfContainerFiles(String path) {
+        return getNumberOfContainerFiles(new File(path));
+    }
+
+    private int getNumberOfContainerFiles(File path) {
+        int n = 0;
+
+        if (path.isDirectory()) {
+            for (File file : path.listFiles()) {
+                if (isContainer(file)) n++;
+            }
+        }
+
+        return n;
     }
 
     public void onPreSave(SubConfiguration subConfiguration) {
@@ -464,7 +516,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
             startWatching(true);
 
-            return "JD FolderWatch has been started.";
+            return "FolderWatch has been started.";
         } else if (cmd.matches("(?is).*/addon/folderwatch/action/stop")) {
             toggleAction.setSelected(false);
             subConfig.setProperty(FolderWatchConstants.PROPERTY_ENABLED, false);
@@ -472,7 +524,7 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
 
             startWatching(false);
 
-            return "JD FolderWatch has been stopped.";
+            return "FolderWatch has been stopped.";
         }
 
         return null;
@@ -483,10 +535,10 @@ public class JDFolderWatch extends PluginOptional implements FileMonitoringListe
         Table t = HelpPage.createTable(new Table(this.getHost()));
 
         t.setCommand("/addon/folderwatch/action/start");
-        t.setInfo("Starts JD FolderWatch watching service.");
+        t.setInfo("Starts FolderWatch watching service.");
 
         t.setCommand("/addon/folderwatch/action/stop");
-        t.setInfo("Stops JD FolderWatch watching service.");
+        t.setInfo("Stops FolderWatch watching service.");
 
         // not implemented yet:
         /*
