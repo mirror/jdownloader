@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -35,10 +36,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-import org.appwork.utils.Regex;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
+
+    private static final String ua = RandomUserAgent.generate();
 
     public MegaShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -119,10 +120,9 @@ public class MegaShareCom extends PluginForHost {
         return -1;
     }
 
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -135,7 +135,6 @@ public class MegaShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String reconnectWaittime = br.getRegex("var c = (\\d+);").getMatch(0);
