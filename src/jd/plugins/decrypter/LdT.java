@@ -53,7 +53,6 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            // href="/de/go/4914989-x7.to/"
             String hosterlinks[] = br.getRegex("href=\"((/de)?/go/\\d+-.*?/)\"").getColumn(0);
             String streamlinks[] = br.getRegex("\"((/de)?/go/\\d+-[a-z0-9\\.-]+/streaming/.*?)\"").getColumn(0);
             if ((hosterlinks == null || hosterlinks.length == 0) && (streamlinks == null || streamlinks.length == 0)) return null;

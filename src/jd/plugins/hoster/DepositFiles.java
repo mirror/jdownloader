@@ -30,6 +30,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -164,11 +165,13 @@ public class DepositFiles extends PluginForHost {
         }
     }
 
-    private String getDllink() {
-        String dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("action =  \\'(.*?)\\';").getMatch(0);
-        if (dllink != null) dllink.trim().replaceAll("(\\'|\\+|\\n|\\t|\\r| )", "");
-        return dllink;
+    private String getDllink() throws Exception {
+        String crap = br.getRegex("document\\.getElementById\\(\\'download_container\\'\\)\\.innerHTML = \\'(.*?\\';)").getMatch(0);
+        if (crap == null) return null;
+        crap = crap.replaceAll("(\\'| |\\+|\t|\r|\n)", "");
+        String[] lol = HTMLParser.getHttpLinks(crap, "");
+        if (lol == null || lol.length == 0) return null;
+        return lol[0];
     }
 
     public void checkErrors() throws NumberFormatException, PluginException {
@@ -178,9 +181,12 @@ public class DepositFiles extends PluginForHost {
         /* download not available at the moment */
         if (br.containsHTML("Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         /* limit reached */
-        if (br.containsHTML("You used up your limit") || br.containsHTML("Please try in")) {
+        if (br.containsHTML("You used up your limit") || br.containsHTML("Please try in") || br.containsHTML("You have reached your download time limit")) {
             String wait = br.getRegex("html_download_api-limit_interval\">(\\d+)</span>").getMatch(0);
-            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 1000l);
+            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l);
+            System.out.print(br.toString());
+            wait = br.getRegex(">Try in (\\d+) minutes or use GOLD account").getMatch(0);
+            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         }
         /* county slots full */
