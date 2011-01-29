@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://(www\\.)?cramit\\.in/user/\\d+(/\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://(www\\.)?(cramit\\.in|cramitin\\.(net|eu|us))/user/\\d+(/\\d+)?" }, flags = { 0 })
 public class CramitInUser extends PluginForDecrypt {
 
     public CramitInUser(PluginWrapper wrapper) {
@@ -41,6 +41,7 @@ public class CramitInUser extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCookie("http://" + HOST, "lang", "english");
+        parameter = parameter.replaceAll("cramitin\\.(net|eu|us)", "cramit.in");
         br.getPage(parameter);
         if (br.containsHTML("No such user exist")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] links = br.getRegex("\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})\"").getColumn(0);

@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -69,7 +69,8 @@ public class U115Com extends PluginForHost {
                 filename = br.getRegex(",file_name:\"(.*?)\"").getMatch(0);
             }
         }
-        String filesize = br.getRegex("<li><strong>文件大小</strong>：(.*?)</li>").getMatch(0);
+        String filesize = br.getRegex("文件大小：(.*?)</li>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("u6587\\\\u4ef6\\\\u5927\\\\u5c0f\\\\uff1a(.*?)\\\\r\\\\n\\\\").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.replace(",", "");
         link.setFinalFileName(filename);

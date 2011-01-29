@@ -42,7 +42,7 @@ public class SkipFileComUser extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookie("http://" + HOST, "lang", "english");
         br.getPage(parameter);
-        if (br.containsHTML("No such user exist")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("No such user exist") || !br.containsHTML("</TR><TR align=center>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] links = br.getRegex("\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)
