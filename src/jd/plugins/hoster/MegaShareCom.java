@@ -199,7 +199,7 @@ public class MegaShareCom extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("Invalid Captcha Value")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("This file is password protected.")) {
-                logger.warning("Wrong password!");
+                logger.warning("Wrong password!!");
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }

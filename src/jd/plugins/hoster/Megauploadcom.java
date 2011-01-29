@@ -33,21 +33,21 @@ import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -134,12 +134,23 @@ public class Megauploadcom extends PluginForHost {
 
     private void antiJDBlock(final Browser br) {
         try {
+            workAroundTimeOut(br);
             if (br == null) { return; }
             br.getHeaders().put("User-Agent", Megauploadcom.agent);
             br.setAcceptLanguage("en-us,en;q=0.5");
             br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
         } catch (Throwable e) {
             /* setCookie throws exception in 09580 */
+        }
+    }
+
+    private static void workAroundTimeOut(final Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(30000);
+            }
+        } catch (final Throwable e) {
         }
     }
 
@@ -287,6 +298,13 @@ public class Megauploadcom extends PluginForHost {
             } catch (final Throwable ee) {
             }
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, url, resume, this.isPremium(account, this.br.cloneBrowser(), false, true) ? 0 : 1);
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getRequest().setConnectTimeout(30000);
+                dl.getRequest().setReadTimeout(60000);
+            } catch (final Throwable ee) {
+            }
             if (!this.dl.getConnection().isOK()) {
                 this.dl.getConnection().disconnect();
                 if (this.dl.getConnection().getResponseCode() == 416) {
