@@ -32,11 +32,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -132,6 +132,7 @@ public class Uploadedto extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        workAroundTimeOut(br);
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
@@ -187,9 +188,18 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
 
+    private static void workAroundTimeOut(final Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(30000);
+            }
+        } catch (final Throwable e) {
+        }
+    }
+
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         login(account);
@@ -233,7 +243,13 @@ public class Uploadedto extends PluginForHost {
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
-
+        try {
+            /* remove next major update */
+            /* workaround for broken timeout in 0.9xx public */
+            dl.getRequest().setConnectTimeout(30000);
+            dl.getRequest().setReadTimeout(60000);
+        } catch (final Throwable ee) {
+        }
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -260,9 +276,10 @@ public class Uploadedto extends PluginForHost {
         String id = downloadLink.getStringProperty("id");
         try {
             Browser br = new Browser();
+            workAroundTimeOut(br);
             br.setDebug(true);
             br.getPage("http://uploaded.to/rarerrors?auth=" + Encoding.urlEncode(id) + "&server=" + Encoding.urlEncode(server) + "&flag=" + (b ? 1 : 0));
-        } catch (IOException e) {
+        } catch (final Throwable e) {
             e.printStackTrace();
         }
     }
@@ -277,6 +294,7 @@ public class Uploadedto extends PluginForHost {
         this.correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         LINK_OBSERVER.register(downloadLink);
+        workAroundTimeOut(br);
         br.setFollowRedirects(true);
         String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
         int retry = 0;
@@ -328,6 +346,7 @@ public class Uploadedto extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
+        workAroundTimeOut(br);
         br.setCookie("http://uploaded.to/", "lang", "de");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -403,10 +422,24 @@ public class Uploadedto extends PluginForHost {
             }
             if (br.containsHTML(RECAPTCHA)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getRequest().setConnectTimeout(30000);
+                dl.getRequest().setReadTimeout(60000);
+            } catch (final Throwable ee) {
+            }
         } else {
             String dlLink = br.getRedirectLocation();
             if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getRequest().setConnectTimeout(30000);
+                dl.getRequest().setReadTimeout(60000);
+            } catch (final Throwable ee) {
+            }
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();

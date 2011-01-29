@@ -27,11 +27,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -90,7 +90,8 @@ public class Mega1280Com extends PluginForHost {
         String wait = br.getRegex("var count = (\\d+);").getMatch(0);
         if (wait == null || downloadURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(Long.parseLong(wait) * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 1);
+        /* seems no longer to allow resume for free users */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.Mega1280Com.Servererror", "Servererror!"), 60 * 60 * 1000l);
@@ -108,6 +109,7 @@ public class Mega1280Com extends PluginForHost {
         String postData = "user_email=" + Encoding.urlEncode(mailPart1) + " &lstdomain_mail=" + Encoding.urlEncode(mailPart2) + "&user_password=" + Encoding.urlEncode(account.getPass()) + "&auto_login=1&btnLogin=+&user_previous=index.php";
         br.postPage("http://psp.1280.com/login.php", postData);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://psp.1280.com/errors.php?error=active")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.getCookie("http://psp.1280.com/", "1280_userpass") == null || br.getCookie("http://psp.1280.com/", "1280_userid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -120,14 +122,17 @@ public class Mega1280Com extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://mega.1280.com/statistic.php");
-        String days = br.getRegex("<b>Thời hạn dùng:</b></td>[\t\n\r ]+<td height=\"25\" align=\"left\" valign=\"top\">(\\d+)\\&nbsp;").getMatch(0);
-        if (days != null) {
-            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 60 * 60 * 1000));
-        } else {
-            ai.setExpired(true);
-            return ai;
-        }
+        /* TODO: needs to get fixed but i cant read the language */
+        // br.getPage("http://mega.1280.com/statistic.php");
+        // String days =
+        // br.getRegex("<b>Thời hạn dùng:</b></td>[\t\n\r ]+<td height=\"25\" align=\"left\" valign=\"top\">(\\d+)\\&nbsp;").getMatch(0);
+        // if (days != null) {
+        // ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) *
+        // 24 * 60 * 60 * 1000));
+        // } else {
+        // ai.setExpired(true);
+        // return ai;
+        // }
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
@@ -138,9 +143,13 @@ public class Mega1280Com extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
-        Form dlForm = br.getFormbyProperty("name", "frm_download");
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, true, 1);
+        if (br.getRedirectLocation() != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 1);
+        } else {
+            Form dlForm = br.getFormbyProperty("name", "frm_download");
+            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, true, 1);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.Mega1280Com.Servererror", "Servererror!"), 60 * 60 * 1000l);
