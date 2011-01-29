@@ -30,21 +30,22 @@ import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Application;
 
 @OptionalPlugin(rev = "$Revision$", id = "webinterface", interfaceversion = 7)
 public class JDWebinterface extends PluginOptional {
     static public JDWebinterface instance;
-    static final String PROPERTY_HTTPS = "PARAM_HTTPS";
-    static final String PROPERTY_LOGIN = "PARAM_LOGIN";
-    static final String PROPERTY_PASS = "PARAM_PASS";
-    static final String PROPERTY_PORT = "PARAM_PORT";
-    static final String PROPERTY_REFRESH = "PARAM_REFRESH";
-    static final String PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
-    static final String PROPERTY_LOCALHOST_ONLY = "PROPERTY_LOCALHOST_ONLY";
+    static final String          PROPERTY_HTTPS            = "PARAM_HTTPS";
+    static final String          PROPERTY_LOGIN            = "PARAM_LOGIN";
+    static final String          PROPERTY_PASS             = "PARAM_PASS";
+    static final String          PROPERTY_PORT             = "PARAM_PORT";
+    static final String          PROPERTY_REFRESH          = "PARAM_REFRESH";
+    static final String          PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
+    static final String          PROPERTY_LOCALHOST_ONLY   = "PROPERTY_LOCALHOST_ONLY";
 
-    static final String PROPERTY_USER = "PARAM_USER";
+    static final String          PROPERTY_USER             = "PARAM_USER";
 
     public JDWebinterface(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,7 +88,7 @@ public class JDWebinterface extends PluginOptional {
     @Override
     public boolean initAddon() {
         new JDSimpleWebserver();
-        logger.info("WebInterface ok: java " + JDUtilities.getJavaVersion());
+        logger.info("WebInterface ok: java " + Application.getJavaVersion());
         return true;
     }
 

@@ -11,8 +11,9 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Application;
 
 import com.sun.awt.AWTUtilities;
 
@@ -39,7 +40,7 @@ public class JDInfoBar extends PluginOptional {
 
     private void initConfigEntries() {
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (Application.getJavaVersion() >= 16000000) {
             ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_OPACITY, JDL.L(JDL_PREFIX + "opacity", "Opacity of the Dialog [in %]"), 1, 100, 10) {
                 private static final long serialVersionUID = 1L;
 
@@ -101,7 +102,7 @@ public class JDInfoBar extends PluginOptional {
                 infoDialog = InfoDialog.getInstance(activateAction);
                 infoDialog.setEnableDropLocation(getPluginConfig().getBooleanProperty(PROPERTY_DROPLOCATION, true));
                 infoDialog.setEnableDocking(getPluginConfig().getBooleanProperty(PROPERTY_DOCKING, true));
-                if (JDUtilities.getJavaVersion() >= 1.6) updateOpacity(null);
+                if (Application.getJavaVersion() >= 16000000) updateOpacity(null);
             }
             infoDialog.showDialog();
         } else {

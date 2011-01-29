@@ -230,18 +230,6 @@ public class JDUtilities {
     }
 
     /**
-     * @return Gibt die verwendete java Version als Double Value zurueck. z.B.
-     *         1.603
-     */
-    public static Double getJavaVersion() {
-        final String version = System.getProperty("java.version");
-        final int dotIndex = version.indexOf('.');
-        final int majorVersion = Formatter.filterInt(version.substring(0, dotIndex));
-        final int subversion = Formatter.filterInt(version.substring(dotIndex + 1));
-        return Double.parseDouble(majorVersion + "." + subversion);
-    }
-
-    /**
      * Liefert einen URLClassLoader zurueck, um Dateien aus dem Stammverzeichnis
      * zu laden
      * 

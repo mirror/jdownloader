@@ -23,8 +23,9 @@ import javax.swing.AbstractAction;
 import jd.gui.action.JDAction;
 import jd.gui.swing.GuiRunnable;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Application;
 
 public abstract class ToolBarAction extends JDAction {
     /**
@@ -84,7 +85,7 @@ public abstract class ToolBarAction extends JDAction {
     public final void actionPerformed(ActionEvent e) {
         if (this.type == Types.TOGGLE) {
             updateIcon();
-            if (JDUtilities.getJavaVersion() < 1.6) this.setSelected(!this.isSelected());
+            if (Application.getJavaVersion() < 16000000) this.setSelected(!this.isSelected());
         }
         if (getActionListener() != null) {
             getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));

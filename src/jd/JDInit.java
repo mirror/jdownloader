@@ -64,6 +64,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -440,9 +441,9 @@ public class JDInit {
                     if (help == null) {
                         continue;
                     }
-
+                    double cJavaV = Application.getJavaVersion() / 10000000.0d;
                     if (help.windows() && OSDetector.isWindows() || (help.linux() && OSDetector.isLinux()) || help.mac() && OSDetector.isMac()) {
-                        if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
+                        if (cJavaV >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
                             new OptionalPluginWrapper(c, help);
                             list.add(cName);
                         }

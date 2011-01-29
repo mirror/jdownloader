@@ -45,9 +45,9 @@ import javax.swing.table.TableColumnModel;
 import jd.config.SubConfiguration;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.jdesktop.swingx.JXTable;
 
 public class JDTable extends JXTable {
@@ -101,7 +101,7 @@ public class JDTable extends JXTable {
         this.installColumnControlButton();
         this.getTableHeader().setPreferredSize(new Dimension(this.getColumnModel().getTotalColumnWidth(), 19));
         // This method is 1.6 only
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (Application.getJavaVersion() >= 16000000) {
             this.setFillsViewportHeight(true);
         }
 

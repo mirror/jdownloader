@@ -26,6 +26,8 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
+
 public class OptionalPluginWrapper extends PluginWrapper {
 
     private static final ArrayList<OptionalPluginWrapper> OPTIONAL_WRAPPER = new ArrayList<OptionalPluginWrapper>();
@@ -93,10 +95,9 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     private PluginOptional loadPlugin() {
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Double version = JDUtilities.getJavaVersion();
-
-        if (version < this.version) {
-            logger.finer("Plugin " + this.getClassName() + " requires Java Version " + this.version + " your Version is: " + version);
+        double cJavaV = Application.getJavaVersion() / 10000000.0d;
+        if (cJavaV < this.version) {
+            logger.finer("Plugin " + this.getClassName() + " requires Java Version " + this.version + " your Version is: " + cJavaV);
             return null;
         }
         logger.finer("Try to initialize " + this.getClassName());

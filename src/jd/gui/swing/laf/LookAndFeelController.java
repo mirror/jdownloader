@@ -46,14 +46,16 @@ import jd.nutils.OSDetector;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Application;
+
 public class LookAndFeelController {
 
     /**
      *Config parameter to store the users laf selection
      */
-    public static final String PARAM_PLAF = "PLAF5";
+    public static final String PARAM_PLAF     = "PLAF5";
     public static final String DEFAULT_PREFIX = "LAF_CFG";
-    private static boolean uiInitated = false;
+    private static boolean     uiInitated     = false;
 
     /**
      * Collects all supported LAFs for the current system
@@ -67,7 +69,7 @@ public class LookAndFeelController {
         for (int i = 0; i < lafis.length; i++) {
             String clname = lafis[i].getClassName();
 
-            if (clname.contains("Substance") && JDUtilities.getJavaVersion() >= 1.6) {
+            if (clname.contains("Substance") && Application.getJavaVersion() >= 16000000) {
                 ret.add(new LookAndFeelWrapper(lafis[i]).setName(lafis[i].getName().replaceAll("([A-Z0-9]\\d*)", " $0").trim()));
             } else if (clname.contains("Synthetica")) {
                 ret.add(new LookAndFeelWrapper(lafis[i]).setName(lafis[i].getName().replaceAll("([A-Z0-9]\\d*)", " $0").trim()));

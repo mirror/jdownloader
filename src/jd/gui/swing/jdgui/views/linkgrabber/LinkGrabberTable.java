@@ -65,9 +65,10 @@ import jd.plugins.DownloadLinkInfoCache;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.MenuScroller;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Application;
 
 class PropMenuItem extends JMenuItem implements ActionListener {
 
@@ -111,7 +112,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
         this.linkgrabber = linkgrabber;
         addMouseListener(this);
         addKeyListener(this);
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (Application.getJavaVersion() >= 16000000) {
             setDropMode(DropMode.USE_SELECTION);
         }
         setDragEnabled(true);

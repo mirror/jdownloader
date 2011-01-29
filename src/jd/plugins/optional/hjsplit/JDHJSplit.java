@@ -56,6 +56,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 
@@ -227,7 +228,7 @@ public class JDHJSplit extends PluginOptional {
      * @return
      */
     private boolean checkSize(ArrayList<File> files, DownloadLink extractTo) {
-        if (JDUtilities.getJavaVersion() < 1.6) return true;
+        if (Application.getJavaVersion() < 16000000) return true;
 
         long totalSize = 0;
 

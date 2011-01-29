@@ -61,6 +61,8 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
+
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "trayicon", interfaceversion = 7, minJVM = 1.6)
 public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener, LinkGrabberControllerListener, WindowStateListener {
 
@@ -132,8 +134,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
             @Override
             public Boolean runSave() {
-                if (JDUtilities.getJavaVersion() < 1.6) {
-                    logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
+                if (Application.getJavaVersion() < 16000000) {
+                    logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
                     return false;
                 }
                 if (!SystemTray.isSupported()) {

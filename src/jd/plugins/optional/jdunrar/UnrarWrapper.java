@@ -36,9 +36,9 @@ import jd.nutils.io.Signature;
 import jd.nutils.jobber.JDRunnable;
 import jd.plugins.DownloadLink;
 import jd.utils.EditDistance;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 
 /**
@@ -171,7 +171,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
      * @return
      */
     private boolean checkSize() {
-        if (JDUtilities.getJavaVersion() < 1.6) return true;
+        if (Application.getJavaVersion() < 16000000) return true;
 
         File f = extractTo;
 

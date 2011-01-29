@@ -22,11 +22,13 @@ import java.io.File;
 import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 
+import org.appwork.utils.Application;
+
 public class GetExplorer {
 
     private static final String PARAM_FILE_BROWSER = "PARAM_FILE_BROWSER";
 
-    private static Object[] explorer = JDUtilities.getConfiguration().getGenericProperty(PARAM_FILE_BROWSER, (Object[]) null);
+    private static Object[]     explorer           = JDUtilities.getConfiguration().getGenericProperty(PARAM_FILE_BROWSER, (Object[]) null);
 
     /**
      * Versucht den Programmpfad zum Explorer zu finden
@@ -79,7 +81,7 @@ public class GetExplorer {
     public static boolean openExplorer(File path) {
         if (path == null) return false;
 
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (Application.getJavaVersion() >= 16000000) {
             try {
                 Desktop.getDesktop().open(path);
                 return true;

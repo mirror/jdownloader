@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
@@ -31,6 +33,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}(/[a-z0-9]+)?" }, flags = { 0 })
 public class FilesMailRu extends PluginForHost {
+
+    private static AtomicInteger freeCounter = new AtomicInteger(0);
+    private static int           maxFree     = -1;
 
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -121,27 +126,37 @@ public class FilesMailRu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        String finallink = br.getRegex(DLLINKREGEX).getMatch(0);
-        if (finallink == null) {
-            logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        goToSleep(downloadLink);
-        // Errorhandling, sometimes the link which is usually renewed by the
-        // linkgrabber doesn't work and needs to be refreshed again!
-        int chunks = -10;
-        if (downloadLink.getStringProperty("disablechunks") != null) chunks = 1;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
-        if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!");
-        dl.startDownload();
-        if (downloadLink.getLinkStatus().getErrorMessage() != null) {
-            if (downloadLink.getLinkStatus().getErrorMessage().contains("Service Temporarily Unavailable")) {
-                downloadLink.setProperty("disablechunks", "disable");
-                downloadLink.setChunksProgress(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Chunkerror");
+        freeCounter.incrementAndGet();
+        try {
+            requestFileInformation(downloadLink);
+            br.setFollowRedirects(false);
+            String finallink = br.getRegex(DLLINKREGEX).getMatch(0);
+            if (finallink == null) {
+                logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            goToSleep(downloadLink);
+            // Errorhandling, sometimes the link which is usually renewed by the
+            // linkgrabber doesn't work and needs to be refreshed again!
+            int chunks = -10;
+            if (downloadLink.getStringProperty("disablechunks") != null) chunks = 1;
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
+            if (dl.getConnection().getResponseCode() == 503) {
+                /* sets current max for free for this session */
+                final int max = freeCounter.get();
+                maxFree = Math.max(1, max);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!");
+            }
+            dl.startDownload();
+            if (downloadLink.getLinkStatus().getErrorMessage() != null) {
+                if (downloadLink.getLinkStatus().getErrorMessage().contains("Service Temporarily Unavailable")) {
+                    downloadLink.setProperty("disablechunks", "disable");
+                    downloadLink.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Chunkerror");
+                }
+            }
+        } finally {
+            freeCounter.decrementAndGet();
         }
     }
 

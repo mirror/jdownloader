@@ -8,13 +8,14 @@ import java.awt.event.MouseEvent;
 import javax.swing.JButton;
 
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.Application;
 
 public abstract class JDCloseButton extends JButton implements ActionListener {
 
     private static final long serialVersionUID = -8939894934856422310L;
 
-    private JDCloseAction closeAction;
+    private JDCloseAction     closeAction;
 
     public JDCloseButton() {
         super();
@@ -43,7 +44,7 @@ public abstract class JDCloseButton extends JButton implements ActionListener {
             }
         });
         setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
-        if (JDUtilities.getJavaVersion() >= 1.6) setHideActionText(true);
+        if (Application.getJavaVersion() >= 16000000) setHideActionText(true);
     }
 
     private final void setBorder(boolean state) {

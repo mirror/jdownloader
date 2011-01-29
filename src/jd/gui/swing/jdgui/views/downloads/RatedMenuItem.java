@@ -14,10 +14,10 @@ import javax.swing.JSeparator;
 
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
+import org.appwork.utils.Application;
 
 public class RatedMenuItem implements ActionListener {
     // delegate for an Action
@@ -127,7 +127,7 @@ public class RatedMenuItem implements ActionListener {
      * 
      * @param popup
      */
-    public void addToPopup(final JMenu popup) {        
+    public void addToPopup(final JMenu popup) {
         if (this.action != null) {
             if (this.action._action instanceof MenuAction) {
 
@@ -144,7 +144,7 @@ public class RatedMenuItem implements ActionListener {
         }
     }
 
-    public void addToPopup(final JPopupMenu popup) {       
+    public void addToPopup(final JPopupMenu popup) {
         if (this.action != null) {
             if (this.action._action instanceof MenuAction) {
                 popup.add(this.getJMenuItem(((MenuAction) this.action._action)));
@@ -169,7 +169,7 @@ public class RatedMenuItem implements ActionListener {
             ret.addActionListener(this.action);
             return ret;
         case TOGGLE:
-            if (JDUtilities.getJavaVersion() >= 1.6) {
+            if (Application.getJavaVersion() >= 16000000) {
                 // Togglebuttons for 1.6
                 final JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(mi);
                 m2.addActionListener(this.action);

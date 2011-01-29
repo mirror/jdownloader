@@ -48,48 +48,48 @@ class LinkGrabberControllerBroadcaster extends Eventsender<LinkGrabberController
 
 public class LinkGrabberController implements LinkGrabberFilePackageListener, LinkGrabberControllerListener {
 
-    public final static Object ControllerLock = new Object();
+    public final static Object                       ControllerLock             = new Object();
 
-    public static final byte MOVE_BEFORE = 1;
-    public static final byte MOVE_AFTER = 2;
-    public static final byte MOVE_BEGIN = 3;
-    public static final byte MOVE_END = 4;
-    public static final byte MOVE_TOP = 5;
-    public static final byte MOVE_BOTTOM = 6;
-    public static final byte MOVE_UP = 7;
-    public static final byte MOVE_DOWN = 8;
+    public static final byte                         MOVE_BEFORE                = 1;
+    public static final byte                         MOVE_AFTER                 = 2;
+    public static final byte                         MOVE_BEGIN                 = 3;
+    public static final byte                         MOVE_END                   = 4;
+    public static final byte                         MOVE_TOP                   = 5;
+    public static final byte                         MOVE_BOTTOM                = 6;
+    public static final byte                         MOVE_UP                    = 7;
+    public static final byte                         MOVE_DOWN                  = 8;
 
-    public static final String PARAM_ONLINECHECK = "PARAM_ONLINECHECK";
-    public static final String PARAM_REPLACECHARS = "PARAM_REPLACECHARS";
-    public static final String PARAM_INFOPANEL_ONLINKGRAB = "PARAM_INFOPANEL_ONLINKGRAB";
-    public static final String CONFIG = "LINKGRABBER";
-    public static final String IGNORE_LIST = "IGNORE_LIST";
-    public static final String DONTFORCEPACKAGENAME = "dontforcename";
-    public static final String PARAM_CONTROLPOSITION = "PARAM_CONTROLPOSITION";
-    public static final String PARAM_USE_CNL2 = "PARAM_USE_CNL2";
-    public static final String PARAM_NEWPACKAGES = "PARAM_NEWPACKAGES";
+    public static final String                       PARAM_ONLINECHECK          = "PARAM_ONLINECHECK";
+    public static final String                       PARAM_REPLACECHARS         = "PARAM_REPLACECHARS";
+    public static final String                       PARAM_INFOPANEL_ONLINKGRAB = "PARAM_INFOPANEL_ONLINKGRAB";
+    public static final String                       CONFIG                     = "LINKGRABBER";
+    public static final String                       IGNORE_LIST                = "IGNORE_LIST";
+    public static final String                       DONTFORCEPACKAGENAME       = "dontforcename";
+    public static final String                       PARAM_CONTROLPOSITION      = "PARAM_CONTROLPOSITION";
+    public static final String                       PARAM_USE_CNL2             = "PARAM_USE_CNL2";
+    public static final String                       PARAM_NEWPACKAGES          = "PARAM_NEWPACKAGES";
 
-    public static final String PROPERTY_EXPANDED = "lg_expanded";
-    public static final String PROPERTY_USEREXPAND = "lg_userexpand";
+    public static final String                       PROPERTY_EXPANDED          = "lg_expanded";
+    public static final String                       PROPERTY_USEREXPAND        = "lg_userexpand";
 
-    private static ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
-    private static final HashSet<String> extensionFilter = new HashSet<String>();
+    private static ArrayList<LinkGrabberFilePackage> packages                   = new ArrayList<LinkGrabberFilePackage>();
+    private static final HashSet<String>             extensionFilter            = new HashSet<String>();
 
-    private static LinkGrabberController INSTANCE = null;
+    private static LinkGrabberController             INSTANCE                   = null;
 
-    private LinkGrabberControllerBroadcaster broadcaster;
+    private LinkGrabberControllerBroadcaster         broadcaster;
 
-    private static String[] filter;
+    private static String[]                          filter;
 
-    private ConfigPropertyListener cpl;
-    private LinkGrabberFilePackage FP_UNSORTED;
-    private LinkGrabberFilePackage FP_UNCHECKED;
-    private LinkGrabberFilePackage FP_OFFLINE;
-    private LinkGrabberFilePackage FP_FILTERED;
-    private LinkGrabberDistributeEvent distributer = null;
-    private LinkGrabberPackagingEvent customizedpackager = null;
+    private ConfigPropertyListener                   cpl;
+    private LinkGrabberFilePackage                   FP_UNSORTED;
+    private LinkGrabberFilePackage                   FP_UNCHECKED;
+    private LinkGrabberFilePackage                   FP_OFFLINE;
+    private LinkGrabberFilePackage                   FP_FILTERED;
+    private LinkGrabberDistributeEvent               distributer                = null;
+    private LinkGrabberPackagingEvent                customizedpackager         = null;
 
-    private Logger logger;
+    private Logger                                   logger;
 
     public synchronized static LinkGrabberController getInstance() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberController();
@@ -577,6 +577,13 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         }
     }
 
+    /**
+     * example how to use filter to block ALL except one hoster
+     * http://(?!.*?megaupload.com).*?/.+
+     * 
+     * @param element
+     * @return
+     */
     public static boolean isFiltered(DownloadLink element) {
         if (filter == null || filter.length == 0) return false;
         synchronized (filter) {

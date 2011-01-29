@@ -25,7 +25,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.Application;
 
 public class MenuAction extends ToolBarAction {
 
@@ -97,7 +98,7 @@ public class MenuAction extends ToolBarAction {
         case NORMAL:
             return new JMenuItem(this);
         case TOGGLE:
-            if (JDUtilities.getJavaVersion() >= 1.6) {
+            if (Application.getJavaVersion() >= 16000000) {
                 // Togglebuttons for 1.6
                 final JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(this);
 

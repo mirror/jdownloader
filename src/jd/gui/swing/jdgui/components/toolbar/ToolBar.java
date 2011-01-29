@@ -38,9 +38,9 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
 
 public class ToolBar extends JToolBar {
@@ -124,7 +124,7 @@ public class ToolBar extends JToolBar {
                 switch (action.getType()) {
                 case NORMAL:
                     this.add(ab = new JButton(action), "w 32!");
-                    if (JDUtilities.getJavaVersion() >= 1.6) {
+                    if (Application.getJavaVersion() >= 16000000) {
                         ab.setHideActionText(true);
                     }
                     lastseparator = false;
@@ -137,10 +137,10 @@ public class ToolBar extends JToolBar {
                     break;
                 case TOGGLE:
                     this.add(ab = new JToggleButton(action), "w 32!");
-                    if (JDUtilities.getJavaVersion() >= 1.6) {
+                    if (Application.getJavaVersion() >= 16000000) {
                         ab.setHideActionText(true);
                     }
-                    if (JDUtilities.getJavaVersion() < 1.6) {
+                    if (Application.getJavaVersion() < 16000000) {
                         final AbstractButton button = ab;
                         ab.setSelected(action.isSelected());
                         action.addPropertyChangeListener(new PropertyChangeListener() {
@@ -175,7 +175,7 @@ public class ToolBar extends JToolBar {
                 }
 
                 if (ab != null) {
-                    if (JDUtilities.getJavaVersion() < 1.6) {
+                    if (Application.getJavaVersion() < 16000000) {
                         if (action.getValue(Action.LARGE_ICON_KEY) != null) {
                             ab.setIcon((Icon) action.getValue(Action.LARGE_ICON_KEY));
                         }

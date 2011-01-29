@@ -78,6 +78,8 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
+
 public class DownloadTable extends JDTable implements MouseListener, KeyListener {
 
     public static final String       PROPERTY_EXPANDED = "expanded";
@@ -98,7 +100,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         this.panel = panel;
         this.addMouseListener(this);
         this.addKeyListener(this);
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (Application.getJavaVersion() >= 16000000) {
             this.setDropMode(DropMode.USE_SELECTION);
         }
         this.setDragEnabled(true);
@@ -208,7 +210,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
              * Desktop-Class (e.g. to open a file with correct application) is
              * only supported by v1.6 or higher
              */
-            if (JDUtilities.getJavaVersion() >= 1.6) {
+            if (Application.getJavaVersion() >= 16000000) {
                 // check if open a file is supported by this operating
                 // system (on linux maybe wrong GNOME version)
                 if (Desktop.isDesktopSupported()) {
@@ -232,10 +234,9 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
                 }
             }
-        }        
+        }
         ret.add(RatedMenuItem.createSeparator());
         ret.add(new RatedMenuItem("PRIORITY", this.createPrioMenu(alllinks), 0));
-        
 
         return ret;
     }

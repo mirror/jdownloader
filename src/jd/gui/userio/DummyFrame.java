@@ -23,7 +23,8 @@ import javax.swing.JFrame;
 
 import jd.gui.swing.SwingGui;
 import jd.nutils.JDImage;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.Application;
 
 /**
  * Dumme JFRame from which dialogs can inherit the icon. workaround for 1.5
@@ -45,7 +46,7 @@ public class DummyFrame extends JFrame {
     private DummyFrame() {
         super();
 
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (Application.getJavaVersion() >= 16000000) {
             ArrayList<Image> list = new ArrayList<Image>();
             list.add(JDImage.getImage("logo/logo_14_14"));
             list.add(JDImage.getImage("logo/logo_15_15"));

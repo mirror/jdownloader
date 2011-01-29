@@ -38,6 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 
 /**
@@ -216,7 +217,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return
      */
     private boolean checkSize(final DownloadLink dlLink) {
-        if (JDUtilities.getJavaVersion() < 1.6) { return true; }
+        if (Application.getJavaVersion() < 16000000) { return true; }
 
         File f = new File(dlLink.getFileOutput()).getParentFile();
 
@@ -708,12 +709,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         this.setStopMark(DownloadWatchDog.nostopMark);
                     }
                     /* restore speed limit */
-                    if (JSonWrapper.get("DOWNLOAD").hasProperty("MAXSPEEDBEFOREPAUSE")) {
-                        DownloadWatchDog.LOG.info("Restoring old speedlimit");
-                        JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JSonWrapper.get("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
-                        JSonWrapper.get("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
-                        JSonWrapper.get("DOWNLOAD").save();
-                    }
                     /* full start reached */
                     DownloadWatchDog.LOG.info("DownloadWatchDog: start");
                     JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));

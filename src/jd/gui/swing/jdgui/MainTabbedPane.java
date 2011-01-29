@@ -37,13 +37,14 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.Application;
 
 public class MainTabbedPane extends JTabbedPane implements MouseListener {
 
-    private static final long serialVersionUID = -1531827591735215594L;
+    private static final long     serialVersionUID = -1531827591735215594L;
     private static MainTabbedPane INSTANCE;
-    protected View latestSelection;
+    protected View                latestSelection;
 
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) INSTANCE = new MainTabbedPane();
@@ -86,7 +87,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
     }
 
     private void addClosableTab(ClosableView view) {
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (Application.getJavaVersion() >= 16000000) {
             super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
             view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
             this.setTabComponentAt(this.getTabCount() - 1, new ClosableTabHeader(view));
@@ -101,7 +102,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
         this.setMinimumSize(new Dimension(300, 100));
         this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         this.setOpaque(false);
-        if (JDUtilities.getJavaVersion() < 1.6) {
+        if (Application.getJavaVersion() < 16000000) {
             addMouseListener(this);
         }
 
@@ -213,10 +214,10 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
      * in JBuilder. This value is null if no extra icon is required.
      */
     private class CloseTabIcon implements Icon {
-        private int x_pos;
-        private int y_pos;
-        private int width;
-        private int height;
+        private int  x_pos;
+        private int  y_pos;
+        private int  width;
+        private int  height;
         private Icon fileIcon;
 
         public CloseTabIcon(Icon fileIcon) {

@@ -83,6 +83,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
@@ -476,7 +477,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      * {@link JFrame#setIconImage(Image)}
      */
     private void setWindowIcon() {
-        if (JDUtilities.getJavaVersion() >= 1.6) {
+        if (Application.getJavaVersion() >= 16000000) {
             final ArrayList<Image> list = new ArrayList<Image>();
             list.add(JDImage.getImage("logo/logo_14_14"));
             list.add(JDImage.getImage("logo/logo_15_15"));

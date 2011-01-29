@@ -74,6 +74,7 @@ import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
@@ -1367,7 +1368,7 @@ public class JDChat extends PluginOptional {
 
             } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_VERSION)) {
 
-                final String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + CrossSystem.getOSString() + " system";
+                final String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + Application.getJavaVersion() + " on a " + CrossSystem.getOSString() + " system";
                 this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + this.prepareToSend(msg) + new String(new byte[] { 1 }));
                 this.addToText(null, JDChat.STYLE_ACTION, this.conn.getNick() + " " + Utils.prepareMsg(msg));
             } else if (org.appwork.utils.Regex.matches(cmd, JDChat.CMD_MODE)) {

@@ -27,6 +27,8 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
+
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mit
  * Platzhaltern werte einzusetzen
@@ -125,7 +127,7 @@ public final class Replacer {
             return Formatter.fillInteger(c.get(Calendar.HOUR_OF_DAY), 2, "0") + ":" + Formatter.fillInteger(c.get(Calendar.MINUTE), 2, "0") + ":" + Formatter.fillInteger(c.get(Calendar.SECOND), 2, "0");
         }
 
-        if (key.equalsIgnoreCase("SYSTEM.JAVA_VERSION")) { return JDUtilities.getJavaVersion().toString(); }
+        if (key.equalsIgnoreCase("SYSTEM.JAVA_VERSION")) { return Application.getJavaVersion() + ""; }
 
         if (key.equalsIgnoreCase("JD.REVISION")) { return JDUtilities.getRevision(); }
 
