@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -73,7 +73,7 @@ public class FurkNet extends PluginForHost {
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove(null);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String waittime = br.getRegex("id=\"free_dl_countdown\">(\\d+)</div>").getMatch(0);
         if (waittime != null) {
             // waittime
@@ -84,7 +84,9 @@ public class FurkNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
+            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.followConnection();
+            if (br.containsHTML(">File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("Slots limit for free downloads")) {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60000);
