@@ -62,16 +62,16 @@ import org.appwork.utils.Regex;
  * 
  */
 public class Multi implements IExtraction {
-    private static final String      DUMMY_HOSTER    = "dum.my";
-    private static final String      PRIORITY        = "PRIORITY";
+    private static final String      DUMMY_HOSTER       = "dum.my";
+    private static final String      PRIORITY           = "PRIORITY";
 
-    private static final String      PatternRar      = "(?i).*\\.rar$";
-    private static final String      PatternRarMulti = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
-    private static final String      PatternZip      = "(?i).*\\.zip$";
-    private static final String      PatternTarGz    = "(?i).*\\.tar\\.gz$";
-    private static final String      PatternTarBz2   = "(?i).*\\.tar\\.bz2$";
-    private static final String      Pattern7z       = "(?i).*\\.7z$";
-    private static final String      Pattern7zMulti  = "(?i).*\\.7z\\.\\d+$";
+    private static final String      PatternRar         = "(?i).*\\.rar$";
+    private static final String      PatternRarMulti    = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
+    private static final String      PatternZip         = "(?i).*\\.zip$";
+    private static final String      PatternTarGz       = "(?i).*\\.tar\\.gz$";
+    private static final String      PatternTarBz2      = "(?i).*\\.tar\\.bz2$";
+    private static final String      Pattern7z          = "(?i).*\\.7z$";
+    private static final String      Pattern7zMulti     = "(?i).*\\.7z\\.\\d+$";
 
     private Archive                  archive;
     private int                      crack;
@@ -83,7 +83,10 @@ public class Multi implements IExtraction {
     private Logger                   logger;
 
     // Indicates that the passwordcheck works with only open the archive.
-    private boolean                  passwordArchive = false;
+    private boolean                  passwordArchive    = false;
+
+    // Indicates that the passwordcheck works with extracting the archive.
+    private boolean                  passwordExtracting = false;
 
     /** For 7z */
     private MultiOpener              multiopener;
@@ -247,6 +250,11 @@ public class Multi implements IExtraction {
                         final String path = item.getPath();
                         item.extractSlow(new ISequentialOutStream() {
                             public int write(byte[] data) throws SevenZipException {
+                                if (passwordExtracting) {
+                                    passwordfound.found();
+                                    return 0;
+                                }
+
                                 int length = 0;
                                 if (new Regex(path, ".+\\.iso").matches()) {
                                     length = 37000;
@@ -278,6 +286,10 @@ public class Multi implements IExtraction {
                                 return 0;
                             }
                         }, password);
+
+                        passwordExtracting = true;
+                        return false;
+
                     } catch (SevenZipException e) {
                         // An error will be thrown if the write method returns
                         // 0.
