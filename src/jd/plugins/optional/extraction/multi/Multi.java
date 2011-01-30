@@ -82,6 +82,9 @@ public class Multi implements IExtraction {
 
     private Logger                   logger;
 
+    // Indicates that the passwordcheck works with only open the archive.
+    private boolean                  passwordArchive = false;
+
     /** For 7z */
     private MultiOpener              multiopener;
     /** For rar */
@@ -239,7 +242,7 @@ public class Multi implements IExtraction {
             final BooleanHelper passwordfound = new BooleanHelper();
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 size += item.getSize();
-                if (!passwordfound.getBoolean()) {
+                if (!passwordArchive && !passwordfound.getBoolean()) {
                     try {
                         final String path = item.getPath();
                         item.extractSlow(new ISequentialOutStream() {
@@ -284,7 +287,7 @@ public class Multi implements IExtraction {
                 }
             }
 
-            if (!passwordfound.getBoolean()) return false;
+            if (!passwordArchive && !passwordfound.getBoolean()) return false;
 
             archive.setSize(size);
 
@@ -293,6 +296,7 @@ public class Multi implements IExtraction {
         } catch (FileNotFoundException e) {
             return false;
         } catch (SevenZipException e) {
+            passwordArchive = true;
             return false;
         } catch (IOException e) {
             e.printStackTrace();
