@@ -49,16 +49,21 @@ public class VideoMarkizaSk extends PluginForDecrypt {
         br.getPage(cryptedLink.getCryptedUrl());
 
         // retrieve playlist first
-        String playlist = br.getRegex("s1.addVariable[(]\"file\",encodeURIComponent[(]\"(.*?)\"[)][)];").getMatch(0);
-        if (null == playlist || playlist.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String playlistId = br.getRegex("div onclick=\"flowplayerPlayerOnThumb[(]'video_player_(.*?)'").getMatch(0);
+        if (null == playlistId || playlistId.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String playlistUrl = br.getRegex("var flowplayerJSConfigScript = '(.*?)'").getMatch(0);
+        if (null == playlistUrl || playlistUrl.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        String playlist = playlistUrl + "media=" + playlistId;
         br.getPage(playlist);
 
-        String[][] links = br.getRegex("<item>\\s+<title>(.*?)</title>(.*?)medium=\"video\"\\s+url=\"(.*?)\"").getMatches();
+        // parse playlist for valid links
+        String[][] links = br.getRegex("\"url\":\"http://vid1.markiza.sk/(.*?)[.]mp4\"").getMatches();
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 // we want valid entries only + no commercials
-                if (null != link && 3 == link.length && null != link[2] && 0 < link[2].length() && !link[0].trim().equals("Reklama:")) {
-                    decryptedLinks.add(createDownloadlink(link[2]));
+                if (null != link && 1 == link.length && null != link[0] && 0 < link[0].trim().length()) {
+                    decryptedLinks.add(createDownloadlink("http://vid1.markiza.sk/" + link[0] + ".mp4"));
                 }
             }
         }
