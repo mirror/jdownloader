@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -114,14 +114,14 @@ public class EasyShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie(MAINPAGE, "language", "en");
-        String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)/").getMatch(0);
+        String fileID = new Regex(downloadLink.getDownloadURL(), "easy-share\\.com/(\\d+)").getMatch(0);
         br.getPage("http://api.easy-share.com/files/" + fileID);
         if (!br.containsHTML("ed:status>O<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("(>errorFileNotFound<|>File Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("<title>(?!File info)(.*?)</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("rel=\"enclosure\" length=\"(\\d+)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         return AvailableStatus.TRUE;
     }
