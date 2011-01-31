@@ -89,10 +89,11 @@ public class LdT extends PluginForDecrypt implements ProgressControllerListener 
             }
         } else {
             br.getPage(parameter);
-            DownloadLink dl;
+            if (br.getRedirectLocation() == null) return null;
             if (br.getRedirectLocation().equalsIgnoreCase(parameter) || br.getRedirectLocation().equalsIgnoreCase(parameter + "/")) br.getPage(parameter);
             if (br.getRedirectLocation().equalsIgnoreCase(parameter)) return null;
             String url = br.getRedirectLocation();
+            DownloadLink dl;
             decryptedLinks.add(dl = createDownloadlink(url));
             dl.addSourcePluginPassword("iload.to");
             dl.setUrlDownload(url);

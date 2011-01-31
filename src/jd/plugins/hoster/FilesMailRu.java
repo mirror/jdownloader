@@ -19,8 +19,10 @@ package jd.plugins.hoster;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -30,8 +32,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}(/[a-z0-9]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}(/[a-z0-9]+)?" }, flags = { 2 })
 public class FilesMailRu extends PluginForHost {
 
     private static AtomicInteger freeCounter = new AtomicInteger(0);
@@ -39,6 +42,7 @@ public class FilesMailRu extends PluginForHost {
 
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://en.reg.mail.ru/cgi-bin/signup");
     }
 
     @Override
@@ -62,7 +66,6 @@ public class FilesMailRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(true);
         if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
             logger.warning("final filename and folderID are bot null for unknown reasons!");
@@ -126,6 +129,10 @@ public class FilesMailRu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        doFree(downloadLink, false);
+    }
+
+    private void doFree(DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
         freeCounter.incrementAndGet();
         try {
             requestFileInformation(downloadLink);
@@ -135,11 +142,12 @@ public class FilesMailRu extends PluginForHost {
                 logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            goToSleep(downloadLink);
+            if (!premium) goToSleep(downloadLink);
             // Errorhandling, sometimes the link which is usually renewed by the
             // linkgrabber doesn't work and needs to be refreshed again!
             int chunks = -10;
             if (downloadLink.getStringProperty("disablechunks") != null) chunks = 1;
+            if (premium) chunks = 0;
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
             if (dl.getConnection().getResponseCode() == 503) {
                 /* sets current max for free for this session */
@@ -174,6 +182,49 @@ public class FilesMailRu extends PluginForHost {
         String replaceThis = new Regex(dllink, "http://(content\\d+-n)\\.files\\.mail\\.ru.*?").getMatch(0);
         if (replaceThis != null) dllink = dllink.replace(replaceThis, replaceThis.replace("-n", ""));
         return dllink;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://swa.mail.ru/cgi-bin/auth", "Page=http%3A%2F%2Ffiles.mail.ru%2F&Login=" + Encoding.urlEncode(account.getUser()) + "&Domain=mail.ru&Password=" + Encoding.urlEncode(account.getPass()));
+        br.setFollowRedirects(true);
+        br.getPage("http://files.mail.ru/eng?back=%2Fsms-services");
+        if (!br.containsHTML(">You have a VIP status<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("<b>Your VIP status is valid until (.*?)</b><br><br>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "MMMM dd, yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        login(account);
+        br.setFollowRedirects(false);
+        doFree(link, true);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

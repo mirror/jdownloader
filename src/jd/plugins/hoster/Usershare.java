@@ -63,19 +63,8 @@ public class Usershare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        Form freeform = null;
-        Form[] allForms = br.getForms();
-        if (allForms != null && allForms.length != 0) {
-            for (Form singleForm : allForms) {
-                if (singleForm.containsHTML("download1")) {
-                    freeform = singleForm;
-                    break;
-                }
-            }
-        }
-        if (freeform != null) {
-            freeform.remove("method_premium");
-            br.submitForm(freeform);
+        if (br.containsHTML("\"download1\"")) {
+            br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(link.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
         }
         String passCode = null;
         String linkurl = null;
@@ -105,19 +94,26 @@ public class Usershare extends PluginForHost {
             checkErrors(link, true, passCode, false);
             linkurl = getDllink();
         } else {
+            Form dlform = br.getFormbyProperty("name", "F1");
+            if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (password) {
                 logger.info("The downloadlink seems to be password protected.");
-                Form pwform = br.getFormbyProperty("name", "F1");
-                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                passCode = handlePassword(passCode, pwform, link);
-                pwform.put("password", passCode);
+                passCode = handlePassword(passCode, dlform, link);
+                dlform.put("password", passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm and submitted it.");
-                br.submitForm(pwform);
-                checkErrors(link, true, passCode, false);
-                linkurl = br.getRedirectLocation();
-            } else {
-                linkurl = getDllink();
             }
+            // Ticket Time
+            String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+            if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+            if (ttt != null) {
+                int tt = Integer.parseInt(ttt);
+                logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
+                if (tt > 0) sleep(tt * 1001l, link);
+            }
+            br.submitForm(dlform);
+            checkErrors(link, true, passCode, false);
+            linkurl = br.getRedirectLocation();
+            if (linkurl == null) linkurl = getDllink();
         }
         if (passCode != null) {
             link.setProperty("pass", passCode);

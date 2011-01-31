@@ -504,3 +504,4 @@ jd/plugins/hoster/SharedZipCom.class
 jd/plugins/hoster/SixGigaCom.class
 jd/plugins/hoster/JiffyUploadCom.class
 jd/plugins/decrypter/RmNwsrg.class
+jd/plugins/hoster/UpFileCom.class
