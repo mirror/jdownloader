@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Timer;
 
+import javax.swing.JViewport;
 import javax.swing.filechooser.FileFilter;
 
 import jd.OptionalPluginWrapper;
@@ -41,6 +42,8 @@ import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
+import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -69,6 +72,10 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
     private static final int       SET_LINK_AUTOEXTRACT    = 1005;
 
     private static final int       SET_PACKAGE_AUTOEXTRACT = 1006;
+
+    private static final String    MENU_PACKAGES           = "MENU_EXTRACT_PACKAGE";
+
+    private static final String    MENU_LINKS              = "MENU_EXTRACT_LINK";
 
     private static MenuAction      menuAction              = null;
 
@@ -173,18 +180,26 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     m.setEnabled(false);
                 }
 
-                m.setProperty("LINK", link);
+                m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
                 container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.autoextract", SET_LINK_AUTOEXTRACT));
                 m.setActionListener(this);
                 m.setSelected(link.getFilePackage().isPostProcessing());
                 if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
                     m.setEnabled(false);
                 }
-                m.setProperty("LINK", link);
+                m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
                 container.addMenuItem(new MenuAction(Types.SEPARATOR));
                 container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.setextract", SET_EXTRACT_TO));
                 m.setActionListener(this);
+
+                if (isLinkSupported(link.getFileOutput())) {
+                    m.setEnabled(true);
+                } else {
+                    m.setEnabled(false);
+                }
+
                 m.setProperty("LINK", link);
+                m.setProperty(MENU_LINKS, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedDownloadLinks());
                 File dir = this.getExtractToPath(link);
                 while (dir != null && !dir.exists()) {
                     if (dir.getParentFile() == null) break;
@@ -193,22 +208,29 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 if (dir == null) break;
                 container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.openextract3", OPEN_EXTRACT));
                 m.setActionListener(this);
+
+                if (isLinkSupported(link.getFileOutput())) {
+                    m.setEnabled(true);
+                } else {
+                    m.setEnabled(false);
+                }
+
                 link.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
                 m.setProperty("LINK", link);
             } else {
                 FilePackage fp = (FilePackage) event.getCaller();
 
                 container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.extract", EXTRACT_PACKAGE));
+                m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
                 m.setIcon(getIconKey());
                 m.setActionListener(this);
-                m.setProperty("PACKAGE", fp);
                 container.addMenuItem(m = new MenuAction("optional.extraction.linkmenu.package.autoextract", SET_PACKAGE_AUTOEXTRACT));
+                m.setProperty(MENU_PACKAGES, ((DownloadTable) ((JViewport) DownloadLinksPanel.getDownloadLinksPanel().getScrollPane().getComponent(0)).getComponent(0)).getSelectedFilePackages());
                 m.setSelected(fp.isPostProcessing());
                 m.setActionListener(this);
                 if (!this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
                     m.setEnabled(false);
                 }
-                m.setProperty("PACKAGE", fp);
             }
             break;
         }
@@ -379,31 +401,36 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
     private void actionPerformedOnMenuItem(MenuAction source) {
         SubConfiguration cfg = this.getPluginConfig();
-        DownloadLink link;
+        ArrayList<DownloadLink> dlinks = (ArrayList<DownloadLink>) source.getProperty(MENU_LINKS);
+        ArrayList<FilePackage> fps = (ArrayList<FilePackage>) source.getProperty(MENU_PACKAGES);
         switch (source.getActionID()) {
         case 1:
             cfg.setProperty("ACTIVATED", !cfg.getBooleanProperty("ACTIVATED", true));
             cfg.save();
             break;
         case EXTRACT_LINK:
-            link = (DownloadLink) source.getProperty("LINK");
-            final Archive archive = buildArchive(link);
-            new Thread() {
-                @Override
-                public void run() {
-                    addToQueue(archive);
-                }
-            }.start();
+            if (dlinks == null) return;
+            for (DownloadLink link : dlinks) {
+                final Archive archive = buildArchive(link);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        addToQueue(archive);
+                    }
+                }.start();
+            }
             break;
         case EXTRACT_PACKAGE:
-            FilePackage fp = (FilePackage) source.getProperty("PACKAGE");
+            if (fps == null) return;
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            for (DownloadLink l : fp.getDownloadLinkList()) {
-                if (l.getLinkStatus().isFinished()) {
-                    links.add(l);
+            for (FilePackage fp : fps) {
+                for (DownloadLink l : fp.getDownloadLinkList()) {
+                    if (l.getLinkStatus().isFinished()) {
+                        links.add(l);
+                    }
                 }
             }
-            if (links.size() <= 0) return;
+            if (links.size() == 0) return;
             for (DownloadLink link0 : links) {
                 final Archive archive0 = buildArchive(link0);
                 new Thread() {
@@ -415,7 +442,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             }
             break;
         case OPEN_EXTRACT:
-            link = (DownloadLink) source.getProperty("LINK");
+            DownloadLink link = (DownloadLink) source.getProperty("LINK");
             if (link == null) { return; }
             String path = link.getStringProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
 
@@ -427,8 +454,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
             break;
         case SET_EXTRACT_TO:
-            link = (DownloadLink) source.getProperty("LINK");
-            Archive archive0 = buildArchive(link);
+            DownloadLink link0 = (DownloadLink) source.getProperty("LINK");
+            if (link0 == null) { return; }
+            if (dlinks == null) return;
 
             FileFilter ff = new FileFilter() {
                 @Override
@@ -443,7 +471,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 }
             };
 
-            File extractto = this.getExtractToPath(link);
+            File extractto = this.getExtractToPath(link0);
             while (extractto != null && !extractto.isDirectory()) {
                 extractto = extractto.getParentFile();
             }
@@ -451,19 +479,25 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             File[] files = UserIO.getInstance().requestFileChooser("_EXTRACTION_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, null);
             if (files == null) return;
 
-            for (DownloadLink l : archive0.getDownloadLinks()) {
-                l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
+            for (DownloadLink ll : dlinks) {
+                Archive archive0 = buildArchive(ll);
+                for (DownloadLink l : archive0.getDownloadLinks()) {
+                    l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
+                }
             }
             break;
         case SET_LINK_AUTOEXTRACT:
-            link = (DownloadLink) source.getProperty("LINK");
-            if (link == null) { return; }
-            link.getFilePackage().setPostProcessing(!link.getFilePackage().isPostProcessing());
+            if (dlinks == null) { return; }
+            for (DownloadLink l : dlinks) {
+                l.getFilePackage().setPostProcessing(!l.getFilePackage().isPostProcessing());
+            }
             break;
         case SET_PACKAGE_AUTOEXTRACT:
-            fp = (FilePackage) source.getProperty("PACKAGE");
-            if (fp == null) { return; }
-            fp.setPostProcessing(!fp.isPostProcessing());
+            if (fps == null) { return; }
+            for (FilePackage fp : fps) {
+                if (fp == null) continue;
+                fp.setPostProcessing(!fp.isPostProcessing());
+            }
             break;
         }
     }

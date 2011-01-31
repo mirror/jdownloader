@@ -579,9 +579,11 @@ public class Multi implements IExtraction {
 
             inArchive.close();
         } catch (SevenZipException e) {
-            e.printStackTrace();
+            logger.warning("Tried to close a non existing archive");
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning("Tried to close an already closed archive");
+        } catch (NullPointerException e) {
+            logger.warning("Tried to close a non existing archive");
         }
     }
 
