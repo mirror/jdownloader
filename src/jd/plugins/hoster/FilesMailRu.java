@@ -39,6 +39,7 @@ public class FilesMailRu extends PluginForHost {
 
     private static AtomicInteger freeCounter = new AtomicInteger(0);
     private static int           maxFree     = -1;
+    private boolean              keepCookies = false;
 
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,7 +66,7 @@ public class FilesMailRu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
+        if (!keepCookies) this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
             logger.warning("final filename and folderID are bot null for unknown reasons!");
@@ -135,9 +136,10 @@ public class FilesMailRu extends PluginForHost {
     private void doFree(DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
         freeCounter.incrementAndGet();
         try {
+            String finallink = null;
+            keepCookies = premium;
             requestFileInformation(downloadLink);
-            br.setFollowRedirects(false);
-            String finallink = br.getRegex(DLLINKREGEX).getMatch(0);
+            finallink = br.getRegex(DLLINKREGEX).getMatch(0);
             if (finallink == null) {
                 logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -148,7 +150,7 @@ public class FilesMailRu extends PluginForHost {
             int chunks = -10;
             if (downloadLink.getStringProperty("disablechunks") != null) chunks = 1;
             if (premium) chunks = 0;
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, chunks);
             if (dl.getConnection().getResponseCode() == 503) {
                 /* sets current max for free for this session */
                 final int max = freeCounter.get();

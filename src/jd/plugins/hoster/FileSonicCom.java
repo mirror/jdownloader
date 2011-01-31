@@ -30,12 +30,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -73,24 +73,28 @@ public class FileSonicCom extends PluginForHost {
                     index++;
                 }
                 sb.delete(0, sb.capacity());
-                sb.append("redirect=%2Fdashboard&links=");
+                sb.append("link_id=");
                 int c = 0;
                 for (final DownloadLink dl : links) {
                     if (c > 0) {
-                        sb.append("%0D%0A");
+                        sb.append(";");
                     }
-                    sb.append(dl.getDownloadURL());
+                    sb.append(getPureID(dl));
                     c++;
                 }
-                sb.append("&controls%5Bsubmit%5D=");
-                br.postPage("http://www.filesonic.com/link-checker", sb.toString());
+                sb.append("&bz=1");
+                br.postPage("http://www.filesonic.com/api/info", sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String id = this.getID(dllink);
-                    final String hit[] = br.getRegex("source\">.*?<span>.*?filesonic.com/file/" + id + ".*?fileName\">.*?<span>(.*?)<.*?fileSize\">.*?<span>(.*?)<").getRow(0);
-                    if (hit != null && hit.length == 2 && hit[1].length() > 2) {
+                    final String hit[] = br.getRegex(id + ".*?;(.*?);(\\d+) B;(\\S+)").getRow(0);
+                    if (hit != null && hit.length == 3) {
                         dllink.setFinalFileName(hit[0].trim());
-                        dllink.setDownloadSize(SizeFormatter.getSize(hit[1]));
-                        dllink.setAvailable(true);
+                        dllink.setDownloadSize(Long.parseLong(hit[1].trim()));
+                        if ("AVAILABLE".equalsIgnoreCase(hit[2].trim())) {
+                            dllink.setAvailable(true);
+                        } else {
+                            dllink.setAvailable(false);
+                        }
                     } else {
                         dllink.setAvailable(false);
                     }
@@ -109,11 +113,23 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* convert sharingmatrix to filesonic that set english language */
+        link.setUrlDownload("http://www.filesonic.com/file/" + getID(link));
+    }
+
+    public String getID(final DownloadLink link) {
         String id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
         if (id == null) {
             id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
         }
-        link.setUrlDownload("http://www.filesonic.com/file/" + id);
+        return id;
+    }
+
+    public String getPureID(final DownloadLink link) {
+        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
+        if (id == null) {
+            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
+        }
+        return id;
     }
 
     private void errorHandling(final DownloadLink downloadLink, final Browser br) throws PluginException {
@@ -186,15 +202,6 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.filesonic.com/contact-us";
-    }
-
-    /* returns only the id, needed for filecheck */
-    private String getID(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
-        if (id == null) {
-            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
-        }
-        return id;
     }
 
     @Override

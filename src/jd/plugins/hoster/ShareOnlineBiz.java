@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -46,8 +46,11 @@ import org.mozilla.javascript.Scriptable;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
-    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS = new HashMap<Account, HashMap<String, String>>();
-    private final static Object                                    LOCK         = new Object();
+    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS   = new HashMap<Account, HashMap<String, String>>();
+    private final static Object                                    LOCK           = new Object();
+    private final static HashMap<Long, Long>                       noFreeSlot     = new HashMap<Long, Long>();
+    private long                                                   server         = -1;
+    private final static long                                      waitNoFreeSlot = 10 * 60 * 1000l;
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -191,11 +194,12 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        server = -1;
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.setAcceptLanguage("en, en-gb;q=0.8");
         String id = getID(downloadLink);
         br.setDebug(true);
-        if (br.postPage("http://api.share-online.biz/linkcheck.php?md5=1", "links=" + id).matches("\\s*")) {
+        if (br.postPage("http://api.share-online.biz/linkcheck.php?md5=1&snr=1", "links=" + id).matches("\\s*")) {
             String startURL = downloadLink.getDownloadURL();
             // workaround to bypass new layout and use old site
             br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
@@ -205,10 +209,11 @@ public class ShareOnlineBiz extends PluginForHost {
             downloadLink.setName(strings[1].trim());
             return AvailableStatus.TRUE;
         }
-        String infos[] = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.+)").getRow(0);
+        String infos[] = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*?);(\\d+)").getRow(0);
         if (infos == null || !infos[1].equalsIgnoreCase("OK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Long.parseLong(infos[3].trim()));
         downloadLink.setName(infos[2].trim());
+        server = Long.parseLong(infos[5].trim());
         return AvailableStatus.TRUE;
     }
 
@@ -225,7 +230,7 @@ public class ShareOnlineBiz extends PluginForHost {
                 links.clear();
                 while (true) {
                     /* we test 80 links at once */
-                    if (index == urls.length || links.size() > 80) break;
+                    if (index == urls.length || links.size() > 200) break;
                     links.add(urls[index]);
                     index++;
                 }
@@ -392,7 +397,25 @@ public class ShareOnlineBiz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-
+        if (server != -1) {
+            synchronized (noFreeSlot) {
+                Long ret = noFreeSlot.get(server);
+                if (ret != null) {
+                    if (System.currentTimeMillis() - ret < waitNoFreeSlot) {
+                        if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
+                            /*
+                             * reset counter this error does not cause plugin to
+                             * stop
+                             */
+                            downloadLink.getLinkStatus().setRetryCount(0);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
+                    } else {
+                        noFreeSlot.remove(server);
+                    }
+                }
+            }
+        }
         String startURL = downloadLink.getDownloadURL();
         // workaround to bypass new layout and use old site
         br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
@@ -404,12 +427,17 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
-        if (br.containsHTML("Server Info: no slots available")) {
+        if (br.containsHTML("Server Info: no slots available") || true) {
             if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
                 /* reset counter this error does not cause plugin to stop */
                 downloadLink.getLinkStatus().setRetryCount(0);
             }
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 5 * 60 * 1000l);
+            if (server != -1) {
+                synchronized (noFreeSlot) {
+                    noFreeSlot.put(server, System.currentTimeMillis());
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
         }
 
         /* CaptchaCode holen */
@@ -464,7 +492,12 @@ public class ShareOnlineBiz extends PluginForHost {
                 /* reset counter this error does not cause plugin to stop */
                 downloadLink.getLinkStatus().setRetryCount(0);
             }
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 5 * 60 * 1000l);
+            if (server != -1) {
+                synchronized (noFreeSlot) {
+                    noFreeSlot.put(server, System.currentTimeMillis());
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
         }
 
         // Keine Zwangswartezeit, deswegen auskommentiert
@@ -510,6 +543,9 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        synchronized (noFreeSlot) {
+            noFreeSlot.clear();
+        }
     }
 
 }
