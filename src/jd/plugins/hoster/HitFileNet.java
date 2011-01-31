@@ -142,7 +142,7 @@ public class HitFileNet extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = "http://hitfile.net" + dllink;
         // Seems like the connections are limited to 5
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
