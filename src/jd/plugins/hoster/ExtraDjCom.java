@@ -20,11 +20,11 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -37,7 +37,7 @@ public class ExtraDjCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "info@extradj.com";
+        return "http://extradj.com/about.html";
     }
 
     @Override

@@ -21,11 +21,11 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -39,10 +39,10 @@ public class FourUsTo extends PluginForHost {
     // MhfScriptBasic 1.0
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/rules.php";
+        return "http://4us.to/contact.php";
     }
 
-    private static final String COOKIE_HOST = "http://Only4Devs2Test.com";
+    private static final String COOKIE_HOST = "http://4us.to";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");

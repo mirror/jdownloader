@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -38,7 +38,7 @@ public class NetStorerCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.teradepot.com/tos.html";
+        return "http://www.netstorer.com/tos";
     }
 
     @Override
