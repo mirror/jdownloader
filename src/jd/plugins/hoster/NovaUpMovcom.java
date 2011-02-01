@@ -38,7 +38,7 @@ public class NovaUpMovcom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://novamov.com/terms.html";
+        return "http://www.novamov.com/terms.php";
     }
 
     private static final String VIDEOREGEX                   = "flashvars\\.file=\"(http.*?)\"";
