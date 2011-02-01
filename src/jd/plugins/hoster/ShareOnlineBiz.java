@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -427,7 +427,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
-        if (br.containsHTML("Server Info: no slots available") || true) {
+        if (br.containsHTML("Server Info: no slots available")) {
             if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
                 /* reset counter this error does not cause plugin to stop */
                 downloadLink.getLinkStatus().setRetryCount(0);

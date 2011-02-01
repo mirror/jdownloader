@@ -16,11 +16,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Hash;
@@ -394,7 +394,6 @@ public class PremGet extends PluginForHost implements JDPremInterface {
             } else {
                 ac.setExpired(false);
                 if (validUntil != null) {
-
                     ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil));
 
                 }

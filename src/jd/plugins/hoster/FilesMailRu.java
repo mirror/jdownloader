@@ -24,11 +24,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -150,7 +150,7 @@ public class FilesMailRu extends PluginForHost {
             int chunks = -10;
             if (downloadLink.getStringProperty("disablechunks") != null) chunks = 1;
             if (premium) chunks = 0;
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, chunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
             if (dl.getConnection().getResponseCode() == 503) {
                 /* sets current max for free for this session */
                 final int max = freeCounter.get();

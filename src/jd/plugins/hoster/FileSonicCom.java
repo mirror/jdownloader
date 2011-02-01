@@ -30,12 +30,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -85,7 +85,7 @@ public class FileSonicCom extends PluginForHost {
                 sb.append("&bz=1");
                 br.postPage("http://www.filesonic.com/api/info", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final String id = this.getID(dllink);
+                    final String id = this.getPureID(dllink);
                     final String hit[] = br.getRegex(id + ".*?;(.*?);(\\d+) B;(\\S+)").getRow(0);
                     if (hit != null && hit.length == 3) {
                         dllink.setFinalFileName(hit[0].trim());
