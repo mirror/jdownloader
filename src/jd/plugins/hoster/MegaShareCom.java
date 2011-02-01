@@ -141,7 +141,7 @@ public class MegaShareCom extends PluginForHost {
         if (reconnectWaittime != null) {
             if (Integer.parseInt(reconnectWaittime) > 320) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l);
         }
-        Regex valRegex = br.getRegex("name=\"(\\d+prVal)\" value=\"(.*?)\"");
+        Regex valRegex = br.getRegex("name=\"(\\d+prZVal)\" value=\"(.*?)\"");
         Form dlForm = br.getFormbyProperty("name", "downloader");
         if (dlForm == null || valRegex.getMatch(0) == null || valRegex.getMatch(1) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlForm.remove("yesss");
@@ -154,8 +154,20 @@ public class MegaShareCom extends PluginForHost {
         if (reconnectWaittime != null) wait = Integer.parseInt(reconnectWaittime);
         sleep(wait * 1001l, downloadLink);
         br.submitForm(dlForm);
-        dlForm = br.getForm(1);
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlForm = br.getFormbyProperty("name", "downloader");
+        if (dlForm == null || valRegex.getMatch(0) == null || valRegex.getMatch(1) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlForm.remove("yesss");
+        dlForm.remove("yesss");
+        dlForm.remove("yesss");
+        dlForm.remove("yesss");
+        dlForm.remove("yesss");
+        dlForm.put("wComp", "1");
+        String bla = dlForm.getRegex("name=\"(accel\\d+)\"").getMatch(0);
+        if (bla != null) {
+            dlForm.remove(bla);
+            dlForm.remove(bla);
+            dlForm.put(valRegex.getMatch(0), valRegex.getMatch(1));
+        }
         File captchaFile = getLocalCaptchaFile();
         int i = 15;
         while (i-- > 0) {
