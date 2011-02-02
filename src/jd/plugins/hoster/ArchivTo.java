@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -38,7 +38,7 @@ public class ArchivTo extends PluginForHost {
     }
 
     public String getAGBLink() {
-        return "http://archiv.to/Legal.html";
+        return "http://archiv.to/imprint";
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {

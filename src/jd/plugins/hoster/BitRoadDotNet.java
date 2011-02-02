@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -38,7 +38,7 @@ public class BitRoadDotNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://bitroad.net/tmpl/terms.php";
+        return "http://bitroad.net/terms/";
     }
 
     @Override

@@ -36,7 +36,7 @@ public class FourShareWs extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://4share.ws/en/terms/";
+        return "http://4share.ws/terms";
     }
 
     @Override
