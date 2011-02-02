@@ -386,7 +386,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://rapidshare.com/faq.html";
+        return "http://rapidshare.com/#!rapidshare-ag/rapidshare-ag_agb";
     }
 
     /**
