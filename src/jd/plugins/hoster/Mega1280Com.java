@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
@@ -36,6 +37,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/file/[0-9|A-Z]+" }, flags = { 2 })
 public class Mega1280Com extends PluginForHost {
@@ -122,17 +124,15 @@ public class Mega1280Com extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        /* TODO: needs to get fixed but i cant read the language */
-        // br.getPage("http://mega.1280.com/statistic.php");
-        // String days =
-        // br.getRegex("<b>Thời hạn dùng:</b></td>[\t\n\r ]+<td height=\"25\" align=\"left\" valign=\"top\">(\\d+)\\&nbsp;").getMatch(0);
-        // if (days != null) {
-        // ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) *
-        // 24 * 60 * 60 * 1000));
-        // } else {
-        // ai.setExpired(true);
-        // return ai;
-        // }
+        br.getPage("http://mega.1280.com/account.php");
+        String validUntil = br.getRegex("<dt>Thời hạn dùng:</dt>.*?<dd>.*? (\\d+/\\d+/\\d+).*?</dd>").getMatch(0);
+        if (validUntil != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH));
+        } else {
+            logger.info("expireDate regex Broken" + br.toString());
+            // ai.setExpired(true);
+            // return ai;
+        }
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
