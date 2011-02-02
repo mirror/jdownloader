@@ -40,10 +40,9 @@ public class UTl extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String MAINPAGE  = "http://up.tl/";
-    private static final String POSTPAGE  = "http://up.tl/login/efetuar";
-    private static final String DOMAIN    = "up.tl";
-//    private static final String LOGINPAGE = "http://up.tl/login";
+    private static final String MAINPAGE = "http://up.tl/";
+    private static final String POSTPAGE = "http://up.tl/login/efetuar";
+    private static final String DOMAIN   = "up.tl";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -69,16 +68,12 @@ public class UTl extends PluginForDecrypt {
 
     private boolean getUserLogin() throws IOException, DecrypterException {
         br.setFollowRedirects(true);
-        // br.getPage(url);
         String username = null;
         String password = null;
-        // br.getPage(LOGINPAGE);
         synchronized (LOCK) {
             username = this.getPluginConfig().getStringProperty("user", null);
             password = this.getPluginConfig().getStringProperty("pass", null);
-            if (username != null && password != null) {
-                br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&senha=" + Encoding.urlEncode(password) + "&salvar=1&entrar=Entrar");
-            }
+            br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&senha=" + Encoding.urlEncode(password) + "&salvar=1&entrar=Entrar");
             for (int i = 0; i < 3; i++) {
                 if (br.getCookie(MAINPAGE, "u") == null || br.getCookie(MAINPAGE, "token") == null) {
                     this.getPluginConfig().setProperty("user", Property.NULL);

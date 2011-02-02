@@ -28,16 +28,15 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-//http://www.4shared.com/file/<FILEID[a-70-9]>/<FILENAME>.html
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
@@ -121,7 +120,7 @@ public class FourSharedCom extends PluginForHost {
                 if (filename == null) filename = br.getRegex("<title>(.*?) - 4shared\\.com - online file sharing and storage - download</title>").getMatch(0);
             }
             String size = br.getRegex("<td class=\"finforight lgraybox\" style=\"border-top:1px #dddddd solid\">([0-9,]+ [a-zA-Z]+)</td>").getMatch(0);
-            if (size==null) size=br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
+            if (size == null) size = br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setName(Encoding.htmlDecode(filename.trim()));
             if (size != null) downloadLink.setDownloadSize(SizeFormatter.getSize(size.replace(",", "")));
@@ -179,7 +178,7 @@ public class FourSharedCom extends PluginForHost {
         br.setDebug(true);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
-
+        if (br.getURL().contains("401waitm")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
         String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
         if (error != null) {
             dl.getConnection().disconnect();
@@ -214,7 +213,7 @@ public class FourSharedCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 1;
     }
 
     public void reset() {
