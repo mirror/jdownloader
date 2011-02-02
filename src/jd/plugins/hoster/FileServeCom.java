@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -357,6 +357,7 @@ public class FileServeCom extends PluginForHost {
     }
 
     public void login(final Account account) throws Exception {
+        isFree = false;
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         this.br.setDebug(true);
@@ -397,6 +398,11 @@ public class FileServeCom extends PluginForHost {
             account.setProperty("type", "free");
             this.isFree = true;
         } else {
+            try {
+                account.setMaxSimultanDownloads(Integer.MAX_VALUE);
+            } catch (final Throwable e) {
+                /* not available in 0.9xxx */
+            }
             account.setProperty("type", null);
         }
     }
