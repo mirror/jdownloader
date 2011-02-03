@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -48,19 +49,18 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    static private final String FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
-
+    private static final String UA                       = RandomUserAgent.generate();
+    private static final String FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
+    private static final String MAINPAGE                 = "http://depositfiles.com";
+
     public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private final Pattern       FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-
     private final Pattern       FILE_INFO_SIZE           = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
 
     private static final Object PREMLOCK                 = new Object();
 
     private static int          simultanpremium          = 1;
-
-    private static String       MAINPAGE                 = "http://depositfiles.com";
 
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
@@ -290,7 +290,7 @@ public class DepositFiles extends PluginForHost {
                 logger.warning("Form by submitvalue Kostenloser+download is null!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // psp, hier der Keks. Wird via JS generiert!
+            // Important: Setup Cookie
             br.setCookie(MAINPAGE, "adv_135", "1");
             br.submitForm(form);
             checkErrors();
@@ -336,8 +336,15 @@ public class DepositFiles extends PluginForHost {
                 if (wait != null) {
                     waitThis = Integer.parseInt(wait);
                 }
-                this.sleep((waitThis + 1) * 1001l, downloadLink);
+                this.sleep(waitThis * 1001l, downloadLink);
             }
+            // Important! Setup Header
+            br.getHeaders().put("Accept-Charset", null);
+            br.getHeaders().put("Pragma", null);
+            br.getHeaders().put("Cache-Control", null);
+            br.getHeaders().put("Accept", "text/html, */*");
+            br.getHeaders().put("Accept-Encoding", "gzip, deflate");
+            br.getHeaders().put("Accept-Language", "de");
             br.setFollowRedirects(true);
             br.getPage(dllink);
             final Form finalform = br.getForm(0);
@@ -443,6 +450,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
         final String link = downloadLink.getDownloadURL();
         setLangtoGer();
         /* needed so the download gets counted,any referer should work */
