@@ -75,13 +75,14 @@ public class Zippysharecom extends PluginForHost {
         prepareBrowser(downloadLink);
         if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // DLLINK via packed JS or Flash App
-        if (br.containsHTML("DownloadButton_v1\\.00s\\.swf")) {
+        if (br.containsHTML("DownloadButton_v1\\.05s\\.swf")) {
             final String flashContent = br.getRegex("swfobject.embedSWF\\((.*?)\\)").getMatch(0);
             if (flashContent != null) {
                 DLLINK = new Regex(flashContent, "url: '(.*?)'").getMatch(0);
                 final String seed = new Regex(flashContent, "seed: (\\d+)").getMatch(0);
                 if (DLLINK == null || seed == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                final long time = Integer.parseInt(seed) * 13 % 2139 + 6;
+                long time = Integer.parseInt(seed);
+                time = (long) ((time * time + time) % 234903 * Math.floor(time / 8) % 317562356);
                 DLLINK = DLLINK + "&time=" + time;
             }
         } else {
