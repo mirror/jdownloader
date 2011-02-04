@@ -20,8 +20,10 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Timer;
 
 import javax.swing.JViewport;
@@ -774,29 +776,50 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         Boolean usesub = this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, false);
         if (usesub) {
             if (this.getPluginConfig().getIntegerProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, 0) > controller.getArchiv().getNumberOfFiles()) { return; }
-            if (!this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, false) || controller.getArchiv().isNoFolder()) { return; }
+            if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, false)) {
+                if (controller.getArchiv().isNoFolder()) { return; }
+            }
 
             String path = this.getPluginConfig().getStringProperty(ExtractionConstants.CONFIG_KEY_SUBPATH, "%PACKAGENAME%");
             DownloadLink link = controller.getArchiv().getFirstDownloadLink();
 
             try {
-                if (link.getFilePackage().getName() != null) {
+                if (path.contains("%PACKAGENAME%") && link.getFilePackage().getName() != null) {
                     path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
                 } else {
                     path = path.replace("%PACKAGENAME%", "");
                     logger.severe("Could not set packagename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
                 }
 
-                if (controller.getExtractor().getArchiveName(link) != null) {
+                if (path.contains("%ARCHIVENAME%") && controller.getExtractor().getArchiveName(link) != null) {
                     path = path.replace("%ARCHIVENAME%", controller.getExtractor().getArchiveName(link));
                 } else {
+                    path = path.replace("%ARCHIVENAME%", "");
                     logger.severe("Could not set archivename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
                 }
 
-                if (link.getHost() != null) {
+                if (path.contains("%HOSTER%") && link.getHost() != null) {
                     path = path.replace("%HOSTER%", link.getHost());
                 } else {
+                    path = path.replace("%HOSTER%", "");
                     logger.severe("Could not set hoster for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                }
+
+                if (path.contains("$DATE:")) {
+                    int start = path.indexOf("$DATE:");
+                    int end = start + 6;
+
+                    while (end < path.length() && path.charAt(end) != '$') {
+                        end++;
+                    }
+
+                    try {
+                        SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
+                        path = path.replace(path.substring(start, end + 1), format.format(new Date()));
+                    } catch (Exception e) {
+                        path = path.replace(path.substring(start, end + 1), "");
+                        logger.severe("Could not set extraction date. Maybe pattern is wrong. For " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                    }
                 }
 
                 String dif = new File(JDUtilities.getDefaultDownloadDirectory()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
