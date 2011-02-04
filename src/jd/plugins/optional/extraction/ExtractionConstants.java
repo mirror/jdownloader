@@ -45,6 +45,7 @@ public class ExtractionConstants {
     public static final String CONFIG_KEY_SUBPATH_MINNUM                       = "KEY_SUBPATH_MINNUM";
     public static final String CONFIG_KEY_ADDITIONAL_SPACE                     = "CONFIG_KEY_ADDITIONAL_SPACE";
     public static final String CONFIG_KEY_COPY_FILES_TO_BASE_DIR_AFTER_EXTRACT = "COPY_FILES_TO_BASE_DIR_AFTER_EXTRACT";
+    public static final String CONFIG_KEY_MATCHER                              = "MATCHER";
     public static final String DOWNLOADLINK_KEY_EXTRACTTOPATH                  = "EXTRAXT_TO_PATH";
     public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH                  = "EXTRACTEDPATH";
     public static final String CONFIG_KEY_LIST                                 = "LIST";

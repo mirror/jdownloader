@@ -95,6 +95,8 @@ public class Multi implements IExtraction {
     /** For all single files */
     private RandomAccessFileInStream stream;
 
+    private ArrayList<String>        filter             = new ArrayList<String>();
+
     public Multi() {
         crack = 0;
         inArchive = null;
@@ -302,6 +304,8 @@ public class Multi implements IExtraction {
                     }
                 }
 
+                if (filter(item.getPath())) continue;
+
                 String[] erg = item.getPath().split("/");
                 if (archive.isNoFolder() && erg.length > 1) {
                     if (folder.equals("")) {
@@ -340,12 +344,17 @@ public class Multi implements IExtraction {
             int priority = conf.getIntegerProperty(PRIORITY);
 
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
-                final File extractTo = new File(archive.getExtractTo().getAbsoluteFile() + File.separator + item.getPath());
-
                 // Skip 0 Byte files (folders)
                 if (item == null || item.getSize() == 0) {
                     continue;
                 }
+
+                if (filter(item.getPath())) {
+                    logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstDownloadLink().getFileOutput());
+                    continue;
+                }
+
+                final File extractTo = new File(archive.getExtractTo().getAbsoluteFile() + File.separator + item.getPath());
 
                 if (!extractTo.exists()) {
                     if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs()) || !extractTo.createNewFile()) {
@@ -468,12 +477,32 @@ public class Multi implements IExtraction {
         return crack;
     }
 
+    private boolean filter(String file) {
+        file = "/" + file;
+        for (String entry : filter) {
+            if (file.contains(entry)) { return true; }
+        }
+
+        return false;
+    }
+
     public boolean prepare() {
         try {
             if (archive.getFirstDownloadLink().getHost().equals(DUMMY_HOSTER)) {
                 Archive a = buildArchive(archive.getFirstDownloadLink());
                 archive.setDownloadLinks(a.getDownloadLinks());
                 archive.setType(a.getType());
+            }
+
+            String f = conf.getStringProperty(ExtractionConstants.CONFIG_KEY_MATCHER, null);
+
+            if (f != null && f.length() > 0) {
+                String[] entries = Regex.getLines(f);
+                for (String entry : entries) {
+                    if (!entry.startsWith("#") && entry.trim().length() != 0) {
+                        filter.add(entry.trim());
+                    }
+                }
             }
 
             if (archive.getType() == Archive.SINGLE_FILE) {
@@ -512,11 +541,12 @@ public class Multi implements IExtraction {
                     continue;
                 }
 
-                if (item.getPath().trim().equals("")) continue;
                 if (item.isEncrypted()) {
                     archive.setProtected(true);
                     return true;
                 }
+
+                if (item.getPath().trim().equals("") || filter(item.getPath())) continue;
 
                 String[] erg = item.getPath().split("/");
                 if (archive.isNoFolder() && erg.length > 1) {

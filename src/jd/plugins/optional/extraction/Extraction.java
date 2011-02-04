@@ -561,6 +561,10 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, JDL.L("gui.config.extraction.subpath_no_folder", "Only use subpath if the files of the archive are in not in one folder")).setDefaultValue(false));
         ce.setEnabledCondidtion(conditionEntry, true);
 
+        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.config.matcher.title", "Don't unpack files with the following patterns"), getIconKey()));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, ExtractionConstants.CONFIG_KEY_MATCHER, ""));
+        ce.setDefaultValue("#Ignore filetype 'xyz':\r\n\r\n.xyz\r\n\r\n#Ignore folder 'abc':\r\n\r\n/abc/\r\n\r\n#One exclude each line\r\n\r\n");
+
         for (IExtraction extractor : extractors) {
             extractor.initConfig(config, subConfig);
         }

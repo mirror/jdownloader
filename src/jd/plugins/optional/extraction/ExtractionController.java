@@ -129,7 +129,7 @@ public class ExtractionController extends Thread implements JDRunnable {
             if (extractor.prepare()) {
                 if (!checkSize()) {
                     fireEvent(ExtractionConstants.NOT_ENOUGH_SPACE);
-                    logger.info("Not enough space for unpacking of " + archive.getFirstDownloadLink().getFileOutput());
+                    logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstDownloadLink().getFileOutput());
                     extractor.close();
                     return;
                 }
@@ -188,48 +188,31 @@ public class ExtractionController extends Thread implements JDRunnable {
                     fireEvent(ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
-                    JDLogger.getLogger().warning("A CRC error occurred when unpacking");
+                    JDLogger.getLogger().warning("A CRC error occurred when unpacking " + archive.getFirstDownloadLink().getFileOutput());
                     fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED_CRC);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_USER_BREAK:
-                    JDLogger.getLogger().info(" User interrupted extraction");
+                    JDLogger.getLogger().info("User interrupted unpacking of " + archive.getFirstDownloadLink().getFileOutput());
                     fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR:
-                    JDLogger.getLogger().warning("Could not create Outputfile");
-                    fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
-                    break;
-                case ExtractionControllerConstants.EXIT_CODE_MEMORY_ERROR:
-                    JDLogger.getLogger().warning("Not enough memory for operation");
-                    fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
-                    break;
-                case ExtractionControllerConstants.EXIT_CODE_USER_ERROR:
-                    JDLogger.getLogger().warning("Command line option error");
-                    fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
-                    break;
-                case ExtractionControllerConstants.EXIT_CODE_OPEN_ERROR:
-                    JDLogger.getLogger().warning("Open file error");
+                    JDLogger.getLogger().warning("Could not create Outputfile for" + archive.getFirstDownloadLink().getFileOutput());
                     fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR:
-                    JDLogger.getLogger().warning("Write to disk error");
+                    JDLogger.getLogger().warning("Unsblr to write unpacked data on harddisk for " + archive.getFirstDownloadLink().getFileOutput());
                     this.exception = new ExtractionException("Write to disk error");
                     fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
-                case ExtractionControllerConstants.EXIT_CODE_LOCKED_ARCHIVE:
-                    JDLogger.getLogger().warning("Attempt to modify an archive previously locked");
-                    fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
-                    break;
                 case ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR:
-                    JDLogger.getLogger().warning("A fatal error occurred");
+                    JDLogger.getLogger().warning("A unknown fatal error occurred while unpacking " + archive.getFirstDownloadLink().getFileOutput());
                     fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WARNING:
-                    JDLogger.getLogger().warning("Non fatal error(s) occurred");
+                    JDLogger.getLogger().warning("Non fatal error(s) occurred while unpacking " + archive.getFirstDownloadLink().getFileOutput());
                     fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 default:
-                    JDLogger.getLogger().warning("Unknown Error");
                     fireEvent(ExtractionConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
                 }
