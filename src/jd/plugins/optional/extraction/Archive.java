@@ -121,6 +121,11 @@ public class Archive {
      */
     private ArrayList<File>         extractedFiles;
 
+    /**
+     * Indicates that the archive has no folders.
+     */
+    private boolean                 noFolder       = true;
+
     public Archive() {
         archives = new ArrayList<DownloadLink>();
         crcError = new ArrayList<DownloadLink>();
@@ -273,5 +278,13 @@ public class Archive {
 
     public ArrayList<File> getExtractedFiles() {
         return extractedFiles;
+    }
+
+    public void setNoFolder(boolean noFolder) {
+        this.noFolder = noFolder;
+    }
+
+    public boolean isNoFolder() {
+        return noFolder;
     }
 }

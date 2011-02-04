@@ -297,7 +297,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
      * @return
      */
     private File getExtractToPath(DownloadLink link) {
-        IExtraction extractor = getExtractor(link);
         if (link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) return (File) link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH);
         if (link.getHost().equals(DUMMY_HOSTER)) return new File(link.getFileOutput()).getParentFile();
         String path;
@@ -308,43 +307,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             path = this.getPluginConfig().getStringProperty(ExtractionConstants.CONFIG_KEY_UNPACKPATH, JDUtilities.getDefaultDownloadDirectory());
         }
 
-        File ret = new File(path);
-        if (!this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, false)) return ret;
-
-        path = this.getPluginConfig().getStringProperty(ExtractionConstants.CONFIG_KEY_SUBPATH, "%PACKAGENAME%");
-
-        try {
-            if (link.getFilePackage().getName() != null) {
-                path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
-            } else {
-                path = path.replace("%PACKAGENAME%", "");
-                logger.severe("link.getFilePackage().getName() == null");
-            }
-            if (extractor.getArchiveName(link) != null) {
-                path = path.replace("%ARCHIVENAME%", extractor.getArchiveName(link));
-            } else {
-                logger.severe("getArchiveName(link) == null");
-            }
-            if (link.getHost() != null) {
-                path = path.replace("%HOSTER%", link.getHost());
-            } else {
-                logger.severe("link.getFilePackage().getName() == null");
-            }
-
-            String dif = new File(JDUtilities.getDefaultDownloadDirectory()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
-            if (new File(dif).isAbsolute()) {
-                dif = "";
-            }
-            path = path.replace("%SUBFOLDER%", dif);
-
-            path = path.replaceAll("[/]+", "\\\\");
-            path = path.replaceAll("[\\\\]+", "\\\\");
-
-            return new File(ret, path);
-        } catch (Exception e) {
-            JDLogger.exception(e);
-            return ret;
-        }
+        return new File(path);
     }
 
     @Override
@@ -581,17 +544,20 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_OVERWRITE, JDL.L("gui.config.extraction.overwrite", "Overwrite existing files?")).setDefaultValue(false));
 
         config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.config.advanced", "Advanced settings"), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.extraction.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.extraction.deep_extract", "Deep-Extraction")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.extraction.remove_infofile", "Delete Infofile after extraction")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, JDL.L("gui.config.extraction.additional_space", "Leave x MiB additional space after unpacking"), 1, 2048, 1).setDefaultValue(512));
+
+        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.config.subfolder", "Subfolder settings"), getIconKey()));
         config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_SUBPATH, JDL.L("gui.config.extraction.use_subpath", "Use subpath")).setDefaultValue(false));
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH, JDL.L("gui.config.extraction.subpath", "Subpath")));
         ce.setDefaultValue("%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 1, 600, 1).setDefaultValue(5));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 0, 1000, 1).setDefaultValue(0));
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.extraction.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.extraction.deep_extract", "Deep-Extraction")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.extraction.remove_infofile", "Delete Infofile after extraction")).setDefaultValue(false));
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, JDL.L("gui.config.extraction.additional_space", "Leave x MiB additional space after unpacking"), 1, 2048, 1).setDefaultValue(512));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, JDL.L("gui.config.extraction.subpath_no_folder", "Only use subpath if the files of the archive are in not in one folder")).setDefaultValue(false));
+        ce.setEnabledCondidtion(conditionEntry, true);
 
         for (IExtraction extractor : extractors) {
             extractor.initConfig(config, subConfig);
@@ -807,16 +773,49 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
     private void assignRealDownloadDir(ExtractionController controller) {
         Boolean usesub = this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, false);
         if (usesub) {
-            int min = this.getPluginConfig().getIntegerProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
-            if (min > controller.getArchiv().getNumberOfFiles()) { return; }
+            if (this.getPluginConfig().getIntegerProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, 0) > controller.getArchiv().getNumberOfFiles()) { return; }
+            if (!this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, false) || controller.getArchiv().isNoFolder()) { return; }
 
-            File dl = this.getExtractToPath(controller.getArchiv().getFirstDownloadLink());
-            controller.getArchiv().setExtractTo(dl);
+            String path = this.getPluginConfig().getStringProperty(ExtractionConstants.CONFIG_KEY_SUBPATH, "%PACKAGENAME%");
+            DownloadLink link = controller.getArchiv().getFirstDownloadLink();
 
-            ArrayList<DownloadLink> linkList = controller.getArchiv().getDownloadLinks();
-            for (DownloadLink l : linkList) {
+            try {
+                if (link.getFilePackage().getName() != null) {
+                    path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
+                } else {
+                    path = path.replace("%PACKAGENAME%", "");
+                    logger.severe("Could not set packagename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                }
+
+                if (controller.getExtractor().getArchiveName(link) != null) {
+                    path = path.replace("%ARCHIVENAME%", controller.getExtractor().getArchiveName(link));
+                } else {
+                    logger.severe("Could not set archivename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                }
+
+                if (link.getHost() != null) {
+                    path = path.replace("%HOSTER%", link.getHost());
+                } else {
+                    logger.severe("Could not set hoster for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                }
+
+                String dif = new File(JDUtilities.getDefaultDownloadDirectory()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
+                if (new File(dif).isAbsolute()) {
+                    dif = "";
+                }
+                path = path.replace("%SUBFOLDER%", dif);
+
+                path = path.replaceAll("[/]+", "\\\\");
+                path = path.replaceAll("[\\\\]+", "\\\\");
+
+                controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
+
+            for (DownloadLink l : controller.getArchiv().getDownloadLinks()) {
                 if (l == null) continue;
-                l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH, dl.getAbsolutePath());
+                l.setProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH, controller.getArchiv().getExtractTo().getAbsolutePath());
             }
         }
     }
@@ -831,7 +830,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
      */
     private void onExtractionDummyEvent(int id, ExtractionController controller) {
         ProgressController pc = controller.getProgressController();
-        // int min;
         switch (id) {
         case ExtractionConstants.WRAPPER_STARTED:
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));

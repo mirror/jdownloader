@@ -243,8 +243,12 @@ public class Multi implements IExtraction {
 
             long size = 0;
             final BooleanHelper passwordfound = new BooleanHelper();
+            String folder = "";
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
-                size += item.getSize();
+                if (item.isFolder() || item.getSize() == 0) {
+                    continue;
+                }
+
                 if (!passwordArchive && !passwordfound.getBoolean()) {
                     try {
                         final String path = item.getPath();
@@ -297,6 +301,21 @@ public class Multi implements IExtraction {
                         // password was accepted.
                     }
                 }
+
+                String[] erg = item.getPath().split("/");
+                if (archive.isNoFolder() && erg.length > 1) {
+                    if (folder.equals("")) {
+                        folder = erg[0];
+                    } else {
+                        if (!folder.equals(erg[0])) {
+                            archive.setNoFolder(false);
+                        }
+                    }
+                } else {
+                    archive.setNoFolder(false);
+                }
+
+                size += item.getSize();
             }
 
             if (!passwordArchive && !passwordfound.getBoolean()) return false;
@@ -486,11 +505,32 @@ public class Multi implements IExtraction {
 
             long size = 0;
             int numberOfFiles = 0;
+            String folder = "";
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
+                if (item.isFolder()) {
+                    archive.setNoFolder(false);
+                    continue;
+                }
+
                 if (item.getPath().trim().equals("")) continue;
                 if (item.isEncrypted()) {
                     archive.setProtected(true);
+                    return true;
                 }
+
+                String[] erg = item.getPath().split("/");
+                if (archive.isNoFolder() && erg.length > 1) {
+                    if (folder.equals("")) {
+                        folder = erg[0];
+                    } else {
+                        if (!folder.equals(erg[0])) {
+                            archive.setNoFolder(false);
+                        }
+                    }
+                } else {
+                    archive.setNoFolder(false);
+                }
+
                 size += item.getSize();
                 if (item.getSize() > 0) {
                     numberOfFiles++;

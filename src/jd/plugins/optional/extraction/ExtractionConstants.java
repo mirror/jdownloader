@@ -35,6 +35,7 @@ public class ExtractionConstants {
     public static final String CONFIG_KEY_UNPACKPATH                           = "UNPACKPATH";
     public static final String CONFIG_KEY_USE_SUBPATH                          = "USE_SUBPATH";
     public static final String CONFIG_KEY_SUBPATH                              = "SUBPATH";
+    public static final String CONFIG_KEY_SUBPATH_NO_FOLDER                    = "SUBPATH_NO_FOLDER";
     public static final String CONFIG_KEY_REMVE_AFTER_EXTRACT                  = "REMOVE_AFTER_EXTRACT";
     public static final String CONFIG_KEY_ASK_UNKNOWN_PASS                     = "ASK_UNKNOWN_PASS";
     public static final String CONFIG_KEY_OVERWRITE                            = "OVERWRITE";
