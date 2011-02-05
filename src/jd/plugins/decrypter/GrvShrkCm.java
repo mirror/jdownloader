@@ -94,6 +94,9 @@ public class GrvShrkCm extends PluginForDecrypt {
                 dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
             } catch (final Exception e) {
             }
+            // Im finalen Link sind nur \w und '+' Zeichen erlaubt.
+            // Aus '#' wird 'number'
+            dlLink.setProperty("Name", ret.get("Name").replace("#", "number+").replaceAll("\\s\\W|\\W\\s", "").replaceAll("\\W$", "+").replace(" ", "+"));
             decryptedLinks.add(dlLink);
             dlLink.setFilePackage(fp);
         }
@@ -197,6 +200,9 @@ public class GrvShrkCm extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 dlLink.setFilePackage(fp);
+                // Im finalen Link sind nur \w und '+' Zeichen erlaubt.
+                // Aus '#' wird 'number'
+                dlLink.setProperty("Name", titleContent.get("Name").replace("#", "number+").replaceAll("\\s\\W|\\W\\s", "").replaceAll("\\W$", "+").replace(" ", "+"));
                 decryptedLinks.add(dlLink);
                 progress.increase(1);
                 // we do no linkcheck..so this should be fast
@@ -253,13 +259,11 @@ public class GrvShrkCm extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptPlaylists(final String parameter, final ProgressController progress) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.forceDebug(true);
         br.getPage(parameter);
         final String playlistID = parameter.substring(parameter.lastIndexOf("/") + 1);
         final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
         final String method = "playlistGetSongs";
         final String paramString = getPostParameterString(GrvShrkCm.LISTEN, method, country) + "\"parameters\":{\"playlistID\":" + playlistID + "}}";
-        logger.warning(playlistID + " # " + country + " # " + paramString);
         br.getHeaders().put("Content-Type", "application/json");
         br.postPageRaw(GrvShrkCm.LISTEN + "more.php?" + method, paramString);
         final String result = br.getRegex("\"result\"\\:.*?\\[(.*)\\]").getMatch(0);
@@ -281,7 +285,6 @@ public class GrvShrkCm extends PluginForDecrypt {
             final HashMap<String, String> ret = new HashMap<String, String>();
             for (final String[] ss : new Regex(s[0], "\"(.*?)\"\\s*:\\s*\"(.*?)\"").getMatches()) {
                 ret.put(ss[0], ss[1]);
-
             }
             final DownloadLink dlLink = createDownloadlink("http://grooveshark.viajd/song/" + ret.get("SongID"));
             for (final Entry<String, String> next : ret.entrySet()) {
@@ -293,6 +296,9 @@ public class GrvShrkCm extends PluginForDecrypt {
                 dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
             } catch (final Exception e) {
             }
+            // Im finalen Link sind nur \w und '+' Zeichen erlaubt.
+            // Aus '#' wird 'number'
+            dlLink.setProperty("Name", ret.get("Name").replace("#", "number+").replaceAll("\\s\\W|\\W\\s", "").replaceAll("\\W$", "+").replace(" ", "+"));
             decryptedLinks.add(dlLink);
             dlLink.setFilePackage(fp);
         }
@@ -316,7 +322,7 @@ public class GrvShrkCm extends PluginForDecrypt {
     private String getSecretKey(final Browser ajax, final String token, final String sid) throws IOException {
         ajax.getHeaders().put("Content-Type", "application/json");
         String secretKey = "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"20100831.08\",\"session\":\"" + sid + "\",\"uuid\":\"" + GrvShrkCm.USERID + "\"},\"method\":\"getCommunicationToken\"}";
-        ajax.postPageRaw("https://cowbell.grooveshark.com//more.php?getCommunicationToken", secretKey);
+        ajax.postPageRaw("https://cowbell.grooveshark.com/more.php?getCommunicationToken", secretKey);
         secretKey = ajax.getRegex("result\":\"(.*?)\"").getMatch(0);
         return secretKey;
     }
