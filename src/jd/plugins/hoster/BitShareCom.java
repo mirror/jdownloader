@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -75,7 +75,10 @@ public class BitShareCom extends PluginForHost {
         Regex nameAndSize = br.getRegex("<h1>Downloading (.*?) - ([0-9\\.]+ [A-Za-z]+)</h1>");
         String filename = nameAndSize.getMatch(0);
         String filesize = nameAndSize.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            logger.warning("Filename or filesize is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
         return AvailableStatus.TRUE;
@@ -95,7 +98,10 @@ public class BitShareCom extends PluginForHost {
         }
         String fileID = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         String tempID = br.getRegex(AJAXIDREGEX).getMatch(0);
-        if (fileID == null || tempID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileID == null || tempID == null) {
+            logger.warning("fileID or tempID is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
@@ -154,6 +160,7 @@ public class BitShareCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("<h1>404 Not Found</h1>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            logger.warning("Unhandled error happened before the download");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
