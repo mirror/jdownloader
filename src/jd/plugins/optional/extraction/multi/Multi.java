@@ -395,8 +395,6 @@ public class Multi implements IExtraction {
                     }
                 }
 
-                if (archive.getExitCode() != 0) { return; }
-
                 // TODO: Write an proper CRC check
                 // System.out.println(item.getCRC() + " : " +
                 // Integer.toHexString(item.getCRC()) + " : " +
@@ -634,6 +632,17 @@ public class Multi implements IExtraction {
     }
 
     public void close() {
+        // Deleteing rar recovery volumes
+        if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstDownloadLink().getFileOutput().matches(PatternRarMulti)) {
+            for (DownloadLink link : archive.getDownloadLinks()) {
+                File f = new File(link.getFileOutput().replace(".rar", ".rev"));
+                if (f.exists()) {
+                    logger.info("Deleteing rar recovery volume " + f.getAbsolutePath());
+                    f.delete();
+                }
+            }
+        }
+
         try {
             if (multiopener != null) {
                 multiopener.close();

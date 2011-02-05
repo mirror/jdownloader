@@ -788,21 +788,21 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             DownloadLink link = controller.getArchiv().getFirstDownloadLink();
 
             try {
-                if (path.contains("%PACKAGENAME%") && link.getFilePackage().getName() != null) {
+                if (link.getFilePackage().getName() != null) {
                     path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
                 } else {
                     path = path.replace("%PACKAGENAME%", "");
                     logger.severe("Could not set packagename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
                 }
 
-                if (path.contains("%ARCHIVENAME%") && controller.getExtractor().getArchiveName(link) != null) {
+                if (controller.getExtractor().getArchiveName(link) != null) {
                     path = path.replace("%ARCHIVENAME%", controller.getExtractor().getArchiveName(link));
                 } else {
                     path = path.replace("%ARCHIVENAME%", "");
                     logger.severe("Could not set archivename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
                 }
 
-                if (path.contains("%HOSTER%") && link.getHost() != null) {
+                if (link.getHost() != null) {
                     path = path.replace("%HOSTER%", link.getHost());
                 } else {
                     path = path.replace("%HOSTER%", "");
