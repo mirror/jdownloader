@@ -52,7 +52,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         String finalfilename = null;
         if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("yourfileplace.com/") && !parameter.contains("oneclickmoviez.com/dwnl/") && !parameter.contains("1tool.biz") && !parameter.contains("catchfile.net") && !parameter.contains("file4ever.us") && !parameter.contains("trailerzone.info/") && !parameter.contains("fairtilizer.com/") && !parameter.contains("tm-exchange.com/") && !parameter.contains("fileblip.com/") && !parameter.contains("mixconnect.com/") && !parameter.contains("machines.") && !parameter.contains("ubuntuone.com")) br.getPage(parameter);
         if (parameter.contains("adf.ly/") || parameter.contains("9.bb/")) {
-            System.out.print(br.toString());
             if (parameter.contains("9.bb/") && br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             finallink = br.getRedirectLocation();
             if (finallink == null) {
