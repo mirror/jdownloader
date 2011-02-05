@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://[\\w\\.]*?xhamster\\.com/movies/[0-9]+/.*?\\.html" }, flags = { 0 })
 public class XHamsterCom extends PluginForHost {
@@ -67,8 +68,20 @@ public class XHamsterCom extends PluginForHost {
             downloadLink.setName(filename);
         }
         String dllink = getDllink();
-        if (!br.openGetConnection(dllink).getContentType().contains("html")) downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
-        return AvailableStatus.TRUE;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(dllink);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
     }
 
     @Override
