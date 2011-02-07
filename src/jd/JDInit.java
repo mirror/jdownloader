@@ -65,6 +65,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.ShutDownHooksQueue;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -274,8 +275,8 @@ public class JDInit {
         GarbageController.getInstance();
         DownloadController.getInstance();
         /* add ShutdownHook so we have chance to save database properly */
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
+        ShutDownHooksQueue.add(new Runnable() {
+
             public void run() {
                 try {
                     if (DatabaseConnector.isDatabaseShutdown()) {

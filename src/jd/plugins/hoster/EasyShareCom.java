@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -201,7 +201,7 @@ public class EasyShareCom extends PluginForHost {
                     break;
                 }
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode("recaptcha", cf, downloadLink);
+            String code = getCaptchaCode(cf, downloadLink);
             form.put("recaptcha_challenge_field", challenge);
             form.put("recaptcha_response_field", Encoding.urlEncode(code));
             br.setFollowRedirects(true);

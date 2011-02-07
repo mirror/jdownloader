@@ -193,8 +193,16 @@ public class FavIconController extends SubConfiguration implements Runnable {
             }
             favBr.getPage("http://" + host);
             url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?)('|\")").getMatch(4);
-            if (url == null) url = favBr.getRegex("href=('|\")([^>'\"]*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
-            if (url != null) {
+            if (url == null || url.length() == 0) url = favBr.getRegex("href=('|\")([^>'\"]*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
+            if (url == null || url.length() == 0) {
+                /*
+                 * workaround for hoster with not complete url, eg
+                 * rapidshare.com
+                 */
+                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=.*?//([^>'\"]*?)('|\")").getMatch(3);
+                if (url != null && url.length() > 0) url = "http://" + url;
+            }
+            if (url != null && url.length() > 0) {
                 /* favicon tag with ico extension */
                 favBr.getHeaders().put("Accept-Encoding", "");
                 con = favBr.openGetConnection(url);
