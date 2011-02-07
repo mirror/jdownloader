@@ -28,13 +28,13 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/.+" }, flags = { 0 })
 public class ReverBnationCom extends PluginForDecrypt {
 
-    public ReverBnationCom(PluginWrapper wrapper) {
+    public ReverBnationCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String artist = br.getRegex("=artist_(\\d+)\"").getMatch(0);
@@ -51,12 +51,25 @@ public class ReverBnationCom extends PluginForDecrypt {
                 ids = br.getRegex("onclick=\"addSongToQueue\\(\\'(\\d+)\\'\\)").getColumn(0);
             }
         }
-        if (ids == null || ids.length == 0 || artist == null) return null;
-        for (String id : ids) {
-            decryptedLinks.add(createDownloadlink("reverbnationcomid" + id + "reverbnationcomartist" + artist));
+        final String[] titleContent = br.getRegex("songpopup-(songname|artistname).*?\">(.*?)(</div>|\">)").getColumn(1);
+        if (ids == null || ids.length == 0 || titleContent == null || titleContent.length == 0 || artist == null) { return null; }
+        final String[] title = new String[ids.length];
+        for (int i = 0, j = 0; j < ids.length; i += 2, j++) {
+            if (!titleContent[i].contains(titleContent[i + 1])) {
+                title[j] = titleContent[i + 1] + " - " + titleContent[i];
+            } else {
+                title[j] = titleContent[i];
+            }
         }
-
+        for (int i = 0; i < ids.length; i++) {
+            final DownloadLink dlLink = createDownloadlink("reverbnationcomid" + ids[i] + "reverbnationcomartist" + artist);
+            dlLink.setName(title[i].replaceAll("<span title=\"", ""));
+            decryptedLinks.add(dlLink);
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
+        }
         return decryptedLinks;
     }
-
 }

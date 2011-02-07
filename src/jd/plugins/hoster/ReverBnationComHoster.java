@@ -18,20 +18,23 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
+import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "reverbnationcomid\\d+reverbnationcomartist\\d+" }, flags = { 0 })
 public class ReverBnationComHoster extends PluginForHost {
 
-    public ReverBnationComHoster(PluginWrapper wrapper) {
+    public ReverBnationComHoster(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -40,65 +43,53 @@ public class ReverBnationComHoster extends PluginForHost {
         return "http://www.reverbnation.com/main/terms_and_conditions";
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        String dllink = getDllink(link);
-        URLConnectionAdapter con = null;
+    private String getBps(final String crap, final String sID) throws PluginException {
+        /*
+         * Ich habe es mit BigInteger versucht!
+         */
+        final String tk = new Regex(crap, "tk=(\\d+)").getMatch(0);
+        final String rk = new Regex(crap, "rk=(\\d+)").getMatch(0);
+        final String keyCode = "1103515245";
+        final String constantKey = "12345";
+        final String binRate = "1.000000E+015";
+        Object result = new Object();
+        final String fun = "(" + rk + "+" + tk + "*" + sID + "*" + keyCode + "+" + constantKey + ")%" + binRate;
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                return AvailableStatus.TRUE;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        String dllink = getDllink(downloadLink);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+            result = ((Double) engine.eval(fun)).longValue();
+        } catch (final Exception e) {
+            JDLogger.exception(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        return result.toString();
     }
 
-    private String getDllink(DownloadLink link) throws IOException, PluginException {
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("X-Prototype-Version", "1.6.1");
-        Regex infoRegex = new Regex(link.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
-        System.out.print("http://www.reverbnation.com/audio_player/add_to_beginning/" + infoRegex.getMatch(0) + "?from_page_object=artist_" + infoRegex.getMatch(1));
+    private String getDllink(final DownloadLink link) throws IOException, PluginException {
+        final Regex infoRegex = new Regex(link.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
         br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + infoRegex.getMatch(0) + "?from_page_object=artist_" + infoRegex.getMatch(1), "");
-        String damnString = br.getRegex("from_page_object=String_-(\\d+)\\\\\"").getMatch(0);
-        if (damnString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String damnString = br.getRegex("from_page_object=String_-(\\d+)\\\\\"").getMatch(0);
+        if (damnString == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        // folgender Request macht unten den redirect
+        br.postPage("http://www.reverbnation.com/audio_player/set_now_playing_index/0", "");
         br.getPage("http://www.reverbnation.com/controller/audio_player/get_tk");
-        String crap = br.toString().trim();
-        if (crap.length() > 300) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        System.out.print("http://www.reverbnation.com/controller/audio_player/liby/queue_" + infoRegex.getMatch(1) + "?from_page_object=String_-" + damnString + "&" + crap + "&bps=634519254827008");
-        br.getPage("http://www.reverbnation.com/controller/audio_player/liby/queue_" + infoRegex.getMatch(1) + "?from_page_object=String_-" + damnString + "&" + crap + "&bps=634519254827008");
-        // Hier müsste eigentlich ein redirect auf den finalen Link erfolgen
-        System.out.print(br.getRedirectLocation());
-        System.out.print(br.toString());
-        String finallink = br.getRegex("Navigate\\.go_to_page_url\\(\\'(.*?)\\'").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        finallink = finallink.replace("tk%3D", "&tk=");
+        final String crap = br.toString().trim();
+        if (crap.length() > 300) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        // bps berechnen
+        final String bps = getBps(crap, infoRegex.getMatch(0));
+        br.getPage("http://www.reverbnation.com/controller/audio_player/liby/_" + infoRegex.getMatch(0) + "?from_page_object=String_-" + damnString + "&" + crap + "&bps=" + bps);
+        final String finallink = br.getRedirectLocation();
+        if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        // wichtige Header
+        br.getHeaders().put("Referer", "http://cache.reverbnation.com/audio_player/inline_audioplayer_v2xx.swf?4037");
+        br.getHeaders().put("x-flash-version", "10,1,53,64");
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Accept-Language", "de-DE");
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Connection", "Keep-Alive");
         return finallink;
-    }
-
-    @Override
-    public void reset() {
     }
 
     @Override
@@ -107,7 +98,38 @@ public class ReverBnationComHoster extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setDebug(true);
+        br.setFollowRedirects(false);
+        // alternative Downloadmethode
+        final Regex infoRegex = new Regex(downloadLink.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
+        br.postPage("http://www.reverbnation.com/controller/audio_player/download_song/" + infoRegex.getMatch(0) + "?modal=true", "");
+        String dllink = br.getRegex("location\\.href='(.*?)'").getMatch(0);
+        // der harte Weg
+        if (dllink == null) {
+            dllink = getDllink(downloadLink);
+        }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
+    }
 }
