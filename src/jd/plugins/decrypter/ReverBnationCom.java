@@ -23,6 +23,7 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/.+" }, flags = { 0 })
@@ -61,10 +62,15 @@ public class ReverBnationCom extends PluginForDecrypt {
                 title[j] = titleContent[i];
             }
         }
+        int nameCounter = 0;
         for (int i = 0; i < ids.length; i++) {
             final DownloadLink dlLink = createDownloadlink("reverbnationcomid" + ids[i] + "reverbnationcomartist" + artist);
             dlLink.setName(title[i].replaceAll("<span title=\"", ""));
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(titleContent[nameCounter + 1]);
+            dlLink.setFilePackage(fp);
             decryptedLinks.add(dlLink);
+            nameCounter += 2;
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);

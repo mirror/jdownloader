@@ -66,6 +66,12 @@ public class MgfpCm extends PluginForDecrypt {
             authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
             if (authorsName == null) {
                 authorsName = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
+                if (authorsName == null) {
+                    authorsName = br.getRegex("<title>Porn pics of (.*?) (\\(Page 1\\))?</title>").getMatch(0);
+                    if (authorsName == null) {
+                        authorsName = br.getRegex("<a class=\"title\" href=\"/gallery/\\d+\">(.*?)</a>").getMatch(0);
+                    }
+                }
             }
         }
         if (galleryName == null) {
