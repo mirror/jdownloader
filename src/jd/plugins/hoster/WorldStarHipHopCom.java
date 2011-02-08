@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "http://[\\w\\.]*?worldstarhiphop\\.com/videos/video(\\d+)?.php\\?v=[a-zA-Z0-9]+" }, flags = { 0 })
 public class WorldStarHipHopCom extends PluginForHost {
@@ -62,6 +62,7 @@ public class WorldStarHipHopCom extends PluginForHost {
         }
         dllink = br.getRegex("v=playFLV\\.php\\?loc=(http://.*?\\.(mp4|flv))\\&amp;").getMatch(0);
         if (dllink == null) dllink = br.getRegex("(http://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("v=(http://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         String ext = ".mp4";
@@ -70,12 +71,20 @@ public class WorldStarHipHopCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = br2.openGetConnection(dllink);
-        if (!con.getContentType().contains("html"))
-            downloadLink.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override

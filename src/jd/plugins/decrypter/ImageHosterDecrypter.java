@@ -21,14 +21,16 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/" }, flags = { 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com" }, urls = { "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/" }, flags = { 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(PluginWrapper wrapper) {
@@ -44,7 +46,34 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         String finallink = null;
         if (parameter.contains("imagebam.com")) {
             /* Error handling */
+            if (br.containsHTML("The gallery you are looking for")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             if (br.containsHTML("Image not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (parameter.contains("/gallery/")) {
+                String name = new Regex(parameter, "/gallery/(.+)").getMatch(0);
+                if (name == null) {
+                    name = "ImageBamGallery";
+                } else {
+                    name = "ImageBamGallery_" + name;
+                }
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(name);
+                String pages[] = br.getRegex("class=\"pagination_(current|link)\">(\\d+)<").getColumn(1);
+                for (String page : pages) {
+                    br.getPage(parameter + "/" + page);
+                    if (br.containsHTML("The gallery you are looking for")) continue;
+                    String links[] = br.getRegex("'(http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
+                    for (String link : links) {
+                        DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
+                        decryptedLinks.add(dl);
+                    }
+                }
+                if (decryptedLinks.size() > 0) {
+                    fp.addLinks(decryptedLinks);
+                    return decryptedLinks;
+                } else {
+                    return null;
+                }
+            }
             finallink = br.getRegex("\\'(http://[0-9]+\\.imagebam\\.com/dl\\.php\\?ID=.*?)\\'").getMatch(0);
             if (finallink == null) finallink = br.getRegex("\\'(http://[0-9]+\\.imagebam\\.com/download\\.php\\?ID=.*?)\\'").getMatch(0);
         } else if (parameter.contains("media.photobucket.com")) {

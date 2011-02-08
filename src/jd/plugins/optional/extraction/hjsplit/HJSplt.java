@@ -173,7 +173,7 @@ public class HJSplt implements IExtraction {
                 return false;
             } else {
                 Archive a = buildDummyArchive(file);
-                if (a.getFirstDownloadLink() != null || a.getDownloadLinks().size() < 2) {
+                if (a.getFirstDownloadLink() == null || a.getDownloadLinks().size() <= 1) {
                     return false;
                 } else {
                     return true;
