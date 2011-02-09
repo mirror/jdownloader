@@ -16,6 +16,8 @@
 
 package jd.plugins.optional.extraction;
 
+import java.util.List;
+
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.plugins.DownloadLink;
@@ -151,4 +153,13 @@ public interface IExtraction {
      * Ends the extraction.
      */
     public void close();
+
+    /**
+     * checks an Archive if any part is missing.
+     * 
+     * @param archive
+     *            The archive.
+     * @return A list of parts which are missing.
+     */
+    public List<String> checkComplete(Archive archive);
 }

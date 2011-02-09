@@ -36,7 +36,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
@@ -152,8 +151,8 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     for (File archiveStartFile : list) {
                         if (isLinkSupported(archiveStartFile.getAbsolutePath())) {
                             Archive ar = buildDummyArchive(archiveStartFile);
-                            if (ar.isActive()) continue;
-                            addToQueue(buildDummyArchive(archiveStartFile));
+                            if (ar.isActive() || !ar.isComplete()) continue;
+                            addToQueue(ar);
                         }
                     }
                 } catch (Exception e) {
@@ -242,7 +241,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
      * Startet das abwarbeiten der extractqueue
      */
     private void addToQueue(final Archive archive) {
-        IExtraction extractor = getExtractor(archive.getFirstDownloadLink());
+        IExtraction extractor = archive.getExtractor();
 
         if (!new File(archive.getFirstDownloadLink().getFileOutput()).exists()) return;
         archive.getFirstDownloadLink().getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
@@ -252,7 +251,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         archive.setOverwriteFiles(this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_OVERWRITE, true));
         archive.setExtractTo(dl);
 
-        ExtractionController controller = new ExtractionController(archive, extractor);
+        ExtractionController controller = new ExtractionController(archive);
 
         if (archive.getFirstDownloadLink().getHost().equals(DUMMY_HOSTER)) {
             ProgressController progress = new ProgressController(JDL.LF("plugins.optional.extraction.progress.extractfile", "Extract %s", archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
@@ -263,18 +262,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
 
         controller.setRemoveAfterExtract(this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, false));
 
-        ArrayList<String> pwList = new ArrayList<String>();
-        pwList.add(archive.getFirstDownloadLink().getFilePackage().getPassword());
-        pwList.addAll(archive.getFirstDownloadLink().getFilePackage().getPasswordAuto());
-        String dlpw = archive.getFirstDownloadLink().getStringProperty("pass", null);
-        if (dlpw != null) pwList.add(dlpw);
-        pwList.addAll(PasswordListController.getInstance().getPasswordList());
-        pwList.add(extractor.getArchiveName(archive.getFirstDownloadLink()));
-        pwList.add(new File(archive.getFirstDownloadLink().getFileOutput()).getName());
-        controller.setPasswordList(pwList);
-
         archive.setActive(true);
-
         extractor.setConfig(getPluginConfig());
 
         controller.fireEvent(ExtractionConstants.WRAPPER_STARTED);
@@ -354,11 +342,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         DownloadLink link = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
         if (link == null) {
             /* link no longer in list */
-            link = new DownloadLink(null, file.getName(), DUMMY_HOSTER, "", true);
-            link.setDownloadSize(file.length());
-            FilePackage fp = FilePackage.getInstance();
-            fp.setDownloadDirectory(file.getParent());
-            link.setFilePackage(fp);
+            DummyDownloadLink link0 = new DummyDownloadLink(null, file.getName(), DUMMY_HOSTER, "", true);
+            link0.setFile(file);
+            return buildArchive(link0);
         }
 
         return buildArchive(link);
@@ -380,7 +366,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 new Thread() {
                     @Override
                     public void run() {
-                        addToQueue(archive);
+                        if (archive.isComplete()) addToQueue(archive);
                     }
                 }.start();
             }
@@ -401,7 +387,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                 new Thread() {
                     @Override
                     public void run() {
-                        addToQueue(archive0);
+                        if (archive0.isComplete()) addToQueue(archive0);
                     }
                 }.start();
             }
@@ -523,7 +509,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     new Thread() {
                         @Override
                         public void run() {
-                            addToQueue(archive);
+                            if (archive.isComplete()) addToQueue(archive);
                         }
                     }.start();
                 }
@@ -625,7 +611,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
 
             if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.extraction.askForPassword", "Password for %s?", controller.getArchiv().getFirstDownloadLink().getName()), null);
+                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.extraction.askForPassword", "Password for %s?", controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
                     ls.setStatusText(JDL.L("plugins.optional.extraction.status.extractfailedpass", "Extract failed (password)"));
@@ -795,8 +781,8 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     logger.severe("Could not set packagename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
                 }
 
-                if (controller.getExtractor().getArchiveName(link) != null) {
-                    path = path.replace("%ARCHIVENAME%", controller.getExtractor().getArchiveName(link));
+                if (controller.getArchiv().getExtractor().getArchiveName(link) != null) {
+                    path = path.replace("%ARCHIVENAME%", controller.getArchiv().getExtractor().getArchiveName(link));
                 } else {
                     path = path.replace("%ARCHIVENAME%", "");
                     logger.severe("Could not set archivename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
@@ -884,7 +870,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailedpass", "Extract failed (password)"));
 
             if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.extraction.askForPassword", "Password for %s?", controller.getArchiv().getFirstDownloadLink().getName()), null);
+                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.extraction.askForPassword", "Password for %s?", controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     this.onFinished(controller);
                     break;

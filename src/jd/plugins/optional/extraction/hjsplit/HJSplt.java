@@ -19,15 +19,16 @@ package jd.plugins.optional.extraction.hjsplit;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.nutils.io.FileSignatures;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.optional.extraction.Archive;
+import jd.plugins.optional.extraction.DummyDownloadLink;
 import jd.plugins.optional.extraction.ExtractionController;
 import jd.plugins.optional.extraction.ExtractionControllerConstants;
 import jd.plugins.optional.extraction.IExtraction;
@@ -51,6 +52,7 @@ public class HJSplt implements IExtraction {
 
     public Archive buildArchive(DownloadLink link) {
         Archive a = new Archive();
+        a.setExtractor(this);
 
         File file = new File(link.getFileOutput());
 
@@ -92,12 +94,8 @@ public class HJSplt implements IExtraction {
      */
     private DownloadLink buildDownloadLinkFromFile(String file) {
         File file0 = new File(file);
-        DownloadLink link = new DownloadLink(null, file0.getName(), DUMMY_HOSTER, "", true);
-        link.setDownloadSize(file0.length());
-        FilePackage fp = FilePackage.getInstance();
-        fp.setDownloadDirectory(file0.getParent());
-        link.setFilePackage(fp);
-
+        DummyDownloadLink link = new DummyDownloadLink(null, file0.getName(), DUMMY_HOSTER, "", true);
+        link.setFile(file0);
         return link;
     }
 
@@ -407,5 +405,9 @@ public class HJSplt implements IExtraction {
             return ext;
         }
         return null;
+    }
+
+    public List<String> checkComplete(Archive archive) {
+        return new ArrayList<String>();
     }
 }

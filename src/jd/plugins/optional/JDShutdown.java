@@ -359,6 +359,21 @@ public class JDShutdown extends PluginOptional {
                     }
                 }
             }
+
+            addon = JDUtilities.getOptionalPlugin("extraction");
+            if (addon != null && addon.isEnabled()) {
+                while (true) {
+                    Object obj = addon.getPlugin().interact("isWorking", null);
+                    if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;
+                    logger.info("JD-Unrar is working - wait before shutting down");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        JDLogger.exception(e);
+                    }
+                }
+            }
+
             int ret = getPluginConfig().getIntegerProperty(CONFIG_MODE, 0);
             String message;
             int ret2;

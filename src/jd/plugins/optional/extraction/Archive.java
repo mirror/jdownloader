@@ -18,7 +18,9 @@ package jd.plugins.optional.extraction;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
+import jd.controlling.JDLogger;
 import jd.plugins.DownloadLink;
 
 /**
@@ -126,6 +128,11 @@ public class Archive {
      */
     private boolean                 noFolder       = true;
 
+    /**
+     * The extractor for the archive.
+     */
+    private IExtraction             extractor;
+
     public Archive() {
         archives = new ArrayList<DownloadLink>();
         crcError = new ArrayList<DownloadLink>();
@@ -229,12 +236,15 @@ public class Archive {
 
     public boolean isComplete() {
         for (DownloadLink l : archives) {
-            System.out.println(l.getLinkStatus());
-            if (!l.getLinkStatus().isFinished()) { // &&
-                                                   // !l.getFilePackage().isPostProcessing())
-                                                   // {
-                return false;
+            if (!l.getLinkStatus().isFinished() || !new File(l.getFileOutput()).exists()) { return false; }
+        }
+
+        List<String> missing = extractor.checkComplete(this);
+        if (missing.size() > 0) {
+            for (String entry : missing) {
+                JDLogger.getLogger().warning("Missing archive file: " + entry);
             }
+            return false;
         }
 
         return true;
@@ -286,5 +296,13 @@ public class Archive {
 
     public boolean isNoFolder() {
         return noFolder;
+    }
+
+    public void setExtractor(IExtraction extractor) {
+        this.extractor = extractor;
+    }
+
+    public IExtraction getExtractor() {
+        return extractor;
     }
 }

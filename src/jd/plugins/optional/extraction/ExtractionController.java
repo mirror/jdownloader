@@ -50,16 +50,17 @@ public class ExtractionController extends Thread implements JDRunnable {
     private Timer                         timer;
     private Logger                        logger;
 
-    ExtractionController(Archive archiv, IExtraction extractor) {
+    ExtractionController(Archive archiv) {
         this.archive = archiv;
-        this.extractor = extractor;
 
+        extractor = archive.getExtractor();
         extractor.setArchiv(archiv);
         extractor.setExtractionController(this);
 
         config = SubConfiguration.getConfig(JDL.L("plugins.optional.extraction.name", "Extraction"));
 
         logger = JDLogger.getLogger();
+        passwordList = new ArrayList<String>();
     }
 
     /**
@@ -133,6 +134,14 @@ public class ExtractionController extends Thread implements JDRunnable {
                     extractor.close();
                     return;
                 }
+
+                passwordList.add(archive.getFirstDownloadLink().getFilePackage().getPassword());
+                passwordList.addAll(archive.getFirstDownloadLink().getFilePackage().getPasswordAuto());
+                String dlpw = archive.getFirstDownloadLink().getStringProperty("pass", null);
+                if (dlpw != null) passwordList.add(dlpw);
+                passwordList.addAll(PasswordListController.getInstance().getPasswordList());
+                passwordList.add(extractor.getArchiveName(archive.getFirstDownloadLink()));
+                passwordList.add(new File(archive.getFirstDownloadLink().getFileOutput()).getName());
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
                     fireEvent(ExtractionConstants.WRAPPER_CRACK_PASSWORD);
@@ -273,15 +282,6 @@ public class ExtractionController extends Thread implements JDRunnable {
     }
 
     /**
-     * Sets the password list for extraction.
-     * 
-     * @param passwordList
-     */
-    void setPasswordList(ArrayList<String> passwordList) {
-        this.passwordList = passwordList;
-    }
-
-    /**
      * Gets the passwordlist
      * 
      * @return
@@ -349,15 +349,6 @@ public class ExtractionController extends Thread implements JDRunnable {
      */
     public void setExeption(Exception e) {
         exception = e;
-    }
-
-    /**
-     * Returns the extractor of this controller.
-     * 
-     * @return
-     */
-    IExtraction getExtractor() {
-        return extractor;
     }
 
     /**

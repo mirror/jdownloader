@@ -33,9 +33,9 @@ import jd.controlling.JDLogger;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.optional.extraction.Archive;
+import jd.plugins.optional.extraction.DummyDownloadLink;
 import jd.plugins.optional.extraction.ExtractionConstants;
 import jd.plugins.optional.extraction.ExtractionController;
 import jd.plugins.optional.extraction.ExtractionControllerConstants;
@@ -54,6 +54,7 @@ import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.StringFormatter;
 
 /**
  * Extracts rar, zip, 7z. tar.gz, tar.bz2.
@@ -82,9 +83,6 @@ public class Multi implements IExtraction {
 
     private Logger                   logger;
 
-    // Indicates that the passwordcheck works with only open the archive.
-    private boolean                  passwordArchive    = false;
-
     // Indicates that the passwordcheck works with extracting the archive.
     private boolean                  passwordExtracting = false;
 
@@ -106,6 +104,7 @@ public class Multi implements IExtraction {
     public Archive buildArchive(DownloadLink link) {
         String file = link.getFileOutput();
         Archive archive = new Archive();
+        archive.setExtractor(this);
 
         String pattern = "";
         ArrayList<DownloadLink> matches = new ArrayList<DownloadLink>();
@@ -196,12 +195,8 @@ public class Multi implements IExtraction {
      */
     private DownloadLink buildDownloadLinkFromFile(String file) {
         File file0 = new File(file);
-        DownloadLink link = new DownloadLink(null, file0.getName(), DUMMY_HOSTER, "", true);
-        link.setDownloadSize(file0.length());
-        FilePackage fp = FilePackage.getInstance();
-        fp.setDownloadDirectory(file0.getParent());
-        link.setFilePackage(fp);
-
+        DummyDownloadLink link = new DummyDownloadLink(null, file0.getName(), DUMMY_HOSTER, "", true);
+        link.setFile(file0);
         return link;
     }
 
@@ -220,7 +215,11 @@ public class Multi implements IExtraction {
 
         try {
             if (inArchive != null) {
-                inArchive.close();
+                try {
+                    inArchive.close();
+                } catch (SevenZipException e) {
+                    logger.warning("Unable to close archive");
+                }
             }
 
             if (archive.getType() == Archive.SINGLE_FILE) {
@@ -251,7 +250,7 @@ public class Multi implements IExtraction {
                     continue;
                 }
 
-                if (!passwordArchive && !passwordfound.getBoolean()) {
+                if (!passwordfound.getBoolean()) {
                     try {
                         final String path = item.getPath();
                         item.extractSlow(new ISequentialOutStream() {
@@ -322,7 +321,7 @@ public class Multi implements IExtraction {
                 size += item.getSize();
             }
 
-            if (!passwordArchive && !passwordfound.getBoolean()) return false;
+            if (!passwordfound.getBoolean()) return false;
 
             archive.setSize(size);
 
@@ -331,7 +330,6 @@ public class Multi implements IExtraction {
         } catch (FileNotFoundException e) {
             return false;
         } catch (SevenZipException e) {
-            passwordArchive = true;
             return false;
         } catch (IOException e) {
             e.printStackTrace();
@@ -638,7 +636,9 @@ public class Multi implements IExtraction {
                 File f = new File(link.getFileOutput().replace(".rar", ".rev"));
                 if (f.exists()) {
                     logger.info("Deleteing rar recovery volume " + f.getAbsolutePath());
-                    f.delete();
+                    if (!f.delete()) {
+                        logger.warning("Could not deleting rar recovery volume " + f.getAbsolutePath());
+                    }
                 }
             }
         }
@@ -710,5 +710,85 @@ public class Multi implements IExtraction {
         boolean getBoolean() {
             return bool;
         }
+    }
+
+    public List<String> checkComplete(Archive archive) {
+        List<String> missing = new ArrayList<String>();
+
+        if (archive.getType() == Archive.SINGLE_FILE || archive.getDownloadLinks().size() < 2) return missing;
+
+        int last = 1;
+        int length = 0;
+        int start = 2;
+        String getpartid = "";
+        String getwhole = "";
+        String postfix = "";
+        String first = "";
+        DownloadLink firstdl = null;
+
+        switch (archive.getType()) {
+        case Archive.MULTI:
+            firstdl = archive.getFirstDownloadLink();
+            getpartid = "\\.7z\\.?(\\d+)";
+            getwhole = "(\\.7z\\.?)(\\d+)";
+            break;
+        case Archive.MULTI_RAR:
+            if (archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) {
+                getpartid = "\\.pa?r?t?\\.?(\\d+)\\.";
+                getwhole = "(\\.pa?r?t?\\.?)(\\d+)\\.";
+                postfix = ".rar";
+                firstdl = archive.getFirstDownloadLink();
+            } else if (archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.rar$") && !archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
+                start = 0;
+                getpartid = "\\.r(\\d+)";
+                getwhole = "(\\.r)(\\d+)";
+                for (DownloadLink l : archive.getDownloadLinks()) {
+                    if (l.getFileOutput().endsWith(".r00")) {
+                        firstdl = l;
+                        break;
+                    }
+                }
+            }
+            break;
+        default:
+            return missing;
+        }
+
+        first = firstdl.getFileOutput();
+
+        if (archive.getDownloadLinks().size() == 1) {
+            String part = getArchiveName(firstdl) + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last++ + "", "0", "", length) + postfix;
+            missing.add(part);
+            return missing;
+        }
+
+        // Just get partnumbers to speed up the checking.
+        List<Integer> erg = new ArrayList<Integer>();
+        for (DownloadLink l : archive.getDownloadLinks()) {
+            String e = "";
+            if ((e = new Regex(l.getFileOutput(), getpartid).getMatch(0)) != null) {
+                int p = Integer.parseInt(e);
+
+                if (p > last) last = p;
+
+                erg.add(p);
+            }
+        }
+
+        length = new Regex(first, getpartid).getMatch(0).length();
+
+        for (int i = start; i <= last; i++) {
+            if (!erg.contains(i)) {
+                String part = getArchiveName(firstdl) + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(i + "", "0", "", length) + postfix;
+                missing.add(part);
+            }
+        }
+
+        if (new File(first).length() <= new File(new File(first).getParent() + File.separator + getArchiveName(firstdl) + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last + "", "0", "", length) + postfix).length()) {
+            String part = getArchiveName(firstdl) + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last++ + "", "0", "", length) + postfix;
+            missing.add(part);
+        }
+
+        return missing;
     }
 }
