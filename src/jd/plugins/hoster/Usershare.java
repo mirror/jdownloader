@@ -64,7 +64,7 @@ public class Usershare extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (br.containsHTML("\"download1\"")) {
-            br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(link.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
+            br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(link.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "(.*?/)?([a-z0-9]{12})").getMatch(1) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
         }
         String passCode = null;
         String linkurl = null;
@@ -142,6 +142,7 @@ public class Usershare extends PluginForHost {
             return ai;
         }
         String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space == null) space = br.getRegex(Pattern.compile("<label>Used space: </label><span>(.*?) of .*?Mb </span></li>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
@@ -160,7 +161,8 @@ public class Usershare extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        String expire = new Regex(br.toString(), "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+        String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+        if (expire == null) expire = br.getRegex("<label> Premium-Account expire:</label><span>(.*?)</span>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
@@ -263,7 +265,7 @@ public class Usershare extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("label>Size:</label> <span>(.*?)</span>").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("You have requested <font color=\"red\">http://(www\\.)?usershare\\.net/[a-z0-9]{12}/.*?</font> \\((.*?)\\)</font>").getMatch(1);
+                filesize = br.getRegex("You have requested <font color=\"red\">http://(www\\.)?usershare\\.net/(.*?/[0-9a-z]{12}|[0-9a-z]{12}).*?</font> \\((.*?)\\)</font>").getMatch(2);
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
