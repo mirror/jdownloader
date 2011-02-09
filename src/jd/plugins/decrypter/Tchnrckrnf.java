@@ -32,13 +32,12 @@ public class Tchnrckrnf extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String link = br.getRegex("value=\"(.*?)\"").getMatch(0);
+        String link = br.getRegex("window\\.location\\.href = \\'(.*?)\\';").getMatch(0);
         if (link == null) return null;
         DownloadLink dl_link = createDownloadlink(link);
         dl_link.addSourcePluginPassword("technorocker");
@@ -46,7 +45,5 @@ public class Tchnrckrnf extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
