@@ -27,11 +27,11 @@ import org.appwork.utils.Regex;
 
 public class JDPremServServer implements Handler, ControlListener {
 
-    private static final JDPremServServer INSTANCE = new JDPremServServer();
-    private HttpServer server = null;
-    private static final HashMap<String, ArrayList<DownloadLink>> startedLinks = new HashMap<String, ArrayList<DownloadLink>>();
-    private static final Object LOCK = new Object();
-    private boolean listenerAdded = false;
+    private static final JDPremServServer                         INSTANCE      = new JDPremServServer();
+    private HttpServer                                            server        = null;
+    private static final HashMap<String, ArrayList<DownloadLink>> startedLinks  = new HashMap<String, ArrayList<DownloadLink>>();
+    private static final Object                                   LOCK          = new Object();
+    private boolean                                               listenerAdded = false;
 
     private JDPremServServer() {
     }
@@ -65,7 +65,7 @@ public class JDPremServServer implements Handler, ControlListener {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String dlpw = request.getParameter("dlpw");
-        String resetUrl = request.getParameter("reset");
+        String resetUrl = request.getParameter("link");
         if (resetUrl != null) resetUrl = Encoding.urlDecode(resetUrl, false);
         if (username != null) username = Encoding.urlDecode(username, false);
         if (password != null) password = Encoding.urlDecode(password, false);
