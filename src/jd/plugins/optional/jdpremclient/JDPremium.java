@@ -28,6 +28,7 @@ import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
 import jd.plugins.OptionalPlugin;
@@ -169,7 +170,8 @@ public class JDPremium extends PluginOptional {
         synchronized (LOCK) {
             if (Main.isInitComplete() && replaced == false) {
                 logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
-                return false;
+                UserIO.getInstance().requestMessageDialog(0, "Restart needed!");
+                return true;
             }
             if (!init) {
                 /* init our new plugins */

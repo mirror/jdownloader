@@ -26,12 +26,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://([\\w\\.]*?|members\\.)(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures\\.com/[a-zA-Z0-9/.]+|(premium)?motherlessvideos\\.com/[a-zA-Z0-9/.]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
@@ -63,12 +63,19 @@ public class MotherLessCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(parameter.getDownloadURL());
-        if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(Plugin.getFileNameFromHeader(con));
-        parameter.setDownloadSize(con.getLongContentLength());
-        con.disconnect();
-        return AvailableStatus.TRUE;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(parameter.getDownloadURL());
+            if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            parameter.setName(Plugin.getFileNameFromHeader(con));
+            parameter.setDownloadSize(con.getLongContentLength());
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     public void handleFree(DownloadLink link) throws Exception {
