@@ -38,25 +38,39 @@ public class DuckLoadComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> realPages = new ArrayList<String>();
-        realPages.add("0");
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("This folder could not be found\\.")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("ico_folder\\.png\" alt=\"\" style=\"margin-bottom:-3px;\" /> (.*?) \\[<strong>").getMatch(0);
         // Find all pages and remove double entries
-        String[] pages = br.getRegex("folder_start=(\\d+)\\'").getColumn(0);
-        if (pages != null && pages.length != 0) for (String aPage : pages)
-            if (!realPages.contains(aPage)) realPages.add(aPage);
         String folderID = new Regex(parameter, "duckload\\.com/folder/(.+)").getMatch(0);
-        progress.setRange(realPages.size());
-        for (String currentPage : realPages) {
-            if (!currentPage.equals("0")) br.getPage("http://www.duckload.com/Folder/" + folderID + "&folder_start=" + currentPage);
-            String[] links = br.getRegex("\\'(http://(www\\.)?duckload\\.com/(download/\\d+/.*?|play/[A-Z0-9]+))\\'").getColumn(0);
-            if (links == null || links.length == 0) return null;
-            for (String dl : links)
-                decryptedLinks.add(createDownloadlink(dl));
-            progress.increase(1);
+        ArrayList<String> pagesDone = new ArrayList<String>();
+        while (true) {
+            /* get all pages on current page */
+            String[] pages = br.getRegex("folder_start=(\\d+)\\'").getColumn(0);
+            ArrayList<String> pagesTodo = new ArrayList<String>();
+            if (pages != null) {
+                /* filter pages done/todo */
+                for (String page : pages) {
+                    if (!pagesTodo.contains(page)) {
+                        if (!pagesDone.contains(page)) {
+                            pagesTodo.add(page);
+                            pagesDone.add(page);
+                        }
+                    }
+                }
+                if (pagesTodo.size() == 0) break;
+                for (String page : pagesTodo) {
+                    /* iterate through todo and find links */
+                    if (!page.equals("0")) br.getPage("http://www.duckload.com/Folder/" + folderID + "&folder_start=" + page);
+                    String[] links = br.getRegex("\\'(http://(www\\.)?duckload\\.com/(download/\\d+/.*?|play/[A-Z0-9]+))\\'").getColumn(0);
+                    if (links != null) {
+                        for (String dl : links) {
+                            decryptedLinks.add(createDownloadlink(dl));
+                        }
+                    }
+                }
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
