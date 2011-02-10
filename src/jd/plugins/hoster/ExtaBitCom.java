@@ -25,18 +25,18 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://[\\w\\.]*?extabit\\.com/file/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://(www\\.)?(u\\d+\\.extabit\\.com/go/[a-z0-9]+|extabit\\.com/file/[a-z0-9]+)" }, flags = { 2 })
 public class ExtaBitCom extends PluginForHost {
 
     public ExtaBitCom(PluginWrapper wrapper) {
@@ -51,6 +51,21 @@ public class ExtaBitCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://extabit.com/static/terms.jsp";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        if (link.getDownloadURL().contains("/go/")) {
+            br.setFollowRedirects(false);
+            String finallink = null;
+            try {
+                br.getPage(link.getDownloadURL());
+            } catch (Exception e) {
+
+            }
+            finallink = br.getRedirectLocation();
+            if (finallink == null) finallink = "http://extabit.com/file/fileofflineblablabla";
+            link.setUrlDownload(finallink);
+        }
     }
 
     @Override

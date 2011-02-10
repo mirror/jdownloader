@@ -31,17 +31,17 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://[\\w\\.]*?2shared\\.com/(audio|file|video)/.*?/[a-zA-Z0-9._]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo)/.*?/[a-zA-Z0-9._]+" }, flags = { 0 })
 public class TwoSharedCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.2shared.com";
@@ -52,8 +52,7 @@ public class TwoSharedCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/audio/", "/file/"));
-        link.setUrlDownload(link.getDownloadURL().replace("/video/", "/file/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/(audio|video|photo)/", "/file/"));
     }
 
     public String decrypt(final int a, final List<String> param) throws Exception {
@@ -106,36 +105,44 @@ public class TwoSharedCom extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
         }
-        String link = this.br.getRegex(Pattern.compile("\\$\\.get\\('(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String result;
-        if (!this.br.containsHTML("\\+key") && (link != null)) {
-            final List<String> param = new ArrayList<String>();
-            final Browser fn = this.br.cloneBrowser();
-            if (!link.contains("\\d+")) {
-                // Function Decode
-                param.add(new Regex(fn.toString().replaceAll("\n|\t", ""), "function decode(.*?)\\}.*?\\}").getMatch(-1));
-                // var em
-                param.add(this.br.getRegex("var em='(.*?)';").getMatch(-1));
-                // var key
-                param.add(this.br.getRegex("var key='(.*?)';").getMatch(0));
-                result = this.decrypt(1, param);
-                link += result;
-            }
-            final String jsquery = fn.getPage(TwoSharedCom.MAINPAGE + this.br.getRegex("src=\"(.*?)\"").getMatch(0, 1));
-            final String charalgo = new Regex(jsquery, "var viw(.*)l2surl;\\}").getMatch(-1).replaceAll("M\\.url", "M");
-            if ((link == null) || (jsquery == null) || (charalgo == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            param.clear();
-            param.add(charalgo);
-            param.add(link);
-            result = this.decrypt(0, param);
-        } else {
-            result = this.br.getRegex("window\\.location ='(.*?)';").getMatch(0);
-            // result = link + this.br.getRegex("var key='(.*?)';").getMatch(0);
+        String finallink = null;
+        String link = this.br.getRegex(Pattern.compile("\\$\\.get\\(\\'(.*?)\\'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        // special handling for picture-links
+        if (br.containsHTML(">Loading image")) {
+            br.getPage("http://www.2shared.com" + link);
+            finallink = br.toString();
         }
-        if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (finallink.length() > 300) {
+            String result;
+            if (!this.br.containsHTML("\\+key") && (link != null)) {
+                final List<String> param = new ArrayList<String>();
+                final Browser fn = this.br.cloneBrowser();
+                if (!link.contains("\\d+")) {
+                    // Function Decode
+                    param.add(new Regex(fn.toString().replaceAll("\n|\t", ""), "function decode(.*?)\\}.*?\\}").getMatch(-1));
+                    // var em
+                    param.add(this.br.getRegex("var em='(.*?)';").getMatch(-1));
+                    // var key
+                    param.add(this.br.getRegex("var key='(.*?)';").getMatch(0));
+                    result = this.decrypt(1, param);
+                    link += result;
+                }
+                final String jsquery = fn.getPage(TwoSharedCom.MAINPAGE + this.br.getRegex("src=\"(.*?)\"").getMatch(0, 1));
+                final String charalgo = new Regex(jsquery, "var viw(.*)l2surl;\\}").getMatch(-1).replaceAll("M\\.url", "M");
+                if ((link == null) || (jsquery == null) || (charalgo == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                param.clear();
+                param.add(charalgo);
+                param.add(link);
+                result = this.decrypt(0, param);
+            } else {
+                finallink = this.br.getRegex("window\\.location ='(.*?)';").getMatch(0);
+                // result = link +
+                // this.br.getRegex("var key='(.*?)';").getMatch(0);
+            }
+        }
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // link = this.br.getPage(TwoSharedCom.MAINPAGE + result).trim();
-        link = result.trim();
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, link, true, 1);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, finallink, true, 1);
         if (this.dl.getConnection().getContentType().contains("html") & (this.dl.getConnection().getURL().getQuery() == null)) {
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -152,16 +159,19 @@ public class TwoSharedCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         this.br.setCookiesExclusive(true);
         this.br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(The file link that you requested is not valid|Please contact link publisher or try to make a search)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Form pwform = this.br.getForm(0);
         if (pwform != null) {
             final String filename = this.br.getRegex("<td class=\"header\" align=\"center\">Download (.*?)</td>").getMatch(0);
-            if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.trim());
             return AvailableStatus.TRUE;
         }
-        final String filesize = this.br.getRegex(Pattern.compile("<span class=.*?>File size:</span>(.*?)&nbsp; &nbsp;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String filesize = this.br.getRegex(Pattern.compile("<span class=.*?>File size:</span>(.*?)&nbsp; &nbsp;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        // filesize regex for picturelinks
+        if (filesize == null) filesize = br.getRegex("class=\"bodytitle\">Loading image \\((.*?)\\)\\.\\.\\. Please wait").getMatch(0);
         final String filename = this.br.getRegex("<title>2shared - download(.*?)</title>").getMatch(0);
-        if ((filesize == null) || (filename == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",|\\.", "")));
         return AvailableStatus.TRUE;

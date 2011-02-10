@@ -21,15 +21,15 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://[\\w\\.]*?axifile\\.com/(\\?|mydownload\\.php\\?file=)\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com(/mydownload\\.php\\?file=|(/)?\\?)\\d+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,6 +38,10 @@ public class AxiFileCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.axifile.com/terms.php";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        if (link.getDownloadURL().contains("axifile.com?")) link.setUrlDownload(link.getDownloadURL().replace("?", "/?"));
     }
 
     @Override
@@ -64,8 +68,7 @@ public class AxiFileCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String link = (downloadLink.getDownloadURL());
-        String link2 = link.replace(".com/?", ".com/mydownload.php?file=");
+        String link2 = downloadLink.getDownloadURL().replace(".com/?", ".com/mydownload.php?file=");
         br.getPage(link2);
         // password protected-links-handling
         if (br.containsHTML("This file is password protected")) {
