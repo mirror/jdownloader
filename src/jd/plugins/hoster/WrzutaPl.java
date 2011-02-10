@@ -25,11 +25,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -55,7 +55,9 @@ public class WrzutaPl extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Nie odnaleziono pliku.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("anie</h3>\\s+<h2>(.*?)</h2>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>WRZUTA - (.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
         String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filesize == null) filesize = br.getRegex(Pattern.compile("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
@@ -63,9 +65,9 @@ public class WrzutaPl extends PluginForHost {
         // Set the ending if the file doesn't have it but don't set it as a
         // final filename as it could be wrong!
         if (downloadLink.getDownloadURL().contains("/audio/") && !filename.contains(".mp3"))
-            downloadLink.setName(filename.trim() + ".mp3");
+            downloadLink.setName(Encoding.htmlDecode(filename.trim() + ".mp3"));
         else
-            downloadLink.setName(filename.trim());
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -136,7 +138,7 @@ public class WrzutaPl extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
