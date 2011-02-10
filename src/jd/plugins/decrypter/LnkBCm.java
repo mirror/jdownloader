@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -30,6 +31,8 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkbee.com" }, urls = { "http://[\\w\\.]*?linkbee\\.com/[\\w]+" }, flags = { 0 })
 public class LnkBCm extends PluginForDecrypt {
 
+    private static final String ua = RandomUserAgent.generate();
+
     public LnkBCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -37,16 +40,27 @@ public class LnkBCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(false);
         String found = null;
         br.getPage(parameter);
+        String id = new Regex(parameter, "\\.com/([\\w]+)").getMatch(0);
+        String loc = br.getRedirectLocation();
+        if (loc != null && loc.contains(id)) {
+            br.getPage(loc);
+        }
         if (br.getRedirectLocation() != null) {
             found = br.getRedirectLocation();
         } else {
             String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
+            String title = br.getRegex("<title>Linkbee:.*?(http://.*?/).*?</title>").getMatch(0);
+            if (title != null) title = title.trim();
             for (String pwned : lol) {
-                if (!pwned.equals(parameter) && !pwned.endsWith(".gif")) decryptedLinks.add(createDownloadlink(pwned));
+                if (!pwned.equals(parameter) && !pwned.endsWith(".gif")) {
+                    if (title != null && pwned.startsWith(title)) {
+                        decryptedLinks.add(createDownloadlink(pwned));
+                    }
+                }
             }
             return decryptedLinks;
         }
