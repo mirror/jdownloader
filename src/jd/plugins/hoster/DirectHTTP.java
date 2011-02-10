@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -48,6 +49,8 @@ import jd.utils.locale.JDL;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bz2|cbr|cbz|ccf|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gsd|gif|gz|iwd|iso|ipsw|java|jar|jpg|jpeg|jdeatme|load|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tiff|tif|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zip|z\\d+|_[_a-z]{2}|\\d+($|\"|\r|\n))" }, flags = { 2, 0 })
 public class DirectHTTP extends PluginForHost {
+
+    private static final String LASTMODIFIED = "LASTMODIFIED";
 
     public static class Recaptcha {
 
@@ -473,6 +476,7 @@ public class DirectHTTP extends PluginForHost {
         } else {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
         }
+        String lastModified = dl.getConnection().getHeaderField("Last-Modified");
         if (!this.dl.startDownload()) {
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
                 if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
@@ -486,6 +490,17 @@ public class DirectHTTP extends PluginForHost {
                     downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+            }
+        } else {
+            try {
+                if (this.getPluginConfig().getBooleanProperty(LASTMODIFIED, true)) {
+                    Date last = org.appwork.utils.formatter.TimeFormatter.parseDateString(lastModified);
+                    if (last != null) {
+                        new File(downloadLink.getFileOutput()).setLastModified(last.getTime());
+                    }
+                }
+            } catch (final Throwable e) {
+                /* stable 09581 does not have access to this function */
             }
         }
     }
@@ -600,6 +615,9 @@ public class DirectHTTP extends PluginForHost {
 
     private void setConfigElements() {
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
+        ConfigEntry ce;
+        this.config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LASTMODIFIED, JDL.L("plugins.http.lastmodified", "Set file time to last modified time(server).")));
+        ce.setDefaultValue(true);
     }
 
     private void setCustomHeaders(final Browser br, final DownloadLink downloadLink) {
