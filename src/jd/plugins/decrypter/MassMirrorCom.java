@@ -58,7 +58,6 @@ public class MassMirrorCom extends PluginForDecrypt {
         if (directLink != null) {
             String link = "directhttp://http://massmirror.com" + directLink;
             DownloadLink direct = new DownloadLink(null, null, "DirectHTTP", link, true);
-            direct.setProperty("cookies", br.getCookies("http://massmirror.com").get("PHPSESSID"));
             direct.setProperty("refURL", br.getURL());
             decryptedLinks.add(direct);
         }
