@@ -95,6 +95,9 @@ public class KeepFileCom extends PluginForHost {
             if (filesize == null) {
                 filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
             }
+            if (filesize == null) {
+                filesize = new Regex(brbefore, "Download File</h2>.*?<b>.*?<b> \\((.*?)\\)").getMatch(0);
+            }
         }
         if (filename == null || filename.equals("")) {
             if (brbefore.contains("You have reached the download-limit")) {
