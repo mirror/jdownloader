@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -42,15 +43,24 @@ public class MassMirrorCom extends PluginForDecrypt {
         /* Error handling */
         if (br.containsHTML("(File Not Found|The file you requested was not found|This file never existed on|Removed due to copyright violations)") || !br.containsHTML("download.php")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] redirectLinks = br.getRegex("\"(download\\.php\\?id=.*?fileid=[a-z0-9A-Z]+)\"").getColumn(0);
+        String directLink = br.getRegex("(/get\\.php\\?dl=.*?)\"").getMatch(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
         for (String link : redirectLinks) {
             link = link.replace("amp;", "");
-            br.getPage("http://massmirror.com/" + link);
-            String dllink = br.getRedirectLocation();
+            Browser cl = br.cloneBrowser();
+            cl.getPage("http://massmirror.com/" + link);
+            String dllink = cl.getRedirectLocation();
             if (dllink == null) return null;
             decryptedLinks.add(createDownloadlink(dllink));
             progress.increase(1);
+        }
+        if (directLink != null) {
+            String link = "directhttp://http://massmirror.com" + directLink;
+            DownloadLink direct = new DownloadLink(null, null, "DirectHTTP", link, true);
+            direct.setProperty("cookies", br.getCookies("http://massmirror.com").get("PHPSESSID"));
+            direct.setProperty("refURL", br.getURL());
+            decryptedLinks.add(direct);
         }
 
         return decryptedLinks;
