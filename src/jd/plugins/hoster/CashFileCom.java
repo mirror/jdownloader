@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cash-file.com" }, urls = { "http://[\\w\\.]*?cash-file\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cash-file.com", "cash-file.net" }, urls = { "fhrftjhergblablaUNUSED_REGEX", "http://(www\\.)?cash-file\\.(com|net)/[a-z0-9]{12}" }, flags = { 0, 0 })
 public class CashFileCom extends PluginForHost {
 
     public CashFileCom(PluginWrapper wrapper) {
@@ -51,18 +51,24 @@ public class CashFileCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("cash-file.com", "cash-file.net"));
+    }
+
     private String              brbefore      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST   = "http://cash-file.com";
+    private static final String COOKIE_HOST   = "http://cash-file.net";
     public boolean              nopremium     = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setReadTimeout(180 * 1000);
+        // Fix old links in the linklist
+        correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         doSomething();
         if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<")) {
