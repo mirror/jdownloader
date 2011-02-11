@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -39,7 +39,7 @@ public class FileAm extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://about.socifiles.com/terms-of-service";
+        return "http://3.file.am/?page=tos";
     }
 
     public void correctDownloadLink(DownloadLink link) {

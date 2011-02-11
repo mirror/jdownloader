@@ -29,11 +29,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -45,6 +45,11 @@ public class FilerNet extends PluginForHost {
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://filer.net/premium");
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.filer.net/agb.htm";
     }
 
     @Override
@@ -157,11 +162,6 @@ public class FilerNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         dl.startDownload();
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.filer.net/faq";
     }
 
     @Override

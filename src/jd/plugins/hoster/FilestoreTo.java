@@ -48,7 +48,7 @@ public class FilestoreTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.filestore.to/rules.php?setlang=en";
+        return "http://www.filestore.to/?p=terms";
     }
 
     @Override

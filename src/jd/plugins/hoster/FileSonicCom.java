@@ -30,12 +30,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -51,6 +51,11 @@ public class FileSonicCom extends PluginForHost {
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filesonic.com/premium");
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.filesonic.com/terms-and-conditions";
     }
 
     @Override
@@ -197,11 +202,6 @@ public class FileSonicCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.filesonic.com/contact-us";
     }
 
     @Override

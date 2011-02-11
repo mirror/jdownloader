@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -59,6 +59,11 @@ public class FileFactory extends PluginForHost {
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filefactory.com/info/premium.php");
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.filefactory.com/legal/terms.php";
     }
 
     public void checkErrors() throws PluginException {
@@ -157,11 +162,6 @@ public class FileFactory extends PluginForHost {
             ai.setPremiumPoints(Long.parseLong(points.replaceAll("\\,", "").trim()));
         }
         return ai;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.filefactory.com/info/terms.php";
     }
 
     @Override
