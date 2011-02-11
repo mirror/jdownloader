@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 
 import org.w3c.dom.Document;
 
-@HostPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "rtl-now.rtl.de" }, urls = { "http://rtl-now\\.rtl\\.de/\\w+\\.php\\?(container_id=.+|player=1&play_now=1)" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "rtl-now.rtl.de" }, urls = { "http://rtl-now\\.rtl\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class RTLnowDe extends PluginForHost {
 
     private static String MAINPAGE = "http://rtl-now.rtl.de";
@@ -62,7 +62,7 @@ public class RTLnowDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://rutube.ru/agreement.html";
+        return "http://rtl-now.rtl.de/nutzungsbedingungen";
     }
 
     @Override
@@ -152,10 +152,7 @@ public class RTLnowDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("meta name=\"title\" content=\"(.*?):: Видео на RuTube").getMatch(0);
-        }
+        final String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim() + ".flv");
         return AvailableStatus.TRUE;

@@ -20,13 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -39,86 +39,96 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // At the moment this decrypter only decrypts turbobit.net links as
-    // "protected.socadvnet.com" only allows crypting links of this host!
+    /*
+     * At the moment this decrypter only decrypts: turbobit.net, hotfile.com
+     * links as "protected.socadvnet.com" only allows crypting links of this
+     * host!
+     */
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        this.br.setDebug(true);
+        br.setDebug(true);
         final String parameter = param.toString();
-        this.br.setFollowRedirects(false);
-        this.br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         final String postvar = new Regex(parameter, "protected\\.socadvnet\\.com/\\?(.+)").getMatch(0);
         if (postvar == null) { return null; }
-        this.br.getPage(parameter);
-        if ((this.br.getRedirectLocation() != null) && this.br.getRedirectLocation().equals(PrtctdScdvntCm.MAINPAGE + "index.php")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
-        if (this.br.getRedirectLocation() != null) {
-            this.br.getPage(this.br.getRedirectLocation());
+        br.getPage(parameter);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(MAINPAGE + "index.php")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
         }
 
-        final String cpPage = this.br.getRegex("<img src=\"(.*?)\"").getMatch(0);
-        final Browser ajax = this.br;
-        String sendCaptcha = this.br.getRegex("src='/(.*?)'").getMatch(0);
-        if (sendCaptcha == null) { return null; }
-        ajax.getPage(PrtctdScdvntCm.MAINPAGE + sendCaptcha);
-        sendCaptcha = ajax.getRegex("req\\._POST\\(\"/(.*?)\\?res_code=").getMatch(0);
-
-        this.br.postPage(PrtctdScdvntCm.MAINPAGE + "allinks.php", "LinkName=" + postvar);
-        final String[] linksCount = this.br.getRegex("(moc\\.tenvdacos\\.detcetorp//:eopp)").getColumn(0);
-        if ((cpPage == null) || (linksCount == null) || (linksCount.length == 0)) { return null; }
+        final String cpPage = br.getRegex("<img src=\"(.*?)\"").getMatch(0);
+        final String sendCaptcha = "lsp.php";
+        br.postPage(MAINPAGE + "allink.php", "LinkName=" + postvar);
+        final String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:ptth)").getColumn(0);
+        if (linksCount == null || linksCount.length == 0) { return null; }
         final int linkCounter = linksCount.length;
-        for (int i = 0; i <= 3; i++) {
-            final String equals = this.getCaptchaCode(PrtctdScdvntCm.MAINPAGE + cpPage, param);
-            this.br.postPage(PrtctdScdvntCm.MAINPAGE + sendCaptcha, "res_code=" + equals);
-            if (!this.br.toString().trim().equals("1") && !this.br.toString().trim().equals("0")) {
-                this.logger.warning("Error in doing the maths for link: " + parameter);
-                return null;
+        if (cpPage != null) {
+            for (int i = 0; i <= 3; i++) {
+                final String equals = this.getCaptchaCode(MAINPAGE + cpPage, param);
+                br.postPage(MAINPAGE + sendCaptcha, "res_code=" + equals);
+                if (!br.toString().trim().equals("1") && !br.toString().trim().equals("0")) {
+                    Plugin.logger.warning("Error in doing the maths for link: " + parameter);
+                    return null;
+                }
+                if (!br.toString().trim().equals("1")) {
+                    continue;
+                }
+                break;
             }
-            if (!this.br.toString().trim().equals("1")) {
-                continue;
-            }
-            break;
+            if (!br.toString().trim().equals("1")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         }
-        if (!this.br.toString().trim().equals("1")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-        this.logger.info("Found " + linkCounter + " links, decrypting now...");
+        Plugin.logger.info("Found " + linkCounter + " links, decrypting now...");
         progress.setRange(linkCounter);
         for (int i = 0; i <= linkCounter - 1; i++) {
-            this.br.getHeaders().put("Referer", parameter);
-            final String actualPage = PrtctdScdvntCm.MAINPAGE + "allinks.php?out_name=" + postvar + "&&link_id=" + i;
-            this.br.getPage(actualPage);
-            if (this.br.containsHTML("No htmlCode read")) {
-                this.logger.info("Found one offline link for link " + parameter + " linkid:" + i);
+            br.getHeaders().put("Referer", parameter);
+            final String actualPage = MAINPAGE + "allink.php?out_name=" + postvar + "&&link_id=" + i;
+            br.getPage(actualPage);
+            if (br.containsHTML("This file is either removed due to copyright claim or is deleted by the uploader")) {
+                Plugin.logger.info("Found one offline link for link " + parameter + " linkid:" + i);
                 continue;
             }
-            String finallink = this.br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http.*?)\"").getMatch(0);
+            String finallink = br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http.*?)\"").getMatch(0);
             if (finallink == null) {
                 // Handlings for more hosters will come soon i think
-                if (this.br.containsHTML("turbobit\\.net")) {
-                    final String singleProtectedLink = PrtctdScdvntCm.MAINPAGE + "plugin/turbobit.net.free.php?out_name=" + postvar + "&link_id=" + i;
-                    this.br.getPage(singleProtectedLink);
-                    if (this.br.getRedirectLocation() == null) {
-                        this.logger.warning("Redirect location for this link is null: " + parameter);
+                if (br.containsHTML("turbobit\\.net")) {
+                    final String singleProtectedLink = MAINPAGE + "plugin/turbobit.net.free.php?out_name=" + postvar + "&link_id=" + i;
+                    br.getPage(singleProtectedLink);
+                    if (br.getRedirectLocation() == null) {
+                        Plugin.logger.warning("Redirect location for this link is null: " + parameter);
                         return null;
                     }
-                    final String turboId = new Regex(this.br.getRedirectLocation(), "http://turbobit\\.net/download/free/(.+)").getMatch(0);
+                    final String turboId = new Regex(br.getRedirectLocation(), "http://turbobit\\.net/download/free/(.+)").getMatch(0);
                     if (turboId == null) {
-                        this.logger.warning("There is a problem with the link: " + actualPage);
+                        Plugin.logger.warning("There is a problem with the link: " + actualPage);
                         return null;
                     }
                     finallink = "http://turbobit.net/" + turboId + ".html";
-                } else if (this.br.containsHTML("hotfile\\.com")) {
-                    finallink = this.br.getRegex("style=\"margin:0;padding:0;\" action=\"(.*?)\"").getMatch(0);
+                } else if (br.containsHTML("hotfile\\.com")) {
+                    finallink = br.getRegex("style=\"margin:0;padding:0;\" action=\"(.*?)\"").getMatch(0);
+                    if (finallink.equals("plugin/hotfile.com.free.php")) {
+                        final String singleProtectedLink = MAINPAGE + finallink;
+                        br.postPage(singleProtectedLink, "out_name=" + postvar + "&link_id=" + i);
+                    }
+                    finallink = br.getRegex("href=\"(.*?)\"").getMatch(0).trim();
                     if (finallink == null) {
-                        finallink = this.br.getRegex("onmouseout=\"hoverFuncRemove\\(this\\)\" ><a href=\"(/dl.*?\\.html)\\?uploadid=").getMatch(0);
-                        if (finallink != null) {
-                            finallink = "http://hotfile.com" + finallink;
+                        Plugin.logger.warning("There is a problem with the link: " + actualPage);
+                        return null;
+                    }
+                    if (finallink.contains("/get/")) {
+                        br.getPage(finallink);
+                        if (br.containsHTML("Invalid link")) {
+                            finallink = br.getRegex("href=\"(.*?)\"").getMatch(0);
                         }
                     }
                 }
             }
             if (finallink == null) {
-                this.logger.warning("Finallink for the following link is null: " + parameter);
+                Plugin.logger.warning("Finallink for the following link is null: " + parameter);
             }
-            decryptedLinks.add(this.createDownloadlink(finallink));
+            decryptedLinks.add(createDownloadlink(finallink));
             progress.increase(1);
         }
         return decryptedLinks;
