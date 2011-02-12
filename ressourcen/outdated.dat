@@ -505,3 +505,7 @@ jd/plugins/hoster/SixGigaCom.class
 jd/plugins/hoster/JiffyUploadCom.class
 jd/plugins/decrypter/RmNwsrg.class
 jd/plugins/hoster/UpFileCom.class
+jd/plugins/hoster/YourFileSendercom.class
+jd/plugins/hoster/HostPlikCom.class
+jd/plugins/hoster/File4SaveCom.class
+jd/plugins/hoster/ZetshareCom.class
