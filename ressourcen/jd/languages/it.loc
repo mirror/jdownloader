@@ -1504,6 +1504,7 @@ plugins.hoster.youtube.checkmp4 = Cattura MP4
 plugins.hoster.youtube.checkwebm = Cattura WEBM
 plugins.hoster.youtube.idasfilename = Usa ID video come nome del file
 plugins.http.htaccess = Lista di tutte le password HTAccess. Ogni riga una password.
+plugins.http.lastmodified = Imposta l'orario a quello dell'ultima modifica (server)
 plugins.jdchat.userlistposition = Posizione lista utente:
 plugins.jdchat.userlistposition_left = Sinistra
 plugins.jdchat.userlistposition_right = Destra
