@@ -19,21 +19,22 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmaps.com" }, urls = { "http://[\\w\\.]*?l4dmaps\\.com/(details|mirrors|file-download)\\.php\\?file=[0-9]+" }, flags = { 0 })
 public class L4dMapsCom extends PluginForHost {
-    private static final String l4dservers = "l4dservers";
+    private static final String   l4dservers = "l4dservers";
 
     /** The list of server values displayed to the user */
     private static final String[] servers;
@@ -124,19 +125,19 @@ public class L4dMapsCom extends PluginForHost {
             }
         }
         if (usedServer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        usedServer = "http://www.l4dmaps.com" + usedServer;
+        usedServer = "http://www.l4dmaps.com" + Encoding.htmlDecode(usedServer);
         if (realusedserver == true) {
             logger.info("Link to configured server has been successfully taken, link = " + usedServer);
         } else {
             logger.warning("Link to configured server hasn't been successfully taken, link = " + usedServer);
         }
         br.getPage(usedServer);
-        String dllink = br.getRegex("begin, <a href=\"(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;url=(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Workaround to mae the dllink valid
+        // Workaround to make the dllink valid
         String entry = new Regex(usedServer, "entry=(\\d+)").getMatch(0);
         if (entry != null) dllink = dllink.replace("entry=0", "entry=" + entry);
-        dllink = dllink.replace("amp;", "");
+        dllink = Encoding.htmlDecode(dllink);
         dllink = "http://www.l4dmaps.com/" + dllink;
         br.getPage(dllink);
         dllink = br.getRedirectLocation();

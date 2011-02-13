@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -36,6 +36,7 @@ public class UpAvagaBy extends PluginForHost {
         super(wrapper);
     }
 
+    // Note: This site is NOT available in Germany
     @Override
     public String getAGBLink() {
         return "http://up.uvaga.by/rules.html";
