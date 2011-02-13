@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -26,14 +29,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "http://(www\\.)?vimeo\\.com/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "http://(www\\.)?vimeo\\.com/[0-9]+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
-    static private final String AGB = "http://www.vimeo.com/terms";
+    private static final String MAINPAGE = "http://www.vimeo.com";
+    static private final String AGB      = "http://www.vimeo.com/terms";
     private String              clipData;
     private String              finalURL;
 
     public VimeoCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://vimeo.com/join");
     }
 
     public String getAGBLink() {
@@ -76,14 +81,83 @@ public class VimeoCom extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setDebug(true);
         requestFileInformation(downloadLink);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0).startDownload();
+        doFree(downloadLink);
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage(MAINPAGE + "/log_in");
+        String token = br.getRegex("name=\"token\" value=\"(.*?)\"").getMatch(0);
+        if (token == null) {
+            logger.warning("Login is broken!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.setCookie(MAINPAGE, "xsrftv", token);
+        br.setCookie(MAINPAGE, "home_active_tab", "inbox");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        br.postPage(MAINPAGE + "/log_in", "sign_in%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&sign_in%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(token));
+        if (br.getCookie(MAINPAGE, "vimeo") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("\">Sorry, not available for download")) {
+            logger.info("No download available for link: " + link.getDownloadURL() + " , downloading as unregistered user...");
+            doFree(link);
+        }
+        String dllink = br.getRegex("class=\"download\">[\t\n\r ]+<a href=\"(/.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(/download/video:\\d+\\?v=\\d+\\&e=\\d+\\&h=[a-z0-9]+\\&uh=[a-z0-9]+)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = MAINPAGE + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-
-        return 20;
+        return -1;
     }
 
     public void reset() {
