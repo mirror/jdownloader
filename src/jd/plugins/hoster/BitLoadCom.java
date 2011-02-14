@@ -51,6 +51,7 @@ public class BitLoadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://www.bitload.com", "locale", "de");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex nameAndSize = br.getRegex("Ihre Datei <strong>(.*?) \\((\\d+,\\d+ .*?)\\)</strong> wird angefordert");

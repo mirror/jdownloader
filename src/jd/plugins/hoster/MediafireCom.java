@@ -35,12 +35,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -279,6 +279,11 @@ public class MediafireCom extends PluginForHost {
         } catch (final Exception e) {
             logger.info(eb.getHtmlText());
             e.printStackTrace();
+        } finally {
+            try {
+                eb.getDocument().close();
+            } catch (final Throwable e) {
+            }
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }

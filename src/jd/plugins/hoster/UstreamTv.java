@@ -25,13 +25,11 @@ import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import flex.messaging.io.amf.ASObject;
-import flex.messaging.io.amf.client.AMFConnection;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
 public class UstreamTv extends PluginForHost {
@@ -66,39 +64,43 @@ public class UstreamTv extends PluginForHost {
         parameter.put("autoplay", "");
         parameter.put("pageUrl", pageUrl);
         // ActionMessageFormat
-        ASObject result;
-        final AMFConnection amfConnection = new AMFConnection();
         try {
-            amfConnection.connect(url);
-            amfConnection.addHttpRequestHeader("Content-type", "application/x-amf");
-            amfConnection.addHttpRequestHeader("Referer", "http://cdn1.ustream.tv/swf/4/viewer.rsl.465.swf?");
-            amfConnection.addHttpRequestHeader("x-flash-version", "10,1,85,3");
-            result = (ASObject) amfConnection.call("Viewer.getVideo", parameter);
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        amfConnection.close();
-        int chunk = 0;
-        String dllink = new String();
-        // mp4,flv Selection
-        if (result.containsKey("liveHttpUrl")) {
-            dllink = result.get("liveHttpUrl").toString();
-            chunk = 1;
-        } else if (result.containsKey("flv")) {
-            if (pageUrl.contains("highlight")) {
-                downloadLink.setName(downloadLink.getName().replace("mp4", "flv"));
+            flex.messaging.io.amf.ASObject result;
+            final flex.messaging.io.amf.client.AMFConnection amfConnection = new flex.messaging.io.amf.client.AMFConnection();
+            try {
+                amfConnection.connect(url);
+                amfConnection.addHttpRequestHeader("Content-type", "application/x-amf");
+                amfConnection.addHttpRequestHeader("Referer", "http://cdn1.ustream.tv/swf/4/viewer.rsl.465.swf?");
+                amfConnection.addHttpRequestHeader("x-flash-version", "10,1,85,3");
+                result = (flex.messaging.io.amf.ASObject) amfConnection.call("Viewer.getVideo", parameter);
+            } catch (final Exception e) {
+                JDLogger.exception(e);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = result.get("flv").toString();
-        } else {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporary offline!");
+            amfConnection.close();
+            int chunk = 0;
+            String dllink = new String();
+            // mp4,flv Selection
+            if (result.containsKey("liveHttpUrl")) {
+                dllink = result.get("liveHttpUrl").toString();
+                chunk = 1;
+            } else if (result.containsKey("flv")) {
+                if (pageUrl.contains("highlight")) {
+                    downloadLink.setName(downloadLink.getName().replace("mp4", "flv"));
+                }
+                dllink = result.get("flv").toString();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporary offline!");
+            }
+            dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunk);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } catch (final NoClassDefFoundError e) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Nightly Version of JD needed!");
         }
-        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunk);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
