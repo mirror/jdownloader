@@ -433,9 +433,11 @@ public class MediafireCom extends PluginForHost {
     private void handlePW(final DownloadLink downloadLink) throws Exception {
         if (this.br.containsHTML("dh\\(''\\)")) {
             new PasswordSolver(this, this.br, downloadLink) {
+                String curPw = null;
 
                 @Override
                 protected void handlePassword(final String password) throws Exception {
+                    curPw = password;
                     final Form form = this.br.getFormbyProperty("name", "form_password");
                     form.put("downloadp", password);
                     this.br.submitForm(form);
@@ -443,7 +445,15 @@ public class MediafireCom extends PluginForHost {
 
                 @Override
                 protected boolean isCorrect() {
-                    return this.br.getFormbyProperty("name", "form_password") != null && !this.br.containsHTML("dh\\(''\\)");
+                    Form form = this.br.getFormbyProperty("name", "form_password");
+                    boolean b = this.br.containsHTML("dh\\(''\\)");
+                    if (b == false) {
+                        String dh = br.getRegex("dh\\('(.*?)'\\)").getMatch(0);
+                        if (dh != null && dh.trim().equals(curPw)) {
+                            b = true;
+                        }
+                    }
+                    return form != null && !b;
                 }
 
             }.run();

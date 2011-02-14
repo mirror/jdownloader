@@ -30,11 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -120,13 +120,14 @@ public class ShareCx extends PluginForHost {
             } else {
                 logger.info("Couldn't find a captcha, continuing without captcha...");
             }
+            String before = br.toString();
             br.submitForm(dlform1);
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 String waittime = br.getRegex("startTimer\\((\\d+)\\);").getMatch(0);
                 if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
                 logger.warning("dllink equals null, stopping...");
-
+                logger.warning("Browser before:" + before);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
