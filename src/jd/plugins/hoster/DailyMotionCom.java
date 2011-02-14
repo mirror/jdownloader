@@ -23,11 +23,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://[\\w\\.]*?dailymotion\\.com/video/[a-z0-9]+_.{1}" }, flags = { 0 })
 public class DailyMotionCom extends PluginForHost {
@@ -61,19 +61,26 @@ public class DailyMotionCom extends PluginForHost {
                 }
             }
         }
-        String allLinks = null;
-        dllink = new Regex(Encoding.htmlDecode(br.toString()), "addVariable\\(\"video\", \"(.*?)\"\\);").getMatch(0);
+        dllink = br.getRegex("\\.addVariable\\(\"sequence\",  \"(.*?)\"").getMatch(0);
         if (dllink != null) {
-            allLinks = Encoding.htmlDecode(dllink);
-            dllink = new Regex(allLinks, "(http://www\\.dailymotion\\.com/cdn/H264-848x480/video/.*?\\.mp4.*?@@h264-hq)").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(allLinks, "(http://www\\.dailymotion\\.com/cdn/H264-512x384/video/.*?\\.mp4.*?@@h264)").getMatch(0);
+            String allLinks = Encoding.htmlDecode(dllink);
+            if (allLinks.contains("Dein Land nicht abrufbar")) {
+                // Video not available for your country, let's get the
+                // downloadUrl from another place
+                logger.info("This video is not available for this country, trying to get the url from another place...");
+                dllink = br.getRegex("addVariable\\(\"video\", \"(http://.*?)\"\\)").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/cdn/.*?)\"").getMatch(0);
+            } else {
+                System.out.print(allLinks);
+                // Prefer HD videos
+                dllink = new Regex(allLinks, "hqURL\":\"(http:.*?)\"").getMatch(0);
+                if (dllink == null) dllink = new Regex(allLinks, "sdURL\":\"(http:.*?)\"").getMatch(0);
             }
         }
-        if (dllink == null) dllink = allLinks;
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = dllink.replace("\\", "");
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".mp4");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         br.setFollowRedirects(true);
         URLConnectionAdapter con = br.openGetConnection(dllink);
         if (!con.getContentType().contains("html"))
