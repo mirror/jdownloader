@@ -55,18 +55,16 @@ public class VimeoCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(dlURL);
         this.finalURL = br.getRedirectLocation();
-        if (finalURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finalURL == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(finalURL);
             if (con.getContentType() != null && con.getContentType().contains("mp4")) {
-                downloadLink.setFinalFileName(title + ".mp4");
+                downloadLink.setName(title + ".mp4");
             } else {
-                downloadLink.setFinalFileName(title + ".flv");
+                downloadLink.setName(title + ".flv");
             }
-            downloadLink.setDownloadSize(br.getRequest().getContentLength());
-            if (title == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(title);
+            downloadLink.setDownloadSize(con.getContentLength());
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -92,6 +90,9 @@ public class VimeoCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // Set the final filename here because downloads via account have other
+        // extensions
+        downloadLink.setFinalFileName(downloadLink.getName());
         dl.startDownload();
     }
 
@@ -164,6 +165,7 @@ public class VimeoCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setFinalFileName(link.getName().replace(link.getName().substring(link.getName().length() - 4, link.getName().length()), getFileNameFromHeader(dl.getConnection()).substring(getFileNameFromHeader(dl.getConnection()).length() - 4, getFileNameFromHeader(dl.getConnection()).length())));
         dl.startDownload();
     }
 
