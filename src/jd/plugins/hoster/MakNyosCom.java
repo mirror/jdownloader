@@ -31,12 +31,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -57,11 +57,11 @@ public class MakNyosCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private String brbefore = "";
+    private String              brbefore      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://maknyos.com";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST   = "http://maknyos.com";
+    public boolean              nopremium     = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -116,6 +116,7 @@ public class MakNyosCom extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
         String passCode = null;
+        br.setDebug(true);
         Form[] allForms = br.getForms();
         if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form freeform = null;
@@ -126,7 +127,7 @@ public class MakNyosCom extends PluginForHost {
             }
         }
         if (freeform != null) {
-            freeform.remove("method_premium");
+            freeform.put("method_premium", null);
             br.submitForm(freeform);
             doSomething();
         }
@@ -159,14 +160,14 @@ public class MakNyosCom extends PluginForHost {
         if (brbefore.contains(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"plaintext captchas\" for this host");
             // Captcha method by ManiacMansion
-            String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
+            String[][] letters = new Regex(br.toString(), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&.*?)</span>").getMatches();
             if (letters == null || letters.length == 0) {
                 logger.warning("plaintext captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
             for (String[] letter : letters) {
-                capMap.put(Integer.parseInt(letter[0]), letter[1]);
+                capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
             }
             StringBuilder code = new StringBuilder();
             for (String value : capMap.values()) {
@@ -225,6 +226,7 @@ public class MakNyosCom extends PluginForHost {
             if (password) {
                 passCode = handlePassword(passCode, DLForm, downloadLink);
             }
+            DLForm.put("method_premium", null);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, resumable, maxchunks);
             logger.info("Submitted DLForm");
         }
@@ -249,6 +251,7 @@ public class MakNyosCom extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
+                if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -279,9 +282,9 @@ public class MakNyosCom extends PluginForHost {
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
+        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!brbefore.contains("Premium-Account expire") && !brbefore.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!brbefore.contains("Premium-Account expire") && !br.containsHTML(">Renew premium<")) nopremium = true;
     }
