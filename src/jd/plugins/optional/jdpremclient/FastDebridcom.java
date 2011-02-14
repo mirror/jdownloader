@@ -17,11 +17,11 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
@@ -44,7 +44,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getAGBLink() {
-        if (plugin == null) return "https://www.fast-debrid.com/";
+        if (plugin == null) return "https://www.fast-debrid.com/charte.php";
         return plugin.getAGBLink();
     }
 
