@@ -1405,7 +1405,6 @@ plugins.hoster.filesonic.onlypremium = Only downloadable for premium users
 plugins.hoster.filesonic.onlypremiumsize = Only downloadable for premium users (file larger than %s MB)
 plugins.hoster.filesonic.servererror = Server error
 plugins.hoster.freaksharenet.waitinsteadofreconnect = Wait 10 minutes instead of reconnecting
-plugins.hoster.fsxhu.waiting = %s users in queue, 
 plugins.hoster.gigapeta.unavailable = Your IP is already downloading a file
 plugins.hoster.gigasizecom.errors.alreadyloading = Cannot check, already loading file
 plugins.hoster.hellsharecom.error.404 = Not available for your country
