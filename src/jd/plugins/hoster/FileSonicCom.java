@@ -47,6 +47,7 @@ public class FileSonicCom extends PluginForHost {
 
     private static final Object LOCK               = new Object();
     private static long         LAST_FREE_DOWNLOAD = 0l;
+    private static String       geoDomain          = null;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -58,11 +59,33 @@ public class FileSonicCom extends PluginForHost {
         return "http://www.filesonic.com/terms-and-conditions";
     }
 
+    private synchronized String getDomain() {
+        if (geoDomain != null) return geoDomain;
+        String defaultDomain = "http://www.filesonic.com";
+        try {
+            Browser br = new Browser();
+            br.setCookie(defaultDomain, "lang", "en");
+            br.setFollowRedirects(false);
+            br.getPage(defaultDomain);
+            geoDomain = br.getRedirectLocation();
+            if (geoDomain == null) {
+                geoDomain = defaultDomain;
+            } else {
+                String domain = new Regex(br.getRedirectLocation(), "http://.*?(filesonic\\..*?)/").getMatch(0);
+                geoDomain = "http://www" + domain;
+            }
+        } catch (final Throwable e) {
+            geoDomain = defaultDomain;
+        }
+        return geoDomain;
+    }
+
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
             final Browser br = new Browser();
+            br.setCookie(getDomain(), "lang", "en");
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -88,7 +111,7 @@ public class FileSonicCom extends PluginForHost {
                     c++;
                 }
                 sb.append("&bz=1");
-                br.postPage("http://www.filesonic.com/api/info", sb.toString());
+                br.postPage(getDomain() + "/api/info", sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String id = this.getPureID(dllink);
                     final String hit[] = br.getRegex(id + ".*?;(.*?);(\\d+) B;(\\S+)").getRow(0);
@@ -118,7 +141,7 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* convert sharingmatrix to filesonic that set english language */
-        link.setUrlDownload("http://www.filesonic.com/file/" + getID(link));
+        link.setUrlDownload(getDomain() + "/file/" + getID(link));
     }
 
     public String getID(final DownloadLink link) {
@@ -189,7 +212,7 @@ public class FileSonicCom extends PluginForHost {
             if (account.getAccountInfo() != null) {
                 ai = account.getAccountInfo();
             }
-            this.br.getPage("http://www.filesonic.com/user/settings");
+            this.br.getPage(getDomain() + "/user/settings");
             final String expiredate = this.br.getRegex("Premium Membership Valid Until:.*?info\">(.*?)<").getMatch(0);
             if (expiredate != null) {
                 ai.setStatus("Premium User");
@@ -246,7 +269,7 @@ public class FileSonicCom extends PluginForHost {
         this.errorHandling(downloadLink, ajax);
         this.br.setFollowRedirects(true);
         // download is ready already
-        final String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.com[^<]*?)\"><span>Start download now!</span></a></p>";
+        final String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.[a-z]{2,3}[^<]*?)\"><span>Start download now!</span></a></p>";
 
         downloadUrl = ajax.getRegex(re).getMatch(0);
         if (downloadUrl == null) {
@@ -389,24 +412,24 @@ public class FileSonicCom extends PluginForHost {
             this.br.setDebug(true);
             this.br.setFollowRedirects(true);
             try {
-                this.br.setCookie("http://www.filesonic.com/", "lang", "en");
+                this.br.setCookie(getDomain(), "lang", "en");
                 final Object ret = account.getProperty("cookies", null);
                 if (ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (cookies.containsKey("role") && account.isValid()) {
                         for (final String key : cookies.keySet()) {
-                            this.br.setCookie("http://www.filesonic.com/", key, cookies.get(key));
+                            this.br.setCookie(getDomain(), key, cookies.get(key));
                         }
                         return;
                     }
                 }
                 try {
-                    this.br.getPage("http://www.filesonic.com/");
-                    this.XMLRequest(this.br, "http://www.filesonic.com/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    this.br.getPage(getDomain());
+                    this.XMLRequest(this.br, getDomain() + "/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 } catch (final Exception e) {
                 }
                 this.br.setFollowRedirects(false);
-                final String premCookie = this.br.getCookie("http://www.filesonic.com", "role");
+                final String premCookie = this.br.getCookie(getDomain(), "role");
                 if (premCookie == null) {
                     AccountInfo ai = account.getAccountInfo();
                     if (ai == null) {
@@ -433,7 +456,7 @@ public class FileSonicCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies("http://www.filesonic.com");
+                final Cookies add = this.br.getCookies(getDomain());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -446,11 +469,8 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
-        if (parameter.getDownloadURL().contains(".net")) {
-            this.correctDownloadLink(parameter);
-        }
-
-        this.br.setCookie("http://www.filesonic.com/", "lang", "en");
+        this.correctDownloadLink(parameter);
+        this.br.setCookie(getDomain(), "lang", "en");
         this.br.getPage(parameter.getDownloadURL());
         if (this.br.getRedirectLocation() != null) {
             this.br.getPage(this.br.getRedirectLocation());

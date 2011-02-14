@@ -24,8 +24,8 @@ import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
@@ -826,7 +826,18 @@ abstract public class DownloadInterface {
             last = downloadLink.getChunksProgress()[i];
         }
         if (chunks > 0) {
-            setChunkNum(chunks);
+            if (chunks <= this.getChunkNum()) {
+                /* downloadchunks are less or equal to allowed chunks */
+                setChunkNum(chunks);
+            } else {
+                /*
+                 * downloadchunks are more than allowed chunks, need to
+                 * repartition the download
+                 */
+                logger.info("Download has " + chunks + " Chunks but only " + getChunkNum() + " allowed! Change to 1!");
+                setChunkNum(1);
+                downloadLink.setChunksProgress(new long[] { downloadLink.getChunksProgress()[0] });
+            }
             return true;
         }
         return false;

@@ -291,13 +291,12 @@ public class RAFDownload extends DownloadInterface {
         DownloadInterface dl = new RAFDownload(downloadLink.getLivePlugin(), downloadLink, request);
         PluginForHost plugin = downloadLink.getLivePlugin();
         if (plugin != null) plugin.setDownloadInterface(dl);
-        dl.setResume(b);
         if (i == 0) {
             dl.setChunkNum(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         } else {
             dl.setChunkNum(i < 0 ? Math.min(i * -1, JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) : i);
         }
-
+        dl.setResume(b);
         return dl;
 
     }
