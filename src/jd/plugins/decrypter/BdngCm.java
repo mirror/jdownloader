@@ -50,9 +50,6 @@ public class BdngCm extends PluginForDecrypt {
         if (!br.containsHTML("Diese Datei wurde gesplittet")) {
             /* For single video links */
             // if (!parameter.endsWith("/1")) parameter = parameter + "/1";
-            /* For audio files */
-            // if (parameter.contains("audio/")) parameter =
-            // parameter.replace("audio/", "file/");
             final DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter));
             dlLink.setProperty("type", "single");
             decryptedLinks.add(dlLink);

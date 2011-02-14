@@ -74,7 +74,7 @@ public class DepositFiles extends PluginForHost {
         /* download not available at the moment */
         if (br.containsHTML("Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
         /* limit reached */
-        if (br.containsHTML("You used up your limit") || br.containsHTML("Please try in") || br.containsHTML("You have reached your download time limit")) {
+        if (br.containsHTML("(Sie haben ein Limit fuer Downloaden ausgeschoepft|You used up your limit|Please try in|You have reached your download time limit)")) {
             String wait = br.getRegex("html_download_api-limit_interval\">(\\d+)</span>").getMatch(0);
             if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l); }
             System.out.print(br.toString());
@@ -291,7 +291,13 @@ public class DepositFiles extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // Important: Setup Cookie
-            br.setCookie(MAINPAGE, "adv_135", "1");
+            final String[] Keks = br.getRegex("(adv_.*?);").getMatch(0).split("=");
+            if (Keks.length == 1) {
+                br.setCookie(MAINPAGE, Keks[0], "");
+            }
+            if (Keks.length == 2) {
+                br.setCookie(MAINPAGE, Keks[0], Keks[1]);
+            }
             br.submitForm(form);
             checkErrors();
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }

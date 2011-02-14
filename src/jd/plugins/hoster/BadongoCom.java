@@ -48,8 +48,9 @@ import org.appwork.utils.formatter.StringFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.+" }, flags = { PluginWrapper.LOAD_ON_INIT })
 public class BadongoCom extends PluginForHost {
 
-    private static final String FILETEMPLATE = "http://www.badongo.com/ajax/prototype/ajax_api_filetemplate.php";
+    private static final String FILETEMPLATE = "/ajax/prototype/ajax_api_filetemplate.php";
     private static final String JAVASCRIPT   = "eval(.*?)\n|\r|\rb";
+    private static final String MAINPAGE     = "http://www.badongo.com";
 
     public BadongoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -114,7 +115,7 @@ public class BadongoCom extends PluginForHost {
             final String capSecret = br.getRegex("cap_secret value=(.*?)>").getMatch(0);
             final String action = br.getRegex("action=\\\\\"(.*?)\\\\\"").getMatch(0);
             if (cid == null || fileID == null || capSecret == null || action == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            final String code = this.getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
+            final String code = this.getCaptchaCode(MAINPAGE + "/ccaptcha.php?cid=" + cid, downloadLink);
             String postData = "user_code=" + code + "&cap_id=" + cid + "&cap_secret=" + capSecret;
             br.getHeaders().put("Referer", realURL);
             br.postPage(action, postData);
@@ -124,8 +125,8 @@ public class BadongoCom extends PluginForHost {
             }
             /* packed JS in ArrayList */
             final ArrayList<String> packedJS = new ArrayList<String>();
-            packedJS.add(br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0, 2));
-            packedJS.add(br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0, 7));
+            packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 2));
+            packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 7));
             if (packedJS.get(1) == null) {
                 packedJS.set(1, "{:'#':'#':'#':'" + br.getRegex("dlUrl \\+ \"(.*?)\"").getMatch(0, 1) + "'");
             }
@@ -134,7 +135,7 @@ public class BadongoCom extends PluginForHost {
             /* DOWNLOAD:INIT */
             postData = "id=" + fileID + "&type=" + filetype + "&ext=" + filepart + "&f=download:init&z=" + plainJS[1] + "&h=" + plainJS[2];
             br.getHeaders().put("Referer", action);
-            br.postPage(BadongoCom.FILETEMPLATE, postData);
+            br.postPage(MAINPAGE + FILETEMPLATE, postData);
             /* DOWNLOAD:CHECK#1 */
             plainJS = unpackJS(br.getRegex(JAVASCRIPT).getMatch(0));
             if (plainJS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -145,13 +146,13 @@ public class BadongoCom extends PluginForHost {
             if (wait != null) {
                 waitThis = Integer.parseInt(wait);
             }
-            this.sleep(waitThis * 1001l, downloadLink);
+            this.sleep((waitThis - 10) * 1001l, downloadLink);
             /* DOWNLOAD:CHECK#2 + additional wait time */
             do {
-                br.postPage(FILETEMPLATE, postData);
-                plainJS = unpackJS(br.getRegex(BadongoCom.JAVASCRIPT).getMatch(0));
-                if (plainJS[0] != null && plainJS[0].contains("ck_[0-9a-f]+")) {
-                    wait = plainJS[0].replaceAll("\\D", "");
+                br.postPage(MAINPAGE + FILETEMPLATE, postData);
+                plainJS = unpackJS(br.getRegex(JAVASCRIPT).getMatch(0));
+                if (plainJS[0] != null && new Regex(plainJS[0], "window.[0-9a-f]+").matches()) {
+                    wait = new Regex(plainJS[0], "=(\\d+)").getMatch(0);
                     if (wait != null) {
                         waitThis = Integer.parseInt(wait);
                     }
@@ -172,7 +173,7 @@ public class BadongoCom extends PluginForHost {
             String link = null;
             final String returnVar = br.getRegex("javascript:\\w+\\(\\\\'(.*?)\\\\'\\)").getMatch(0, 1);
             final String[] alllink = br.getRegex(returnVar + "\\(.'(.*?).'\\)").getColumn(0);
-            if (returnVar != null && alllink != null || alllink.length > 0) {
+            if (returnVar != null && alllink != null && alllink.length > 0) {
                 for (final String tmplink : alllink) {
                     if (tmplink.contains("www.badongo.com")) {
                         link = tmplink;
@@ -195,7 +196,7 @@ public class BadongoCom extends PluginForHost {
             /* Test */
             if (plainJS[1] == null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l); }
             /* Next Request. Response final link as redirect */
-            br.getPage("http://www.badongo.com" + plainJS[1]);
+            br.getPage(MAINPAGE + plainJS[1]);
             dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
         } else {
             String dllink = br.getRegex("songFileSrc\",\\s?\"(.*?)\"\\)").getMatch(0);
@@ -254,7 +255,7 @@ public class BadongoCom extends PluginForHost {
     }
 
     public boolean isPremium() throws PluginException, IOException {
-        br.getPage("http://www.badongo.com/de/");
+        br.getPage(MAINPAGE + "/de/");
         final String type = br.getRegex("Du bist zur Zeit als <b>(.*?)</b> eingeloggt").getMatch(0);
         if (type == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (new Regex(type, Pattern.compile("premium", Pattern.CASE_INSENSITIVE)).matches()) { return true; }
@@ -263,21 +264,21 @@ public class BadongoCom extends PluginForHost {
 
     public void login(final Account account) throws Exception {
         setBrowserExclusive();
-        br.setCookie("http://www.badongo.com", "badongoL", "de");
+        br.setCookie(MAINPAGE, "badongoL", "de");
         // br.getPage("http://www.badongo.com");
-        br.getPage("http://www.badongo.com/de/login");
+        br.getPage(MAINPAGE + "/de/login");
         final Form form = br.getForm(0);
         form.put("username", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        if (br.getCookie("http://www.badongo.com", "badongo_user") == null || br.getCookie("http://www.badongo.com", "badongo_password") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (br.getCookie(MAINPAGE, "badongo_user") == null || br.getCookie(MAINPAGE, "badongo_password") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setCookiesExclusive(true);
-        br.setCookie("http://www.badongo.com", "badongoL", "de");
+        br.setCookie(MAINPAGE, "badongoL", "de");
         br.getPage(downloadLink.getDownloadURL());
         /* File Password */
         if (br.containsHTML("Diese Datei ist zur Zeit : <b>Geschützt</b>")) {
@@ -360,9 +361,6 @@ public class BadongoCom extends PluginForHost {
         if (result == null && unpacked.contains("getFileLinkInitOpt")) {
             result = unpacked;
         }
-        if (result == null && unpacked.contains("ck_[0-9a-f]+")) {
-            result = unpacked;
-        }
         if (result == null) {
             result = unpacked;
         }
@@ -373,17 +371,17 @@ public class BadongoCom extends PluginForHost {
         unpacked = result.toString();
         int z = 0;
         unpacked = unpacked.replaceAll("\n|\r|\rb|\t| ", "");
-        if (unpacked.length() <= 20 && unpacked.contains("ck_[0-9a-f]+")) {
+        if (unpacked.length() <= 45 && new Regex(unpacked, "window.[0-9a-f]+").matches()) {
             row[0] = unpacked;
             return row;
         }
         final int a = unpacked.lastIndexOf("{");
         unpacked = unpacked.substring(a + 1, unpacked.length());
-        final Pattern pattern = Pattern.compile("(:|=)'(.*?)'|window\\['ck_[0-9a-f]+'\\].*?\"(\\d+)\"|\".(.*?)\"");
+        final Pattern pattern = Pattern.compile("(:|=)'(.*?)'|window\\['[0-9a-f]+'\\].*?\"(\\d+)\"|\".(.*?)\"");
         final Matcher matcher = pattern.matcher(unpacked);
         while (matcher.find()) {
             z += 1;
-            row[z] = matcher.group().toString().replaceAll("'|:|=|\"|window\\['ck_[0-9a-f]+'\\]", "").trim();
+            row[z] = matcher.group().toString().replaceAll("'|:|=|\"|window\\['[0-9a-f]+'\\]", "").trim();
         }
         return row;
     }
