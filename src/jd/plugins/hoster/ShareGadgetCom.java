@@ -22,11 +22,11 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -69,8 +69,12 @@ public class ShareGadgetCom extends PluginForHost {
         // this.sleep(40000, downloadLink); //Remove if they find a better way
         // to force wait time
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("Final dllink is no file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
-
     }
 
     @Override

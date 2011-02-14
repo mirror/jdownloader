@@ -95,19 +95,35 @@ public class VimeoCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
+    private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        // HEADER_BEGIN
+        br.setCookie(MAINPAGE, "cached_email", account.getUser());
+        br.getHeaders().put("Accept", "application/x-ms-application, image/jpeg, application/xaml+xml, image/gif, image/pjpeg, application/x-ms-xbap, */*");
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        br.getHeaders().put("Accept-Language", "de-DE");
+        br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C)");
+        br.getHeaders().put("Referer", "http://vimeo.com/");
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        br.getHeaders().put("connection", "Keep-Alive");
+        // HEADER_END
         br.getPage(MAINPAGE + "/log_in");
-        String token = br.getRegex("name=\"token\" value=\"(.*?)\"").getMatch(0);
+        final String token = br.getRegex("name=\"token\" value=\"(.*?)\"").getMatch(0);
         if (token == null) {
             logger.warning("Login is broken!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
+        br.getHeaders().put("Pragma", "no-cache");
+        br.getHeaders().put("Referer", "http://vimeo.com/log_in");
         br.setCookie(MAINPAGE, "xsrftv", token);
-        br.setCookie(MAINPAGE, "home_active_tab", "inbox");
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.postPage(MAINPAGE + "/log_in", "sign_in%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&sign_in%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(token));
-        if (br.getCookie(MAINPAGE, "vimeo") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        // br.setCookie(MAINPAGE, "home_active_tab", "inbox");
+        br.postPage(MAINPAGE + "/log_in", "sign_in%5Bemail%5D=" + Encoding.htmlDecode(account.getUser()) + "&sign_in%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(token));
+        if (br.getCookie(MAINPAGE, "vimeo") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     @Override
