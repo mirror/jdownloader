@@ -71,7 +71,6 @@ public class DailyMotionCom extends PluginForHost {
                 dllink = br.getRegex("addVariable\\(\"video\", \"(http://.*?)\"\\)").getMatch(0);
                 if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/cdn/.*?)\"").getMatch(0);
             } else {
-                System.out.print(allLinks);
                 // Prefer HD videos
                 dllink = new Regex(allLinks, "hqURL\":\"(http:.*?)\"").getMatch(0);
                 if (dllink == null) dllink = new Regex(allLinks, "sdURL\":\"(http:.*?)\"").getMatch(0);
