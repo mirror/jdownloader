@@ -20,7 +20,7 @@ package jd.plugins.optional.extraction;
  * Eventinterface for the ExtractionWrapper.
  * 
  * @author botzi
- *
+ * 
  */
 public interface ExtractionListener {
     abstract public void onExtractionEvent(int id, ExtractionController wrapper);

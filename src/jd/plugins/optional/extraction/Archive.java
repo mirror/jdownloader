@@ -198,10 +198,6 @@ public class Archive {
         this.archives = archives;
     }
 
-    public void addDownloadLink(DownloadLink link) {
-        archives.add(link);
-    }
-
     public void setGotInterrupted(final boolean gotInterrupted) {
         this.gotInterrupted = gotInterrupted;
     }

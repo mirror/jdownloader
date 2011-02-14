@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Timer;
 
 import javax.swing.JViewport;
@@ -468,10 +469,20 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             }
         }
 
-        this.queue = new Jobber(1);
-
         initExtractors();
+
+        Iterator<IExtraction> it = extractors.iterator();
+        while (it.hasNext()) {
+            IExtraction extractor = it.next();
+            if (!extractor.checkCommand()) {
+                logger.warning("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
+                it.remove();
+            }
+        }
+
         initConfig();
+
+        this.queue = new Jobber(1);
 
         if (menuAction == null) menuAction = new MenuAction("optional.extraction.menu.extract.singlefiles", getIconKey()) {
             private static final long serialVersionUID = -7569522709162921624L;

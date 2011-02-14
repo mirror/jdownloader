@@ -49,6 +49,7 @@ import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.ISevenZipInArchive;
 import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.SevenZipNativeInitializationException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
@@ -466,6 +467,11 @@ public class Multi implements IExtraction {
     }
 
     public boolean checkCommand() {
+        try {
+            SevenZip.initSevenZipFromPlatformJAR();
+        } catch (SevenZipNativeInitializationException e) {
+            logger.warning("Could not initialize Multiunpacker");
+        }
         return SevenZip.isInitializedSuccessfully();
     }
 
@@ -584,15 +590,6 @@ public class Multi implements IExtraction {
 
     public void setArchiv(Archive archive) {
         this.archive = archive;
-    }
-
-    /**
-     * Retruns the {@link Archive} for this unpack process.
-     * 
-     * @return The {@link Archive}.
-     */
-    Archive getArchive() {
-        return archive;
     }
 
     public void setExtractionController(ExtractionController controller) {
