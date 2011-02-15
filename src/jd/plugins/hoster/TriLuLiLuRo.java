@@ -20,15 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video/)[A-Za-z0-9_]+/[a-z0-9]+" }, flags = { 0 })
 public class TriLuLiLuRo extends PluginForHost {
@@ -42,16 +42,19 @@ public class TriLuLiLuRo extends PluginForHost {
         return "http://www.trilulilu.ro/termeni-conditii";
     }
 
-    private String              DLLINK      = null;
-    private static final String VIDEOPLAYER = "videoplayer2010HDmp4";
+    private String              DLLINK       = null;
+    private static final String VIDEOPLAYER  = "videoplayer2010HDmp4";
+    private static final String LIMITREACHED = ">Ai atins limita de 5 ascultări de piese audio pe zi. Te rugăm să intri in cont ca să poţi";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(Fişierul căutat nu există|Fişierul nu este disponibil pentru vizionare în ţara dumneavoastră|Contul acestui utilizator a fost dezactivat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
         String filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"Trilulilu - (.*?) - Muzică Diverse\" />").getMatch(0);
@@ -63,34 +66,19 @@ public class TriLuLiLuRo extends PluginForHost {
                 }
             }
         }
-        getDownloadUrl(downloadLink);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
         if (br.containsHTML(VIDEOPLAYER))
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+            downloadLink.setFinalFileName(filename + ".mp4");
         else
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp3");
-        Browser br2 = br.cloneBrowser();
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+            downloadLink.setFinalFileName(filename + ".mp3");
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         getDownloadUrl(downloadLink);
         int maxchunks = 1;
         // Videos have no chunk-limits!

@@ -50,7 +50,7 @@ public class XFileSharingProBasic extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.1.1.1
+    // XfileSharingProBasic Version 2.1.1.2
     // This is only for developers to easily implement hosters using the
     // "xfileshare(pro)" script (more informations can be found on
     // xfilesharing.net)!
@@ -255,9 +255,9 @@ public class XFileSharingProBasic extends PluginForHost {
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
+        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!BRBEFORE.contains("Premium-Account expire") && !BRBEFORE.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!BRBEFORE.contains("Premium-Account expire") && !br.containsHTML(">Renew premium<")) NOPREMIUM = true;
     }
