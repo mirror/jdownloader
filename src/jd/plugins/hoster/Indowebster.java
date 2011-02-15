@@ -16,14 +16,16 @@
 
 package jd.plugins.hoster;
 
+import java.util.Random;
+
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -72,10 +74,19 @@ public class Indowebster extends PluginForHost {
             logger.warning("dlForm is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // logger.info("Final link = " + ad_url);
+        dlForm.remove("button");
+        dlForm.put("button.x", Integer.toString(new Random().nextInt(10)));
+        dlForm.put("button.y", Integer.toString(new Random().nextInt(10)));
+        br.submitForm(dlForm);
+        // dllinks look like this:
+        // http://www63.indowebster.com/32e7f829472e4f9d65234e5de9d43ddf.mkv
+        // Important: downloads only work for indonesian IPs but still we can
+        // test the process till here
+        String dllink = null;
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("But Our Download Server Can be Accessed from Indonesia Only")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download Server Can be Accessed from Indonesia Only");
