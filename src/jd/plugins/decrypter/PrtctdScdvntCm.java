@@ -26,7 +26,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -70,7 +69,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
                 final String equals = this.getCaptchaCode(MAINPAGE + cpPage, param);
                 br.postPage(MAINPAGE + sendCaptcha, "res_code=" + equals);
                 if (!br.toString().trim().equals("1") && !br.toString().trim().equals("0")) {
-                    Plugin.logger.warning("Error in doing the maths for link: " + parameter);
+                    logger.warning("Error in doing the maths for link: " + parameter);
                     return null;
                 }
                 if (!br.toString().trim().equals("1")) {
@@ -80,14 +79,14 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
             }
             if (!br.toString().trim().equals("1")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         }
-        Plugin.logger.info("Found " + linkCounter + " links, decrypting now...");
+        logger.info("Found " + linkCounter + " links, decrypting now...");
         progress.setRange(linkCounter);
         for (int i = 0; i <= linkCounter - 1; i++) {
             br.getHeaders().put("Referer", parameter);
             final String actualPage = MAINPAGE + "allink.php?out_name=" + postvar + "&&link_id=" + i;
             br.getPage(actualPage);
             if (br.containsHTML("This file is either removed due to copyright claim or is deleted by the uploader")) {
-                Plugin.logger.info("Found one offline link for link " + parameter + " linkid:" + i);
+                logger.info("Found one offline link for link " + parameter + " linkid:" + i);
                 continue;
             }
             String finallink = br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http.*?)\"").getMatch(0);
@@ -97,12 +96,12 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
                     final String singleProtectedLink = MAINPAGE + "plugin/turbobit.net.free.php?out_name=" + postvar + "&link_id=" + i;
                     br.getPage(singleProtectedLink);
                     if (br.getRedirectLocation() == null) {
-                        Plugin.logger.warning("Redirect location for this link is null: " + parameter);
+                        logger.warning("Redirect location for this link is null: " + parameter);
                         return null;
                     }
                     final String turboId = new Regex(br.getRedirectLocation(), "http://turbobit\\.net/download/free/(.+)").getMatch(0);
                     if (turboId == null) {
-                        Plugin.logger.warning("There is a problem with the link: " + actualPage);
+                        logger.warning("There is a problem with the link: " + actualPage);
                         return null;
                     }
                     finallink = "http://turbobit.net/" + turboId + ".html";
@@ -114,7 +113,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
                     }
                     finallink = br.getRegex("href=\"(.*?)\"").getMatch(0).trim();
                     if (finallink == null) {
-                        Plugin.logger.warning("There is a problem with the link: " + actualPage);
+                        logger.warning("There is a problem with the link: " + actualPage);
                         return null;
                     }
                     if (finallink.contains("/get/")) {
@@ -126,7 +125,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
                 }
             }
             if (finallink == null) {
-                Plugin.logger.warning("Finallink for the following link is null: " + parameter);
+                logger.warning("Finallink for the following link is null: " + parameter);
             }
             decryptedLinks.add(createDownloadlink(finallink));
             progress.increase(1);
