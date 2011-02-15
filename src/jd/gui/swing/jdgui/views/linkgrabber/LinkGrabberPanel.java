@@ -170,6 +170,14 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
                                 fp2.setDownloadLinks(new ArrayList<DownloadLink>());
                             }
+
+                            new GuiRunnable<Object>() {
+                                @Override
+                                public Object runSave() {
+                                    LinkgrabberView.getInstance().setInfoPanel(null);
+                                    return null;
+                                }
+                            }.start();
                         }
                     }
                 }
