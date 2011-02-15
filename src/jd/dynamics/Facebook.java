@@ -25,41 +25,35 @@ import net.miginfocom.swing.MigLayout;
 
 public class Facebook extends DynamicPluginInterface {
 
-    private static boolean CALLED = false;
-
     @Override
     public void execute() {
-        System.out.println("FB 1");
+
         try {
-            Thread.sleep(10000);
-            System.out.println("FB 2");
-            final String id = "1";
+            Thread.sleep(5000);
+
+            final String id = "2";
             if (SubConfiguration.getConfig("facebook").getGenericProperty(id, false) && JDInitFlags.SWITCH_DEBUG == false) {
                 // Schon durchgefuehrt
-                System.out.println("FB 3");
+
                 return;
             }
-            System.out.println("FB 4");
             File fb = JDUtilities.getResourceFile("tmp/fb.png");
             File fbMouseOver = JDUtilities.getResourceFile("tmp/fbmo.png");
             fb.getParentFile().mkdirs();
 
             fb.deleteOnExit();
             fbMouseOver.deleteOnExit();
-            System.out.println("FB 5");
 
             Browser.download(fb, "http://update0.jdownloader.org/facebook.png");
             Browser.download(fbMouseOver, "http://update0.jdownloader.org/facebook_mo.png");
-            System.out.println("FB 6");
+
             final ImageIcon ico = new ImageIcon(ImageIO.read(fb));
             final ImageIcon icoMO = new ImageIcon(ImageIO.read(fbMouseOver));
+
+            new FBDialog(ico, icoMO);
             SubConfiguration.getConfig("facebook").setProperty(id, true);
 
             SubConfiguration.getConfig("facebook").save();
-            System.out.println("FB 8");
-
-            new FBDialog(ico, icoMO);
-
         } catch (final InterruptedException e1) {
             e1.printStackTrace();
         } catch (IOException e) {
@@ -79,7 +73,6 @@ public class Facebook extends DynamicPluginInterface {
         public FBDialog(final ImageIcon ico, final ImageIcon icoMO) {
             super(JDGui.getInstance().getMainFrame());
 
-            System.out.println("FB 7");
             final JLabel lbl = new JLabel(ico);
             lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             lbl.addMouseListener(new MouseListener() {
