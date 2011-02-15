@@ -201,7 +201,11 @@ public class EasyShareCom extends PluginForHost {
                     break;
                 }
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode(cf, downloadLink);
+            /*
+             * another as default cause current stable has easy-captcha method
+             * that does not work
+             */
+            String code = getCaptchaCode("recaptcha", cf, downloadLink);
             form.put("recaptcha_challenge_field", challenge);
             form.put("recaptcha_response_field", Encoding.urlEncode(code));
             br.setFollowRedirects(true);

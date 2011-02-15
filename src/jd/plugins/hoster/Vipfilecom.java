@@ -123,6 +123,9 @@ public class Vipfilecom extends PluginForHost {
             if (url == null) {
                 url = br.getRegex("\"(http://[0-9\\.]+/downloadp\\d+/.*?/vip-file\\.com/[0-9\\.]+/.*?)\"").getMatch(0);
             }
+            if (url == null) {
+                url = br.getRegex("\"(http://[0-9\\.]+/[^/].*?download[^/].*?\\d+/.*?/vip-file\\.com/[0-9\\.]+/.*?)\"").getMatch(0);
+            }
         }
         if (url == null && br.containsHTML("(Wrong password|>This password expired<)")) {
             logger.info("Downloadpassword seems to be wrong, disabeling account now!");
