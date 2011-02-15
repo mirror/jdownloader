@@ -106,6 +106,30 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
                 if (obj.isRegexValid()) return super.getToolTip(obj);
                 return JDL.LF(JDL_PREFIX + "regex.malformed", "Malformed Regex!");
             }
+        });
+        this.addColumn(new ExtCheckColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "onurl", "On URL?"), this) {
+
+            private static final long serialVersionUID = -755486233284215838L;
+
+            @Override
+            public boolean isEnabled(CustomizeSetting obj) {
+                return obj.isOnURL();
+            }
+
+            @Override
+            public boolean isEditable(CustomizeSetting obj) {
+                return true;
+            }
+
+            @Override
+            protected boolean getBooleanValue(CustomizeSetting value) {
+                return value.isOnURL();
+            }
+
+            @Override
+            protected void setBooleanValue(boolean value, CustomizeSetting object) {
+                object.setOnURL(value);
+            }
 
         });
         this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "packageName", "FilePackage name"), this) {

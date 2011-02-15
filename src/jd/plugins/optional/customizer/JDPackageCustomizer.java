@@ -131,7 +131,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
     }
 
     public void attachToPackagesSecondStage(DownloadLink link) {
-        CustomizeSetting setting = CustomizeSetting.getFirstMatch(link.getName());
+        CustomizeSetting setting = CustomizeSetting.getFirstMatch(link.getName(), link.getDownloadURL());
         if (setting != null) {
             logger.info("Customizer: Using customization of filepackage for link " + link.getName());
             if (ctrl.isExtensionFiltered(link)) {

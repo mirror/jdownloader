@@ -165,7 +165,7 @@ public class CustomizerGui extends SwitchPanel {
 
                 @Override
                 public boolean doHighlight(ExtTable<?> extTable, int row) {
-                    return tester.getText().length() > 0 && (CustomizeSetting) extTable.getExtTableModel().getValueAt(row, 0) == CustomizeSetting.getFirstMatch(tester.getText());
+                    return tester.getText().length() > 0 && (CustomizeSetting) extTable.getExtTableModel().getValueAt(row, 0) == CustomizeSetting.getFirstMatch(tester.getText(), tester.getText());
                 }
 
             });

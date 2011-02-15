@@ -29,11 +29,16 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
 
     private static ArrayList<CustomizeSetting> SETTINGS = null;
 
-    public static CustomizeSetting getFirstMatch(String fileName) {
+    public static CustomizeSetting getFirstMatch(String fileName, String url) {
         ArrayList<CustomizeSetting> settings = new ArrayList<CustomizeSetting>(SETTINGS);
         Collections.sort(settings);
         for (CustomizeSetting setting : settings) {
-            if (setting.isEnabled() && setting.matches(fileName)) return setting;
+            String match = fileName;
+            if (setting.isOnURL()) {
+                match = url;
+            }
+            if (setting.isEnabled() && setting.matches(match)) return setting;
+
         }
         return null;
     }
@@ -67,6 +72,23 @@ public class CustomizeSetting implements Serializable, Comparable<CustomizeSetti
     private int               dlpriority       = 0;
 
     private transient int     matchCount       = 0;
+
+    private boolean           onURL            = false;
+
+    /**
+     * @return the onURL
+     */
+    protected boolean isOnURL() {
+        return onURL;
+    }
+
+    /**
+     * @param onURL
+     *            the onURL to set
+     */
+    protected void setOnURL(boolean onURL) {
+        this.onURL = onURL;
+    }
 
     public CustomizeSetting(String name) {
         setName(name);
