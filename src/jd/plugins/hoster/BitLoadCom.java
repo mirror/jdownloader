@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitload.com", "mystream.to" }, urls = { "http://(www\\.)?(bitload\\.com/f/\\d+/[a-z0-9]+|mystream\\.to/file-\\d+-[a-z0-9]+)", "http://blablarfdghrtthgrt56z3ef27893bv" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitload.com", "mystream.to" }, urls = { "http://(www\\.)?(bitload\\.com/(f|d)/\\d+/[a-z0-9]+|mystream\\.to/file-\\d+-[a-z0-9]+)", "http://blablarfdghrtthgrt56z3ef27893bv" }, flags = { 0, 0 })
 public class BitLoadCom extends PluginForHost {
 
     public BitLoadCom(PluginWrapper wrapper) {
@@ -45,6 +45,8 @@ public class BitLoadCom extends PluginForHost {
         if (link.getDownloadURL().contains("mystream.to/")) {
             Regex mystreamIDs = new Regex(link.getDownloadURL(), "mystream\\.to/file-(\\d+)-([a-z0-9]+)");
             link.setUrlDownload("http://www.bitload.com/f/" + mystreamIDs.getMatch(0) + "/" + mystreamIDs.getMatch(1));
+        } else {
+            link.setUrlDownload(link.getDownloadURL().replace("/d/", "/f/"));
         }
     }
 
