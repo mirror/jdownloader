@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -61,7 +61,7 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://freakshare.com/?x=faq";
+        return "http://freakshare.com/terms-of-service.html";
     }
 
     public void correctDownloadLink(DownloadLink link) {

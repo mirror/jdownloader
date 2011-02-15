@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -40,7 +40,7 @@ public class FlyShareCz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.flyshare.cz/jak-to-funguje";
+        return "http://www.flyshare.cz/podminky-pouzivani";
     }
 
     @Override
