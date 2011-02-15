@@ -21,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -388,8 +389,9 @@ public class Multi implements IExtraction {
                 }
 
                 // Set last write time
-                if (item.getLastWriteTime() != null) {
-                    if (!extractTo.setLastModified(item.getLastWriteTime().getTime())) {
+                Date date = item.getLastWriteTime();
+                if (date != null && date.getTime() >= 0) {
+                    if (!extractTo.setLastModified(date.getTime())) {
                         logger.warning("Could not set last write/modified time for " + item.getPath());
                     }
                 }
