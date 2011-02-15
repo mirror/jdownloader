@@ -67,7 +67,8 @@ public class ShareCx extends PluginForHost {
         try {
             requestFileInformation(downloadLink);
             this.setBrowserExclusive();
-            String p1 = br.getPage(downloadLink.getDownloadURL());
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
             br.setFollowRedirects(false);
             Form dlform0 = br.getForm(0);
             if (dlform0 == null) {
@@ -76,7 +77,7 @@ public class ShareCx extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dlform0.put("method_free", "Datei+herunterladen");
-            String p2 = br.submitForm(dlform0);
+            br.submitForm(dlform0);
             String reconTime = br.getRegex("startTimer\\((\\d+)\\)").getMatch(0);
             if (reconTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconTime) * 1001l);
             if (br.containsHTML("Sie haben Ihr Download-Limit von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
@@ -120,13 +121,12 @@ public class ShareCx extends PluginForHost {
             } else {
                 logger.info("Couldn't find a captcha, continuing without captcha...");
             }
-            String p3 = br.submitForm(dlform1);
+            br.submitForm(dlform1);
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 String waittime = br.getRegex("startTimer\\((\\d+)\\);").getMatch(0);
                 if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
                 logger.warning("dllink equals null, stopping...");
-                logger.warning("Browser before:" + p1 + p2 + p3);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -207,10 +207,12 @@ public class ShareCx extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
         String dllink = null;
         if (br.getRedirectLocation() != null) {
             dllink = br.getRedirectLocation();
         } else {
+            if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
             Form dlform = br.getFormbyProperty("name", "F1");
             br.submitForm(dlform);
             dllink = br.getRegex("wenigen Sekunden automatisch... <a href=\"(http://.*?)\"").getMatch(0);
@@ -238,6 +240,7 @@ public class ShareCx extends PluginForHost {
         // same time
         if (br.containsHTML("<br>oder kaufen Sie sich jetzt einen <a")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (br.containsHTML("No File")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
     }
 
     @Override
