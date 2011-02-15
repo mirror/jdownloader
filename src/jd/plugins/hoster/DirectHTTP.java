@@ -20,8 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -494,7 +496,7 @@ public class DirectHTTP extends PluginForHost {
         } else {
             try {
                 if (this.getPluginConfig().getBooleanProperty(LASTMODIFIED, true)) {
-                    Date last = org.appwork.utils.formatter.TimeFormatter.parseDateString(lastModified);
+                    Date last = parseDateString(lastModified);
                     if (last != null) {
                         new File(downloadLink.getFileOutput()).setLastModified(last.getTime());
                     }
@@ -503,6 +505,23 @@ public class DirectHTTP extends PluginForHost {
                 /* stable 09581 does not have access to this function */
             }
         }
+    }
+
+    private final String[] dateformats = new String[] { "EEE, dd-MMM-yy HH:mm:ss z", "EEE, dd-MMM-yyyy HH:mm:ss z", "EEE, dd MMM yyyy HH:mm:ss z", "EEE MMM dd HH:mm:ss z yyyy", "EEE, dd-MMM-yyyy HH:mm:ss z", "EEEE, dd-MMM-yy HH:mm:ss z" };
+
+    public Date parseDateString(final String date) {
+        Date expireDate = null;
+        for (final String format : dateformats) {
+            try {
+                final SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.UK);
+                sdf.setLenient(false);
+                expireDate = sdf.parse(date);
+                break;
+            } catch (final Exception e2) {
+            }
+        }
+        if (expireDate == null) { return null; }
+        return expireDate;
     }
 
     private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
