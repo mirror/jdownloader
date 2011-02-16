@@ -28,11 +28,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -48,14 +48,14 @@ public class LizShareCom extends PluginForHost {
     // XfileSharingProBasic Version 1.8
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/tos.html";
+        return "http://lizshare.net/terms.php";
     }
 
-    public String brbefore = "";
+    public String               brbefore      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST = "http://lizshare.net";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST   = "http://lizshare.net";
+    public boolean              nopremium     = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

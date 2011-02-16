@@ -21,27 +21,26 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.ge" }, urls = { "http://[\\w\\.]*?link\\.ge/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.ge" }, urls = { "http://(www\\.)?link\\.ge/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class LinkGe extends PluginForHost {
 
     public LinkGe(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("http://Only4Devs2Test.com/register.php?g=3");
     }
 
     // MhfScriptBasic 1.0, modified filesize regex, added second file not found
     // text
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/rules.php";
+        return "http://www.link.ge/faq.php";
     }
 
     private static final String COOKIE_HOST = "http://link.ge";

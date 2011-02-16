@@ -18,16 +18,16 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madshare.com" }, urls = { "http://[\\w\\.]*?madshare\\.com/(en/)?download/[a-zA-Z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madshare.com" }, urls = { "http://(www\\.)?madshare\\.com/(en/)?download/[a-zA-Z0-9]+/" }, flags = { 0 })
 public class MadShareCom extends PluginForHost {
 
     public MadShareCom(PluginWrapper wrapper) {
@@ -36,7 +36,7 @@ public class MadShareCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.madshare.com/en/terms-and-conditions.html";
+        return "http://www.madshare.com/en/tos.html";
     }
 
     @Override
