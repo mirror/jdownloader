@@ -35,12 +35,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -56,15 +56,15 @@ import org.w3c.dom.html2.HTMLCollection;
 //import org.w3c.dom.html2.HTMLCollection;
 //API:  http://support.mediafire.com/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=68
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?(?!sharekey)|file/).+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).+" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
     public static abstract class PasswordSolver {
 
-        protected Browser       br;
+        protected Browser br;
         protected PluginForHost plg;
-        protected DownloadLink  dlink;
-        private final int       maxTries;
-        private int             currentTry;
+        protected DownloadLink dlink;
+        private final int maxTries;
+        private int currentTry;
 
         public PasswordSolver(final PluginForHost plg, final Browser br, final DownloadLink downloadLink) {
             this.plg = plg;
@@ -109,17 +109,17 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static final String                   UA                 = RandomUserAgent.generate();
+    private static final String UA = RandomUserAgent.generate();
 
-    static private final String                   offlinelink        = "tos_aup_violation";
+    static private final String offlinelink = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
-    private static final String                   ERROR_PAGE         = "error.php";
+    private static final String ERROR_PAGE = "error.php";
     /**
      * The number of retries to be performed in order to determine if a file is
      * available
      */
-    private static final int                      NUMBER_OF_RETRIES  = 3;
+    private static final int NUMBER_OF_RETRIES = 3;
 
     /**
      * Map to cache the configuration keys
@@ -284,6 +284,16 @@ public class MediafireCom extends PluginForHost {
                 eb.getDocument().close();
             } catch (final Throwable e) {
             }
+            try {
+                /*
+                 * this call will stop/kill all remaining js from previous
+                 * extBrowser!
+                 */
+                Browser loboCleanup = new Browser();
+                eb.eval(loboCleanup);
+            } catch (final Throwable e) {
+            }
+
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
@@ -564,7 +574,7 @@ public class MediafireCom extends PluginForHost {
             filesize = this.br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo-fs\" value=\"(.*?)\">").getMatch(0);
         }
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setFinalFileName(filename.trim());
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         status = AvailableStatus.TRUE;
         return status;

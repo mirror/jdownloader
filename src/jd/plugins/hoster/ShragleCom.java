@@ -116,13 +116,13 @@ public class ShragleCom extends PluginForHost {
         final URLConnectionAdapter con = this.dl.getConnection();
         if ((con.getContentType() != null) && con.getContentType().contains("html")) {
             this.br.followConnection();
+            if (this.br.containsHTML("Ihre Session-ID ist")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "SESSION-ID Invalid", 10 * 60 * 1000l);
             if (this.br.containsHTML("bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l); }
             if (this.br.containsHTML("The selected file was not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if ((this.br.containsHTML("Die von Ihnen angeforderte Datei") && this.br.containsHTML("Bitte versuchen Sie es")) || mayfail) {
                 if (downloadLink.getLinkStatus().getRetryCount() > 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             }
-            con.disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
@@ -151,7 +151,7 @@ public class ShragleCom extends PluginForHost {
         final URLConnectionAdapter con = this.dl.getConnection();
         if ((con.getContentType() != null) && con.getContentType().contains("html")) {
             this.br.followConnection();
-            System.out.println(br);
+            if (this.br.containsHTML("Ihre Session-ID ist")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "SESSION-ID Invalid", 10 * 60 * 1000l);
             if (this.br.containsHTML("bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l); }
             if (this.br.containsHTML("The selected file was not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (this.br.containsHTML("tige Session-ID.")) { throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -161,7 +161,6 @@ public class ShragleCom extends PluginForHost {
                 if (downloadLink.getLinkStatus().getRetryCount() > 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             }
-            con.disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();

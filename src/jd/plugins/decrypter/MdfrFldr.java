@@ -21,12 +21,14 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?mediafire\\.com/(\\?sharekey=.+|(?!download|file)[^\\?]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?mediafire\\.com/(\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER).+)" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     public MdfrFldr(PluginWrapper wrapper) {
@@ -42,7 +44,15 @@ public class MdfrFldr extends PluginForDecrypt {
         if (br.containsHTML("The page cannot be found")) return decryptedLinks;
         Thread.sleep(500);
         String reqlink = br.getRegex(Pattern.compile("LoadJS\\(\".*?/js/myfiles\\.php/(.*?)\"")).getMatch(0);
-        if (reqlink == null) { return null; }
+        if (reqlink == null) {
+            String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
+            if (ID != null) {
+                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
+            return null;
+        }
         br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
         String links[][] = br.getRegex(Pattern.compile("[a-z]{2}\\[\\d+\\]=Array\\('\\d+','\\d+',\\d+,'([a-z0-9]*?)','[a-f0-9]*?','(.*?)','(\\d+)'", Pattern.CASE_INSENSITIVE)).getMatches();
         progress.setRange(links.length);
@@ -50,7 +60,7 @@ public class MdfrFldr extends PluginForDecrypt {
         for (String[] element : links) {
             if (!element[2].equalsIgnoreCase("0")) {
                 DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
-                link.setName(element[1]);
+                link.setName(Encoding.htmlDecode(element[1]));
                 link.setDownloadSize(Long.parseLong(element[2]));
                 link.setProperty("origin", "decrypter");
                 decryptedLinks.add(link);
