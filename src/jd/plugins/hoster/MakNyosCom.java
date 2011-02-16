@@ -48,7 +48,6 @@ public class MakNyosCom extends PluginForHost {
     public MakNyosCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
-        this.setStartIntervall(60 * 1000l);
     }
 
     // XfileSharingProBasic Version 1.9, manual little reCaptcha workaround
