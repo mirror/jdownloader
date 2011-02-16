@@ -49,18 +49,18 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    private static final String UA                       = RandomUserAgent.generate();
-    private static final String FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
+    private static final String UA = RandomUserAgent.generate();
+    private static final String FILE_NOT_FOUND = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-    private static final String MAINPAGE                 = "http://depositfiles.com";
+    private static final String MAINPAGE = "http://depositfiles.com";
 
-    public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private final Pattern       FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern       FILE_INFO_SIZE           = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
+    public String DLLINKREGEX2 = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private final Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    private final Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
 
-    private static final Object PREMLOCK                 = new Object();
+    private static final Object PREMLOCK = new Object();
 
-    private static int          simultanpremium          = 1;
+    private static int simultanpremium = 1;
 
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
@@ -291,12 +291,15 @@ public class DepositFiles extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // Important: Setup Cookie
-            final String[] Keks = br.getRegex("(adv_.*?);").getMatch(0).split("=");
-            if (Keks.length == 1) {
-                br.setCookie(MAINPAGE, Keks[0], "");
-            }
-            if (Keks.length == 2) {
-                br.setCookie(MAINPAGE, Keks[0], Keks[1]);
+            final String keks = br.getRegex("(adv_.*?);").getMatch(0);
+            if (keks != null) {
+                final String[] Keks = keks.split("=");
+                if (Keks.length == 1) {
+                    br.setCookie(MAINPAGE, Keks[0], "");
+                }
+                if (Keks.length == 2) {
+                    br.setCookie(MAINPAGE, Keks[0], Keks[1]);
+                }
             }
             br.submitForm(form);
             checkErrors();
