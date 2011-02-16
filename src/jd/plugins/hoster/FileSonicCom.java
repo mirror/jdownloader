@@ -30,12 +30,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -45,9 +45,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.(com|net|jp|tw)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
-    private static final Object LOCK               = new Object();
-    private static long         LAST_FREE_DOWNLOAD = 0l;
-    private static String       geoDomain          = null;
+    private static final Object LOCK = new Object();
+    private static long LAST_FREE_DOWNLOAD = 0l;
+    private static String geoDomain = null;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -357,15 +357,17 @@ public class FileSonicCom extends PluginForHost {
         final String url = this.br.getRedirectLocation();
         if (url == null) {
             /* no redirect, what the frak */
-            logger.warning(this.br.toString());
+            /*
+             * this can be caused by a reconnect/changed ip and cookie no longer
+             * valid
+             */
             AccountInfo ai = account.getAccountInfo();
             if (ai == null) {
                 ai = new AccountInfo();
                 account.setAccountInfo(ai);
             }
-            ai.setStatus("ServerProblems(2), will try again in few minutes!");
             account.setProperty("cookies", null);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fetch new Login", 30 * 1000);
         }
         this.br.setFollowRedirects(true);
         this.br.setDebug(true);

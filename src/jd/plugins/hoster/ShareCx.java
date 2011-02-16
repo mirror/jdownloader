@@ -67,7 +67,7 @@ public class ShareCx extends PluginForHost {
         try {
             requestFileInformation(downloadLink);
             this.setBrowserExclusive();
-            br.getPage(downloadLink.getDownloadURL());
+            String p1 = br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
             br.setFollowRedirects(false);
             Form dlform0 = br.getForm(0);
@@ -77,7 +77,7 @@ public class ShareCx extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dlform0.put("method_free", "Datei+herunterladen");
-            br.submitForm(dlform0);
+            String p2 = br.submitForm(dlform0);
             String reconTime = br.getRegex("startTimer\\((\\d+)\\)").getMatch(0);
             if (reconTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconTime) * 1001l);
             if (br.containsHTML("Sie haben Ihr Download-Limit von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
@@ -121,12 +121,13 @@ public class ShareCx extends PluginForHost {
             } else {
                 logger.info("Couldn't find a captcha, continuing without captcha...");
             }
-            br.submitForm(dlform1);
+            String p3 = br.submitForm(dlform1);
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 String waittime = br.getRegex("startTimer\\((\\d+)\\);").getMatch(0);
                 if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
                 logger.warning("dllink equals null, stopping...");
+                logger.warning("Browsers: " + p1 + p2 + p3);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
