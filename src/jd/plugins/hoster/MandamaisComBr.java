@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -38,7 +38,7 @@ public class MandamaisComBr extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.mandamais.com.br/comunidade/";
+        return "http://www.mandamais.com.br/denuncia.html";
     }
 
     @Override

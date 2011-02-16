@@ -78,7 +78,8 @@ public class TuneScoopCom extends PluginForHost {
         dlForm = br.getFormbyProperty("name", "dform");
         if (dlForm == null) dlForm = br.getFormbyProperty("name", "dform");
         if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, -2);
+        // More chunks are possible but cause problems
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

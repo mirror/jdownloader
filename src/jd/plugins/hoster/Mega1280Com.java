@@ -49,7 +49,7 @@ public class Mega1280Com extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://mega.1280.com/terms.php";
+        return "http://mega.1280.com/policy.php?action=sudung";
     }
 
     private static final String SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";

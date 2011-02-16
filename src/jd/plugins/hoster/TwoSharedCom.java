@@ -31,17 +31,17 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo)/.*?/[a-zA-Z0-9._]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo|document)/.*?/[a-zA-Z0-9._]+" }, flags = { 0 })
 public class TwoSharedCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.2shared.com";
@@ -52,7 +52,7 @@ public class TwoSharedCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("/(audio|video|photo)/", "/file/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/(audio|video|photo|document)/", "/file/"));
     }
 
     public String decrypt(final int a, final List<String> param) throws Exception {

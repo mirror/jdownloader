@@ -19,32 +19,32 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.XPath;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lastfm.de" }, urls = { "http://wwwik3mg23seryi4521\\.(fm|de|pl|es|fr|it|jp|com\\.br|ru|se|com\\.tr)/(music/.+/_/.+)" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class LastFm extends PluginForHost {
-    private static final HashMap<String, FilePackage> PACKAGE_CACHE = new HashMap<String, FilePackage>();
-    private static final String API_ROOT = "http://ext.last.fm/2.0/?";
-    private static final String API_KEY = "api_key";
-    private static final String API_KEY_VALUE = "da6ae1e99462ee22e81ac91ed39b43a4";
-    private static final String API_SIG = "api_sig";
-    private static final String API_SIG_SECRET = "4655c1c8293fcf46fc1bee6a07162e25";
-    private static final String API_METHOD = "method";
+    private static final HashMap<String, FilePackage> PACKAGE_CACHE  = new HashMap<String, FilePackage>();
+    private static final String                       API_ROOT       = "http://ext.last.fm/2.0/?";
+    private static final String                       API_KEY        = "api_key";
+    private static final String                       API_KEY_VALUE  = "da6ae1e99462ee22e81ac91ed39b43a4";
+    private static final String                       API_SIG        = "api_sig";
+    private static final String                       API_SIG_SECRET = "4655c1c8293fcf46fc1bee6a07162e25";
+    private static final String                       API_METHOD     = "method";
 
     public LastFm(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,7 +52,7 @@ public class LastFm extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.last.fm/legal/terms";
+        return "http://www.lastfm.de/legal/terms";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -66,8 +66,8 @@ public class LastFm extends PluginForHost {
         // we should filter these unavailable links.
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        
-        if(br.containsHTML("Track not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        if (br.containsHTML("Track not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String title = br.getRegex("class=\"preview track\">(.*?)</p>").getMatch(0);
         String artist = br.getRegex("class=\"preview artist\">(.*?)</p>").getMatch(0);
@@ -100,8 +100,8 @@ public class LastFm extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
-        if(br.containsHTML("Track not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        
+        if (br.containsHTML("Track not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         String title = br.getRegex("class=\"preview track\">(.*?)</p>").getMatch(0);
         String artist = br.getRegex("class=\"preview artist\">(.*?)</p>").getMatch(0);
         title = Encoding.htmlDecode(title);
@@ -116,7 +116,7 @@ public class LastFm extends PluginForHost {
         args.put(API_SIG, createApiSig(args));
 
         br.getPage(createUrl(args));
-        if(br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         String query = "/lfm/session/key";
         XPath xpath = new XPath(br.toString(), query, false);
@@ -132,7 +132,7 @@ public class LastFm extends PluginForHost {
         args.put("y", Long.toString(System.currentTimeMillis() / 1000));
 
         br.getPage(createUrl(args));
-        if(br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         query = "/lfm/playlists/playlist/url";
         xpath = new XPath(br.toString(), query, false);
@@ -152,7 +152,7 @@ public class LastFm extends PluginForHost {
         args.put(API_SIG, createApiSig(args));
 
         br.getPage(createUrl(args));
-        if(br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         query = "/lfm/playlist/trackList/track/location";
         xpath = new XPath(br.toString(), query, false);
@@ -167,7 +167,7 @@ public class LastFm extends PluginForHost {
         args.put(API_SIG, createApiSig(args));
 
         br.getPage(createUrl(args));
-        if(br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("error")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         xpath = new XPath(br.toString(), query, false);
         songLink = xpath.getMatches().get(0);
