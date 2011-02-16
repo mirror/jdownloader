@@ -49,8 +49,8 @@ import org.appwork.utils.formatter.StringFormatter;
 public class BadongoCom extends PluginForHost {
 
     private static final String FILETEMPLATE = "/ajax/prototype/ajax_api_filetemplate.php";
-    private static final String JAVASCRIPT   = "eval(.*?)\n|\r|\rb";
-    private static final String MAINPAGE     = "http://www.badongo.com";
+    private static final String JAVASCRIPT = "eval(.*?)[\r\n]+";
+    private static final String MAINPAGE = "http://www.badongo.com";
 
     public BadongoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -125,8 +125,10 @@ public class BadongoCom extends PluginForHost {
             }
             /* packed JS in ArrayList */
             final ArrayList<String> packedJS = new ArrayList<String>();
-            packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 2));
-            packedJS.add(br.getRegex(JAVASCRIPT).getMatch(0, 7));
+            String s1 = br.getRegex(JAVASCRIPT).getMatch(0, 2);
+            String s2 = br.getRegex(JAVASCRIPT).getMatch(0, 7);
+            packedJS.add(s1);
+            packedJS.add(s2);
             if (packedJS.get(1) == null) {
                 packedJS.set(1, "{:'#':'#':'#':'" + br.getRegex("dlUrl \\+ \"(.*?)\"").getMatch(0, 1) + "'");
             }
