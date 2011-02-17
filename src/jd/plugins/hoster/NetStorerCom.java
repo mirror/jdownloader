@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netstorer.com" }, urls = { "http://[\\w\\.]*?netstorer\\.com/[a-zA-Z0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netstorer.com" }, urls = { "http://(www\\.)?netstorer\\.com/[a-zA-Z0-9]+/.+" }, flags = { 0 })
 public class NetStorerCom extends PluginForHost {
 
     public NetStorerCom(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class NetStorerCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.netstorer.com/tos";
+        return "http://netstorer.com/tos";
     }
 
     @Override

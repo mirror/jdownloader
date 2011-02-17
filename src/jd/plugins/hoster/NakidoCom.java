@@ -20,15 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nakido.com" }, urls = { "http://[\\w\\.]*?nakido\\.com/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nakido.com" }, urls = { "http://(www\\.)?nakido\\.com/[A-Z0-9]+" }, flags = { 0 })
 public class NakidoCom extends PluginForHost {
 
     public NakidoCom(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class NakidoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.nakido.com/contact";
+        return "http://www.nakido.com/ts";
     }
 
     @Override

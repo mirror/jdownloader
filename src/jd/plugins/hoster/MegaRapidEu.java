@@ -25,11 +25,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -44,9 +44,7 @@ public class MegaRapidEu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        // They do have AGBs but their site is buggy and a direct URL to the
-        // AGBs doesn't exist!
-        return "http://megarapid.eu/";
+        return "http://www.megarapid.eu/static/?vypsatCo=podminky";
     }
 
     private boolean             DIRECT     = false;
