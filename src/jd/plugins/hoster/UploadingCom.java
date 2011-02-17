@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -257,6 +257,7 @@ public class UploadingCom extends PluginForHost {
         checkErrors();
         String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
         String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
+        if (br.containsHTML("that only premium members are")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members"); }
         if (fileID == null || code == null) {
             logger.warning("The first form equals null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
