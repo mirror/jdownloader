@@ -30,12 +30,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -45,9 +45,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.(com|net|jp|tw)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
-    private static final Object LOCK = new Object();
-    private static long LAST_FREE_DOWNLOAD = 0l;
-    private static String geoDomain = null;
+    private static final Object LOCK               = new Object();
+    private static long         LAST_FREE_DOWNLOAD = 0l;
+    private static String       geoDomain          = null;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -393,12 +393,22 @@ public class FileSonicCom extends PluginForHost {
             } else if (this.br.containsHTML("You can not access this page directly")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 1000l * 10);
             } else {
+                if (br.containsHTML("Select a file to upload")) {
+                    /* user did reconnect and login cookie no longer valid */
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fetch new Login", 30 * 1000);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
             this.br.followConnection();
             this.errorHandling(downloadLink, this.br);
+            if (br.containsHTML("Select a file to upload")) {
+                /* user did reconnect and login cookie no longer valid */
+                account.setProperty("cookies", null);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fetch new Login", 30 * 1000);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
