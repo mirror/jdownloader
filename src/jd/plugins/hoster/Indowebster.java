@@ -19,13 +19,14 @@ package jd.plugins.hoster;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -62,6 +63,7 @@ public class Indowebster extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+        br.forceDebug(true);
         String ad_url = br.getRegex("<div style=\"float:left;margin-left:5px;\"><a href=\"(download=.*?)\" class=\"tn_button1\">DOWNLOAD").getMatch(0);
         if (ad_url == null) ad_url = br.getRegex("\"(download=.*?\\&do=[A-Za-z0-9]+)\"").getMatch(0);
         if (ad_url == null) {
@@ -78,14 +80,9 @@ public class Indowebster extends PluginForHost {
         dlForm.put("button.x", Integer.toString(new Random().nextInt(10)));
         dlForm.put("button.y", Integer.toString(new Random().nextInt(10)));
         br.submitForm(dlForm);
-        // dllinks look like this:
-        // http://www63.indowebster.com/32e7f829472e4f9d65234e5de9d43ddf.mkv
-        // Important: downloads only work for indonesian IPs but still we can
-        // test the process till here
-        String dllink = null;
+        String dllink = br.getHttpConnection().getHeaderField("refresh");
+        dllink = new Regex(dllink, "url=(.*?)$").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setDebug(true);
-        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -107,5 +104,4 @@ public class Indowebster extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
