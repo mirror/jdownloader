@@ -72,7 +72,7 @@ public class FileSonicCom extends PluginForHost {
                 geoDomain = defaultDomain;
             } else {
                 String domain = new Regex(br.getRedirectLocation(), "http://.*?(filesonic\\..*?)/").getMatch(0);
-                geoDomain = "http://www" + domain;
+                geoDomain = "http://www." + domain;
             }
         } catch (final Throwable e) {
             geoDomain = defaultDomain;
