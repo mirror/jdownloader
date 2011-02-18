@@ -37,6 +37,9 @@ public class Facebook extends DynamicPluginInterface {
 
                 return;
             }
+            SubConfiguration.getConfig("facebook").setProperty(id, true);
+
+            SubConfiguration.getConfig("facebook").save();
             File fb = JDUtilities.getResourceFile("tmp/fb.png");
             File fbMouseOver = JDUtilities.getResourceFile("tmp/fbmo.png");
             fb.getParentFile().mkdirs();
@@ -51,9 +54,7 @@ public class Facebook extends DynamicPluginInterface {
             final ImageIcon icoMO = new ImageIcon(ImageIO.read(fbMouseOver));
 
             new FBDialog(ico, icoMO);
-            SubConfiguration.getConfig("facebook").setProperty(id, true);
 
-            SubConfiguration.getConfig("facebook").save();
         } catch (final InterruptedException e1) {
             e1.printStackTrace();
         } catch (IOException e) {

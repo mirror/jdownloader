@@ -208,6 +208,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
                 final Class<?>[] classes = new Class[] { PluginWrapper.class };
                 final Constructor<?> con = plgClass.getConstructor(classes);
                 this.loadedPlugin = (Plugin) con.newInstance(new Object[] { this });
+
             } catch (Exception e) {
                 logger.severe("Plugin Exception!");
                 JDLogger.exception(e);
