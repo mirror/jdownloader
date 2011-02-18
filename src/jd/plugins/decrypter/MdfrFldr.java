@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?mediafire\\.com/(\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER).+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?mediafire\\.com/(imageview.+|i/\\?.+|\\\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER).+)" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     public MdfrFldr(PluginWrapper wrapper) {
@@ -38,7 +38,24 @@ public class MdfrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        if (parameter.contains("imageview.php")) {
+            String ID = new Regex(parameter, "\\.com/.*?quickkey=(.+)").getMatch(0);
+            if (ID != null) {
+                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
+            return null;
+        }
+        if (parameter.contains("/i/?")) {
+            String ID = new Regex(parameter, "\\.com/i/\\?(.+)").getMatch(0);
+            if (ID != null) {
+                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
+            return null;
+        }
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("The page cannot be found")) return decryptedLinks;
