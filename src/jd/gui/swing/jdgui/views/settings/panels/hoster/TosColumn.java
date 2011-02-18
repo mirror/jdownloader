@@ -18,10 +18,10 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class TosColumn extends ExtColumn<HostPluginWrapper> implements ActionListener {
 
-    private static final long    serialVersionUID = 4600633634774184026L;
+    private static final long serialVersionUID = 4600633634774184026L;
 
     private final JRendererLabel labelRend;
-    private final JLink          labelEdit;
+    private final JLink labelEdit;
 
     public TosColumn(String name, ExtTableModel<HostPluginWrapper> table) {
         super(name, table);
@@ -45,7 +45,12 @@ public class TosColumn extends ExtColumn<HostPluginWrapper> implements ActionLis
     @Override
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         try {
-            labelEdit.setUrl(new URL(((HostPluginWrapper) value).getPlugin().getAGBLink()));
+            String url = ((HostPluginWrapper) value).getPlugin().getAGBLink();
+            if (url == null || url.length() == 0) {
+                labelEdit.setUrl(null);
+            } else {
+                labelEdit.setUrl(new URL(url));
+            }
         } catch (Exception e) {
         }
         return labelEdit;

@@ -134,8 +134,8 @@ public class JLink extends JLabel {
     }
 
     private void initBroadcaster() {
-        this.broadcaster = new Eventsender<ActionListener, DefaultEvent>() {            
-            
+        this.broadcaster = new Eventsender<ActionListener, DefaultEvent>() {
+
             protected void fireEvent(final ActionListener listener, final DefaultEvent event) {
                 listener.actionPerformed(new ActionEvent(JLink.this, JLink.CLICKED, getText()));
             }
@@ -199,7 +199,11 @@ public class JLink extends JLabel {
 
     public void setUrl(URL url) {
         this.url = url;
-        if (url != null) this.setToolTipText(url.toExternalForm());
+        if (url != null) {
+            this.setToolTipText(url.toExternalForm());
+        } else {
+            this.setToolTipText(null);
+        }
     }
 
     public static HyperlinkListener getHyperlinkListener() {
