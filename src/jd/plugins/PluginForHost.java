@@ -571,6 +571,9 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public boolean isAGBChecked() {
+        String url = this.getAGBLink();
+        /* in case a plugin does not have a valid agblink, then return true */
+        if (url == null || url.length() == 0) return true;
         return getPluginConfig().getBooleanProperty(AGB_CHECKED, false);
     }
 
