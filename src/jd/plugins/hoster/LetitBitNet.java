@@ -298,7 +298,7 @@ public class LetitBitNet extends PluginForHost {
         }
         if (con.getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("<title>Error</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
