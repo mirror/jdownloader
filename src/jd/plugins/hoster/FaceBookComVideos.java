@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -35,86 +37,31 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http://[\\w\\.]*?facebook\\.com/video/video\\.php\\?v=\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
-    public FaceBookComVideos(PluginWrapper wrapper) {
+    private String              dllink           = null;
+    private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
+    private static final String DLLINKREGEXP     = "\\(\"(highqual|video)_src\", \"(http.*?)\"\\)";
+
+    public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.facebook.com/r.php");
     }
 
-    private String dllink = null;
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.facebook.com/terms.php";
-    }
-
-    private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
-    private static final String DLLINKREGEXP     = "\\(\"video_src\", \"(http.*?)\"\\)";
-
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(FACEBOOKMAINPAGE + "//login.php");
-        Form loginForm = br.getForm(0);
-        if (loginForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginForm.put("email", account.getUser());
-        loginForm.put("pass", account.getPass());
-        br.submitForm(loginForm);
-        if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setStatus("Valid Facebook account is active");
-        ai.setUnlimitedTraffic();
-        account.setValid(true);
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        String addedlink = downloadLink.getDownloadURL();
-        if (dllink == null) {
-            br.getPage(addedlink);
-            dllink = br.getRegex(DLLINKREGEXP).getMatch(0);
-        }
-        if (dllink == null) {
-            logger.warning("Final downloadlink (dllink) is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.urlDecode(dllink, true);
-        logger.info("Final downloadlink = " + dllink + " starting download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) return false;
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
         try {
             br.setCookie("http://www.facebook.com", "locale", "en_GB");
-            Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa == null || !aa.isValid()) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
+            final Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa == null || !aa.isValid()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen"); }
             br.setFollowRedirects(true);
             login(aa);
-            for (DownloadLink dl : urls) {
-                String addedlink = dl.getDownloadURL();
+            for (final DownloadLink dl : urls) {
+                final String addedlink = dl.getDownloadURL();
                 br.getPage(addedlink);
                 if (br.containsHTML("No htmlCode read")) {
                     dl.setAvailable(false);
                     continue;
                 }
-                dllink = br.getRegex(DLLINKREGEXP).getMatch(0);
+                dllink = Encoding.urlDecode(decodeUnicode(br.getRegex(DLLINKREGEXP).getMatch(1)), true);
                 // extrahiere Videoname aus HTML-Quellcode
                 String filename = br.getRegex("class=\"video_title datawrap\">(.*)</h3>").getMatch(0);
 
@@ -132,7 +79,7 @@ public class FaceBookComVideos extends PluginForHost {
                     // falls Username gefunden wurde, so setze dies und Video-ID
                     // zusammen
                     if (filename != null) {
-                        String videoid = new Regex(dl.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
+                        final String videoid = new Regex(dl.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
                         filename = filename + " - Video_" + videoid;
                     }
                 }
@@ -148,33 +95,40 @@ public class FaceBookComVideos extends PluginForHost {
                     dl.setAvailable(false);
                 }
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return false;
         }
         return true;
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+    private String decodeUnicode(final String s) {
+        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        final Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
         }
-        return downloadLink.getAvailableStatus();
+        return res;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Valid Facebook account is active");
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        return ai;
     }
 
     @Override
-    public void reset() {
+    public String getAGBLink() {
+        return "http://www.facebook.com/terms.php";
     }
 
     @Override
@@ -183,6 +137,67 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        final String addedlink = downloadLink.getDownloadURL();
+        if (dllink == null) {
+            br.getPage(addedlink);
+            dllink = br.getRegex(DLLINKREGEXP).getMatch(1);
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (dllink) is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Final downloadlink = " + dllink + " starting download...");
+        final String Vollkornkeks = downloadLink.getDownloadURL().replace(FACEBOOKMAINPAGE, "");
+        br.setCookie(FACEBOOKMAINPAGE, "x-referer", Encoding.urlEncode(FACEBOOKMAINPAGE + Vollkornkeks + "#" + Vollkornkeks));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    public void login(final Account account) throws Exception {
+        setBrowserExclusive();
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        br.getPage(FACEBOOKMAINPAGE);
+        final Form loginForm = br.getForm(0);
+        if (loginForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        loginForm.remove("persistent");
+        loginForm.remove(null);
+        loginForm.put("email", account.getUser());
+        loginForm.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(loginForm);
+        if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        }
+        return downloadLink.getAvailableStatus();
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }
