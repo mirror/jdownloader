@@ -21,12 +21,12 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -39,7 +39,7 @@ public class Xun6Com extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://xun6.com/contact/";
+        return "http://xun6.com/privacy/";
     }
 
     @Override

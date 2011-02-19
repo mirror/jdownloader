@@ -21,12 +21,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -35,13 +35,12 @@ public class UploadyTo extends PluginForHost {
 
     public UploadyTo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("http://Only4Devs2Test.com/register.php?g=3");
     }
 
     // MhfScriptBasic 1.0, modified captchaurl, extended server errorhandling
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/rules.php";
+        return "http://www.uploady.to/dl/rules.php";
     }
 
     private static final String COOKIE_HOST = "http://uploady.to";

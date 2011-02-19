@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -46,7 +46,7 @@ public class Vipfilecom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://vip-file.com/tmpl/terms.php";
+        return "http://vip-file.com/page/terms.php";
     }
 
     public static final String  FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
