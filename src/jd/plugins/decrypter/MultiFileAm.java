@@ -41,7 +41,8 @@ public class MultiFileAm extends PluginForDecrypt {
             logger.info("Decrypting multi.file.am links...");
             br.getPage(parameter);
             if (br.containsHTML(">This file does not exist<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            String[] redirectLinks = br.getRegex("<td width=\"170\"><a target=\"_blank\" href=\"(/.*?)\"").getColumn(0);
+            String[] redirectLinks = br.getRegex("width=\"140\"><a target=\"_blank\" href=\"(/.*?)\"").getColumn(0);
+            if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("width=\"70\" align=\"right\"><a target=\"_blank\" href=\"(/.*?))\"").getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) return null;
             progress.setRange(redirectLinks.length);
             for (String singleRedirectLink : redirectLinks) {
