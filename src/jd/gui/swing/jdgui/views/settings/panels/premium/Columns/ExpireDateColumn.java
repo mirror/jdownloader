@@ -22,6 +22,7 @@ import jd.gui.swing.jdgui.views.settings.panels.premium.HostAccounts;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.utils.locale.JDL;
 
 public class ExpireDateColumn extends JDTextTableColumn {
 
@@ -54,14 +55,14 @@ public class ExpireDateColumn extends JDTextTableColumn {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();
             if (!ac.isValid()) {
-                return "Invalid account";
+                return JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.invalidAccount", "Invalid Account");
             } else if (ai == null) {
-                return "Unknown";
+                return JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.unknown", "Unknown");
             } else {
                 if (ai.getValidUntil() == -1) {
-                    return "Unlimited";
+                    return JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.unlimited", "Unlimited");
                 } else if (ai.isExpired()) {
-                    return "Expired";
+                    return JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.expired", "Expired");
                 } else {
                     return Formatter.formatTime(ai.getValidUntil());
                 }

@@ -27,6 +27,7 @@ import jd.gui.swing.jdgui.views.settings.panels.premium.HostAccounts;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
@@ -133,12 +134,12 @@ public class TrafficLeftColumn extends JDTableColumn {
         } else {
             HostAccounts ha = (HostAccounts) value;
             if (!ha.gotAccountInfos()) {
-                jlr.setText("Unknown");
+                jlr.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.unknown", "Unknown"));
             } else {
                 if (ha.getTraffic() < 0) {
-                    jlr.setText("Unlimited");
+                    jlr.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.unlimited", "Unlimited"));
                 } else if (ha.getTraffic() == 0) {
-                    jlr.setText("No Traffic left");
+                    jlr.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.noTrafficLeft", "No Traffic Left"));
                 } else {
                     jlr.setText(Formatter.formatReadable(ha.getTraffic()));
                 }
