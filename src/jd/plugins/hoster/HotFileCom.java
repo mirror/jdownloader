@@ -38,12 +38,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -94,7 +94,7 @@ public class HotFileCom extends PluginForHost {
         tbr.postPage("http://api.hotfile.com", post);
         final HashMap<String, String> ret = new HashMap<String, String>();
         ret.put("httpresponse", tbr.toString());
-        final String vars[][] = tbr.getRegex("(.*?)=(.*?)(&|$)").getMatches();
+        final String vars[][] = tbr.getRegex("([^\r\n]*?)=([^\r\n]*?)(&|$)").getMatches();
         for (final String var[] : vars) {
             ret.put(var[0] != null ? var[0].trim() : null, var[1]);
         }
@@ -198,7 +198,7 @@ public class HotFileCom extends PluginForHost {
             return ai;
         }
         final String rawAnswer = info.get("httpresponse");
-        logger.severe("HotFileDebug: " + rawAnswer);
+        logger.severe("HotFileDebug(ApiAccountCheck): " + rawAnswer);
         if (rawAnswer != null && rawAnswer.startsWith(".too many failed")) {
             /* fallback to normal website */
             logger.severe("api reports: too many failed logins(check logins)! using website fallback!");
@@ -240,7 +240,7 @@ public class HotFileCom extends PluginForHost {
             }
             final String validUntil[] = br.getRegex("Premium until.*?>(.*?)<.*?>(\\d+:\\d+:\\d+)").getRow(0);
             if (validUntil == null || validUntil[0] == null || validUntil[1] == null) {
-                logger.severe("HotFileDebug: " + br.toString());
+                logger.severe("HotFileDebug(WebsiteAccCheck): " + br.toString());
                 account.setProperty("cookies", null);
                 account.setValid(false);
             } else {
@@ -366,7 +366,7 @@ public class HotFileCom extends PluginForHost {
         params.put("link", Encoding.urlEncode(downloadLink.getDownloadURL() + "\n\r"));
         params.put("alllinks", "1");
         final HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params);
-        logger.severe("HotFileDebug: " + info.get("httpresponse"));
+        logger.severe("HotFileDebug(Download): " + info.get("httpresponse"));
         if (info.get("httpresponse").contains("file not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (info.get("httpresponse").contains("premium required")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         final String finalUrls = info.get("httpresponse").trim();
