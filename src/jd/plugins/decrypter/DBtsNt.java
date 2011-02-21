@@ -162,10 +162,9 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
                 logger.warning("Decrypter must be defect, detailedLink = " + aLink + " Mainlink = " + parameter);
                 return false;
             }
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            decryptedLinks.add(createDownloadlink(finallink));
         }
         progress.increase(1);
-
         return true;
     }
 
