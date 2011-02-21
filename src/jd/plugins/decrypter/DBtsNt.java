@@ -35,7 +35,7 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist)\\?id=\\d+" }, flags = { 0 })
 public class DBtsNt extends PluginForDecrypt implements ProgressControllerListener {
 
-    private String fpName;
+    private String                  fpName;
     private ArrayList<DownloadLink> decryptedLinks;
 
     public DBtsNt(PluginWrapper wrapper) {
@@ -65,9 +65,7 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
             String link = "/link?id=" + id;
             if (!decryptSingleLink(parameter.toString(), progress, decryptedLinks, link)) return null;
         } else if (type.equals("liveset")) {
-
-            if (fpName == null) fpName = br.getRegex("<title>AudioBeats\\.net - (.*?)</title>").getMatch(0);
-
+            fpName = br.getRegex("rel=\"alternate\" type=\"application/rss\\+xml\" title=\"(.*?)\"").getMatch(0);
             if (!decryptLiveset(parameter.toString(), progress, decryptedLinks)) return null;
         } else if (type.equals("event") || type.equals("artist")) {
 
@@ -99,7 +97,7 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
                 }
             } else {
 
-                String[] allLinks = br.getRegex("\"(/link\\?id=\\d+)\"").getColumn(0);
+                String[] allLinks = br.getRegex("\"(/link\\?id=\\d+-.*?)\"").getColumn(0);
 
                 if (allLinks == null || allLinks.length == 0) return false;
                 progress.setRange(progress.getMax() + allLinks.length);
@@ -132,7 +130,6 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
 
     private void setPackageName() {
         if (fpName != null) {
-
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
@@ -141,7 +138,17 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
 
     private boolean decryptSingleLink(String parameter, ProgressController progress, ArrayList<DownloadLink> decryptedLinks, String aLink) throws IOException {
         br.setFollowRedirects(false);
+        aLink = "http://www.audiobeats.net" + aLink.replace("link?id", "link.php?id");
         br.getPage(aLink);
+        String finallink = null;
+        String cryptedLink = br.getRegex("\"(http://lsdb\\.eu/download/\\d+\\.html)\"").getMatch(0);
+        if (cryptedLink == null) cryptedLink = br.getRegex("\"(http://djurl\\.com/[A-Za-z0-9]+)\"").getMatch(0);
+        if (cryptedLink != null) {
+            br.getPage(cryptedLink);
+            if (cryptedLink.contains("djurl.com")) {
+                finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
+            }
+        }
         if (abort) {
             progress.setColor(Color.RED);
             progress.setStatusText(progress.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
@@ -149,11 +156,14 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
             progress.doFinalize(5000l);
             return false;
         }
-        if (br.getRedirectLocation() == null) {
-            logger.warning("Decrypter must be defect, link = " + parameter);
-            return false;
+        if (finallink == null) finallink = br.getRedirectLocation();
+        if (!br.containsHTML("3voor12\\.vpro\\.nl")) {
+            if (finallink == null) {
+                logger.warning("Decrypter must be defect, detailedLink = " + aLink + " Mainlink = " + parameter);
+                return false;
+            }
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
-        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         progress.increase(1);
 
         return true;
