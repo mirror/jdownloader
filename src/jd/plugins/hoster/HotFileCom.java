@@ -38,12 +38,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -52,15 +52,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)?" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
-    private final String        ua              = RandomUserAgent.generate();
-    private static final Object LOCK            = new Object();
+    private final String ua = RandomUserAgent.generate();
+    private static final Object LOCK = new Object();
 
     private static final String UNLIMITEDMAXCON = "UNLIMITEDMAXCON";
 
-    private static final String TRY_IWL_BYPASS  = "TRY_IWL_BYPASS";
-    private static final String CAPTCHARETRIES  = "CAPTCHARETRIES";
+    private static final String TRY_IWL_BYPASS = "TRY_IWL_BYPASS";
+    private static final String CAPTCHARETRIES = "CAPTCHARETRIES";
 
-    private boolean             directDownload  = false;
+    private boolean directDownload = false;
 
     public HotFileCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -265,6 +265,7 @@ public class HotFileCom extends PluginForHost {
          * website anyway
          */
         requestFileInformation(link);
+        if ("http://hotfile.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (directDownload) {
             /* use directDownloadLink */
             br.setFollowRedirects(true);
@@ -367,6 +368,7 @@ public class HotFileCom extends PluginForHost {
         params.put("alllinks", "1");
         final HashMap<String, String> info = callAPI(null, "getdirectdownloadlink", account, params);
         logger.severe("HotFileDebug(Download): " + info.get("httpresponse"));
+        if (info.get("httpresponse").contains("file was deleted")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (info.get("httpresponse").contains("file not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (info.get("httpresponse").contains("premium required")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         final String finalUrls = info.get("httpresponse").trim();
@@ -432,6 +434,7 @@ public class HotFileCom extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
+        if ("http://hotfile.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (finalUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         // Set the meximum connections per file
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);

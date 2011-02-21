@@ -39,6 +39,7 @@ public class BitShareComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("Folder does not contain any files")) return decryptedLinks;
         if (br.containsHTML("Folder can not be found\\!")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<h1>View public folder \"(.*?)\"</h1>").getMatch(0);
         String[] links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);

@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -49,9 +49,9 @@ public class Freaksharenet extends PluginForHost {
         setConfigElements();
     }
 
-    private boolean             NOPREMIUM          = false;
-    private static final String WAIT1              = "WAIT1";
-    private static int          MAXPREMDLS         = -1;
+    private boolean NOPREMIUM = false;
+    private static final String WAIT1 = "WAIT1";
+    private static int MAXPREMDLS = -1;
     private static final String MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
 
     private void setConfigElements() {
@@ -202,14 +202,18 @@ public class Freaksharenet extends PluginForHost {
         doFree(downloadLink);
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
-        final boolean resume = false;
-        final int maxchunks = 1;
-        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
+    public void handleFreeErrors() throws PluginException {
         if (br.containsHTML("Sorry, you cant download more then 50 files at time.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         if (br.containsHTML("your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         if (br.containsHTML("No Downloadserver\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        final boolean resume = false;
+        final int maxchunks = 1;
+        boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
+        handleFreeErrors();
         br.setFollowRedirects(false);
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -228,6 +232,7 @@ public class Freaksharenet extends PluginForHost {
         }
         if (!waitReconnecttime) sleep((tt + 2) * 1001l, downloadLink);
         br.submitForm(form);
+        handleFreeErrors();
         form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br.containsHTML("api\\.recaptcha\\.net")) {
