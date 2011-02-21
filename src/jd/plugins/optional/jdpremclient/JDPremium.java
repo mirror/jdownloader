@@ -24,9 +24,9 @@ import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -139,14 +139,14 @@ class PremShareHost extends HostPluginWrapper {
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 7)
 public class JDPremium extends PluginOptional {
 
-    private static final Object                  LOCK                = new Object();
-    private static boolean                       replaced            = false;
-    private static boolean                       init                = false;
-    private static boolean                       enabled             = false;
-    private static String                        jdpremServer        = null;
-    private static boolean                       preferLocalAccounts = false;
+    private static final Object LOCK = new Object();
+    private static boolean replaced = false;
+    private static boolean init = false;
+    private static boolean enabled = false;
+    private static String jdpremServer = null;
+    private static boolean preferLocalAccounts = false;
 
-    private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
+    private static final HashMap<String, String> premShareHosts = new HashMap<String, String>();
 
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
@@ -180,7 +180,7 @@ public class JDPremium extends PluginOptional {
                 premShareHosts.put("multishare.cz", "MultiShare");
                 premShareHosts.put("dwnld4me.com", "Download4Me");
                 premShareHosts.put("linksnappy.com", "LinkSnappycom");
-
+                premShareHosts.put("rehost.to", "ReHostto");
                 premShareHosts.put("nopremium.pl", "NoPremium");
                 premShareHosts.put("premget.pl", "PremGet");
                 premShareHosts.put("twojlimit.pl", "TwojLimit");
