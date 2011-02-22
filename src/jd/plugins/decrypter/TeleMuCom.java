@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.DecryptPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -53,7 +54,7 @@ public class TeleMuCom extends PluginForDecrypt {
 
         // On this site, when an accent is set, the result is as extended ASCII
         // character which is bad in the name of the package
-        fpName = br.normalizeExtendedASCII(fpName);
+        fpName = Encoding.htmlDecode(fpName);
         fpName = RemoveCharacter(fpName);
 
         int iLinkImage = 0;
