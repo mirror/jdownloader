@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -306,6 +306,10 @@ public class ShareOnlineBiz extends PluginForHost {
             /* signal to use API for download */
             useAPI = true;
         } catch (PluginException e) {
+            try {
+                logger.severe(br.toString());
+            } catch (final Throwable e2) {
+            }
             /* workaround for stable */
             DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
             LinkStatus linkState = new LinkStatus(tmpLink);

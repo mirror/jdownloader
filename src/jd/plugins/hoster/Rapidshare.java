@@ -51,7 +51,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/(files/\\d+/[^\"\r\n ]+|\\#\\!download\\|\\d+.*?\\|\\d+\\|.+?($|\\|\\d+))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://[\\w\\.]*?rapidshare\\.com/(files/\\d+/[^\"\r\n ]+|\\#\\!download\\|\\d+.*?\\|\\d+\\|.+?($|\\|\\d+))" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
 
     public static class RSLink {
@@ -215,7 +215,7 @@ public class Rapidshare extends PluginForHost {
                 idlist.append(",").append(Rapidshare.getID(u.getDownloadURL()));
                 namelist.append(",").append(this.getName(u));
                 links.add(u);
-                size = ("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1").length();
+                size = ("https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1").length();
             }
             if (links.size() != 0) {
                 if (links.size() != urls.length) {
@@ -570,7 +570,8 @@ public class Rapidshare extends PluginForHost {
         this.br.forceDebug(true);
         this.workAroundTimeOut(this.br);
 
-        final boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
+        boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
+        ssl = true;
         final String prtotcol = ssl ? "https" : "http";
 
         /* TODO: remove me after 0.9xx public */
@@ -743,7 +744,8 @@ public class Rapidshare extends PluginForHost {
             br.setCookiesExclusive(true);
             br.clearCookies(this.getHost());
 
-            final boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
+            boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
+            ssl = true;
             final String prtotcol = ssl ? "https" : "http";
 
             /*
@@ -839,7 +841,12 @@ public class Rapidshare extends PluginForHost {
         }
         this.workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         br.forceDebug(true);
-        if (account != null && this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND, false) || this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false)) {
+        // &&
+        // this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND,
+        // false) ||
+        // this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION,
+        // false)
+        if (account != null && true) {
             req = req.replaceFirst("http:", "https:");
         }
         try {
