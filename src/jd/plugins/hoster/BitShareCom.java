@@ -46,17 +46,13 @@ public class BitShareCom extends PluginForHost {
     private static final String AJAXIDREGEX = "var ajaxdl = \"(.*?)\";";
     private static final String FILEIDREGEX = "bitshare\\.com/files/([a-z0-9]{8})/";
     private static final String DLLINKREGEX = "SUCCESS#(http://.+)";
+    private static final String MAINPAGE    = "http://bitshare.com/";
 
     private static final String agent       = RandomUserAgent.generate();
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://bitshare.com/premium.html");
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        String fid = new Regex(link.getDownloadURL(), "bitshare\\.com/\\?f=(.+)").getMatch(0);
-        if (fid != null) link.setUrlDownload("http://bitshare.com/files/" + fid + "/.html");
     }
 
     @Override
@@ -67,11 +63,18 @@ public class BitShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie(MAINPAGE, "language_selection", "EN");
         br.getHeaders().put("User-Agent", agent);
-        /* switch language to english */
-        br.getPage("http://bitshare.com/?language=EN");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error - File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().contains("?f=")) {
+            String newlink = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/.*?\\.html)\"").getMatch(0);
+            if (newlink == null) {
+                logger.warning("Failed to get new link for shortlink: " + link.getDownloadURL());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setUrlDownload(newlink);
+        }
         Regex nameAndSize = br.getRegex("<h1>Downloading (.*?) - ([0-9\\.]+ [A-Za-z]+)</h1>");
         String filename = nameAndSize.getMatch(0);
         String filesize = nameAndSize.getMatch(1);
@@ -169,8 +172,7 @@ public class BitShareCom extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", agent);
-        /* switch language to english */
-        br.getPage("http://bitshare.com/?language=EN");
+        br.setCookie(MAINPAGE, "language_selection", "EN");
         br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
         if (!br.containsHTML("\\(<b>Premium</b>\\)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
