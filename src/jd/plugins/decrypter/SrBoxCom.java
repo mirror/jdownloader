@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -13,11 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+//
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -41,9 +42,9 @@ public class SrBoxCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("(An error has occurred|The article cannot be found)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<title>(.*?)\\&raquo").getMatch(0);
+        String fpName = br.getRegex("<h1><a href.*>(.*?)</a></h1>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<b>Download Fast:(.*?)</b>").getMatch(0);
                 if (fpName == null) {
@@ -51,17 +52,78 @@ public class SrBoxCom extends PluginForDecrypt {
                 }
             }
         }
-        String[] links = br.getRegex("leech_begin--><a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://www\\.israbox\\.com/engine/go\\.php\\?url=.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
+        // On this site, when an accent is set, the result is as extended ASCII
+        // character which is bad in the name of the package
+        fpName = br.normalizeExtendedASCII(fpName);
+        fpName = RemoveCharacter(fpName);
+
+        // Array of image to download the cover (It can be usable if the user
+        // want to create a subfolder with the name of the package because
+        // the folder is immediately created because it will download the cover
+        // in it
+        String[] TabImage = br.getRegex("<img src=\"http://[\\w\\.]*?israbox\\.com/uploads(.*?)\"").getColumn(0);
+
+        // Temporary array of links in the page
+        String[] TabTemp = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
+        if (TabTemp == null || TabTemp.length == 0) return null;
+
+        String strLink = null;
+        String[] linksTemp = new String[TabTemp.length];
+        ArrayList<HostPluginWrapper> AllHosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
+
+        // We look if the link in the array is supported by a plug-in
+        int iLink = 0;
+        for (int iIndex = 0; iIndex < TabTemp.length; iIndex++) {
+            strLink = TabTemp[iIndex].toLowerCase();
+            for (HostPluginWrapper wrapper : AllHosts) {
+
+                if (wrapper.canHandle(strLink)) {
+                    linksTemp[iLink] = strLink;
+                    iLink++;
+                    break;
+                }
+            }
+        }
+
+        // Creation of the array of link that is supported by plug-in
+        String[] links = new String[iLink];
+        for (int iIndex = 0; iIndex < links.length; iIndex++) {
+            links[iIndex] = linksTemp[iIndex];
+        }
+        int iImage = TabImage == null ? 0 : TabImage.length;
+
+        // Some link can be crypted in this site, see if it is the case
+        String[] linksCrypted = br.getRegex("\"(http://www\\.israbox\\.com/engine/go\\.php\\?url=.*?)\"").getColumn(0);
+
+        progress.setRange(links.length + iImage + linksCrypted.length);
+        // Added links
         for (String redirectlink : links) {
-            br.getPage(redirectlink);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) return null;
-            decryptedLinks.add(createDownloadlink(finallink));
+            decryptedLinks.add(createDownloadlink(redirectlink));
             progress.increase(1);
         }
+
+        // Added crypted links
+        for (String redirectlink : linksCrypted) {
+            br.getPage(redirectlink);
+            String finallink = br.getRedirectLocation();
+            if (finallink != null) {
+                decryptedLinks.add(createDownloadlink(finallink));
+                progress.increase(1);
+            }
+        }
+
+        // Added Image
+        if (TabImage != null) {
+            for (String strImageLink : TabImage) {
+                if (!strImageLink.toLowerCase().contains("foto")) {
+                    strImageLink = "http://www.israbox.com/uploads" + strImageLink;
+                    decryptedLinks.add(createDownloadlink(strImageLink));
+                }
+                progress.increase(1);
+            }
+        }
+
+        // Add all link in a package
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
@@ -70,4 +132,20 @@ public class SrBoxCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /**
+     * Allows to remove some character to have a nice name
+     * 
+     * @param strName
+     *            The name of the package
+     * @return the name of the package normalized.
+     */
+    private String RemoveCharacter(String strName) {
+        strName = strName.replace("", "-");
+        strName = strName.replace("", "'");
+        strName = strName.replace(":", ",");
+
+        strName = strName.replace("VA - ", "");
+        strName = strName.replace("FLAC", "");
+        return strName;
+    }
 }
