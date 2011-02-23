@@ -156,7 +156,10 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
             progress.doFinalize(5000l);
             return false;
         }
-        if (finallink == null) finallink = br.getRedirectLocation();
+        if (finallink == null) {
+            finallink = br.getRegex("link_header\\.php\" noresize=\"noresize\">[\t\n\r ]+<frame src=\"(http.*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRedirectLocation();
+        }
         if (!br.containsHTML("3voor12\\.vpro\\.nl")) {
             if (finallink == null) {
                 logger.warning("Decrypter must be defect, detailedLink = " + aLink + " Mainlink = " + parameter);
