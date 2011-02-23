@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -81,7 +81,7 @@ public class FurkNet extends PluginForHost {
             sleep(tt * 1001l, link);
         } else
             sleep(60001l, link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

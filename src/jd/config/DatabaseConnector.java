@@ -16,12 +16,11 @@
 
 package jd.config;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -38,21 +37,23 @@ import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.IO;
+
 public class DatabaseConnector implements Serializable {
 
-    private static final long             serialVersionUID = 8074213660382482620L;
+    private static final long serialVersionUID = 8074213660382482620L;
 
-    private static Logger                 logger           = jd.controlling.JDLogger.getLogger();
+    private static Logger logger = jd.controlling.JDLogger.getLogger();
 
-    private String                        configpath       = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
+    private String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
 
-    private final HashMap<String, Object> dbdata           = new HashMap<String, Object>();
+    private final HashMap<String, Object> dbdata = new HashMap<String, Object>();
 
-    public static final Object            LOCK             = new Object();
+    public static final Object LOCK = new Object();
 
-    private static boolean                dbshutdown       = false;
+    private static boolean dbshutdown = false;
 
-    private static Connection             con              = null;
+    private static Connection con = null;
 
     static {
 
@@ -142,20 +143,22 @@ public class DatabaseConnector implements Serializable {
         if (!f.exists()) return true;
         boolean databaseok = true;
 
+        BufferedInputStream in = null;
         FileInputStream fis = null;
-        BufferedReader in = null;
         try {
             fis = new FileInputStream(f);
-            in = new BufferedReader(new InputStreamReader(fis));
+            in = new BufferedInputStream(fis);
             String line = "";
             int counter = 0;
-
+            byte[] buffer = new byte[100];
+            Integer read = 0;
             main: while (counter < 7) {
-                line = in.readLine();
-                if (line == null) {
+                read = IO.readLine(in, buffer);
+                if (read == null || read == 0) {
                     databaseok = false;
                     break main;
                 }
+                line = new String(buffer, 0, (read > 0 ? read : buffer.length), "UTF-8");
                 switch (counter) {
                 case 0:
                     if (!line.equals("CREATE SCHEMA PUBLIC AUTHORIZATION DBA")) {
@@ -196,8 +199,10 @@ public class DatabaseConnector implements Serializable {
                 counter++;
             }
 
-            while (((line = in.readLine()) != null)) {
-                if (!line.matches("INSERT INTO .*? VALUES\\('.*?','.*?'\\)")) {
+            while (((read = IO.readLine(in, buffer)) != null)) {
+                if (read == 0) break;
+                line = new String(buffer, 0, (read > 0 ? read : buffer.length), "UTF-8");
+                if (!line.startsWith("INSERT INTO")) {
                     databaseok = false;
                     break;
                 }
@@ -207,17 +212,14 @@ public class DatabaseConnector implements Serializable {
             databaseok = false;
         } catch (final IOException e) {
             databaseok = false;
-
         } finally {
             try {
                 in.close();
-
-            } catch (final IOException e1) {
+            } catch (final Throwable e1) {
             }
             try {
-
                 fis.close();
-            } catch (final IOException e1) {
+            } catch (final Throwable e1) {
             }
         }
         return databaseok;

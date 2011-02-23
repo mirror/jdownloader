@@ -23,34 +23,30 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookie;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
-    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS   = new HashMap<Account, HashMap<String, String>>();
-    private final static Object                                    LOCK           = new Object();
-    private final static HashMap<Long, Long>                       noFreeSlot     = new HashMap<Long, Long>();
-    private long                                                   server         = -1;
-    private final static long                                      waitNoFreeSlot = 10 * 60 * 1000l;
+    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS = new HashMap<Account, HashMap<String, String>>();
+    private final static Object LOCK = new Object();
+    private final static HashMap<Long, Long> noFreeSlot = new HashMap<Long, Long>();
+    private long server = -1;
+    private final static long waitNoFreeSlot = 10 * 60 * 1000l;
+    private final static String UA = RandomUserAgent.generate();
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,21 +59,11 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
+    public void correctDownloadLink(DownloadLink link) {
         // We do not have to change anything here, the regexp also works for
         // egoshare links!
         String id = new Regex(link.getDownloadURL(), "(id\\=|/dl/)([a-zA-Z0-9]+)").getMatch(1);
-        link.setUrlDownload("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
-    }
-
-    public void loginWebsite(Account account) throws IOException, PluginException {
-        br.setCookie("http://www.share-online.biz", "king_mylang", "en");
-        br.postPage("http://www.share-online.biz/login.php", "act=login&location=index.php&dieseid=&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login&folder_autologin=1");
-        String cookie = br.getCookie("http://www.share-online.biz", "king_passhash");
-        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://www.share-online.biz/members.php");
-        String expired = br.getRegex(Pattern.compile("<b>Expired\\?</b></td>.*?<td align=\"left\">(.*?)<a", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (expired == null || !expired.trim().equalsIgnoreCase("no")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        link.setUrlDownload("http://www.share-online.biz/dl/" + id);
     }
 
     public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws IOException, PluginException {
@@ -118,81 +104,33 @@ public class ShareOnlineBiz extends PluginForHost {
         return ret;
     }
 
-    private boolean isPremium() throws IOException {
-        if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://www.share-online.biz/members.php") || br.toString().startsWith("Not HTML Code.")) {
-            br.getPage("http://www.share-online.biz/members.php");
-        }
-        if (br.containsHTML("<b>Premium account</b>")) return true;
-        if (br.containsHTML("<b>VIP account</b>")) return true;
-        return false;
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
-        /* use api first */
-        try {
-            HashMap<String, String> infos = loginAPI(account, true);
-            /* evaluate expire date */
-            final Long validUntil = Long.parseLong(infos.get("expire_date"));
-            account.setValid(true);
-            if (validUntil > 0) {
-                ai.setValidUntil(validUntil * 1000);
-            } else {
-                ai.setValidUntil(-1);
-            }
-            if (infos.containsKey("points")) ai.setPremiumPoints(Long.parseLong(infos.get("points")));
-            if (infos.containsKey("money")) ai.setAccountBalance(infos.get("money"));
-            /* set account type */
-            ai.setStatus(infos.get("group"));
-            return ai;
-        } catch (PluginException e) {
-            /* workaround for stable */
-            DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
-            LinkStatus linkState = new LinkStatus(tmpLink);
-            e.fillLinkStatus(linkState);
-            if (linkState.hasStatus(LinkStatus.ERROR_PREMIUM)) {
-                account.setValid(false);
-                return ai;
-            }
-        } catch (Exception e) {
-        }
-        /* fallback to normal website login */
-        try {
-            loginWebsite(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        if (!isPremium()) {
-            account.setValid(false);
-            ai.setStatus("No Premium Account!");
-            return ai;
-        }
-        br.getPage("http://www.share-online.biz/members.php");
-        String points = br.getRegex(Pattern.compile("<b>Total Points:</b></td>.*?<td align=\"left\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (points != null) ai.setPremiumPoints(points);
-        String expire = br.getRegex(Pattern.compile("<b>Package Expire Date:</b></td>.*?<td align=\"left\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (expire != null && expire.contains("Never")) {
-            ai.setValidUntil(-1);
-        } else {
-            /*
-             * they only say the day, so we need to make it work the whole last
-             * day
-             */
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null) + (1000l * 60 * 60 * 24));
-        }
+        HashMap<String, String> infos = loginAPI(account, true);
+        /* evaluate expire date */
+        final Long validUntil = Long.parseLong(infos.get("expire_date"));
         account.setValid(true);
+        if (validUntil > 0) {
+            ai.setValidUntil(validUntil * 1000);
+        } else {
+            ai.setValidUntil(-1);
+        }
+        if (infos.containsKey("points")) ai.setPremiumPoints(Long.parseLong(infos.get("points")));
+        if (infos.containsKey("money")) ai.setAccountBalance(infos.get("money"));
+        /* set account type */
+        ai.setStatus(infos.get("group"));
         return ai;
     }
 
     private final String getID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
+        return new Regex(link.getDownloadURL(), "(id\\=|/dl/)([a-zA-Z0-9]+)").getMatch(1);
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         server = -1;
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
@@ -277,124 +215,61 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        /* try api first */
-        boolean useAPI = false;
-        try {
-            this.setBrowserExclusive();
-            final HashMap<String, String> infos = loginAPI(account, false);
-            final String linkID = getID(parameter);
-            br.setCookie("http://www.share-online.biz", "dl", infos.get("dl"));
-            final String response = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=download&lid=" + linkID);
-            final HashMap<String, String> dlInfos = getInfos(response, ": ");
-            final String filename = dlInfos.get("NAME");
-            final String size = dlInfos.get("SIZE");
-            final String status = dlInfos.get("STATUS");
-            parameter.setMD5Hash(dlInfos.get("MD5"));
-            if (!"online".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (size != null) parameter.setDownloadSize(Long.parseLong(size));
-            if (filename != null) parameter.setFinalFileName(filename);
-            final String dlURL = dlInfos.get("URL");
-            if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.setFollowRedirects(true);
-            /* Datei herunterladen */
-            /* api does allow resume, but only 1 chunk */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, 1);
-            if (!dl.getConnection().isContentDisposition()) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* signal to use API for download */
-            useAPI = true;
-        } catch (PluginException e) {
-            try {
-                logger.severe(br.toString());
-            } catch (final Throwable e2) {
-            }
-            /* workaround for stable */
-            DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
-            LinkStatus linkState = new LinkStatus(tmpLink);
-            e.fillLinkStatus(linkState);
-            if (linkState.hasStatus(LinkStatus.ERROR_PREMIUM)) throw e;
-            if (linkState.hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) throw e;
-            if (linkState.hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT)) {
-                logger.severe(br.toString());
-            } else {
-                logger.severe(e.getErrorMessage());
-            }
-        } catch (Exception e) {
-            logger.severe(e.getMessage());
-        } finally {
-            /* remove downloadCookie */
-            Cookie dlCookie = br.getCookies("http://www.share-online.biz").get("dl");
-            if (dlCookie != null) br.getCookies("http://www.share-online.biz").remove(dlCookie);
-        }
-        if (useAPI) {
-            /* let us use API to download the file */
-            dl.startDownload();
-            return;
-        }
-        /* fallback to website download */
-        requestFileInformation(parameter);
-        loginWebsite(account);
-        if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
-        String startURL = parameter.getDownloadURL();
-        // workaround to bypass new layout and use old site
-        br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
-        // Account banned/deactivated because too many IPs used it
-        if (br.containsHTML(">DL_GotMaxIPPerUid<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        // Sometimes the API is wrong so a file is marked as online but it's
-        // offline so here we chack that
-        if (br.containsHTML("(strong>Your desired download could not be found|/>There isn't any usable file behind the URL)")) {
-            logger.info("The following link was marked as online by the API but is offline: " + parameter.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("You have got max allowed threads from same download session")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
-        Form form = br.getForm(0);
-        if (form == null) {
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("FileNotFound")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        if (form.containsHTML("name=downloadpw")) {
-            String passCode = null;
-            if (parameter.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, parameter);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = parameter.getStringProperty("pass", null);
-            }
-            form.put("downloadpw", passCode);
-            br.submitForm(form);
-            if (br.containsHTML("Unfortunately the password you entered is not correct")) {
-                /* PassCode war falsch, also Löschen */
-                parameter.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            /* PassCode war richtig, also Speichern */
-            parameter.setProperty("pass", passCode);
-        }
-
-        if (br.containsHTML("DL_GotMaxIPPerUid")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-
-        String url = br.getRegex("loadfilelink\\.decode\\(\"(.*?)\"\\);").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        this.setBrowserExclusive();
+        final HashMap<String, String> infos = loginAPI(account, false);
+        final String linkID = getID(parameter);
+        br.setCookie("http://www.share-online.biz", "dl", infos.get("dl"));
+        final String response = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=download&lid=" + linkID);
+        final HashMap<String, String> dlInfos = getInfos(response, ": ");
+        final String filename = dlInfos.get("NAME");
+        final String size = dlInfos.get("SIZE");
+        final String status = dlInfos.get("STATUS");
+        if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        parameter.setMD5Hash(dlInfos.get("MD5"));
+        if (!"online".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (size != null) parameter.setDownloadSize(Long.parseLong(size));
+        if (filename != null) parameter.setFinalFileName(filename);
+        final String dlURL = dlInfos.get("URL");
+        if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        /*
-         * website does NOT allow resume, more chunks are possible but
-         * deactivated due api limitation
-         */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, false, 1);
-
+        /* api does allow resume, but only 1 chunk */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            handleErrors(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void errorHandlingFree(Browser br, DownloadLink downloadLink) throws PluginException {
+        /* file is offline */
+        if (br.containsHTML("The requested file is not available")) {
+            logger.info("The following link was marked as online by the API but is offline: " + downloadLink.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* no free slot */
+        if (br.containsHTML("No free slots for free users") || br.getURL().contains("failure/full")) {
+            if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
+                /* reset counter this error does not cause plugin to stop */
+                downloadLink.getLinkStatus().setRetryCount(0);
+            }
+            if (server != -1) {
+                synchronized (noFreeSlot) {
+                    noFreeSlot.put(server, System.currentTimeMillis());
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
+        }
+        if (br.getURL().contains("failure/threads")) {
+            /* already loading,too many threads */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+        }
+        if (br.getURL().contains("failure/bandwidth")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+        if (br.getURL().contains("failure/filenotfound") || br.getURL().contains("failure/invalid")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
+        if (br.getURL().contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
+        if (br.getURL().contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
+        if (br.getURL().contains("failure/expired") || br.getURL().contains("failure/session")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l); }
     }
 
     @Override
@@ -420,111 +295,65 @@ public class ShareOnlineBiz extends PluginForHost {
                 }
             }
         }
-        String startURL = downloadLink.getDownloadURL();
-        // workaround to bypass new layout and use old site
-        br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
-        // Sometimes the API is wrong so a file is marked as online but it's
-        // offline so here we chack that
-        if (br.containsHTML("(strong>Your desired download could not be found|/>There isn't any usable file behind the URL)")) {
-            logger.info("The following link was marked as online by the API but is offline: " + downloadLink.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
-
-        if (br.containsHTML("Server Info: no slots available")) {
-            if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
-                /* reset counter this error does not cause plugin to stop */
-                downloadLink.getLinkStatus().setRetryCount(0);
-            }
-            if (server != -1) {
-                synchronized (noFreeSlot) {
-                    noFreeSlot.put(server, System.currentTimeMillis());
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
-        }
-
-        /* CaptchaCode holen */
-        String captchaCode = getCaptchaCode("http://www.share-online.biz/captcha.php", downloadLink);
-        Form form = br.getForm(1);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String passCode = null;
-        if (form.containsHTML("name=downloadpw")) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            form.put("downloadpw", passCode);
-        }
-
-        /* Überprüfen(Captcha,Password) */
-        form.put("captchacode", captchaCode);
-        br.submitForm(form);
-        System.out.print(br.toString());
-        if (br.containsHTML("Captcha number error or expired") || br.containsHTML("Unfortunately the password you entered is not correct")) {
-            if (br.containsHTML("Unfortunately the password you entered is not correct")) {
-                /* PassCode war falsch, also Löschen */
-                downloadLink.setProperty("pass", null);
-            }
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-
-        /* Downloadlimit erreicht */
-        if (br.containsHTML("max allowed download sessions") || br.containsHTML("this download is too big")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1000l); }
-
-        /* PassCode war richtig, also Speichern */
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
-        /* DownloadLink holen, thx @dwd */
-        String all = br.getRegex("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(-1);
-        String dec = br.getRegex("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(-1);
-        Context cx = null;
-        String url = null;
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Cache-Control", null);
+        br.setCookie("http://www.share-online.biz", "page_language", "english");
+        br.getPage(downloadLink.getDownloadURL());
+        Browser brc = br.cloneBrowser();
         try {
-            cx = ContextFactory.getGlobal().enterContext();
-            Scriptable scope = cx.initStandardObjects();
-            String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
-            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-            url = Context.toString(result);
+            brc.openGetConnection("http://www.share-online.biz/template/images/corp/uploadking.php?show=last");
         } finally {
-            if (cx != null) Context.exit();
-        }
-        if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
-        if (br.containsHTML("Server Info: no slots available")) {
-            if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
-                /* reset counter this error does not cause plugin to stop */
-                downloadLink.getLinkStatus().setRetryCount(0);
+            try {
+                brc.getHttpConnection().disconnect();
+            } catch (final Throwable e) {
             }
-            if (server != -1) {
-                synchronized (noFreeSlot) {
-                    noFreeSlot.put(server, System.currentTimeMillis());
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
         }
-
-        // Keine Zwangswartezeit, deswegen auskommentiert
-        // sleep(15000, downloadLink);
+        errorHandlingFree(br, downloadLink);
+        if (!br.containsHTML(">>> continue for free <<<")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String ID = getID(downloadLink);
+        br.postPage("http://www.share-online.biz/dl/" + ID + "/free/", "dl_free=1");
+        errorHandlingFree(br, downloadLink);
+        String wait = br.getRegex("var wait=(\\d+)").getMatch(0);
+        if (wait != null) {
+            this.sleep(Integer.parseInt(wait) * 1000l, downloadLink);
+        }
+        /* DownloadLink holen, thx @dwd */
+        String dlINFO = br.getRegex("var dl=\"(.*?)\"").getMatch(0);
+        String url = Encoding.Base64Decode(dlINFO);
+        // String nfoINFO = br.getRegex("var nfo=\"(.*?)\"").getMatch(0);
+        // Browser brc = br.cloneBrowser();
+        // brc.getPage("http://www.share-online.biz/template/js/tools.js");
+        // String fun =
+        // brc.getRegex("(function info.*?)(function|$)").getMatch(0);
+        // Context cx = null;
+        // String res = null;
+        // try {
+        // cx = ContextFactory.getGlobal().enterContext();
+        // Scriptable scope = cx.initStandardObjects();
+        // String fun2 = "function f(){ " + fun.trim() + ";\nreturn info('" +
+        // nfoINFO + "')  } f()";
+        // Object result = cx.evaluateString(scope, fun2, "<cmd>", 1, null);
+        // res = Context.toString(result);
+        // } catch (final Throwable e) {
+        // e.printStackTrace();
+        // } finally {
+        // if (cx != null) Context.exit();
+        // }
+        // if (res != null) res = Encoding.Base64Decode(res);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            handleErrors(br);
+            errorHandlingFree(br, downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private void handleErrors(Browser br) throws PluginException {
-        if (br.containsHTML("max allowed download sessions") || br.containsHTML("this download is too big")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1000l); }
-        if (br.containsHTML("the database is currently") || br.containsHTML("Database not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 20 * 60 * 1000l);
-        if (br.containsHTML("any usable file behind the URL you")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Your desired download could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        /* server issue, file not online, redirects to mainpage */
-        if (br.getURL().equalsIgnoreCase("http://www.share-online.biz")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
