@@ -184,8 +184,8 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             String id0 = br.getRegex("key: \\'(.*?)\\',").getMatch(0);
             if (id0 == null) return null;
             String artist = br.getRegex("artist:\\'(.*?)\\'").getMatch(0);
-            String sngName = br.getRegex("song:\\'(.*?)\\'").getMatch(0);
-            if (artist != null && sngName != null) finalfilename = artist.trim() + " - " + sngName.trim() + ".mp3";
+            String sngName = br.getRegex("song:\\'(.*?)\\',").getMatch(0);
+            if (artist != null && sngName != null) finalfilename = artist.trim() + " - " + sngName.trim().replace("\\'", "'") + ".mp3";
             br.getPage("http://hypem.com/serve/play/" + fid + "/" + id0 + ".mp3");
             finallink = br.getRedirectLocation();
             if (finallink != null) finallink = "directhttp://" + finallink;
