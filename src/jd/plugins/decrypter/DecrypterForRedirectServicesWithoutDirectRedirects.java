@@ -177,7 +177,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.contains("hypem.com/")) {
             // Check if a redirect was there before
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            String fid = new Regex(br.getURL(), "hypem\\.com/item/(.+)").getMatch(0);
+            String fid = new Regex(br.getURL(), "/item/(.+)").getMatch(0);
             if (fid == null) return null;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://hypem.com/item/" + fid + "?ax=1&ts=");
