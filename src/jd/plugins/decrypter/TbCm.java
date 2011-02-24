@@ -60,7 +60,7 @@ public class TbCm extends PluginForDecrypt {
 
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
 
-        private String   text;
+        private String text;
         private String[] ext;
 
         DestinationFormat(final String text, final String[] ext) {
@@ -85,20 +85,20 @@ public class TbCm extends PluginForDecrypt {
 
     static class Info {
         public String link;
-        public long   size;
-        public int    fmt;
+        public long size;
+        public int fmt;
         public String desc;
     }
 
-    private final Pattern                       StreamingShareLink  = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
+    private final Pattern StreamingShareLink = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
 
-    static public final Pattern                 YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    static public final Pattern YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
-    HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
+    HashMap<DestinationFormat, ArrayList<Info>> possibleconverts = null;
 
-    private static final Logger                 LOG                 = JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
-    private static final String                 TEMP_EXT            = ".tmp$";
+    private static final String TEMP_EXT = ".tmp$";
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -370,7 +370,7 @@ public class TbCm extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
         final String VIDEOID = new Regex(video, "watch\\?v=([\\w_-]+)").getMatch(0);
-        String YT_FILENAME = null;
+        String YT_FILENAME = br.containsHTML("&title=") ? Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim()) : VIDEOID;
         final String url = br.getURL();
         boolean ythack = false;
         if (url != null && !url.equals(video)) {
@@ -396,33 +396,24 @@ public class TbCm extends PluginForDecrypt {
                 return null;
             }
         }
-
+        /* html5_fmt_map */
+        YT_FILENAME = br.getRegex(TbCm.YT_FILENAME_PATTERN).count() != 0 ? Encoding.htmlDecode(br.getRegex(TbCm.YT_FILENAME_PATTERN).getMatch(0).trim()) : VIDEOID;
         final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
+        String html5_fmt_map = br.getRegex("\"html5_fmt_map\": \\[(.*?)\\]").getMatch(0);
+        if (html5_fmt_map != null) {
+            String[] html5_hits = new Regex(html5_fmt_map, "\\{(.*?)\\}").getColumn(0);
+            if (html5_hits != null) {
+                for (String hit : html5_hits) {
+                    String hitUrl = new Regex(hit, "url\": \"(http:.*?)\"").getMatch(0);
+                    String hitFmt = new Regex(hit, "itag\": (\\d+)").getMatch(0);
+                    String hitQ = new Regex(hit, "quality\": \"(.*?)\"").getMatch(0);
+                    if (hitUrl != null && hitFmt != null && hitQ != null) {
+                        hitUrl = hitUrl.replaceAll("\\\\/", "/");
+                        links.put(Integer.parseInt(hitFmt), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ });
+                    }
 
-        /* html5 links */
-        if (!ythack) {
-            final HashMap<String, String> VideoQ_map = new HashMap<String, String>() {
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = -2038768002287207875L;
-
-                {
-                    this.put("highres", "Original");
-                    this.put("hd1080", "1080p");
-                    this.put("hd720", "720p");
-                    this.put("large", "480p");
-                    this.put("medium", "360p");
-                    this.put("small", "240p");
-                    this.put("light", "240p Light");
                 }
-            };
-            YT_FILENAME = br.getRegex(TbCm.YT_FILENAME_PATTERN).count() != 0 ? Encoding.htmlDecode(br.getRegex(TbCm.YT_FILENAME_PATTERN).getMatch(0).trim()) : VIDEOID;
-            final String linksDataHTML5[][] = br.getRegex("videoPlayer\\.setAvailableFormat\\(\\s*\"(.+?)\"\\s*,\\s*\".+?\"\\s*,\\s*\"(.+?)\"\\s*,\\s*\"(\\d+)\"\\s*\\)\\s*;").getMatches();
-            String VideoQ = "";
-            for (final String linkData[] : linksDataHTML5) {
-                VideoQ = VideoQ_map.containsKey(linkData[1]) ? VideoQ_map.get(linkData[1]) : linkData[1];
-                links.put(Integer.parseInt(linkData[2]), new String[] { Encoding.htmlDecode(Encoding.urlDecode(linkData[0], true)), VideoQ });
+
             }
         }
 

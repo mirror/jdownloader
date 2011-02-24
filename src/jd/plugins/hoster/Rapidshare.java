@@ -33,21 +33,21 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -72,11 +72,11 @@ public class Rapidshare extends PluginForHost {
             return ret;
         }
 
-        private int          id;
+        private int id;
 
-        private String       name;
+        private String name;
 
-        private String       url;
+        private String url;
 
         private DownloadLink link;
 
@@ -111,30 +111,30 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    private static final String                       WAIT_HOSTERFULL         = "WAIT_HOSTERFULL";
+    private static final String WAIT_HOSTERFULL = "WAIT_HOSTERFULL";
 
-    private static final String                       SSL_CONNECTION          = "SSL_CONNECTION";
+    private static final String SSL_CONNECTION = "SSL_CONNECTION2";
 
-    private static final String                       HTTPS_WORKAROUND        = "HTTPS_WORKAROUND";
+    private static final String HTTPS_WORKAROUND = "HTTPS_WORKAROUND";
 
-    private static final Object                       LOCK                    = new Object();
+    private static final Object LOCK = new Object();
 
-    private static final ArrayList<Account>           RESET_WAITING_ACCOUNTS  = new ArrayList<Account>();
+    private static final ArrayList<Account> RESET_WAITING_ACCOUNTS = new ArrayList<Account>();
 
-    private static final Boolean                      HTMLWORKAROUND          = new Boolean(false);
+    private static final Boolean HTMLWORKAROUND = new Boolean(false);
 
-    private static long                               RS_API_WAIT             = 0;
+    private static long RS_API_WAIT = 0;
 
-    private static final String                       COOKIEPROP              = "cookiesv2";
-    private static final Object                       menuLock                = new Object();
+    private static final String COOKIEPROP = "cookiesv2";
+    private static final Object menuLock = new Object();
 
-    private static final HashMap<Integer, MenuAction> menuActionMap           = new HashMap<Integer, MenuAction>();
+    private static final HashMap<Integer, MenuAction> menuActionMap = new HashMap<Integer, MenuAction>();
 
-    private static final Account                      dummyAccount            = new Account("TRAFSHARE", "TRAFSHARE");
+    private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private static final String                       PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
+    private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
 
-    private static final String                       PRE_RESOLVE             = "PRE_RESOLVE2";
+    private static final String PRE_RESOLVE = "PRE_RESOLVE2";
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -145,11 +145,11 @@ public class Rapidshare extends PluginForHost {
         return ret;
     }
 
-    private String         selectedServer = null;
+    private String selectedServer = null;
 
-    private String         accName        = null;
+    private String accName = null;
 
-    private static boolean updateNeeded   = false;
+    private static boolean updateNeeded = false;
 
     public Rapidshare(final PluginWrapper wrapper) {
         super(wrapper);
@@ -565,13 +565,21 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
+    private boolean useSSL() {
+        if (Browser.getGlobalProxy() != null) {
+            /* workaround for ssl proxy bug in 09581 stable */
+            return false;
+        }
+        return this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, true) || this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND, false);
+    }
+
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.br.forceDebug(true);
         this.workAroundTimeOut(this.br);
 
-        boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
-        ssl = true;
+        boolean ssl = useSSL();
+
         final String prtotcol = ssl ? "https" : "http";
 
         /* TODO: remove me after 0.9xx public */
@@ -645,7 +653,6 @@ public class Rapidshare extends PluginForHost {
             }
             final String directurl = prtotcol + "://" + host + "/cgi-bin/rsapi.cgi?sub=download_v1&bin=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
 
-            logger.finest("Direct-Download: Server-Selection not available!");
             request = this.br.createGetRequest(directurl);
 
             try {
@@ -744,8 +751,7 @@ public class Rapidshare extends PluginForHost {
             br.setCookiesExclusive(true);
             br.clearCookies(this.getHost());
 
-            boolean ssl = this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, false);
-            ssl = true;
+            boolean ssl = useSSL();
             final String prtotcol = ssl ? "https" : "http";
 
             /*
@@ -841,12 +847,8 @@ public class Rapidshare extends PluginForHost {
         }
         this.workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         br.forceDebug(true);
-        // &&
-        // this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND,
-        // false) ||
-        // this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION,
-        // false)
-        if (account != null && true) {
+
+        if (account != null && useSSL()) {
             req = req.replaceFirst("http:", "https:");
         }
         try {
@@ -899,7 +901,7 @@ public class Rapidshare extends PluginForHost {
      */
     private void setConfigElements() {
 
-        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl", "Use Secure Communication over SSL (Double traffic will be charged)")).setDefaultValue(false));
+        this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(true));
         this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.HTTPS_WORKAROUND, JDL.L("plugins.hoster.rapidshare.com.https", "Use HTTPS workaround for ISP Block")).setDefaultValue(false));
         /* caused issues lately because it seems some ip's are sharedhosting */
         // this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
@@ -965,11 +967,6 @@ public class Rapidshare extends PluginForHost {
                     final String left = Formatter.formatSeconds(nextBill, false);
                     ai.setStatus((notenoughrapids ? "(Not enough rapids for autorefill)" : "") + "Valid for " + left);
                 }
-            }
-            if ("1".equals(data.get("onlyssldls"))) {
-                this.getPluginConfig().setProperty(Rapidshare.SSL_CONNECTION, true);
-            } else {
-                this.getPluginConfig().setProperty(Rapidshare.SSL_CONNECTION, false);
             }
         } catch (final Exception e) {
             logger.severe("RS-API change detected, please inform support!");

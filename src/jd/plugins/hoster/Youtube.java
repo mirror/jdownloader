@@ -42,14 +42,14 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "httpJDYoutube://[\\w\\.]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
-    private static final Object lock         = new Object();
-    private boolean             prem         = false;
+    private static final Object lock = new Object();
+    private boolean prem = false;
     private static final String IDASFILENAME = "ISASFILENAME";
-    private static final String ALLOW_MP3    = "ALLOW_MP3";
-    private static final String ALLOW_MP4    = "ALLOW_MP4";
-    private static final String ALLOW_WEBM   = "ALLOW_WEBM";
-    private static final String ALLOW_FLV    = "ALLOW_FLV";
-    private static final String ALLOW_3GP    = "ALLOW_3GP";
+    private static final String ALLOW_MP3 = "ALLOW_MP3";
+    private static final String ALLOW_MP4 = "ALLOW_MP4";
+    private static final String ALLOW_WEBM = "ALLOW_WEBM";
+    private static final String ALLOW_FLV = "ALLOW_FLV";
+    private static final String ALLOW_3GP = "ALLOW_3GP";
 
     public Youtube(final PluginWrapper wrapper) {
         super(wrapper);
@@ -158,7 +158,10 @@ public class Youtube extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             final String page = Encoding.htmlDecode(br.toString());
             final String red = new Regex(page, "url='(http://.*?)'").getMatch(0);
-            if (red == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (red == null) {
+                account.setValid(false);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             br.getPage(red);
         }
         br.setFollowRedirects(true);
