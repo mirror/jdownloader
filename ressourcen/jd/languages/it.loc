@@ -1471,7 +1471,6 @@ plugins.hoster.sendspacepl.only4premium = Questo file è scaricabile solo da ute
 plugins.hoster.sharecashdotnet.only4premium = Scaricabile solo dagli utenti Premium
 plugins.hoster.shareflarenet.nofreedownloadlink = Scaricabile solo dagli utenti Premium
 plugins.hoster.sharenownet.errors.servererror = Errore del server
-plugins.hoster.shareonlinebiz.errors.servernotavailable = Server al momento non disponibile
 plugins.hoster.shareonlinebiz.errors.servernotavailable3 = Slot gratuiti terminati! Acquista account Premium o attendi!
 plugins.hoster.sharerapidcz.only4downloadmanager = Scaricabile solo con il download manager RapidShare
 plugins.hoster.socifilescom.passwordprotected = Questo collegamento è protetto da password
