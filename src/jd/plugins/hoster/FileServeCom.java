@@ -299,8 +299,15 @@ public class FileServeCom extends PluginForHost {
         if (br2.containsHTML("Captcha error") || this.br.containsHTML("incorrect-captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         final String wait = br2.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l); }
-        if (br2.containsHTML("landing-406.php")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
-        if (br2.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry\\.\\.\\.</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time|URL=http://www\\.fileserve\\.com/landing-403\\.php\"|landing-error\\.php\\?error_code=404)") || br.getURL().contains("landing-error.php?error_code=404")) { throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support"); }
+        if (br2.containsHTML("landing-406\\.php")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
+        if (br2.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry\\.\\.\\.</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time|URL=http://www\\.fileserve\\.com/landing-403\\.php\"|landing-error\\.php\\?error_code=404)") || br2.getURL().contains("landing-error.php?error_code=404")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
+        if (br2.containsHTML("(landing-error\\.php\\?error_code=2702|is already downloading a file</li>)") || br2.getURL().contains("landing-2702.html")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP is already downloading", 5 * 60 * 1000l);
+        if (br2.containsHTML("landing-error\\.php") || br.getURL().contains("landing-")) {
+            logger.warning("Unknown landing error!");
+            logger.warning("Url = " + br2.getURL());
+            logger.warning("html code = " + br2.toString());
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown landing error, please contact our support!");
+        }
     }
 
     private void handleCaptchaErrors(Browser br2, DownloadLink downloadLink) throws IOException, PluginException {
