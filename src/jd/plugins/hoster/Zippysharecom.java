@@ -35,6 +35,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
+import flash.swf.tools.SwfxPrinter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
 
@@ -63,6 +65,32 @@ public class Zippysharecom extends PluginForHost {
         return "http://www.zippyshare.com/terms.html";
     }
 
+    private int getHashfromFlash(final String flashurl, final int time) throws Exception {
+        final String[] args = { "-abc", flashurl };
+        // diasassemble abc
+        final String asasm = SwfxPrinter.main(args);
+        final String doABC = new Regex(asasm, "<doABC2>(.*)</doABC2>").getMatch(0);
+        final String[] methods = new Regex(doABC, "(function.+?Traits Entries)").getColumn(0);
+        String function = null;
+        for (final String method : methods) {
+            if (method.contains(":::break")) {
+                for (final String lines : Regex.getLines(method)) {
+                    if (lines.contains("pushbyte")) {
+                        function = new Regex(lines, "\t(\\d+)").getMatch(0);
+                    } else if (lines.contains("multiply")) {
+                        function += "*" + time + "#";
+                    } else if (lines.contains("pushint")) {
+                        function += new Regex(lines, "\t(\\d+)\t").getMatch(0);
+                    } else if (lines.contains("modulo") && function != null) {
+                        function = function.replace("#", "%");
+                    }
+                }
+                if (function == null) { return 0; }
+            }
+        }
+        return Integer.parseInt(execJS(function));
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -73,16 +101,18 @@ public class Zippysharecom extends PluginForHost {
         br.setFollowRedirects(true);
         setBrowserExclusive();
         prepareBrowser(downloadLink);
-        String mainpage = downloadLink.getDownloadURL().substring(0, downloadLink.getDownloadURL().indexOf(".com/") + 5);
+        final String mainpage = downloadLink.getDownloadURL().substring(0, downloadLink.getDownloadURL().indexOf(".com/") + 5);
         // DLLINK via packed JS or Flash App
         if (br.containsHTML("DownloadButton_v1\\.14s\\.swf")) {
             final String flashContent = br.getRegex("swfobject.embedSWF\\((.*?)\\)").getMatch(0);
+            final String flashurl = mainpage + "swf/DownloadButton_v1.14s.swf";
             if (flashContent != null) {
                 DLLINK = new Regex(flashContent, "url: '(.*?)'").getMatch(0);
                 final String seed = new Regex(flashContent, "seed: (\\d+)").getMatch(0);
                 if (DLLINK == null || seed == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                long time = Integer.parseInt(seed);
-                time = 24 * time % 6743256;
+                int time = Integer.parseInt(seed);
+                time = getHashfromFlash(flashurl, time);
+                if (time == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 DLLINK = DLLINK + "&time=" + time;
                 // corrupted files?
                 if (DLLINK.startsWith("nulldownload")) {
@@ -101,14 +131,18 @@ public class Zippysharecom extends PluginForHost {
                 }
             } else {
                 DLLINK = br.getRegex("document\\.getElementById\\('dlbutton'\\).href = \"/(.*?)\";").getMatch(0);
+                String t = br.toString();
+                t = t.replaceAll("\n", "");
+                String math = new Regex(t, "<script type=\"text/javascript\">\\s+(var.*?)document").getMatch(0);
+                math = math + "z;";
                 if (DLLINK != null) {
-                    String var = new Regex(DLLINK, "\"\\+(.*?)\\+\"").getMatch(0);
+                    final String var = new Regex(DLLINK, "\"\\+(.*?)\\+\"").getMatch(0);
                     if (var.matches("\\w+")) {
-                        String tmpvar = br.getRegex("var " + var + " = (.*?);").getMatch(0);
+                        final String tmpvar = br.getRegex("var " + var + " = (.*?);").getMatch(0);
                         DLLINK = DLLINK.replaceAll("\\+" + var + "\\+", "\\+" + tmpvar + "\\+");
-                        var = tmpvar;
+                        math = tmpvar;
                     }
-                    String data = execJS(var);
+                    final String data = execJS(math);
                     if (DLLINK.contains(var)) {
                         DLLINK = DLLINK.replace("\"+" + var + "+\"", data);
                     }

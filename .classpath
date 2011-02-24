@@ -92,5 +92,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/JDBrowser"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JDUpdater"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
+	<classpathentry kind="lib" path="ressourcen/libs/swfutils.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
