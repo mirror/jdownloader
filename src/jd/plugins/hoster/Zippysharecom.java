@@ -138,13 +138,10 @@ public class Zippysharecom extends PluginForHost {
                 String t = br.toString();
                 t = t.replaceAll("\n", "");
                 String math = new Regex(t, "<script type=\"text/javascript\">\\s+(var.*?)document").getMatch(0);
-                math = math + "z;";
                 if (DLLINK != null) {
                     final String var = new Regex(DLLINK, "\"\\+(.*?)\\+\"").getMatch(0);
-                    if (var.matches("\\w+")) {
-                        final String tmpvar = br.getRegex("var " + var + " = (.*?);").getMatch(0);
-                        DLLINK = DLLINK.replaceAll("\\+" + var + "\\+", "\\+" + tmpvar + "\\+");
-                        math = tmpvar;
+                    if (var != null) {
+                        math += var;
                     }
                     final String data = execJS(math);
                     if (DLLINK.contains(var)) {
