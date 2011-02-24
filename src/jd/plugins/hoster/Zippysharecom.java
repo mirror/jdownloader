@@ -67,7 +67,7 @@ public class Zippysharecom extends PluginForHost {
 
     private int getHashfromFlash(final String flashurl, final int time) throws Exception {
         final String[] args = { "-abc", flashurl };
-        // diasassemble abc
+        // disassemble abc
         final String asasm = SwfxPrinter.main(args);
         final String doABC = new Regex(asasm, "<doABC2>(.*)</doABC2>").getMatch(0);
         final String[] methods = new Regex(doABC, "(function.+?Traits Entries)").getColumn(0);

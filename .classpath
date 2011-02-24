@@ -89,9 +89,10 @@
 	<classpathentry kind="lib" path="ressourcen/libs/jetty-util-7.1.6.v20100715.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jpathwatch-0-93-rc1.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/AppleJavaExtensions.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/asc.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/swfutils.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JDBrowser"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JDUpdater"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swfutils.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>	
 	<classpathentry kind="output" path="bin"/>
 </classpath>
