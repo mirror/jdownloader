@@ -111,7 +111,11 @@ public class Zippysharecom extends PluginForHost {
                 final String seed = new Regex(flashContent, "seed: (\\d+)").getMatch(0);
                 if (DLLINK == null || seed == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 int time = Integer.parseInt(seed);
-                time = getHashfromFlash(flashurl, time);
+                try {
+                    time = getHashfromFlash(flashurl, time);
+                } catch (final Throwable e) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Works only with the latest nightly version currently!");
+                }
                 if (time == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 DLLINK = DLLINK + "&time=" + time;
                 // corrupted files?
