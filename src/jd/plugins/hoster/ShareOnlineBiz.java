@@ -29,11 +29,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -41,12 +41,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
-    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS = new HashMap<Account, HashMap<String, String>>();
-    private final static Object LOCK = new Object();
-    private final static HashMap<Long, Long> noFreeSlot = new HashMap<Long, Long>();
-    private long server = -1;
-    private final static long waitNoFreeSlot = 10 * 60 * 1000l;
-    private final static String UA = RandomUserAgent.generate();
+    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS   = new HashMap<Account, HashMap<String, String>>();
+    private final static Object                                    LOCK           = new Object();
+    private final static HashMap<Long, Long>                       noFreeSlot     = new HashMap<Long, Long>();
+    private long                                                   server         = -1;
+    private final static long                                      waitNoFreeSlot = 10 * 60 * 1000l;
+    private final static String                                    UA             = RandomUserAgent.generate();
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,7 +95,9 @@ public class ShareOnlineBiz extends PluginForHost {
         HashMap<String, String> ret = new HashMap<String, String>();
         for (String info : infos) {
             String data[] = info.split(seperator);
-            if (data.length == 2) {
+            if (data.length == 1) {
+                ret.put(data[0].trim(), null);
+            } else if (data.length == 2) {
                 ret.put(data[0].trim(), data[1].trim());
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
