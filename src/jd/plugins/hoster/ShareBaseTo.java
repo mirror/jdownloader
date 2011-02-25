@@ -17,16 +17,23 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebase.to2" }, urls = { "blablablaINVALID_REGEX" }, flags = { 0 })
 public class ShareBaseTo extends PluginForHost {
+
+    @Override
+    public ArrayList<MenuAction> createMenuitems() {
+        return new ArrayList<MenuAction>();
+    }
 
     public ShareBaseTo(PluginWrapper wrapper) {
         super(wrapper);
