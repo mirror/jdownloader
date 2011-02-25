@@ -98,6 +98,7 @@ public class BitLoadCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("Got html code instead of the file!");
             br.followConnection();
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
