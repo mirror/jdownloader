@@ -16,16 +16,23 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org2" }, urls = { "http://[\\w\\.]*?(appscene\\.org|filedude\\.com)/(download/[0-9a-zA-Z]+|download\\.php\\?id=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org2" }, urls = { "http://[\\w\\.]*?(appsblablablaneveruserthisblablacene\\.org|filedude\\.com)/(download/[0-9a-zA-Z]+|download\\.php\\?id=\\d+)" }, flags = { 0 })
 public class AppSceneOrg extends PluginForHost {
+    @Override
+    public ArrayList<MenuAction> createMenuitems() {
+        return new ArrayList<MenuAction>();
+    }
+
     // TODO: rename the whole class (delete this one and use "FileDudeCom" as
     // new classname
     public AppSceneOrg(PluginWrapper wrapper) {
