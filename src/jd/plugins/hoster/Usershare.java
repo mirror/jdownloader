@@ -259,6 +259,7 @@ public class Usershare extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("(File Not Found|No such user exist|>This file is either removed due to Copyright Claim, has Expired or is deleted by the uploader|>Reason for deletion<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex specialCase = br.getRegex("Size of the file \\'(.*?)\\' you are trying to download is (.*?)\\.You can download files");
         String filename = br.getRegex("class=\"hdr\"><TD colspan=2>(.*?)</TD>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<b>Filename:</b></td><td nowrap>(.*?)</b>").getMatch(0);
@@ -270,6 +271,9 @@ public class Usershare extends PluginForHost {
                         filename = br.getRegex("<h3>Download File:(.*?)</h3>").getMatch(0);
                         if (filename == null) {
                             filename = br.getRegex("<title>Download(.*?)</title>").getMatch(0);
+                            if (filename == null) {
+                                filename = specialCase.getMatch(0);
+                            }
                         }
                     }
                 }
@@ -280,6 +284,9 @@ public class Usershare extends PluginForHost {
             filesize = br.getRegex("label>Size:</label> <span>(.*?)</span>").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("You have requested <font color=\"red\">http://(www\\.)?usershare\\.net/(.*?/[0-9a-z]{12}|[0-9a-z]{12}).*?</font> \\((.*?)\\)</font>").getMatch(2);
+                if (filesize == null) {
+                    filesize = specialCase.getMatch(1);
+                }
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -360,8 +367,9 @@ public class Usershare extends PluginForHost {
         }
         if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
-        if (br.containsHTML(" can download files up to ") || br.containsHTML("Upgrade your account to download bigger files") || br.containsHTML("This file reached max downloads") || br.containsHTML(">Upgrade your account to download larger files")) {
+        if (br.containsHTML(" can download files up to ") || br.containsHTML("Upgrade your account to download bigger files") || br.containsHTML("This file reached max downloads") || br.containsHTML(">Upgrade your account to download larger files") || br.containsHTML("(>Size of the file \\'|You can download files over )")) {
             String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit == null) filesizelimit = br.getRegex("You can download files over (.*?) only with Premium-account").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
