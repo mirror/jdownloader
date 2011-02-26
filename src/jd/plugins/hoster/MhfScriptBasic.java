@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -26,12 +27,13 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -40,7 +42,7 @@ public class MhfScriptBasic extends PluginForHost {
 
     public MhfScriptBasic(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("http://Only4Devs2Test.com/register.php?g=3");
+        // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
 
     // MhfScriptBasic 1.1
@@ -58,6 +60,9 @@ public class MhfScriptBasic extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
     }
+
+    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
@@ -103,15 +108,28 @@ public class MhfScriptBasic extends PluginForHost {
             captchaform = br.getFormbyProperty("name", "validateform");
             if (captchaform == null) {
                 captchaform = br.getFormbyProperty("name", "valideform");
+                if (captchaform == null) {
+                    captchaform = br.getFormbyProperty("name", "verifyform");
+                }
             }
         }
-        if (br.containsHTML("(captcha.php|class=textinput name=downloadpw)")) {
+        if (br.containsHTML("class=textinput name=downloadpw") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
             if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             for (int i = 0; i <= 3; i++) {
-                if (br.containsHTML("captcha.php")) {
+                if (br.containsHTML(CHEAPCAPTCHATEXT)) {
+                    logger.info("Found normal captcha");
                     String captchaurl = COOKIE_HOST + "/captcha.php";
                     String code = getCaptchaCode(captchaurl, link);
                     captchaform.put("captchacode", code);
+                } else if (br.containsHTML(RECAPTCHATEXT)) {
+                    logger.info("Found reCaptcha");
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.parse();
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    captchaform.put("recaptcha_challenge_field", rc.getChallenge());
+                    captchaform.put("recaptcha_response_field", getCaptchaCode(cf, link));
                 }
                 if (br.containsHTML("class=textinput name=downloadpw")) {
                     if (link.getStringProperty("pass", null) == null) {
@@ -129,7 +147,8 @@ public class MhfScriptBasic extends PluginForHost {
                     link.setProperty("pass", null);
                     continue;
                 }
-                if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML(IPBLOCKED)) {
+                if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
                     logger.warning("Wrong captcha or wrong password!");
                     link.setProperty("pass", null);
                     continue;
@@ -142,7 +161,7 @@ public class MhfScriptBasic extends PluginForHost {
             link.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML(IPBLOCKED)) {
+        if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
             logger.warning("Wrong captcha or wrong password!");
             link.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -150,7 +169,6 @@ public class MhfScriptBasic extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         String finalLink = findLink();
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 0);
