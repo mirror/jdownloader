@@ -105,7 +105,7 @@ public class RuTubeRu extends PluginForHost {
         this.br.setFollowRedirects(false);
         this.br.getPage(downloadLink.getDownloadURL());
         if (this.br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final String fsk18 = this.br.getRegex("<br><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
+        final String fsk18 = this.br.getRegex("<p><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
         if (fsk18 != null) {
             this.br.getPage(fsk18);
         }

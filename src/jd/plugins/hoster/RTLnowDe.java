@@ -152,8 +152,12 @@ public class RTLnowDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        final String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
+        if (folge != null && !folge.contains(filename)) {
+            filename += " - " + folge;
+        }
         downloadLink.setName(filename.trim() + ".flv");
         return AvailableStatus.TRUE;
     }
