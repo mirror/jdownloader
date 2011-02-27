@@ -1484,6 +1484,7 @@ plugins.hoster.tube8com.setting.prefervideosformobilephones = Prefer video for m
 plugins.hoster.u115com.undermaintenance = Temporarily unavailable
 plugins.hoster.uhotfilecom.errors.404 = Server error
 plugins.hoster.uhotfilecom.errors.only4premium = Only downloadable for premium users (file larger than %s MB)
+plugins.hoster.unlimitcoil.only4premium = Only downloadable for premium users
 plugins.hoster.uploadcomua.nofreedownloadlink = Only downloadable for premium users
 plugins.hoster.uploadedto.errors.indirectlinkerror = Indirect link error
 plugins.hoster.uploadedto.errors.notpremium = This is free account
