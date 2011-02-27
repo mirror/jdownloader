@@ -133,7 +133,7 @@ public class OronCom extends PluginForHost {
         if (dllink != null) {
             /* try saved link */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -15);
-            if (!(dl.getConnection().isContentDisposition()) && dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("octet")) {
+            if (!(dl.getConnection().isContentDisposition()) || (dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("octet"))) {
                 logger.warning("saved link no longer valid!");
                 dllink = null;
                 link.setProperty("finaldownloadlink", null);
@@ -217,7 +217,7 @@ public class OronCom extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        if (!(dl.getConnection().isContentDisposition()) && dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("octet")) {
+        if (!(dl.getConnection().isContentDisposition()) || (dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("octet"))) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             if (br.containsHTML("File Not Found")) {
