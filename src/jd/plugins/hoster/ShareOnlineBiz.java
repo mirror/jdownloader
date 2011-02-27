@@ -232,6 +232,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (size != null) parameter.setDownloadSize(Long.parseLong(size));
         if (filename != null) parameter.setFinalFileName(filename);
         final String dlURL = dlInfos.get("URL");
+        // http://api.share-online.biz/api/account.php?act=fileError&fid=FILE_ID
         if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
@@ -239,12 +240,13 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            errorHandling(br, parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private void errorHandlingFree(Browser br, DownloadLink downloadLink) throws PluginException {
+    private void errorHandling(Browser br, DownloadLink downloadLink) throws PluginException {
         /* file is offline */
         if (br.containsHTML("The requested file is not available")) {
             logger.info("The following link was marked as online by the API but is offline: " + downloadLink.getDownloadURL());
@@ -268,7 +270,16 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         }
         if (br.getURL().contains("failure/bandwidth")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
-        if (br.getURL().contains("failure/filenotfound") || br.getURL().contains("failure/invalid")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
+        if (br.getURL().contains("failure/filenotfound")) {
+            try {
+                final Browser br2 = new Browser();
+                final String id = this.getID(downloadLink);
+                br2.getPage("http://api.share-online.biz/api/account.php?act=fileError&fid=" + id);
+            } catch (Throwable e) {
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getURL().contains("failure/invalid")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
         if (br.getURL().contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
         if (br.getURL().contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
         if (br.getURL().contains("failure/expired") || br.getURL().contains("failure/session")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l); }
@@ -314,11 +325,11 @@ public class ShareOnlineBiz extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        errorHandlingFree(br, downloadLink);
+        errorHandling(br, downloadLink);
         if (!br.containsHTML(">>> continue for free <<<")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ID = getID(downloadLink);
         br.postPage("http://www.share-online.biz/dl/" + ID + "/free/", "dl_free=1");
-        errorHandlingFree(br, downloadLink);
+        errorHandling(br, downloadLink);
         String wait = br.getRegex("var wait=(\\d+)").getMatch(0);
         if (wait != null) {
             this.sleep(Integer.parseInt(wait) * 1000l, downloadLink);
@@ -352,7 +363,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            errorHandlingFree(br, downloadLink);
+            errorHandling(br, downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

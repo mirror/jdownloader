@@ -156,7 +156,7 @@ public class JDUtilities {
         cont.add(comp, cons);
     }
 
-    public static String convertExceptionReadable(final Exception e) {
+    public static String convertExceptionReadable(final Throwable e) {
         String s = e.getClass().getName().replaceAll("Exception", "");
         s = s.substring(s.lastIndexOf('.') + 1);
         final StringBuilder ret = new StringBuilder();

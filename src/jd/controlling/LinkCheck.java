@@ -45,15 +45,15 @@ class LinkCheckBroadcaster extends Eventsender<LinkCheckListener, LinkCheckEvent
 
 public class LinkCheck implements ActionListener, ProgressControllerListener {
 
-    private static LinkCheck INSTANCE = null;
-    private Timer checkTimer = null;
-    private Thread checkThread = null;
+    private static LinkCheck               INSTANCE     = null;
+    private Timer                          checkTimer   = null;
+    private Thread                         checkThread  = null;
 
-    private ArrayList<DownloadLink> linksToCheck = new ArrayList<DownloadLink>();
-    private boolean checkRunning = false;
-    protected ProgressController pc;
-    protected Jobber checkJobbers;
-    transient private LinkCheckBroadcaster broadcaster = new LinkCheckBroadcaster();
+    private ArrayList<DownloadLink>        linksToCheck = new ArrayList<DownloadLink>();
+    private boolean                        checkRunning = false;
+    protected ProgressController           pc;
+    protected Jobber                       checkJobbers;
+    transient private LinkCheckBroadcaster broadcaster  = new LinkCheckBroadcaster();
 
     public synchronized static LinkCheck getLinkChecker() {
         if (INSTANCE == null) {
@@ -145,24 +145,28 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             plg.setBrowser(new Browser());
             plg.init();
             long timer = System.currentTimeMillis();
-            boolean ret = plg.checkLinks(hosterList.toArray(new DownloadLink[] {}));
-
-            if (!ret) {
-                for (int i = 0; i < hosterList.size(); i++) {
-                    link = hosterList.get(i);
-                    if (!checkRunning) return;
-                    if (!link.getBooleanProperty("removed", false)) {
-                        link.getAvailableStatus(plg);
-                        getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, link));
+            try {
+                boolean ret = plg.checkLinks(hosterList.toArray(new DownloadLink[] {}));
+                if (!ret) {
+                    for (int i = 0; i < hosterList.size(); i++) {
+                        link = hosterList.get(i);
+                        if (!checkRunning) return;
+                        if (!link.getBooleanProperty("removed", false)) {
+                            link.getAvailableStatus(plg);
+                            getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, link));
+                        }
+                        pc.increase(1);
                     }
-                    pc.increase(1);
+                } else {
+                    long reqtime = System.currentTimeMillis() - timer;
+                    for (DownloadLink d : hosterList) {
+                        d.setRequestTime(reqtime);
+                    }
+                    getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
+                    pc.increase(hosterList.size());
                 }
-            } else {
-                long reqtime = System.currentTimeMillis() - timer;
-                for (DownloadLink d : hosterList) {
-                    d.setRequestTime(reqtime);
-                }
-                getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
+            } catch (Throwable e) {
+                JDLogger.exception(e);
                 pc.increase(hosterList.size());
             }
         }

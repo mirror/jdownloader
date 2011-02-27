@@ -68,130 +68,130 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         UNCHECKED, FALSE, UNCHECKABLE, TRUE;
     }
 
-    public static final int LINKTYPE_CONTAINER = 1;
+    public static final int                    LINKTYPE_CONTAINER       = 1;
 
-    public static final int LINKTYPE_NORMAL = 0;
+    public static final int                    LINKTYPE_NORMAL          = 0;
 
-    private transient static Logger logger = JDLogger.getLogger();
+    private transient static Logger            logger                   = JDLogger.getLogger();
 
-    private static final long serialVersionUID = 1981079856214268373L;
+    private static final long                  serialVersionUID         = 1981079856214268373L;
 
-    public static final String UNKNOWN_FILE_NAME = "unknownFileName.file";
+    public static final String                 UNKNOWN_FILE_NAME        = "unknownFileName.file";
 
-    public static final String STATIC_OUTPUTFILE = "STATIC_OUTPUTFILE";
+    public static final String                 STATIC_OUTPUTFILE        = "STATIC_OUTPUTFILE";
 
-    private transient AvailableStatus availableStatus = AvailableStatus.UNCHECKED;
+    private transient AvailableStatus          availableStatus          = AvailableStatus.UNCHECKED;
 
-    private long[] chunksProgress = null;
+    private long[]                             chunksProgress           = null;
 
-    private transient DownloadLinkBroadcaster broadcaster = new DownloadLinkBroadcaster();
+    private transient DownloadLinkBroadcaster  broadcaster              = new DownloadLinkBroadcaster();
 
     /** Containername */
-    private String container;
+    private String                             container;
 
     /** Dateiname des Containers */
-    private String containerFile = null;
+    private String                             containerFile            = null;
 
     /** Index dieses DownloadLinks innerhalb der Containerdatei */
-    private int containerIndex = -1;
+    private int                                containerIndex           = -1;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long downloadCurrent = 0;
+    private long                               downloadCurrent          = 0;
 
-    private transient DownloadInterface downloadInstance;
+    private transient DownloadInterface        downloadInstance;
 
     private transient SingleDownloadController downloadLinkController;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long downloadMax = 0;
+    private long                               downloadMax              = 0;
 
-    private String subdirectory = null;
+    private String                             subdirectory             = null;
 
-    private String browserurl = null;
+    private String                             browserurl               = null;
 
-    private FilePackage filePackage;
+    private FilePackage                        filePackage;
 
     /** Hoster des Downloads */
-    private String host;
+    private String                             host;
 
     /** Zeigt an, ob dieser Downloadlink aktiviert ist */
-    private boolean isEnabled;
+    private boolean                            isEnabled;
 
-    private LinkStatus linkStatus;
+    private LinkStatus                         linkStatus;
 
-    private TransferStatus transferstatus;
+    private TransferStatus                     transferstatus;
 
-    private int linkType = LINKTYPE_NORMAL;
+    private int                                linkType                 = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
-    private String name;
+    private String                             name;
 
-    private transient PluginForHost defaultplugin;
+    private transient PluginForHost            defaultplugin;
 
-    private transient PluginForHost liveplugin;
+    private transient PluginForHost            liveplugin;
 
     /**
      * Falls vorhanden, das Plugin fuer den Container, aus der dieser Download
      * geladen wurde
      */
-    private transient PluginsC pluginForContainer;
+    private transient PluginsC                 pluginForContainer;
 
-    private String sourcePluginComment = null;
+    private String                             sourcePluginComment      = null;
 
-    private ArrayList<String> sourcePluginPasswordList = null;
+    private ArrayList<String>                  sourcePluginPasswordList = null;
 
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
      * Pfad) abgespeichert. (z.b. Plugins, DownloadSystem)
      */
-    private String finalFileName;
+    private String                             finalFileName;
 
     /**
      * if filename is set by jd (eg autorename) or user (manual rename of
      * filename), then this filename has highest priority
      */
-    private String forcedFileName = null;
+    private String                             forcedFileName           = null;
 
     /**
      * /** Von hier soll der Download stattfinden
      */
-    private String urlDownload;
+    private String                             urlDownload;
 
     /**
      * Password welches einem weiteren Decrypter-Plugin uebergeben werden soll
      * (zb FolderPassword)
      */
-    private String decrypterPassword;
+    private String                             decrypterPassword;
 
-    private String mD5Hash;
+    private String                             mD5Hash;
 
-    private transient PluginProgress pluginProgress;
+    private transient PluginProgress           pluginProgress;
 
-    private String sha1Hash;
+    private String                             sha1Hash;
 
-    private int priority = 0;
+    private int                                priority                 = 0;
 
-    private transient ImageIcon icon = null;
+    private transient ImageIcon                icon                     = null;
 
-    private long requestTime;
+    private long                               requestTime;
 
-    private String partnum2 = null;
+    private String                             partnum2                 = null;
 
-    private long created = -1l;
+    private long                               created                  = -1l;
 
-    private long finishedDate = -1l;
+    private long                               finishedDate             = -1l;
 
     /**
      * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
      * icon to be shown
      */
-    private ImageIcon customIcon = null;
+    private ImageIcon                          customIcon               = null;
     /**
      * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
      * tooltip to be shown
      */
-    private String customIconText = null;
+    private String                             customIconText           = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -642,7 +642,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                         break;
                     }
 
-                } catch (Exception e) {
+                } catch (Throwable e) {
+                    JDLogger.exception(e);
                     availableStatus = AvailableStatus.UNCHECKABLE;
                     break;
                 }
@@ -857,7 +858,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Veraendert den Aktiviert-Status Resets ERROR_TEMPORARILY_UNAVAILABLE!!
+     * Veraendert den Aktiviert-Status s ERROR_TEMPORARILY_UNAVAILABLE!!
      * 
      * @param isEnabled
      *            Soll dieser DownloadLink aktiviert sein oder nicht

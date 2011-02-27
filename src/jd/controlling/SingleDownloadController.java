@@ -34,9 +34,9 @@ import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettings;
 import jd.http.HTTPProxy;
+import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
@@ -179,7 +179,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
                     logger.finest("Hoster Plugin Version: " + rev);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                     linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.finest("Hoster Plugin Version: " + downloadLink.getLivePlugin().getVersion());
                     JDLogger.exception(e);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
