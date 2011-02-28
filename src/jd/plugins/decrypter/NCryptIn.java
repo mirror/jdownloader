@@ -41,7 +41,7 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?ncrypt\\.in/folder-.*?=" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?ncrypt\\.in/folder-.+" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
 
     public NCryptIn(PluginWrapper wrapper) {
@@ -60,7 +60,7 @@ public class NCryptIn extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(<h1>Dieser Ordner/Link existiert nicht\\.\\.\\.</h1>|<li>Die URL ist nicht korrekt</li>|<li>Der Ordner/Link wurde Abused</li>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.getURL().contains("error=crypted_id_invalid")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         // Handle Captcha and/or password
         if (br.containsHTML(RECAPTCHA)) {
             for (int i = 0; i <= 5; i++) {
