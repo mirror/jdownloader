@@ -366,7 +366,7 @@ public class FileSonicCom extends PluginForHost {
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)
          */
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, false, 1);
         if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
             this.br.followConnection();
 
