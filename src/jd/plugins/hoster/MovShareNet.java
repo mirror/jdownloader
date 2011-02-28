@@ -73,6 +73,7 @@ public class MovShareNet extends PluginForHost {
         String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"file\",\"(http:.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("flashvars.file=\"(http:.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
