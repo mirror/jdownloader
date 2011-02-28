@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -379,6 +380,54 @@ public class Usershare extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
+    }
+
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            StringBuilder sb = new StringBuilder();
+            while (true) {
+                sb.delete(0, sb.capacity());
+                sb.append("links=");
+                links.clear();
+                while (true) {
+                    /* we test 100 links at once */
+                    if (index == urls.length || links.size() > 100) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                br.getPage("http://www.usershare.net/checkfiles.html");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    /*
+                     * append fake filename, because api will not report
+                     * anything else
+                     */
+                    if (c > 0) sb.append("%0D%0A");
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    c++;
+                }
+                br.postPage("http://www.usershare.net/checkfiles.html", "op=checkfiles&process=Check+URLs&list=" + sb.toString());
+                for (DownloadLink dl : links) {
+                    String fileid = new Regex(dl.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "(.*?/)?([a-z0-9]{12})").getMatch(1);
+                    if (fileid == null) {
+                        logger.warning("Usershare availablecheck is broken!");
+                        return false;
+                    }
+                    if (br.containsHTML(fileid + " not found") || !br.containsHTML(fileid + " found")) {
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override

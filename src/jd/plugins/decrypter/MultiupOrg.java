@@ -35,14 +35,16 @@ public class MultiupOrg extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("Sorry but your file does not exist or no longer exists")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] links = br.getRegex("php\\?lien=(.*?)\\'").getColumn(0);
+        if (br.containsHTML("(Sorry but your file does not exist or no longer exists|The file does not exist any more|It was deleted either further to a complaint or further to a not access for several weeks)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=");
+        String[] links = br.getRegex("<a target=\"_blank\" href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+            if (!dl.contains("multiup.org/")) decryptedLinks.add(createDownloadlink(dl));
 
         return decryptedLinks;
     }

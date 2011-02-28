@@ -59,15 +59,16 @@ public class XHamsterCom extends PluginForHost {
                 }
             }
         }
-        String ending = br.getRegex("'type':'(.*?)'").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String dllink = getDllink();
+        String ending = br.getRegex("\\'type\\':\\'(.*?)\\'").getMatch(0);
+        if (ending == null) ending = dllink.substring(dllink.length() - 3, dllink.length());
         filename = Encoding.htmlDecode(filename.trim());
         if (ending != null) {
             downloadLink.setFinalFileName(filename + "." + ending);
         } else {
             downloadLink.setName(filename);
         }
-        String dllink = getDllink();
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
@@ -100,10 +101,11 @@ public class XHamsterCom extends PluginForHost {
     }
 
     public String getDllink() throws IOException, PluginException {
-        String server = br.getRegex("'srv': '(.*?)'").getMatch(0);
-        String type = br.getRegex("'type':'(.*?)'").getMatch(0);
-        String file = br.getRegex("'file': '(.*?)'").getMatch(0);
-        if (server == null || type == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
+        String type = br.getRegex("\\'type\\':\\'(.*?)\\'").getMatch(0);
+        if (type == null) type = "flv";
+        String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
+        if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = server + "/" + type + "2/" + file;
         return dllink;
     }

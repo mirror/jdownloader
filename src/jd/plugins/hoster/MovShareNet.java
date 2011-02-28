@@ -18,11 +18,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 //movshare by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net" }, urls = { "http://[\\w\\.]*?movshare\\.net/video/[a-z0-9]+" }, flags = { 0 })
@@ -71,9 +71,13 @@ public class MovShareNet extends PluginForHost {
         }
         if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"file\",\"(http:.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("flashvars.file=\"(http:.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"file\",\"(http:.*?)\"").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("flashvars\\.file=\"(http:.*?)\"").getMatch(0);
+            }
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();

@@ -67,6 +67,7 @@ public class BitLoadCom extends PluginForHost {
         String filename = nameAndSize.getMatch(0);
         if (filename == null) filename = br.getRegex("Sie möchten <strong>(.*?)</strong> schauen <br/>").getMatch(0);
         String filesize = nameAndSize.getMatch(1);
+        if (filesize == null) filesize = br.getRegex("x\">Divx</strong> \\((.*?)\\)<br/><br/>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         // Streamlinks show no filesize
