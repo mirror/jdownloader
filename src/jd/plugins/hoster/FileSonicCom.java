@@ -18,24 +18,21 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -45,9 +42,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.(com|net|jp|tw)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
-    private static final Object LOCK               = new Object();
-    private static long         LAST_FREE_DOWNLOAD = 0l;
-    private static String       geoDomain          = null;
+    private static final Object LOCK = new Object();
+    private static long LAST_FREE_DOWNLOAD = 0l;
+    private static String geoDomain = null;
+    private static String geoDomainEnd = null;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -63,21 +61,44 @@ public class FileSonicCom extends PluginForHost {
         if (geoDomain != null) return geoDomain;
         String defaultDomain = "http://www.filesonic.com";
         try {
-            Browser br = new Browser();
-            br.setCookie(defaultDomain, "lang", "en");
-            br.setFollowRedirects(false);
-            br.getPage(defaultDomain);
-            geoDomain = br.getRedirectLocation();
+            geoDomain = getDomainAPI();
             if (geoDomain == null) {
-                geoDomain = defaultDomain;
-            } else {
-                String domain = new Regex(br.getRedirectLocation(), "http://.*?(filesonic\\..*?)/").getMatch(0);
-                geoDomain = "http://www." + domain;
+                Browser br = new Browser();
+                br.setCookie(defaultDomain, "lang", "en");
+                br.setFollowRedirects(false);
+                br.getPage(defaultDomain);
+                geoDomain = br.getRedirectLocation();
+                if (geoDomain == null) {
+                    geoDomain = defaultDomain;
+                } else {
+                    String domain = new Regex(br.getRedirectLocation(), "http://.*?(filesonic\\..*?)/").getMatch(0);
+                    geoDomain = "http://www." + domain;
+                }
             }
         } catch (final Throwable e) {
             geoDomain = defaultDomain;
         }
+        geoDomainEnd = new Regex(geoDomain, ".*?filesonic(\\..+)($|/)").getMatch(0);
         return geoDomain;
+    }
+
+    private synchronized String getDomainEnd() {
+        if (geoDomainEnd != null) return geoDomainEnd;
+        getDomain();
+        return geoDomainEnd;
+    }
+
+    private synchronized String getDomainAPI() {
+        try {
+            Browser br = new Browser();
+            br.setFollowRedirects(true);
+            br.getPage("http://api.filesonic.com/utility?method=getFilesonicDomainForCurrentIp");
+            String domain = br.getRegex("response>.*?filesonic(\\..*?)</resp").getMatch(0);
+            if (domain != null) { return "http://www.filesonic" + domain; }
+        } catch (final Throwable e) {
+            logger.severe(e.getMessage());
+        }
+        return null;
     }
 
     @Override
@@ -101,30 +122,27 @@ public class FileSonicCom extends PluginForHost {
                     index++;
                 }
                 sb.delete(0, sb.capacity());
-                sb.append("link_id=");
+                sb.append("ids=");
                 int c = 0;
                 for (final DownloadLink dl : links) {
                     if (c > 0) {
-                        sb.append(";");
+                        sb.append(",");
                     }
                     sb.append(getPureID(dl));
                     c++;
                 }
-                sb.append("&bz=1");
-                br.postPage(getDomain() + "/api/info", sb.toString());
+                br.postPage("http://api.filesonic.com/link?method=getInfo", sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String id = this.getPureID(dllink);
-                    final String hit[] = br.getRegex(id + ".*?;(.*?);(\\d+) B;(\\S+)").getRow(0);
-                    if (hit != null && hit.length == 3) {
-                        dllink.setFinalFileName(hit[0].trim());
-                        dllink.setDownloadSize(Long.parseLong(hit[1].trim()));
-                        if ("AVAILABLE".equalsIgnoreCase(hit[2].trim())) {
-                            dllink.setAvailable(true);
-                        } else {
-                            dllink.setAvailable(false);
-                        }
-                    } else {
+                    final String hit = br.getRegex("link><id>" + id + "(.*?)</link>").getMatch(0);
+                    if (hit == null || hit.contains("status>NOT_AVAILABLE")) {
                         dllink.setAvailable(false);
+                    } else {
+                        String name = new Regex(hit, "filename>(.*?)</filename").getMatch(0);
+                        String size = new Regex(hit, "size>(\\d+)</size").getMatch(0);
+                        dllink.setAvailable(true);
+                        dllink.setFinalFileName(name);
+                        if (size != null) dllink.setDownloadSize(Long.parseLong(size));
                     }
                 }
                 if (index == urls.length) {
@@ -191,32 +209,50 @@ public class FileSonicCom extends PluginForHost {
         }
     }
 
+    private String loginAPI(Browser useBr, Account account) throws IOException, PluginException {
+        Browser br = useBr;
+        if (br == null) br = new Browser();
+        br.setFollowRedirects(true);
+        String page = br.getPage("http://api.filesonic.com/user?method=getInfo&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml");
+        String premium = br.getRegex("is_premium>(.*?)</is_").getMatch(0);
+        if (!"1".equals(premium)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        return page;
+    }
+
+    private String downloadAPI(Browser useBr, Account account, DownloadLink link) throws IOException, PluginException {
+        Browser br = useBr;
+        if (br == null) br = new Browser();
+        br.setFollowRedirects(true);
+        String pw = "";
+        String pwUsw = link.getStringProperty("pass", null);
+        if (pwUsw != null) {
+            pw = "&passwords[" + this.getPureID(link) + "]=" + Encoding.urlEncode(pwUsw);
+        }
+        String page = br.getPage("http://api.filesonic.com/link?method=getDownloadLink&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml&ids=" + this.getPureID(link) + pw);
+        if (page.contains("FSApi_Auth_Exception")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String status = br.getRegex("status>(.*?)</status").getMatch(0);
+        if ("NOT_AVAILABLE".equals(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return page;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (FileSonicCom.LOCK) {
             AccountInfo ai = new AccountInfo();
             try {
-                this.login(account, true);
-            } catch (final PluginException e) {
-                if (account.getAccountInfo() != null) {
-                    ai = account.getAccountInfo();
-                }
-                if (e.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
-                    account.setValid(true);
-                } else {
-                    account.setValid(false);
-                }
+                loginAPI(br, account);
+            } catch (final IOException e) {
+                account.setValid(true);
+                account.setTempDisabled(true);
+                ai.setStatus("ServerError, will retry later");
+                return ai;
+            } catch (final Throwable e) {
+                account.setValid(false);
                 return ai;
             }
-
-            if (account.getAccountInfo() != null) {
-                ai = account.getAccountInfo();
-            }
-            this.br.getPage(getDomain() + "/user/settings");
-            final String expiredate = this.br.getRegex("Premium Membership Valid Until:.*?info\">(.*?)<").getMatch(0);
+            final String expiredate = br.getRegex("expiration>(.*?)</premium").getMatch(0);
             if (expiredate != null) {
                 ai.setStatus("Premium User");
-                // it seems expire date is still wrong for many users
                 account.setValid(true);
                 ai.setUnlimitedTraffic();
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "yyyy-MM-dd HH:mm:ss", null));
@@ -321,7 +357,6 @@ public class FileSonicCom extends PluginForHost {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
                 rc.handleAuto(this, downloadLink);
-
             }
 
             downloadUrl = ajax.getRegex(re).getMatch(0);
@@ -348,135 +383,36 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        String passCode = null;
         this.setBrowserExclusive();
         this.requestFileInformation(downloadLink);
-        this.login(account, false);
-        final String dllink = downloadLink.getDownloadURL();
-        this.br.getPage(dllink);
-        final String url = this.br.getRedirectLocation();
+        String resp = downloadAPI(br, account, downloadLink);
+        String url = new Regex(resp, "CDATA\\[(http://.*?)\\]\\]").getMatch(0);
         if (url == null) {
-            /* no redirect, what the frak */
-            /*
-             * this can be caused by a reconnect/changed ip and cookie no longer
-             * valid
-             */
-            AccountInfo ai = account.getAccountInfo();
-            if (ai == null) {
-                ai = new AccountInfo();
-                account.setAccountInfo(ai);
+            /* check for needed pw */
+            String status = new Regex(resp, "status>(.*?)</status").getMatch(0);
+            if ("PASSWORD_REQUIRED".equals(status) || "WRONG_PASSWORD".equals(status)) {
+                /* wrong pw */
+                String passCode = Plugin.getUserInput(null, downloadLink);
+                downloadLink.setProperty("pass", passCode);
             }
-            account.setProperty("cookies", null);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fetch new Login", 30 * 1000);
+            resp = downloadAPI(br, account, downloadLink);
+            url = new Regex(resp, "CDATA\\[(http://.*?)\\]\\]").getMatch(0);
         }
-        this.br.setFollowRedirects(true);
-        this.br.setDebug(true);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
-        /* first download try, without password */
-        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && this.dl.getConnection().getContentType().contains("html")) {
-            this.br.followConnection();
-            if (this.br.containsHTML("This file is password protected")) {
-                /* password handling */
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(null, downloadLink);
-                } else {
-                    /* get saved password */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                final Form form = this.br.getForm(0);
-                form.put("password", Encoding.urlEncode(passCode));
-                /* second downloadtry with password */
-
-                // 1 chunk because of bug #2478
-                // http://svn.jdownloader.org/issues/2478
-                this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, form, true, 1);
-            } else if (this.br.containsHTML("You can not access this page directly")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 1000l * 10);
-            } else {
-                if (br.containsHTML("Select a file to upload")) {
-                    /* user did reconnect and login cookie no longer valid */
-                    account.setProperty("cookies", null);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fetch new Login", 30 * 1000);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
-            this.br.followConnection();
-            this.errorHandling(downloadLink, this.br);
-            if (br.containsHTML("Select a file to upload")) {
-                /* user did reconnect and login cookie no longer valid */
-                account.setProperty("cookies", null);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fetch new Login", 30 * 1000);
+        if (url == null) {
+            String status = new Regex(resp, "status>(.*?)</status").getMatch(0);
+            if ("PASSWORD_REQUIRED".equals(status) || "WRONG_PASSWORD".equals(status)) {
+                /* wrong pw */
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password missing/wrong");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
+        if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
+            this.br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
-    }
-
-    @SuppressWarnings("unchecked")
-    public void login(final Account account, final boolean force) throws Exception {
-        synchronized (FileSonicCom.LOCK) {
-            this.setBrowserExclusive();
-            this.br.setDebug(true);
-            this.br.setFollowRedirects(true);
-            try {
-                this.br.setCookie(getDomain(), "lang", "en");
-                final Object ret = account.getProperty("cookies", null);
-                if (ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (cookies.containsKey("role") && account.isValid()) {
-                        for (final String key : cookies.keySet()) {
-                            this.br.setCookie(getDomain(), key, cookies.get(key));
-                        }
-                        return;
-                    }
-                }
-                try {
-                    this.br.getPage(getDomain());
-                    this.XMLRequest(this.br, getDomain() + "/user/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                } catch (final Exception e) {
-                }
-                this.br.setFollowRedirects(false);
-                final String premCookie = this.br.getCookie(getDomain(), "role");
-                if (premCookie == null) {
-                    AccountInfo ai = account.getAccountInfo();
-                    if (ai == null) {
-                        ai = new AccountInfo();
-                        account.setAccountInfo(ai);
-                    }
-                    ai.setStatus(null);
-                    account.setProperty("cookies", null);
-                    if (this.br.containsHTML("You must be logged in") && this.br.containsHTML("If you don")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-                    if (this.br.containsHTML("User Does Not Exist With")) {
-                        ai.setStatus("User Does Not Exist With This Email Address");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    if (this.br.containsHTML("Provided password does not match")) {
-                        ai.setStatus("Provided password does not match");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        ai.setStatus("ServerProblems(1), will try again in few minutes!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    }
-                }
-                if (premCookie.equalsIgnoreCase("free")) {
-                    account.setProperty("cookies", null);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(getDomain());
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("cookies", cookies);
-            } finally {
-                this.br.setFollowRedirects(false);
-            }
-        }
     }
 
     @Override
@@ -513,12 +449,4 @@ public class FileSonicCom extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private void XMLRequest(Browser br, final String url, final String post) throws IOException {
-        if (br == null) {
-            br = this.br;
-        }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage(url, post);
-        br.getHeaders().put("X-Requested-With", null);
-    }
 }
