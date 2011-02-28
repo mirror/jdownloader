@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrastar-warez.com" }, urls = { "http://(www\\.)?ultrastar-warez\\.com/index\\.php\\?section=download\\&cat=\\d+\\&id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrastar-base.com" }, urls = { "http://(www\\.)?ultrastar-(warez|base)\\.com/index\\.php\\?section=download\\&cat=\\d+\\&id=\\d+" }, flags = { 0 })
 public class LtrstrWzCom extends PluginForDecrypt {
 
     public LtrstrWzCom(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class LtrstrWzCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("ultrastar-warez.com", "ultrastar-base.com");
         br.getPage(parameter);
         if (br.containsHTML("(>Uploaded: 31\\.12\\.69 \\(23:00\\)<|class=\"title\"> - </span></td>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<span class=\"title\">(.*?)</span>").getMatch(0);
