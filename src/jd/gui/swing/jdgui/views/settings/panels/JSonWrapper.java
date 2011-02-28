@@ -29,10 +29,10 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     /**
      * 
      */
-    private static final long                    serialVersionUID = 1L;
-    private static HashMap<Storage, JSonWrapper> MAP              = new HashMap<Storage, JSonWrapper>();
-    private Storage                              storage;
-    private JDController                         jdController;
+    private static final long serialVersionUID = 1L;
+    private static HashMap<Storage, JSonWrapper> MAP = new HashMap<Storage, JSonWrapper>();
+    private Storage storage;
+    private JDController jdController;
 
     private JSonWrapper(Storage json) {
         this.storage = json;
@@ -124,7 +124,7 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        throw new RuntimeException("no Implemented");
+        return null;
     }
 
     public Object getProperty(final String key, final Object def) {
