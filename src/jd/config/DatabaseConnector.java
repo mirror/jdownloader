@@ -151,14 +151,12 @@ public class DatabaseConnector implements Serializable {
             String line = "";
             int counter = 0;
             byte[] buffer = new byte[100];
-            Integer read = 0;
             main: while (counter < 7) {
-                read = IO.readLine(in, buffer);
-                if (read == null || read == 0) {
+                line = IO.readLine(in, buffer);
+                if (line == null) {
                     databaseok = false;
                     break main;
                 }
-                line = new String(buffer, 0, (read > 0 ? read : buffer.length), "UTF-8");
                 switch (counter) {
                 case 0:
                     if (!line.equals("CREATE SCHEMA PUBLIC AUTHORIZATION DBA")) {
@@ -199,9 +197,7 @@ public class DatabaseConnector implements Serializable {
                 counter++;
             }
 
-            while (((read = IO.readLine(in, buffer)) != null)) {
-                if (read == 0) break;
-                line = new String(buffer, 0, (read > 0 ? read : buffer.length), "UTF-8");
+            while (((line = IO.readLine(in, buffer)) != null)) {
                 if (!line.startsWith("INSERT INTO")) {
                     databaseok = false;
                     break;
