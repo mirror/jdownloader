@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://[\\w\\.]*?img[0-9]+\\.imagevenue\\.com/img\\.php\\?image=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://[\\w\\.]*?img[0-9]+\\.imagevenue\\.com/img\\.php.*?image=.+" }, flags = { 0 })
 public class ImageVenueCom extends PluginForHost {
 
     public ImageVenueCom(PluginWrapper wrapper) {
@@ -55,11 +55,20 @@ public class ImageVenueCom extends PluginForHost {
         String filename0 = new Regex(finallink, "imagevenue\\.com/.*?/.*?/\\d+_(.*?_[0-9]{2,})_").getMatch(0);
         if (ending != null && filename0 != null) filename = filename0 + "." + ending;
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        URLConnectionAdapter con = br.openGetConnection(finallink);
-        long size = con.getLongContentLength();
-        link.setDownloadSize(Long.valueOf(size));
-        link.setName(filename.trim());
-        return AvailableStatus.TRUE;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(finallink);
+            if (!con.isOK()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            long size = con.getLongContentLength();
+            link.setDownloadSize(Long.valueOf(size));
+            link.setName(filename.trim());
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
