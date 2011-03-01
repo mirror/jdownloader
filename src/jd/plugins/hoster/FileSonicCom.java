@@ -247,6 +247,7 @@ public class FileSonicCom extends PluginForHost {
                 ai.setStatus("ServerError, will retry later");
                 return ai;
             } catch (final Throwable e) {
+                ai.setStatus("Account invalid! Try Email as Login and don't use special chars in PW!");
                 account.setValid(false);
                 return ai;
             }

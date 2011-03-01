@@ -55,7 +55,7 @@ public class LoadFilesIn extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://loadfiles.in";
-    public boolean              nopremium   = false;
+    public boolean nopremium = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -384,6 +384,7 @@ public class LoadFilesIn extends PluginForHost {
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
+                checkErrors(link);
                 Form DLForm = br.getFormbyProperty("name", "F1");
                 if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("(<br><b>Passwort:</b>|<br><b>Password:</b>)")) {

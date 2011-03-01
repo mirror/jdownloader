@@ -25,20 +25,27 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unlimit.co.il" }, urls = { "http://(www\\.)?unlimit\\.co\\.il/getfile\\.php\\?name=\\d+-\\d+-.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unlimit.co.il" }, urls = { "http://[\\w\\.]*?unlimit\\.co\\.il/getfile\\.php\\?name=\\d+-\\d+-.+" }, flags = { 2 })
 public class UnLimitCoIl extends PluginForHost {
 
     public UnLimitCoIl(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         this.enablePremium();
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        String url = link.getDownloadURL();
+        url = url.replaceFirst("http://.*?/", "http://unlimit.co.il/");
+        link.setUrlDownload(url);
     }
 
     @Override
