@@ -292,6 +292,7 @@ public class HotFileCom extends PluginForHost {
             int tries = getPluginConfig().getIntegerProperty(HotFileCom.CAPTCHARETRIES, 20);
             while (true) {
                 final Form[] forms = br.getForms();
+                if (br.containsHTML("Could not open socket")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
                 final Form form = forms[1];
                 long sleeptime = 0;
                 try {
