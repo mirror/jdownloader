@@ -290,7 +290,6 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws PluginException, IOException {
         synchronized (LOCK) {
             this.setBrowserExclusive();

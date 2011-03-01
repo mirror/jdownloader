@@ -15,14 +15,12 @@ public class CaptchaDialogQueue extends Queue {
 
     private CaptchaDialogQueue() {
         super("CaptchaDialogQueue");
-
     }
 
     public String addWait(final CaptchaDialogQueueEntry item) {
         if (PluginForDecrypt.isAborted(item.getInitTime(), item.getHost())) return null;
 
         return super.addWait(item);
-
     }
 
     public void blockByHost(String host) {
@@ -42,14 +40,12 @@ public class CaptchaDialogQueue extends Queue {
                 /* clear queue */
                 queue.get(prio).clear();
             }
-
         }
     }
 
     public void blockAll() {
         PluginForDecrypt.abortQueued();
         this.killQueue();
-
     }
 
 }

@@ -16,11 +16,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Hash;
@@ -299,7 +299,6 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws PluginException, IOException {
         synchronized (LOCK) {
             this.setBrowserExclusive();

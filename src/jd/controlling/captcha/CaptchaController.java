@@ -32,6 +32,16 @@ import jd.gui.UserIO;
 
 public class CaptchaController {
 
+    private static CaptchaSolver captchaSolver = null;
+
+    public static void setCaptchaSolver(CaptchaSolver captchaSolver) {
+        CaptchaController.captchaSolver = captchaSolver;
+    }
+
+    public static CaptchaSolver getCaptchaSolver() {
+        return captchaSolver;
+    }
+
     private final String    methodname;
     private final File      captchafile;
     private final String    explain;
@@ -41,7 +51,17 @@ public class CaptchaController {
     /**
      * When the plugin calling this contgroller has been initiated
      */
-    private long            initTime;
+    private final long      initTime;
+
+    public CaptchaController(long initTime, final String host, final ImageIcon icon, final String method, final File file, final String suggest, final String explain) {
+        this.host = host;
+        this.icon = icon;
+        this.methodname = method;
+        this.captchafile = file;
+        this.explain = explain;
+        this.suggest = suggest;
+        this.initTime = initTime;
+    }
 
     public String getMethodname() {
         return methodname;
@@ -71,17 +91,6 @@ public class CaptchaController {
         return initTime;
     }
 
-    public CaptchaController(long initTime, final String host, final ImageIcon icon, final String method, final File file, final String suggest, final String explain) {
-        this.host = host;
-        this.icon = icon;
-        this.methodname = method;
-        this.captchafile = file;
-        this.explain = explain;
-        this.suggest = suggest;
-        this.initTime = initTime;
-
-    }
-
     /**
      * Returns if the method is enabled.
      * 
@@ -93,7 +102,7 @@ public class CaptchaController {
 
     public String getCode(final int flag) {
 
-        if (!hasMethod()) { return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? null : showDialog(flag, suggest); }
+        if (!hasMethod()) { return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? null : addCaptchaToQueue(flag, suggest); }
 
         final JAntiCaptcha jac = new JAntiCaptcha(methodname);
         try {
@@ -103,7 +112,7 @@ public class CaptchaController {
             String captchaCode = jac.checkCaptcha(captchafile, captcha);
             if (jac.isExtern()) {
                 if ((flag & UserIO.NO_USER_INTERACTION) == 0 && captchaCode == null || captchaCode.trim().length() == 0) {
-                    captchaCode = showDialog(flag, suggest);
+                    captchaCode = addCaptchaToQueue(flag, suggest);
                 }
                 return captchaCode;
             }
@@ -124,7 +133,7 @@ public class CaptchaController {
             }
 
             if (vp > SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 95)) {
-                return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? captchaCode : showDialog(flag, captchaCode);
+                return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? captchaCode : addCaptchaToQueue(flag, captchaCode);
             } else {
                 return captchaCode;
             }
@@ -133,8 +142,8 @@ public class CaptchaController {
         }
     }
 
-    private String showDialog(final int flag, final String def) {
+    private String addCaptchaToQueue(final int flag, final String def) {
         return CaptchaDialogQueue.getInstance().addWait(new CaptchaDialogQueueEntry(this, flag, def));
-
     }
+
 }

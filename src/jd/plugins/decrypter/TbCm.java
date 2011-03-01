@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -321,9 +320,8 @@ public class TbCm extends PluginForDecrypt {
                     }
                 }
 
-                for (final Iterator<Entry<jd.plugins.decrypter.TbCm.DestinationFormat, ArrayList<Info>>> it = this.possibleconverts.entrySet().iterator(); it.hasNext();) {
-                    final Entry<jd.plugins.decrypter.TbCm.DestinationFormat, ArrayList<Info>> next = it.next();
-                    final jd.plugins.decrypter.TbCm.DestinationFormat convertTo = next.getKey();
+                for (final Entry<DestinationFormat, ArrayList<Info>> next : this.possibleconverts.entrySet()) {
+                    final DestinationFormat convertTo = next.getKey();
                     // create a package, for each quality.
                     final FilePackage filePackage = FilePackage.getInstance();
                     filePackage.setName("YouTube " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");

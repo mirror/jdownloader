@@ -8,7 +8,6 @@ import jd.utils.locale.JDL;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -16,13 +15,9 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
 
-    public String getHost() {
-        return captchaController.getHost();
-    }
-
-    private CaptchaController captchaController;
-    private int               flag;
-    private String            def;
+    private final CaptchaController captchaController;
+    private final int               flag;
+    private final String            def;
 
     public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, String def) {
         this.captchaController = captchaController;
@@ -30,20 +25,22 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         this.def = def;
     }
 
-    public boolean handleException(RuntimeException e) {
-        Log.exception(e);
-        return true;
+    public String getHost() {
+        return captchaController.getHost();
     }
 
     protected String run() {
+        if (CaptchaController.getCaptchaSolver() != null) {
+            String result = CaptchaController.getCaptchaSolver().solveCaptcha(captchaController.getHost(), captchaController.getIcon(), captchaController.getCaptchafile(), def, captchaController.getExplain());
+            if (result != null && result.length() > 0) return result;
+        }
+
         UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         try {
             return UserIO.getInstance().requestCaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, captchaController.getHost(), captchaController.getIcon(), captchaController.getCaptchafile(), def, captchaController.getExplain());
         } catch (DialogNoAnswerException e) {
             if (!e.isCausedByTimeout()) {
-                String[] options = new String[] { JDL.L("captchacontroller.cancel.dialog.allorhost.next", "Show all further pending Captchas"), JDL.LF("captchacontroller.cancel.dialog.allorhost.cancelhost", "Do not show pending Captchas for %s", captchaController.getHost()), JDL.L("captchacontroller.cancel.dialog.allorhost.all", "Cancel all pending Captchas"),
-
-                };
+                String[] options = new String[] { JDL.L("captchacontroller.cancel.dialog.allorhost.next", "Show all further pending Captchas"), JDL.LF("captchacontroller.cancel.dialog.allorhost.cancelhost", "Do not show pending Captchas for %s", captchaController.getHost()), JDL.L("captchacontroller.cancel.dialog.allorhost.all", "Cancel all pending Captchas") };
                 try {
                     int defSelection = JSonStorage.getPlainStorage("CaptchaController").get("lastCancelOption", 0);
 
@@ -60,9 +57,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                         CaptchaDialogQueue.getInstance().blockAll();
                         JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 2);
                         break;
-
                     }
-
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
                 } catch (DialogCanceledException e1) {
@@ -71,11 +66,9 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                     e1.printStackTrace();
                 }
             }
-
         }
         UserIO.setCountdownTime(-1);
         return null;
-
     }
 
     public long getInitTime() {

@@ -7,11 +7,11 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -58,14 +58,12 @@ public class RayFileCom extends PluginForHost {
 
         String cookie_key = null;
         String cookie_value = null;
-        String cookie_path = null;
         String cookie_host = null;
         regex = "setCookie\\('(.*?)', '(.*?)', (.*?), '(.*?)', '(.*?)'.*?\\)";
 
         p = Pattern.compile(regex);
         cookie_key = ajax.getRegex(p).getMatch(0);
         cookie_value = ajax.getRegex(p).getMatch(1);
-        cookie_path = ajax.getRegex(p).getMatch(3);
         cookie_host = ajax.getRegex(p).getMatch(4);
 
         this.br.setCookie(cookie_host, cookie_key, cookie_value);

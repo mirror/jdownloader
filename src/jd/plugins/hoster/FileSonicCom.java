@@ -42,10 +42,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.(com|net|jp|tw)/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
-    private static final Object LOCK = new Object();
-    private static long LAST_FREE_DOWNLOAD = 0l;
-    private static String geoDomain = null;
-    private static String geoDomainEnd = null;
+    private static final Object LOCK               = new Object();
+    private static long         LAST_FREE_DOWNLOAD = 0l;
+    private static String       geoDomain          = null;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -78,14 +77,7 @@ public class FileSonicCom extends PluginForHost {
         } catch (final Throwable e) {
             geoDomain = defaultDomain;
         }
-        geoDomainEnd = new Regex(geoDomain, ".*?filesonic(\\..+)($|/)").getMatch(0);
         return geoDomain;
-    }
-
-    private synchronized String getDomainEnd() {
-        if (geoDomainEnd != null) return geoDomainEnd;
-        getDomain();
-        return geoDomainEnd;
     }
 
     private synchronized String getDomainAPI() {
