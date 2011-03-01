@@ -80,17 +80,7 @@ public class BitLoadCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL() + "?c=free");
-        String dllink = br.getRegex("bis die Datei bereitgestellt wird!</div>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(http://ms\\d+\\.mystream\\.to/file-\\d+/[A-Za-z0-9]+/.*?)\"").getMatch(0);
-            if (dllink == null) {
-                // For Streamlinks
-                dllink = br.getRegex("var url = \\'(http://.*?)\\'").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("\\'(http://ms\\d+\\.mystream\\.to/file-\\d+/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
-                }
-            }
-        }
+        String dllink = getDllink();
         if (dllink == null) {
             logger.warning("The dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -103,6 +93,21 @@ public class BitLoadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDllink() {
+        String dllink = br.getRegex("bis die Datei bereitgestellt wird!</div>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://ms\\d+\\.mystream\\.to/file-\\d+/[A-Za-z0-9]+/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                // For Streamlinks
+                dllink = br.getRegex("var url = \\'(http://.*?)\\'").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\\'(http://ms\\d+\\.mystream\\.to/file-\\d+/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
+                }
+            }
+        }
+        return dllink;
     }
 
     private void login(Account account) throws Exception {
@@ -146,7 +151,10 @@ public class BitLoadCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         br.getPage(link.getDownloadURL() + "?c=premium");
         String dllink = br.getRegex("bis die Datei bereitgestellt wird\\!</div>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://bl\\d+\\.bitload\\.com/file-\\d+/[A-Za-z0-9]+/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://bl\\d+\\.bitload\\.com/file-\\d+/[A-Za-z0-9]+/.*?)\"").getMatch(0);
+            if (dllink == null) dllink = getDllink();
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
