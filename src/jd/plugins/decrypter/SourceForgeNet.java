@@ -51,10 +51,14 @@ public class SourceForgeNet extends PluginForDecrypt {
                 link = br.getRegex("Please use this <a href=\"(.*?)\"").getMatch(0);
                 if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
             } else {
-                String continuelink = br.getRegex("\\}\" href=\"(http://sourceforge\\.net/projects/.*?/download)\"").getMatch(0);
+                String continuelink = br.getRegex("href=\"(http://sourceforge\\.net/projects/[A-Za-z0-9_-]+/files/.*?/download)\"").getMatch(0);
                 if (continuelink == null) return null;
                 br.getPage(continuelink);
-                link = new Regex(Encoding.htmlDecode(br.toString()), "Please use this <a href=\"(http://.*?)\"").getMatch(0);
+                if (br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
+                    logger.info("Servererror for link: " + parameter);
+                    throw new DecrypterException(JDL.L("plugins.decrypt.sourceforgenet.errormsg.servererror", "A server error happened, please try again or check in browser!"));
+                }
+                link = new Regex(Encoding.htmlDecode(br.toString()), "Please use this([\t\n\r ]+)?<a href=\"(http://.*?)\"").getMatch(1);
             }
             if (link == null) return null;
             String urlPart = new Regex(link, "(http://downloads\\.sourceforge\\.net/project/.*?)http://sourceforge\\.net/").getMatch(0);

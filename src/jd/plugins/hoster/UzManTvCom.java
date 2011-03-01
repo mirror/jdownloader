@@ -24,11 +24,11 @@ import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uzmantv.com" }, urls = { "http://(www\\.)?uzmantv\\.com/[a-z0-9-]+" }, flags = { 0 })
 public class UzManTvCom extends PluginForHost {
@@ -124,7 +124,8 @@ public class UzManTvCom extends PluginForHost {
         String jsOne = br.getRegex("</div><script type=\"text/javascript\">(.*?)</script>").getMatch(0);
         String securedStuff = br.getRegex("var tok = (.*?);").getMatch(0);
         String ext = br.getRegex("ext=([a-z0-9]{2,5})\\&").getMatch(0);
-        if (securedStuff == null || jsOne == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (ext == null) ext = "flv";
+        if (securedStuff == null || jsOne == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         securedStuff = execJS(jsOne + securedStuff);
         return "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + securedStuff + "." + ext;
     }
