@@ -42,7 +42,6 @@ import javax.swing.WindowConstants;
 
 import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
-import jd.config.Configuration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
@@ -228,7 +227,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     return null;
                 }
             }.start();
-            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false) && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
+            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                 /* autostart downloads when no autoupdate is enabled */
                 JDController.getInstance().autostartDownloadsonStartup();
             }

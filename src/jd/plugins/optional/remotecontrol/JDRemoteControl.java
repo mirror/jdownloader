@@ -39,12 +39,13 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 7)
 public class JDRemoteControl extends PluginOptional {
 
-    private static final String PARAM_PORT = "PORT";
-    private static final String PARAM_ENABLED = "ENABLED";
+    private static final String    PARAM_PORT    = "PORT";
+    private static final String    PARAM_ENABLED = "ENABLED";
+
     private final SubConfiguration subConfig;
 
-    private HttpServer server;
-    private MenuAction activate;
+    private HttpServer             server;
+    private MenuAction             activate;
 
     public JDRemoteControl(final PluginWrapper wrapper) {
         super(wrapper);

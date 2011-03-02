@@ -44,6 +44,7 @@ import jd.CPluginWrapper;
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
+import jd.Main;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
@@ -63,6 +64,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
+import org.jdownloader.update.JDUpdater;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -260,12 +262,13 @@ public class JDUtilities {
             return JD_HOME;
         } else {
             Application.setApplication(".jd_home");
-            URL ressource = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class");
-            /* we have 2 different Main classes */
+            // do not use hardcoded classpathes if possible
+            URL ressource = Thread.currentThread().getContextClassLoader().getResource(Main.class.getName().replace(".", "/") + ".class");
+
             if (ressource != null) {
                 JD_HOME = new File(Application.getRoot(jd.Main.class));
             } else {
-                JD_HOME = new File(Application.getRoot(jd.update.Main.class));
+                throw new NullPointerException("jd/Main.class not found");
             }
             if (!JD_HOME.exists()) {
                 JD_HOME.mkdirs();
@@ -282,10 +285,9 @@ public class JDUtilities {
     public static String getJDTitle() {
         final StringBuilder ret = new StringBuilder("JDownloader");
 
-        final int i = WebUpdate.getWaitingUpdates();
-        if (i > 0) {
+        if (JDUpdater.getInstance().getWaitingUpdates() > 0) {
             ret.append(new char[] { ' ', '(' });
-            ret.append(JDL.LF("gui.mainframe.title.updatemessage2", "%s Updates available", i));
+            ret.append(JDL.LF("gui.mainframe.title.updatemessage2", "%s Updates available", JDUpdater.getInstance().getWaitingUpdates()));
             ret.append(')');
         }
 

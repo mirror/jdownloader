@@ -59,11 +59,11 @@ import jd.pluginloader.VirtualDecrypterClass;
 import jd.pluginloader.VirtualHosterClass;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.updater.UpdaterConstants;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.Application;
 import org.appwork.utils.ShutDownHooksQueue;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -158,6 +158,7 @@ public class JDInit {
                     if (!vc.isValid()) {
                         continue;
                     }
+
                     // initclass. create Hostwrapper
                     vc.initWrapper();
 
@@ -180,11 +181,7 @@ public class JDInit {
     }
 
     public void checkUpdate() {
-        if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDIO.readFileToString(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
-            UserIO.getInstance().requestTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.readFileToString(JDUtilities.getResourceFile("webcheck.tmp")));
-            JDUtilities.getResourceFile("webcheck.tmp").delete();
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
-        }
+
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
             final String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
             if (!old.equals(JDUtilities.getRevision())) {

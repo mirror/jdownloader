@@ -34,13 +34,12 @@ import jd.gui.userio.DummyFrame;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.nutils.io.JDIO;
-import jd.updater.UpdaterConstants;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.JSonStorage;
+import org.jdownloader.update.JDUpdater;
 
 public class AboutDialog extends JDialog {
 
@@ -53,13 +52,13 @@ public class AboutDialog extends JDialog {
         JLabel lbl = new JLabel("JDownloader");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
-        String branch = JSonStorage.getPlainStorage("WEBUPDATE").get(UpdaterConstants.BRANCHINUSE, (String) null);
-
-        final String version;
-        if (branch == null) {
-            version = "JDownloader Build " + JDUtilities.getRevision();
-        } else {
+        String branch = null;
+        String version = null;
+        try {
+            branch = JDUpdater.getInstance().getBranch().getName();
             version = "JDownloader -" + branch + "- Build " + JDUtilities.getRevision();
+        } catch (Throwable e2) {
+            version = "JDownloader Build " + JDUtilities.getRevision();
         }
 
         JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
@@ -81,15 +80,17 @@ public class AboutDialog extends JDialog {
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
+        StringBuilder sb = new StringBuilder();
+        sb.append(version).append("\r\n");
+        sb.append("Java Vendor: ").append(System.getProperty("java.vendor")).append("\r\n");
+        sb.append("Java Version: ").append(System.getProperty("java.version"));
 
+        final String info = sb.toString();
         JButton btn = Factory.createButton(JDL.L(JDL_PREFIX + "copy", "Copy"), JDTheme.II("gui.icons.copy", 16, 16), new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(version).append("\r\n");
-                sb.append("Java Vendor: ").append(System.getProperty("java.vendor")).append("\r\n");
-                sb.append("Java Version: ").append(System.getProperty("java.version"));
-                ClipboardHandler.getClipboard().copyTextToClipboard(sb.toString());
+
+                ClipboardHandler.getClipboard().copyTextToClipboard(info);
             }
 
         });

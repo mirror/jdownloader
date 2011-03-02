@@ -21,8 +21,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
@@ -46,11 +46,11 @@ import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
@@ -437,11 +437,6 @@ public class Serverhandler implements Handler {
             Reconnecter.getInstance().forceReconnect();
         } else if (requestUrl.matches(".*?/action/(force)?update")) {
             // Do Perform webupdate
-
-            if (requestUrl.matches(".+/action/forceupdate")) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true);
-                JSonWrapper.get("WEBUPDATE").setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
-            }
 
             WebUpdate.doUpdateCheck(true);
             response.addContent("Do Webupdate...");

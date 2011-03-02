@@ -95,8 +95,6 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD = "CREATE_SUBFOLDER_BEFORE_DOWNLOAD";
 
-    public static final String PARAM_WEBUPDATE_AUTO_RESTART           = "WEBUPDATE_AUTO_RESTART";
-
     public static final String PARAM_WEBUPDATE_DISABLE                = "WEBUPDATE_DISABLE";
 
     private static final long  serialVersionUID                       = -2709887320616014389L;

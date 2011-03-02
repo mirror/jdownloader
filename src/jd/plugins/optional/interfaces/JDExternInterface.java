@@ -36,7 +36,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
@@ -47,13 +46,13 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.update.WebUpdater;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.update.JDUpdater;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -236,9 +235,8 @@ public class JDExternInterface extends PluginOptional {
                     }.waitForEDT();
 
                     if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
-                        JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
-                        JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
-                        JSonWrapper.get("WEBUPDATE").save();
+                        JDUpdater.getInstance().setBranchInUse(branch);
+
                         WebUpdate.doUpdateCheck(false);
                     }
 

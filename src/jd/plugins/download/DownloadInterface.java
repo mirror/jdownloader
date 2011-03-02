@@ -24,8 +24,8 @@ import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Map;
-import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
@@ -47,10 +47,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.updater.UpdaterConstants;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;

@@ -18,10 +18,9 @@ package jd;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.dialog.InstallerDialog;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
-import jd.update.WebUpdater;
 
 import org.appwork.storage.JacksonStorageChest;
+import org.jdownloader.update.JDUpdater;
 
 /**
  * Der Installer erscheint nur beim ersten mal Starten der Webstartversion und
@@ -32,8 +31,9 @@ import org.appwork.storage.JacksonStorageChest;
  */
 public class Installer {
 
-    private boolean     aborted = false;
-    private JSonWrapper webConfig;
+    private boolean aborted = false;
+
+    // private JSonWrapper webConfig;
 
     public Installer() {
         if (!InstallerDialog.showDialog(null)) {
@@ -44,9 +44,9 @@ public class Installer {
             try {
                 /* read default values from jddefaults */
                 JacksonStorageChest defaults = new JacksonStorageChest("jddefaults", true);
-                webConfig = JSonWrapper.get("WEBUPDATE");
-                webConfig.setProperty(WebUpdater.PARAM_BRANCH, defaults.get(WebUpdater.PARAM_BRANCH, null));
-                webConfig.save();
+
+                JDUpdater.getInstance().setBranchInUse(defaults.get(JDUpdater.PARAM_BRANCH, (String) null));
+
             } catch (final Throwable e) {
                 JDLogger.exception(e);
             }

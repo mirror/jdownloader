@@ -46,13 +46,11 @@ import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.OutdatedParser;
-import jd.update.WebUpdater;
 import jd.utils.CheckJava;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -62,6 +60,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
+import org.jdownloader.update.JDUpdater;
 
 /**
  * @author JD-Team
@@ -72,7 +71,8 @@ public class Main {
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
 
     private static boolean          Init_Complete              = false;
-    private static JSonWrapper      webConfig;
+
+    // private static JSonWrapper webConfig;
 
     /**
      * Sets special Properties for MAC
@@ -277,20 +277,17 @@ public class Main {
         for (int i = 0; i < args.length; i++) {
 
             if (args[i].equalsIgnoreCase("-branch")) {
-                webConfig = JSonWrapper.get("WEBUPDATE");
-                if (args[i + 1].equalsIgnoreCase("reset")) {
-                    webConfig.setProperty(WebUpdater.PARAM_BRANCH, null);
-                    if (webConfig.hasChanges()) {
-                        webConfig.save();
-                        Main.LOG.info("Switching back to default JDownloader branch");
-                    }
-                } else {
 
-                    webConfig.setProperty(WebUpdater.PARAM_BRANCH, args[i + 1]);
-                    if (webConfig.hasChanges()) {
-                        webConfig.save();
-                        Main.LOG.info("Switching to " + args[i + 1] + " JDownloader branch");
-                    }
+                if (args[i + 1].equalsIgnoreCase("reset")) {
+                    JDUpdater.getInstance().setBranchInUse(null);
+
+                    Main.LOG.info("Switching back to default JDownloader branch");
+
+                } else {
+                    JDUpdater.getInstance().setBranchInUse(args[i + 1]);
+
+                    Main.LOG.info("Switching to " + args[i + 1] + " JDownloader branch");
+
                 }
 
                 i++;
@@ -515,21 +512,21 @@ public class Main {
          */
         Main.LOG.info("update start");
 
-        // new Thread("Update and dynamics") {
-        // @Override
-        // public void run() {
-        // try {
-        // Thread.sleep(5000);
-        // WebUpdate.doUpdateCheck(false);
-        //
-        // Main.loadDynamics();
-        //
-        // WebUpdate.dynamicPluginsFinished();
-        // } catch (final Exception e) {
-        // e.printStackTrace();
-        // }
-        // }
-        // }.start();
+        new Thread("Update and dynamics") {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(5000);
+                    // WebUpdate.doUpdateCheck(false);
+
+                    Main.loadDynamics();
+                    //
+                    // WebUpdate.dynamicPluginsFinished();
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
 
         Main.LOG.info("update end");
     }
