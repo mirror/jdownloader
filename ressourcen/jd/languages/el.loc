@@ -1351,6 +1351,7 @@ plugins.decrypt.general.captchacodewrong = Λάθος captcha
 plugins.decrypt.jamendo = Δημιουργία ενός υποφακέλου για κάθε άλμπουμ
 plugins.decrypt.jamendoalbum = Προτίμηση ολόκληρου άλμπουμ ως ZIP
 plugins.decrypt.rslayer.captchaexpired = Οι κωδικοί Captcha είναι πολύ παλιοί.
+plugins.decrypt.sourceforgenet.errormsg.servererror = Σφάλμα Εξυπηρετήτη. Προσπαθήστε ξανά αργότερα.
 plugins.decrypter.frznromsn.captchadescription = Παρακαλώ πατήστε στον ανοικτό κύκλο!
 plugins.decrypter.linkstoreus.captchadescription = Παρακαλώ πατήστε στον ανοικτό κύκλο!
 plugins.decrypter.urtcutcom.badpassword = Πληκτρολογήσατε λάθος κωδικό 5 φορές. Παρακαλώ ελέγξτε τα δεδομένα σας.
