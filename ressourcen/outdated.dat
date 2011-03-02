@@ -147,7 +147,6 @@ tools/Windows/kikin/KikinInstaller_1_11_9_jdownloader.setup
 jd/plugins/hoster/BitRoadNet.class
 jd/plugins/hoster/File2UploadNet.class
 jd/plugins/hoster/FileUploadnet.class
-jd/plugins/hoster/FourFreeLoadNet.class
 jd/plugins/hoster/QuickUploadNet.class
 jd/plugins/decrypter/MrrrCrtrCm.class
 jd/plugins/hoster/Odsiebiecom.class
@@ -547,3 +546,8 @@ jd/plugins/hoster/ThreeHundredAndSixtyFiveFilesCom.class
 jd/plugins/hoster/UpAvagaBy.class
 jd/plugins/hoster/GigaFoundationDe.class
 jd/plugins/decrypter/GigaFoundationDeDecrypter.class
+jd/plugins/hoster/LikeFilesCom.class
+jd/plugins/hoster/MangoShareCom.class
+jd/plugins/hoster/PingHosterCom.class
+jd/plugins/hoster/GigaFoundationDe.class
+jd/plugins/hoster/GigaFoundationDe.class
