@@ -28,16 +28,16 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -469,6 +469,12 @@ public class CraMitIn extends PluginForHost {
             dllink = br.getRegex(">This download will be available for your IP for the next 24 hours\\.</font></h3><BR>.*?ACTION=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(http://ns\\d+\\.ovh\\.net:\\d+/d/[a-z0-9]+/.+)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("doesn\\'t, please <span class=green><b><a href=\"(http://.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("<meta http-equiv=REFRESH CONTENT=\"\\d+; url=(http://.*?)\"").getMatch(0);
+                    }
+                }
             }
         }
         return dllink;
