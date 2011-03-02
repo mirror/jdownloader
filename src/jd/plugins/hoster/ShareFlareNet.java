@@ -44,8 +44,8 @@ public class ShareFlareNet extends PluginForHost {
         enablePremium("http://shareflare.net/page/premium.php");
     }
 
-    private static final String NEXTPAGE             = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
-    private static final String LINKFRAMEPART        = "tmpl/tmpl_frame_top\\.php\\?link=";
+    private static final String NEXTPAGE = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
+    private static final String LINKFRAMEPART = "tmpl/tmpl_frame_top\\.php\\?link=";
     private static final String FREEDOWNLOADPOSSIBLE = "download4";
 
     @Override
@@ -148,7 +148,8 @@ public class ShareFlareNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("the dllink doesn't seem to be a file, following the connection...");
             br.followConnection();
-            if (br.containsHTML("title>Error</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);
+            if (br.containsHTML("title>Error</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
