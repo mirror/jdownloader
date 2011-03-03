@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://[\\w\\.]*?img[0-9]+\\.imagevenue\\.com/img\\.php.*?image=.+" }, flags = { 0 })
 public class ImageVenueCom extends PluginForHost {
@@ -52,7 +52,7 @@ public class ImageVenueCom extends PluginForHost {
         String server = new Regex(link.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
         finallink = "http://" + server + finallink;
         String ending = new Regex(finallink, "imagevenue\\.com.*?\\.(.{3,4}$)").getMatch(0);
-        String filename0 = new Regex(finallink, "imagevenue\\.com/.*?/.*?/\\d+_(.*?_[0-9]{2,})_").getMatch(0);
+        String filename0 = new Regex(finallink, "imagevenue\\.com/.*?/.*?/\\d+.*?_(.*?)($|\\..{2,4}$)").getMatch(0);
         if (ending != null && filename0 != null) filename = filename0 + "." + ending;
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         URLConnectionAdapter con = null;
