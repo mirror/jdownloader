@@ -362,10 +362,18 @@ public class FileServeCom extends PluginForHost {
     private HashMap<String, String> loginAPI(final Browser useBr, final Account account) throws IOException, PluginException {
         Browser br = useBr;
         if (br == null) br = new Browser();
+        String username = account.getUser();
+        String password = account.getPass();
+        if (username != null && username.length() > 20) {
+            username = username.substring(0, 20);
+        }
+        if (password != null && password.length() > 20) {
+            password = password.substring(0, 20);
+        }
         try {
             br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; MS Web Services Client Protocol 2.0.50727.4952)");
             br.getHeaders().put("SOAPAction", "\"urn:FileserveAPIWebServiceAction\"");
-            br.postPage("http://api.fileserve.com/api/fileserveAPIServer.php", "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:tns=\"urn:FileserveAPI\" xmlns:types=\"urn:FileserveAPI/encodedTypes\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body soap:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><tns:login><username xsi:type=\"xsd:string\">" + account.getUser() + "</username><password xsi:type=\"xsd:string\">" + account.getPass() + "</password></tns:login></soap:Body></soap:Envelope>");
+            br.postPage("http://api.fileserve.com/api/fileserveAPIServer.php", "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:tns=\"urn:FileserveAPI\" xmlns:types=\"urn:FileserveAPI/encodedTypes\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body soap:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><tns:login><username xsi:type=\"xsd:string\">" + username + "</username><password xsi:type=\"xsd:string\">" + password + "</password></tns:login></soap:Body></soap:Envelope>");
         } finally {
             br.getHeaders().remove("SOAPAction");
         }
