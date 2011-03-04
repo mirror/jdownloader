@@ -134,14 +134,14 @@ public class Lnksvn extends PluginForDecrypt {
         final String parameter = param.toString();
         // http://linksave.in/21341715574afdcd07e69d5
         final String folderID = new Regex(parameter, "linksave\\.in/(view.php\\?id=)?([\\w]+)").getMatch(1);
-        if ((folderID != null) && Lnksvn.isExternInterfaceActive() && SubConfiguration.getConfig("LINKGRABBER").getBooleanProperty("PARAM_USE_CNL2", true)) {
+        if ((folderID != null) && isExternInterfaceActive() && SubConfiguration.getConfig("LINKGRABBER").getBooleanProperty("PARAM_USE_CNL2", true)) {
             final Browser cnlcheck = this.br.cloneBrowser();
             cnlcheck.getPage("http://linksave.in/cnl.php?id=" + folderID);
             // CNL Dummy
-            if (cnlcheck.toString().trim().equals("1") && ((System.currentTimeMillis() - Lnksvn.LATEST_OPENED_CNL_TIME) > 60 * 1000) && !Lnksvn.CNL_URL_MAP.containsKey(parameter)) {
-                Lnksvn.LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
+            if (cnlcheck.toString().trim().equals("1") && ((System.currentTimeMillis() - LATEST_OPENED_CNL_TIME) > 60 * 1000) && !CNL_URL_MAP.containsKey(parameter)) {
+                LATEST_OPENED_CNL_TIME = System.currentTimeMillis();
                 LocalBrowser.openDefaultURL(new URL(parameter + "?jd=1"));
-                Lnksvn.CNL_URL_MAP.put(parameter, Boolean.TRUE);
+                CNL_URL_MAP.put(parameter, Boolean.TRUE);
                 Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
                 return decryptedLinks;
             }
@@ -278,6 +278,10 @@ public class Lnksvn extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
+            if (br.getRegex("cnl\\.jpg").matches() && !isExternInterfaceActive()) {
+                Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("gui.config.linkgrabber.cnl2", "Enable Click'n'Load Support"));
+                return decryptedLinks;
+            }
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
