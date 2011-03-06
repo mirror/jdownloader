@@ -19,21 +19,25 @@ package jd.plugins.hoster;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-upload.net" }, urls = { "((http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html)|(http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html))|(http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)))" }, flags = { 0 })
 public class FileUploadDotnet extends PluginForHost {
     static private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
 
-    static private final Pattern PAT_VIEW = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_VIEW     = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
 
-    static private final Pattern PAT_Member = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_Member   = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
+    private final static String  UA           = RandomUserAgent.generate();
 
     public FileUploadDotnet(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,6 +52,7 @@ public class FileUploadDotnet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
+        br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(false);
         try {
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
@@ -58,7 +63,7 @@ public class FileUploadDotnet extends PluginForHost {
                 if (!br.containsHTML("Datei existiert nicht auf unserem Server")) {
                     String filename = br.getRegex("<h1>Download \"(.*?)\"</h1>").getMatch(0);
                     String filesize;
-                    if ((filesize = br.getRegex("e:</b></td><td>(.*?)Kbyte<td>").getMatch(0)) != null) {
+                    if ((filesize = br.getRegex("e:</b></td><td>(.*?)Kbyte</td>").getMatch(0)) != null) {
                         downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
@@ -94,14 +99,16 @@ public class FileUploadDotnet extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
+        br.getHeaders().put("User-Agent", UA);
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
             /* DownloadFiles */
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getForm(0));
+            Form form = br.getForm(0);
+            form.setAction(Encoding.htmlDecode(form.getAction()));
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
             String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadurl);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadurl);
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

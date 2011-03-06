@@ -19,18 +19,18 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.net/(shared/static/|rssdownload/).*)|(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
 public class BoxNet extends PluginForHost {
-    private static final String TOS_LINK = "https://www.box.net/static/html/terms.html";
+    private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
 
-    private static final String OUT_OF_BANDWITH_MSG = "out of bandwidth";
+    private static final String OUT_OF_BANDWITH_MSG    = "out of bandwidth";
     private static final String REDIRECT_DOWNLOAD_LINK = "http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
 
     public BoxNet(PluginWrapper wrapper) {
@@ -45,9 +45,7 @@ public class BoxNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         // setup referer and cookies for single file downloads
-        if (link.getDownloadURL().matches(REDIRECT_DOWNLOAD_LINK)) {
-            br.getPage(link.getBrowserUrl());
-        }
+        requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -64,26 +62,39 @@ public class BoxNet extends PluginForHost {
         if (parameter.getDownloadURL().matches(REDIRECT_DOWNLOAD_LINK)) {
             br.getPage(parameter.getBrowserUrl());
         }
-        URLConnectionAdapter urlConnection = br.openGetConnection(parameter.getDownloadURL());
-        if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
+        URLConnectionAdapter urlConnection = null;
+        try {
+            urlConnection = br.openGetConnection(parameter.getDownloadURL());
+            if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
+                urlConnection.disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!urlConnection.isContentDisposition()) {
+                br.followConnection();
+                if (br.containsHTML(OUT_OF_BANDWITH_MSG)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                String originalpage = br.getRegex("please visit: <a href=\"(.*?)\"").getMatch(0);
+                if (originalpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(originalpage);
+                String dlpage = br.getRegex("href=\"(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.*?)\"").getMatch(0);
+                if (dlpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dlpage = dlpage.replace("amp;", "");
+                urlConnection = br.openGetConnection(dlpage);
+            }
+            String name = urlConnection.getHeaderField("Content-Disposition");
+            if (name != null) {
+                /* workaround for old core */
+                name = name.replaceAll("filename=.*?;", "");
+                parameter.setFinalFileName(Plugin.getFileNameFromDispositionHeader(name));
+            }
+            parameter.setDownloadSize(urlConnection.getLongContentLength());
             urlConnection.disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                urlConnection.disconnect();
+            } catch (final Throwable e) {
+            }
         }
-        if (!urlConnection.isContentDisposition()) {
-            br.followConnection();
-            if (br.containsHTML(OUT_OF_BANDWITH_MSG)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            String originalpage = br.getRegex("please visit: <a href=\"(.*?)\"").getMatch(0);
-            if (originalpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(originalpage);
-            String dlpage = br.getRegex("href=\"(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.*?)\"").getMatch(0);
-            if (dlpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dlpage = dlpage.replace("amp;", "");
-            urlConnection = br.openGetConnection(dlpage);
-        }
-        parameter.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
-        parameter.setDownloadSize(urlConnection.getLongContentLength());
-        urlConnection.disconnect();
-        return AvailableStatus.TRUE;
     }
 
     @Override

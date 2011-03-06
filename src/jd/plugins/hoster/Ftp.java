@@ -133,7 +133,7 @@ public class Ftp extends PluginForHost {
         try {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
-            final String filePath = new Regex(ftpurl, "://.*?/(.+)").getMatch(0);
+            String filePath = new Regex(ftpurl, "://.*?/(.+)").getMatch(0);
             String name = null;
             ftp.connect(url);
             if (oldStyle()) {
@@ -141,6 +141,7 @@ public class Ftp extends PluginForHost {
                  * old style, list folder content and then change into folder to
                  * retrieve the file
                  */
+                if (!filePath.contains("/")) filePath = "/" + filePath;
                 String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
                 if (list != null) {
                     /* list command worked */

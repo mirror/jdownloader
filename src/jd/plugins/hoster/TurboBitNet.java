@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -38,6 +39,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 //When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://[\\w\\.]*?(filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|sharezoid\\.com|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com)/(.*?\\.html|download/free/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
+
+    private final static String UA = RandomUserAgent.generate();
 
     public TurboBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,6 +65,7 @@ public class TurboBitNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", UA);
         br.getHeaders().put("Referer", downloadLink.getDownloadURL());
         // To get the english version of the page which then usually redirects
         // us to our link again!
@@ -106,7 +110,7 @@ public class TurboBitNet extends PluginForHost {
         String wait2 = br.getRegex("id=\\'timeout\\'>(\\d+)</span>").getMatch(0);
         if (wait2 == null) wait2 = br.getRegex("limit: (\\d+),").getMatch(0);
         if (wait2 != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait2) * 1001l);
-        Form captchaform = br.getForm(3);
+        Form captchaform = br.getForm(2);
         if (captchaform == null) {
             logger.warning("captchaform equals null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -164,6 +168,7 @@ public class TurboBitNet extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", UA);
         br.setCookie("http://turbobit.net/", "lang", "english");
         br.setCustomCharset("UTF-8");
         br.getPage("http://turbobit.net/en");

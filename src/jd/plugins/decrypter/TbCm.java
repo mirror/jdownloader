@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -59,7 +60,7 @@ public class TbCm extends PluginForDecrypt {
 
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
 
-        private String text;
+        private String   text;
         private String[] ext;
 
         DestinationFormat(final String text, final String[] ext) {
@@ -84,20 +85,20 @@ public class TbCm extends PluginForDecrypt {
 
     static class Info {
         public String link;
-        public long size;
-        public int fmt;
+        public long   size;
+        public int    fmt;
         public String desc;
     }
 
-    private final Pattern StreamingShareLink = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
+    private final Pattern                       StreamingShareLink  = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
 
-    static public final Pattern YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    static public final Pattern                 YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
-    HashMap<DestinationFormat, ArrayList<Info>> possibleconverts = null;
+    HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
 
-    private static final Logger LOG = JDLogger.getLogger();
+    private static final Logger                 LOG                 = JDLogger.getLogger();
 
-    private static final String TEMP_EXT = ".tmp$";
+    private static final String                 TEMP_EXT            = ".tmp$";
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -191,7 +192,14 @@ public class TbCm extends PluginForDecrypt {
             boolean prem = false;
             final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
             if (accounts != null && accounts.size() != 0) {
-                prem = this.login(accounts.get(0));
+                Iterator<Account> it = accounts.iterator();
+                while (it.hasNext()) {
+                    Account n = it.next();
+                    if (n.isEnabled() && n.isValid()) {
+                        prem = this.login(n);
+                        break;
+                    }
+                }
             }
 
             try {

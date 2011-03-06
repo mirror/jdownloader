@@ -90,6 +90,7 @@ public abstract class Plugin implements ActionListener {
         if (header == null) { return null; }
         final String orgheader = header;
         String contentdisposition = header;
+
         String filename = null;
         for (int i = 0; i < 2; i++) {
             if (contentdisposition.contains("filename*")) {
@@ -99,6 +100,8 @@ public abstract class Plugin implements ActionListener {
                  * RGF2aWQgR3VldHRhIC0gSnVzdCBBIExpdHRsZSBNb3JlIExvdmUgW2FMYnlsb3ZlciBYLUNsdXNpdiBSZW1peF0uTVAz
                  * ?=
                  */
+                /* remove fallback, in case RFC 2231/5987 appear */
+                contentdisposition = contentdisposition.replaceAll("filename=.*?;", "");
                 contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
                 final String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
                 if (format == null) {

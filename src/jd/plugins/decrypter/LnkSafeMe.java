@@ -50,6 +50,9 @@ public class LnkSafeMe extends PluginForDecrypt {
         br.getPage(parameter);
         if (parameter.contains("/d/")) {
             String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                finallink = br.getRegex("window.location=\"(http:.*?)\"").getMatch(0);
+            }
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
@@ -94,6 +97,9 @@ public class LnkSafeMe extends PluginForDecrypt {
             for (String dl : links) {
                 br.getPage(MAINPAGE + dl);
                 String finallink = br.getRedirectLocation();
+                if (finallink == null) {
+                    finallink = br.getRegex("window.location=\"(http:.*?)\"").getMatch(0);
+                }
                 if (finallink == null) return null;
                 decryptedLinks.add(createDownloadlink(finallink));
                 progress.increase(1);
