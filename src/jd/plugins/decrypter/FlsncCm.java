@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -14,11 +15,50 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\.com/.*?folder/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\.(com|net|jp|tw|in|it)/.*?folder/[0-9a-z]+" }, flags = { 0 })
 public class FlsncCm extends PluginForDecrypt {
+
+    private static String geoDomain = null;
 
     public FlsncCm(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private synchronized String getDomain() {
+        if (geoDomain != null) return geoDomain;
+        String defaultDomain = "http://www.filesonic.com";
+        try {
+            geoDomain = getDomainAPI();
+            if (geoDomain == null) {
+                Browser br = new Browser();
+                br.setCookie(defaultDomain, "lang", "en");
+                br.setFollowRedirects(false);
+                br.getPage(defaultDomain);
+                geoDomain = br.getRedirectLocation();
+                if (geoDomain == null) {
+                    geoDomain = defaultDomain;
+                } else {
+                    String domain = new Regex(br.getRedirectLocation(), "http://.*?(filesonic\\..*?)/").getMatch(0);
+                    geoDomain = "http://www." + domain;
+                }
+            }
+        } catch (final Throwable e) {
+            geoDomain = defaultDomain;
+        }
+        return geoDomain;
+    }
+
+    private synchronized String getDomainAPI() {
+        try {
+            Browser br = new Browser();
+            br.setFollowRedirects(true);
+            br.getPage("http://api.filesonic.com/utility?method=getFilesonicDomainForCurrentIp");
+            String domain = br.getRegex("response>.*?filesonic(\\..*?)</resp").getMatch(0);
+            if (domain != null) { return "http://www.filesonic" + domain; }
+        } catch (final Throwable e) {
+            logger.severe(e.getMessage());
+        }
+        return null;
     }
 
     @Override
@@ -27,7 +67,7 @@ public class FlsncCm extends PluginForDecrypt {
         String parameter = param.toString();
         String id = new Regex(parameter, "/(folder/[0-9a-z]+)").getMatch(0);
         if (id == null) return null;
-        parameter = "http://www.filesonic.com/en/" + id;
+        parameter = getDomain() + "/en/" + id;
         boolean failed = false;
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -36,7 +76,7 @@ public class FlsncCm extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             failed = true;
             links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\.com/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\.[a-z]{2,3}/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
         }
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
@@ -44,7 +84,7 @@ public class FlsncCm extends PluginForDecrypt {
             if (failed) {
                 if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
             } else {
-                String filename = new Regex(data, "filesonic\\.com/.*?file/.*?/(.*?)\"").getMatch(0);
+                String filename = new Regex(data, "filesonic\\.[a-z]{2,3}/.*?file/.*?/(.*?)\"").getMatch(0);
                 String filesize = new Regex(data, "valign=\"top\">.*?\\|.*?\\|.*?\\|.*?\\|(.*?)\\(.*?</td>").getMatch(0);
                 String dlink = new Regex(data, "href=\"(http.*?)\"").getMatch(0);
                 if (dlink == null) return null;

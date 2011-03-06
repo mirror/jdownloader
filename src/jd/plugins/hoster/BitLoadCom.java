@@ -66,6 +66,7 @@ public class BitLoadCom extends PluginForHost {
         Regex nameAndSize = br.getRegex("Ihre Datei <strong>(.*?) \\((\\d+,\\d+ .*?)\\)</strong> wird angefordert");
         String filename = nameAndSize.getMatch(0);
         if (filename == null) filename = br.getRegex("Sie möchten <strong>(.*?)</strong> schauen <br/>").getMatch(0);
+        if (filename == null) filename = br.getRegex("Sie haben folgende Datei angefordert.*?>(.*?)</").getMatch(0);
         String filesize = nameAndSize.getMatch(1);
         if (filesize == null) filesize = br.getRegex("x\">Divx</strong> \\((.*?)\\)<br/><br/>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

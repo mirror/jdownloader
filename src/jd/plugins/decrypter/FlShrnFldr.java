@@ -64,8 +64,8 @@ public class FlShrnFldr extends PluginForDecrypt {
             }
             pageCnt++;
         } while (otherPages != null && pageCnt <= otherPages.length); // get all
-                                                                      // sites'
-                                                                      // links
+        // sites'
+        // links
         return decryptedLinks;
     }
 }

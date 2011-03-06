@@ -29,12 +29,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -266,7 +266,7 @@ public class SendspaceCom extends PluginForHost {
             URLConnectionAdapter con = dl.getConnection();
             if (con.getContentType().contains("html")) {
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                handleErrors(true);
             }
         }
         dl.startDownload();
@@ -282,7 +282,7 @@ public class SendspaceCom extends PluginForHost {
         if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
         if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.serverfull", "Free service capacity full"), 5 * 60 * 1000l); }
         if (error.contains("this connection has reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
-        if (error.contains("reached daily download")) {
+        if (error.contains("reached daily download") || error.contains("reached your daily download")) {
             int wait = 60;
             String untilh = br.getRegex("again in (\\d+)h:(\\d+)m").getMatch(0);
             String untilm = br.getRegex("again in (\\d+)h:(\\d+)m").getMatch(1);
