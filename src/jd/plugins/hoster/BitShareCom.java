@@ -224,7 +224,8 @@ public class BitShareCom extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -15);
+        /* max 15 connections at all */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -237,7 +238,7 @@ public class BitShareCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         // Maximum allowed connections = 15
-        return 1;
+        return 5;
     }
 
     @Override
