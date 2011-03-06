@@ -17,11 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -34,8 +35,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/dir/[\\w\\._-]+/[\\w\\._-]+/?" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(dir/.+)?" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
+
+    private final static double RANDOM = Math.random();
 
     public FrShrdFldr(final PluginWrapper wrapper) {
         super(wrapper);
@@ -45,18 +50,20 @@ public class FrShrdFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
+        br.setCookie(getHost(), "4langcookie", "en");
         String pass = "";
 
         // check for password
-        this.br.getPage(parameter);
-        if (this.br.containsHTML("enter a password to access")) {
-            final Form form = this.br.getFormbyProperty("name", "theForm");
+        br.getPage(parameter);
+        if (br.containsHTML("enter a password to access")) {
+            final Form form = br.getFormbyProperty("name", "theForm");
             if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             for (int retry = 5; retry > 0; retry--) {
                 pass = Plugin.getUserInput(null, param);
                 form.put("userPass2", pass);
-                this.br.submitForm(form);
-                if (!this.br.containsHTML("enter a password to access")) {
+                br.submitForm(form);
+                if (!br.containsHTML("enter a password to access")) {
                     break;
                 } else {
                     if (retry == 1) {
@@ -67,110 +74,99 @@ public class FrShrdFldr extends PluginForDecrypt {
             }
         }
 
+        final String script = br.getRegex("src=\"(/account/homeScript.*?)\"").getMatch(0);
+        final String sId = new Regex(script, "^.+sId=(\\w+)").getMatch(0);
+        if (script == null || sId == null) { return null; }
+
+        br.cloneBrowser().getPage("http://" + br.getHost() + script);
+        final String burl = "/account/changedir.jsp?sId=" + sId;
+
+        String[] subDir = br.getRegex("javascript:changeDirLeft\\((\\d+)\\)").getColumn(0);
+        int result = 4;
         // allow choice scan only root directory or all subdirectories too
-        final int result = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, JDL.L("jd.plugins.decrypter.frshrdfldr.dir.title", "Directory scan"), JDL.L("jd.plugins.decrypter.frshrdfldr.dir.message", "Do you want scan all subdirectory or only files in this directory?"), null, JDL.L("jd.plugins.decrypter.frshrdfldr.dir.ok", "Subdirectory"), JDL.L("jd.plugins.decrypter.frshrdfldr.dir.cancel", "File"));
-
-        final String script = this.br.getRegex("src=\"(/account/homeScript.*?)\"").getMatch(0);
-        this.br.cloneBrowser().getPage("http://" + this.br.getHost() + script);
-        final String burl = this.br.getRegex("var bUrl = \"(/account/changedir.jsp\\?sId=.*?)\";").getMatch(0);
-        final String name = this.br.getRegex("hidden\" name=\"defaultZipName\" value=\"(.*?)\">").getMatch(0).trim();
-
-        if (result == 4) {
-            this.scanFile(decryptedLinks, pass, burl, name, name);
-        }
-        if (result == 2) {
-            this.scanDirectory(decryptedLinks, pass, burl, name, progress);
+        if (subDir.length > 1 && br.containsHTML("ml_file_")) {
+            result = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, JDL.L("jd.plugins.decrypter.frshrdfldr.dir.title", "Directory scan"), JDL.L("jd.plugins.decrypter.frshrdfldr.dir.message", "Do you want scan all subdirectory or only files in this directory?"), null, JDL.L("jd.plugins.decrypter.frshrdfldr.dir.ok", "Subdirectory"), JDL.L("jd.plugins.decrypter.frshrdfldr.dir.cancel", "File"));
         }
 
+        if (result == 4 && br.containsHTML("ml_file_")) {
+            subDir = new String[] { subDir[0] };
+        }
+        scan(decryptedLinks, pass, burl, subDir, progress);
+
+        if (decryptedLinks.size() == 0) {
+            try {
+                logger.warning("Decrypter out of date for link: " + parameter);
+            } catch (final Throwable e) {
+                /* not available in public 0.9580 */
+            }
+            return null;
+        }
         return decryptedLinks;
     }
 
-    // replace ID directory with correct name
-    private void replaceA(final ArrayList<String> names, final String oldS, final String newS) throws Exception {
-        String rpl;
-        int pos;
+    private void scan(final ArrayList<DownloadLink> decryptedLinks, final String pass, final String burl, final String[] subDir, final ProgressController progress) throws Exception {
+        final String[] pages = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
+        String url;
 
-        for (int x = 0; x < names.size(); x++) {
-            rpl = "\\" + names.get(x) + "\\";
-            pos = rpl.indexOf("\\" + oldS + "\\");
-            if (pos != -1) {
-                names.set(x, rpl.substring(0, pos) + "\\" + newS + "\\" + rpl.substring(pos + 1 + oldS.length()));
-            }
+        if (subDir.length > 1) {
+            progress.setRange(subDir.length);
+        } else {
+            progress.setRange(pages.length);
         }
-    }
 
-    // scan all ID directory and make simple tree structure
-    private void scanDirectory(final ArrayList<DownloadLink> decryptedLinks, final String pass, final String burl, final String defName, final ProgressController progress) throws Exception {
-        final ArrayList<String> links = new ArrayList<String>();
-        final ArrayList<String> names = new ArrayList<String>();
-        String name;
-
-        links.addAll(Arrays.asList(this.br.getRegex("new WebFXTreeItem\\('(.+?)','javascript:changeDirLeft\\((\\d+)\\)',false\\)").getColumn(1)));
-        for (int i = 0; i < links.size(); i++) {
-            name = this.br.getRegex("tree(\\w+)\\.add\\(tree" + links.get(i) + "\\)").getMatch(0);
+        // scan all
+        int j = 1;
+        do {
+            if (subDir.length > 1) {
+                progress.increase(1);
+            }
+            String name = br.getRegex("<.*?>4shared - (.*?) - free").getMatch(0);
             if (name == null) {
-                names.add(defName + "\\" + links.get(i));
-            } else {
-                names.add(names.get(links.indexOf(name)) + "\\" + links.get(i));
+                name = "4shared - Folder";
             }
-        }
-
-        // scan files in actual directory
-        this.scanFile(decryptedLinks, pass, burl, defName, defName);
-        progress.increase(1);
-
-        progress.setRange(links.size());
-        for (int i = 0; i < links.size(); i++) {
-            final String url = "http://" + this.br.getHost() + burl + "&ajax=true&changedir=" + links.get(i) + "&sortsMode=NAME&sortsAsc=true&random=0.1863370989474954";
-            this.br.getPage(url);
-            name = this.br.getRegex("<b style=\"font-size:larger;\">\\s*(.+?)\\s*</b>").getMatch(0);
-            this.replaceA(names, links.get(i), name);
-            this.scanFile(decryptedLinks, pass, burl, name, names.get(i));
-            progress.increase(1);
-        }
-    }
-
-    // scan file in actual directory and put in filepackage with setting correct
-    // save directory
-    private void scanFile(final ArrayList<DownloadLink> decryptedLinks, final String pass, final String burl, final String name, final String path) throws Exception {
-        final ArrayList<DownloadLink> dL = new ArrayList<DownloadLink>();
-        final String[] pages = this.br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
-        String[] links;
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(name + "-" + path);
-
-        // scan
-        links = this.br.getRegex("<a href=\"(http://[\\w\\.]*?4shared(-china)?\\.com/(get|file|document|photo|video|audio)/.+?/.*?)(\\?dirPwdVerified|.)\"").getColumn(0);
-        for (final String dl : links) {
-            DownloadLink dlink;
-            dlink = this.createDownloadlink(dl);
-            if (pass.length() != 0) {
-                dlink.setProperty("pass", pass);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(name);
+            // change to listview
+            if (br.containsHTML("(fbContainer|thumbdiv)")) {
+                br.getPage("http://" + br.getHost() + burl + "&ajax=true&changedir=" + subDir[j - 1] + "&homemode=8&viewMode=1&random=" + RANDOM);
             }
-            decryptedLinks.add(dlink);
-            dL.add(dlink);
-        }
-
-        // scan all possible tabs
-        for (int i = 0; i < pages.length - 1; i++) {
-            final String url = "http://" + this.br.getHost() + burl + "&ajax=true&firstFileToShow=" + pages[i] + "&sortsMode=NAME&sortsAsc=&random=0.9519735221243086";
-            this.br.getPage(url);
-
-            // scan
-            links = this.br.getRegex("<a href=\"(http://[\\w\\.]*?4shared(-china)?\\.com/(get|file|document|photo|video|audio)/.+?/.*?)(\\?dirPwdVerified|.)\"").getColumn(0);
-            for (final String dl : links) {
-                DownloadLink dlink;
-                dlink = this.createDownloadlink(dl);
-                if (pass.length() != 0) {
-                    dlink.setProperty("pass", pass);
+            // scan pages
+            int i = 0;
+            do {
+                if (subDir.length == 1) {
+                    progress.increase(1);
                 }
-                decryptedLinks.add(dlink);
-                dL.add(dlink);
+                final String[] links = br.getRegex("ml_file(.*?)title").getColumn(0);
+                // scan page
+                for (String dl : links) {
+                    final String[] dlTmp = dl.split("\n");
+                    dl = new Regex(dlTmp[1], "href=\"javascript:openNewWindow\\('(.*?)'").getMatch(0);
+                    final String dlName = new Regex(dlTmp[2], "/>(.*?)</a>").getMatch(0);
+                    final String dlSize = new Regex(dlTmp[5], ">(.*?)</td>").getMatch(0);
+                    if (dl == null | dlName == null | dlSize == null) {
+                        continue;
+                    }
+                    final DownloadLink dlink = createDownloadlink(dl.replaceAll("4shared\\.com", "4shared.viajd").replace("https", "http"));
+                    if (pass.length() != 0) {
+                        dlink.setProperty("pass", pass);
+                    }
+                    dlink.setName(Encoding.htmlDecode(dlName));
+                    dlink.setDownloadSize(SizeFormatter.getSize(dlSize.replace(",", "")));
+                    dlink.setAvailable(true);
+                    dlink.setFilePackage(fp);
+                    decryptedLinks.add(dlink);
+                }
+                if (i < pages.length - 1) {
+                    url = "http://" + br.getHost() + burl + "&ajax=true&firstFileToShow=" + pages[i] + "&sortsMode=NAME&sortsAsc=&random=" + RANDOM;
+                    br.getPage(url);
+                }
+                i++;
+            } while (i <= pages.length);
+            if (j < subDir.length) {
+                url = "http://" + br.getHost() + burl + "&refreshAfterUnzip=false&ajax=true&changedir=" + subDir[j] + "&random=" + RANDOM;
+                br.getPage(url);
             }
-        }
-        if (dL.size() > 0) {
-            fp.addLinks(dL);
-        }
+            j++;
+        } while (j <= subDir.length);
     }
 }
