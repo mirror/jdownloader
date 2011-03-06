@@ -16,26 +16,35 @@
 
 package jd.gui.swing;
 
+import java.io.File;
+import java.util.logging.Logger;
+
 import javax.swing.JFrame;
 
+import jd.Main;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.actions.ActionController;
 
 import com.apple.eawt.AboutHandler;
+import com.apple.eawt.AppEvent;
 import com.apple.eawt.AppEvent.AboutEvent;
 import com.apple.eawt.AppEvent.AppReOpenedEvent;
+import com.apple.eawt.AppEvent.OpenFilesEvent;
 import com.apple.eawt.AppEvent.PreferencesEvent;
 import com.apple.eawt.AppEvent.QuitEvent;
 import com.apple.eawt.AppReOpenedListener;
 import com.apple.eawt.Application;
+import com.apple.eawt.OpenFilesHandler;
+import com.apple.eawt.OpenURIHandler;
 import com.apple.eawt.PreferencesHandler;
 import com.apple.eawt.QuitHandler;
 import com.apple.eawt.QuitResponse;
 
-public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, ControlListener {
+public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, ControlListener, OpenFilesHandler, OpenURIHandler {
 
     public static void enableMacSpecial() {
         Application macApplication = Application.getApplication();
@@ -44,10 +53,13 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         macApplication.setPreferencesHandler(adapter);
         macApplication.setQuitHandler(adapter);
         macApplication.addAppEventListener(adapter);
-
+        macApplication.setOpenFileHandler(adapter);
+        macApplication.setOpenURIHandler(adapter);
     }
 
-    private QuitResponse quitResponse;
+    private QuitResponse        quitResponse;
+    private String              openURIlinks;
+    private static final Logger LOG = JDLogger.getLogger();
 
     private MacOSApplicationAdapter() {
     }
@@ -88,6 +100,35 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
             JDController.getInstance().removeControlListener(this);
             quitResponse.performQuit();
+        } else if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE && openURIlinks != null) {
+            JDController.getInstance().removeControlListener(this);
+            LOG.info("Distribute links: " + openURIlinks);
+            JDController.distributeLinks(openURIlinks);
+            openURIlinks = null;
+        }
+    }
+
+    public void openFiles(OpenFilesEvent e) {
+        appReOpened(null);
+        LOG.info("Handle open files from Dock " + e.getFiles().toString());
+        for (File file : e.getFiles()) {
+            if (JDController.isContainerFile(file)) {
+                LOG.info("Processing Container file: " + file.getAbsolutePath());
+                JDController.loadContainerFile(file);
+            }
+        }
+    }
+
+    public void openURI(AppEvent.OpenURIEvent e) {
+        appReOpened(null);
+        LOG.info("Handle open uri from Dock " + e.getURI().toString());
+        String links = e.getURI().toString();
+        if (Main.isInitComplete()) {
+            LOG.info("Distribute links: " + links);
+            JDController.distributeLinks(links);
+        } else {
+            openURIlinks = links;
+            JDController.getInstance().addControlListener(this);
         }
     }
 }
