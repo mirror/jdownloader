@@ -3,6 +3,8 @@ package org.jdownloader.update;
 import java.awt.HeadlessException;
 import java.io.IOException;
 
+import javax.swing.JFrame;
+
 import jd.controlling.JDController;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
@@ -38,6 +40,17 @@ public class JDUpdater extends Updater implements Runnable {
     private UpdaterGUI         gui;
     private boolean            silentCheck;
     private int                waitingUpdates = 0;
+    private boolean            updateRunning  = false;
+    private Thread             updaterThread;
+
+    /**
+     * unsynched access to gui. may return null
+     * 
+     * @return
+     */
+    private UpdaterGUI getExistingGUI() {
+        return gui;
+    }
 
     private UpdaterGUI getGUI() {
         synchronized (this) {
@@ -74,9 +87,30 @@ public class JDUpdater extends Updater implements Runnable {
     }
 
     public void startUpdate(final boolean silentCheck) {
+        if (updateRunning) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    if (getExistingGUI() != null) {
+                        getExistingGUI().toFront();
+                        getExistingGUI().flash();
+                        getExistingGUI().setExtendedState(JFrame.NORMAL);
+                    } else {
+                        Dialog.getInstance().showMessageDialog("Update already running");
+                    }
+
+                }
+
+            };
+
+            return;
+        }
+        updateRunning = true;
         this.silentCheck = silentCheck;
 
-        new Thread(this).start();
+        updaterThread = new Thread(this);
+        updaterThread.start();
 
     }
 
@@ -116,6 +150,7 @@ public class JDUpdater extends Updater implements Runnable {
             } finally {
 
                 JDController.releaseDelayExit(id);
+                updateRunning = false;
             }
         }
     }
@@ -123,39 +158,64 @@ public class JDUpdater extends Updater implements Runnable {
     private void runGUI(Updater updater) throws HTTPIOException, ParseException, InterruptedException, UpdateException, IOException {
         getGUI().reset();
         gui = getGUI();
-        setWaitingUpdates(updater.getFilesToInstall().size());
+        try {
+            // ask to restart if there are updates left in the
 
-        // ask to restart if there are updates left in the
+            new EDTRunner() {
 
-        new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    gui.setVisible(true);
+                    // SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle());
 
-            @Override
-            protected void runInEDT() {
-                gui.setVisible(true);
-                // SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle());
+                }
+            };
+            setWaitingUpdates(updater.getFilesToInstall().size());
 
+            final UpdatePackage updates = updater.getUpdates();
+            setWaitingUpdates(updater.getFilesToInstall().size() + updates.size());
+            if (updates.size() > 0) {
+
+                Log.L.finer(updater.getBranch().getName());
+                Log.L.finer("Files to update: " + updates);
+
+                updater.downloadUpdates();
+
+            } else {
+                updater.downloadUpdates();
             }
-        };
-        final UpdatePackage updates = updater.getUpdates();
-        setWaitingUpdates(updater.getFilesToInstall().size() + updates.size());
-        if (updates.size() > 0) {
+            setWaitingUpdates(updater.getFilesToInstall().size());
+            if (updater.getFilesToInstall().size() > 0) {
 
-            Log.L.finer(updater.getBranch().getName());
-            Log.L.finer("Files to update: " + updates);
+                if (gui.installNow()) {
 
-            updater.downloadUpdates();
-
-        } else {
-            updater.downloadUpdates();
-        }
-        setWaitingUpdates(updater.getFilesToInstall().size());
-        if (updater.getFilesToInstall().size() > 0) {
-
-            if (gui.installNow()) {
-
-                JDUtilities.restartJDandWait();
-                return;
+                    JDUtilities.restartJDandWait();
+                    return;
+                }
             }
+        } catch (AppNotFoundException e) {
+            gui.onException(e);
+
+        } catch (HTTPIOException e) {
+            gui.onException(e);
+
+        } catch (ParseException e) {
+            gui.onException(e);
+
+        } catch (InterruptedException e) {
+            gui.onException(e);
+
+        } catch (UpdateException e) {
+            gui.onException(e);
+
+        } catch (IOException e) {
+            gui.onException(e);
+
+        } catch (RuntimeException e) {
+            gui.onException(e);
+
+        } finally {
+
         }
     }
 
@@ -178,5 +238,11 @@ public class JDUpdater extends Updater implements Runnable {
 
     public int getWaitingUpdates() {
         return waitingUpdates;
+    }
+
+    public void interrupt() {
+        if (updaterThread != null) {
+            updaterThread.interrupt();
+        }
     }
 }

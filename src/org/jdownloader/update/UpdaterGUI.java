@@ -1,5 +1,7 @@
 package org.jdownloader.update;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -11,9 +13,12 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import jd.gui.swing.jdgui.JDGui;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
 import org.appwork.update.updateclient.AppNotFoundException;
 import org.appwork.update.updateclient.ParseException;
 import org.appwork.update.updateclient.gui.UpdaterCoreGui;
@@ -21,12 +26,17 @@ import org.appwork.update.updateclient.http.HTTPIOException;
 import org.appwork.update.updateclient.translation.T;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.windowflasher.WindowFlasher;
 
-public class UpdaterGUI extends JFrame {
+public class UpdaterGUI extends JFrame implements ActionListener {
     private UpdaterCoreGui panel;
     private JButton        ok;
     private JButton        cancel;
     private JButton        ok2;
+    private WindowFlasher  flasher;
 
     public void setVisible(boolean b) {
         super.setVisible(b);
@@ -40,21 +50,37 @@ public class UpdaterGUI extends JFrame {
         super("Updater");
         panel = new UpdaterCoreGui(JDUpdater.getInstance());
         panel.expand();
+
+        flasher = new WindowFlasher(this);
         JDUpdater.getInstance().getEventSender().addListener(panel);
         JDUpdater.getInstance().getStateMachine().addListener(panel);
+        JDUpdater.getInstance().getStateMachine().addListener(new StateEventListener() {
+
+            public void onStateUpdate(StateEvent event) {
+            }
+
+            public void onStateChange(StateEvent event) {
+                flash();
+            }
+        });
         addWindowListener(new WindowListener() {
 
             public void windowActivated(final WindowEvent arg0) {
+                // sets dialog parent to updateframe if active
+                Dialog.getInstance().setParentOwner(UpdaterGUI.this);
             }
 
             public void windowClosed(final WindowEvent arg0) {
             }
 
             public void windowClosing(final WindowEvent arg0) {
-                setVisible(false);
+                cancel();
+
             }
 
             public void windowDeactivated(final WindowEvent arg0) {
+                // resets dialog root
+                Dialog.getInstance().setParentOwner(JDGui.getInstance().getMainFrame());
             }
 
             public void windowDeiconified(final WindowEvent arg0) {
@@ -97,10 +123,7 @@ public class UpdaterGUI extends JFrame {
             }
 
             public void windowActivated(WindowEvent e) {
-                if (isVisible()) {
-                    toFront();
-                    setExtendedState(JFrame.NORMAL);
-                }
+                Dialog.getInstance().setParentOwner(JDGui.getInstance().getMainFrame());
             }
         });
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -115,12 +138,26 @@ public class UpdaterGUI extends JFrame {
 
     }
 
+    protected void cancel() {
+        try {
+            Dialog.getInstance().showConfirmDialog(0, "Realy cancel update?");
+            JDUpdater.getInstance().interrupt();
+            setVisible(false);
+
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void layoutGUI() {
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill][]"));
         this.add(panel);
         ok = new JButton();
         ok2 = new JButton();
         cancel = new JButton(JDL.L("org.jdownloader.update.UpdaterGUI.layoutGUI.cancel", "Cancel"));
+        cancel.addActionListener(this);
         panel.add(Box.createHorizontalGlue(), "spanx,pushx,split 4,newline");
         panel.add(ok, "hidemode 3,sg bt,tag ok");
         panel.add(ok2, "hidemode 3,sg bt,tag ok");
@@ -136,7 +173,7 @@ public class UpdaterGUI extends JFrame {
     }
 
     public boolean installNow() throws AppNotFoundException, HTTPIOException, ParseException {
-
+        flash();
         final ArrayList<File> installedFiles = JDUpdater.getInstance().getFilesToInstall();
         new EDTRunner() {
 
@@ -166,6 +203,38 @@ public class UpdaterGUI extends JFrame {
             }
         };
         return false;
+    }
+
+    public void flash() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                // if (isActive()) {
+                // toFront();
+                // setExtendedState(JFrame.NORMAL);
+                // }
+                flasher.start();
+            }
+        };
+    }
+
+    public void onException(Throwable e) {
+        panel.onException(e);
+
+    }
+
+    public void actionPerformed(ActionEvent arg0) {
+        if (arg0.getSource() == cancel) {
+            cancel();
+
+        } else if (arg0.getSource() == this.ok) {
+            // install now
+
+        } else if (arg0.getSource() == this.ok2) {
+            // install later
+            JDUtilities.restartJD(true);
+        }
     }
 
 }
