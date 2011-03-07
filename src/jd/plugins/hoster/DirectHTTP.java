@@ -116,6 +116,7 @@ public class DirectHTTP extends PluginForHost {
                 File dest = null;
                 while (dest == null || dest.exists()) {
                     dest = JDUtilities.getResourceFile("captchas/recaptcha_" + plg.getHost() + "_" + count + ".jpg", true);
+                    dest.deleteOnExit();
                     count++;
                 }
                 dest.deleteOnExit();

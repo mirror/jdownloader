@@ -77,9 +77,17 @@ public class IFilezCom extends PluginForHost {
         }
         String code = getCaptchaCode("http://i-filez.com/includes/vvc.php?vvcid=" + verifycode, downloadLink);
         br.postPage(downloadLink.getDownloadURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&FREE=Download+for+free");
-        if (br.containsHTML(CAPTCHATEXT) || br.containsHTML(">The image code you entered is incorrect\\!<")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String additionalWaittime = br.getRegex("Для выдачи новой ссылки должно пройти не менее (\\d+) сек").getMatch(0);
-        if (additionalWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(additionalWaittime) * 1001l);
+        String additionalWaittime = br.getRegex("was recently downloaded from your IP address. No less than (\\d+) min").getMatch(0);
+        if (additionalWaittime != null) {
+            /* wait 1 minute more to be sure */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(additionalWaittime) + 1) * 60 * 1001l);
+        }
+        additionalWaittime = br.getRegex("was recently downloaded from your IP address. No less than (\\d+) sec").getMatch(0);
+        if (additionalWaittime != null) {
+            /* wait 15 secs more to be sure */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(additionalWaittime) + 15) * 1001l);
+        }
+        if (br.containsHTML(CAPTCHATEXT) || br.containsHTML(">The image code you entered is incorrect\\!<")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         br.setFollowRedirects(false);
         String dllink = br.getRegex("document\\.getElementById\\(\"wait_input\"\\)\\.value= unescape\\(\\'(.*?)\\'\\);").getMatch(0);
         if (dllink == null) {
