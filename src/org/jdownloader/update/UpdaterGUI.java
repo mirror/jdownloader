@@ -21,6 +21,8 @@ import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.update.updateclient.AppNotFoundException;
 import org.appwork.update.updateclient.ParseException;
+import org.appwork.update.updateclient.event.UpdaterEvent;
+import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.update.updateclient.gui.UpdaterCoreGui;
 import org.appwork.update.updateclient.http.HTTPIOException;
 import org.appwork.update.updateclient.translation.T;
@@ -31,7 +33,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.windowflasher.WindowFlasher;
 
-public class UpdaterGUI extends JFrame implements ActionListener {
+public class UpdaterGUI extends JFrame implements ActionListener, StateEventListener, UpdaterListener {
     private UpdaterCoreGui panel;
     private JButton        ok;
     private JButton        cancel;
@@ -46,6 +48,13 @@ public class UpdaterGUI extends JFrame implements ActionListener {
 
     }
 
+    public void onStateUpdate(StateEvent event) {
+    }
+
+    public void onStateChange(StateEvent event) {
+        flash();
+    }
+
     public UpdaterGUI() {
         super("Updater");
         panel = new UpdaterCoreGui(JDUpdater.getInstance());
@@ -54,15 +63,9 @@ public class UpdaterGUI extends JFrame implements ActionListener {
         flasher = new WindowFlasher(this);
         JDUpdater.getInstance().getEventSender().addListener(panel);
         JDUpdater.getInstance().getStateMachine().addListener(panel);
-        JDUpdater.getInstance().getStateMachine().addListener(new StateEventListener() {
+        JDUpdater.getInstance().getStateMachine().addListener(this);
 
-            public void onStateUpdate(StateEvent event) {
-            }
-
-            public void onStateChange(StateEvent event) {
-                flash();
-            }
-        });
+        JDUpdater.getInstance().getEventSender().addListener(this);
         addWindowListener(new WindowListener() {
 
             public void windowActivated(final WindowEvent arg0) {
@@ -140,7 +143,7 @@ public class UpdaterGUI extends JFrame implements ActionListener {
 
     protected void cancel() {
         try {
-            Dialog.getInstance().showConfirmDialog(0, "Realy cancel update?");
+            Dialog.getInstance().showConfirmDialog(0, T._.dialog_rly_cancel());
             JDUpdater.getInstance().interrupt();
             setVisible(false);
 
@@ -172,7 +175,7 @@ public class UpdaterGUI extends JFrame implements ActionListener {
         panel.reset();
     }
 
-    public boolean installNow() throws AppNotFoundException, HTTPIOException, ParseException {
+    public boolean installNow() throws AppNotFoundException, HTTPIOException, ParseException, InterruptedException {
         flash();
         final ArrayList<File> installedFiles = JDUpdater.getInstance().getFilesToInstall();
         new EDTRunner() {
@@ -235,6 +238,27 @@ public class UpdaterGUI extends JFrame implements ActionListener {
             // install later
             JDUtilities.restartJD(true);
         }
+    }
+
+    public void onUpdaterEvent(UpdaterEvent event) {
+
+        System.out.println("Updater: " + event);
+
+        switch (event.getType()) {
+
+        // case EXIT_REQUEST:
+        // cancel();
+        // break;
+        }
+    }
+
+    public void onUpdaterModuleEnd(UpdaterEvent event) {
+    }
+
+    public void onUpdaterModuleProgress(UpdaterEvent event, int parameter) {
+    }
+
+    public void onUpdaterModuleStart(UpdaterEvent event) {
     }
 
 }

@@ -110,6 +110,7 @@ public class JDUpdater extends Updater implements Runnable {
         this.silentCheck = silentCheck;
 
         updaterThread = new Thread(this);
+        this.setThread(updaterThread);
         updaterThread.start();
 
     }
@@ -242,6 +243,7 @@ public class JDUpdater extends Updater implements Runnable {
 
     public void interrupt() {
         if (updaterThread != null) {
+
             updaterThread.interrupt();
         }
     }

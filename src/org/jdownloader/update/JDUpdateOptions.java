@@ -30,7 +30,7 @@ public class JDUpdateOptions implements UpdaterOptions {
     }
 
     public String[] getUpdServer() {
-        return new String[] { "http://192.168.2.250/jcgi/", "http://upd0.appwork.org/jcgi/" };
+        return new String[] { "http://upd0.appwork.org/jcgi/" };
     }
 
     public String getWorkingDirectory() {
