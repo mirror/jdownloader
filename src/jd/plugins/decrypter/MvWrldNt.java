@@ -56,7 +56,7 @@ public class MvWrldNt extends PluginForDecrypt {
         final Form captchaForm = br.getForm(0);
         if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) { return null; }
         captchaUrl = captchaForm.getRegex("img src=\"(.*?)\"").getMatch(0);
-        final Browser brc = br.cloneBrowser();
+        Browser brc = br.cloneBrowser();
         captchaUrl = MAINPAGE + captchaUrl;
         final File captchaFile = getLocalCaptchaFile();
         brc.getDownload(captchaFile, captchaUrl);
@@ -93,6 +93,8 @@ public class MvWrldNt extends PluginForDecrypt {
         if (links == null || links.length == 0) { return null; }
         progress.setRange(links.length);
         for (String dl : links) {
+            brc = br.cloneBrowser();
+            brc.setFollowRedirects(false);
             brc.getPage(MAINPAGE + dl);
             if (brc.getRequest().getHttpConnection().getResponseCode() == 302) {
                 dl = brc.getRequest().getHttpConnection().getHeaderField("Location");

@@ -7,11 +7,9 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -71,7 +69,8 @@ public class FlsncCm extends PluginForDecrypt {
         boolean failed = false;
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        if (br.containsHTML("(Folder do not exist<|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">No links to show<")) return decryptedLinks;
+        if (br.containsHTML("(Folder do not exist<|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake)")) return decryptedLinks;
         String[] links = br.getRegex("<td width=\"70%\" align=\"left\" valign=\"top\">(.*?)</tr>").getColumn(0);
         if (links == null || links.length == 0) {
             failed = true;
