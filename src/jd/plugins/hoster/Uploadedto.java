@@ -32,11 +32,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -45,14 +45,14 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
-    private static final UploadedtoLinkObserver LINK_OBSERVER     = new UploadedtoLinkObserver();
-    private static final String                 RECAPTCHA         = "/recaptcha/";
-    private static final String                 PASSWORDPROTECTED = "<span>Passwort:</span>";
+    private static final UploadedtoLinkObserver LINK_OBSERVER = new UploadedtoLinkObserver();
+    private static final String RECAPTCHA = "/recaptcha/";
+    private static final String PASSWORDPROTECTED = "<span>Passwort:</span>";
 
     static class UploadedtoLinkObserver extends Thread {
 
         private ArrayList<DownloadLink> list;
-        private Object                  lock = new Object();
+        private Object lock = new Object();
 
         public UploadedtoLinkObserver() {
             super("UploadedCRCObserver");
@@ -238,6 +238,7 @@ public class Uploadedto extends PluginForHost {
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.uploadedto.errors.indirectlinkerror", "Indirect link error"));
                 return;
             }
+            logger.info(br.getRedirectLocation());
         } else {
             logger.info("Direct Downloads active");
         }

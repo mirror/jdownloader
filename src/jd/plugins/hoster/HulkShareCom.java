@@ -55,7 +55,7 @@ public class HulkShareCom extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://hulkshare.com";
-    public boolean              nopremium   = false;
+    public boolean nopremium = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -321,7 +321,7 @@ public class HulkShareCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setDebug(true);
         br.getPage(COOKIE_HOST + "/login.html");
-        Form loginform = br.getForm(0);
+        Form loginform = br.getForm(1);
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));

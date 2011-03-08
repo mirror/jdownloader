@@ -175,10 +175,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             String damnID = new Regex(parameter, "/(\\d+)$").getMatch(0);
             br.getPage(parameter.replace(damnID, "") + "file.php?id=" + damnID);
             finallink = br.getRegex("<td width=\"70%\">[\t\n\r ]+<a href=\"(.*?)\"").getMatch(0);
-        } else if (parameter.contains("gamz.us/") || parameter.contains("zero10.net/")) {
+        } else if (parameter.contains("gamz.us/")) {
             String damnID = new Regex(parameter, "(\\d+)$").getMatch(0);
             br.getPage("http://gamz.us/?id=" + damnID + "&d=1");
             finallink = br.getRegex(NEWSREGEX2).getMatch(0);
+        } else if (parameter.contains("zero10.net/")) {
+            String damnID = new Regex(parameter, "(\\d+)$").getMatch(0);
+            br.postPage("http://zero10.net/link.php?id=" + damnID, "s=1");
+            finallink = br.getRegex("onClick=.*?\\('(http:.*?)'").getMatch(0);
         } else if (parameter.contains("official.fm/")) {
             br.setFollowRedirects(true);
             br.getPage(parameter + ".xspf?ll_header=yes");

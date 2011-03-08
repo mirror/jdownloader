@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadingit.com" }, urls = { "http://[\\w\\.]*?uploadingit\\.com/d/[A-Z0-9]{16}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadingit.com" }, urls = { "http://[\\w\\.]*?uploadingit\\.com/(d/[A-Z0-9]{16}|file/[a-zA-Z0-9]+/.+)" }, flags = { 0 })
 public class UploadingItCom extends PluginForHost {
 
     public UploadingItCom(PluginWrapper wrapper) {
@@ -45,18 +45,25 @@ public class UploadingItCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>Invalid Download - Uploadingit</title>|\">Sorry, but according to our database the download link you have entered is not valid\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Oh Snap! File Not Found!<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"download_filename\">(.*?)</div>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<td style=\"width:150px\">(.*?)</td>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("Visit Uploadingit\\.com for free file hosting\\.\\&quot;\\&gt;Download (.*?) from Uploadingit\\.com\\&lt;/a\\&gt;\"").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<title>(.*?) - Uploadingit</title>").getMatch(0);
+                    filename = br.getRegex("class=\"downloadTitle\">(.*?)<").getMatch(0);
+                }
+                if (filename == null) {
+                    filename = br.getRegex("<title>(Downloading: )?(.*?) - Uploadingit</title>").getMatch(1);
                 }
             }
         }
         String filesize = br.getRegex(" class=\"download_filesize\">\\((.*?)\\)</div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"downloadSize\">\\((.*?)\\)<").getMatch(0);
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -65,9 +72,15 @@ public class UploadingItCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = downloadLink.getDownloadURL().replace("/d/", "/GET/");
+        String dllink = br.getRegex("downloadShareURL.*?value=\"(http:.*?)\"").getMatch(0);
+        sleep(10 * 1000l, downloadLink);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        br.getPage(dllink);
+        dllink = br.getRegex("\\('(file/download/.*?)'").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        sleep(10 * 1000l, downloadLink);
+        dllink = "http://uploadingit.com/" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
