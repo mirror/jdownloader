@@ -25,8 +25,8 @@ public class JDUpdateOptions implements UpdaterOptions {
         return 15000;
     }
 
-    public boolean getRestart() {
-        return false;
+    public String getRestart() {
+        return null;
     }
 
     public String[] getUpdServer() {
@@ -49,7 +49,18 @@ public class JDUpdateOptions implements UpdaterOptions {
     public void setOsFilter(boolean b) {
     }
 
-    public void setRestart(boolean b) {
+    public void setRestart(String b) {
+    }
+
+    public boolean getDebug() {
+        return !Application.isJared(JDUpdateOptions.class);
+    }
+
+    public void setDebug(boolean b) {
+
+    }
+
+    public void setWorkinfDirectory(String dir) {
     }
 
 }

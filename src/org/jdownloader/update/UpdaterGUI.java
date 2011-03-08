@@ -13,7 +13,6 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import jd.gui.swing.jdgui.JDGui;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -52,6 +51,7 @@ public class UpdaterGUI extends JFrame implements ActionListener, StateEventList
     }
 
     public void onStateChange(StateEvent event) {
+
         flash();
     }
 
@@ -161,6 +161,8 @@ public class UpdaterGUI extends JFrame implements ActionListener, StateEventList
         ok2 = new JButton();
         cancel = new JButton(JDL.L("org.jdownloader.update.UpdaterGUI.layoutGUI.cancel", "Cancel"));
         cancel.addActionListener(this);
+        ok.addActionListener(this);
+        ok2.addActionListener(this);
         panel.add(Box.createHorizontalGlue(), "spanx,pushx,split 4,newline");
         panel.add(ok, "hidemode 3,sg bt,tag ok");
         panel.add(ok2, "hidemode 3,sg bt,tag ok");
@@ -175,7 +177,7 @@ public class UpdaterGUI extends JFrame implements ActionListener, StateEventList
         panel.reset();
     }
 
-    public boolean installNow() throws AppNotFoundException, HTTPIOException, ParseException, InterruptedException {
+    public void installNow() throws AppNotFoundException, HTTPIOException, ParseException, InterruptedException {
         flash();
         final ArrayList<File> installedFiles = JDUpdater.getInstance().getFilesToInstall();
         new EDTRunner() {
@@ -205,7 +207,7 @@ public class UpdaterGUI extends JFrame implements ActionListener, StateEventList
                 ok2.setVisible(true);
             }
         };
-        return false;
+
     }
 
     public void flash() {
@@ -229,14 +231,20 @@ public class UpdaterGUI extends JFrame implements ActionListener, StateEventList
 
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == cancel) {
+
+            if (JDUpdater.getInstance().isInterrupted() || JDUpdater.getInstance().getStateMachine().isFinal()) {
+                setVisible(false);
+                return;
+            }
             cancel();
 
         } else if (arg0.getSource() == this.ok) {
             // install now
-
+            RestartController.getInstance().restartViaUpdater();
         } else if (arg0.getSource() == this.ok2) {
             // install later
-            JDUtilities.restartJD(true);
+            RestartController.getInstance().exitViaUpdater();
+            setVisible(false);
         }
     }
 
@@ -259,6 +267,11 @@ public class UpdaterGUI extends JFrame implements ActionListener, StateEventList
     }
 
     public void onUpdaterModuleStart(UpdaterEvent event) {
+    }
+
+    public void onNoUpdates() {
+        cancel.setText(T._.exit());
+        this.panel.onFinished(null);
     }
 
 }

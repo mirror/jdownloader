@@ -63,9 +63,10 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.Application;
-import org.appwork.utils.ShutDownHooksQueue;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -272,8 +273,10 @@ public class JDInit {
         GarbageController.getInstance();
         DownloadController.getInstance();
         /* add ShutdownHook so we have chance to save database properly */
-        ShutDownHooksQueue.add(new Runnable() {
 
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
             public void run() {
                 try {
                     if (DatabaseConnector.isDatabaseShutdown()) {
@@ -289,6 +292,7 @@ public class JDInit {
                 }
             }
         });
+
     }
 
     public void initGUI(final JDController controller) {

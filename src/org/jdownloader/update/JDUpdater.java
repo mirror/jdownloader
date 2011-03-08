@@ -186,13 +186,15 @@ public class JDUpdater extends Updater implements Runnable {
                 updater.downloadUpdates();
             }
             setWaitingUpdates(updater.getFilesToInstall().size());
+
+            // important
+            updater.getStateMachine().forceState(Updater.DONE);
             if (updater.getFilesToInstall().size() > 0) {
 
-                if (gui.installNow()) {
+                gui.installNow();
 
-                    JDUtilities.restartJDandWait();
-                    return;
-                }
+            } else {
+                gui.onNoUpdates();
             }
         } catch (AppNotFoundException e) {
             gui.onException(e);
