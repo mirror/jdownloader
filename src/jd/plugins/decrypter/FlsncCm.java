@@ -13,7 +13,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\.(com|net|jp|tw|in|it)/.*?folder/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\.[a-z]{2,3}/.*?folder/[0-9a-z]+" }, flags = { 0 })
 public class FlsncCm extends PluginForDecrypt {
 
     private static String geoDomain = null;
