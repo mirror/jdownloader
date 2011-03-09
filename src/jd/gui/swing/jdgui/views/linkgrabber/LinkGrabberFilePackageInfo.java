@@ -35,6 +35,8 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTRunner;
+
 public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
@@ -74,20 +76,24 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
 
     public void update() {
         if (fp == null) return;
-        /*
-         * wichtig: die set funktionen lösen eine action aus , welche ansonsten
-         * wiederum ein updatevent aufrufen würden
-         */
-        txtName.setText(fp.getName());
-        txtComment.setText(fp.getComment());
-        txtPassword.setText(fp.getPassword());
-        txtPassword2.setText(fp.getPasswordAuto().toString());
-        brwSaveTo.setText(fp.getDownloadDirectory());
-        chbPostProcessing.setSelected(fp.isPostProcessing());
-        chbUseSubdirectory.setSelected(fp.useSubDir());
-        /* neuzeichnen */
-        revalidate();
-
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                /*
+                 * wichtig: die set funktionen lösen eine action aus , welche
+                 * ansonsten wiederum ein updatevent aufrufen würden
+                 */
+                txtName.setText(fp.getName());
+                txtComment.setText(fp.getComment());
+                txtPassword.setText(fp.getPassword());
+                txtPassword2.setText(fp.getPasswordAuto().toString());
+                brwSaveTo.setText(fp.getDownloadDirectory());
+                chbPostProcessing.setSelected(fp.isPostProcessing());
+                chbUseSubdirectory.setSelected(fp.useSubDir());
+                /* neuzeichnen */
+                revalidate();
+            }
+        };
     }
 
     public LinkGrabberFilePackage getPackage() {
