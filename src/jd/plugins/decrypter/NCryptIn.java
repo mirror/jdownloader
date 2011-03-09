@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.captcha.specials.Ncrypt;
 import jd.controlling.ProgressController;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
@@ -87,8 +88,13 @@ public class NCryptIn extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 final String captchaLink = br.getRegex(OTHERCAPTCHA).getMatch(0);
                 if (captchaLink == null) { return null; }
+
+                final File captchaFile = this.getLocalCaptchaFile(".gif");
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in" + captchaLink));
+                Ncrypt.setDelay(captchaFile, 80);
+                final String code = getCaptchaCode(captchaFile, param);
+
                 allForm.setAction(parameter);
-                final String code = getCaptchaCode("http://ncrypt.in" + captchaLink, param);
                 allForm.put("captcha", code);
                 if (allForm.containsHTML(PASSWORDTEXT)) {
                     final String passCode = getPassword(param);
@@ -198,5 +204,4 @@ public class NCryptIn extends PluginForDecrypt {
         }
         return null;
     }
-
 }
