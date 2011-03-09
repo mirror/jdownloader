@@ -70,11 +70,17 @@ public class FileSonicCom extends PluginForHost {
                 if (geoDomain == null) {
                     geoDomain = defaultDomain;
                 } else {
-                    String domain = new Regex(br.getRedirectLocation(), "http://.*?(filesonic\\..*?)/").getMatch(0);
-                    geoDomain = "http://www." + domain;
+                    String domain = new Regex(br.getRedirectLocation(), "https?://.*?(filesonic\\..*?)(/|$)").getMatch(0);
+                    if (domain == null) {
+                        logger.severe("getDomain: failed(2) " + br.getRedirectLocation() + " " + br.toString());
+                        geoDomain = defaultDomain;
+                    } else {
+                        geoDomain = "http://www." + domain;
+                    }
                 }
             }
         } catch (final Throwable e) {
+            logger.info("getDomain: failed(1)" + e.toString());
             geoDomain = defaultDomain;
         }
         return geoDomain;
@@ -436,6 +442,7 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        this.correctDownloadLink(link);
     }
 
     @Override
