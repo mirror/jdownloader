@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -37,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/dir/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(\"|\r*?\n*?$|dir/.+)" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     private final static double RANDOM = Math.random();
@@ -105,7 +106,14 @@ public class FrShrdFldr extends PluginForDecrypt {
     }
 
     private void scan(final ArrayList<DownloadLink> decryptedLinks, final String pass, final String burl, final String[] subDir, final ProgressController progress) throws Exception {
-        final String[] pages = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
+        LinkedList<String> pagesTodo = new LinkedList<String>();
+        LinkedList<String> pagesDone = new LinkedList<String>();
+        String[] pages = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
+        if (pages != null) {
+            for (String page : pages) {
+                pagesTodo.add(page);
+            }
+        }
         String url;
 
         if (subDir.length > 1) {
@@ -131,18 +139,27 @@ public class FrShrdFldr extends PluginForDecrypt {
                 br.getPage("http://" + br.getHost() + burl + "&ajax=true&changedir=" + subDir[j - 1] + "&homemode=8&viewMode=1&random=" + RANDOM);
             }
             // scan pages
-            int i = 0;
+            String page = null;
             do {
+                if (!pagesTodo.isEmpty()) {
+                    page = pagesTodo.removeFirst();
+                    pagesDone.add(page);
+                } else {
+                    page = null;
+                }
                 if (subDir.length == 1) {
                     progress.increase(1);
                 }
-                final String[] links = br.getRegex("ml_file(.*?)title").getColumn(0);
+                final String[] links = br.getRegex("ml_file(.*?)File</td>.*?<.*?title").getColumn(0);
                 // scan page
+
                 for (String dl : links) {
                     final String[] dlTmp = dl.split("\n");
+                    String dlName = null;
+                    String dlSize = null;
                     dl = new Regex(dlTmp[1], "href=\"javascript:openNewWindow\\('(.*?)'").getMatch(0);
-                    final String dlName = new Regex(dlTmp[2], "/>(.*?)</a>").getMatch(0);
-                    final String dlSize = new Regex(dlTmp[5], ">(.*?)</td>").getMatch(0);
+                    dlName = new Regex(dlTmp[2], "/>(.*?)</a>").getMatch(0);
+                    dlSize = new Regex(dlTmp[5], ">(.*?)</td>").getMatch(0);
                     if (dl == null | dlName == null | dlSize == null) {
                         continue;
                     }
@@ -156,12 +173,19 @@ public class FrShrdFldr extends PluginForDecrypt {
                     dlink.setFilePackage(fp);
                     decryptedLinks.add(dlink);
                 }
-                if (i < pages.length - 1) {
-                    url = "http://" + br.getHost() + burl + "&ajax=true&firstFileToShow=" + pages[i] + "&sortsMode=NAME&sortsAsc=&random=" + RANDOM;
+
+                if (page != null) {
+                    url = "http://" + br.getHost() + burl + "&ajax=true&firstFileToShow=" + page + "&sortsMode=NAME&sortsAsc=&random=" + RANDOM;
                     br.getPage(url);
+                    pages = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
+                    for (String tmp : pages) {
+                        if (pagesDone.contains(tmp)) continue;
+                        if (pagesTodo.contains(tmp)) continue;
+                        if ("0".equals(tmp)) continue;
+                        pagesTodo.add(tmp);
+                    }
                 }
-                i++;
-            } while (i <= pages.length);
+            } while (pagesTodo.size() != 0);
             if (j < subDir.length) {
                 url = "http://" + br.getHost() + burl + "&refreshAfterUnzip=false&ajax=true&changedir=" + subDir[j] + "&random=" + RANDOM;
                 br.getPage(url);
