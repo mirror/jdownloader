@@ -366,10 +366,12 @@ public class DepositFiles extends PluginForHost {
             final URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
                 con.disconnect();
+                if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (!con.isContentDisposition()) {
-                con.disconnect();
+                br.followConnection();
+                if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             }
             if (passCode != null) {
@@ -378,6 +380,7 @@ public class DepositFiles extends PluginForHost {
             if (con.getContentType().contains("html")) {
                 logger.warning("The finallink doesn't lead to a file, following connection...");
                 br.followConnection();
+                if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
                 if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l); }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

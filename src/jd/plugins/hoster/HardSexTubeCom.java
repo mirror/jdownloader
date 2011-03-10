@@ -58,17 +58,24 @@ public class HardSexTubeCom extends PluginForHost {
         String videoID = new Regex(downloadLink.getDownloadURL(), "hardsextube\\.com/video/(\\d+)/").getMatch(0);
         Browser br2 = br.cloneBrowser();
         br2.getPage("http://vidii.hardsextube.com/video/" + videoID + "/configuj.xml");
-        dllink = br2.getRegex("FLVPath\" Value=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br2.getRegex("\"(http://vs[0-9]+\\.hardsextube\\.com/content/.*?\\.flv)\"").getMatch(0);
+        dllink = br2.getRegex("\"(http://vs[0-9]+\\.hardsextube\\.com/content/.*?\\.flv)\"").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
-        URLConnectionAdapter con = br.openGetConnection(dllink);
-        if (!con.getContentType().contains("html"))
-            downloadLink.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(dllink);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
