@@ -28,15 +28,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 public class NoPremium extends PluginForHost implements JDPremInterface {
 
-    private boolean                  proxyused    = false;
-    private String                   infostring   = null;
-    private PluginForHost            plugin       = null;
-    private static boolean           enabled      = false;
+    private boolean proxyused = false;
+    private String infostring = null;
+    private PluginForHost plugin = null;
+    private static boolean enabled = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object      LOCK         = new Object();
-    private String                   Info         = null;
-    private String                   validUntil   = null;
-    private boolean                  expired      = false;
+    private static final Object LOCK = new Object();
+    private String Info = null;
+    private String validUntil = null;
+    private boolean expired = false;
 
     /* function returns transfer left */
     private long GetTrasferLeft(String wynik) {
@@ -367,7 +367,9 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
             try {
                 hosts = br.getPage("http://www.nopremium.pl/clipboard.php");
                 login(account, true);
-
+            } catch (PluginException e) {
+                account.setValid(false);
+                return ac;
             } catch (Exception e) {
                 account.setTempDisabled(true);
                 account.setValid(true);

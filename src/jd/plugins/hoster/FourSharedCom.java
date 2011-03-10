@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -39,6 +40,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
+    private static String agent = RandomUserAgent.generate();
 
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -51,6 +53,7 @@ public class FourSharedCom extends PluginForHost {
         if (link.getDownloadURL().contains(".com/download")) {
             try {
                 final Browser br = new Browser();
+                br.getHeaders().put("User-Agent", agent);
                 br.getPage(link.getDownloadURL());
                 final String newLink = br.getRedirectLocation();
                 if (newLink != null) {
@@ -190,6 +193,7 @@ public class FourSharedCom extends PluginForHost {
 
     public void login(final Account account) throws IOException, PluginException {
         setBrowserExclusive();
+        br.getHeaders().put("User-Agent", agent);
         br.getHeaders().put("4langcookie", "en");
         br.getPage("http://www.4shared.com/login.jsp");
         br.postPage("http://www.4shared.com/index.jsp", "afp=&afu=&df=&rdf=&cff=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&openid=");
@@ -202,6 +206,7 @@ public class FourSharedCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         try {
             setBrowserExclusive();
+            br.getHeaders().put("User-Agent", agent);
             br.setCookie("4shared.com", "4langcookie", "en");
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());

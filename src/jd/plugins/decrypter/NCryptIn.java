@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.captcha.specials.Ncrypt;
 import jd.controlling.ProgressController;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
@@ -45,11 +44,11 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?ncrypt\\.in/folder-.+" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
 
-    private static final String             RECAPTCHA      = "recaptcha_challenge_field";
-    private static final String             OTHERCAPTCHA   = "\"(/temp/anicaptcha/\\d+\\.gif)\"";
-    private static final String             PASSWORDTEXT   = "password";
-    private static final String             PASSWORDFAILED = "class=\"error\">\\&bull; Das Passwort ist ung\\&uuml;ltig";
-    private static HashMap<String, Boolean> CNL_URL_MAP    = new HashMap<String, Boolean>();
+    private static final String RECAPTCHA = "recaptcha_challenge_field";
+    private static final String OTHERCAPTCHA = "\"(/temp/anicaptcha/\\d+\\.gif)\"";
+    private static final String PASSWORDTEXT = "password";
+    private static final String PASSWORDFAILED = "class=\"error\">\\&bull; Das Passwort ist ung\\&uuml;ltig";
+    private static HashMap<String, Boolean> CNL_URL_MAP = new HashMap<String, Boolean>();
 
     public NCryptIn(final PluginWrapper wrapper) {
         super(wrapper);
@@ -91,7 +90,11 @@ public class NCryptIn extends PluginForDecrypt {
 
                 final File captchaFile = this.getLocalCaptchaFile(".gif");
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in" + captchaLink));
-                Ncrypt.setDelay(captchaFile, 80);
+                try {
+                    jd.captcha.specials.Ncrypt.setDelay(captchaFile, 80);
+                } catch (final Throwable e) {
+                    /* not existing in 09581 stable */
+                }
                 final String code = getCaptchaCode(captchaFile, param);
 
                 allForm.setAction(parameter);

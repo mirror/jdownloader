@@ -19,22 +19,25 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitload.com", "mystream.to" }, urls = { "http://(www\\.)?(bitload\\.com/(f|d)/\\d+/[a-z0-9]+|mystream\\.to/file-\\d+-[a-z0-9]+)", "http://blablarfdghrtthgrt56z3ef27893bv" }, flags = { 2, 0 })
 public class BitLoadCom extends PluginForHost {
+
+    private static String agent = RandomUserAgent.generate();
 
     public BitLoadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,6 +63,7 @@ public class BitLoadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", agent);
         br.setCookie("http://www.bitload.com", "locale", "de");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -81,6 +85,7 @@ public class BitLoadCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL() + "?c=free");
+        if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = getDllink();
         if (dllink == null) {
             logger.warning("The dllink is null...");
@@ -90,6 +95,7 @@ public class BitLoadCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("Got html code instead of the file!");
             br.followConnection();
+            if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -113,6 +119,7 @@ public class BitLoadCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", agent);
         br.setCookie("http://www.bitload.com", "locale", "de");
         br.postPage(MAINPAGE + "login", "sUsername=" + Encoding.urlEncode(account.getUser()) + "&sPassword=" + Encoding.urlEncode(account.getPass()) + "&login_submit=");
         if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "username") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -151,6 +158,7 @@ public class BitLoadCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         br.getPage(link.getDownloadURL() + "?c=premium");
+        if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = br.getRegex("bis die Datei bereitgestellt wird\\!</div>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://bl\\d+\\.bitload\\.com/file-\\d+/[A-Za-z0-9]+/.*?)\"").getMatch(0);
