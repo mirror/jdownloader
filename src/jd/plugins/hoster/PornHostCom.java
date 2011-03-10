@@ -75,9 +75,12 @@ public class PornHostCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = null;
         if (!downloadLink.getDownloadURL().contains(".html")) {
-            dllink = br.getRegex("download this file</label>.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = br.getRegex("\"http://dl[0-9]+\\.pornhost\\.com/files/.*?/.*?/.*?/.*?/.*?/.*?\\..*?\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"http://dl[0-9]+\\.pornhost\\.com/files/.*?/.*?/.*?/.*?/.*?/.*?\\..*?\"").getMatch(0);
+                dllink = br.getRegex("reateRNPlayer.*?\"(http://.*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("download this file</label>.*?<a href=\"(.*?)\"").getMatch(0);
             }
         } else {
             dllink = br.getRegex("style=\"width: 499px; height: 372px\">[\t\n\r ]+<img src=\"(http.*?)\"").getMatch(0);
