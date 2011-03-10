@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(dir/.+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/dir/.+" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     private final static double RANDOM = Math.random();
@@ -146,7 +146,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                     if (dl == null | dlName == null | dlSize == null) {
                         continue;
                     }
-                    final DownloadLink dlink = createDownloadlink(dl.replaceAll("4shared\\.com", "4shared.viajd").replace("https", "http"));
+                    final DownloadLink dlink = createDownloadlink(dl.replace("https", "http"));
                     if (pass.length() != 0) {
                         dlink.setProperty("pass", pass);
                     }
