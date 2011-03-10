@@ -208,7 +208,7 @@ public class ShareFlareNet extends PluginForHost {
 
     private String getDllink() {
         String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/download[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/.*?download.*?[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
         return dllink;
     }
 
