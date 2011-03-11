@@ -52,6 +52,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         boolean dh = false;
         String finallink = null;
         String finalfilename = null;
+        if (parameter.contains("gameone.de")) {
+            br.setCookiesExclusive(true);
+        }
         if (parameter.contains("madmimi.com") || parameter.contains("t.co")) {
             br.getPage(parameter);
             finallink = br.getRedirectLocation();

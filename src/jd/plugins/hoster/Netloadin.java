@@ -84,7 +84,7 @@ public class Netloadin extends PluginForHost {
         try {
             if (br != null) {
                 br.setConnectTimeout(30000);
-                br.setReadTimeout(90000);
+                br.setReadTimeout(120000);
             }
         } catch (Throwable e) {
         }
@@ -160,6 +160,13 @@ public class Netloadin extends PluginForHost {
             sleep(20000, downloadLink);
             logger.info("used serverurl: " + finalURL);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL);
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getConnection().setConnectTimeout(30000);
+                dl.getConnection().setReadTimeout(120000);
+            } catch (Throwable e) {
+            }
             dl.startDownload();
         } catch (IOException e) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
@@ -226,6 +233,13 @@ public class Netloadin extends PluginForHost {
         br.getPage(url);
         if (br.getRedirectLocation() != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation());
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getConnection().setConnectTimeout(30000);
+                dl.getConnection().setReadTimeout(120000);
+            } catch (Throwable e) {
+            }
             dl.startDownload();
         } else {
             handleErrors(downloadLink);
@@ -362,7 +376,7 @@ public class Netloadin extends PluginForHost {
                     /* remove next major update */
                     /* workaround for broken timeout in 0.9xx public */
                     con.setConnectTimeout(30000);
-                    con.setReadTimeout(90000);
+                    con.setReadTimeout(120000);
                 } catch (Throwable e) {
                 }
                 /**
@@ -380,7 +394,7 @@ public class Netloadin extends PluginForHost {
                             /* remove next major update */
                             /* workaround for broken timeout in 0.9xx public */
                             con.setConnectTimeout(30000);
-                            con.setReadTimeout(90000);
+                            con.setReadTimeout(120000);
                         } catch (Throwable e) {
                         }
                         dl = RAFDownload.download(downloadLink, con, resume, chunks);
@@ -399,7 +413,7 @@ public class Netloadin extends PluginForHost {
                     /* remove next major update */
                     /* workaround for broken timeout in 0.9xx public */
                     con.setConnectTimeout(30000);
-                    con.setReadTimeout(90000);
+                    con.setReadTimeout(120000);
                 } catch (Throwable e) {
                 }
                 dl = RAFDownload.download(downloadLink, con, resume, chunks);
@@ -412,6 +426,13 @@ public class Netloadin extends PluginForHost {
                 if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.netloadin.errors.couldnotfollow", "Server: could not follow the link"));
                 checkPassword(downloadLink);
                 handleErrors(downloadLink);
+            }
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getConnection().setConnectTimeout(30000);
+                dl.getConnection().setReadTimeout(120000);
+            } catch (Throwable e) {
             }
             if (!dl.startDownload()) {
                 if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
