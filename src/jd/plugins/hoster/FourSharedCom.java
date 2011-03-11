@@ -123,7 +123,7 @@ public class FourSharedCom extends PluginForHost {
             if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             if (url.contains("linkerror.jsp")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             // Ticket Time
-            final String ttt = br.getRegex(" var c = (\\d+?);").getMatch(0);
+            final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
             int tt = 40;
             if (ttt != null) {
                 logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
@@ -157,17 +157,23 @@ public class FourSharedCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
                 }
             } else {
-                if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+                handleFreeErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+            handleFreeErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("pass", pass);
         dl.startDownload();
+    }
+
+    private void handleFreeErrors() throws PluginException {
+        if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+        String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
+        if (ttt != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
     }
 
     @Override

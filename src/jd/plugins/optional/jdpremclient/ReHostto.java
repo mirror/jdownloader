@@ -196,26 +196,30 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
         String url = Encoding.urlEncode(link.getDownloadURL());
         br.getPage("http://rehost.to/api.php?cmd=login&user=" + user + "&pass=" + pw);
         String long_ses = br.getRegex("long_ses=(.+)").getMatch(0);
-        br.postPage("http://rehost.to/process_download.php", "user=cookie&pass=" + long_ses + "&dl=" + url);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resumePossible(this.getHost()), 1);
-        if (dl.getConnection().getResponseCode() == 404) {
-            /* file offline */
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!dl.getConnection().isContentDisposition()) {
-            /* unknown error */
-            br.followConnection();
-            if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            logger.severe("Rehost: error!");
-            logger.severe(br.toString());
-            synchronized (LOCK) {
-                premiumHosts.remove(link.getHost());
+        int retry = 0;
+        while (true) {
+            br.postPage("http://rehost.to/process_download.php", "user=cookie&pass=" + long_ses + "&dl=" + url);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resumePossible(this.getHost()), 1);
+            if (dl.getConnection().getResponseCode() == 404) {
+                /* file offline */
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return false;
+            if (!dl.getConnection().isContentDisposition()) {
+                /* unknown error */
+                br.followConnection();
+                if (br.getURL().contains("error=download_failed") && retry++ <= 3) continue;
+                if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                logger.severe("Rehost: error!");
+                logger.severe(br.toString());
+                synchronized (LOCK) {
+                    premiumHosts.remove(link.getHost());
+                }
+                return false;
+            }
+            dl.startDownload();
+            return true;
         }
-        dl.startDownload();
-        return true;
     }
 
     @Override
@@ -369,8 +373,12 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
             if (hoster.contains("netload.in")) return true;
             if (hoster.contains("uploaded.to")) return true;
             if (hoster.contains("x7.to")) return true;
-            if (hoster.contains("shragle.com")) return true;
             if (hoster.contains("freakshare.")) return true;
+            if (hoster.contains("filesonic")) return true;
+            if (hoster.contains("easy-share")) return true;
+            if (hoster.contains("duckload")) return true;
+            if (hoster.contains("megaupload")) return true;
+            if (hoster.contains("megavideo")) return true;
             if (hoster.contains("fileserve.com")) return true;
             if (hoster.contains("bitshare.com")) return true;
             if (hoster.contains("hotfile.com")) return true;
