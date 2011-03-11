@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -29,12 +28,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -58,8 +57,8 @@ public class OronCom extends PluginForHost {
         return "http://oron.com/tos.html";
     }
 
-    public boolean              nopremium          = false;
-    private static final String COOKIE_HOST        = "http://oron.com";
+    public boolean nopremium = false;
+    private static final String COOKIE_HOST = "http://oron.com";
     private static final String ONLY4PREMIUMERROR0 = "The file status can only be queried by Premium Users";
     private static final String ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
 
@@ -90,12 +89,11 @@ public class OronCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?>(.*?)of.*?Mb</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space + " Mb");
-        String points = br.getRegex(Pattern.compile("You have collected:</td>.*?(\\d+) premium", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
         account.setValid(true);
         String availableTraffic = br.getRegex("<td>Available:</td>.*?<td>(.*?)</td>").getMatch(0);
+        if (availableTraffic == null) {
+            availableTraffic = br.getRegex("Traffic Available:</td>.*?<td>(.*?)</td>").getMatch(0);
+        }
         if (availableTraffic != null) ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
         if (!nopremium) {
             String expire = br.getRegex("<td>Premium Account expires:</td>.*?<td>(.*?)</td>").getMatch(0);

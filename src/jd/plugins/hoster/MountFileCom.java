@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -95,6 +95,12 @@ public class MountFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://dl1.mountfile.com/view", postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            long wait = 60 * 60 * 1000l;
+            if (br.containsHTML("You reached your hourly traffic limit.")) {
+                String waitTimer = br.getRegex("You can wait download for.*?\">(\\d+)<").getMatch(0);
+                if (waitTimer != null) wait = Long.parseLong(waitTimer) * 60 * 1000l;
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

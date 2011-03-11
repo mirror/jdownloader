@@ -52,11 +52,11 @@ public class GoldFileEu extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private String              BRBEFORE      = "";
+    private String BRBEFORE = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST   = "http://goldfile.eu";
-    public boolean              NOPREMIUM     = false;
+    private static final String COOKIE_HOST = "http://goldfile.eu";
+    public boolean NOPREMIUM = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -232,6 +232,10 @@ public class GoldFileEu extends PluginForHost {
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if ("http://goldfile.eu".equals(dllink)) {
+            /* page now forces to do a game,survey or other stuff */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Not possible as free user!");
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
