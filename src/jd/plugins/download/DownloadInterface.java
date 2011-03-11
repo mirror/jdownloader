@@ -39,7 +39,7 @@ import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.URLConnectionAdapter.METHOD;
+import jd.http.URLConnectionAdapter.RequestMethod;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -215,7 +215,7 @@ abstract public class DownloadInterface {
                 }
                 URLConnectionAdapter con = null;
                 clonedconnection = true;
-                if (connection.getRequestMethod() == METHOD.POST) {
+                if (connection.getRequestMethod() == RequestMethod.POST) {
                     connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
                     con = br.openRequestConnection(connection.getRequest());
                 } else {
