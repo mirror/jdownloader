@@ -109,7 +109,7 @@ public class SubConfiguration extends Property implements Serializable {
             if (SUB_CONFIGS.containsKey(name)) {
                 return true;
             } else {
-                return JDUtilities.getDatabaseConnector().getData(name) != null;
+                return JDUtilities.getDatabaseConnector().hasData(name);
             }
         } finally {
             SubConfiguration.SUBCONFIG_LOCK = false;

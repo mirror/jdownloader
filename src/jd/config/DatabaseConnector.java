@@ -221,6 +221,32 @@ public class DatabaseConnector implements Serializable {
         return databaseok;
     }
 
+    public synchronized boolean hasData(final String name) {
+        synchronized (LOCK) {
+            if (!isDatabaseShutdown()) {
+                Statement statement = null;
+                ResultSet rs = null;
+                try {
+                    // try to init the table
+                    statement = con.createStatement();
+                    rs = statement.executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
+                    if (rs.next()) { return true; }
+                } catch (final Exception e) {
+                } finally {
+                    try {
+                        rs.close();
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        statement.close();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
     public synchronized void removeData(final String name) {
         synchronized (LOCK) {
             if (!isDatabaseShutdown()) {
@@ -231,22 +257,14 @@ public class DatabaseConnector implements Serializable {
                     statement = con.createStatement();
                     rs = statement.executeQuery("DELETE FROM config WHERE name = '" + name + "'");
                 } catch (final Exception e) {
-                    e.printStackTrace();
                 } finally {
-                    if (rs != null) {
-                        try {
-                            rs.close();
-                        } catch (final SQLException e) {
-                            e.printStackTrace();
-                        }
+                    try {
+                        rs.close();
+                    } catch (final Throwable e) {
                     }
-
-                    if (statement != null) {
-                        try {
-                            statement.close();
-                        } catch (final SQLException e) {
-                            e.printStackTrace();
-                        }
+                    try {
+                        statement.close();
+                    } catch (final Throwable e) {
                     }
                 }
             }
@@ -263,7 +281,6 @@ public class DatabaseConnector implements Serializable {
                 ret = dbdata.get(name);
                 Statement statement = null;
                 ResultSet rs = null;
-
                 try {
                     if (ret == null) {
                         // try to init the table
@@ -273,26 +290,18 @@ public class DatabaseConnector implements Serializable {
                             ret = rs.getObject(2);
                             dbdata.put(rs.getString(1), ret);
                         }
-
                     }
                 } catch (final Exception e) {
                     JDLogger.getLogger().warning("Database not available. Create new one: " + name);
                     JDLogger.exception(Level.FINEST, e);
                 } finally {
-                    if (rs != null) {
-                        try {
-                            rs.close();
-                        } catch (final SQLException e) {
-                            e.printStackTrace();
-                        }
+                    try {
+                        rs.close();
+                    } catch (final Throwable e) {
                     }
-
-                    if (statement != null) {
-                        try {
-                            statement.close();
-                        } catch (final SQLException e) {
-                            e.printStackTrace();
-                        }
+                    try {
+                        statement.close();
+                    } catch (final Throwable e) {
                     }
                 }
             }
@@ -315,7 +324,6 @@ public class DatabaseConnector implements Serializable {
             try {
                 statement = con.createStatement();
                 rs = statement.executeQuery("SELECT * FROM config");
-
                 while (rs.next()) {
                     final SubConfiguration conf = SubConfiguration.getConfig(rs.getString(1));
                     if (conf.getProperties().size() > 0) {
@@ -325,20 +333,13 @@ public class DatabaseConnector implements Serializable {
             } catch (final SQLException e) {
                 e.printStackTrace();
             } finally {
-                if (rs != null) {
-                    try {
-                        rs.close();
-                    } catch (final SQLException e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    rs.close();
+                } catch (final Throwable e) {
                 }
-
-                if (statement != null) {
-                    try {
-                        statement.close();
-                    } catch (final SQLException e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    statement.close();
+                } catch (final Throwable e) {
                 }
             }
             return ret;
@@ -353,30 +354,52 @@ public class DatabaseConnector implements Serializable {
         synchronized (LOCK) {
             if (!isDatabaseShutdown()) {
                 dbdata.put(name, data);
+                ResultSet rs = null;
+                Statement cs = null;
+                PreparedStatement pst = null;
                 try {
-                    final ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
+                    cs = con.createStatement();
+                    rs = cs.executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
                     rs.next();
                     if (rs.getInt(1) > 0) {
-                        final PreparedStatement pst = con.prepareStatement("UPDATE config SET obj = ? WHERE name = '" + name + "'");
+                        pst = con.prepareStatement("UPDATE config SET obj = ? WHERE name = '" + name + "'");
                         pst.setObject(1, data);
                         pst.execute();
                     } else {
-                        final PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
+                        pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
                         pst.setString(1, name);
                         pst.setObject(2, data);
                         pst.execute();
                     }
-
                 } catch (final Exception e) {
+                    PreparedStatement pst2 = null;
                     try {
                         System.out.println("First save " + name);
-                        final PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
+                        pst2 = con.prepareStatement("INSERT INTO config VALUES (?,?)");
                         pst.setString(1, name);
                         pst.setObject(2, data);
                         pst.execute();
                     } catch (final Exception e2) {
                         JDLogger.getLogger().warning("Database save error: " + name);
                         JDLogger.exception(Level.FINEST, e2);
+                    } finally {
+                        try {
+                            pst2.close();
+                        } catch (final Throwable e2) {
+                        }
+                    }
+                } finally {
+                    try {
+                        rs.close();
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        cs.close();
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        pst.close();
+                    } catch (final Throwable e) {
                     }
                 }
             }
@@ -418,20 +441,13 @@ public class DatabaseConnector implements Serializable {
                     JDLogger.exception(Level.FINEST, e);
                     JDLogger.getLogger().warning("Database not available. Create new one: links");
                 } finally {
-                    if (rs != null) {
-                        try {
-                            rs.close();
-                        } catch (final SQLException e) {
-                            e.printStackTrace();
-                        }
+                    try {
+                        rs.close();
+                    } catch (final Throwable e) {
                     }
-
-                    if (statement != null) {
-                        try {
-                            statement.close();
-                        } catch (final SQLException e) {
-                            e.printStackTrace();
-                        }
+                    try {
+                        statement.close();
+                    } catch (final Throwable e) {
                     }
                 }
             }
@@ -445,19 +461,25 @@ public class DatabaseConnector implements Serializable {
     public void saveLinks(final Object obj) {
         synchronized (LOCK) {
             if (!isDatabaseShutdown()) {
+                PreparedStatement pst = null;
                 try {
                     if (getLinks() == null) {
-                        final PreparedStatement pst = con.prepareStatement("INSERT INTO links VALUES (?,?)");
+                        pst = con.prepareStatement("INSERT INTO links VALUES (?,?)");
                         pst.setString(1, "links");
                         pst.setObject(2, obj);
                         pst.execute();
                     } else {
-                        final PreparedStatement pst = con.prepareStatement("UPDATE links SET obj=? WHERE name='links'");
+                        pst = con.prepareStatement("UPDATE links SET obj=? WHERE name='links'");
                         pst.setObject(1, obj);
                         pst.execute();
                     }
                 } catch (final Exception e) {
                     JDLogger.exception(e);
+                } finally {
+                    try {
+                        pst.close();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
