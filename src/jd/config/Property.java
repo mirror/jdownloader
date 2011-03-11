@@ -18,7 +18,6 @@ package jd.config;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.logging.Logger;
 
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -42,8 +41,6 @@ public class Property implements Serializable {
      */
     public static final Object NULL = new Object();
 
-    protected transient Logger logger = null;
-
     private HashMap<String, Object> properties;
     private HashMap<String, Integer> propertiesHashes;
 
@@ -52,8 +49,6 @@ public class Property implements Serializable {
     public Property() {
         properties = new HashMap<String, Object>();
         propertiesHashes = new HashMap<String, Integer>();
-
-        logger = JDLogger.getLogger();
     }
 
     /**
@@ -78,7 +73,7 @@ public class Property implements Serializable {
         } catch (final Exception e) {
             // logger.finer("Could not cast " + r.getClass().getSimpleName() +
             // " to " + e.getClass().getSimpleName() + " for key " + key);
-            logger.finer("Could not cast " + r.getClass().getSimpleName() + " to " + def.getClass().getSimpleName() + " for key " + key);
+            JDLogger.getLogger().finer("Could not cast " + r.getClass().getSimpleName() + " to " + def.getClass().getSimpleName() + " for key " + key);
             return def;
         }
     }
@@ -177,6 +172,13 @@ public class Property implements Serializable {
             properties = new HashMap<String, Object>();
         }
         return properties;
+    }
+
+    public void copyTo(Property dest) {
+        if (dest != null && dest != this) {
+            dest.properties.putAll(this.properties);
+            dest.propertiesHashes.putAll(this.propertiesHashes);
+        }
     }
 
     /**

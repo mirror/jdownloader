@@ -221,6 +221,38 @@ public class DatabaseConnector implements Serializable {
         return databaseok;
     }
 
+    public synchronized void removeData(final String name) {
+        synchronized (LOCK) {
+            if (!isDatabaseShutdown()) {
+                dbdata.remove(name);
+                Statement statement = null;
+                ResultSet rs = null;
+                try {
+                    statement = con.createStatement();
+                    rs = statement.executeQuery("DELETE FROM config WHERE name = '" + name + "'");
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (rs != null) {
+                        try {
+                            rs.close();
+                        } catch (final SQLException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if (statement != null) {
+                        try {
+                            statement.close();
+                        } catch (final SQLException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Returns a CONFIGURATION
      */

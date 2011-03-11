@@ -100,6 +100,22 @@ public class SubConfiguration extends Property implements Serializable {
         return name;
     }
 
+    public synchronized static boolean hasConfig(final String name) {
+        if (SUBCONFIG_LOCK) {
+            JDLogger.exception(new Exception("Static Database init error!!"));
+        }
+        SUBCONFIG_LOCK = true;
+        try {
+            if (SUB_CONFIGS.containsKey(name)) {
+                return true;
+            } else {
+                return JDUtilities.getDatabaseConnector().getData(name) != null;
+            }
+        } finally {
+            SubConfiguration.SUBCONFIG_LOCK = false;
+        }
+    }
+
     public synchronized static SubConfiguration getConfig(final String name) {
         if (SUBCONFIG_LOCK) {
             JDLogger.exception(new Exception("Static Database init error!!"));
@@ -119,4 +135,16 @@ public class SubConfiguration extends Property implements Serializable {
         }
     }
 
+    public synchronized static void removeConfig(final String name) {
+        if (SUBCONFIG_LOCK) {
+            JDLogger.exception(new Exception("Static Database init error!!"));
+        }
+        SUBCONFIG_LOCK = true;
+        try {
+            SUB_CONFIGS.remove(name);
+            JDUtilities.getDatabaseConnector().removeData(name);
+        } finally {
+            SubConfiguration.SUBCONFIG_LOCK = false;
+        }
+    }
 }

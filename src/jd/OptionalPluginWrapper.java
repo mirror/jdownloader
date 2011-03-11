@@ -19,6 +19,7 @@ package jd;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
+import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.plugins.OptionalPlugin;
@@ -36,11 +37,12 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return OPTIONAL_WRAPPER;
     }
 
-    private final String         id;
-    private final double         version;
-    private final String         name;
-    private final String         description;
+    private final String id;
+    private final double version;
+    private final String name;
+    private final String description;
     private final OptionalPlugin annotation;
+    private SubConfiguration subConfig = null;
 
     public OptionalPluginWrapper(Class<?> c, OptionalPlugin help) {
         super(c.getName(), null, c.getName(), null, 0, help.rev());
@@ -80,6 +82,26 @@ public class OptionalPluginWrapper extends PluginWrapper {
     @Override
     public String getHost() {
         return name;
+    }
+
+    /*
+     * converts old dynamic getConfigName entries to static getID entries, WE
+     * MUST USE STATIC getID to access db
+     */
+    @Override
+    public synchronized SubConfiguration getPluginConfig() {
+        if (subConfig != null) return subConfig;
+        subConfig = SubConfiguration.getConfig(this.getID());
+        if (SubConfiguration.hasConfig(this.getConfigName())) {
+            /* convert old to new */
+            SubConfiguration oldConfig = SubConfiguration.getConfig(this.getConfigName());
+            if (oldConfig != null) {
+                /* put old values into new db and delete old one then */
+                oldConfig.copyTo(subConfig);
+                SubConfiguration.removeConfig(this.getConfigName());
+            }
+        }
+        return subConfig;
     }
 
     public String getDescription() {

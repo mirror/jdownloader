@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
@@ -33,7 +34,8 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
     /**
      * is the optional plugin running
      */
-    private boolean         running                 = false;
+    private boolean running = false;
+    private SubConfiguration subConfig = null;
 
     public PluginOptional(final PluginWrapper wrapper) {
         super(wrapper);
@@ -72,7 +74,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
      * @return
      */
     public String getID() {
-        return this.getHost();
+        return this.getWrapper().getID();
     }
 
     @Override
@@ -139,5 +141,25 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
          */
         JDController.getInstance().removeControlListener(this);
         this.running = false;
+    }
+
+    /*
+     * converts old dynamic getConfigName entries to static getID entries, WE
+     * MUST USE STATIC getID to access db
+     */
+    @Override
+    public synchronized SubConfiguration getPluginConfig() {
+        if (subConfig != null) return subConfig;
+        subConfig = SubConfiguration.getConfig(this.getID());
+        if (SubConfiguration.hasConfig(this.getHost())) {
+            /* convert old to new */
+            SubConfiguration oldConfig = SubConfiguration.getConfig(this.getHost());
+            if (oldConfig != null) {
+                /* put old values into new db and delete old one then */
+                oldConfig.copyTo(subConfig);
+                SubConfiguration.removeConfig(this.getHost());
+            }
+        }
+        return subConfig;
     }
 }
