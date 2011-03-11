@@ -66,6 +66,7 @@ public class ReverBnationCom extends PluginForDecrypt {
         for (int i = 0; i < ids.length; i++) {
             final DownloadLink dlLink = createDownloadlink("reverbnationcomid" + ids[i] + "reverbnationcomartist" + artist);
             dlLink.setName(title[i].replaceAll("<span title=\"", ""));
+            dlLink.setProperty("orgName", dlLink.getName());
             FilePackage fp = FilePackage.getInstance();
             fp.setName(titleContent[nameCounter + 1]);
             dlLink.setFilePackage(fp);

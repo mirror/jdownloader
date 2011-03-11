@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -68,7 +69,7 @@ public class ReverBnationComHoster extends PluginForHost {
     private String getDllink(final DownloadLink link) throws IOException, PluginException {
         final Regex infoRegex = new Regex(link.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
         br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + infoRegex.getMatch(0) + "?from_page_object=artist_" + infoRegex.getMatch(1), "");
-        final String damnString = br.getRegex("from_page_object=String_-(\\d+)\\\\\"").getMatch(0);
+        final String damnString = br.getRegex("from_page_object=String_-?(\\d+)\\\\\"").getMatch(0);
         if (damnString == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         // folgender Request macht unten den redirect
         br.postPage("http://www.reverbnation.com/audio_player/set_now_playing_index/0", "");
@@ -115,6 +116,17 @@ public class ReverBnationComHoster extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String amzName = dl.getConnection().getHeaderField("x-amz-meta-filename");
+        if (amzName != null) {
+            downloadLink.setFinalFileName(amzName);
+        } else {
+            String name = Plugin.getFileNameFromHeader(dl.getConnection());
+            if ("flash9-en.ocx".equals(name)) {
+                /* workaround for dirty name */
+                String orgName = downloadLink.getStringProperty("orgName", null);
+                if (orgName != null) downloadLink.setFinalFileName(orgName);
+            }
         }
         dl.startDownload();
     }

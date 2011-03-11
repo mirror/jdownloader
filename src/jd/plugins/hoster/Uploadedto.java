@@ -238,7 +238,7 @@ public class Uploadedto extends PluginForHost {
                 linkStatus.setErrorMessage(JDL.L("plugins.hoster.uploadedto.errors.indirectlinkerror", "Indirect link error"));
                 return;
             }
-            logger.info(br.getRedirectLocation());
+            logger.info("Download from:" + br.getRedirectLocation());
         } else {
             logger.info("Direct Downloads active");
         }
