@@ -296,7 +296,8 @@ public class UploadingCom extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-
+        /* is broken at the moment, retest later */
+        if (true) return false;
         if (urls == null || urls.length == 0) { return false; }
         try {
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
