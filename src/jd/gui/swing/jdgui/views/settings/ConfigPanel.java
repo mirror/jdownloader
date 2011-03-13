@@ -34,9 +34,10 @@ import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdownloader.update.RestartController;
 
 public abstract class ConfigPanel extends SwitchPanel {
 
@@ -167,7 +168,9 @@ public abstract class ConfigPanel extends SwitchPanel {
             if (!JDGui.getInstance().isExitRequested()) {
                 int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.title", "Restart required!"), JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion", "This option needs a JDownloader restart."), null, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.ok", "Restart NOW!"), null);
 
-                if (UserIO.isOK(answer)) JDUtilities.restartJD(false);
+                if (UserIO.isOK(answer)) {
+                    RestartController.getInstance().directRestart();
+                }
             }
         }
     }

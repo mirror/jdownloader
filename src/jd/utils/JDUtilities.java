@@ -23,12 +23,10 @@ import java.awt.Insets;
 import java.io.File;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
 
@@ -54,7 +52,6 @@ import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
-import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -109,8 +106,6 @@ public class JDUtilities {
     public static final Object   USERIO_LOCK         = new Object();
 
     private static String        REVISION;
-
-    private static String[]      JD_ARGUMENTS        = new String[1];
 
     private static long          REVISIONINT         = -1;
 
@@ -418,101 +413,6 @@ public class JDUtilities {
     public static int getRunType() {
         final String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
         return (caller.matches("jar\\:.*\\.jar\\!.*")) ? RUNTYPE_LOCAL_JARED : RUNTYPE_LOCAL;
-    }
-
-    public static void setJDargs(final String[] args) {
-        JD_ARGUMENTS = args;
-    }
-
-    public static void restartJDandWait() {
-        restartJD(false);
-        while (true) {
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-            }
-        }
-    }
-
-    public static void restartJD(final boolean tinybypass) {
-        new Thread(new Runnable() {
-            public void run() {
-                if (JDUtilities.getController() != null) {
-                    JDUtilities.getController().prepareShutdown(false);
-                }
-
-                final List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
-                final ArrayList<String> jargs = new ArrayList<String>();
-
-                boolean xmxset = false;
-                boolean xmsset = false;
-                boolean useconc = false;
-                boolean minheap = false;
-                boolean maxheap = false;
-                System.out.println("RESTART NOW");
-                for (final String h : lst) {
-                    if (h.contains("Xmx")) {
-                        xmxset = true;
-                        if (Runtime.getRuntime().maxMemory() < 533000000) {
-                            jargs.add("-Xmx512m");
-                            continue;
-                        }
-                    } else if (h.contains("xms")) {
-                        xmsset = true;
-                    } else if (h.contains("XX:+useconc")) {
-                        useconc = true;
-                    } else if (h.contains("minheapfree")) {
-                        minheap = true;
-                    } else if (h.contains("maxheapfree")) {
-                        maxheap = true;
-                    }
-                    jargs.add(h);
-                }
-                if (!xmxset) {
-                    jargs.add("-Xmx512m");
-                }
-                if (OSDetector.isLinux()) {
-                    if (!xmsset) jargs.add("-Xms64m");
-                    if (!useconc) jargs.add("-XX:+UseConcMarkSweepGC");
-                    if (!minheap) jargs.add("-XX:MinHeapFreeRatio=0");
-                    if (!maxheap) jargs.add("-XX:MaxHeapFreeRatio=0");
-                }
-                jargs.add("-jar");
-                jargs.add("JDownloader.jar");
-
-                final String[] javaArgs = jargs.toArray(new String[jargs.size()]);
-                final String[] finalArgs = new String[JD_ARGUMENTS.length + javaArgs.length];
-                System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
-                System.arraycopy(JD_ARGUMENTS, 0, finalArgs, javaArgs.length, JD_ARGUMENTS.length);
-
-                final ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
-                final String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
-
-                if (restartfiles != null && restartfiles.size() > 0 || tinybypass) {
-                    if (OSDetector.isMac()) {
-                        LOGGER.info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
-                    } else {
-                        if (new File(javaPath).exists()) {
-                            LOGGER.info(JDUtilities.runCommand(javaPath, new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
-                        } else {
-                            LOGGER.info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
-                        }
-                    }
-                } else {
-                    if (OSDetector.isMac()) {
-                        LOGGER.info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
-                    } else {
-                        if (new File(javaPath).exists()) {
-                            LOGGER.info(JDUtilities.runCommand(javaPath, finalArgs, getResourceFile(".").getAbsolutePath(), 0));
-                        } else {
-                            LOGGER.info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
-                        }
-                    }
-                }
-                System.out.println("EXIT NOW");
-                System.exit(0);
-            }
-        }).start();
     }
 
     private static URL getResourceURL(final String resource) {

@@ -18,28 +18,30 @@ public class SilentUpdaterEvent extends ShutdownEvent {
         return SilentUpdaterEvent.INSTANCE;
     }
 
-    private String updaterJarName = "Updater.jar";
-    private String exeName        = "JDownloader.exe";
-    private String jarName        = "JDownloader.jar";
-    private String appName        = "JDownloader.app";
-
     /**
      * Create a new instance of SilentUpdaterEvent. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private SilentUpdaterEvent() {
+        this.setHookPriority(Integer.MAX_VALUE);
 
     }
 
     @Override
     public void run() {
 
-        final File root = Application.getResource(updaterJarName);
+        final File root = Application.getResource(RestartController.JARNAME);
         if (!root.exists()) {
             System.err.println(root + " is missing");
             return;
         }
-        final String tiny[] = new String[] { "java", "-jar", updaterJarName, "-restart", " " };
+
+        final String tiny[] = new String[] { RestartController.JAVA_INTERPRETER, "-jar", RestartController.UPDATER_JARNAME, "-restart", " " };
+        if (Application.getResource(RestartController.JARNAME).exists()) {
+            System.out.println(Application.getResource(RestartController.JARNAME) + " exists");
+        } else {
+            System.err.println(Application.getResource(RestartController.JARNAME) + " is Missing");
+        }
 
         /*
          * build complete call arguments for tinybootstrap

@@ -61,6 +61,7 @@ import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
 import org.jdownloader.update.JDUpdater;
+import org.jdownloader.update.RestartController;
 
 /**
  * @author JD-Team
@@ -272,7 +273,6 @@ public class Main {
         }
 
         Main.preInitChecks();
-        JDUtilities.setJDargs(args);
 
         for (int i = 0; i < args.length; i++) {
 
@@ -444,7 +444,8 @@ public class Main {
             Main.LOG.severe("COULD NOT DELETE OUTDATED FILES.RESTART REQUIRED");
             final int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.Main.removerestart.title", "Updater"), JDL.L("jd.Main.removerestart.message", "Could not remove outdated libraries. Restart recommended!"), null, JDL.L("jd.Main.removerestart.ok", "Restart now!"), JDL.L("jd.Main.removerestart.cancel", "Continue"));
             if (UserIO.isOK(answer)) {
-                JDUtilities.restartJD(true);
+
+                RestartController.getInstance().restartViaUpdater();
                 while (true) {
                     try {
                         Thread.sleep(5000);
@@ -506,29 +507,29 @@ public class Main {
         } catch (final InterruptedException e) {
             JDLogger.exception(e);
         }
-
-        /*
-         * Keeps the home working directory for developers up2date
-         */
-        Main.LOG.info("update start");
-
-        new Thread("Update and dynamics") {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(5000);
-                    // WebUpdate.doUpdateCheck(false);
-
-                    Main.loadDynamics();
-                    //
-                    // WebUpdate.dynamicPluginsFinished();
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
-
-        Main.LOG.info("update end");
+        JDUpdater.getInstance().startChecker();
+        // /*
+        // * Keeps the home working directory for developers up2date
+        // */
+        // Main.LOG.info("update start");
+        //
+        // new Thread("Update and dynamics") {
+        // @Override
+        // public void run() {
+        // try {
+        // Thread.sleep(5000);
+        // // WebUpdate.doUpdateCheck(false);
+        //
+        // Main.loadDynamics();
+        // //
+        // // WebUpdate.dynamicPluginsFinished();
+        // } catch (final Exception e) {
+        // e.printStackTrace();
+        // }
+        // }
+        // }.start();
+        //
+        // Main.LOG.info("update end");
     }
 
 }

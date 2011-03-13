@@ -1,12 +1,11 @@
 package org.jdownloader.update;
 
 import java.awt.HeadlessException;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
-import javax.swing.AbstractAction;
 import javax.swing.JFrame;
 
 import jd.controlling.JDController;
@@ -19,12 +18,12 @@ import org.appwork.update.updateclient.ParseException;
 import org.appwork.update.updateclient.UpdateException;
 import org.appwork.update.updateclient.Updater;
 import org.appwork.update.updateclient.http.HTTPIOException;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 public class JDUpdater extends Updater implements Runnable {
     private static final JDUpdater INSTANCE = new JDUpdater();
@@ -165,10 +164,13 @@ public class JDUpdater extends Updater implements Runnable {
     }
 
     private void runGUI(final Updater updater) throws HTTPIOException, ParseException, InterruptedException, UpdateException, IOException {
+
         Log.L.finer("Start GUI Updatecheck");
+        Log.L.finer("Start Silent Updatecheck");
         getGUI().reset();
         gui = getGUI();
         try {
+            // ask to restart if there are updates left in the
             new EDTRunner() {
 
                 @Override
@@ -176,53 +178,46 @@ public class JDUpdater extends Updater implements Runnable {
                     gui.setVisible(true);
                 }
             };
-            // ask to restart if there are updates left in the
-            ArrayList<File> filesToInstall = updater.getFilesToInstall();
-            setWaitingUpdates(filesToInstall.size());
-
+            updater.setBreakBeforePoint(updater.stateWaitForUnlock);
+            updater.start();
             final UpdatePackage updates = updater.getUpdates();
+            ArrayList<File> filesToInstall = updater.getFilesToInstall();
+
             setWaitingUpdates(filesToInstall.size() + updates.size());
-            if (updates.size() > 0) {
 
-                // gui.doDownloadNow(new Runnable() {
+            if (filesToInstall.size() > 0) {
+                UpdateFoundDialog dialog = new UpdateFoundDialog(new Runnable() {
+
+                    public void run() {
+                        // user clicked "Later"
+                        RestartController.getInstance().exitViaUpdater();
+                    }
+
+                }, new Runnable() {
+
+                    public void run() {
+                        // user clicked "NOW"
+                        RestartController.getInstance().restartViaUpdater();
+                    }
+
+                }, filesToInstall.size());
+                // try {
+                // Dialog.getInstance().showDialog(dialog);
+                // user clicked "INstall now"
                 //
-                // public void run() {
-                // // try {
-                // // updater.downloadUpdates();
-                // //
-                // // setWaitingUpdates(updater.getFilesToInstall().size());
-                // // updater.getStateMachine().forceState(StateApp.DONE);
-                // //
-                // // gui.installNow();
-                // // } catch (HTTPIOException e1) {
-                // // gui.onException(e1);
-                // // } catch (ParseException e1) {
-                // // gui.onException(e1);
-                // // } catch (InterruptedException e1) {
-                // // gui.onException(e1);
-                // // } catch (UpdateException e1) {
-                // // gui.onException(e1);
-                // // } catch (IOException e1) {
-                // // gui.onException(e1);
-                // // } catch (RuntimeException e1) {
-                // // gui.onException(e1);
-                // //
-                // // }
+                // return;
+                // } catch (DialogClosedException e) {
                 //
+                // } catch (DialogCanceledException e) {
+                // if (e.isCausedByTimeout()) {
+                // // no user interaction.
+                // // ask again in next update cycle
+                // return;
                 // }
-                // }, new Runnable() {
-                //
-                // public void run() {
                 // }
-                // });
-                Log.L.finer(updater.getBranch().getName());
-                Log.L.finer("Files to update: " + updates);
-
-            } else if (filesToInstall.size() > 0) {
-
-                // updater.getStateMachine().forceState(StateApp.DONE);
-                //
-                // gui.installNow();
+                // user clicked cancel
+                // do not ask user unless he clicks update manually
+                stopChecker();
 
             } else {
                 Log.L.finer("No Updates available");
@@ -230,10 +225,11 @@ public class JDUpdater extends Updater implements Runnable {
             }
 
         } catch (Throwable e) {
-            // gui.onException(e);
+            Log.exception(Level.WARNING, e);
         } finally {
 
         }
+
     }
 
     private void setWaitingUpdates(int size) {
@@ -265,24 +261,38 @@ public class JDUpdater extends Updater implements Runnable {
             setWaitingUpdates(filesToInstall.size() + updates.size());
 
             if (filesToInstall.size() > 0) {
-                ConfirmDialog dialog = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, "Update!", "XYZ are ready for Installation.\r\nDo you want to run the update now?", ImageProvider.getImageIcon("logo", 32, 32), "Yes", null);
-                dialog.setLeftActions(new AbstractAction("Ask me later") {
+                UpdateFoundDialog dialog = new UpdateFoundDialog(new Runnable() {
 
-                    /**
-                     * 
-                     */
-                    private static final long serialVersionUID = 1L;
-
-                    public void actionPerformed(ActionEvent e) {
+                    public void run() {
+                        // user clicked "Later"
                         RestartController.getInstance().exitViaUpdater();
                     }
 
-                });
-                Dialog.getInstance().showDialog(dialog);
-                RestartController.getInstance().restartViaUpdater();
+                }, new Runnable() {
 
-                // updater.getStateMachine().forceState(StateApp.DONE);
-                //
+                    public void run() {
+                        // user clicked "NOW"
+                        RestartController.getInstance().restartViaUpdater();
+                    }
+
+                }, filesToInstall.size());
+                try {
+                    Dialog.getInstance().showDialog(dialog);
+                    // user clicked "INstall now"
+
+                    return;
+                } catch (DialogClosedException e) {
+
+                } catch (DialogCanceledException e) {
+                    if (e.isCausedByTimeout()) {
+                        // no user interaction.
+                        // ask again in next update cycle
+                        return;
+                    }
+                }
+                // user clicked cancel
+                // do not ask user unless he clicks update manually
+                stopChecker();
 
             } else {
                 Log.L.finer("No Updates available");
@@ -290,9 +300,21 @@ public class JDUpdater extends Updater implements Runnable {
             }
 
         } catch (Throwable e) {
-            Log.exception(e);
+            Log.exception(Level.WARNING, e);
         } finally {
 
+        }
+    }
+
+    private synchronized void stopChecker() {
+        if (updateChecker != null) {
+            updateChecker.interrupt();
+            try {
+                updateChecker.join(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            updateChecker = null;
         }
     }
 

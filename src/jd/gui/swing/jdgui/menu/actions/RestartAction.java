@@ -21,8 +21,9 @@ import java.awt.event.ActionEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.JDFlags;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.update.RestartController;
 
 public class RestartAction extends ToolBarAction {
 
@@ -35,7 +36,7 @@ public class RestartAction extends ToolBarAction {
     @Override
     public void onAction(ActionEvent e) {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestart", "Are you sure that you want to restart JDownloader?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-            JDUtilities.restartJD(false);
+            RestartController.getInstance().directRestart();
         }
     }
 

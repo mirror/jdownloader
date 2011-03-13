@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.update.RestartController;
 
 public class JDSimpleWebserverRequestHandler {
 
@@ -314,7 +315,7 @@ public class JDSimpleWebserverRequestHandler {
 
                             JDLogger.exception(e);
                         }
-                        JDUtilities.restartJD(false);
+                        RestartController.getInstance().directRestart();
                     }
                 }).start();
 

@@ -44,6 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.update.RestartController;
 
 /**
  * Im JDController wird das ganze App gesteuert. Events werden deligiert.
@@ -297,8 +298,7 @@ public class JDController implements ControlListener {
     public void exit() {
         new Thread(new Runnable() {
             public void run() {
-                prepareShutdown(false);
-                System.exit(0);
+                RestartController.getInstance().exit();
             }
         }).start();
     }

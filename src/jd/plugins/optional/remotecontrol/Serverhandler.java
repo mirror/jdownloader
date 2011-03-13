@@ -60,6 +60,7 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.update.RestartController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -452,7 +453,7 @@ public class Serverhandler implements Handler {
                     } catch (final InterruptedException e) {
                         JDLogger.exception(e);
                     }
-                    JDUtilities.restartJD(false);
+                    RestartController.getInstance().directRestart();
                 }
             }).start();
         } else if (requestUrl.equals("/action/shutdown")) {
