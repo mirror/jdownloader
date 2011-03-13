@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -44,8 +44,8 @@ public class ShareFlareNet extends PluginForHost {
         enablePremium("http://shareflare.net/page/premium.php");
     }
 
-    private static final String NEXTPAGE = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
-    private static final String LINKFRAMEPART = "tmpl/tmpl_frame_top\\.php\\?link=";
+    private static final String NEXTPAGE             = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
+    private static final String LINKFRAMEPART        = "tmpl/tmpl_frame_top\\.php\\?link=";
     private static final String FREEDOWNLOADPOSSIBLE = "download4";
 
     @Override
@@ -218,7 +218,8 @@ public class ShareFlareNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        /* seems no longer supports multiple free downloads */
+        return 1;
     }
 
     @Override

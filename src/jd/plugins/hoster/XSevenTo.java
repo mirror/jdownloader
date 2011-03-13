@@ -162,28 +162,35 @@ public class XSevenTo extends PluginForHost {
         br.getPage("http://x7.to/lang/en");
         br.setFollowRedirects(true);
         // Check if the link is a normal- or a direct link
-        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        if (con.getContentType().contains("html")) {
-            br.followConnection();
-            String filename = br.getRegex("<title>x7\\.to » Download: (.*?)</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>(.*?)<").getMatch(1);
-                if (filename != null) {
-                    String extension = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>.*?<small.*?>(.*?)<").getMatch(1);
-                    if (extension == null) extension = "";
-                    filename = filename.trim() + extension;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getContentType().contains("html")) {
+                br.followConnection();
+                String filename = br.getRegex("<title>x7\\.to » Download: (.*?)</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>(.*?)<").getMatch(1);
+                    if (filename != null) {
+                        String extension = br.getRegex("<b>(Download|Stream)</b>.*?<span.*?>.*?<small.*?>(.*?)<").getMatch(1);
+                        if (extension == null) extension = "";
+                        filename = filename.trim() + extension;
+                    }
                 }
+                String filesize = br.getRegex("<b>(Download|Stream)</b>.*?\\((.*?)\\)").getMatch(1);
+                if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                downloadLink.setName(filename.trim());
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", ".")));
+                if (br.containsHTML(PREMIUMONLYTEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
+            } else {
+                downloadLink.getLinkStatus().setStatusText("Direct link");
+                downloadLink.setName(getFileNameFromHeader(con));
+                downloadLink.setDownloadSize(con.getContentLength());
             }
-            String filesize = br.getRegex("<b>(Download|Stream)</b>.*?\\((.*?)\\)").getMatch(1);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", ".")));
-            if (br.containsHTML(PREMIUMONLYTEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
-        } else {
-            downloadLink.getLinkStatus().setStatusText("Direct link");
-            downloadLink.setName(getFileNameFromHeader(con));
-            downloadLink.setDownloadSize(con.getContentLength());
-            con.disconnect();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
         return AvailableStatus.TRUE;
     }

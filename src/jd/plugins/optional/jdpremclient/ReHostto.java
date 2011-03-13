@@ -16,21 +16,21 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 public class ReHostto extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
+    private static final Object      LOCK         = new Object();
 
     public ReHostto(PluginWrapper wrapper) {
         super(wrapper);
@@ -198,7 +198,10 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
         String long_ses = br.getRegex("long_ses=(.+)").getMatch(0);
         int retry = 0;
         while (true) {
+            br.setFollowRedirects(false);
             br.postPage("http://rehost.to/process_download.php", "user=cookie&pass=" + long_ses + "&dl=" + url);
+            if (br.getRedirectLocation() == null) continue;
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resumePossible(this.getHost()), 1);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
