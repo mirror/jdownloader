@@ -32,12 +32,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -118,7 +118,7 @@ public class File4SafeCom extends PluginForHost {
         }
         if (brbefore.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         // Errorhandling for only-premium links
-        if (brbefore.contains(" can download files up to ") || brbefore.contains("Upgrade your account to download bigger files") || brbefore.contains("This file reached max downloads") || brbefore.contains(">Upgrade your account to download larger files")) {
+        if (brbefore.contains(" can download files up to ") || brbefore.contains("Upgrade your account to download bigger files") || brbefore.contains("This file reached max downloads") || brbefore.contains(">Upgrade your account to download larger files") || brbefore.contains(">To download you must register")) {
             String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();

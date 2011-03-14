@@ -20,11 +20,11 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -47,10 +47,11 @@ public class DataPortCz extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<h2>Litujeme, soubor nebyl nalezen\\.</h2>|Prosím zkontrolujte překlepy v adrese\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) :: DataPort\\.cz - Neomezený download server</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<td>Název souboru:</td>[\n\r\t ]+<td>(.*?)</td>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<td>Název souboru:</td>[\n\r\t ]+<td><strong>(.*?)</strong></td>").getMatch(0);
         String filesize = br.getRegex("<td>Velikost souboru:</td>[\n\r\t ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
+        // Set final filename here because server sends us bad filenames
+        link.setFinalFileName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -60,7 +61,10 @@ public class DataPortCz extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("<td><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.dataport\\.cz/download\\.php\\?uid=\\d+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -24,8 +24,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -65,7 +68,18 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
             String link = "/link?id=" + id;
             if (!decryptSingleLink(parameter.toString(), progress, decryptedLinks, link)) return null;
         } else if (type.equals("liveset")) {
+            br.getPage(parameter.toString());
             fpName = br.getRegex("rel=\"alternate\" type=\"application/rss\\+xml\" title=\"(.*?)\"").getMatch(0);
+            String scloudID = br.getRegex("return ShowSoundcloud\\((\\d+)\\);\"").getMatch(0);
+            if (scloudID != null) {
+                Browser br2 = br.cloneBrowser();
+                br2.getPage("http://www.audiobeats.net/soundcloud?format=raw&id=" + scloudID);
+                String scloudLink = br2.getRegex("\"http://player\\.soundcloud\\.com/player\\.swf\\?url=(http://soundcloud\\.com/.*?)\"").getMatch(0);
+                if (scloudLink != null) {
+                    logger.info("Grabbing scloudlink succeeded");
+                    decryptedLinks.add(createDownloadlink(scloudLink));
+                }
+            }
             if (!decryptLiveset(parameter.toString(), progress, decryptedLinks)) return null;
         } else if (type.equals("event") || type.equals("artist")) {
 
@@ -85,7 +99,7 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
         return decryptedLinks;
     }
 
-    private boolean decryptLiveset(String parameter, ProgressController progress, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+    private boolean decryptLiveset(String parameter, ProgressController progress, ArrayList<DownloadLink> decryptedLinks) throws IOException, DecrypterException {
         int i = 0;
         do {
             br.getPage(parameter);
@@ -99,7 +113,14 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
 
                 String[] allLinks = br.getRegex("\"(/link\\?id=\\d+-.*?)\"").getColumn(0);
 
-                if (allLinks == null || allLinks.length == 0) return false;
+                if (allLinks == null || allLinks.length == 0) {
+                    if (decryptedLinks.size() > 0) {
+                        return true;
+                    } else {
+                        if (br.containsHTML("Sorry this links is reported as dead\\.")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                        return false;
+                    }
+                }
                 progress.setRange(progress.getMax() + allLinks.length);
                 for (String aLink : allLinks) {
                     if (abort) {
@@ -146,7 +167,11 @@ public class DBtsNt extends PluginForDecrypt implements ProgressControllerListen
         if (cryptedLink != null) {
             br.getPage(cryptedLink);
             if (cryptedLink.contains("djurl.com")) {
-                finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
+                finallink = br.getRegex("var finalStr = \"(.*?)\";").getMatch(0);
+                if (finallink != null)
+                    finallink = Encoding.Base64Decode(finallink);
+                else
+                    finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
             }
         }
         if (abort) {

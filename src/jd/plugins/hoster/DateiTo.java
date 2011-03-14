@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to", "sharebase.to" }, urls = { "http://(www\\.)?(sharebase\\.(de|to)/(files/|1,)|datei\\.to/datei/)[\\w]+\\.html", "blablablaInvalid_regex" }, flags = { 2, 2 })
 public class DateiTo extends PluginForHost {
@@ -69,10 +70,11 @@ public class DateiTo extends PluginForHost {
     }
 
     public void login(Account account) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.getPage("http://datei.to/apito/jd.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()));
-        String[] info = Regex.getLines(br.toString());
-        if (info.length != 3 || info[0].matches("FALSE") || !info[0].matches("PREMIUM")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://datei.to/ajax/login.php", "User=" + Encoding.urlEncode(account.getUser()) + "&Pass=" + Encoding.urlEncode(account.getPass()));
+        if (!br.toString().trim().equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -84,9 +86,13 @@ public class DateiTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String[] info = Regex.getLines(br.toString());
-        ai.setValidUntil(Long.parseLong(info[1]) * 1000l);
-        ai.setPremiumPoints(Long.parseLong(info[2]));
+        br.postPage("http://datei.to/ajax/account.php", "Menue=0&Seite=");
+        String expireDate = br.getRegex("align=\"right\"><strong><span style=\"color:#009900;\">(.*?) Uhr</span>").getMatch(0);
+        if (expireDate != null)
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyy | HH:mm", null));
+        else
+            ai.setExpired(true);
+        ai.setUnlimitedTraffic();
         return ai;
     }
 
@@ -94,16 +100,19 @@ public class DateiTo extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        String id = new Regex(downloadLink.getDownloadURL(), "/files/([\\w]+\\.html)").getMatch(0);
-        if (id != null) {
-            br.getPage("http://datei.to/files/" + id + "," + Encoding.urlEncode(account.getUser() + "," + Encoding.urlEncode(account.getPass())));
-        } else {
-            id = new Regex(downloadLink.getDownloadURL(), "/1,([\\w]+\\.html)").getMatch(0);
-            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage("http://datei.to/1," + id + "," + Encoding.urlEncode(account.getUser() + "," + Encoding.urlEncode(account.getPass())));
-        }
+        br.getPage(downloadLink.getDownloadURL());
+        // If direct-download is enabled it works like this
         String dlUrl = br.getRedirectLocation();
-        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (dlUrl == null) {
+            String postData = br.getRegex("url: \"ajax/download\\.php\", data: \"(.*?)\"").getMatch(0);
+            if (postData == null) {
+                logger.warning("Couldn't find postData!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.postPage("http://datei.to/ajax/download.php", postData);
+            dlUrl = br.toString();
+        }
+        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
         br.setFollowRedirects(true);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
