@@ -19,16 +19,20 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 
 public class RestartController implements ShutdownVetoListener {
-    private static final RestartController INSTANCE         = new RestartController();
-    public static String                   UPDATER_JARNAME  = "Updater.jar";
-    public static String                   EXENAME          = "JDownloader.exe";
-    public static String                   JARNAME          = "JDownloader.jar";
-    public static String                   APPNAME          = "JDownloader.app";
-    public static String                   JAVA_INTERPRETER = "java";
+    private static final RestartController INSTANCE = new RestartController();
+    public static String UPDATER_JARNAME = "Updater.jar";
+    public static String EXENAME = "JDownloader.exe";
+    public static String JARNAME = "JDownloader.jar";
+    public static String APPNAME = "JDownloader.app";
+    public static String JAVA_INTERPRETER = "java";
     static {
-        String javaInterpreter = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
-        if (new File(javaInterpreter).exists()) {
-            JAVA_INTERPRETER = "\"" + javaInterpreter + "\"";
+        try {
+            String javaInterpreter = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
+            if (new File(javaInterpreter).exists()) {
+                JAVA_INTERPRETER = javaInterpreter;
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
         }
 
     }
