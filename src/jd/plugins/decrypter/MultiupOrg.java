@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://[\\w\\.]*?multiup\\.org/\\?lien=.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://[\\w\\.]*?multiup\\.org/(\\?lien=.+|fichiers/download.+)" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
 
     public MultiupOrg(PluginWrapper wrapper) {
@@ -40,6 +40,7 @@ public class MultiupOrg extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("(Sorry but your file does not exist or no longer exists|The file does not exist any more|It was deleted either further to a complaint or further to a not access for several weeks)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        Thread.sleep(1000l);
         br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=");
         String[] links = br.getRegex("<a target=\"_blank\" href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
