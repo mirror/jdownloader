@@ -30,11 +30,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -42,15 +42,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
-    private static int          simultanpremium = 1;
-    private static final Object PREMLOCK        = new Object();
+    private static int simultanpremium = 1;
+    private static final Object PREMLOCK = new Object();
     // private String otherUseragent =
     // "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
-    private String              userAgent       = RandomUserAgent.generate();
-    private boolean             free            = false;
-    private static final String FILEIDREGEX     = "name=\"file_id\" value=\"(.*?)\"";
-    private static final String CODEREGEX       = "uploading\\.com/files/get/(.+)";
-    private static final Object LOCK            = new Object();
+    private String userAgent = RandomUserAgent.generate();
+    private boolean free = false;
+    private static final String FILEIDREGEX = "name=\"file_id\" value=\"(.*?)\"";
+    private static final String CODEREGEX = "uploading\\.com/files/get/(.+)";
+    private static final Object LOCK = new Object();
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -296,8 +296,6 @@ public class UploadingCom extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-        /* is broken at the moment, retest later */
-        if (true) return false;
         if (urls == null || urls.length == 0) { return false; }
         try {
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
