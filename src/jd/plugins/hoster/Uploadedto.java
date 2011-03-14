@@ -108,11 +108,27 @@ public class Uploadedto extends PluginForHost {
         String points = br.getMatch("Points:<.*?>([0-9\\.]+)<");
         String traffic = br.getMatch("downloading:<.*?>([0-9,]+ [GMB]+)");
         String expire[] = br.getRegex("Duration:<.*?>(\\d+) weeks (\\d+) days and (\\d+) hours").getRow(0);
-
-        long weeks = Integer.parseInt(expire[0]) * 7 * 24 * 60 * 60 * 1000l;
-        long days = Integer.parseInt(expire[1]) * 24 * 60 * 60 * 1000l;
-        long hours = Integer.parseInt(expire[2]) * 60 * 60 * 1000l;
-        ai.setValidUntil(System.currentTimeMillis() + weeks + days + hours);
+        if (expire != null) {
+            long weeks = Integer.parseInt(expire[0]) * 7 * 24 * 60 * 60 * 1000l;
+            long days = Integer.parseInt(expire[1]) * 24 * 60 * 60 * 1000l;
+            long hours = Integer.parseInt(expire[2]) * 60 * 60 * 1000l;
+            ai.setValidUntil(System.currentTimeMillis() + weeks + days + hours);
+        } else {
+            expire = br.getRegex("Duration:<.*?>(\\d+) days and (\\d+) hours").getRow(0);
+            if (expire != null) {
+                long days = Integer.parseInt(expire[0]) * 24 * 60 * 60 * 1000l;
+                long hours = Integer.parseInt(expire[1]) * 60 * 60 * 1000l;
+                ai.setValidUntil(System.currentTimeMillis() + days + hours);
+            } else {
+                expire = br.getRegex("Duration:<.*?>(\\d+) hours").getRow(0);
+                if (expire != null) {
+                    long hours = Integer.parseInt(expire[0]) * 60 * 60 * 1000l;
+                    ai.setValidUntil(System.currentTimeMillis() + hours);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
         if (balance != null) {
             balance = balance.replaceAll(",", ".");
             ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
