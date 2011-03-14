@@ -76,6 +76,8 @@ public class Uploadedto extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
+        br.setCookie("http://uploaded.to", "lang", "en");
+        br.getPage("http://uploaded.to/language/en");
         br.postPage("http://uploaded.to/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("User and password do not match")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie("http://uploaded.to", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -90,6 +92,9 @@ public class Uploadedto extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.setCookie("http://uploaded.to", "lang", "en");
+        /* language is saved in account itself */
+        br.getPage("http://uploaded.to/language/en");
         br.getPage("http://uploaded.to/me");
         String isPremium = br.getMatch("Status:</.*?<em(>Premium<)/em>");
         if (isPremium == null) {
@@ -187,6 +192,7 @@ public class Uploadedto extends PluginForHost {
         String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
         br.setFollowRedirects(false);
         br.setCookie("http://uploaded.to/", "lang", "de");
+        br.getPage("http://uploaded.to/language/de");
         br.getPage("http://uploaded.to/file/" + id);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(".to/404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("id=\"filename\">(.*?)<").getMatch(0);
@@ -224,7 +230,8 @@ public class Uploadedto extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         workAroundTimeOut(br);
-        br.setCookie("http://uploaded.to/", "lang", "de");
+        // br.setCookie("http://uploaded.to/", "lang", "de");
+        // br.getPage("http://uploaded.to/language/de");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String passCode = null;
