@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -204,25 +206,14 @@ public class Uploadedto extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.correctDownloadLink(downloadLink);
-        this.setBrowserExclusive();
-        workAroundTimeOut(br);
-        String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
-        br.setFollowRedirects(false);
-        br.setCookie("http://uploaded.to/", "lang", "de");
-        br.getPage("http://uploaded.to/language/de");
-        br.getPage("http://uploaded.to/file/" + id);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(".to/404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("id=\"filename\">(.*?)<").getMatch(0);
-        String size = br.getRegex("id=\"filename\">.*?<small>(.*?)</").getMatch(0);
-        if (br.containsHTML("<h2>Authentifizierung</h2>")) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.uploadedto.passwordprotectedlink", "This link is password protected"));
-        } else if (filename != null && size != null) {
-            downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(SizeFormatter.getSize(size));
-        } else {
+        this.checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        } else if (!downloadLink.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     private String getPassword(DownloadLink downloadLink) throws Exception {
@@ -246,11 +237,15 @@ public class Uploadedto extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        this.setBrowserExclusive();
         workAroundTimeOut(br);
-        // br.setCookie("http://uploaded.to/", "lang", "de");
-        // br.getPage("http://uploaded.to/language/de");
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
+        br.setFollowRedirects(false);
+        br.setCookie("http://uploaded.to/", "lang", "de");
+        br.getPage("http://uploaded.to/language/de");
+        br.getPage("http://uploaded.to/file/" + id);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(".to/404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String passCode = null;
         if (br.containsHTML("<h2>Authentifizierung</h2>")) {
             passCode = getPassword(downloadLink);
@@ -318,6 +313,64 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            workAroundTimeOut(br);
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("apikey=hP5Y37ulYfr8gSsS97LCT7kG5Gqp8Uug");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    sb.append("&id_" + c + "=" + getID(dl));
+                    c++;
+                }
+                br.postPage("http://uploaded.to/api/filemultiple", sb.toString());
+                String infos[][] = br.getRegex(Pattern.compile("(.*?),(.*?),(.*?),(.*?),(.*?)(\r|\n|$)")).getMatches();
+                for (DownloadLink dl : links) {
+                    String id = getID(dl);
+                    int hit = -1;
+                    for (int i = 0; i < infos.length; i++) {
+                        if (infos[i][1].equalsIgnoreCase(id)) {
+                            hit = i;
+                            break;
+                        }
+                    }
+                    if (hit == -1) {
+                        /* id not in response, so its offline */
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setFinalFileName(infos[hit][4].trim());
+                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
+                        if ("online".equalsIgnoreCase(infos[hit][0].trim())) {
+                            dl.setAvailable(true);
+                            dl.setMD5Hash(infos[hit][3].trim());
+                        } else {
+                            dl.setAvailable(false);
+                        }
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
 }
