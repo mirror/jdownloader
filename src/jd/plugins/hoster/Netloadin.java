@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -44,27 +45,27 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netload.in" }, urls = { "http://[\\w\\.]*?netload\\.in/[^(http://)].+" }, flags = { 2 })
 public class Netloadin extends PluginForHost {
-    static private final String AGB_LINK = "http://netload.in/index.php?id=13";
+    static private final String  AGB_LINK            = "http://netload.in/index.php?id=13";
 
-    static private final String CAPTCHA_WRONG = "Sicherheitsnummer nicht eingegeben";
+    static private final String  CAPTCHA_WRONG       = "Sicherheitsnummer nicht eingegeben";
 
-    static private final String DOWNLOAD_CAPTCHA = "download_captcha.tpl";
-    static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
-    static private final String DOWNLOAD_START = "download_load.tpl";
-    static private final String DOWNLOAD_STARTXMAS = "download_load_xmas.tpl";
-    static private final String DOWNLOAD_STARTXMAS2 = "download_load_xmas2.tpl";
-    private String LINK_PASS = null;
+    static private final String  DOWNLOAD_CAPTCHA    = "download_captcha.tpl";
+    static private final String  DOWNLOAD_LIMIT      = "download_limit.tpl";
+    static private final String  DOWNLOAD_START      = "download_load.tpl";
+    static private final String  DOWNLOAD_STARTXMAS  = "download_load_xmas.tpl";
+    static private final String  DOWNLOAD_STARTXMAS2 = "download_load_xmas2.tpl";
+    private String               LINK_PASS           = null;
 
-    static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
+    static private final Pattern DOWNLOAD_WAIT_TIME  = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
 
-    static private final String FILE_DAMAGED = "(Die Datei wurde Opfer einer defekten Festplatte|Diese Datei liegt auf einem Server mit einem technischen Defekt|This Server is currently in maintenance work)";
+    static private final String  FILE_DAMAGED        = "(Die Datei wurde Opfer einer defekten Festplatte|Diese Datei liegt auf einem Server mit einem technischen Defekt|This Server is currently in maintenance work)";
 
-    static private final String FILE_NOT_FOUND = "Die Datei konnte leider nicht gefunden werden";
+    static private final String  FILE_NOT_FOUND      = "Die Datei konnte leider nicht gefunden werden";
 
-    static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
-    static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
+    static private final String  LIMIT_REACHED       = "share/images/download_limit_go_on.gif";
+    static private final String  NEW_HOST_URL        = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
 
-    static public final Object LOGINLOCK = new Object();
+    static public final Object   LOGINLOCK           = new Object();
 
     private static String getID(String link) {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
@@ -296,16 +297,24 @@ public class Netloadin extends PluginForHost {
             if ("disallowd_agent".equalsIgnoreCase(res) || "unknown_auth".equalsIgnoreCase(res)) {
                 logger.severe("api reports: " + res);
                 ai.setStatus("api reports: " + res);
+
+                UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Unexpected error occured during login: '" + res + "'\r\nPlease contact JDownloader Support.");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if ("0".equalsIgnoreCase(res)) {
                 /* free user */
                 ai.setStatus("No premium user");
+                UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Account '" + account.getUser() + "' is a free account and this not supported.\r\nPlease buy a Netload.in Premium account!");
+
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if ("unknown_user".equalsIgnoreCase(res)) {
                 ai.setStatus("Unknown user");
+                UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is unknown.\r\nPlease check your Username!");
+
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if ("unknown_password".equalsIgnoreCase(res) || "wrong_password".equalsIgnoreCase(res)) {
                 ai.setStatus("Wrong password");
+                UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is ok, but the given password is wrong.\r\nPlease check your Password!");
+
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if ("-1".equalsIgnoreCase(res)) {
                 /* lifetime */
