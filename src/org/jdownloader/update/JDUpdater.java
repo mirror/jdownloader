@@ -86,6 +86,15 @@ public class JDUpdater extends Updater implements Runnable {
 
     }
 
+    public void start() throws Exception {
+        try {
+            super.start();
+        } catch (Exception e) {
+            if (isInterrupted()) { throw new InterruptedException(e.getMessage()); }
+            throw e;
+        }
+    }
+
     public void setBranchInUse(String branch) {
         storage.setProperty(PARAM_BRANCH, branch);
 
