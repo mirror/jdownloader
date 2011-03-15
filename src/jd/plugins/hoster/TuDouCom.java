@@ -24,11 +24,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tudou.com" }, urls = { "http://[\\w\\.]*?tudou\\.com/programs/view/[A-Za-z0-9]+" }, flags = { 0 })
 public class TuDouCom extends PluginForHost {
@@ -70,8 +70,7 @@ public class TuDouCom extends PluginForHost {
         if (videoID == null || iid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String xmllink = "http://v2.tudou.com/v?vn=02&refurl=http://www.tudou.com/programs/view/" + videoID + "/&it=" + iid + "&noCache=&ui=0&st=1,2&si=sp&tAg=";
         br.getPage(xmllink);
-        dllink = br.getRegex("s1=\"[a-z0-9]+\">(http://.*?)</f>").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("brt=\"1\".*?(http://.*?)<").getMatch(0);
+        dllink = br.getRegex("brt=\"\\d+\".*?(http://.*?)<").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");

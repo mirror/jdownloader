@@ -329,7 +329,10 @@ public class HotFileCom extends PluginForHost {
             if (dl_url == null) {
                 dl_url = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
             }
-            if (dl_url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (dl_url == null) {
+                if (!br.containsHTML("Click here to download")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.setFollowRedirects(true);
             br.setDebug(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);
