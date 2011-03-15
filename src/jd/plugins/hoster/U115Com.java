@@ -51,8 +51,8 @@ public class U115Com extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        br.setCustomCharset("utf-8");
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) {
@@ -62,20 +62,24 @@ public class U115Com extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (br.containsHTML("id=\"pickcode_error\">很抱歉，文件不存在。</div>") || br.containsHTML("很抱歉，文件不存在。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)\\|优盘|115优盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("id=\"Download\"></a><a id=\"Download(.*?)\"></a>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex(",file_name:\"(.*?)\"").getMatch(0);
+                filename = br.getRegex("file_name: \\'(.*?)\\',").getMatch(0);
             }
         }
-        String filesize = br.getRegex("文件大小：(.*?)</li>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("u6587\\\\u4ef6\\\\u5927\\\\u5c0f\\\\uff1a(.*?)\\\\r\\\\n\\\\").getMatch(0);
+        String filesize = br.getRegex("文件大小：(.*?)<div class=\"share-url\"").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("u6587\\\\u4ef6\\\\u5927\\\\u5c0f\\\\uff1a(.*?)\\\\r\\\\n\\\\").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("file_size: \\'(.*?)\\'").getMatch(0);
+        }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.replace(",", "");
         link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String sh1 = br.getRegex("<li><strong>SHA1</strong>：(.*?)<a").getMatch(0);
+        String sh1 = br.getRegex("<li>SHA1：(.*?) <a href=\"").getMatch(0);
+        if (sh1 == null) sh1 = br.getRegex("sha1: \"(.*?)\",").getMatch(0);
         if (sh1 != null) link.setSha1Hash(sh1.trim());
         return AvailableStatus.TRUE;
     }

@@ -25,11 +25,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -76,6 +77,7 @@ public class CobraShareSk extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML(">Pre stiahnutie súboru je nutné pouí ná file manager <a style=\"color:#000000")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.cobrasharesk.cobradownloadmanageronly", "Only downloadable with the cobrashare downloadmanager"));
         for (int i = 0; i <= 5; i++) {
             String captchaurl = Encoding.htmlDecode(br.getRegex("id=\"overImg\" src=\"(.*?)\" width=\"100\" hei").getMatch(0));
             Form captchaForm = br.getForm(0);

@@ -19,17 +19,18 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -62,7 +63,15 @@ public class GigaSizeCom extends PluginForHost {
         ff.put("passwd", Encoding.urlEncode(account.getPass()));
         ff.put("d", "Login");
         ff.put("login", "1");
-        br.submitForm(ff);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openFormConnection(ff);
+            br.followConnection();
+            // br.submitForm(ff);
+        } catch (Exception e) {
+            if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.followConnection();
         if (br.containsHTML(">\\&raquo; E-Mail-Adresse oder Passwort ung\\&uuml;ltig\\!</div>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 

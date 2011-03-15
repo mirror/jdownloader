@@ -48,12 +48,13 @@ public class OtrDatenkellerAt extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (!br.containsHTML("id=\"reqFile\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
-        String filesize = br.getRegex("Gr\\.{1,5}e: </td><td align=\\'center\\'>(.*?)<td").getMatch(0);
+        String filesize = br.getRegex("Größe: </td><td  align=\\'center\\'> (.*?) <td").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim());
+        link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
         return AvailableStatus.TRUE;
     }
@@ -92,7 +93,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     }
 
     public String getDllink() throws Exception, PluginException {
-        Regex allMatches = br.getRegex("onclick=\"startCount\\([0-9]{1}, [0-9]{1}, '(.*?)', '(.*?)', '(.*?)'\\)");
+        Regex allMatches = br.getRegex("onclick=\"startCount\\([0-9]{1}, [0-9]{1}, \\'(.*?)\\', \\'(.*?)\\', \\'(.*?)\\'\\)");
         String firstPart = allMatches.getMatch(1);
         String secondPart = allMatches.getMatch(0);
         String thirdPart = allMatches.getMatch(2);
