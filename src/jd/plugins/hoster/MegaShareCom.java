@@ -109,7 +109,7 @@ public class MegaShareCom extends PluginForHost {
         br.forceDebug(true);
         final String reconnectWaittime = br.getRegex("var c = (\\d+);").getMatch(0);
         if (reconnectWaittime != null) {
-            if (Integer.parseInt(reconnectWaittime) > 320) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l); }
+            if (Integer.parseInt(reconnectWaittime) >= 299) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l); }
         }
 
         /* FORM_POST_1 */
@@ -139,7 +139,7 @@ public class MegaShareCom extends PluginForHost {
             if (!br.containsHTML("security\\.php\\?i=")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             String captchaimg = br.getRegex("id=\"cimg\" src=\"(.*?)\"").getMatch(0);
             if (captchaimg == null) {
-                captchaimg = br.getRegex("src=\\'(security\\.php\\?i=.*?)\\&").getMatch(0);
+                captchaimg = br.getRegex("src=\"(security\\.php.*?)\"></div>").getMatch(0);
             }
             if (captchaimg == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             captchaimg = "http://www.megashare.com/" + captchaimg;
