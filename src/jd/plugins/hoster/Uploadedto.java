@@ -127,7 +127,11 @@ public class Uploadedto extends PluginForHost {
                     long hours = Integer.parseInt(expire[0]) * 60 * 60 * 1000l;
                     ai.setValidUntil(System.currentTimeMillis() + hours);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (br.getRegex("Duration:<.*?(>unlimited<)").matches()) {
+                        ai.setValidUntil(-1);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
