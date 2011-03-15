@@ -29,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.com/.*(file|vid|audio|pic)/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.com/.*(file|vid|cvid|audio|pic)/[0-9]+(/[0-9]+)?" }, flags = { 0 })
 public class BdngCm extends PluginForDecrypt {
-    static private String host = "badongo.com";
 
     public BdngCm(final PluginWrapper wrapper) {
         super(wrapper);
@@ -41,25 +40,25 @@ public class BdngCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        parameter = parameter.replaceAll("\\.com/\\w\\w/", "\\.com/de/");
         br.setCookiesExclusive(true);
-        br.clearCookies(BdngCm.host);
+        br.clearCookies(br.getHost());
         br.setCookie("http://www.badongo.com", "badongoL", "de");
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        parameter = parameter.replaceFirst("badongo\\.com", "badongo.viajd");
         if (!br.containsHTML("Diese Datei wurde gesplittet")) {
             /* For single video links */
-            // if (!parameter.endsWith("/1")) parameter = parameter + "/1";
+            parameter = parameter.replaceFirst("badongo\\.com", "badongo.viajd");
             final DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter));
             dlLink.setProperty("type", "single");
             decryptedLinks.add(dlLink);
         } else {
             /* Get CaptchaCode */
             for (int i = 0; i <= 5; i++) {
-                br.getPage(param.toString() + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
+                br.getPage(parameter + "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
                 final Form form = br.getForm(0);
                 final String cid = br.getRegex("cid\\=(\\d+)").getMatch(0);
-                final String code = this.getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, param);
+                final String code = getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, param);
                 form.setAction(br.getRegex("action=.\"(.+?).\"").getMatch(0));
                 form.put("user_code", code);
                 form.put("cap_id", br.getRegex("cap_id.\"\\svalue=.\"(\\d+).\"").getMatch(0));
