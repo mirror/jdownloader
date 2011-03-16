@@ -21,6 +21,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -28,6 +29,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
+import jd.plugins.optional.remotecontrol.helppage.HelpPage;
+import jd.plugins.optional.remotecontrol.helppage.Table;
+import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
+
+import org.appwork.utils.Regex;
 
 // notes: this module lets you download content automatically from RSS feeds
 // the module was developed after stable JDownloader 0.9.580 was released (SVN revision 9580)
@@ -37,7 +43,7 @@ import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 // enable CODE_FOR_INTERFACE_5-START-END and disable CODE_FOR_INTERFACE_7-START-END
 // don't forget to change interface version from 7 to 5
 @OptionalPlugin(rev = "$Revision$", id = "jdfeedme", hasGui = true, interfaceversion = 7)
-public class JDFeedMe extends PluginOptional {
+public class JDFeedMe extends PluginOptional implements RemoteSupport {
     // / stop using config and use XML instead
     // public static final String PROPERTY_SETTINGS = "FEEDS";
     public static final String    STORAGE_FEEDS  = "cfg/jdfeedme/feeds.xml";
@@ -45,23 +51,23 @@ public class JDFeedMe extends PluginOptional {
     public static final String    STORAGE_POSTS  = "cfg/jdfeedme/posts.xml";
 
     public static final int       MAX_POSTS      = 100;                      // max
-                                                                              // number
-                                                                              // of
-                                                                              // last
-                                                                              // posts
-                                                                              // we
-                                                                              // save
-                                                                              // per
-                                                                              // feed
-                                                                              // (history)
+    // number
+    // of
+    // last
+    // posts
+    // we
+    // save
+    // per
+    // feed
+    // (history)
     public static final boolean   VERBOSE        = false;                    // should
-                                                                              // we
-                                                                              // spit
-                                                                              // up
-                                                                              // lots
-                                                                              // of
-                                                                              // log
-                                                                              // messages
+    // we
+    // spit
+    // up
+    // lots
+    // of
+    // log
+    // messages
 
     private JDFeedMeView          view;
     private JDFeedMeGui           gui            = null;
@@ -228,7 +234,7 @@ public class JDFeedMe extends PluginOptional {
                 // get the feed content from the web
                 Browser browser = new Browser();
                 browser.setFollowRedirects(true); // support redirects since
-                                                  // some feeds have them
+                // some feeds have them
                 response = browser.getPage(feed_address);
 
                 // parse the feed
@@ -391,7 +397,7 @@ public class JDFeedMe extends PluginOptional {
             try {
                 Browser browser = new Browser();
                 browser.setFollowRedirects(true); // support redirects since
-                                                  // some feeds have them
+                // some feeds have them
                 String response = browser.getPage(post.getLink());
                 link_list_to_download = extractLinksFromHtml(response, feed.getHoster(), JDFeedMeFeed.HOSTER_EXCLUDE);
             } catch (Exception e) {
@@ -626,6 +632,73 @@ public class JDFeedMe extends PluginOptional {
                 JDLogger.exception(e);
             }
         }
+    }
+
+    // integrate JD FeedMe commands into RemoteControl addon
+    public Object handleRemoteCmd(String cmd) {
+        if (cmd.matches("(?is).*/addon/feedme/action/sync")) {
+            syncRss();
+            return "All RSS feeds have been synced.";
+        } else if (cmd.matches("(?is).*/addon/feedme/action/add(/(all|lastweek|last24hours|none))?(/(true|false))?/.+")) {
+            JDFeedMeTable table = getGui().getTable();
+
+            // defaults
+            String url = "http://";
+            String oldoption = JDFeedMeFeed.GET_OLD_OPTIONS_ALL;
+            boolean filteroption = false;
+
+            url = Encoding.urlDecode(new Regex(cmd, ".*/addon/feedme/action/add.*/(.+)").getMatch(0), false);
+
+            if (cmd.matches(".*/(all|lastweek|last24hours|none)/.*")) {
+                String optionstr = new Regex(cmd, ".*/(all|lastweek|last24hours|none)/.*").getMatch(0);
+
+                for (String option : JDFeedMeFeed.GET_OLD_OPTIONS) {
+                    String newstr = option.replaceAll(" ", "").toLowerCase();
+                    if (newstr.equals(optionstr)) {
+                        oldoption = option;
+                        break;
+                    }
+                }
+            }
+
+            if (cmd.matches(".*/(true|false)/.*")) {
+                filteroption = Boolean.parseBoolean(new Regex(cmd, ".*/(true|false)/.*").getMatch(0));
+            }
+
+            JDFeedMeFeed new_feed = new JDFeedMeFeed(url);
+            new_feed.setUniqueid(JDFeedMeFeed.allocateUniqueid());
+            new_feed.setTimestampFromGetOld(oldoption);
+            new_feed.setDoFilters(filteroption);
+            table.getModel().getFeeds().add(new_feed);
+            table.getModel().refreshModel();
+            table.getModel().fireTableDataChanged();
+
+            return "RSS feed has been added.";
+        } else if (cmd.matches("(?is).*/addon/feedme/action/remove")) {
+            return "RSS feed has been removed.";
+        } else if (cmd.matches("(?is).*/addon/feedme/action/reset")) { return "RSS feed has been resetted."; }
+
+        return null;
+    }
+
+    // RemoteControl addon command description
+    public void initCmdTable() {
+        Table t = HelpPage.createTable(new Table(this.getHost()));
+
+        t.setCommand("/addon/feedme/action/sync");
+        t.setInfo("Syncs all RSS feeds");
+
+        t.setCommand("/addon/feedme/action/add/(all|lastweek|last24hours|none)/(true|false)/%X%");
+        t.setInfo("Add RSS feed. Where %X% is the (urlencoded) URL. The two previous parameters are optional");
+
+        // TODO:
+        /*
+         * t.setCommand("/addon/feedme/action/remove");
+         * t.setInfo("Remove RSS feed");
+         * 
+         * t.setCommand("/addon/feedme/action/reset");
+         * t.setInfo("Reset RSS feed");
+         */
     }
 
 }
