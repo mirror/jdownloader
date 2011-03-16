@@ -42,8 +42,6 @@ public class HitFileNet extends PluginForHost {
 
     public HitFileNet(PluginWrapper wrapper) {
         super(wrapper);
-        // Use this if we ever have a premium implementation for this host
-        // this.setStartIntervall(3000l);
         this.enablePremium("http://hitfile.net/premium/emoney/5");
     }
 
@@ -94,19 +92,10 @@ public class HitFileNet extends PluginForHost {
             logger.warning("Unexpected redirect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML("have reached the limit")) {
-            String longWaittime = br.getRegex(WAITTIMEREGEX1).getMatch(0);
-            if (longWaittime == null) longWaittime = br.getRegex(WAITTIMEREGEX2).getMatch(0);
-            if (longWaittime != null) {
-                if (Integer.parseInt(longWaittime) < 31) {
-                    sleep(Integer.parseInt(longWaittime) * 1000l, downloadLink);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(longWaittime) * 1001l);
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            }
-        }
+        String longWaittime = br.getRegex(WAITTIMEREGEX1).getMatch(0);
+        if (longWaittime == null) longWaittime = br.getRegex(WAITTIMEREGEX2).getMatch(0);
+        if (longWaittime != null) if (Integer.parseInt(longWaittime) > 60) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(longWaittime) * 1001l);
+        if (br.containsHTML("(have reached the limit|>From your IP range the limit of connections is reached<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (br.containsHTML(RECAPTCHATEXT)) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -127,11 +116,27 @@ public class HitFileNet extends PluginForHost {
             if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         int waittime = 60;
-        String regexedWaittime = br.getRegex("limit: (\\d+)").getMatch(0);
+        String regexedWaittime = br.getRegex(WAITTIMEREGEX1).getMatch(0);
         if (regexedWaittime != null) waittime = Integer.parseInt(regexedWaittime);
         sleep(waittime * 1001l, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://hitfile.net/download/timeout/" + fileID);
+        boolean waittimeFail = true;
+        for (int i = 0; i <= 4; i++) {
+            br.getPage("http://hitfile.net/download/timeout/" + fileID);
+            String additionalWaittime = br.getRegex("Timeout\\.limit = (\\d+);").getMatch(0);
+            if (additionalWaittime != null) {
+                sleep(Integer.parseInt(additionalWaittime) * 1001l, downloadLink);
+            } else {
+                logger.info("No additional waittime found...");
+                waittimeFail = false;
+                break;
+            }
+            logger.info("Waittime-Try " + (i + 1) + ", waited additional " + additionalWaittime + "seconds");
+        }
+        if (waittimeFail) {
+            logger.warning(br.toString());
+            throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL waittime error");
+        }
         String dllink = br.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("If the download does not start - <a href=\\'/(.*?)\\'>try again").getMatch(0);
@@ -139,9 +144,11 @@ public class HitFileNet extends PluginForHost {
                 dllink = br.getRegex("\\'(/download/redirect/[a-z0-9]+/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.warning("dllink couldn't be found...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = "http://hitfile.net" + dllink;
-        // Seems like the connections are limited to 5
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -84,9 +84,6 @@ public class MhfScriptBasic extends PluginForHost {
             filename = br.getRegex("\"Click (this to report for|Here to Report)(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                }
             }
         }
         String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|left)>(.*?)</td>").getMatch(2);
@@ -101,7 +98,9 @@ public class MhfScriptBasic extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (br.containsHTML("value=\"Free Users\"")) br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        if (br.containsHTML("value=\"Free Users\""))
+            br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
         String passCode = null;
         Form captchaform = br.getFormbyProperty("name", "myform");
         if (captchaform == null) {
