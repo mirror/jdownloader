@@ -62,7 +62,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
             link.setFinalFileName(filename.trim());
             String dllink = br.getRegex(DLLINKREGEX).getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setDownloadSize(br.openGetConnection(dllink).getContentLength());
+            link.setDownloadSize(br.openGetConnection(dllink).getLongContentLength());
         }
         return AvailableStatus.TRUE;
     }

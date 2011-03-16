@@ -48,8 +48,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }, flags = { 2 })
 public class MegasharesCom extends PluginForHost {
 
-    private final String        UserAgent = "JD_" + "$Revision$";
-    private static final Object LOCK      = new Object();
+    private final String UserAgent = "JD_" + "$Revision$";
+    private static final Object LOCK = new Object();
 
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -143,7 +143,7 @@ public class MegasharesCom extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws IOException {        
+    public void correctDownloadLink(DownloadLink link) throws IOException {
         String url = link.getDownloadURL();
         String id = null;
         if (url.contains("/dl/")) {
@@ -185,7 +185,7 @@ public class MegasharesCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -10);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.getHttpConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             /*
              * seems like megashares sends empty page when last download was
              * some secs ago
@@ -244,7 +244,7 @@ public class MegasharesCom extends PluginForHost {
              * some secs ago
              */
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            if (br.getHttpConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             if (br.getHttpConnection().toString().contains("Get a link card now")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             if (br.getHttpConnection().toString().contains("Your Passport needs to")) throw new PluginException(LinkStatus.ERROR_RETRY);
             /* maybe we have to fix link */

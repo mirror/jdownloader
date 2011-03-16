@@ -20,11 +20,11 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -41,9 +41,9 @@ public class NovaUpMovcom extends PluginForHost {
         return "http://www.novamov.com/terms.php";
     }
 
-    private static final String VIDEOREGEX                   = "flashvars\\.file=\"(http.*?)\"";
-    private static final String VIDEOREGEX2                  = "\"(http://s\\d+\\.novamov\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"";
-    private static final String TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
+    private static final String VIDEOREGEX = "flashvars\\.file=\"(http.*?)\"";
+    private static final String VIDEOREGEX2 = "\"(http://s\\d+\\.novamov\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"";
+    private static final String TEMPORARYUNAVAILABLE = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
     private static final String TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
 
     public void correctDownloadLink(DownloadLink link) {
@@ -99,7 +99,7 @@ public class NovaUpMovcom extends PluginForHost {
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             URLConnectionAdapter con = br.openGetConnection(dllink);
             try {
-                parameter.setDownloadSize(con.getContentLength());
+                parameter.setDownloadSize(con.getLongContentLength());
             } finally {
                 con.disconnect();
             }

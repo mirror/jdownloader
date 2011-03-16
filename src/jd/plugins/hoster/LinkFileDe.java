@@ -68,7 +68,7 @@ public class LinkFileDe extends PluginForHost {
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         captchaForm.put("captcha", code);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, true, 1);
-        if (dl.getConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, "Fataler Serverfehler");
+        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, "Fataler Serverfehler");
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));

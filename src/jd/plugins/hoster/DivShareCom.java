@@ -141,7 +141,7 @@ public class DivShareCom extends PluginForHost {
             br.setFollowRedirects(false);
             if (con.isContentDisposition()) {
                 downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition")).replace("_", "."));
-                downloadLink.setDownloadSize(con.getContentLength());
+                downloadLink.setDownloadSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
             }
             if (br.containsHTML("This file is unavailable until")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

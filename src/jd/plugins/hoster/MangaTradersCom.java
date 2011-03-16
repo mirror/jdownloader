@@ -129,7 +129,7 @@ public class MangaTradersCom extends PluginForHost {
                 } else {
                     URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
                     dl.setFinalFileName(getFileNameFromHeader(con));
-                    dl.setDownloadSize(con.getContentLength());
+                    dl.setDownloadSize(con.getLongContentLength());
                     dl.setAvailable(true);
                 }
             }

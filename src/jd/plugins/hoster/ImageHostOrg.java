@@ -65,7 +65,7 @@ public class ImageHostOrg extends PluginForHost {
             // Handling for direct (picture) links
             URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
             if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            int filesize = con.getContentLength();
+            long filesize = con.getLongContentLength();
             if (filesize == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = getFileNameFromHeader(con);
             link.setDownloadSize(filesize);

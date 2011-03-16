@@ -184,7 +184,7 @@ public class XSevenTo extends PluginForHost {
             } else {
                 downloadLink.getLinkStatus().setStatusText("Direct link");
                 downloadLink.setName(getFileNameFromHeader(con));
-                downloadLink.setDownloadSize(con.getContentLength());
+                downloadLink.setDownloadSize(con.getLongContentLength());
             }
         } finally {
             try {

@@ -71,7 +71,7 @@ public class VimeoCom extends PluginForHost {
                 downloadLink.setName(title + ".flv");
             }
             if ("FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
-                downloadLink.setDownloadSize(con.getContentLength());
+                downloadLink.setDownloadSize(con.getLongContentLength());
             }
             return AvailableStatus.TRUE;
         } finally {

@@ -58,7 +58,7 @@ public class LiveDriveCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             link.setName(getFileNameFromHeader(con));
-            link.setDownloadSize(con.getContentLength());
+            link.setDownloadSize(con.getLongContentLength());
             return AvailableStatus.TRUE;
         }
     }

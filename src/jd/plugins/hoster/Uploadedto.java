@@ -163,7 +163,8 @@ public class Uploadedto extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        String id = getID(downloadLink);
+        br.getPage("http://uploaded.to/file/" + id);
         String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
             error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
@@ -243,7 +244,7 @@ public class Uploadedto extends PluginForHost {
         requestFileInformation(downloadLink);
         this.setBrowserExclusive();
         workAroundTimeOut(br);
-        String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
+        String id = getID(downloadLink);
         br.setFollowRedirects(false);
         br.setCookie("http://uploaded.to/", "lang", "de");
         br.getPage("http://uploaded.to/language/de");

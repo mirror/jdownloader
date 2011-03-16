@@ -19,30 +19,28 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigasize.com" }, urls = { "http://[\\w\\.]*?gigasize\\.com/get\\.php.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigasize.com" }, urls = { "http://[\\w\\.]*?gigasize\\.com/get/[a-z0-9]+" }, flags = { 2 })
 public class GigaSizeCom extends PluginForHost {
 
-    private static final String AGB_LINK        = "http://www.gigasize.com/page.php?p=terms";
-    private static int          simultanpremium = 1;
-    private static final Object PREMLOCK        = new Object();
+    private static final String AGB_LINK = "http://www.gigasize.com/page.php?p=terms";
 
-    public String               agent           = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+    public String agent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
 
     public GigaSizeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,24 +53,16 @@ public class GigaSizeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         br.getHeaders().put("User-Agent", agent);
-        br.getPage("http://gigasize.com/index.php?lang=de");
-        Form ff = new Form();
-        ff.setAction("http://www.gigasize.com/login.php");
-        ff.setMethod(MethodType.POST);
-        ff.put("uname", Encoding.urlEncode(account.getUser()));
-        ff.put("passwd", Encoding.urlEncode(account.getPass()));
-        ff.put("d", "Login");
-        ff.put("login", "1");
-        URLConnectionAdapter con = null;
+        br.getPage("http://www.gigasize.com");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         try {
-            con = br.openFormConnection(ff);
-            br.followConnection();
-            // br.submitForm(ff);
-        } catch (Exception e) {
-            if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            String token = br.getPage("http://www.gigasize.com/formtoken");
+            br.postPage("http://www.gigasize.com/signin", "func=&token=" + token + "&signRem=1&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        } finally {
+            br.getHeaders().put("X-Requested-With", null);
         }
-        br.followConnection();
-        if (br.containsHTML(">\\&raquo; E-Mail-Adresse oder Passwort ung\\&uuml;ltig\\!</div>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://gigasize.com", "MIIS_GIGASIZE_AUTH") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("premium\":1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public boolean isPremium() throws IOException {
@@ -90,115 +80,75 @@ public class GigaSizeCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        if (!isPremium()) {
-            ai.setStatus("Free Membership");
-            account.setValid(true);
-            return ai;
-        }
-        String expirein = br.getRegex("Ihr Premium Account.*?ab in(.*?)Tag.*?</p>").getMatch(0);
-        String points = br.getRegex("Tauschen Sie GigaPoints.*?<span>(\\d+)</span>").getMatch(0);
-        if (expirein != null) {
-            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expirein.trim()) * 24 * 60 * 60 * 1000));
-        }
-        if (points != null) {
-            ai.setPremiumPoints(points);
-        }
+        br.getPage("http://www.gigasize.com/settings");
+        String expirein = br.getRegex("Expiration date:.*?(\\d+-\\d+-\\d+ \\d+:\\d+:\\d+)").getMatch(0);
         account.setValid(true);
+        if (expirein != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expirein, "yyyy-MM-dd HH:mm:ss", null));
+        }
         return ai;
+    }
+
+    private String getID(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "/get/(.+)").getMatch(0);
     }
 
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        boolean free = false;
-        synchronized (PREMLOCK) {
-            requestFileInformation(parameter);
-            login(account);
-            if (!this.isPremium()) {
-                if (simultanpremium + 1 > 2) {
-                    simultanpremium = 2;
-                } else {
-                    simultanpremium++;
-                }
-                free = true;
-            } else {
-                if (simultanpremium + 1 > 20) {
-                    simultanpremium = 20;
-                } else {
-                    simultanpremium++;
-                }
-            }
-        }
-        if (free) {
-            handleFree0(parameter);
-            return;
-        }
+        requestFileInformation(parameter);
+        login(account);
         br.getPage(parameter.getDownloadURL());
+        Form form = br.getForm(2);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(form);
         br.setFollowRedirects(true);
-        br.getPage("http://www.gigasize.com/form.php");
-        Form download = br.getForm(0);
-        if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, download, true, 0);
+        String token = br.getPage("http://www.gigasize.com/formtoken");
+        br.postPage("http://www.gigasize.com/getoken", "fileId=" + getID(parameter) + "&token=" + token + "&rnd=" + System.currentTimeMillis());
+        String url = br.getRegex("redirect\":\"(http:.*?)\"").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        url = url.replaceAll("\\\\/", "/");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.startDownload()) {
-            /* workaround for buggy server */
-            if (parameter.getDownloadSize() < 1000) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        }
+        dl.startDownload();
     }
 
     @Override
-    public void handleFree(DownloadLink parameter) throws Exception {
-        requestFileInformation(parameter);
-        if (parameter.getAvailableStatus() == AvailableStatus.UNCHECKABLE) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        handleFree0(parameter);
-    }
-
-    public void handleFree0(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(true);
-        if (br.containsHTML("versuchen gerade mehr")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-        Form forms[] = br.getForms();
-        Form captchaForm = null;
-        for (Form form : forms) {
-            if (form.getAction() != null && form.getAction().contains("formdownload.php")) {
-                captchaForm = form;
-                break;
-            }
+        String adsCaptcha = br.getRegex("iframe src='(http://api.adsca.*?)'").getMatch(0);
+        if (adsCaptcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser brc = br.cloneBrowser();
+        brc.getPage(adsCaptcha);
+        String captchaURL = brc.getRegex("img src=\"(http:.*?)\"").getMatch(0);
+        String captchaKEY = brc.getRegex("Code:.*?code\">(.*?)<").getMatch(0);
+        String captchaCODE = null;
+        Browser brt = br;
+        br = brc;
+        try {
+            brc.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+            captchaCODE = getCaptchaCode(captchaURL, downloadLink);
+        } finally {
+            br = brt;
         }
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaCode = getCaptchaCode("http://www.gigasize.com/randomImage.php", downloadLink);
-        captchaForm.put("txtNumber", captchaCode);
-        br.submitForm(captchaForm);
-        if (br.containsHTML("YOU HAVE REACHED")) {
-            String temp = br.getRegex("Please retry after\\s(\\d+)\\sMinu").getMatch(0);
-            int waitTime = 60;
-            if (temp != null) {
-                waitTime = Integer.parseInt(temp) + 1;
-            }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime * 60 * 1000l);
-        }
-        Form download = br.getFormbyProperty("id", "formDownload");
-        if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int waittime = 60;
-        String regexedWaittime = br.getRegex("id=\"d2\">(\\d+)</strong>").getMatch(0);
-        if (regexedWaittime != null)
-            waittime = Integer.parseInt(regexedWaittime);
-        else
-            logger.info("The regexed waittime is not found, waiting the default waittime...");
-        sleep(waittime * 1001l, downloadLink);
+        br.postPage("http://www.gigasize.com/getoken", "fileId=" + getID(downloadLink) + "&adUnder=&adscaptcha_response_field=" + captchaCODE + "&adscaptcha_challenge_field=" + captchaKEY);
+        if (!br.containsHTML("status\":1")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        sleep(30 * 1000l, downloadLink);
+        String token = br.getPage("http://www.gigasize.com/formtoken");
+        br.postPage("http://www.gigasize.com/getoken", "fileId=" + getID(downloadLink) + "&token=" + token + "&rnd=" + System.currentTimeMillis());
+        String url = br.getRegex("redirect\":\"(http:.*?)\"").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        url = url.replaceAll("\\\\/", "/");
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.startDownload()) {
-            /* workaround for buggy server */
-            if (downloadLink.getDownloadSize() < 1000) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        }
+        dl.startDownload();
     }
 
     @Override
@@ -210,15 +160,9 @@ public class GigaSizeCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", agent);
-        br.getPage("http://www.gigasize.com/index.php?lang=de");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("has been removed because we")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Die[ ]*?Datei[ ]*?wurde[ ]*?gel")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Download-Slots sind besetzt")) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.gigasizecom.errors.alreadyloading", "Cannot check, because already loading file"));
-            return AvailableStatus.UNCHECKABLE;
-        }
-        String[] dat = br.getRegex("strong>Name</strong>: <b>(.*?)</b></p>.*?<p>Gr.*? <span>(.*?)</span>").getRow(0);
+        if (br.containsHTML("error\">Download error<\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String[] dat = br.getRegex("<strong title=\"(.*?)\".*?File size:.*?>(.*?)<").getRow(0);
         if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0]);
         downloadLink.setDownloadSize(SizeFormatter.getSize(dat[1]));
@@ -232,9 +176,7 @@ public class GigaSizeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        synchronized (PREMLOCK) {
-            return simultanpremium;
-        }
+        return -1;
     }
 
     @Override

@@ -110,7 +110,7 @@ public class UFileNet extends PluginForHost {
         dllink = "http://www.u-file.net/" + dllink;
         sleep(16 * 1000l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        int size = dl.getConnection().getContentLength();
+        long size = dl.getConnection().getLongContentLength();
         if (size == 23056508) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error or file offline!");
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

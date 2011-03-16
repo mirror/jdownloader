@@ -97,7 +97,7 @@ public class FilefrogTo extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("Sorry your Premium traffic is exhausted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             // server error. for some files it returns 0 byte text files.
-            if (con.getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
+            if (con.getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -146,7 +146,7 @@ public class FilefrogTo extends PluginForHost {
         if (!con.isContentDisposition()) {
             if (br.getURL().contains("traffic-exhausted")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
             // server error. for some files it returns 0 byte text files.
-            if (con.getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
+            if (con.getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

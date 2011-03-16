@@ -68,7 +68,7 @@ public class SoundcloudCom extends PluginForHost {
             url = "http://media.soundcloud.com/stream/" + data[0] + "?stream_token=" + data[1];
             URLConnectionAdapter con = br.openGetConnection(url);
             if (!con.getContentType().contains("html"))
-                parameter.setDownloadSize(con.getContentLength());
+                parameter.setDownloadSize(con.getLongContentLength());
             else
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             con.disconnect();

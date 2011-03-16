@@ -70,7 +70,7 @@ public class ChThnhInfo extends PluginForHost {
             if (this.isAborted(downloadLink)) return;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentLength() == 0) {
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == 0) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

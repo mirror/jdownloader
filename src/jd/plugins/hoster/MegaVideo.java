@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/(.*?(v|d)=|v/)[a-zA-Z0-9]+" }, flags = { 2 })
 public class MegaVideo extends PluginForHost {
 
-    private static String       agent     = RandomUserAgent.generate();
+    private static String agent = RandomUserAgent.generate();
     private final static Object LOGINLOCK = new Object();
 
     public MegaVideo(PluginWrapper wrapper) {
@@ -250,7 +250,7 @@ public class MegaVideo extends PluginForHost {
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
-        if (dl.getConnection().getContentLength() == -1) {
+        if (dl.getConnection().getLongContentLength() == -1) {
             /* no content length= waiting page */
             DynByteBuffer buffer = new DynByteBuffer(1024);
             int read = -1;

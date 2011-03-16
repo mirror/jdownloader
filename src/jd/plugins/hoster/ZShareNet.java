@@ -121,7 +121,7 @@ public class ZShareNet extends PluginForHost {
         if (!dl.getConnection().isContentDisposition() || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("/images/download.gif")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
-            if (br.containsHTML("404 - Not Found") || br.getHttpConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("404 - Not Found") || br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.getHeaders().get("Referer") != null && br.getHeaders().get("Referer").contains("token")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -190,7 +190,7 @@ public class ZShareNet extends PluginForHost {
             logger.warning("The download couldn't be started, something is wrong...");
             br.followConnection();
             if (br.containsHTML("/images/download.gif")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
-            if (br.containsHTML("404 - Not Found") || br.getHttpConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("404 - Not Found") || br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.getHeaders().get("Referer") != null && br.getHeaders().get("Referer").contains("token")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             logger.warning("Unsupported errormessage on downloadstart!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

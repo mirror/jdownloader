@@ -51,7 +51,7 @@ public class ImagesHackUs extends PluginForHost {
         URLConnectionAdapter con = br.openGetConnection(finallink);
         if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(getFileNameFromHeader(con));
-        link.setDownloadSize(con.getContentLength());
+        link.setDownloadSize(con.getLongContentLength());
         return AvailableStatus.TRUE;
     }
 

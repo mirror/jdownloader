@@ -49,7 +49,7 @@ public class SoundSnapCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
-        int filesize = con.getContentLength();
+        long filesize = con.getLongContentLength();
         if (con.getContentType().contains("html") || filesize == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = getFileNameFromHeader(con);
         link.setName(filename.trim());

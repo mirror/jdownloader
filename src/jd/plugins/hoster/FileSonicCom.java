@@ -137,6 +137,9 @@ public class FileSonicCom extends PluginForHost {
                         dllink.setAvailable(false);
                     } else {
                         String name = new Regex(hit, "filename>(.*?)</filename").getMatch(0);
+                        if (name.startsWith("<![CDATA")) {
+                            name = new Regex(name, "CDATA\\[(.*?)\\]").getMatch(0);
+                        }
                         String size = new Regex(hit, "size>(\\d+)</size").getMatch(0);
                         dllink.setAvailable(true);
                         dllink.setFinalFileName(name);
