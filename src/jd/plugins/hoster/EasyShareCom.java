@@ -55,7 +55,7 @@ public class EasyShareCom extends PluginForHost {
         return "http://www.easy-share.com/tos.html";
     }
 
-    private static final String MAINPAGE     = "http://www.easy-share.com/";
+    private static final String MAINPAGE = "http://www.easy-share.com/";
     private static final String FILENOTFOUND = "Requested file is deleted";
 
     private void login(Account account) throws Exception {

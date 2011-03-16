@@ -72,11 +72,11 @@ public class Rapidshare extends PluginForHost {
             return ret;
         }
 
-        private int          id;
+        private int id;
 
-        private String       name;
+        private String name;
 
-        private String       url;
+        private String url;
 
         private DownloadLink link;
 
@@ -111,30 +111,30 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    private static final String                       WAIT_HOSTERFULL         = "WAIT_HOSTERFULL";
+    private static final String WAIT_HOSTERFULL = "WAIT_HOSTERFULL";
 
-    private static final String                       SSL_CONNECTION          = "SSL_CONNECTION2";
+    private static final String SSL_CONNECTION = "SSL_CONNECTION2";
 
-    private static final String                       HTTPS_WORKAROUND        = "HTTPS_WORKAROUND";
+    private static final String HTTPS_WORKAROUND = "HTTPS_WORKAROUND";
 
-    private static final Object                       LOCK                    = new Object();
+    private static final Object LOCK = new Object();
 
-    private static final ArrayList<Account>           RESET_WAITING_ACCOUNTS  = new ArrayList<Account>();
+    private static final ArrayList<Account> RESET_WAITING_ACCOUNTS = new ArrayList<Account>();
 
-    private static final Boolean                      HTMLWORKAROUND          = new Boolean(false);
+    private static final Boolean HTMLWORKAROUND = new Boolean(false);
 
-    private static long                               RS_API_WAIT             = 0;
+    private static long RS_API_WAIT = 0;
 
-    private static final String                       COOKIEPROP              = "cookiesv2";
-    private static final Object                       menuLock                = new Object();
+    private static final String COOKIEPROP = "cookiesv2";
+    private static final Object menuLock = new Object();
 
-    private static final HashMap<Integer, MenuAction> menuActionMap           = new HashMap<Integer, MenuAction>();
+    private static final HashMap<Integer, MenuAction> menuActionMap = new HashMap<Integer, MenuAction>();
 
-    private static final Account                      dummyAccount            = new Account("TRAFSHARE", "TRAFSHARE");
+    private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private static final String                       PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
+    private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
 
-    private static final String                       PRE_RESOLVE             = "PRE_RESOLVE2";
+    private static final String PRE_RESOLVE = "PRE_RESOLVE2";
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -145,11 +145,11 @@ public class Rapidshare extends PluginForHost {
         return ret;
     }
 
-    private String         selectedServer = null;
+    private String selectedServer = null;
 
-    private String         accName        = null;
+    private String accName = null;
 
-    private static boolean updateNeeded   = false;
+    private static boolean updateNeeded = false;
 
     public Rapidshare(final PluginWrapper wrapper) {
         super(wrapper);

@@ -33,7 +33,7 @@ import org.w3c.dom.NodeList;
 
 public class JACMethod implements Comparable<JACMethod> {
 
-    private static Logger logger = JDLogger.getLogger();
+    private static Logger               logger  = JDLogger.getLogger();
 
     private static ArrayList<JACMethod> methods = null;
 
@@ -80,7 +80,7 @@ public class JACMethod implements Comparable<JACMethod> {
         return entries;
     }
 
-    private static ArrayList<JACMethod> parseJACInfo(File dir) {
+    public static ArrayList<JACMethod> parseJACInfo(File dir) {
         String filecontent = JDIO.readFileToString(new File(dir.getAbsolutePath() + "/jacinfo.xml"));
         Document doc = JDUtilities.parseXmlString(filecontent, false);
         if (doc == null) return null;

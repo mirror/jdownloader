@@ -46,11 +46,11 @@ public class SflnkgNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String RECAPTCHATEXT         = "api\\.recaptcha\\.net";
-    private static String       CAPTCHAREGEX1         = "\"(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?sid=[a-z0-9]+)\"";
-    private static String       CAPTCHAREGEX2         = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
-    private static String       CAPTCHATEXT3          = "fancycaptcha\\.css\"";
-    private static String       PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
+    private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
+    private static String CAPTCHAREGEX1 = "\"(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?sid=[a-z0-9]+)\"";
+    private static String CAPTCHAREGEX2 = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
+    private static String CAPTCHATEXT3 = "fancycaptcha\\.css\"";
+    private static String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

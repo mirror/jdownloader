@@ -62,7 +62,7 @@ public class RpDogCm extends PluginForDecrypt {
             String code = getCaptchaCode(file, param);
             crptform.put("captcha", code);
             br.submitForm(crptform);
-            if (!br.containsHTML("Please enter the correct security code")){
+            if (!br.containsHTML("Please enter the correct security code")) {
                 break;
             }
             br.getPage(parameter);

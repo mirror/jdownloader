@@ -33,21 +33,21 @@ import jd.controlling.AccountController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -59,13 +59,13 @@ public class Megauploadcom extends PluginForHost {
         ONLINE, OFFLINE, API, BLOCKED
     }
 
-    private static final String   MU_PARAM_PORT   = "MU_PARAM_PORT_NEW1";
-    private final static String[] ports           = new String[] { "80", "800", "1723" };
-    private static String         wwwWorkaround   = null;
-    private static final Object   LOCK            = new Object();
+    private static final String MU_PARAM_PORT = "MU_PARAM_PORT_NEW1";
+    private final static String[] ports = new String[] { "80", "800", "1723" };
+    private static String wwwWorkaround = null;
+    private static final Object LOCK = new Object();
 
-    private static final Object   LOGINLOCK       = new Object();
-    private static int            simultanpremium = 1;
+    private static final Object LOGINLOCK = new Object();
+    private static int simultanpremium = 1;
 
     private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
         if (br.containsHTML("gencap\\.php\\?")) {
@@ -109,11 +109,11 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    private boolean             onlyapi            = false;
+    private boolean onlyapi = false;
 
-    private String              wait               = null;
+    private String wait = null;
 
-    private static String       agent              = RandomUserAgent.generate();
+    private static String agent = RandomUserAgent.generate();
 
     /*
      * every jd session starts with 1=default, because no waittime does not work
@@ -122,9 +122,9 @@ public class Megauploadcom extends PluginForHost {
      * try to workaround the waittime, 0=no waittime, 1 = default, other = 60
      * secs
      */
-    private static int          WaittimeWorkaround = 1;
+    private static int WaittimeWorkaround = 1;
 
-    private static final Object PREMLOCK           = new Object();
+    private static final Object PREMLOCK = new Object();
 
     public Megauploadcom(final PluginWrapper wrapper) {
         super(wrapper);

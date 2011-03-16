@@ -50,8 +50,8 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 
 public class RouterSender {
-    private static final RouterSender INSTANCE           = new RouterSender();
-    private static final String       ROUTER_COL_SERVICE = "http://update3.jdownloader.org:44444";
+    private static final RouterSender INSTANCE = new RouterSender();
+    private static final String ROUTER_COL_SERVICE = "http://update3.jdownloader.org:44444";
 
     public static RouterSender getInstance() {
         return RouterSender.INSTANCE;
@@ -100,49 +100,49 @@ public class RouterSender {
         System.out.println(mc + " => " + RouterSender.getManufactor(mc));
     }
 
-    private String                      routerIP;
-    private String                      script;
-    private String                      routerName;
+    private String routerIP;
+    private String script;
+    private String routerName;
 
-    private String                      mac;
-    private String                      manufactor;
-    private int                         responseCode;
-    private HashMap<String, String>     responseHeaders;
+    private String mac;
+    private String manufactor;
+    private int responseCode;
+    private HashMap<String, String> responseHeaders;
 
-    private String                      title;
+    private String title;
 
-    private int                         pTagsCount;
+    private int pTagsCount;
 
-    private int                         frameTagCount;
+    private int frameTagCount;
 
-    private String                      favIconHash;
-    private JTextField                  txtName;
-    private JTextField                  txtManufactor;
-    private JTextField                  txtUser;
-    private JTextField                  txtPass;
-    private JTextField                  txtIP;
-    private JTextField                  txtFirmware;
-    private String                      firmware;
+    private String favIconHash;
+    private JTextField txtName;
+    private JTextField txtManufactor;
+    private JTextField txtUser;
+    private JTextField txtPass;
+    private JTextField txtIP;
+    private JTextField txtFirmware;
+    private String firmware;
     private ArrayList<UpnpRouterDevice> devices;
-    private String                      response;
-    private String                      exception;
+    private String response;
+    private String exception;
 
-    private String                      sslException;
+    private String sslException;
 
-    private String                      sslResponse;
+    private String sslResponse;
 
-    private int                         sslResponseCode;
+    private int sslResponseCode;
 
-    private HashMap<String, String>     sslResponseHeaders;
+    private HashMap<String, String> sslResponseHeaders;
 
-    private String                      sslTitle;
+    private String sslTitle;
 
-    private int                         sslPTagsCount;
+    private int sslPTagsCount;
 
-    private int                         sslFrameTagCount;
+    private int sslFrameTagCount;
 
-    private String                      sslFavIconHash;
-    private final Storage               storage;
+    private String sslFavIconHash;
+    private final Storage storage;
 
     private RouterSender() {
         this.storage = JSonStorage.getPlainStorage("ROUTERSENDER");

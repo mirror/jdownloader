@@ -19,18 +19,18 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.net/(shared/static/|rssdownload/).*)|(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
 public class BoxNet extends PluginForHost {
-    private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
+    private static final String TOS_LINK = "https://www.box.net/static/html/terms.html";
 
-    private static final String OUT_OF_BANDWITH_MSG    = "out of bandwidth";
+    private static final String OUT_OF_BANDWITH_MSG = "out of bandwidth";
     private static final String REDIRECT_DOWNLOAD_LINK = "http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
 
     public BoxNet(PluginWrapper wrapper) {

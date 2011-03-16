@@ -95,7 +95,7 @@ public class BigUploadCom extends PluginForHost {
         URLConnectionAdapter connection = cbr.openGetConnection(captchaurl);
         cbr.downloadConnection(cf, connection);
         String code = getCaptchaCode(cf, downloadLink);
-        
+
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Captcha Usereingabe in die Form einfügen

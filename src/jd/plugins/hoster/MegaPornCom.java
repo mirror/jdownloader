@@ -59,13 +59,13 @@ public class MegaPornCom extends PluginForHost {
         ONLINE, OFFLINE, API, BLOCKED
     }
 
-    private static final String   MU_PARAM_PORT   = "MU_PARAM_PORT_NEW1";
-    private final static String[] ports           = new String[] { "80", "800", "1723" };
-    private static String         wwwWorkaround   = null;
-    private static final Object   LOCK            = new Object();
+    private static final String MU_PARAM_PORT = "MU_PARAM_PORT_NEW1";
+    private final static String[] ports = new String[] { "80", "800", "1723" };
+    private static String wwwWorkaround = null;
+    private static final Object LOCK = new Object();
 
-    private static final Object   LOGINLOCK       = new Object();
-    private static int            simultanpremium = 1;
+    private static final Object LOGINLOCK = new Object();
+    private static int simultanpremium = 1;
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -114,11 +114,11 @@ public class MegaPornCom extends PluginForHost {
         }
     }
 
-    private boolean             onlyapi            = false;
+    private boolean onlyapi = false;
 
-    private String              wait               = null;
+    private String wait = null;
 
-    private static String       agent              = RandomUserAgent.generate();
+    private static String agent = RandomUserAgent.generate();
 
     /*
      * every jd session starts with 1=default, because no waittime does not work
@@ -127,9 +127,9 @@ public class MegaPornCom extends PluginForHost {
      * try to workaround the waittime, 0=no waittime, 1 = default, other = 60
      * secs
      */
-    private static int          WaittimeWorkaround = 1;
+    private static int WaittimeWorkaround = 1;
 
-    private static final Object PREMLOCK           = new Object();
+    private static final Object PREMLOCK = new Object();
 
     public MegaPornCom(final PluginWrapper wrapper) {
         super(wrapper);

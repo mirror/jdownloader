@@ -44,7 +44,7 @@ public class TwisTysCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://twistys.com";
-    public static final Object  LOCK     = new Object();
+    public static final Object LOCK = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {

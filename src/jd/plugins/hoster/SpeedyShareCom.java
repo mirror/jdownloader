@@ -46,7 +46,7 @@ public class SpeedyShareCom extends PluginForHost {
         return "http://www.speedyshare.com/terms.php";
     }
 
-    private static final String PREMIUMONLY     = ">This paraticular file can only be downloaded after you purchase";
+    private static final String PREMIUMONLY = ">This paraticular file can only be downloaded after you purchase";
     private static final String PREMIUMONLYTEXT = "Only downloadable for premium users";
 
     @Override

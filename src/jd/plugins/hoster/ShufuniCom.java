@@ -27,7 +27,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shufuni.com" }, urls = { "http://[\\w\\.]*?shufuni\\.com/[\\w-+]+" }, flags = { 2 })
 public class ShufuniCom extends PluginForHost {
 

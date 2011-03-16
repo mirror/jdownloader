@@ -25,11 +25,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -48,11 +48,11 @@ public class ChoMikujPl extends PluginForHost {
         return "http://chomikuj.pl/Regulamin.aspx";
     }
 
-    private String              DLLINK              = null;
-    private static final String PREMIUMONLY         = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej)";
+    private String DLLINK = null;
+    private static final String PREMIUMONLY = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej)";
     private static final String PREMIUMONLYUSERTEXT = "Download is only available for registered/premium users!";
-    private static final String MAINPAGE            = "http://chomikuj.pl/";
-    private static final String FILEIDREGEX         = "\\&id=(.*?)\\&";
+    private static final String MAINPAGE = "http://chomikuj.pl/";
+    private static final String FILEIDREGEX = "\\&id=(.*?)\\&";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("60423fhrzisweguikipo9re", "chomikuj.pl").replace("amp;", ""));

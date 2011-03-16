@@ -115,7 +115,7 @@ public class CrptTo extends PluginForDecrypt {
             /* check for cnl2 button and click it */
             Form form = br.getForm(0);
             if (form != null && form.getAction() != null && form.getAction().contains("addcrypted2")) {
-                Browser cnlbr=br.cloneBrowser();
+                Browser cnlbr = br.cloneBrowser();
                 cnlbr.setConnectTimeout(5000);
                 if (form.getAction().contains("http://localhost") || form.getAction().contains("http://127")) {
                     cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));

@@ -59,7 +59,7 @@ public class PrzeklejPl extends PluginForHost {
     }
 
     private static final String REGISTEREDONLY = "> możesz pobrać, jeżeli jesteś zalogowany";
-    private static final String NOFREEMESSAGE  = "Only downloadable for registered users";
+    private static final String NOFREEMESSAGE = "Only downloadable for registered users";
     private static final String FINALLINKREGEX = "class=\"download\" href=\"(.*?)\"";
 
     @Override

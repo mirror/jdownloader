@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickload.to" }, urls = { "http://[\\w\\.]*?quickload\\.to/\\?Go=Player\\&HashID=FILE[A-Z0-9]+" }, flags = { 0 })
 public class QuickLoadTo extends PluginForHost {

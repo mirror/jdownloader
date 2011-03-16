@@ -41,8 +41,8 @@ import jd.utils.EditDistance;
 public class Srnnks extends PluginForDecrypt {
     class DecryptRunnable implements JDRunnable {
 
-        private final String                  action;
-        private final Browser                 br;
+        private final String action;
+        private final Browser br;
         private final ArrayList<DownloadLink> results;
 
         public DecryptRunnable(final String action, final Browser br, final ArrayList<DownloadLink> results) {
@@ -87,14 +87,14 @@ public class Srnnks extends PluginForDecrypt {
 
     }
 
-    private final static String[] passwords           = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
-    private static long           LATEST_BLOCK_DETECT = 0;
+    private final static String[] passwords = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
+    private static long LATEST_BLOCK_DETECT = 0;
 
-    private static long           LATEST_RECONNECT    = 0;
-    private static Object         GLOBAL_LOCK         = new Object();
+    private static long LATEST_RECONNECT = 0;
+    private static Object GLOBAL_LOCK = new Object();
 
     // seems like sj does block ips if requestlimit is not ok
-    private static final long     FW_WAIT             = 300;
+    private static final long FW_WAIT = 300;
 
     private synchronized static boolean limitsReached(final Browser br) throws IOException {
         int ret = -100;

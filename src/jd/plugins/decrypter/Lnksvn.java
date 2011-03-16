@@ -169,7 +169,7 @@ public class Lnksvn extends PluginForDecrypt {
         // alle verschlüsseleten Links in einem Rutsch entschlüsseln
         final class LsDirektLinkTH extends Thread {
             Browser browser;
-            String  result;
+            String result;
 
             public LsDirektLinkTH(final Browser browser) {
                 this.browser = browser;
