@@ -44,7 +44,7 @@ public class RouterUtils {
     private static class WebServerChecker implements JDRunnable {
 
         private final String host;
-        private InetAddress  address = null;
+        private InetAddress address = null;
 
         public WebServerChecker(final String host) {
             this.host = host;
@@ -65,7 +65,7 @@ public class RouterUtils {
 
     public final static ArrayList<String> HOST_NAMES = new ArrayList<String>();
 
-    private static InetAddress            ADDRESS_CACHE;
+    private static InetAddress ADDRESS_CACHE;
 
     static {
         RouterUtils.HOST_NAMES.add("fritz.fonwlan.box");
@@ -157,7 +157,7 @@ public class RouterUtils {
      * 
      * @return
      */
-    private static InetAddress            ASYNCH_RETURN;
+    private static InetAddress ASYNCH_RETURN;
 
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
 

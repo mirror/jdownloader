@@ -60,7 +60,7 @@ public abstract class Plugin implements ActionListener {
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /* afer 0.95xx */
-    protected JDPluginLogger   logger          = null;
+    protected JDPluginLogger logger = null;
 
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
@@ -237,15 +237,15 @@ public abstract class Plugin implements ActionListener {
 
     protected final ConfigContainer config;
 
-    protected final PluginWrapper   wrapper;
+    protected final PluginWrapper wrapper;
 
-    protected Browser               br = null;
+    protected Browser br = null;
     /**
      * returns the init time of this plugin. this can be used, for example to
      * ignore further captcha questions if the user decided not to continue
      * decrypting
      */
-    private long                    initTime;
+    private long initTime;
 
     public void setInitTime(long initTime) {
         System.out.println("Set " + this + " " + initTime);

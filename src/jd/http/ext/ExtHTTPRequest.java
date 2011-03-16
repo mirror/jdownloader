@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
-import java.util.zip.GZIPInputStream;
 
 import jd.http.Browser;
 import jd.http.Request;
@@ -74,11 +73,6 @@ public class ExtHTTPRequest implements HttpRequest {
     public int getReadyState() {
 
         return readyState;
-
-    }
-
-    public byte[] getResponseBytes() {
-        return request.getResponseBytes();
 
     }
 
@@ -214,12 +208,7 @@ public class ExtHTTPRequest implements HttpRequest {
     public static String read(URLConnectionAdapter con) throws IOException {
         BufferedReader rd;
         InputStreamReader isr;
-        InputStream is = null;
-        if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-            if (con.getInputStream() != null) is = new GZIPInputStream(con.getInputStream());
-        } else {
-            if (con.getInputStream() != null) is = con.getInputStream();
-        }
+        InputStream is = con.getInputStream();
         if (is == null) return null;
         String cs = con.getCharset();
         if (cs == null) {
@@ -263,6 +252,10 @@ public class ExtHTTPRequest implements HttpRequest {
             }
         }
         return htmlCode.toString();
+    }
+
+    public byte[] getResponseBytes() {
+        return this.request.getResponseBytes();
     }
 
 }

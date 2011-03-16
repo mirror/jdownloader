@@ -16,8 +16,8 @@
 
 package jd.plugins.decrypter;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -106,10 +106,11 @@ public class RpdsfD extends PluginForDecrypt {
                         logger.severe("Decrypt error: HOst server error. please try again later");
                         continue main;
                     }
+                    URLConnectionAdapter con = null;
                     try {
-                        URLConnectionAdapter con = br.openGetConnection(parameter + flash.get(flashcounter));
+                        con = br.openGetConnection(parameter + flash.get(flashcounter));
 
-                        BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+                        InputStream input = con.getInputStream();
                         StringBuilder sb = new StringBuilder();
 
                         zaehler = new long[7];
@@ -137,6 +138,11 @@ public class RpdsfD extends PluginForDecrypt {
                     } catch (Exception e) {
                         logger.info("Error while parsing. Loading flash again!");
 
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
                     }
                 }
 
