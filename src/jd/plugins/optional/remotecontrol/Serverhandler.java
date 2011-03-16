@@ -21,8 +21,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.OptionalPluginWrapper;
@@ -46,11 +46,11 @@ import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
@@ -366,9 +366,8 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/set/downloaddir/general/.+")) {
             final String dir = new Regex(requestUrl, ".*/set/downloaddir/general/(.+)").getMatch(0);
 
-            // TODO: Doesn't seem to work but I really don't know why :-/
-            JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
-            JSonWrapper.get("DOWNLOAD").save();
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
+            JDUtilities.getConfiguration().save();
 
             response.addContent("PARAM_DOWNLOAD_DIRECTORY=" + dir);
         } else if (requestUrl.matches("(?is).*/set/download/limit/[0-9]+")) {
