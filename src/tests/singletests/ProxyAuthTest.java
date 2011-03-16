@@ -20,8 +20,8 @@ import java.net.InetSocketAddress;
 
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.http.Browser;
-import jd.http.HTTPProxy;
 
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

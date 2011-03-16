@@ -57,7 +57,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.JacksonMapper;
+import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.Application;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;

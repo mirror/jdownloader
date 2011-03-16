@@ -34,9 +34,8 @@ import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
-import jd.http.BrowserSettings;
-import jd.http.HTTPProxy;
 import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettings;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
@@ -50,6 +49,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet

@@ -39,7 +39,6 @@ import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.URLConnectionAdapter.RequestMethod;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -52,6 +51,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.Regex;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
