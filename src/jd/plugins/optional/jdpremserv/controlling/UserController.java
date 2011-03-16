@@ -10,7 +10,6 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.event.BasicEvent;
 import org.appwork.utils.event.BasicEventSender;
-import org.codehaus.jackson.type.TypeReference;
 
 public class UserController implements ControlListener {
 
@@ -35,7 +34,7 @@ public class UserController implements ControlListener {
 
     private UserController() {
         this.eventSender = new BasicEventSender<PremServUser>();
-        premServUsers = JSonStorage.restoreFrom(STORAGEPATH, new TypeReference<ArrayList<PremServUser>>() {
+        premServUsers = JSonStorage.restoreFrom(STORAGEPATH, new org.appwork.storage.TypeRef<ArrayList<PremServUser>>() {
         }, new ArrayList<PremServUser>());
 
         JDUtilities.getController().addControlListener(this);

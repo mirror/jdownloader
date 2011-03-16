@@ -56,6 +56,8 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.JacksonMapper;
 import org.appwork.utils.Application;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
@@ -67,6 +69,10 @@ import org.jdownloader.update.RestartController;
  * @author JD-Team
  */
 public class Main {
+    static {
+        // USe Jacksonmapper in this project
+        JSonStorage.setMapper(new JacksonMapper());
+    }
     private static Logger           LOG;
     private static boolean          instanceStarted            = false;
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;

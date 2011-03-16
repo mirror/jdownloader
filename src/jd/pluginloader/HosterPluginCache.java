@@ -3,7 +3,6 @@ package jd.pluginloader;
 import java.util.HashMap;
 
 import org.appwork.storage.JSonStorage;
-import org.codehaus.jackson.type.TypeReference;
 
 /**
  * Caches all plugin info in a JSON File.
@@ -29,7 +28,7 @@ public class HosterPluginCache extends PluginCache<CachedHoster> {
     @Override
     protected HashMap<String, CachedHoster> restore(String cachedString) {
 
-        return JSonStorage.restoreFromString(cachedString, new TypeReference<HashMap<String, CachedHoster>>() {
+        return JSonStorage.restoreFromString(cachedString, new org.appwork.storage.TypeRef<HashMap<String, CachedHoster>>() {
         }, new HashMap<String, CachedHoster>());
 
     }

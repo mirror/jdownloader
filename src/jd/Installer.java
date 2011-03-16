@@ -19,7 +19,7 @@ package jd;
 import jd.controlling.JDLogger;
 import jd.gui.swing.dialog.InstallerDialog;
 
-import org.appwork.storage.JacksonStorageChest;
+import org.appwork.storage.JsonKeyValueStorage;
 import org.jdownloader.update.JDUpdater;
 
 /**
@@ -43,7 +43,7 @@ public class Installer {
             /* install not aborted */
             try {
                 /* read default values from jddefaults */
-                JacksonStorageChest defaults = new JacksonStorageChest("jddefaults", true);
+                JsonKeyValueStorage defaults = new JsonKeyValueStorage("jddefaults", true);
 
                 JDUpdater.getInstance().setBranchInUse(defaults.get(JDUpdater.PARAM_BRANCH, (String) null));
 
