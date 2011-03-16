@@ -28,11 +28,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -42,13 +42,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class BitShareCom extends PluginForHost {
 
     // private static final String RECAPTCHA = "/recaptcha/";
-    private static final String JSONHOST    = "http://bitshare.com/files-ajax/";
+    private static final String JSONHOST = "http://bitshare.com/files-ajax/";
     private static final String AJAXIDREGEX = "var ajaxdl = \"(.*?)\";";
     private static final String FILEIDREGEX = "bitshare\\.com/files/([a-z0-9]{8})/";
     private static final String DLLINKREGEX = "SUCCESS#(http://.+)";
-    private static final String MAINPAGE    = "http://bitshare.com/";
+    private static final String MAINPAGE = "http://bitshare.com/";
 
-    private static final String agent       = RandomUserAgent.generate();
+    private static final String agent = RandomUserAgent.generate();
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,6 +84,10 @@ public class BitShareCom extends PluginForHost {
         }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
+        if (filename.contains("....")) {
+            String urlFilename = new Regex(link.getDownloadURL(), "/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
+            if (urlFilename != null) link.setName(Encoding.htmlDecode(urlFilename));
+        }
         return AvailableStatus.TRUE;
     }
 

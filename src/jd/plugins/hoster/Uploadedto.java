@@ -109,6 +109,7 @@ public class Uploadedto extends PluginForHost {
         String balance = br.getMatch("Balance:<.*?>([0-9,]+) ");
         String points = br.getMatch("Points:<.*?>([0-9\\.]+)<");
         String traffic = br.getMatch("downloading:<.*?>([0-9,]+ [GMB]+)");
+        String addtraffic = br.getMatch("Hybrid-traffic:<.*?>([0-9,]+ [GMB]+)");
         String expire[] = br.getRegex("Duration:<.*?>(\\d+) weeks? (\\d+) days? and (\\d+) hours?").getRow(0);
         if (expire != null) {
             long weeks = Integer.parseInt(expire[0]) * 7 * 24 * 60 * 60 * 1000l;
@@ -139,8 +140,11 @@ public class Uploadedto extends PluginForHost {
             balance = balance.replaceAll(",", ".");
             ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
         }
-        ai.setTrafficLeft(SizeFormatter.getSize(traffic));
-        ai.setTrafficMax(50 * 1024 * 1024 * 1024l);
+        long max = 50 * 1024 * 1024 * 1024l;
+        long current = SizeFormatter.getSize(traffic) + SizeFormatter.getSize(addtraffic);
+        if (current > max) max = current;
+        ai.setTrafficMax(max);
+        ai.setTrafficLeft(current);
         if (points != null) {
             points = points.replaceAll("\\.", "");
             ai.setPremiumPoints(Long.parseLong(points));

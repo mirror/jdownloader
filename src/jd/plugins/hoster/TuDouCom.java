@@ -70,7 +70,8 @@ public class TuDouCom extends PluginForHost {
         if (videoID == null || iid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String xmllink = "http://v2.tudou.com/v?vn=02&refurl=http://www.tudou.com/programs/view/" + videoID + "/&it=" + iid + "&noCache=&ui=0&st=1,2&si=sp&tAg=";
         br.getPage(xmllink);
-        dllink = br.getRegex("brt=\"\\d+\".*?(http://.*?)<").getMatch(0);
+        dllink = br.getRegex("brt=\"2\".*?(http://.*?)<").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("brt=\"1\".*?(http://.*?)<").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
@@ -81,7 +82,7 @@ public class TuDouCom extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html") && !con.getContentType().contains("text"))
                 downloadLink.setDownloadSize(con.getLongContentLength());
             else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
