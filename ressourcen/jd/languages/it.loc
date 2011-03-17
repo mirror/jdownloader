@@ -1398,7 +1398,6 @@ plugins.hoster.filesonic.servererror = Errore server. Riprovare più tardi
 plugins.hoster.freaksharenet.waitinsteadofreconnect = Attendere 10 minuti invece di riconnettersi
 plugins.hoster.fsxhu.waiting = %s utenti in coda, 
 plugins.hoster.gigapeta.unavailable = Questo IP sta già scaricando un file
-plugins.hoster.gigasizecom.errors.alreadyloading = Verifica impossibile: file già in caricamento
 plugins.hoster.hellsharecom.error.404 = Errore server 404. Il file potrebbe non essere disponibile per la vostra nazione!
 plugins.hoster.hellsharecom.error.currentloadis100percent = Carico attuale server 100%
 plugins.hoster.hellsharecom.error.serveruntermaximumload = Il server è a carico massimo
