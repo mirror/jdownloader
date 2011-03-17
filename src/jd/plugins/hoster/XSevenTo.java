@@ -65,9 +65,11 @@ public class XSevenTo extends PluginForHost {
             br.postPage("http://x7.to/james/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
             if (br.getCookie("http://x7.to/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             br.getPage("http://x7.to/my");
-            if (!br.containsHTML("id=\"status\" value=\"premium\"")) {
-                this.getPluginConfig().setProperty("freeaccount", "yesss ;)");
-                this.getPluginConfig().save();
+            String premium = br.getRegex("Account type<.*?(>Premium<)/").getMatch(0);
+            if (premium == null) {
+                account.setProperty("freeaccount", "yesss ;)");
+            } else {
+                account.setProperty("freeaccount", null);
             }
             /* have to call this in order so set language */
             br.getPage("http://x7.to/lang/en");
@@ -85,7 +87,7 @@ public class XSevenTo extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        if (this.getPluginConfig().getStringProperty("freeaccount") == null) {
+        if (account.getStringProperty("freeaccount", null) == null) {
             String validUntil = br.getRegex("Premium member until (.*?)\"").getMatch(0);
             if (validUntil != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
@@ -95,6 +97,11 @@ public class XSevenTo extends PluginForHost {
                 }
             }
             ai.setStatus("Premium User");
+            try {
+                account.setMaxSimultanDownloads(-1);
+            } catch (Exception e) {
+
+            }
         } else {
             try {
                 account.setMaxSimultanDownloads(1);
@@ -126,7 +133,7 @@ public class XSevenTo extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        if (this.getPluginConfig().getStringProperty("freeaccount") == null) {
+        if (account.getStringProperty("freeaccount", null) == null) {
             br.setFollowRedirects(false);
             String dllink = null;
             br.getPage(downloadLink.getDownloadURL());
@@ -323,13 +330,6 @@ public class XSevenTo extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        int maxpremium = -1;
-        if (this.getPluginConfig().getStringProperty("freeaccount") != null) maxpremium = 1;
-        return maxpremium;
     }
 
     @Override

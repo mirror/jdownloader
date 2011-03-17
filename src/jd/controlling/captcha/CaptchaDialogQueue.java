@@ -54,8 +54,9 @@ public class CaptchaDialogQueue extends Queue {
         return this.currentItem;
     }
 
-    protected <T extends Throwable> void startItem(final CaptchaDialogQueueEntry item, final boolean callExceptionhandler) throws T {
-        this.currentItem = item;
+    @Override
+    protected <T extends Throwable> void startItem(final QueueAction<?, T> item, final boolean callExceptionhandler) throws T {
+        this.currentItem = (CaptchaDialogQueueEntry) item;
         try {
             super.startItem(item, callExceptionhandler);
         } finally {
