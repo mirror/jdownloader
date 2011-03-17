@@ -165,7 +165,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
                 int[] rows = table.getSelectedRows();
                 table.editingStopped(null);
                 if (rows.length == 0) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "Remove selected Feed(s)?"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, "Remove selected Feed(s)?"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     ArrayList<JDFeedMeFeed> feeds = table.getModel().getFeeds();
                     for (int i = rows.length - 1; i >= 0; --i) {
                         JDFeedMeFeed feed = feeds.get(rows[i]);

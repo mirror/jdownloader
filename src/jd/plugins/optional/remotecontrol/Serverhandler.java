@@ -35,6 +35,8 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
+import jd.controlling.captcha.CaptchaDialogQueue;
+import jd.controlling.captcha.CaptchaDialogQueueEntry;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.GUIUtils;
@@ -435,6 +437,22 @@ public class Serverhandler implements Handler {
 
             response.addContent("Do Reconnect...");
             Reconnecter.getInstance().forceReconnect();
+        } else if (requestUrl.equals("/action/captcha/getcurrent")) {
+            // Get current captcha image
+
+            CaptchaDialogQueueEntry entry = CaptchaDialogQueue.getInstance().getCurrentQueueEntry();
+            File captchafile = entry.getFile();
+
+            // TODO: response.addContent(...)
+        } else if (requestUrl.matches("(?is).*/action/captcha/solve/.+")) {
+            // Solve captcha
+
+            String code = Encoding.urlDecode(new Regex(requestUrl, ".*/action/captcha/solve/(.+)").getMatch(0), false);
+
+            CaptchaDialogQueueEntry entry = CaptchaDialogQueue.getInstance().getCurrentQueueEntry();
+            entry.setResponse(code);
+
+            response.addContent("CAPTCHA-code has been sent.");
         } else if (requestUrl.matches(".*?/action/(force)?update")) {
             // Do Perform webupdate
 

@@ -155,6 +155,12 @@ public class HelpPage {
         t.setCommand("/action/reconnect");
         t.setInfo("Reconnect");
 
+        t.setCommand("/action/captcha/getcurrent");
+        t.setInfo("Gets the current displayed CAPTCHA-image");
+
+        t.setCommand("/action/captcha/solve/%X%");
+        t.setInfo("Solves the current displayed CAPTCHA with code %X%. Don't forget to urlencode the code!");
+
         // Table: Client actions
         t = createTable(new Table("Client actions"));
 
