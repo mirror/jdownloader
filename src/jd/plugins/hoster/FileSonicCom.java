@@ -27,24 +27,23 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.[a-z]{2,3}/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
-    private static final Object LOCK               = new Object();
-    private static long         LAST_FREE_DOWNLOAD = 0l;
-    private static String       geoDomain          = null;
+    private static final Object LOCK = new Object();
+    private static long LAST_FREE_DOWNLOAD = 0l;
+    private static String geoDomain = null;
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -296,6 +295,11 @@ public class FileSonicCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 600000 - waited);
         }
         this.requestFileInformation(downloadLink);
+        br.setCookie(getDomain(), "lang", "en");
+        this.br.getPage(downloadLink.getDownloadURL());
+        if (this.br.getRedirectLocation() != null) {
+            this.br.getPage(this.br.getRedirectLocation());
+        }
         passCode = null;
 
         final String freeDownloadLink = this.br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
@@ -386,8 +390,7 @@ public class FileSonicCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.setBrowserExclusive();
-        this.checkLinks(new DownloadLink[] { downloadLink });
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        this.requestFileInformation(downloadLink);
         String resp = downloadAPI(br, account, downloadLink);
         String url = new Regex(resp, "CDATA\\[(http://.*?)\\]\\]").getMatch(0);
         if (url == null) {
@@ -419,24 +422,11 @@ public class FileSonicCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
-        this.correctDownloadLink(parameter);
-        this.br.setCookie(getDomain(), "lang", "en");
-        this.br.getPage(parameter.getDownloadURL());
-        if (this.br.getRedirectLocation() != null) {
-            this.br.getPage(this.br.getRedirectLocation());
-        }
-        if (this.br.containsHTML("File not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = this.br.getRegex("Filename: </span> <strong>(.*?)<").getMatch(0);
-        String filesize = this.br.getRegex("<span class=\"size\">(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final String otherName = this.br.getRegex("<title>Download (.*?) for").getMatch(0);
-        if (otherName != null && otherName.length() > filename.length()) {
-            filename = otherName;
-        }
-        filesize = filesize.replace("&nbsp;", "");
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        this.correctDownloadLink(downloadLink);
+        this.checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
 

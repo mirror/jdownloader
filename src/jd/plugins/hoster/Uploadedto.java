@@ -204,6 +204,7 @@ public class Uploadedto extends PluginForHost {
             if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        logger.info("MD5:" + downloadLink.getMD5Hash());
         dl.startDownload();
     }
 
@@ -304,6 +305,7 @@ public class Uploadedto extends PluginForHost {
             if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        logger.info("MD5:" + downloadLink.getMD5Hash());
         dl.startDownload();
     }
 
@@ -368,7 +370,9 @@ public class Uploadedto extends PluginForHost {
                         dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
                         if ("online".equalsIgnoreCase(infos[hit][0].trim())) {
                             dl.setAvailable(true);
-                            dl.setMD5Hash(infos[hit][3].trim());
+                            String md5 = infos[hit][3].trim();
+                            if (md5.length() == 0) md5 = null;
+                            dl.setMD5Hash(md5);
                         } else {
                             dl.setAvailable(false);
                         }
