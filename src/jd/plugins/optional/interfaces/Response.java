@@ -33,41 +33,57 @@ import org.w3c.dom.Element;
 
 public class Response {
 
-    public final static String OK        = "200 OK";
+    public final static String OK = "200 OK";
 
-    public final static String ERROR     = "404 ERROR";
+    public final static String ERROR = "404 ERROR";
 
-    public File                fileServe = null;
+    public File fileServe = null;
 
-    private StringBuilder      data      = new StringBuilder();
+    private StringBuilder data = new StringBuilder();
+    private byte[] byteData = null;
+
+    /**
+     * @return the byteData
+     */
+    public byte[] getByteData() {
+        return byteData;
+    }
+
+    /**
+     * @param byteData
+     *            the byteData to set
+     */
+    public void setByteData(byte[] byteData) {
+        this.byteData = byteData;
+    }
 
     public StringBuilder getData() {
         return data;
     }
 
-    private HashMap<String, String> headers         = new HashMap<String, String>();
+    private HashMap<String, String> headers = new HashMap<String, String>();
 
-    private String                  returnStatus    = Response.OK;
+    private String returnStatus = Response.OK;
 
-    private String                  returnType      = "text/html";
+    private String returnType = "text/html";
 
-    private long                    filestart       = 0;
+    private long filestart = 0;
 
-    private long                    fileend         = -1;
+    private long fileend = -1;
 
-    private long                    filesize        = 0;
+    private long filesize = 0;
 
-    private long                    fileBytesServed = -1;
+    private long fileBytesServed = -1;
 
-    private boolean                 range           = false;
+    private boolean range = false;
 
-    private Object                  additionalData  = null;
+    private Object additionalData = null;
 
-    private boolean                 handleJSONP     = false;
+    private boolean handleJSONP = false;
 
-    private String                  callbackJSONP   = null;
+    private String callbackJSONP = null;
 
-    private boolean                 isJSONFormat    = false;
+    private boolean isJSONFormat = false;
 
     public String getCallbackJSONP() {
         return callbackJSONP;
@@ -202,6 +218,8 @@ public class Response {
                 /* filename */
                 help.append("Content-Disposition: attachment;filename*=UTF-8''" + Encoding.urlEncode(fileServe.getName())).append("\r\n");
                 help.append("Accept-Ranges: bytes").append("\r\n");
+            } else if (byteData != null) {
+                help.append(byteData.length).append("\r\n");
             } else {
                 /* serve string content */
                 help.append(data.toString().getBytes("UTF-8").length).append("\r\n");
@@ -248,6 +266,8 @@ public class Response {
                 } catch (Exception e) {
                 }
             }
+        } else if (byteData != null) {
+            out.write(byteData);
         } else {
             out.write(data.toString().getBytes("UTF-8"));
         }

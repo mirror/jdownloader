@@ -5,6 +5,7 @@ import java.io.File;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
+import jd.gui.swing.dialog.CaptchaDialog;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
@@ -21,6 +22,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     private final int flag;
     private final String def;
     private String resp = null;
+    private CaptchaDialog dialog;
 
     public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, String def) {
         this.captchaController = captchaController;
@@ -38,6 +40,11 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
 
     public void setResponse(String resp) {
         this.resp = resp;
+        try {
+            dialog.dispose();
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     protected String run() {
@@ -54,11 +61,10 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
             String result = CaptchaController.getCaptchaSolver().solveCaptcha(captchaController.getHost(), captchaController.getIcon(), captchaController.getCaptchafile(), def, captchaController.getExplain());
             if (result != null && result.length() > 0) return result;
         }
-
         UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         try {
-            return UserIO.getInstance().requestCaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, captchaController.getHost(), captchaController.getIcon(), captchaController.getCaptchafile(), def, captchaController.getExplain());
-
+            this.dialog = new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, captchaController.getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain());
+            return Dialog.getInstance().showDialog(dialog);
         } catch (DialogNoAnswerException e) {
             if (resp == null) {
                 /* no external response available */

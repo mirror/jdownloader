@@ -16,14 +16,18 @@
 
 package jd.plugins.optional.remotecontrol;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
@@ -48,11 +52,11 @@ import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.Request;
 import jd.plugins.optional.interfaces.Response;
@@ -68,17 +72,17 @@ import org.w3c.dom.Element;
 
 public class Serverhandler implements Handler {
 
-    private final OptionalPluginWrapper rc                          = JDUtilities.getOptionalPlugin("remotecontrol");
-    private static Logger               logger                      = JDLogger.getLogger();
+    private final OptionalPluginWrapper rc = JDUtilities.getOptionalPlugin("remotecontrol");
+    private static Logger logger = JDLogger.getLogger();
 
-    private static final String         LINK_TYPE_OFFLINE           = "offline";
-    private static final String         LINK_TYPE_AVAIL             = "available";
+    private static final String LINK_TYPE_OFFLINE = "offline";
+    private static final String LINK_TYPE_AVAIL = "available";
 
-    private static final String         ERROR_MALFORMED_REQUEST     = "JDRemoteControl - Malformed request. Use /help";
-    private static final String         ERROR_LINK_GRABBER_RUNNING  = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
-    private static final String         ERROR_UNKNOWN_RESPONSE_TYPE = "Error: Unknown response type. Please inform us.";
+    private static final String ERROR_MALFORMED_REQUEST = "JDRemoteControl - Malformed request. Use /help";
+    private static final String ERROR_LINK_GRABBER_RUNNING = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
+    private static final String ERROR_UNKNOWN_RESPONSE_TYPE = "Error: Unknown response type. Please inform us.";
 
-    private final DecimalFormat         f                           = new DecimalFormat("#0.00");
+    private final DecimalFormat f = new DecimalFormat("#0.00");
 
     private Element addDownloadLink(final Document xml, final DownloadLink dl) {
         final Element element = xml.createElement("file");
@@ -212,8 +216,8 @@ public class Serverhandler implements Handler {
             response.addContent(value);
         } else if (requestUrl.equals("/get/downloadstatus")) {
             // Get download status
-
-            response.addContent(DownloadWatchDog.getInstance().getDownloadStatus().toString());
+            /* TODO: wait for my other commits */
+            // response.addContent(DownloadWatchDog.getInstance().getStateMachine().getState().getLabel());
         } else if (requestUrl.equals("/get/isreconnect")) {
             // Get isReconnect
 
@@ -441,7 +445,21 @@ public class Serverhandler implements Handler {
             // Get current captcha image
 
             CaptchaDialogQueueEntry entry = CaptchaDialogQueue.getInstance().getCurrentQueueEntry();
-            File captchafile = entry.getFile();
+            if (entry == null) {
+                response.addContent("none available");
+            } else {
+                File captchafile = entry.getFile();
+                response.setReturnType("image/jpeg");
+                try {
+                    BufferedImage image = ImageIO.read(captchafile);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    ImageIO.write(image, "jpg", baos);
+                    response.setByteData(baos.toByteArray());
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                    response.addContent("error");
+                }
+            }
 
             // TODO: response.addContent(...)
         } else if (requestUrl.matches("(?is).*/action/captcha/solve/.+")) {
@@ -450,9 +468,13 @@ public class Serverhandler implements Handler {
             String code = Encoding.urlDecode(new Regex(requestUrl, ".*/action/captcha/solve/(.+)").getMatch(0), false);
 
             CaptchaDialogQueueEntry entry = CaptchaDialogQueue.getInstance().getCurrentQueueEntry();
-            entry.setResponse(code);
+            if (entry != null) {
+                entry.setResponse(code);
 
-            response.addContent("CAPTCHA-code has been sent.");
+                response.addContent("CAPTCHA-code has been sent.");
+            } else {
+                response.addContent("no captcha currently available");
+            }
         } else if (requestUrl.matches(".*?/action/(force)?update")) {
             // Do Perform webupdate
 
