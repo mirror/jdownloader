@@ -29,13 +29,13 @@ import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 import jd.plugins.download.DownloadInterface.Chunk;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.+/[^& \"]+" }, flags = { 0 })
@@ -57,10 +57,11 @@ public class Ftp extends PluginForHost {
         SimpleFTP ftp = new SimpleFTP();
         try {
             URL url = new URL(downloadLink.getDownloadURL());
-            final String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+)").getMatch(0);
+            String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+)").getMatch(0);
             ftp.connect(url);
             String name = null;
             if (oldStyle()) {
+                if (!filePath.contains("/")) filePath = "/" + filePath;
                 String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
                 if (list != null) {
                     /* list command worked */
@@ -84,13 +85,27 @@ public class Ftp extends PluginForHost {
                 long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {
                     downloadLink.setDownloadSize(size);
-                    name = new Regex(downloadLink.getDownloadURL(), ".*/(.+)").getMatch(0);
+                    name = new Regex(url, ".*/(.+)").getMatch(0);
                     if (name == null) {
                         logger.severe("could not get filename from ftpurl");
                         name = downloadLink.getName();
                     }
                     name = Encoding.urlDecode(name, false);
                     downloadLink.setFinalFileName(name);
+                } else {
+                    /* some server need / at the beginning */
+                    filePath = "/" + filePath;
+                    size = ftp.getSize(Encoding.urlDecode(filePath, false));
+                    if (size != -1) {
+                        downloadLink.setDownloadSize(size);
+                        name = new Regex(url, ".*/(.+)").getMatch(0);
+                        if (name == null) {
+                            logger.severe("could not get filename from ftpurl");
+                            name = downloadLink.getName();
+                        }
+                        name = Encoding.urlDecode(name, false);
+                        downloadLink.setFinalFileName(name);
+                    }
                 }
             }
             if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -180,13 +195,27 @@ public class Ftp extends PluginForHost {
                     }
                     name = Encoding.urlDecode(name, false);
                     downloadLink.setFinalFileName(name);
+                } else {
+                    /* some server need / at the beginning */
+                    filePath = "/" + filePath;
+                    size = ftp.getSize(Encoding.urlDecode(filePath, false));
+                    if (size != -1) {
+                        downloadLink.setDownloadSize(size);
+                        name = new Regex(ftpurl, ".*/(.+)").getMatch(0);
+                        if (name == null) {
+                            logger.severe("could not get filename from ftpurl");
+                            name = downloadLink.getName();
+                        }
+                        name = Encoding.urlDecode(name, false);
+                        downloadLink.setFinalFileName(name);
+                    }
                 }
             }
             if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             try {
                 ftp.getBroadcaster().addListener(new FtpListener() {
-                    private long before   = 0;
-                    private long last     = 0;
+                    private long before = 0;
+                    private long last = 0;
                     private long lastTime = System.currentTimeMillis();
 
                     public void onDownloadProgress(FtpEvent event) {
