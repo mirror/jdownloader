@@ -13,6 +13,8 @@ public class CaptchaDialogQueue extends Queue {
         return INSTANCE;
     }
 
+    private CaptchaDialogQueueEntry currentItem = null;
+
     private CaptchaDialogQueue() {
         super("CaptchaDialogQueue");
     }
@@ -46,6 +48,19 @@ public class CaptchaDialogQueue extends Queue {
     public void blockAll() {
         PluginForDecrypt.abortQueued();
         this.killQueue();
+    }
+
+    public CaptchaDialogQueueEntry getCurrentQueueEntry() {
+        return this.currentItem;
+    }
+
+    protected <T extends Throwable> void startItem(final CaptchaDialogQueueEntry item, final boolean callExceptionhandler) throws T {
+        this.currentItem = item;
+        try {
+            super.startItem(item, callExceptionhandler);
+        } finally {
+            this.currentItem = null;
+        }
     }
 
 }

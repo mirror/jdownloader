@@ -1,5 +1,7 @@
 package jd.controlling.captcha;
 
+import java.io.File;
+
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
@@ -16,8 +18,9 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
 
     private final CaptchaController captchaController;
-    private final int               flag;
-    private final String            def;
+    private final int flag;
+    private final String def;
+    private String resp = null;
 
     public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, String def) {
         this.captchaController = captchaController;
@@ -29,7 +32,24 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         return captchaController.getHost();
     }
 
+    public File getFile() {
+        return captchaController.getCaptchafile();
+    }
+
+    public void setResponse(String resp) {
+        this.resp = resp;
+    }
+
     protected String run() {
+        /* external response already set, no need to ask user */
+        if (resp != null) return resp;
+        String ret = viaGUI();
+        /* external response set, return this instead */
+        if (resp != null) return resp;
+        return ret;
+    }
+
+    private String viaGUI() {
         if (CaptchaController.getCaptchaSolver() != null) {
             String result = CaptchaController.getCaptchaSolver().solveCaptcha(captchaController.getHost(), captchaController.getIcon(), captchaController.getCaptchafile(), def, captchaController.getExplain());
             if (result != null && result.length() > 0) return result;
@@ -38,32 +58,36 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         try {
             return UserIO.getInstance().requestCaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, captchaController.getHost(), captchaController.getIcon(), captchaController.getCaptchafile(), def, captchaController.getExplain());
-        } catch (DialogNoAnswerException e) {
-            if (!e.isCausedByTimeout()) {
-                String[] options = new String[] { JDL.L("captchacontroller.cancel.dialog.allorhost.next", "Show all further pending Captchas"), JDL.LF("captchacontroller.cancel.dialog.allorhost.cancelhost", "Do not show pending Captchas for %s", captchaController.getHost()), JDL.L("captchacontroller.cancel.dialog.allorhost.all", "Cancel all pending Captchas") };
-                try {
-                    int defSelection = JSonStorage.getPlainStorage("CaptchaController").get("lastCancelOption", 0);
 
-                    switch (Dialog.getInstance().showComboDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDL.L("captchacontroller.cancel.dialog.allorhost", "Canceled Captcha Dialog"), JDL.L("captchacontroller.cancel.dialog.allorhost.msg", "You canceled a Captcha Dialog!\r\nHow do you want to continue?"), options, defSelection, captchaController.getIcon(), null, null, null)) {
-                    case 0:
-                        // nothing
-                        JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 0);
-                        break;
-                    case 1:
-                        CaptchaDialogQueue.getInstance().blockByHost(captchaController.getHost());
-                        JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 1);
-                        break;
-                    case 2:
-                        CaptchaDialogQueue.getInstance().blockAll();
-                        JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 2);
-                        break;
+        } catch (DialogNoAnswerException e) {
+            if (resp == null) {
+                /* no external response available */
+                if (!e.isCausedByTimeout()) {
+                    String[] options = new String[] { JDL.L("captchacontroller.cancel.dialog.allorhost.next", "Show all further pending Captchas"), JDL.LF("captchacontroller.cancel.dialog.allorhost.cancelhost", "Do not show pending Captchas for %s", captchaController.getHost()), JDL.L("captchacontroller.cancel.dialog.allorhost.all", "Cancel all pending Captchas") };
+                    try {
+                        int defSelection = JSonStorage.getPlainStorage("CaptchaController").get("lastCancelOption", 0);
+
+                        switch (Dialog.getInstance().showComboDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDL.L("captchacontroller.cancel.dialog.allorhost", "Canceled Captcha Dialog"), JDL.L("captchacontroller.cancel.dialog.allorhost.msg", "You canceled a Captcha Dialog!\r\nHow do you want to continue?"), options, defSelection, captchaController.getIcon(), null, null, null)) {
+                        case 0:
+                            // nothing
+                            JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 0);
+                            break;
+                        case 1:
+                            CaptchaDialogQueue.getInstance().blockByHost(captchaController.getHost());
+                            JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 1);
+                            break;
+                        case 2:
+                            CaptchaDialogQueue.getInstance().blockAll();
+                            JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 2);
+                            break;
+                        }
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    } catch (StorageException e1) {
+                        e1.printStackTrace();
                     }
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                } catch (StorageException e1) {
-                    e1.printStackTrace();
                 }
             }
         }
