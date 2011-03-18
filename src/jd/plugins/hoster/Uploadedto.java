@@ -88,67 +88,33 @@ public class Uploadedto extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
+        br.postPage("http://uploaded.to/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
+        if (!br.containsHTML("status:")) {
+            ai.setStatus("Wrong username or password");
             account.setValid(false);
             return ai;
         }
-        br.setCookie("http://uploaded.to", "lang", "en");
-        /* language is saved in account itself */
-        br.getPage("http://uploaded.to/language/en");
-        br.getPage("http://uploaded.to/me");
-        String isPremium = br.getMatch("Status:</.*?<em(>Premium<)/em>");
+        String isPremium = br.getMatch("status: (premium)");
         if (isPremium == null) {
+            ai.setStatus("Free account");
+            account.setValid(false);
+            return ai;
+        }
+        String traffic = br.getMatch("traffic: (\\d+)");
+        String expire = br.getMatch("expire: (\\d+)");
+        if (expire != null) {
+            ai.setValidUntil(Long.parseLong(expire) * 1000);
+        } else {
             ai.setStatus("Free account");
             account.setValid(false);
             return ai;
         }
         ai.setStatus("Premium account");
         account.setValid(true);
-        String balance = br.getMatch("Balance:<.*?>([0-9,]+) ");
-        String points = br.getMatch("Points:<.*?>([0-9\\.]+)<");
-        String traffic = br.getMatch("downloading:<.*?>([0-9,]+ [GMB]+)");
-        String addtraffic = br.getMatch("Hybrid-traffic:<.*?>([0-9,]+ [GMB]+)");
-        String expire[] = br.getRegex("Duration:<.*?>(\\d+) weeks? (\\d+) days? and (\\d+) hours?").getRow(0);
-        if (expire != null) {
-            long weeks = Integer.parseInt(expire[0]) * 7 * 24 * 60 * 60 * 1000l;
-            long days = Integer.parseInt(expire[1]) * 24 * 60 * 60 * 1000l;
-            long hours = Integer.parseInt(expire[2]) * 60 * 60 * 1000l;
-            ai.setValidUntil(System.currentTimeMillis() + weeks + days + hours);
-        } else {
-            expire = br.getRegex("Duration:<.*?>(\\d+) days? and (\\d+) hours?").getRow(0);
-            if (expire != null) {
-                long days = Integer.parseInt(expire[0]) * 24 * 60 * 60 * 1000l;
-                long hours = Integer.parseInt(expire[1]) * 60 * 60 * 1000l;
-                ai.setValidUntil(System.currentTimeMillis() + days + hours);
-            } else {
-                expire = br.getRegex("Duration:<.*?>(\\d+) hours?").getRow(0);
-                if (expire != null) {
-                    long hours = Integer.parseInt(expire[0]) * 60 * 60 * 1000l;
-                    ai.setValidUntil(System.currentTimeMillis() + hours);
-                } else {
-                    if (br.getRegex("Duration:<.*?(>unlimited<)").matches()) {
-                        ai.setValidUntil(-1);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-            }
-        }
-        if (balance != null) {
-            balance = balance.replaceAll(",", ".");
-            ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
-        }
         long max = 50 * 1024 * 1024 * 1024l;
-        long current = SizeFormatter.getSize(traffic) + SizeFormatter.getSize(addtraffic);
-        if (current > max) max = current;
-        ai.setTrafficMax(max);
+        long current = Long.parseLong(traffic);
+        ai.setTrafficMax(Math.max(max, current));
         ai.setTrafficLeft(current);
-        if (points != null) {
-            points = points.replaceAll("\\.", "");
-            ai.setPremiumPoints(Long.parseLong(points));
-        }
         return ai;
     }
 
@@ -168,7 +134,7 @@ public class Uploadedto extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         String id = getID(downloadLink);
-        br.getPage("http://uploaded.to/file/" + id);
+        br.getPage("http://uploaded.to/file/" + id + "/ddl");
         String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
             error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
@@ -178,9 +144,14 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (br.getRedirectLocation() == null) {
+            if (br.containsHTML(">Traffic exhausted<")) {
+                logger.info("Traffic exhausted, temp disabled account");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             logger.info("InDirect Downloads active");
             Form form = br.getForm(0);
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (form.getAction() != null && form.getAction().contains("/access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             logger.info("Download from:" + form.getAction());
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
         } else {
@@ -204,7 +175,6 @@ public class Uploadedto extends PluginForHost {
             if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        logger.info("MD5:" + downloadLink.getMD5Hash());
         dl.startDownload();
     }
 
@@ -305,7 +275,6 @@ public class Uploadedto extends PluginForHost {
             if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        logger.info("MD5:" + downloadLink.getMD5Hash());
         dl.startDownload();
     }
 
@@ -370,9 +339,10 @@ public class Uploadedto extends PluginForHost {
                         dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
                         if ("online".equalsIgnoreCase(infos[hit][0].trim())) {
                             dl.setAvailable(true);
-                            String md5 = infos[hit][3].trim();
-                            if (md5.length() == 0) md5 = null;
-                            dl.setMD5Hash(md5);
+                            String sha1 = infos[hit][3].trim();
+                            if (sha1.length() == 0) sha1 = null;
+                            dl.setSha1Hash(sha1);
+                            dl.setMD5Hash(null);
                         } else {
                             dl.setAvailable(false);
                         }

@@ -185,6 +185,7 @@ public class ZShareNet extends PluginForHost {
         }
         /* they now check waittime */
         sleep(50 * 1000l, downloadLink);
+        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
         // Möglicherweise serverfehler...
         if (!dl.getConnection().isContentDisposition() || dl.getConnection().getContentType().contains("html")) {

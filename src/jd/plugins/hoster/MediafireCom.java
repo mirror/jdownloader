@@ -363,6 +363,7 @@ public class MediafireCom extends PluginForHost {
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
         if (!this.dl.getConnection().isContentDisposition()) {
             logger.info("Error (3)");
+            logger.info(dl.getConnection() + "");
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -408,6 +409,7 @@ public class MediafireCom extends PluginForHost {
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
         if (!this.dl.getConnection().isContentDisposition()) {
             logger.info("Error (4)");
+            logger.info(dl.getConnection() + "");
             this.br.followConnection();
             if (this.br.getRequest().getHttpConnection().getResponseCode() == 403) {
                 logger.info("Error (3)");
@@ -434,6 +436,7 @@ public class MediafireCom extends PluginForHost {
 
         if (!this.dl.getConnection().isContentDisposition()) {
             logger.info("Error (3)");
+            logger.info(dl.getConnection() + "");
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
