@@ -191,10 +191,10 @@ public class JDUpdater extends Updater implements Runnable {
             updater.start();
             final UpdatePackage updates = updater.getUpdates();
             ArrayList<File> filesToInstall = updater.getFilesToInstall();
+            ArrayList<File> filesToRemove = updater.getFilesToRemove();
+            setWaitingUpdates(filesToInstall.size() + updates.size() + filesToRemove.size());
 
-            setWaitingUpdates(filesToInstall.size() + updates.size());
-
-            if (filesToInstall.size() > 0) {
+            if (filesToInstall.size() > 0 && filesToRemove.size() > 0) {
                 UpdateFoundDialog dialog = new UpdateFoundDialog(new Runnable() {
 
                     public void run() {
@@ -209,7 +209,7 @@ public class JDUpdater extends Updater implements Runnable {
                         RestartController.getInstance().restartViaUpdater();
                     }
 
-                }, filesToInstall.size());
+                }, filesToInstall.size() + filesToRemove.size());
                 // try {
                 // Dialog.getInstance().showDialog(dialog);
                 // user clicked "INstall now"
@@ -266,10 +266,10 @@ public class JDUpdater extends Updater implements Runnable {
             updater.start();
             final UpdatePackage updates = updater.getUpdates();
             ArrayList<File> filesToInstall = updater.getFilesToInstall();
+            ArrayList<File> filesToRemove = updater.getFilesToRemove();
+            setWaitingUpdates(filesToInstall.size() + updates.size() + filesToRemove.size());
 
-            setWaitingUpdates(filesToInstall.size() + updates.size());
-
-            if (filesToInstall.size() > 0) {
+            if (filesToInstall.size() > 0 || filesToRemove.size() > 0) {
                 UpdateFoundDialog dialog = new UpdateFoundDialog(new Runnable() {
 
                     public void run() {
@@ -284,7 +284,7 @@ public class JDUpdater extends Updater implements Runnable {
                         RestartController.getInstance().restartViaUpdater();
                     }
 
-                }, filesToInstall.size());
+                }, filesToInstall.size() + filesToRemove.size());
                 try {
                     Dialog.getInstance().showDialog(dialog);
                     // user clicked "INstall now"
