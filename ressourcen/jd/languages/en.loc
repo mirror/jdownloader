@@ -1631,6 +1631,7 @@ plugins.optional.langfileeditor.svn.updating.error = Updating SVN: Error!
 plugins.optional.langfileeditor.svn.updating.ready = Updating SVN: Complete
 plugins.optional.langfileeditor.test = Test
 plugins.optional.langfileeditor.title = Language Editor
+plugins.optional.remotecontrol.localhost = Local host only
 plugins.optional.remotecontrol.port = Port:
 plugins.optional.remotecontrol.startedonport2 = %s started on port %s\nhttp://127.0.0.1:%s\n/help for Developer Information.
 plugins.optional.remotecontrol.stopped2 = %s stopped.
