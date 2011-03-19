@@ -17,6 +17,7 @@
 package jd.plugins.optional.remotecontrol;
 
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -39,8 +40,9 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 7)
 public class JDRemoteControl extends PluginOptional {
 
-    private static final String    PARAM_PORT    = "PORT";
-    private static final String    PARAM_ENABLED = "ENABLED";
+    private static final String    PARAM_PORT      = "PORT";
+    private static final String    PARAM_LOCALHOST = "LOCALHOST";
+    private static final String    PARAM_ENABLED   = "ENABLED";
 
     private final SubConfiguration subConfig;
 
@@ -65,8 +67,8 @@ public class JDRemoteControl extends PluginOptional {
             subConfig.save();
 
             if (activate.isSelected()) {
-                server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler(), false);
-                server.start();
+                server = initServer();
+                if (server != null) server.start();
                 UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.remotecontrol.startedonport2", "%s started on port %s\nhttp://127.0.0.1:%s\n/help for Developer Information.", getHost(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
             } else {
                 if (server != null) server.sstop();
@@ -96,12 +98,8 @@ public class JDRemoteControl extends PluginOptional {
         activate.setSelected(enabled);
 
         if (enabled) {
-            try {
-                server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler(), false);
-                server.start();
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
+            server = initServer();
+            if (server != null) server.start();
         }
 
         logger.info("RemoteControl OK");
@@ -111,6 +109,17 @@ public class JDRemoteControl extends PluginOptional {
     private void initConfig() {
         config.setGroup(new ConfigGroup(getHost(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500, 1).setDefaultValue(10025));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_LOCALHOST, JDL.L("plugins.optional.RemoteControl.localhost", "localhost only?")).setDefaultValue(false));
+    }
+
+    private HttpServer initServer() {
+        try {
+            return new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler(), subConfig.getBooleanProperty(PARAM_LOCALHOST, false));
+        } catch (IOException e) {
+            JDLogger.exception(e);
+        }
+
+        return null;
     }
 
     @Override

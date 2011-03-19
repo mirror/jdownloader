@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 import jd.OptionalPluginWrapper;
 import jd.plugins.PluginOptional;
-import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
+import jd.plugins.optional.interfaces.RemoteSupport;
 import jd.utils.JDUtilities;
 
 public class HelpPage {

@@ -28,10 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.interfaces.RemoteSupport;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
 import jd.plugins.optional.remotecontrol.helppage.Table;
-import jd.plugins.optional.remotecontrol.utils.RemoteSupport;
 
 import org.appwork.utils.Regex;
 

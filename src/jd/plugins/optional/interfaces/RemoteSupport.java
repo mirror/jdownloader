@@ -1,4 +1,4 @@
-package jd.plugins.optional.remotecontrol.utils;
+package jd.plugins.optional.interfaces;
 
 public interface RemoteSupport {
     /**
