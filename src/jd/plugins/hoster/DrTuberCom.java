@@ -24,11 +24,11 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drtuber.com" }, urls = { "http://(www\\.)?drtuber\\.com/video/\\d+" }, flags = { 0 })
 public class DrTuberCom extends PluginForHost {
@@ -50,16 +50,20 @@ public class DrTuberCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file you have requested was not found on this server") || br.getURL().contains("missing=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<a href=\"\" class=\"vtitle\">(.*?)</a>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) - Free Videos Adult Sex Tube - DrTuber.com</title>").getMatch(0);
+        if (br.containsHTML("(This video cannot be found\\.|Are you sure you typed in the correct url\\?<)") || br.getURL().contains("missing=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) - DrTuber\\.com</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1 class=\"name\">(.*?)</h1>").getMatch(0);
         String vKey = br.getRegex("vkey=([0-9a-z]+)").getMatch(0);
         if (vKey == null) {
             logger.warning("vKey is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.getPage("http://drtuber.com/player/config.php?vkey=" + vKey + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("bm0zOWRjbjI0dDA5OHM=")));
+        String continueLink = br.getRegex("addVariable\\(\\'config\\', \\'(/.*?)\\'\\);").getMatch(0);
+        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("bm0zOWRjbjI0dDA5OHM="));
+        br.getPage(continueLink);
+        System.out.print(br.toString());
         DLLINK = br.getRegex("<video_file>(http://.*?\\.flv)</video_file>").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();

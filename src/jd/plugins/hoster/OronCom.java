@@ -28,12 +28,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -57,8 +57,8 @@ public class OronCom extends PluginForHost {
         return "http://oron.com/tos.html";
     }
 
-    public boolean nopremium = false;
-    private static final String COOKIE_HOST = "http://oron.com";
+    public boolean              nopremium          = false;
+    private static final String COOKIE_HOST        = "http://oron.com";
     private static final String ONLY4PREMIUMERROR0 = "The file status can only be queried by Premium Users";
     private static final String ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
 
@@ -266,11 +266,7 @@ public class OronCom extends PluginForHost {
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         br.setFollowRedirects(true);
-        // Form um auf free zu "klicken"
-        Form DLForm0 = br.getForm(0);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLForm0.remove("method_premium");
-        br.submitForm(DLForm0);
+        if (brbefore.contains("\"download1\"")) br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
         long timeBefore = System.currentTimeMillis();
         doSomething();
         checkErrors(downloadLink);
