@@ -171,9 +171,10 @@ public class FileServeCom extends PluginForHost {
         // || br2.containsHTML("showCaptcha\\(\\);")) {
         Boolean failed = true;
         for (int i = 0; i <= 10; i++) {
-            final String id = this.br.getRegex("var reCAPTCHA_publickey='(.*?)';").getMatch(0);
+            final String id = this.br.getRegex("var reCAPTCHA_publickey=\\'(.*?)\\';").getMatch(0);
             if (!this.br.containsHTML("api\\.recaptcha\\.net") || id == null || fileId == null) {
-                logger.warning("if or fileId is null or the browser doesn't contain the reCaptcha text...");
+                handleCaptchaErrors(br2, downloadLink);
+                logger.warning("id or fileId is null or the browser doesn't contain the reCaptcha text...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Form reCaptchaForm = new Form();
@@ -321,6 +322,10 @@ public class FileServeCom extends PluginForHost {
     private void handleCaptchaErrors(Browser br2, DownloadLink downloadLink) throws IOException, PluginException {
         // Handles captcha errors and additionsl limits
         logger.info("Checking captcha errors...");
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Unexpected captcha error happened");
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String fail = br2.getRegex("\"(fail|error)\":\"(.*?)\"").getMatch(1);
         String waittime = br2.getRegex("\"(waitTime|msg)\":(\\d+)").getMatch(1);
         if (fail != null && waittime != null) {

@@ -27,19 +27,19 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "http://(www\\.)?vimeo\\.com/[0-9]+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
     private static final String MAINPAGE = "http://www.vimeo.com";
-    static private final String AGB = "http://www.vimeo.com/terms";
-    private String clipData;
-    private String finalURL;
-    private static final Object LOCK = new Object();
+    static private final String AGB      = "http://www.vimeo.com/terms";
+    private String              clipData;
+    private String              finalURL;
+    private static final Object LOCK     = new Object();
 
     public VimeoCom(PluginWrapper wrapper) {
         super(wrapper);

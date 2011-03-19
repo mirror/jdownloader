@@ -63,7 +63,6 @@ public class DrTuberCom extends PluginForHost {
         if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("bm0zOWRjbjI0dDA5OHM="));
         br.getPage(continueLink);
-        System.out.print(br.toString());
         DLLINK = br.getRegex("<video_file>(http://.*?\\.flv)</video_file>").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
