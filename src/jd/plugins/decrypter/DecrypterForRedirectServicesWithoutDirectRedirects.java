@@ -65,9 +65,15 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         if (parameter.contains("adf.ly/") || parameter.contains("9.bb/")) {
             if (parameter.contains("9.bb/") && br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             finallink = br.getRedirectLocation();
-            if (finallink == null) finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);
-            if (finallink == null) finallink = br.getRegex("window\\.location = \\'(.*?)\\';").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);
+                if (finallink == null) {
+                    if (finallink == null) {
+                        finallink = br.getRegex("window\\.location = \\'(.*?)\\';").getMatch(0);
+                        if (finallink == null) finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);
+                    }
+                }
+            }
         } else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
             finallink = br.getRedirectLocation();
             dh = true;
