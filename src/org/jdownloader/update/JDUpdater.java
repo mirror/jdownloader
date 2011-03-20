@@ -14,6 +14,7 @@ import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.utils.JDUtilities;
 
 import org.appwork.update.exchange.UpdatePackage;
+import org.appwork.update.updateclient.InstalledFile;
 import org.appwork.update.updateclient.ParseException;
 import org.appwork.update.updateclient.UpdateException;
 import org.appwork.update.updateclient.Updater;
@@ -191,7 +192,7 @@ public class JDUpdater extends Updater implements Runnable {
             updater.start();
             final UpdatePackage updates = updater.getUpdates();
             ArrayList<File> filesToInstall = updater.getFilesToInstall();
-            ArrayList<File> filesToRemove = updater.getFilesToRemove();
+            ArrayList<InstalledFile> filesToRemove = updater.getFilesToRemove();
             setWaitingUpdates(filesToInstall.size() + updates.size() + filesToRemove.size());
 
             if (filesToInstall.size() > 0 && filesToRemove.size() > 0) {
@@ -266,7 +267,7 @@ public class JDUpdater extends Updater implements Runnable {
             updater.start();
             final UpdatePackage updates = updater.getUpdates();
             ArrayList<File> filesToInstall = updater.getFilesToInstall();
-            ArrayList<File> filesToRemove = updater.getFilesToRemove();
+            ArrayList<InstalledFile> filesToRemove = updater.getFilesToRemove();
             setWaitingUpdates(filesToInstall.size() + updates.size() + filesToRemove.size());
 
             if (filesToInstall.size() > 0 || filesToRemove.size() > 0) {
