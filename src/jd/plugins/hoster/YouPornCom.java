@@ -23,11 +23,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.+/?" }, flags = { 0 })
 public class YouPornCom extends PluginForHost {
@@ -48,9 +48,10 @@ public class YouPornCom extends PluginForHost {
         br.postPage(parameter.getDownloadURL(), "user_choice=Enter");
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("invalid video_id")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) - Free Porn Videos - YouPorn\\.com Lite \\(BETA\\)</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) - Free Porn Videos - YouPorn</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("addthis:title=\"YouPorn - (.*?)\"></a>").getMatch(0);
         DLLINK = br.getRegex("\"(http://download\\.youporn\\.com/download/\\d+\\?save=1)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll(" ", "-") + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
