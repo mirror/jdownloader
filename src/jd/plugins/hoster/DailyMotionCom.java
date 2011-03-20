@@ -49,8 +49,8 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private static final String MAINPAGE               = "http://www.dailymotion.com/";
-    private static final String REGISTEREDONLY1        = "this+content+as+suitable+for+mature+audiences+only";
-    private static final String REGISTEREDONLY2        = "nd+set+your+family+filter+OFF,+in+order+to+watch+it.+Please+<a+href=";
+    private static final String REGISTEREDONLY1        = "this content as suitable for mature audiences only";
+    private static final String REGISTEREDONLY2        = "You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it";
     private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
 
     @Override
