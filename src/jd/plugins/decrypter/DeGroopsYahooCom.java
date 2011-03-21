@@ -49,6 +49,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
+        if (parameter.contains("photos/album/")) parameter += "?mode=tn&count=10000";
         br.setCookiesExclusive(false);
         br.getPage("https://login.yahoo.com/config/login?");
         synchronized (LOCK) {
