@@ -40,7 +40,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http(s)?://[\\w\\.]*?usershare\\.net/(.*?/[0-9a-z]{12}|[0-9a-z]{12})" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http(s)?://(www\\.)?usershare\\.net/[a-z0-9/\\.\\-]+" }, flags = { 2 })
 public class Usershare extends PluginForHost {
 
     public Usershare(PluginWrapper wrapper) {
@@ -65,9 +65,7 @@ public class Usershare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (br.containsHTML("\"download1\"")) {
-            br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(link.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "(.*?/)?([a-z0-9]{12})").getMatch(1) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
-        }
+        if (br.containsHTML("\"download1\"")) br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + getFileID(link.getDownloadURL()) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
         String passCode = null;
         String linkurl = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
         if (linkurl == null) {
@@ -411,12 +409,12 @@ public class Usershare extends PluginForHost {
                 }
                 br.postPage("http://www.usershare.net/checkfiles.html", "op=checkfiles&process=Check+URLs&list=" + sb.toString());
                 for (DownloadLink dl : links) {
-                    String fileid = new Regex(dl.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "(.*?/)?([a-z0-9]{12})").getMatch(1);
-                    if (fileid == null) {
+                    String linkpart = new Regex(dl.getDownloadURL().replaceAll("(http://|www\\.)", ""), "usershare\\.net/(.+)").getMatch(0);
+                    if (linkpart == null) {
                         logger.warning("Usershare availablecheck is broken!");
                         return false;
                     }
-                    if (br.containsHTML(fileid + " not found") || !br.containsHTML(fileid + " found")) {
+                    if (br.containsHTML(linkpart + " not found") || !br.containsHTML(linkpart + " found")) {
                         dl.setAvailable(false);
                     } else {
                         dl.setAvailable(true);
@@ -428,6 +426,13 @@ public class Usershare extends PluginForHost {
             return false;
         }
         return true;
+    }
+
+    private String getFileID(String dlurl) {
+        Regex fileidregex = new Regex(dlurl, COOKIE_HOST.replace("http://", "") + "/" + "(.*?)/(.*?)");
+        String fileid = fileidregex.getMatch(1);
+        if (fileid == null || !fileid.matches("[a-z0-9]+{12}")) fileid = fileidregex.getMatch(0);
+        return fileid;
     }
 
     @Override
