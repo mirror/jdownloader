@@ -35,8 +35,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-import flash.swf.tools.SwfxPrinter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
 
@@ -68,7 +66,7 @@ public class Zippysharecom extends PluginForHost {
     private int getHashfromFlash(final String flashurl, final int time) throws Exception {
         final String[] args = { "-abc", flashurl };
         // disassemble abc
-        final String asasm = SwfxPrinter.main(args);
+        final String asasm = flash.swf.tools.SwfxPrinter.main(args);
         final String doABC = new Regex(asasm, "<doABC2>(.*)</doABC2>").getMatch(0);
         final String[] methods = new Regex(doABC, "(function.+?Traits Entries)").getColumn(0);
         String function = null;
@@ -114,7 +112,7 @@ public class Zippysharecom extends PluginForHost {
                 try {
                     time = getHashfromFlash(flashurl, time);
                 } catch (final Throwable e) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Works only with the latest nightly version currently!");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!");
                 }
                 if (time == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 DLLINK = DLLINK + "&time=" + time;
@@ -135,10 +133,9 @@ public class Zippysharecom extends PluginForHost {
                 }
             } else {
                 DLLINK = br.getRegex("document\\.getElementById\\('dlbutton'\\).href = \"/(.*?)\";").getMatch(0);
-                String t = br.toString();
-                t = t.replaceAll("\n", "");
-                String math = new Regex(t, "<script type=\"text/javascript\">\\s+(var.*?)document").getMatch(0);
-                if (DLLINK != null) {
+                String math = br.getRegex("\n<script type=\"text/javascript\">(.*?)</script>\n").getMatch(0);
+                math = math.replaceAll("document\\.getElementById\\('dlbutton'\\)\\.|\n", "");
+                if (DLLINK != null && math != null) {
                     final String var = new Regex(DLLINK, "\"\\+(.*?)\\+\"").getMatch(0);
                     if (var != null) {
                         math += var;
