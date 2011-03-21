@@ -140,9 +140,7 @@ public class XSevenTo extends PluginForHost {
             if (br.getRedirectLocation() != null) {
                 dllink = br.getRedirectLocation();
             } else {
-
-                if (br.containsHTML("img/elem/trafficexh_de.png")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-
+                if (br.containsHTML("img/elem/trafficexh_")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 dllink = br.getRegex("<b>Download</b>.*?href=\"(http://stor.*?)\"").getMatch(0);
                 if (dllink == null && br.containsHTML("<b>Stream</b>")) {
                     /* its a streamdownload */
@@ -154,6 +152,8 @@ public class XSevenTo extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
+                if (br.containsHTML("img/elem/trafficexh_")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                if (br.containsHTML("wird ein erneuter Versuch gestartet") || br.containsHTML("elem/tecissue")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblems");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -262,7 +262,7 @@ public class XSevenTo extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("wird ein erneuter Versuch gestartet")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblems");
+            if (br.containsHTML("wird ein erneuter Versuch gestartet") || br.containsHTML("elem/tecissue")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblems");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

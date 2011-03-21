@@ -81,7 +81,11 @@ public class Uploadedto extends PluginForHost {
         br.setCookie("http://uploaded.to", "lang", "en");
         br.getPage("http://uploaded.to/language/en");
         br.postPage("http://uploaded.to/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-        if (br.containsHTML("User and password do not match")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("User and password do not match")) {
+            AccountInfo ai = account.getAccountInfo();
+            if (ai != null) ai.setStatus("User and password do not match");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         if (br.getCookie("http://uploaded.to", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -89,8 +93,18 @@ public class Uploadedto extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         br.postPage("http://uploaded.to/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
-        if (!br.containsHTML("status:")) {
-            ai.setStatus("Wrong username or password");
+        if (br.containsHTML("blocked")) {
+            ai.setStatus("Too many failed logins! Wait 15 mins");
+            account.setTempDisabled(true);
+            return ai;
+        }
+        if (br.containsHTML("wrong password")) {
+            ai.setStatus("Wrong password");
+            account.setValid(false);
+            return ai;
+        }
+        if (br.containsHTML("wrong user")) {
+            ai.setStatus("Wrong username");
             account.setValid(false);
             return ai;
         }
@@ -151,7 +165,7 @@ public class Uploadedto extends PluginForHost {
             logger.info("InDirect Downloads active");
             Form form = br.getForm(0);
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (form.getAction() != null && form.getAction().contains("/access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (form.getAction() == null || form.getAction().contains("access") || form.getAction().contains("register")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             logger.info("Download from:" + form.getAction());
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
         } else {
@@ -169,7 +183,7 @@ public class Uploadedto extends PluginForHost {
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
             try {
-                dl.getConnection().disconnect();
+                br.followConnection();
             } catch (final Throwable e) {
             }
             if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
