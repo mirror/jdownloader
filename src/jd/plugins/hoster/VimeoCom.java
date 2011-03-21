@@ -27,19 +27,19 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "http://(www\\.)?vimeo\\.com/[0-9]+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
     private static final String MAINPAGE = "http://www.vimeo.com";
-    static private final String AGB      = "http://www.vimeo.com/terms";
-    private String              clipData;
-    private String              finalURL;
-    private static final Object LOCK     = new Object();
+    static private final String AGB = "http://www.vimeo.com/terms";
+    private String clipData;
+    private String finalURL;
+    private static final Object LOCK = new Object();
 
     public VimeoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -122,7 +122,9 @@ public class VimeoCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.setDebug(true);
             final Object ret = account.getProperty("cookies", null);
-            if (ret != null && ret instanceof HashMap<?, ?> && !force) {
+            boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
+            if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("vimeo") && account.isValid()) {
                     for (final String key : cookies.keySet()) {
@@ -141,6 +143,10 @@ public class VimeoCom extends PluginForHost {
             }
             /* important, else we get a 401 */
             br.setCookie(MAINPAGE, "xsrft", token);
+            if (!new Regex(account.getUser(), ".*?@.*?\\..+").matches()) {
+                account.setProperty("cookies", null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             br.postPage(MAINPAGE + "/log_in", "sign_in%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&sign_in%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(token));
             if (br.getCookie(MAINPAGE, "vimeo") == null) {
                 account.setProperty("cookies", null);
@@ -151,6 +157,8 @@ public class VimeoCom extends PluginForHost {
             for (final Cookie c : add.getCookies()) {
                 cookies.put(c.getKey(), c.getValue());
             }
+            account.setProperty("name", account.getUser());
+            account.setProperty("pass", account.getPass());
             account.setProperty("cookies", cookies);
         }
     }
@@ -159,6 +167,13 @@ public class VimeoCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (LOCK) {
             AccountInfo ai = new AccountInfo();
+            if (!new Regex(account.getUser(), ".*?@.*?\\..+").matches()) {
+                account.setProperty("cookies", null);
+                account.setValid(false);
+                ai.setStatus("Invalid email address");
+                return ai;
+
+            }
             try {
                 login(account, true);
             } catch (PluginException e) {

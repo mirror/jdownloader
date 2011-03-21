@@ -13,7 +13,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\.[a-z]{2,3}/.*?folder/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?filesonic\\..*?/.*?folder/[0-9a-z]+" }, flags = { 0 })
 public class FlsncCm extends PluginForDecrypt {
 
     private static String geoDomain = null;
@@ -75,7 +75,7 @@ public class FlsncCm extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             failed = true;
             links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\.[a-z]{2,3}/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\..*?/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
         }
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
@@ -83,7 +83,7 @@ public class FlsncCm extends PluginForDecrypt {
             if (failed) {
                 if (!data.contains("/folder/")) decryptedLinks.add(createDownloadlink(data));
             } else {
-                String filename = new Regex(data, "filesonic\\.[a-z]{2,3}/.*?file/.*?/(.*?)\"").getMatch(0);
+                String filename = new Regex(data, "filesonic\\..*?/.*?file/.*?/(.*?)\"").getMatch(0);
                 String filesize = new Regex(data, "valign=\"top\">.*?\\|.*?\\|.*?\\|.*?\\|(.*?)\\(.*?</td>").getMatch(0);
                 String dlink = new Regex(data, "href=\"(http.*?)\"").getMatch(0);
                 if (dlink == null) return null;

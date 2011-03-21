@@ -95,19 +95,6 @@ class PremShareHost extends HostPluginWrapper {
     }
 
     @Override
-    public boolean isAGBChecked() {
-        if (replacedone != null) return replacedone.isAGBChecked();
-        return true;
-    }
-
-    @Override
-    public void setAGBChecked(final Boolean value) {
-        if (replacedone != null) {
-            replacedone.setAGBChecked(value);
-        }
-    }
-
-    @Override
     public SubConfiguration getPluginConfig() {
         if (replacedone != null) {
             return replacedone.getPluginConfig();
@@ -178,7 +165,6 @@ public class JDPremium extends PluginOptional {
                 premShareHosts.put("jdownloader.org", "PremShare");
                 premShareHosts.put("speedload.cx", "SpeedLoadcx");
                 premShareHosts.put("multishare.cz", "MultiShare");
-                premShareHosts.put("dwnld4me.com", "Download4Me");
                 premShareHosts.put("linksnappy.com", "LinkSnappycom");
                 premShareHosts.put("rehost.to", "ReHostto");
                 premShareHosts.put("nopremium.pl", "NoPremium");

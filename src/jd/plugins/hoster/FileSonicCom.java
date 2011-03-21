@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\.[a-z]{2,3}/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\..*?/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
     private static final Object LOCK = new Object();
@@ -311,7 +311,7 @@ public class FileSonicCom extends PluginForHost {
         this.errorHandling(downloadLink, ajax);
         this.br.setFollowRedirects(true);
         // download is ready already
-        final String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\.[a-z]{2,3}[^<]*?)\"><span>Start download now!</span></a></p>";
+        final String re = "<p><a href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>";
 
         downloadUrl = ajax.getRegex(re).getMatch(0);
         if (downloadUrl == null) {
