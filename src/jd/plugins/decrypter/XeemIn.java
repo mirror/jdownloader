@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypter;
 
@@ -35,15 +35,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com", "xeem.in" }, urls = { "http://[\\w\\.]*?urlcrypt\\.com/open-.*?\\.htm", "http://[\\w\\.]*?xeem\\.in/open-.*?\\.htm" }, flags = { 0, 0 })
-public class UlCrptCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xeem.in" }, urls = { "http://[\\w\\.]*?xeem\\.in/open-.*?\\.htm" }, flags = { 0 })
+public class XeemIn extends PluginForDecrypt {
 
-    public UlCrptCm(PluginWrapper wrapper) {
+    public XeemIn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String PASSWORDFAILED = "geben Sie bitte jetzt das Passwort ein";
-    private static final String CAPTCHAFAILED = "Sicherheitsabfrage";
+    private static final String CAPTCHAFAILED  = "Sicherheitsabfrage";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -68,10 +68,7 @@ public class UlCrptCm extends PluginForDecrypt {
                 // Captcha handling
                 if (br.containsHTML("Sicherheitsabfrage")) {
                     String captchalink = null;
-                    if (parameter.contains("urlcrypt.com"))
-                        captchalink = "http://www.urlcrypt.com/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
-                    else
-                        captchalink = "http://www.xeem.in/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
+                    captchalink = "http://www.xeem.in/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
                     String code = getCaptchaCode(captchalink, param);
                     captchaForm.put("strCaptcha", code);
                 }
@@ -147,10 +144,7 @@ public class UlCrptCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = null;
         Browser brc = br.cloneBrowser();
         String[] dlclinks = null;
-        if (param.toString().contains("urlcrypt.com"))
-            dlclinks = br.getRegex("(http://www\\.urlcrypt\\.com/download-" + format + "-.*?)\"").getColumn(0);
-        else
-            dlclinks = br.getRegex("(http://www\\.xeem\\.in/download-" + format + "-.*?)\"").getColumn(0);
+        dlclinks = br.getRegex("(http://www\\.xeem\\.in/download-" + format + "-.*?)\"").getColumn(0);
         if (dlclinks == null || dlclinks.length == 0) return null;
         for (int index = dlclinks.length - 1; index >= 0; index--) {
             /*
@@ -162,7 +156,7 @@ public class UlCrptCm extends PluginForDecrypt {
             File file = null;
             URLConnectionAdapter con = brc.openGetConnection(link);
             if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/urlcrypt/" + test.replaceAll("(:|/)", "") + "." + format);
+                file = JDUtilities.getResourceFile("tmp/xeemin/" + test.replaceAll("(:|/)", "") + "." + format);
                 if (file == null) return null;
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);

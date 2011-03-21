@@ -126,7 +126,6 @@ public class OronCom extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account);
-
         String dllink = link.getStringProperty("finaldownloadlink", null);
         if (dllink != null) {
             /* try saved link */
@@ -326,7 +325,7 @@ public class OronCom extends PluginForHost {
     }
 
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 2;
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
