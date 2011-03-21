@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>JDownloader - WebInterface v<tmpl_var webinterface_version></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<link href="jd.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="filelist.js"></script>
+<script type="text/javascript" src="scripts.js"></script>
+<noscript><meta http-equiv="refresh" content="0;URL=nojs.tmpl"></noscript>
+</head>
+
+<body>
+<div id="main">
+
+	<div id="header">
+	<h2 class="title">WebInterface<br>(Version <tmpl_var webinterface_version>)</h2>
+	</div>
+
+	<div id="content">
+		<div id="tabs">
+			<ul id="tabmenu">
+				<li class="active"><a href="index.tmpl" name="Status Page" target="_self">Status Page</a></li>
+				<li class="<tmpl_var unrar_available>"><A href="passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
+				<li><A class="active" href="link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
+			</ul>
+		</div>
+
+		<div id="tabcontent">
+
+			<FORM action="link_adder.tmpl" name="jd" id="jdForm" method="POST" target="_parent">
+
+				<div id="toolbar">
+					<div id="toolbarright">
+						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','bye.tmpl', 'close')"></span>
+						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','restart.tmpl', 'restart')"></span>
+					</div>
+					<div id="toolbarleft">
+						<div style="height: 30px;"></div>
+					</div>
+					<div class="toolbarcenter">
+					</div>
+					<br class="clear">
+				</div>
+
+				<div id="message_<tmpl_var message_status escape>"><tmpl_var message><div><a href="#" class="button" onclick="closeMessage();">Close Message</a></div></div>
+
+				<table class="tabledownload" id="packageContainer">
+					<tr>
+						<td style="width:2%;" class="tabletitle">
+							<input type="checkbox" name="checkallbox" onclick="if (this.checked==true) {checkall(document.jd.package_all_add,document.jd.package_single_add); } else {uncheckall(document.jd.package_all_add,document.jd.package_single_add);}">
+						</td>
+						<td class="tabletitle">File</td>
+						<td class="tabletitle">Hoster</td>
+					</tr>
+
+
+				<tmpl_loop pakete>
+					<tr class="package<tmpl_var download_status escape>">
+						<td><INPUT type="checkbox" name="package_all_add" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_add,this)"></td>
+						<td colspan="2">Package-Name: <INPUT size="35" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"> <!--<span style="margin-left: 30px;">Password:</span> <INPUT size="35" type="text" name="adder_password_<tmpl_var package_id escape>" value="">--></td>
+					</tr>
+
+					<tmpl_loop downloads>
+						<tr class="download<tmpl_var download_status escape>" banane="sdf">
+							<td><INPUT type="checkbox" name="package_single_add" value="<tmpl_var package_id escape> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_add,document.jd.package_all_add)"></TD>
+							<td style="padding-left: 30px;"><tmpl_var download_name></TD>
+							<td><tmpl_var download_hoster></TD>
+						</tr>
+					</tmpl_loop>
+
+				</tmpl_loop>
+				</table>
+
+				<script type="text/javascript">
+				// This must be placed immediately after the filelists (packages/downloads).
+				initiate('addlinks');
+				</script>
+
+				<DIV class="leftDLOptions">
+					<SELECT name="selected_dowhat_link_adder">
+					<option>add</option>
+					<option>remove</option>
+					<option>remove offline</option>
+					</SELECT>
+					<a href="#" class="button" onclick="adderSubmit(document.jd.selected_dowhat_link_adder);">Go!</a>
+				</DIV>
+				<br>
+			</FORM>
+
+			<h1>Add Links</h1>
+			<FORM name="add" id="addForm" action="link_adder.tmpl" target="_parent" method="POST">
+				<DIV class="linkAddBox">
+					<div style="float:right;">
+					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
+					</div>
+
+					<div style="padding-right: 100px;">
+					<textarea name="addlinks" cols="90" rows="3" onfocus="formElementChanged(); clean(this);" style="width:100%; float:left;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea>
+					</div>
+					<br class="clear">
+				</DIV>
+			</FORM>
+
+			<h1>Upload container file</h1>
+			<form name="upload" id="uploadForm" action="link_adder.tmpl" method="post" enctype="multipart/form-data">
+				<div class="linkAddBox">
+					<span style="color: #000; font-weight:bold;">Container upload:</span> <input name="container" type="file" size="50"> <a href="#" class="button" onclick="submitForm('uploadForm','link_adder.tmpl','do','Upload')">Upload!</a>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<div id="footer">Addon by jiaz, Design (HTML, CSS, JS) by Bo0nZ</div>
+</body>
+</html>

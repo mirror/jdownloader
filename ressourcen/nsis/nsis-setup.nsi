@@ -48,7 +48,7 @@ InstallDir "$PROGRAMFILES\${APPNAME_SHORT}" #Necessary for correct append behavi
 # MUI Symbol Definitions
 !define MUI_ICON .\res\install.ico
 !define MUI_FINISHPAGE_NOAUTOCLOSE
-!define MUI_FINISHPAGE_RUN $INSTDIR\JDUpdate.exe
+!define MUI_FINISHPAGE_RUN $INSTDIR\JDownloader.exe
 !define MUI_UNICON .\res\uninstall.ico
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 

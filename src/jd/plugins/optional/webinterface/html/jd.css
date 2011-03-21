@@ -1,0 +1,476 @@
+body,html {
+	margin: 0;
+	padding: 5px 0 0 0;
+	width: 100%;
+	background-color: #e7e7e7;
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 11px;
+	color: #666666;
+}
+
+table {
+	border-width: 1px;
+	border-spacing: 1px;
+	border-style: solid;
+	border-color: #2c2895;
+	border-collapse: collapse;
+	background-color: #fff;
+}
+
+table td {
+	border-width: 1px;
+	padding:0;
+	border-style: solid;
+	border-color: #2c2895;
+	background-color: #fff;
+}
+
+h1 {
+	font-size: 18px;
+	margin: 20px 0 0 0;
+	border-bottom: 1px dashed #000;
+}
+
+h2 {
+	font-size: 16px;
+	color: #006AC3;
+	padding: 0 25px;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+}
+
+h2.title {
+	text-align:right;
+	color:#000;
+}
+
+/*
+ * Links
+ */
+a {
+	color: #000000;
+	font-family:verdana, arial, helvetica;
+	font-size:11px;
+	text-decoration:none;
+}
+a:visited {
+	color: #000000;
+	font-family:verdana, arial, helvetica;
+	font-size:11px;
+	text-decoration:none;
+}
+a:hover {
+	color: #FF007F;
+	font-family:verdana, arial, helvetica;
+	font-size:11px;
+	text-decoration:none;
+}
+
+.hide {
+	display:none;
+}
+
+.clear {
+	clear:both;
+}
+
+#deactivatedAutoReload {
+	position: relative;
+	top: -30px;
+	height: 30px;
+	width: 100px;
+	margin: 0px auto;
+	background-color:#ffd5d5;
+	border: 1px solid red;
+	text-align: center;
+	line-height:15px;
+	display: none;
+}
+
+#deactivatedAutoReloadSpace {
+	display:block;
+	height: 30px;
+	width: 1px;
+}
+
+#main {
+	min-width: 800px;
+	width:90%;
+	margin: 0 auto;
+	border:1px solid;
+	background-color:#fff;
+}
+
+#header {
+	height: 81px;
+	width: 100%;
+	background-image:url('img/jd_logo.png');
+	background-repeat:no-repeat;
+	background-color: #fff;
+	background-position: 6px 0px;
+}
+
+/* IE FIX*/
+* html #header { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/jd_logo.png'); }
+
+#content {
+	margin:10px;
+	background-color:#fff;
+}
+
+#footer {
+	width: 90%;
+	text-align: center;
+	margin: 0 auto;
+}
+
+#tabs {
+	background-color: #fff;
+	height: 30px;
+}
+
+#tabmenu {
+	list-style-type: none;
+	margin:0;
+	padding:0;
+}
+
+#tabmenu li {
+	display:inline;
+	margin: 0px 5px 0px 0px;
+}
+
+#tabmenu li a {
+	font-weight:bold;
+	font-size:12px;
+	line-height: 30px;
+	padding: 6px 5px 6px 5px;
+	background-color:#e1e1e1;
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color:#8383ff;
+}
+
+#tabmenu li a:hover {
+	background-color:#d3d3ff;
+}
+
+#tabmenu li a.active {
+	padding: 6px 5px 8px 5px;
+	background-color:#d3d3ff;
+}
+
+#tabcontent, #message {
+	border-width: 1px;
+	border-color: #8383ff;
+	border-style:solid;
+	padding: 10px;
+	background-color: #d3d3ff;
+}
+
+#message, #message_show {
+	/*horizontal and vertical centered*/
+	position: absolute;
+	z-index: 999;
+	left: 50%;
+	width: 80%;
+	margin-left: -40%;
+	top: 50%;
+	height: 50px;
+	line-height: 50px;
+	margin-top: -25px;
+
+	text-align: center;
+	font-size: 16px;
+	color: #000;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-family:verdana,arial,helvetica;
+	font-size:11px;
+}
+
+#message_show {
+	border-width: 1px;
+	border-color: red;
+	border-style:solid;
+	padding: 10px;
+	background-color: #ffd5d5;
+
+	height: auto;
+	top: 200px;
+	line-height: 20px;
+	text-transform: none;
+}
+
+#message_hide, #message_ {
+	display: none;
+}
+
+#packageContainer .symbol {
+	float:left;
+	width:11px;
+	height: 20px;
+	background-position: center;
+	background-repeat:no-repeat;
+	margin-right: 10px;
+}
+
+div.rightDLOptions {
+	float: right;
+	margin-top:5px;
+}
+
+div.leftDLOptions {
+	text-align:left;
+	margin-top: 5px;
+}
+
+div.linkAddBox {
+	text-align:left;
+	width:100%;
+	margin:20px 0px;
+}
+
+/*
+ * Download-Table
+ */
+table.tabledownload {
+	width: 100%;
+}
+
+table.tabledownload td {
+	padding: 0px 5px;
+	line-height: 20px;
+	color: #000;
+}
+
+table.tabledownload td.tabletitle {
+	background-color: #2c2895;
+	color: #fff;
+	font-weight: bold;
+	padding: 2px 5px;
+}
+
+table.tabledownload td.ladebalken, td.ladebalken, td.description {
+	height: 20px;
+	line-height: 20px;
+	padding: 0px;
+	margin:0;
+}
+
+td.value {
+	text-align: right;
+}
+
+td.value, td.description {
+	padding: 0px 5px;
+}
+
+td.description {
+	width: 20%;
+	height: 20px;
+	line-height: 20px;
+	background-color: #BABAFF;
+	font-weight: bold;
+	color: #000;
+	white-space: nowrap;
+}
+
+/*
+ * Progress Bar
+ */
+div.ladebalken {
+	height: 1.8em;
+	overflow:hidden;
+}
+
+div.ladebalkenWrapper {
+        height: 100%;
+	width: 100%;
+	float:left;
+}
+
+span.ladestatus {
+	float:right;
+	display: block;
+	position: relative;
+	top:-1.8em; left:0;
+	line-height: 1.8em;
+	width: 100%;
+	text-align: center;
+	color:#000;
+	font-weight:bold;
+	white-space: nowrap;
+	padding:0;
+	margin: 0;
+}
+
+/* top-image: gloss */
+div.ladebalken div.finished,
+div.ladebalken div.running,
+div.ladebalken div.activated,
+div.ladebalken div.deactivated {
+	/*float: left;*/
+	background-image:url('img/progress.png');
+}
+
+/* IE FIX*/
+* html div.ladebalken div.finished,
+* html div.ladebalken div.running,
+* html div.ladebalken div.activated,
+* html div.ladebalken div.deactivated {
+	 background-image: none;
+	 filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=scale src='img/progress.png');
+}
+
+/*
+ * Row-Colors/Images for progressbars
+ */
+div.ladebalken div.deactivated {
+	background-color: #727272; /*gray*/
+}
+div.ladebalken div.activated {
+	background-color: #0275CE; /*blue*/
+}
+div.ladebalken div.running {
+	background-color: #EFED23; /*yellow*/
+}
+div.ladebalken div.finished {
+	background-color: #02CE02; /*green*/
+}
+
+/*
+ * Row-Colors for downloads (not packages)
+ */
+tr.downloadfinished td {
+  	 background-color:#aaffaa;
+}
+tr.downloadonline td {
+  	 background-color:#228B22;
+}
+tr.downloadoffline td {
+  	 background-color:#8B0000;
+}
+tr.downloadrunning td {
+  	 background-color:#e9e9ff;
+}
+tr.downloadactivated td, tr.download td {
+  	 background-color:#e9e9ff;
+}
+tr.downloaddeactivated td {
+	background-color:#bababa;
+}
+
+/*
+ * Row-Colors for packages (not downloads)
+ */
+tr.packagefinished td {
+  	 background-color:#87e376;
+  	 font-weight: bold;
+}
+tr.packagerunning td {
+  	 background-color:#babaff;
+  	 font-weight: bold;
+}
+tr.packageactivated td, tr.package td {
+  	 background-color:#babaff;
+  	 font-weight: bold;
+}
+tr.packagedeactivated td {
+	background-color:#999999;
+  	 font-weight: bold;
+}
+
+/*
+ * Toolbar
+ */
+#toolbar {
+	padding: 2px;
+	height: 34px;
+}
+
+#toolbarright {
+	float:right;
+}
+
+#toolbarleft {
+	float:left;
+}
+
+#toolbarcenter {
+	height: 32px;
+	overflow:hidden;
+}
+
+/*
+ * Toolbar-Buttons
+ */
+span.toolbarButton {
+	float: left;
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	background-repeat: no-repeat;
+}
+
+#btnClose { background-image:url('img/shutdown.png'); }
+#btnRestart { background-image:url('img/reboot.png'); }
+#btnRefresh { background-image:url('img/refresh.png'); }
+#btnDLstart { background-image:url('img/start.png'); }
+#btnDLstop { background-image:url('img/stop.png'); }
+#btnReconnect { background-image:url('img/reconnect_do.png'); }
+#btnAutoReconnect { background-image:url('img/reconnect.png'); }
+#btnAutoReconnectchecked { background-image:url('img/reconnectchecked.png'); }
+#btnSave { background-image:url('img/save.png'); }
+
+/* IE FIXes */
+* html #btnClose { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/shutdown.png'); }
+* html #btnRestart { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/reboot.png'); }
+* html #btnRefresh { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/refresh.png'); }
+* html #btnDLstart { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/start.png'); }
+* html #btnDLstop { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/stop.png'); }
+* html #btnReconnect { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/reconnect_do.png'); }
+* html #btnAutoReconnect { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/reconnect.png'); }
+* html #btnAutoReconnectchecked { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/reconnect_checked.png'); }
+* html #btnSave { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/save.png'); }
+
+a.button, a.addButton {
+	display:inline;
+	background-color: #e1e1e1;
+	border-width: 1px 2px 2px 1px;
+	border-style: solid;
+	border-color:gray;
+	padding: 1.5px 5px;
+	font-weight:bold;
+	line-height: 32px;
+}
+
+a.addButton {
+	/*float: left;*/
+	display: block;
+	width: 40px;
+	background-image:url('img/add.png');
+	background-repeat: no-repeat;
+	height: 30px;
+	line-height: 30px;
+	padding-left: 35px;
+	/*padding: 7px 5px 9px 35px;*/
+}
+
+/* IE FIX */
+* html a.addButton { background-image: none; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled=true, sizingMethod=crop src='img/add.png'); }
+
+a.button:hover, a.addButton:hover {
+	border-width: 2px 1px 1px 2px;
+}
+
+/* Show/Hide password list tab */
+
+li.unrarAvailable {
+	display:inline !important;
+}
+
+li.unrarUnavailable {
+	display:none !important;
+}

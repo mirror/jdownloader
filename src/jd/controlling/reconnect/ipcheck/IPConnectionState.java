@@ -1,7 +1,5 @@
 package jd.controlling.reconnect.ipcheck;
 
-import com.sun.istack.internal.Nullable;
-
 /**
  * This class stores a single "Connection State". States are, for example:<br>
  * 
@@ -78,7 +76,7 @@ public class IPConnectionState {
      * 
      * @return the cause that caused this state
      */
-    @Nullable
+
     public IPCheckException getCause() {
         return this.cause;
     }
@@ -88,7 +86,7 @@ public class IPConnectionState {
      * 
      * @return
      */
-    @Nullable
+
     public IP getExternalIp() {
         return this.ip;
     }

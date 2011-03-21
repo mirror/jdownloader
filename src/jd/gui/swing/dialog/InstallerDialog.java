@@ -142,11 +142,11 @@ public class InstallerDialog extends AbstractDialog<Object> {
             final String dir = JDUtilities.getResourceFile("downloads").getParent().substring(3).toLowerCase();
 
             if (!JDUtilities.getResourceFile("uninstall.exe").exists() && (dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {
-                lbl.setText(JDL.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
+                lbl.setText(JDL.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads").getParent()));
                 lbl.setForeground(Color.RED);
             }
-            if (!JDUtilities.getResourceFile("tools/tinyupdate.jar").canWrite()) {
-                lbl.setText(JDL.LF("installer.nowriteDir.warning", "Warning! JD cannot write to %s. Check rights!", JDUtilities.getResourceFile("downloads")));
+            if (!JDUtilities.getResourceFile("Updater.jar").canWrite()) {
+                lbl.setText(JDL.LF("installer.nowriteDir.warning", "Warning! JD cannot write to %s. Check rights!", JDUtilities.getResourceFile("downloads").getParent()));
                 lbl.setForeground(Color.RED);
             }
         }

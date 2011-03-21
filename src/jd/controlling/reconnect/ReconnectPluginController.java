@@ -42,8 +42,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 
-import com.sun.istack.internal.Nullable;
-
 public class ReconnectPluginController {
     public static final String                     PRO_ACTIVEPLUGIN = "ACTIVEPLUGIN2";
 
@@ -373,7 +371,7 @@ public class ReconnectPluginController {
     /**
      * Returns the plugin that has the given ID.
      */
-    @Nullable
+
     public RouterPlugin getPluginByID(final String activeID) {
         for (final RouterPlugin plg : this.plugins) {
             if (plg.getID().equals(activeID)) { return plg; }

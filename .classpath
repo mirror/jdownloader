@@ -47,11 +47,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaSimple2D.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaSkyMetallic.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaWhiteVision.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar" sourcepath="ressourcen/code-ressourcen/swingx-1.0-src.zip">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/swingx-1.0-javadoc.zip!/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="ressourcen/libs/jna.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/substance-swingx.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/substance.jar" sourcepath="ressourcen/code-ressourcen/Substance_src.zip">
@@ -80,20 +75,18 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.8.2.jar" sourcepath="ressourcen/code-ressourcen/junit-4.8.2-src.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/flex-messaging-common.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/flex-messaging-core.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding-AllPlatforms.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jetty-io-7.1.6.v20100715.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jetty-security-7.1.6.v20100715.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jetty-server-7.1.6.v20100715.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jetty-servlet-7.1.6.v20100715.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jetty-util-7.1.6.v20100715.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jpathwatch-0-93-rc1.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/AppleJavaExtensions.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/asc.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/swfutils.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JDBrowser"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/JDUpdater"/>
 	<classpathentry kind="lib" path="/JDUpdater/libs/UpdateLib.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingLinux.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JDUpdater"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

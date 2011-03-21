@@ -1,0 +1,391 @@
+<project default="all" basedir=".">
+	<!-- Dependencies -->
+	<property name="dep.awu" value="../AppWorkUtils" />
+	<property name="dep.browser" value="../JDBrowser" />
+	<property name="dep.fcgi" value="../FastCGIInterface" />
+	<property name="dep.updateserv" value="../UpdateServer" />
+	<property name="dep.update" value="../JDUpdater" />
+	<property name="debug" value="true" />
+	<property name="keystore" value="${appwork_java_cert}" />
+    <property name="keystore_alias" value="${appwork_java_cert_alias}" />
+    <property name="keystore_pass" value="${appwork_java_cert_pass}" />
+
+
+	<property name="working" value="update" />
+	<property name="cls" value="${working}/bin" />
+	<property name="dist" value="${working}/dist" />
+	<property name="res" value="ressourcen" />
+	<property name="pluginres" value="${dist}/pluginressourcen" />
+
+	<loadfile property="svn.revision" srcFile=".svn/entries">
+		<filterchain>
+			<headfilter lines="1" skip="3" />
+			<striplinebreaks />
+		</filterchain>
+	</loadfile>
+
+	<path id="classpath">
+		<fileset dir="${cls}" />
+		<!-- Dependencies -->
+		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
+		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
+		<fileset dir="${dep.fcgi}/libs" includes="**/*.jar" />
+		<fileset dir="${dep.updateserv}/libs" includes="**/*.jar" />
+		<fileset dir="${dep.update}/libs" includes="**/*.jar" />
+
+
+		<fileset dir="${res}/libs" includes="**/*.jar" />
+		<fileset dir="${res}/libs_ext" includes="**/*.jar" />
+	</path>
+
+	<!-- Deletes the old build -->
+	<target name="clean">
+		<delete dir="${dist}" />
+
+		<mkdir dir="${dist}" />
+		<mkdir dir="${working}" />
+	</target>
+
+	<!-- Compiles the code -->
+	<target name="compile" depends="clean">
+		<mkdir dir="${cls}" />
+
+		<!-- Build dependencies -->
+
+		<javac srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+			<classpath refid="classpath" />
+
+		</javac>
+
+		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+			<classpath refid="classpath" />
+
+		</javac>
+
+		<javac srcdir="${dep.fcgi}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+			<classpath refid="classpath" />
+
+		</javac>
+
+		<javac srcdir="${dep.updateserv}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+			<classpath refid="classpath" />
+
+		</javac>
+		<javac srcdir="${dep.update}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+			<classpath refid="classpath" />
+
+		</javac>
+
+		<javac srcdir="src" excludes="jd/plugins/optional/neembuu/**/*,jd/plugins/optional/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+			<classpath refid="classpath" />
+
+		</javac>
+
+		<echo message="Finished." />
+	</target>
+
+
+
+	<!-- Copies all the additional ressources -->
+	<target name="copy_res" depends="clean">
+		<copy todir="${dist}/jd">
+			<fileset dir="${res}/jd" includes="**/*" />
+		</copy>
+		<copy todir="${dist}/libs">
+			<fileset dir="${res}/libs" includes="**/*" />
+		</copy>
+		<copy todir="${dist}/licenses">
+			<fileset dir="${res}/licenses" includes="**/*" />
+		</copy>
+
+		<copy todir="${dist}/tools">
+			<fileset dir="${res}/tools" includes="**/*" />
+		</copy>
+		<copy todir="${dist}">
+			<fileset dir="${res}" includes="*.txt, *.exe, *.bat" />
+		</copy>
+		<mkdir dir="${dist}/java" />
+		<mkdir dir="${dist}/tmp" />
+
+	</target>
+
+	<!-- Make the default jar -->
+	<target name="jarMain">
+		<mkdir dir="${dist}/libs" />
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
+		</manifest>
+		<jar file="${dist}/libs/JDHttp.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/http/**/*" />
+			</fileset>
+		</jar>
+		<jar file="${dist}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/gui/**" />
+			</fileset>
+		</jar>
+		<jar file="${dist}/libs/JAntiCaptcha.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/captcha/**" />
+				<exclude name="jd/captcha/methods/**" />
+			</fileset>
+		</jar>
+		<jar file="${dist}/libs/JDUtils.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/nutils/**" />
+			</fileset>
+		</jar>
+
+		<jar file="${dist}/libs/AppWorkUtilities.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="org/appwork/**/*" />
+				<exclude name="org/appwork/update/server/**/*" />
+			</fileset>
+			<fileset dir="${dep.awu}/src">
+				<include name="images/*.png" />
+				<include name="**/*.lng" />
+
+			</fileset>
+		</jar>
+		<delete file="${dist}/Manifest.MF" failonerror="false" />
+		<pathconvert pathsep=" " dirsep="/" property="class-path">
+			<path>
+				<fileset dir="${dist}/libs" includes="**/*.jar" />
+			</path>
+			<mapper type="regexp" from="[\\/]dist[\\/](libs[\\/].*)" to="\1" />
+		</pathconvert>
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
+			<attribute name="Main-Class" value="jd.Main" />
+			<!-- plugins that serialize own classes have to be put in the classpath -->
+			<attribute name="Class-Path" value="${class-path} plugins/Customizer.jar plugins/JDScheduler.jar" />
+		</manifest>
+		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="**/*.class" />
+
+				<exclude name="jd/controlling/reconnect/plugins/*/**" />
+				<exclude name="jd/captcha/**" />
+				<exclude name="org/appwork/**/*" />
+				<exclude name="jd/dynamics/**" />
+				<exclude name="jd/gui/**" />
+				<exclude name="com/fastcgi/**" />
+				<exclude name="jd/http/**" />
+				<exclude name="jd/nutils/**" />
+				<exclude name="jd/plugins/hoster/**" />
+				<exclude name="jd/plugins/decrypter/**" />
+				<exclude name="jd/plugins/optional/**" />
+				<exclude name="jd/utils/dev/**" />
+				<exclude name="tests/**" />
+				<exclude name="**/test/**" />
+			</fileset>
+			<fileset dir="${dep.updateserv}/src">
+				<include name="**/*.lng" />
+				<include name="**/*.png" />
+			</fileset>
+			<fileset dir="${dep.update}/src">
+				<include name="**/*.lng" />
+				<include name="**/*.png" />
+			</fileset>
+			<!-- Put all plugins which should included in here -->
+			<fileset dir="${cls}">
+				<include name="jd/controlling/reconnect/plugins/extern/**" />
+				<include name="jd/controlling/reconnect/plugins/liveheader/**" />
+				<include name="jd/controlling/reconnect/plugins/upnp/**" />
+
+			</fileset>
+
+			<fileset dir="${res}">
+				<include name="*.properties" />
+				<exclude name="jd/captcha/methods" />
+			</fileset>
+		</jar>
+		<delete file="${dist}/Manifest.MF" failonerror="false" />
+	</target>
+
+	<!--Webupdater-->
+	<target name="jarWebupdater" depends="compile">
+		<mkdir dir="${dist}" />
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="AppWork GmbH" />
+			<attribute name="Main-Class" value="org.jdownloader.update.Main" />
+		</manifest>
+		<jar file="${dist}/Updater.jar" manifest="${dist}/Manifest.MF">
+			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
+			<fileset dir="${cls}">
+				<include name="org/jdownloader/update/**/*" />
+				<include name="org/appwork/update/**/*" />
+				<include name="org/appwork/controlling/**/*" />
+				<include name="org/appwork/utils/logging/**/*" />
+				<include name="org/appwork/storage/**/*" />
+				<include name="org/appwork/shutdown/**/*" />
+				<include name="org/appwork/utils/net/**/*" />
+				<include name="org/appwork/net/**/*" />
+				<include name="org/appwork/utils/*.class" />
+				<include name="org/appwork/utils/formatter/**/*" />
+				<include name="org/appwork/utils/event/**/*" />
+				<include name="org/appwork/utils/locale/**/*" />
+				<include name="org/appwork/utils/reflection/**/*" />
+				<include name="org/appwork/txtresource/**/*" />
+				<include name="org/appwork/utils/os/**/*" />
+				<include name="org/appwork/utils/zip/**/*" />
+				<include name="org/appwork/utils/swing/dialog/**/*" />
+				<include name="org/appwork/utils/swing/*.class" />
+				<include name="org/appwork/utils/ImageProvider/**/*" />
+			</fileset>
+
+			<fileset dir="${dep.updateserv}/src">
+				<include name="images/*.png" />
+				<include name="**/*.lng" />
+				<include name="tbs.jar" />
+				<include name="version.dat" />
+			</fileset>
+			<fileset dir="src">
+				<include name="**/*.lng" />
+				<include name="images/*.png" />
+			</fileset>
+			<fileset dir="${dep.awu}/src">
+				<include name="**/*.lng" />
+				<include name="images/*.png" />
+				<include name="tbs.jar" />
+				<include name="version.dat" />
+			</fileset>
+
+		</jar>
+		<delete file="${dist}/Manifest.MF" failonerror="false" />
+	</target>
+
+
+
+	<!-- Copies compiled classes(hoster, decrypter, dynamics -->
+	<target name="copy_compiled">
+		<mkdir dir="${dist}/jd/plugins/hoster/" />
+		<copy todir="${dist}/jd/plugins/hoster/">
+			<fileset dir="${cls}/jd/plugins/hoster/">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<mkdir dir="${dist}/jd/plugins/decrypter/" />
+		<copy todir="${dist}/jd/plugins/decrypter/">
+			<fileset dir="${cls}/jd/plugins/decrypter/">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<mkdir dir="${dist}/jd/dynamics/" />
+		<copy todir="${dist}/jd/dynamics/">
+			<fileset dir="${cls}/jd/dynamics/">
+				<include name="*.class" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- Use this to build an addon -->
+	<macrodef name="buildAddon" description="Function for creating an optional addon">
+
+		<attribute name="package" />
+		<attribute name="include" />
+		<sequential>
+			<echo message="Creating @{package}" />
+			<mkdir dir="${dist}/plugins" />
+
+
+
+			<jar jarfile="${dist}/plugins/@{package}.jar" manifest="${dist}/Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/plugins/optional/@{include}" />
+				</fileset>
+				<fileset dir="src">
+					<include name="jd/plugins/optional/@{include}" />
+					<exclude name="**/*.java" />
+				</fileset>
+			</jar>
+		</sequential>
+	</macrodef>
+
+	<!-- Build optional addon plugins -->
+	<target name="jarOptionals" description="Creates the Optional Plugins">
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="JD-Team and Friends" />
+		</manifest>
+		<buildAddon package="JDChat" include="chat/**/*" />
+		<buildAddon package="JDwebinterface" include="webinterface/**/*" />
+		<!-- Build optional addon plugins -->
+		<mkdir dir="${dist}/plugins/webinterface/" />
+		<copy todir="${dist}/plugins/webinterface/">
+			<fileset dir="src/jd/plugins/optional/webinterface/html">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		<buildAddon package="infobar" include="infobar/**/*" />
+		<buildAddon package="lecturnity" include="lecturnity/**/*" />
+		<buildAddon package="JDRemoteControl" include="remotecontrol/**/*" />
+		<buildAddon package="JDScheduler" include="schedule/**/*" />
+		<buildAddon package="JDShutdown" include="shutdown/**/*" />
+		<buildAddon package="improveddock" include="improveddock/**/*" />
+		<buildAddon package="JDLangFileEditor" include="langfileeditor/**/*" />
+		<buildAddon package="JDInfoFileWriter" include="infofilewriter/**/*" />
+		<buildAddon package="JDUnrar" include="jdunrar/**/*" />
+		<buildAddon package="JDHJMerge" include="hjsplit/**/*" />
+		<buildAddon package="JDTray" include="jdtrayicon/**/*" />
+		<buildAddon package="ExternInterface" include="interfaces/**/*" />
+		<buildAddon package="JDPremium" include="jdpremclient/**/*" />
+		<buildAddon package="JDGrowl" include="growl/**/*" />
+		<buildAddon package="Customizer" include="customizer/**/*" />
+		<buildAddon package="AntiShutdown" include="antistandby/**/*" />
+		<buildAddon package="RouterDBEditor" include="routerdbeditor/**/*" />
+		<buildAddon package="scriptlauncher" include="scriptlauncher/**/*" />
+		<buildAddon package="JDFeedMe" include="jdfeedme/**/*" />
+		<buildAddon package="AntiReconnect" include="antireconnect/**/*" />
+		<buildAddon package="Extraction" include="extraction/**/*" />
+		<buildAddon package="folderwatch" include="folderwatch/**/*" />
+		<delete file="${dist}/Manifest.MF" failonerror="false" />
+	</target>
+
+	<!-- Use this to build an reconnect plugin -->
+	<macrodef name="buildRecPlugin" description="Function for creating an optional router addon">
+		<attribute name="name" />
+
+		<sequential>
+			<echo message="Creating @{name}" />
+			<mkdir dir="${dist}/reconnect/" />
+			<jar jarfile="${dist}/reconnect/@{name}.rec" manifest="${dist}/Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/controlling/reconnect/plugins/@{name}/**" />
+				</fileset>
+			</jar>
+		</sequential>
+	</macrodef>
+
+	<!-- Build optional reconnect plugins -->
+	<target name="jarReconnectOptionals" depends="compile" description="Creates the Optional Reconnect Addons">
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="JD-Team" />
+		</manifest>
+
+		<buildRecPlugin name="batch" />
+
+		<delete file="${dist}/Manifest.MF" failonerror="false" />
+	</target>
+
+
+
+
+
+
+
+
+	<!-- Signs the jars -->
+	<target name="sign">
+		<signjar keystore="${keystore}" alias="${keystore_alias}" storepass="${keystore_pass}">
+			<path>
+				<fileset dir="${dist}" includes="**/*.jar" />
+			</path>
+		</signjar>
+	</target>
+
+	<target name="all" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarOptionals,sign">
+		<echo message="Finished." />
+	</target>
+
+</project>

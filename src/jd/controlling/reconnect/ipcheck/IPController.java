@@ -7,8 +7,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 
-import com.sun.istack.internal.Nullable;
-
 public class IPController extends ArrayList<IPConnectionState> {
     /**
      * 
@@ -124,7 +122,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      * 
      * @return
      */
-    @Nullable
+
     public IP getIP() {
         return this.getCurrentLog().getExternalIp();
     }
