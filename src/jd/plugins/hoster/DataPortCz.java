@@ -25,6 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -59,6 +60,7 @@ public class DataPortCz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">Volné sloty pro stažení zdarma jsou v tuhle chvíli vyčerpány")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.dataportcz.nofreeslots", "No free slots available, wait or buy premium"), 10 * 60 * 1000l);
         String dllink = br.getRegex("<td><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.dataport\\.cz/download\\.php\\?uid=\\d+)\"").getMatch(0);
         if (dllink == null) {
