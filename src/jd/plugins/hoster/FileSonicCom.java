@@ -190,23 +190,15 @@ public class FileSonicCom extends PluginForHost {
 
         if (br.containsHTML("Free users may only download 1 file at a time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.alreadyloading", "This IP is already downloading"), 5 * 60 * 1000l); }
 
-        if (br.containsHTML("Free user can not download files")) {
-            //
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.largefree", "Free user can not download files over 400MB"));
-        }
-        if (br.containsHTML("Download session in progress")) {
-            //
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.inprogress", "Download session in progress"), 10 * 60 * 1000l);
-        }
+        if (br.containsHTML("Free user can not download files")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.largefree", "Free user can not download files over 400MB")); }
+        if (br.containsHTML("Download session in progress")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.filesonic.inprogress", "Download session in progress"), 10 * 60 * 1000l); }
         if (br.containsHTML("This file is password protected")) {
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         }
-        if (br.containsHTML("An Error Occurred")) {
+        if (br.containsHTML("An Error Occurred")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesonic.servererror", "Server error"), 20 * 60 * 1000l); }
 
-            //
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesonic.servererror", "Server error"), 20 * 60 * 1000l);
-        }
+        if (br.containsHTML("This file is available for premium users only.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
     }
 
     private String loginAPI(Browser useBr, Account account) throws IOException, PluginException {
@@ -304,7 +296,7 @@ public class FileSonicCom extends PluginForHost {
 
         final String freeDownloadLink = this.br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
         // this is an ajax call
-        final Browser ajax = this.br.cloneBrowser();
+        Browser ajax = this.br.cloneBrowser();
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.postPage(freeDownloadLink, "");
 
@@ -322,7 +314,7 @@ public class FileSonicCom extends PluginForHost {
             // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             if (ajax.containsHTML("This file is available for premium users only.")) {
 
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Premium only file. Buy Premium Account"); }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
             final String countDownDelay = ajax.getRegex("countDownDelay = (\\d+)").getMatch(0);
             if (countDownDelay != null) {
                 /*
@@ -340,7 +332,8 @@ public class FileSonicCom extends PluginForHost {
                 form.setAction(downloadLink.getDownloadURL() + "?start=1");
                 form.put("tm", tm);
                 form.put("tm_hash", tm_hash);
-
+                ajax = this.br.cloneBrowser();
+                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 ajax.submitForm(form);
                 this.errorHandling(downloadLink, ajax);
             }
@@ -355,6 +348,8 @@ public class FileSonicCom extends PluginForHost {
                 }
                 final Form form = ajax.getForm(0);
                 form.put("passwd", Encoding.urlEncode(passCode));
+                ajax = this.br.cloneBrowser();
+                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 ajax.submitForm(form);
                 if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
 

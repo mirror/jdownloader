@@ -165,13 +165,16 @@ public class Uploadedto extends PluginForHost {
             logger.info("InDirect Downloads active");
             Form form = br.getForm(0);
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (form.getAction() == null || form.getAction().contains("access") || form.getAction().contains("register")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (form.getAction() != null && form.getAction().contains("register")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             logger.info("Download from:" + form.getAction());
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
+            dl.setFileSizeVerified(true);
         } else {
             logger.info("Direct Downloads active");
             logger.info("Download from:" + br.getRedirectLocation());
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+            dl.setFileSizeVerified(true);
         }
         try {
             /* remove next major update */
@@ -180,7 +183,7 @@ public class Uploadedto extends PluginForHost {
             dl.getRequest().setReadTimeout(60000);
         } catch (final Throwable ee) {
         }
-        dl.setFileSizeVerified(true);
+
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
             try {
                 br.followConnection();
