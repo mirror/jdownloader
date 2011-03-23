@@ -177,7 +177,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
             ArrayList<InstalledFile> filesToRemove = updater.getFilesToRemove();
             setWaitingUpdates(filesToInstall.size() + updates.size() + filesToRemove.size());
 
-            if (filesToInstall.size() > 0 && filesToRemove.size() > 0) {
+            if (filesToInstall.size() > 0 || filesToRemove.size() > 0) {
                 UpdateFoundDialog dialog = new UpdateFoundDialog(new Runnable() {
 
                     public void run() {
@@ -192,7 +192,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
                         RestartController.getInstance().restartViaUpdater();
                     }
 
-                }, filesToInstall.size() + filesToRemove.size());
+                }, updater);
                 // try {
                 // Dialog.getInstance().showDialog(dialog);
                 // user clicked "INstall now"
@@ -267,7 +267,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
                         RestartController.getInstance().restartViaUpdater();
                     }
 
-                }, filesToInstall.size() + filesToRemove.size());
+                }, updater);
                 try {
                     Dialog.getInstance().showDialog(dialog);
                     // user clicked "INstall now"
@@ -352,6 +352,10 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
             };
 
         }
+    }
+
+    public boolean hasWaitingUpdates() {
+        return getUpdates().size() > 0 || getFilesToInstall().size() > 0 || getFilesToRemove().size() > 0;
     }
 
 }

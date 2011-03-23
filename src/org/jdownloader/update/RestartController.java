@@ -205,15 +205,15 @@ public class RestartController implements ShutdownVetoListener {
     public void onShutdown() {
 
         if (ShutdownController.getInstance().hasShutdownEvent(SilentUpdaterEvent.getInstance())) {
-            ArrayList<File> filesToInstall = JDUpdater.getInstance().getFilesToInstall();
-            if (filesToInstall.size() > 0) {
+
+            if (JDUpdater.getInstance().hasWaitingUpdates()) {
                 UpdateFoundDialog dialog = new UpdateFoundDialog(null, new Runnable() {
 
                     public void run() {
 
                     }
 
-                }, filesToInstall.size());
+                }, JDUpdater.getInstance());
                 try {
                     Dialog.getInstance().showDialog(dialog);
 
