@@ -7,16 +7,19 @@ import java.util.logging.Level;
 import javax.swing.JFrame;
 
 import jd.JDInitFlags;
-import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.update.exchange.UpdatePackage;
 import org.appwork.update.updateclient.InstalledFile;
 import org.appwork.update.updateclient.Updater;
+import org.appwork.update.updateclient.UpdaterState;
+import org.appwork.update.updateclient.event.UpdaterEvent;
+import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -86,6 +89,38 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
         storage = JSonWrapper.get("WEBUPDATE");
 
         JDUtilities.getController().addControlListener(this);
+        this.getEventSender().addListener(new UpdaterListener() {
+
+            public void onUpdaterModuleStart(UpdaterEvent arg0) {
+            }
+
+            public void onUpdaterModuleProgress(UpdaterEvent arg0, int arg1) {
+            }
+
+            public void onUpdaterModuleEnd(UpdaterEvent arg0) {
+            }
+
+            public void onUpdaterEvent(UpdaterEvent arg0) {
+            }
+
+            public void onStateExit(UpdaterState arg0) {
+                if (arg0 == stateFilter) {
+                    if (getOptions().isDebug()) {
+                        Log.L.info("Files to Install:");
+                        Log.L.info(JSonStorage.toString(getFilesToInstall()));
+                        Log.L.info("Files to Download:");
+                        Log.L.info(JSonStorage.toString(getUpdates()));
+
+                        Log.L.info("Files to Remove:");
+                        Log.L.info(JSonStorage.toString(getFilesToRemove()));
+
+                    }
+                }
+            }
+
+            public void onStateEnter(UpdaterState arg0) {
+            }
+        });
 
     }
 
@@ -138,7 +173,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
 
     public void run() {
         synchronized (this) {
-            final String id = JDController.requestDelayExit("doUpdateCheck");
+
             final Updater updater = JDUpdater.getInstance();
             try {
                 updater.reset();
@@ -151,7 +186,6 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
 
             } finally {
 
-                JDController.releaseDelayExit(id);
                 updateRunning = false;
             }
         }
@@ -180,21 +214,22 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
             setWaitingUpdates(filesToInstall.size() + updates.size() + filesToRemove.size());
 
             if (filesToInstall.size() > 0 || filesToRemove.size() > 0) {
-                UpdateFoundDialog dialog = new UpdateFoundDialog(new Runnable() {
-
-                    public void run() {
-                        // user clicked "Later"
-                        RestartController.getInstance().exitViaUpdater();
-                    }
-
-                }, new Runnable() {
-
-                    public void run() {
-                        // user clicked "NOW"
-                        RestartController.getInstance().restartViaUpdater();
-                    }
-
-                }, updater);
+                // UpdateFoundDialog dialog = new UpdateFoundDialog(new
+                // Runnable() {
+                //
+                // public void run() {
+                // // user clicked "Later"
+                // RestartController.getInstance().exitViaUpdater();
+                // }
+                //
+                // }, new Runnable() {
+                //
+                // public void run() {
+                // // user clicked "NOW"
+                // RestartController.getInstance().restartViaUpdater();
+                // }
+                //
+                // }, updater);
                 // try {
                 // Dialog.getInstance().showDialog(dialog);
                 // user clicked "INstall now"
@@ -211,7 +246,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
                 // }
                 // user clicked cancel
                 // do not ask user unless he clicks update manually
-                stopChecker();
+                // stopChecker();
 
             } else {
                 Log.L.finer("No Updates available");
