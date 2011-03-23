@@ -6,6 +6,7 @@ import java.util.logging.Level;
 
 import javax.swing.JFrame;
 
+import jd.JDInitFlags;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -81,6 +82,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
      */
     private JDUpdater() {
         super(new UpdaterHttpClientImpl(), new Options());
+        getOptions().setDebug(JDInitFlags.SWITCH_DEBUG);
         storage = JSonWrapper.get("WEBUPDATE");
 
         JDUtilities.getController().addControlListener(this);
