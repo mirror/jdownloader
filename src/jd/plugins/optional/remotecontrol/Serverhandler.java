@@ -473,7 +473,7 @@ public class Serverhandler implements Handler {
             } else {
                 response.addContent("no captcha currently available");
             }
-        } else if (requestUrl.matches(".*?/action/(force)?update")) {
+        } else if (requestUrl.matches(".*?/action/update")) {
             // Do Perform webupdate
 
             WebUpdate.doUpdateCheck(true);

@@ -164,8 +164,8 @@ public class HelpPage {
         // Table: Client actions
         t = createTable(new Table("Client actions"));
 
-        t.setCommand("/action/(force)update");
-        t.setInfo("Do a webupdate - /action/forceupdate will activate auto-restart if update is possible");
+        t.setCommand("/action/update");
+        t.setInfo("Do a webupdate");
 
         t.setCommand("/action/restart");
         t.setInfo("Restart JDownloader");

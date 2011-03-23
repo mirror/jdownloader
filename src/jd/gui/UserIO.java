@@ -257,10 +257,8 @@ public class UserIO {
         }
     }
 
-    public String requestCaptchaDialog(final int flag, final String host, final ImageIcon icon, final File captchafile, final String suggestion, final String explain) throws DialogClosedException, DialogCanceledException {
-
+    public String requestCaptchaDialog(final int flag, final String host, final File captchafile, final String suggestion, final String explain) throws DialogClosedException, DialogCanceledException {
         return Dialog.getInstance().showDialog(new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain));
-
     }
 
     public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {

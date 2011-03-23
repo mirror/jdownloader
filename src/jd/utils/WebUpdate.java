@@ -16,21 +16,9 @@
 
 package jd.utils;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Logger;
-
-import jd.JDInit;
-import jd.controlling.JDLogger;
-
 import org.jdownloader.update.JDUpdater;
 
 public class WebUpdate {
-    private static final Logger LOG                = JDLogger.getLogger();
-    private static int          waitingUpdates     = 0;
-    //
-    //
-
-    private static boolean      UPDATE_IN_PROGRESS = false;
 
     /**
      * @param forceguiCall
@@ -39,46 +27,6 @@ public class WebUpdate {
      */
     public static synchronized void doUpdateCheck(final boolean forceguiCall) {
         JDUpdater.getInstance().startUpdate(!forceguiCall);
-    }
-
-    /**
-     * Checks if the class (a plugin) already has been loaded)
-     * 
-     * @param clazz
-     * @return
-     */
-    private static boolean classIsLoaded(String clazz) {
-
-        java.lang.reflect.Method m;
-        try {
-
-            m = ClassLoader.class.getDeclaredMethod("findLoadedClass", new Class[] { String.class });
-
-            m.setAccessible(true);
-
-            Object test1 = m.invoke(JDInit.getPluginClassLoader(), clazz);
-            return test1 != null;
-
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private static void setWaitingUpdates(final int i) {
-        waitingUpdates = Math.max(0, i);
-    }
-
-    public static int getWaitingUpdates() {
-        return waitingUpdates;
     }
 
 }

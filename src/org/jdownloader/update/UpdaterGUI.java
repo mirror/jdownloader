@@ -34,12 +34,14 @@ import org.jdownloader.update.gui.JDStandaloneUpdaterGui;
 import org.jdownloader.update.translate.T;
 
 public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListener {
-    private UpdaterCoreGui panel;
-    private JButton        ok;
-    private JButton        cancel;
-    private JButton        ok2;
-    private WindowFlasher  flasher;
-    private UpdatePackage  updates;
+
+    private static final long serialVersionUID = -8479103857143982495L;
+    private UpdaterCoreGui    panel;
+    private JButton           ok;
+    private JButton           cancel;
+    private JButton           ok2;
+    private WindowFlasher     flasher;
+    private UpdatePackage     updates;
 
     public void onStateUpdate(StateEvent event) {
     }

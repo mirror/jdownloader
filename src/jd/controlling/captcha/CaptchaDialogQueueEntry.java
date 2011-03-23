@@ -19,10 +19,10 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
 
     private final CaptchaController captchaController;
-    private final int flag;
-    private final String def;
-    private String resp = null;
-    private CaptchaDialog dialog;
+    private final int               flag;
+    private final String            def;
+    private String                  resp = null;
+    private CaptchaDialog           dialog;
 
     public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, String def) {
         this.captchaController = captchaController;
@@ -58,7 +58,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
 
     private String viaGUI() {
         if (CaptchaController.getCaptchaSolver() != null) {
-            String result = CaptchaController.getCaptchaSolver().solveCaptcha(captchaController.getHost(), captchaController.getIcon(), captchaController.getCaptchafile(), def, captchaController.getExplain());
+            String result = CaptchaController.getCaptchaSolver().solveCaptcha(captchaController.getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain());
             if (result != null && result.length() > 0) return result;
         }
         UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
@@ -73,7 +73,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                     try {
                         int defSelection = JSonStorage.getPlainStorage("CaptchaController").get("lastCancelOption", 0);
 
-                        switch (Dialog.getInstance().showComboDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDL.L("captchacontroller.cancel.dialog.allorhost", "Canceled Captcha Dialog"), JDL.L("captchacontroller.cancel.dialog.allorhost.msg", "You canceled a Captcha Dialog!\r\nHow do you want to continue?"), options, defSelection, captchaController.getIcon(), null, null, null)) {
+                        switch (Dialog.getInstance().showComboDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDL.L("captchacontroller.cancel.dialog.allorhost", "Canceled Captcha Dialog"), JDL.L("captchacontroller.cancel.dialog.allorhost.msg", "You canceled a Captcha Dialog!\r\nHow do you want to continue?"), options, defSelection, null, null, null, null)) {
                         case 0:
                             // nothing
                             JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 0);

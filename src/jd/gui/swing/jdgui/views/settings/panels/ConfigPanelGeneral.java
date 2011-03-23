@@ -52,15 +52,13 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
     @Override
     protected ConfigContainer setupContainer() {
-        ConfigEntry conditionEntry;
-
         ConfigContainer look = new ConfigContainer();
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), "gui.images.terminal"));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO));
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.general.update", "Update"), "gui.images.update"));
-        look.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JSonWrapper.get("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable2", "Do not inform me about important updates")).setDefaultValue(false));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JSonWrapper.get("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable2", "Do not inform me about important updates")).setDefaultValue(false));
 
         // look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
         // configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART,

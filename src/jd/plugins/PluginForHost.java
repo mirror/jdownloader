@@ -132,7 +132,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             }
             downloadController.fireDownloadLinkUpdate(link);
 
-            final String cc = new CaptchaController(this.getInitTime(), getHost(), getHosterIconUnscaled(), method, file, defaultValue, explain).getCode(flag);
+            final String cc = new CaptchaController(this.getInitTime(), getHost(), method, file, defaultValue, explain).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
         } finally {
@@ -143,27 +143,27 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         }
     }
 
-    private static final String AGB_CHECKED = "AGB_CHECKED";
-    private static int currentConnections = 0;
+    private static final String                AGB_CHECKED            = "AGB_CHECKED";
+    private static int                         currentConnections     = 0;
 
-    public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
-    protected DownloadInterface dl = null;
-    private int maxConnections = 50;
+    public static final String                 PARAM_MAX_RETRIES      = "MAX_RETRIES";
+    protected DownloadInterface                dl                     = null;
+    private int                                maxConnections         = 50;
 
-    private static final HashMap<String, Long> LAST_CONNECTION_TIME = new HashMap<String, Long>();
-    private static final HashMap<String, Long> LAST_STARTED_TIME = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_CONNECTION_TIME   = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_STARTED_TIME      = new HashMap<String, Long>();
 
-    private Long WAIT_BETWEEN_STARTS = 0L;
+    private Long                               WAIT_BETWEEN_STARTS    = 0L;
 
-    private boolean enablePremium = false;
+    private boolean                            enablePremium          = false;
 
-    private boolean accountWithoutUsername = false;
+    private boolean                            accountWithoutUsername = false;
 
-    private String premiumurl = null;
+    private String                             premiumurl             = null;
 
-    protected ImageIcon hosterIcon = null;
-    protected boolean hosterIconRequested = false;
-    private DownloadLink link = null;
+    protected ImageIcon                        hosterIcon             = null;
+    protected boolean                          hosterIconRequested    = false;
+    private DownloadLink                       link                   = null;
 
     public boolean checkLinks(final DownloadLink[] urls) {
         return false;

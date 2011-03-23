@@ -20,7 +20,6 @@ import java.awt.Image;
 import java.io.File;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
@@ -42,20 +41,18 @@ public class CaptchaController {
         return captchaSolver;
     }
 
-    private final String    methodname;
-    private final File      captchafile;
-    private final String    explain;
-    private final String    suggest;
-    private final String    host;
-    private final ImageIcon icon;
+    private final String methodname;
+    private final File   captchafile;
+    private final String explain;
+    private final String suggest;
+    private final String host;
     /**
      * When the plugin calling this contgroller has been initiated
      */
-    private final long      initTime;
+    private final long   initTime;
 
-    public CaptchaController(long initTime, final String host, final ImageIcon icon, final String method, final File file, final String suggest, final String explain) {
+    public CaptchaController(long initTime, final String host, final String method, final File file, final String suggest, final String explain) {
         this.host = host;
-        this.icon = icon;
         this.methodname = method;
         this.captchafile = file;
         this.explain = explain;
@@ -81,10 +78,6 @@ public class CaptchaController {
 
     public String getHost() {
         return host;
-    }
-
-    public ImageIcon getIcon() {
-        return icon;
     }
 
     public long getInitTime() {
