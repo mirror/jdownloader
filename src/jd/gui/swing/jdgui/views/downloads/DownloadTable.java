@@ -358,6 +358,19 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             if (alllinks.isEmpty()) { return; }
             new DeleteAction(alllinks).actionPerformed(null);
         }
+        if ((e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_DOWN) && this.panel.isFilePackageInfoVisible(null)) {
+            int[] rows = getSelectedRows();
+
+            Object element = getValueAt(rows[0], 0);
+
+            if (element != null) {
+                if (element instanceof FilePackage) {
+                    this.panel.showFilePackageInfo((FilePackage) element);
+                } else {
+                    this.panel.showDownloadLinkInfo((DownloadLink) element);
+                }
+            }
+        }
     }
 
     public void keyTyped(final KeyEvent e) {

@@ -451,10 +451,12 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
 
             Object element = getValueAt(rows[0], 0);
 
-            if (element != null && element instanceof LinkGrabberFilePackage) {
-                linkgrabber.showFilePackageInfo((LinkGrabberFilePackage) element);
-            } else {
-                linkgrabber.showFilePackageInfo(LinkGrabberController.getInstance().getFPwithLink((DownloadLink) element));
+            if (element != null) {
+                if (element instanceof LinkGrabberFilePackage) {
+                    linkgrabber.showFilePackageInfo((LinkGrabberFilePackage) element);
+                } else {
+                    linkgrabber.showFilePackageInfo(LinkGrabberController.getInstance().getFPwithLink((DownloadLink) element));
+                }
             }
         }
     }
