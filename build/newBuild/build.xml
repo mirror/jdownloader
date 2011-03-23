@@ -3,12 +3,12 @@
 	<property name="dep.awu" value="../AppWorkUtils" />
 	<property name="dep.browser" value="../JDBrowser" />
 	<property name="dep.fcgi" value="../FastCGIInterface" />
-	<property name="dep.updateserv" value="../UpdateServer" />
+	<property name="dep.updateclient" value="../UpdateClient" />
 	<property name="dep.update" value="../JDUpdater" />
 	<property name="debug" value="true" />
 	<property name="keystore" value="${appwork_java_cert}" />
-    <property name="keystore_alias" value="${appwork_java_cert_alias}" />
-    <property name="keystore_pass" value="${appwork_java_cert_pass}" />
+	<property name="keystore_alias" value="${appwork_java_cert_alias}" />
+	<property name="keystore_pass" value="${appwork_java_cert_pass}" />
 
 
 	<property name="working" value="update" />
@@ -30,7 +30,7 @@
 		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.fcgi}/libs" includes="**/*.jar" />
-		<fileset dir="${dep.updateserv}/libs" includes="**/*.jar" />
+		<fileset dir="${dep.updateclient}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.update}/libs" includes="**/*.jar" />
 
 
@@ -67,7 +67,7 @@
 
 		</javac>
 
-		<javac srcdir="${dep.updateserv}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
 			<classpath refid="classpath" />
 
 		</javac>
@@ -76,7 +76,7 @@
 
 		</javac>
 
-		<javac srcdir="src" excludes="jd/plugins/optional/neembuu/**/*,jd/plugins/optional/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="src" debug="${debug}" excludes="jd/plugins/optional/neembuu/**/*,jd/plugins/optional/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
 			<classpath refid="classpath" />
 
 		</javac>
@@ -180,7 +180,7 @@
 				<exclude name="tests/**" />
 				<exclude name="**/test/**" />
 			</fileset>
-			<fileset dir="${dep.updateserv}/src">
+			<fileset dir="${dep.updateclient}/src">
 				<include name="**/*.lng" />
 				<include name="**/*.png" />
 			</fileset>
@@ -206,12 +206,12 @@
 
 	<!--Webupdater-->
 	<target name="jarWebupdater" depends="compile">
-		<mkdir dir="${dist}" />
-		<manifest file="${dist}/Manifest.MF">
+		<mkdir dir="${working}" />
+		<manifest file="${working}/Manifest.MF">
 			<attribute name="Created-By" value="AppWork GmbH" />
 			<attribute name="Main-Class" value="org.jdownloader.update.Main" />
 		</manifest>
-		<jar file="${dist}/Updater.jar" manifest="${dist}/Manifest.MF">
+		<jar file="${working}/Updater.jar" manifest="${working}/Manifest.MF">
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
 			<fileset dir="${cls}">
 				<include name="org/jdownloader/update/**/*" />
@@ -219,8 +219,12 @@
 				<include name="org/appwork/controlling/**/*" />
 				<include name="org/appwork/utils/logging/**/*" />
 				<include name="org/appwork/storage/**/*" />
+				<include name="org/appwork/utils/images/**/*" />
+				<include name="org/appwork/utils/swing/windowflasher/**/*" />
+
 				<include name="org/appwork/shutdown/**/*" />
 				<include name="org/appwork/utils/net/**/*" />
+				<include name="org/appwork/utils/parser/ShellParser.class" />
 				<include name="org/appwork/net/**/*" />
 				<include name="org/appwork/utils/*.class" />
 				<include name="org/appwork/utils/formatter/**/*" />
@@ -235,25 +239,30 @@
 				<include name="org/appwork/utils/ImageProvider/**/*" />
 			</fileset>
 
-			<fileset dir="${dep.updateserv}/src">
-				<include name="images/*.png" />
+			<fileset dir="${dep.updateclient}/src">
+				<include name="**/*.png" />
 				<include name="**/*.lng" />
 				<include name="tbs.jar" />
 				<include name="version.dat" />
 			</fileset>
+			<fileset dir="${dep.update}/src">
+				<include name="**/*.png" />
+				<include name="**/*.lng" />
+
+			</fileset>
 			<fileset dir="src">
 				<include name="**/*.lng" />
-				<include name="images/*.png" />
+				<include name="**/*.png" />
 			</fileset>
 			<fileset dir="${dep.awu}/src">
 				<include name="**/*.lng" />
-				<include name="images/*.png" />
+				<include name="**/*.png" />
 				<include name="tbs.jar" />
 				<include name="version.dat" />
 			</fileset>
 
 		</jar>
-		<delete file="${dist}/Manifest.MF" failonerror="false" />
+		<delete file="${working}/Manifest.MF" failonerror="false" />
 	</target>
 
 
@@ -309,7 +318,7 @@
 			<attribute name="Created-By" value="JD-Team and Friends" />
 		</manifest>
 		<buildAddon package="JDChat" include="chat/**/*" />
-		<buildAddon package="JDwebinterface" include="webinterface/**/*" />
+		<buildAddon package="JDWebinterface" include="webinterface/**/*" />
 		<!-- Build optional addon plugins -->
 		<mkdir dir="${dist}/plugins/webinterface/" />
 		<copy todir="${dist}/plugins/webinterface/">
@@ -384,7 +393,7 @@
 		</signjar>
 	</target>
 
-	<target name="all" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarOptionals,sign">
+	<target name="all" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarWebupdater,jarOptionals,sign">
 		<echo message="Finished." />
 	</target>
 

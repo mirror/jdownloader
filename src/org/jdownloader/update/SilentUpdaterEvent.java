@@ -59,11 +59,9 @@ public class SilentUpdaterEvent extends ShutdownEvent {
          * needed because the root is different for jre/class version
          */
         File pbroot = null;
-        if (Application.isJared(this.getClass())) {
-            pbroot = new File(Application.getRoot()).getParentFile();
-        } else {
-            pbroot = new File(Application.getRoot());
-        }
+
+        pbroot = new File(Application.getRoot());
+
         System.out.println("Root: " + pbroot);
         pb.directory(pbroot);
         try {

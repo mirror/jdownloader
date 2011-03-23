@@ -17,6 +17,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.update.gui.UpdateFoundDialog;
 
 public class RestartController implements ShutdownVetoListener {
     private static final RestartController INSTANCE         = new RestartController();

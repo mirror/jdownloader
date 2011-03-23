@@ -1,5 +1,6 @@
 package org.jdownloader.update;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -21,6 +22,7 @@ import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.update.updateclient.gui.UpdaterCoreGui;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.locale.APPWORKUTILS;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -28,6 +30,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.windowflasher.WindowFlasher;
+import org.jdownloader.update.gui.JDStandaloneUpdaterGui;
 import org.jdownloader.update.translate.T;
 
 public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListener {
@@ -119,9 +122,13 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
             }
         });
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        // set appicon
-        setIconImages(JDGui.getInstance().getMainFrame().getIconImages());
+        final ArrayList<Image> list = new ArrayList<Image>();
 
+        list.add(IconIO.getImage(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon128.png")));
+        list.add(IconIO.getImage(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon64.png")));
+        list.add(IconIO.getImage(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon32.png")));
+        list.add(IconIO.getImage(JDStandaloneUpdaterGui.class.getResource("resource/updaterIcon16.png")));
+        setIconImages(list);
         layoutGUI();
 
         setLocation(SwingUtils.getCenter(JDGui.getInstance().getMainFrame(), this));
@@ -296,7 +303,7 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
             // error or done
             System.out.println("done");
             final ArrayList<File> installedFiles = JDUpdater.getInstance().getFilesToInstall();
-            if (installedFiles.size() > 0) {
+            if (installedFiles.size() > 0 || JDUpdater.getInstance().getFilesToRemove().size() > 0) {
                 onInstallRequest();
             } else {
                 onNoUpdates();
@@ -314,13 +321,13 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
             @Override
             protected void runInEDT() {
                 // setVisible(true);
-                panel.log(T._.updates_are_ready_for_install_now(installedFiles.size()));
+                panel.log(T._.updates_are_ready_for_install_now(installedFiles.size() + JDUpdater.getInstance().getFilesToRemove().size()));
                 panel.getProgressLogo().setProgress(1.0f);
                 cancel.setText(T._.exit());
                 panel.getBar().setValue(100);
                 panel.getSubBar().setValue(100);
 
-                panel.getSubBar().setString(T._.updates_ready_for_install(installedFiles.size()));
+                panel.getSubBar().setString(T._.updates_ready_for_install(installedFiles.size() + JDUpdater.getInstance().getFilesToRemove().size()));
                 panel.getBar().setString(T._.udpates_found());
 
                 panel.getBar().setIndeterminate(false);

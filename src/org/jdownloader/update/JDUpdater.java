@@ -1,32 +1,30 @@
 package org.jdownloader.update;
 
-import java.awt.HeadlessException;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
 import javax.swing.JFrame;
 
 import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.utils.JDUtilities;
 
 import org.appwork.update.exchange.UpdatePackage;
 import org.appwork.update.updateclient.InstalledFile;
-import org.appwork.update.updateclient.ParseException;
-import org.appwork.update.updateclient.UpdateException;
 import org.appwork.update.updateclient.Updater;
-import org.appwork.update.updateclient.http.HTTPIOException;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.update.gui.UpdateFoundDialog;
 
-public class JDUpdater extends Updater implements Runnable {
+public class JDUpdater extends Updater implements Runnable, ControlListener {
     private static final JDUpdater INSTANCE = new JDUpdater();
 
     /**
@@ -84,6 +82,8 @@ public class JDUpdater extends Updater implements Runnable {
     private JDUpdater() {
         super(new UpdaterHttpClientImpl(), new Options());
         storage = JSonWrapper.get("WEBUPDATE");
+
+        JDUtilities.getController().addControlListener(this);
 
     }
 
@@ -147,24 +147,6 @@ public class JDUpdater extends Updater implements Runnable {
                     runGUI(updater);
                 }
 
-            } catch (HeadlessException e) {
-                e.printStackTrace();
-
-            } catch (HTTPIOException e) {
-                e.printStackTrace();
-                Dialog.getInstance().showExceptionDialog("Update Error", e.getClass().getSimpleName(), e);
-            } catch (ParseException e) {
-                e.printStackTrace();
-                Dialog.getInstance().showExceptionDialog("Update Error", e.getClass().getSimpleName(), e);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Dialog.getInstance().showExceptionDialog("Update Error", e.getClass().getSimpleName(), e);
-            } catch (UpdateException e) {
-                e.printStackTrace();
-                Dialog.getInstance().showExceptionDialog("Update Error", e.getClass().getSimpleName(), e);
-            } catch (IOException e) {
-                e.printStackTrace();
-                Dialog.getInstance().showExceptionDialog("Update Error", e.getClass().getSimpleName(), e);
             } finally {
 
                 JDController.releaseDelayExit(id);
@@ -173,7 +155,7 @@ public class JDUpdater extends Updater implements Runnable {
         }
     }
 
-    private void runGUI(final Updater updater) throws HTTPIOException, ParseException, InterruptedException, UpdateException, IOException {
+    private void runGUI(final Updater updater) {
 
         Log.L.finer("Start GUI Updatecheck");
         Log.L.finer("Start Silent Updatecheck");
@@ -336,6 +318,7 @@ public class JDUpdater extends Updater implements Runnable {
         if (updaterThread != null) {
 
             updaterThread.interrupt();
+            super.requestExit();
         }
     }
 
@@ -354,6 +337,21 @@ public class JDUpdater extends Updater implements Runnable {
             }
         };
         updateChecker.start();
+    }
+
+    public void controlEvent(ControlEvent event) {
+        // interrupt updater if jd exists
+        if (ControlEvent.CONTROL_SYSTEM_EXIT == event.getEventID()) {
+            interrupt();
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    if (gui != null) gui.setVisible(false);
+                }
+            };
+
+        }
     }
 
 }
