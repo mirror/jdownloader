@@ -2,7 +2,6 @@
 	<!-- Dependencies -->
 	<property name="dep.awu" value="../AppWorkUtils" />
 	<property name="dep.browser" value="../JDBrowser" />
-	<property name="dep.fcgi" value="../FastCGIInterface" />
 	<property name="dep.updateclient" value="../UpdateClient" />
 	<property name="dep.update" value="../JDUpdater" />
 	<property name="debug" value="true" />
@@ -29,7 +28,7 @@
 		<!-- Dependencies -->
 		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
-		<fileset dir="${dep.fcgi}/libs" includes="**/*.jar" />
+	
 		<fileset dir="${dep.updateclient}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.update}/libs" includes="**/*.jar" />
 
@@ -62,10 +61,7 @@
 
 		</javac>
 
-		<javac srcdir="${dep.fcgi}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
-			<classpath refid="classpath" />
-
-		</javac>
+	
 
 		<javac srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
 			<classpath refid="classpath" />
