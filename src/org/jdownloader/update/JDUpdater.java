@@ -290,6 +290,9 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
             setWaitingUpdates(filesToInstall.size() + updates.size() + filesToRemove.size());
 
             if (filesToInstall.size() > 0 || filesToRemove.size() > 0) {
+                // gui is visible, because user clicked manual update in the
+                // meantime
+                if (gui.isVisible()) return;
                 UpdateFoundDialog dialog = new UpdateFoundDialog(new Runnable() {
 
                     public void run() {
@@ -306,6 +309,7 @@ public class JDUpdater extends Updater implements Runnable, ControlListener {
 
                 }, updater);
                 try {
+
                     Dialog.getInstance().showDialog(dialog);
                     // user clicked "INstall now"
 
