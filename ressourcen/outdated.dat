@@ -552,3 +552,9 @@ jd/plugins/hoster/PingHosterCom.class
 jd/plugins/hoster/GigaFoundationDe.class
 jd/plugins/hoster/GigaFoundationDe.class
 jd/plugins/decrypter/UlCrptCm.class
+jd/plugins/decrypter/CrptCm.class
+jd/plugins/decrypter/FrstLnkzNt.class
+jd/plugins/decrypter/TlnkrCm.class
+jd/plugins/decrypter/LnkStackOrg.class
+jd/plugins/decrypter/PrtctTOg.class
+jd/captcha/methods/prtctt
