@@ -50,7 +50,6 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
-import jd.nutils.OutdatedParser;
 import jd.utils.CheckJava;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -63,7 +62,6 @@ import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
 import org.jdownloader.update.JDUpdater;
-import org.jdownloader.update.RestartController;
 
 /**
  * @author JD-Team
@@ -448,22 +446,6 @@ public class Main {
             Main.LOG.setLevel(Level.ALL);
         } else {
             JDLogger.removeConsoleHandler();
-        }
-        if (!OutdatedParser.parseFile(JDUtilities.getResourceFile("outdated.dat"))) {
-            Main.LOG.severe("COULD NOT DELETE OUTDATED FILES.RESTART REQUIRED");
-            final int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.Main.removerestart.title", "Updater"), JDL.L("jd.Main.removerestart.message", "Could not remove outdated libraries. Restart recommended!"), null, JDL.L("jd.Main.removerestart.ok", "Restart now!"), JDL.L("jd.Main.removerestart.cancel", "Continue"));
-            if (UserIO.isOK(answer)) {
-
-                RestartController.getInstance().restartViaUpdater();
-                while (true) {
-                    try {
-                        Thread.sleep(5000);
-                    } catch (final InterruptedException e) {
-
-                        // TODO: Cant be Empty
-                    }
-                }
-            }
         }
 
         Main.LOG.info("init Webupdate");
