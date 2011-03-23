@@ -40,7 +40,7 @@
 	<!-- Deletes the old build -->
 	<target name="clean">
 		<delete dir="${dist}" />
-
+		<delete dir="${dist}/bin" />
 		<mkdir dir="${dist}" />
 		<mkdir dir="${working}" />
 	</target>
