@@ -2,8 +2,6 @@ package jd.plugins.optional.jdpremclient;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
 
 import javax.swing.ImageIcon;
 
@@ -26,7 +24,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 
-public class AllDebridcom extends PluginForHost implements JDPremInterface {
+public class Premium4me extends PluginForHost implements JDPremInterface {
 
     private boolean proxyused = false;
     private String infostring = null;
@@ -35,15 +33,15 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object LOCK = new Object();
 
-    public AllDebridcom(PluginWrapper wrapper) {
+    public Premium4me(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.alldebrid.com/");
-        infostring = "Alldebrid.com @ " + wrapper.getHost();
+        this.enablePremium("http://premium4.me/");
+        infostring = "Premium4.me @ " + wrapper.getHost();
     }
 
     @Override
     public String getAGBLink() {
-        if (plugin == null) return "http://www.alldebrid.com/api.php?action=tos";
+        if (plugin == null) return "http://premium4.me/";
         return plugin.getAGBLink();
     }
 
@@ -76,7 +74,7 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getHost() {
-        if (plugin == null) return "alldebrid.com";
+        if (plugin == null) return "premium4.me";
         return plugin.getHost();
     }
 
@@ -88,7 +86,7 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getBuyPremiumUrl() {
-        if (plugin == null) return "http://www.alldebrid.com/buy/";
+        if (plugin == null) return "http://premium4.me/";
         return plugin.getBuyPremiumUrl();
     }
 
@@ -110,11 +108,11 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        /* try alldebrid.com first */
+        /* try premium4me first */
         if (account == null) {
-            if (handleAllDebrid(downloadLink)) return;
+            if (handlePremium4me(downloadLink)) return;
         } else if (!JDPremium.preferLocalAccounts()) {
-            if (handleAllDebrid(downloadLink)) return;
+            if (handlePremium4me(downloadLink)) return;
         }
         if (proxyused = true) {
             /* failed, now try normal */
@@ -176,14 +174,14 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
         return 3;
     }
 
-    private boolean handleAllDebrid(DownloadLink link) throws Exception {
+    private boolean handlePremium4me(DownloadLink link) throws Exception {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
             if (!JDPremium.isEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
-            acc = AccountController.getInstance().getValidAccount("alldebrid.com");
+            acc = AccountController.getInstance().getValidAccount("premium4.me");
             /* enabled account found? */
             if (acc == null || !acc.isEnabled()) return false;
         }
@@ -198,75 +196,52 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
             br.setReadTimeout(90 * 1000);
             br.setDebug(true);
             dl = null;
-            boolean savedLinkValid = false;
-            String genlink = link.getStringProperty("genLinkAllDebrid", null);
-            /* remove generated link */
-            link.setProperty("genLinkAllDebrid", null);
-            if (genlink != null) {
-                /* try saved link first */
-                try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
-                    if (dl.getConnection().isContentDisposition()) {
-                        savedLinkValid = true;
-                    }
-                } catch (final Throwable e) {
-                    savedLinkValid = false;
-                } finally {
-                    if (savedLinkValid == false) {
-                        try {
-                            dl.getConnection().disconnect();
-                        } catch (final Throwable e1) {
-                        }
-                    }
-                }
+            String user = Encoding.urlEncode(acc.getUser());
+            String pw = Encoding.urlEncode(acc.getPass());
+            String url = link.getDownloadURL().replaceFirst("https?://", "");
+            url = Encoding.urlEncode(url);
+            br.postPageRaw("http://premium4.me/login.php", "{\"u\":\"" + user + "\", \"p\":\"" + pw + "\", \"r\":true}");
+            if (br.getCookie("http://premium4.me", "auth") == null) {
+                resetAvailablePremium();
+                acc.setValid(false);
+                return false;
             }
-            if (savedLinkValid == false) {
-                String user = Encoding.urlEncode(acc.getUser());
-                String pw = Encoding.urlEncode(acc.getPass());
-                String url = Encoding.urlEncode(link.getDownloadURL());
-                genlink = br.getPage("http://www.alldebrid.com/service.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
-                if (!genlink.startsWith("http://")) {
-                    logger.severe("AllDebrid(Error): " + genlink);
-                    if (genlink.contains("_limit")) {
-                        /* limit reached for this host */
-                        synchronized (LOCK) {
-                            premiumHosts.remove(link.getHost());
-                        }
-                        return false;
-                    }
-                    /*
-                     * after x retries we disable this host and retry with
-                     * normal plugin
-                     */
-                    if (link.getLinkStatus().getRetryCount() >= getMaxRetries()) {
-                        synchronized (LOCK) {
-                            premiumHosts.remove(link.getHost());
-                        }
-                        /* reset retrycounter */
-                        link.getLinkStatus().setRetryCount(0);
-                        return false;
-                    }
-                    String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
-                if (dl.getConnection().getResponseCode() == 404) {
-                    /* file offline */
-                    dl.getConnection().disconnect();
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (!dl.getConnection().isContentDisposition()) {
-                    /* unknown error */
-                    br.followConnection();
-                    logger.severe("AllDebrid(Error): " + br.toString());
+            br.setFollowRedirects(false);
+            br.getPage("http://premium4.me/getfile.php?link=" + url);
+            if (br.getRedirectLocation() == null) {
+                logger.severe("Premium4Me(Error): " + br.toString());
+                /*
+                 * after x retries we disable this host and retry with normal
+                 * plugin
+                 */
+                if (link.getLinkStatus().getRetryCount() >= getMaxRetries()) {
                     synchronized (LOCK) {
                         premiumHosts.remove(link.getHost());
                     }
+                    /* reset retrycounter */
+                    link.getLinkStatus().setRetryCount(0);
                     return false;
                 }
+                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
             }
-            /* save generated link */
-            link.setProperty("genLinkAllDebrid", genlink);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 1);
+            if (dl.getConnection().getResponseCode() == 404) {
+                /* file offline */
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!dl.getConnection().isContentDisposition()) {
+                /* unknown error */
+                br.followConnection();
+                logger.severe("Premium4Me(Error): " + br.toString());
+                synchronized (LOCK) {
+                    premiumHosts.remove(link.getHost());
+                }
+                return false;
+            }
+
             link.getTransferStatus().usePremium(true);
             dl.startDownload();
         } finally {
@@ -306,7 +281,6 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         if (plugin == null) {
-            HashMap<String, String> accDetails = new HashMap<String, String>();
             String restartReq = enabled == false ? "(Restart required) " : "";
             AccountInfo ac = new AccountInfo();
             br.setConnectTimeout(60 * 1000);
@@ -314,82 +288,51 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
             br.setDebug(true);
             String username = Encoding.urlEncode(account.getUser());
             String pass = Encoding.urlEncode(account.getPass());
-            String page = null;
+            // String page = null;
             String hosts = null;
+            String traffic = null;
+            br.setFollowRedirects(true);
+            br.setAcceptLanguage("en, en-gb;q=0.8");
             try {
-                page = br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + username + "&pw=" + pass);
-                hosts = br.getPage("http://www.alldebrid.com/api.php?action=get_host");
+                br.postPageRaw("http://premium4.me/login.php", "{\"u\":\"" + username + "\", \"p\":\"" + pass + "\", \"r\":true}");
+                if (br.getCookie("http://premium4.me", "auth") != null) {
+                    // page = br.getPage("http://premium4.me/account.php");
+                    traffic = br.getPage("http://premium4.me/traffic.php").trim() + " MB";
+                    hosts = br.getPage("http://premium4.me/hosters.php");
+                }
             } catch (Exception e) {
                 account.setTempDisabled(true);
                 account.setValid(true);
                 resetAvailablePremium();
-                ac.setStatus("AllDebrid Server Error, temp disabled" + restartReq);
+                ac.setStatus("Premium4Me Server Error, temp disabled" + restartReq);
                 return ac;
             }
-            /* parse api response in easy2handle hashmap */
-            String info[][] = new Regex(page, "<([^<>]*?)>([^<]*?)</.*?>").getMatches();
-
-            for (String data[] : info) {
-                accDetails.put(data[0].toLowerCase(Locale.ENGLISH), data[1].toLowerCase(Locale.ENGLISH));
+            if (br.getCookie("http://premium4.me", "auth") == null) {
+                resetAvailablePremium();
+                account.setValid(false);
+                return ac;
             }
-            String type = accDetails.get("type");
-            if ("premium".equals(type)) {
-                /* only platinium and premium support */
-                synchronized (LOCK) {
-                    premiumHosts.clear();
-                    if (hosts != null) {
-                        String hoster[] = new Regex(hosts, "\"(.*?)\"").getColumn(0);
-                        if (hosts != null) {
-                            for (String host : hoster) {
-                                if (hosts == null || host.length() == 0) continue;
-                                host = host.trim();
-                                try {
-                                    if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) continue;
-                                } catch (final Throwable e) {
-                                    logger.severe(e.toString());
-                                }
-                                try {
-                                    if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) continue;
-                                } catch (final Throwable e) {
-                                    logger.severe(e.toString());
-                                }
-                                try {
-                                    if (host.equals("filefactory.com") && accDetails.get("limite_ff") != null && Integer.parseInt(accDetails.get("limite_ff")) == 0) continue;
-                                } catch (final Throwable e) {
-                                    logger.severe(e.toString());
-                                }
-                                try {
-                                    if (host.equals("hotfile.com") && accDetails.get("limite_hf") != null && Integer.parseInt(accDetails.get("limite_hf")) == 0) continue;
-                                } catch (final Throwable e) {
-                                    logger.severe(e.toString());
-                                }
-                                try {
-                                    if (host.equals("filesmonster.com") && accDetails.get("limite_fm") != null && Integer.parseInt(accDetails.get("limite_fm")) == 0) continue;
-                                } catch (final Throwable e) {
-                                    logger.severe(e.toString());
-                                }
-                                premiumHosts.add(host.trim());
-                            }
-                        }
+            ac.setTrafficLeft(traffic);
+            // String date = new Regex(page, "\"d\":\"(.*?)\",").getMatch(0);
+            account.setValid(true);
+            /* expire date does currently not work */
+            // ac.setValidUntil(TimeFormatter.getMilliSeconds(date,
+            // "dd MMM yyyy", null));
+            synchronized (LOCK) {
+                premiumHosts.clear();
+                String hoster[] = new Regex(hosts.trim(), "(.+?)(;|$)").getColumn(0);
+                if (hosts != null) {
+                    for (String host : hoster) {
+                        if (hosts == null || host.length() == 0) continue;
+                        premiumHosts.add(host.trim());
                     }
                 }
-                String daysLeft = accDetails.get("date");
-                if (daysLeft != null) {
-                    account.setValid(true);
-                    ac.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysLeft) * 1000 * 60 * 60 * 24));
-                } else {
-                    /* no daysleft available?! */
-                    account.setValid(false);
-                }
-            } else {
-                /* all others are invalid */
-                account.setValid(false);
             }
             if (account.isValid()) {
                 if (premiumHosts.size() == 0) {
-                    ac.setStatus(restartReq + "Account valid: 0 Hosts via alldebrid.com available");
+                    ac.setStatus(restartReq + "Account valid: 0 Hosts via premium4.me available");
                 } else {
-                    ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via alldebrid.com available");
+                    ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via premium4.me available");
                 }
             } else {
                 account.setTempDisabled(false);
@@ -404,7 +347,6 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("genLinkAllDebrid", null);
         if (plugin != null) plugin.resetDownloadlink(link);
     }
 
@@ -438,9 +380,9 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
             } else if (JDPremium.isEnabled() && enabled) {
-                /* AllDebrid */
+                /* Premium4Me */
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("alldebrid.com") != null) return Integer.MAX_VALUE;
+                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("premium4.me") != null) return Integer.MAX_VALUE;
                 }
             }
             return plugin.getMaxSimultanDownload(account);
@@ -500,7 +442,7 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getCustomFavIconURL() {
-        if (proxyused) return "alldebrid.com";
+        if (proxyused) return "premium4.me";
         if (plugin != null) return plugin.getCustomFavIconURL();
         return null;
     }

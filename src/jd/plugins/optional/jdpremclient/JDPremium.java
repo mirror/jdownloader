@@ -172,6 +172,7 @@ public class JDPremium extends PluginOptional {
                 premShareHosts.put("twojlimit.pl", "TwojLimit");
                 premShareHosts.put("fast-debrid.com", "FastDebridcom");
                 premShareHosts.put("alldebrid.com", "AllDebridcom");
+                premShareHosts.put("premium4.me", "Premium4me");
 
                 int replaceIndex = 0;
                 for (String key : premShareHosts.keySet()) {
