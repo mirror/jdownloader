@@ -17,24 +17,24 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 
 public class FastDebridcom extends PluginForHost implements JDPremInterface {
 
-    private boolean                        proxyused    = false;
-    private String                         infostring   = null;
-    private PluginForHost                  plugin       = null;
-    private static boolean                 enabled      = false;
-    private static ArrayList<String>       premiumHosts = new ArrayList<String>();
-    private static final Object            LOCK         = new Object();
-    private static HashMap<String, String> accDetails   = new HashMap<String, String>();
+    private boolean proxyused = false;
+    private String infostring = null;
+    private PluginForHost plugin = null;
+    private static boolean enabled = false;
+    private static ArrayList<String> premiumHosts = new ArrayList<String>();
+    private static final Object LOCK = new Object();
+    private static HashMap<String, String> accDetails = new HashMap<String, String>();
 
     public FastDebridcom(PluginWrapper wrapper) {
         super(wrapper);
@@ -111,11 +111,6 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + this.getWrapper().getID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-            return;
-        }
         /* try fast-debrid.com first */
         if (account == null) {
             if (handleFastDebrid(downloadLink)) return;
@@ -230,7 +225,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                 String user = Encoding.urlEncode(acc.getUser());
                 String pw = Encoding.urlEncode(acc.getPass());
                 String url = Encoding.urlEncode(link.getDownloadURL());
-                genlink = br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
+                genlink = br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1&viewlink=1");
                 if (!genlink.startsWith("http://")) {
                     logger.severe("FastDebrid(Error): " + genlink);
                     if (genlink.contains("_limit")) {

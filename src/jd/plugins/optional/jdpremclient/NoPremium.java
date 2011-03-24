@@ -124,11 +124,6 @@ public class NoPremium extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + this.getWrapper().getID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-            return;
-        }
         /* try nopremium.pl first */
         if (account == null) {
             if (handleNoPremium(downloadLink)) return;

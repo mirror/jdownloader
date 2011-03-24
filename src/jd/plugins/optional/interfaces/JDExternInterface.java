@@ -61,10 +61,10 @@ import org.mozilla.javascript.Scriptable;
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "externinterface", interfaceversion = 7)
 public class JDExternInterface extends PluginOptional {
 
-    private RequestHandler      handler;
-    private HttpServer          server    = null;
+    private RequestHandler handler;
+    private HttpServer server = null;
     private final static String LOCALONLY = "localonly";
-    private static String       jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
+    private static String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
     public JDExternInterface(PluginWrapper wrapper) {
         super(wrapper);
@@ -207,7 +207,7 @@ public class JDExternInterface extends PluginOptional {
     }
 
     class RequestHandler implements Handler {
-        private String   namespace;
+        private String namespace;
         private String[] splitPath;
 
         public void handle(Request request, Response response) {
@@ -420,6 +420,7 @@ public class JDExternInterface extends PluginOptional {
                     }
                 }
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 

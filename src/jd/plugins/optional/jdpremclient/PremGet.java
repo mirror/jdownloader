@@ -28,15 +28,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 public class PremGet extends PluginForHost implements JDPremInterface {
 
-    private boolean                  proxyused    = false;
-    private String                   infostring   = null;
-    private PluginForHost            plugin       = null;
-    private static boolean           enabled      = false;
+    private boolean proxyused = false;
+    private String infostring = null;
+    private PluginForHost plugin = null;
+    private static boolean enabled = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object      LOCK         = new Object();
-    private String                   Info         = null;
-    private String                   validUntil   = null;
-    private boolean                  expired      = false;
+    private static final Object LOCK = new Object();
+    private String Info = null;
+    private String validUntil = null;
+    private boolean expired = false;
 
     /* function returns transfer left */
     private long GetTransferLeft(String wynik) {
@@ -124,11 +124,6 @@ public class PremGet extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + this.getWrapper().getID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-            return;
-        }
         /* try premget.pl first */
         if (account == null) {
             if (handlePremGet(downloadLink)) return;

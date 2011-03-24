@@ -28,12 +28,12 @@ import org.appwork.utils.Regex;
 
 public class PremShare extends PluginForHost implements JDPremInterface {
 
-    private boolean                  proxyused    = false;
-    private String                   infostring   = null;
-    private PluginForHost            plugin       = null;
+    private boolean proxyused = false;
+    private String infostring = null;
+    private PluginForHost plugin = null;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object      LOCK         = new Object();
-    private static boolean           enabled      = false;
+    private static final Object LOCK = new Object();
+    private static boolean enabled = false;
 
     public void setReplacedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
@@ -114,11 +114,6 @@ public class PremShare extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + this.getWrapper().getID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-            return;
-        }
         /* try premshare first */
         if (account == null) {
             if (handleJDPremServ(downloadLink)) return;

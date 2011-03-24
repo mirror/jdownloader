@@ -143,27 +143,26 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         }
     }
 
-    private static final String                AGB_CHECKED            = "AGB_CHECKED";
-    private static int                         currentConnections     = 0;
+    private static int currentConnections = 0;
 
-    public static final String                 PARAM_MAX_RETRIES      = "MAX_RETRIES";
-    protected DownloadInterface                dl                     = null;
-    private int                                maxConnections         = 50;
+    public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
+    protected DownloadInterface dl = null;
+    private int maxConnections = 50;
 
-    private static final HashMap<String, Long> LAST_CONNECTION_TIME   = new HashMap<String, Long>();
-    private static final HashMap<String, Long> LAST_STARTED_TIME      = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_CONNECTION_TIME = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_STARTED_TIME = new HashMap<String, Long>();
 
-    private Long                               WAIT_BETWEEN_STARTS    = 0L;
+    private Long WAIT_BETWEEN_STARTS = 0L;
 
-    private boolean                            enablePremium          = false;
+    private boolean enablePremium = false;
 
-    private boolean                            accountWithoutUsername = false;
+    private boolean accountWithoutUsername = false;
 
-    private String                             premiumurl             = null;
+    private String premiumurl = null;
 
-    protected ImageIcon                        hosterIcon             = null;
-    protected boolean                          hosterIconRequested    = false;
-    private DownloadLink                       link                   = null;
+    protected ImageIcon hosterIcon = null;
+    protected boolean hosterIconRequested = false;
+    private DownloadLink link = null;
 
     public boolean checkLinks(final DownloadLink[] urls) {
         return false;
@@ -474,11 +473,6 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + this.getWrapper().getID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-            return;
-        }
 
         if (account != null) {
             /* with account */
@@ -571,10 +565,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     }
 
     public boolean isAGBChecked() {
-        String url = this.getAGBLink();
-        /* in case a plugin does not have a valid agblink, then return true */
-        if (url == null || url.length() == 0) return true;
-        return getPluginConfig().getBooleanProperty(AGB_CHECKED, false);
+        return true;
     }
 
     /**

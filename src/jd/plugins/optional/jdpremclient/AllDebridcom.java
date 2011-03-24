@@ -2,6 +2,8 @@ package jd.plugins.optional.jdpremclient;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
 
 import javax.swing.ImageIcon;
 
@@ -12,7 +14,6 @@ import jd.controlling.JDPluginLogger;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -23,7 +24,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
-public class ReHostto extends PluginForHost implements JDPremInterface {
+import org.appwork.utils.Regex;
+
+public class AllDebridcom extends PluginForHost implements JDPremInterface {
 
     private boolean proxyused = false;
     private String infostring = null;
@@ -31,16 +34,17 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
     private static boolean enabled = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
     private static final Object LOCK = new Object();
+    private static HashMap<String, String> accDetails = new HashMap<String, String>();
 
-    public ReHostto(PluginWrapper wrapper) {
+    public AllDebridcom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://rehost.to/index.php?page=download");
-        infostring = "rehost.to @ " + wrapper.getHost();
+        this.enablePremium("http://www.alldebrid.com/");
+        infostring = "Alldebrid.com @ " + wrapper.getHost();
     }
 
     @Override
     public String getAGBLink() {
-        if (plugin == null) return "http://rehost.to";
+        if (plugin == null) return "http://www.alldebrid.com/api.php?action=tos";
         return plugin.getAGBLink();
     }
 
@@ -58,7 +62,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
 
     @Override
     public long getVersion() {
-        if (plugin == null) return getVersion("$Revision: 13504 $");
+        if (plugin == null) return getVersion("$Revision: 13602 $");
         return plugin.getVersion();
     }
 
@@ -73,7 +77,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getHost() {
-        if (plugin == null) return "rehost.to";
+        if (plugin == null) return "alldebrid.com";
         return plugin.getHost();
     }
 
@@ -85,7 +89,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getBuyPremiumUrl() {
-        if (plugin == null) return "http://rehost.to/index.php?page=download";
+        if (plugin == null) return "http://www.alldebrid.com/buy/";
         return plugin.getBuyPremiumUrl();
     }
 
@@ -107,11 +111,11 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        /* try rehost.to first */
+        /* try alldebrid.com first */
         if (account == null) {
-            if (handleReHost(downloadLink)) return;
+            if (handleAllDebrid(downloadLink)) return;
         } else if (!JDPremium.preferLocalAccounts()) {
-            if (handleReHost(downloadLink)) return;
+            if (handleAllDebrid(downloadLink)) return;
         }
         if (proxyused = true) {
             /* failed, now try normal */
@@ -167,14 +171,20 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
         if (plugin != null) plugin.clean();
     }
 
-    private boolean handleReHost(DownloadLink link) throws Exception {
+    @Override
+    public int getMaxRetries() {
+        if (plugin != null) return plugin.getMaxRetries();
+        return 3;
+    }
+
+    private boolean handleAllDebrid(DownloadLink link) throws Exception {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
             if (!JDPremium.isEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
-            acc = AccountController.getInstance().getValidAccount("rehost.to");
+            acc = AccountController.getInstance().getValidAccount("alldebrid.com");
             /* enabled account found? */
             if (acc == null || !acc.isEnabled()) return false;
         }
@@ -182,42 +192,88 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
         requestFileInformation(link);
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         resetFavIcon();
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
-        br.setConnectTimeout(90 * 1000);
-        br.setReadTimeout(90 * 1000);
-        br.setDebug(true);
-        dl = null;
-        String url = Encoding.urlEncode(link.getDownloadURL());
-        br.getPage("http://rehost.to/api.php?cmd=login&user=" + user + "&pass=" + pw);
-        String long_ses = br.getRegex("long_ses=(.+)").getMatch(0);
-        int retry = 0;
-        while (true) {
-            br.setFollowRedirects(false);
-            br.postPage("http://rehost.to/process_download.php", "user=cookie&pass=" + long_ses + "&dl=" + url);
-            if (br.getRedirectLocation() == null) continue;
+        boolean dofollow = br.isFollowingRedirects();
+        try {
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resumePossible(this.getHost()), 1);
-            if (dl.getConnection().getResponseCode() == 404) {
-                /* file offline */
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!dl.getConnection().isContentDisposition()) {
-                /* unknown error */
-                br.followConnection();
-                if (br.getURL().contains("error=download_failed") && retry++ <= 3) continue;
-                if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                logger.severe("Rehost: error!");
-                logger.severe(br.toString());
-                synchronized (LOCK) {
-                    premiumHosts.remove(link.getHost());
+            br.setConnectTimeout(90 * 1000);
+            br.setReadTimeout(90 * 1000);
+            br.setDebug(true);
+            dl = null;
+            boolean savedLinkValid = false;
+            String genlink = link.getStringProperty("genLinkAllDebrid", null);
+            /* remove generated link */
+            link.setProperty("genLinkAllDebrid", null);
+            if (genlink != null) {
+                /* try saved link first */
+                try {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
+                    if (dl.getConnection().isContentDisposition()) {
+                        savedLinkValid = true;
+                    }
+                } catch (final Throwable e) {
+                    savedLinkValid = false;
+                } finally {
+                    if (savedLinkValid == false) {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (final Throwable e1) {
+                        }
+                    }
                 }
-                return false;
             }
+            if (savedLinkValid == false) {
+                String user = Encoding.urlEncode(acc.getUser());
+                String pw = Encoding.urlEncode(acc.getPass());
+                String url = Encoding.urlEncode(link.getDownloadURL());
+                genlink = br.getPage("http://www.alldebrid.com/service.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
+                if (!genlink.startsWith("http://")) {
+                    logger.severe("AllDebrid(Error): " + genlink);
+                    if (genlink.contains("_limit")) {
+                        /* limit reached for this host */
+                        synchronized (LOCK) {
+                            premiumHosts.remove(link.getHost());
+                        }
+                        return false;
+                    }
+                    /*
+                     * after x retries we disable this host and retry with
+                     * normal plugin
+                     */
+                    if (link.getLinkStatus().getRetryCount() >= getMaxRetries()) {
+                        synchronized (LOCK) {
+                            premiumHosts.remove(link.getHost());
+                        }
+                        /* reset retrycounter */
+                        link.getLinkStatus().setRetryCount(0);
+                        return false;
+                    }
+                    String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
+                if (dl.getConnection().getResponseCode() == 404) {
+                    /* file offline */
+                    dl.getConnection().disconnect();
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!dl.getConnection().isContentDisposition()) {
+                    /* unknown error */
+                    br.followConnection();
+                    logger.severe("AllDebrid(Error): " + br.toString());
+                    synchronized (LOCK) {
+                        premiumHosts.remove(link.getHost());
+                    }
+                    return false;
+                }
+            }
+            /* save generated link */
+            link.setProperty("genLinkAllDebrid", genlink);
+            link.getTransferStatus().usePremium(true);
             dl.startDownload();
-            return true;
+        } finally {
+            br.setFollowRedirects(dofollow);
         }
+        return true;
     }
 
     @Override
@@ -253,64 +309,93 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
         if (plugin == null) {
             String restartReq = enabled == false ? "(Restart required) " : "";
             AccountInfo ac = new AccountInfo();
-            final boolean follow = br.isFollowingRedirects();
-            br.setFollowRedirects(true);
             br.setConnectTimeout(60 * 1000);
             br.setReadTimeout(60 * 1000);
             br.setDebug(true);
             String username = Encoding.urlEncode(account.getUser());
             String pass = Encoding.urlEncode(account.getPass());
-            String loginPage = null;
-            long trafficLeft = 0;
-            String ses = null;
+            String page = null;
             String hosts = null;
-            long expire = 0;
             try {
-                loginPage = br.getPage("http://rehost.to/api.php?cmd=login&user=" + username + "&pass=" + pass);
-                ses = new Regex(loginPage, "ses=(.*?),").getMatch(0);
-                if (ses == null) {
-                    loginPage = null;
-                } else {
-                    br.getPage("http://rehost.to/api.php?cmd=get_premium_credits&ses=" + ses);
-                    String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
-                    trafficLeft = Long.parseLong(infos[0]);
-                    expire = Long.parseLong(infos[1]);
-                    hosts = br.getPage("http://rehost.to/api.php?cmd=get_supported_och_dl&ses=" + ses);
-                }
+                page = br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + username + "&pw=" + pass);
+                hosts = br.getPage("http://www.alldebrid.com/api.php?action=get_host");
             } catch (Exception e) {
                 account.setTempDisabled(true);
                 account.setValid(true);
                 resetAvailablePremium();
-                ac.setStatus("Rehost Server Error, temp disabled" + restartReq);
+                ac.setStatus("AllDebrid Server Error, temp disabled" + restartReq);
                 return ac;
-            } finally {
-                br.setFollowRedirects(follow);
             }
-            if (loginPage == null || trafficLeft <= 0 || expire == 0) {
-                account.setValid(false);
-                account.setTempDisabled(false);
-                ac.setStatus("Account invalid");
-                resetAvailablePremium();
-            } else {
-                ac.setValidUntil(expire * 1000);
-                ac.setTrafficLeft(trafficLeft * 1024 * 1024);
-                synchronized (LOCK) {
-                    premiumHosts.clear();
-                    if (!"0".equals(hosts.trim())) {
-                        String hoster[] = new Regex(hosts, "(.*?)(,|$)").getColumn(0);
+            /* parse api response in easy2handle hashmap */
+            String info[][] = new Regex(page, "<([^<>]*?)>([^<]*?)</.*?>").getMatches();
+            synchronized (accDetails) {
+                accDetails.clear();
+                for (String data[] : info) {
+                    accDetails.put(data[0].toLowerCase(Locale.ENGLISH), data[1].toLowerCase(Locale.ENGLISH));
+                }
+                String type = accDetails.get("type");
+                if ("premium".equals(type)) {
+                    /* only platinium and premium support */
+                    synchronized (LOCK) {
+                        premiumHosts.clear();
                         if (hosts != null) {
-                            for (String host : hoster) {
-                                if (host == null || host.length() == 0) continue;
-                                premiumHosts.add(host.trim());
+                            String hoster[] = new Regex(hosts, "\"(.*?)\"").getColumn(0);
+                            if (hosts != null) {
+                                for (String host : hoster) {
+                                    if (hosts == null || host.length() == 0) continue;
+                                    host = host.trim();
+                                    try {
+                                        if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) continue;
+                                    } catch (final Throwable e) {
+                                        logger.severe(e.toString());
+                                    }
+                                    try {
+                                        if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) continue;
+                                    } catch (final Throwable e) {
+                                        logger.severe(e.toString());
+                                    }
+                                    try {
+                                        if (host.equals("filefactory.com") && accDetails.get("limite_ff") != null && Integer.parseInt(accDetails.get("limite_ff")) == 0) continue;
+                                    } catch (final Throwable e) {
+                                        logger.severe(e.toString());
+                                    }
+                                    try {
+                                        if (host.equals("hotfile.com") && accDetails.get("limite_hf") != null && Integer.parseInt(accDetails.get("limite_hf")) == 0) continue;
+                                    } catch (final Throwable e) {
+                                        logger.severe(e.toString());
+                                    }
+                                    try {
+                                        if (host.equals("filesmonster.com") && accDetails.get("limite_fm") != null && Integer.parseInt(accDetails.get("limite_fm")) == 0) continue;
+                                    } catch (final Throwable e) {
+                                        logger.severe(e.toString());
+                                    }
+                                    premiumHosts.add(host.trim());
+                                }
                             }
                         }
                     }
-                }
-                account.setValid(true);
-                if (premiumHosts.size() == 0) {
-                    ac.setStatus(restartReq + "Account valid: 0 Hosts via Rehost.to available");
+                    String daysLeft = accDetails.get("date");
+                    if (daysLeft != null) {
+                        account.setValid(true);
+                        ac.setValidUntil(System.currentTimeMillis() + (Long.parseLong(daysLeft) * 1000 * 60 * 60 * 24));
+                    } else {
+                        /* no daysleft available?! */
+                        account.setValid(false);
+                    }
                 } else {
-                    ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via Rehost.to available");
+                    /* all others are invalid */
+                    account.setValid(false);
+                }
+                if (account.isValid()) {
+                    if (premiumHosts.size() == 0) {
+                        ac.setStatus(restartReq + "Account valid: 0 Hosts via alldebrid.com available");
+                    } else {
+                        ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via alldebrid.com available");
+                    }
+                } else {
+                    account.setTempDisabled(false);
+                    resetAvailablePremium();
+                    ac.setStatus("Account invalid");
                 }
             }
             return ac;
@@ -320,6 +405,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("genLinkAllDebrid", null);
         if (plugin != null) plugin.resetDownloadlink(link);
     }
 
@@ -353,35 +439,14 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
             } else if (JDPremium.isEnabled() && enabled) {
-                /* Rehost */
+                /* AllDebrid */
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("rehost.to") != null) return Integer.MAX_VALUE;
+                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("alldebrid.com") != null) return Integer.MAX_VALUE;
                 }
             }
             return plugin.getMaxSimultanDownload(account);
         }
         return 0;
-    }
-
-    private boolean resumePossible(String hoster) {
-        if (hoster != null) {
-            if (hoster.contains("megaupload.com")) return true;
-            if (hoster.contains("rapidshare.com")) return true;
-            if (hoster.contains("oron.com")) return true;
-            if (hoster.contains("netload.in")) return true;
-            if (hoster.contains("uploaded.to")) return true;
-            if (hoster.contains("x7.to")) return true;
-            if (hoster.contains("freakshare.")) return true;
-            if (hoster.contains("filesonic")) return true;
-            if (hoster.contains("easy-share")) return true;
-            if (hoster.contains("duckload")) return true;
-            if (hoster.contains("megaupload")) return true;
-            if (hoster.contains("megavideo")) return true;
-            if (hoster.contains("fileserve.com")) return true;
-            if (hoster.contains("bitshare.com")) return true;
-            if (hoster.contains("hotfile.com")) return true;
-        }
-        return false;
     }
 
     @Override
@@ -436,7 +501,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getCustomFavIconURL() {
-        if (proxyused) return "rehost.to";
+        if (proxyused) return "alldebrid.com";
         if (plugin != null) return plugin.getCustomFavIconURL();
         return null;
     }

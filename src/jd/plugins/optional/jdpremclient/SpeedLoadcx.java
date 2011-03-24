@@ -27,13 +27,13 @@ import org.appwork.utils.Regex;
 
 public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
 
-    private boolean                       proxyused      = false;
-    private String                        infostring     = null;
-    private PluginForHost                 plugin         = null;
-    private static boolean                enabled        = false;
-    private static ArrayList<String>      premiumHosts   = new ArrayList<String>();
-    private static final Object           LOCK           = new Object();
-    private volatile static int           MAXDOWNLOADS   = 5;
+    private boolean proxyused = false;
+    private String infostring = null;
+    private PluginForHost plugin = null;
+    private static boolean enabled = false;
+    private static ArrayList<String> premiumHosts = new ArrayList<String>();
+    private static final Object LOCK = new Object();
+    private volatile static int MAXDOWNLOADS = 5;
     private volatile static AtomicInteger currentRunning = new AtomicInteger(0);
 
     public SpeedLoadcx(PluginWrapper wrapper) {
@@ -111,11 +111,6 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + this.getWrapper().getID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-            return;
-        }
         /* try speedload.cx first */
         if (account == null) {
             if (handleSpeedLoad(downloadLink)) return;

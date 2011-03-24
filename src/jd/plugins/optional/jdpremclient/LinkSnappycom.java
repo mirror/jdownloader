@@ -31,13 +31,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 public class LinkSnappycom extends PluginForHost implements JDPremInterface {
 
-    private boolean                  proxyused    = false;
-    private String                   infostring   = null;
-    private PluginForHost            plugin       = null;
-    private static boolean           counted      = false;
-    private static boolean           enabled      = false;
+    private boolean proxyused = false;
+    private String infostring = null;
+    private PluginForHost plugin = null;
+    private static boolean counted = false;
+    private static boolean enabled = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object      LOCK         = new Object();
+    private static final Object LOCK = new Object();
 
     public LinkSnappycom(PluginWrapper wrapper) {
         super(wrapper);
@@ -114,11 +114,6 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + this.getWrapper().getID());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-            return;
-        }
         /* try linksnappy.com first */
         if (account == null) {
             if (handleLinkSnappy(downloadLink)) return;
