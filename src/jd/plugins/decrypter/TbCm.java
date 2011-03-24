@@ -60,7 +60,7 @@ public class TbCm extends PluginForDecrypt {
 
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
 
-        private String   text;
+        private String text;
         private String[] ext;
 
         DestinationFormat(final String text, final String[] ext) {
@@ -85,20 +85,20 @@ public class TbCm extends PluginForDecrypt {
 
     static class Info {
         public String link;
-        public long   size;
-        public int    fmt;
+        public long size;
+        public int fmt;
         public String desc;
     }
 
-    private final Pattern                       StreamingShareLink  = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
+    private final Pattern StreamingShareLink = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
 
-    static public final Pattern                 YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    static public final Pattern YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
-    HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
+    HashMap<DestinationFormat, ArrayList<Info>> possibleconverts = null;
 
-    private static final Logger                 LOG                 = JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
-    private static final String                 TEMP_EXT            = ".tmp$";
+    private static final String TEMP_EXT = ".tmp$";
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -414,7 +414,7 @@ public class TbCm extends PluginForDecrypt {
                     String hitFmt = new Regex(hit, "itag\": (\\d+)").getMatch(0);
                     String hitQ = new Regex(hit, "quality\": \"(.*?)\"").getMatch(0);
                     if (hitUrl != null && hitFmt != null && hitQ != null) {
-                        hitUrl = hitUrl.replaceAll("\\\\/", "/");
+                        hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
                         links.put(Integer.parseInt(hitFmt), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ });
                     }
 
@@ -464,12 +464,50 @@ public class TbCm extends PluginForDecrypt {
             } else {
                 Videoq = "unk";
             }
-            links.put(Integer.parseInt(fmt_str[0]), new String[] { Encoding.htmlDecode(Encoding.urlDecode(fmt_str[1], true)), Videoq });
+            links.put(Integer.parseInt(fmt_str[0]), new String[] { Encoding.htmlDecode(unescape(Encoding.urlDecode(fmt_str[1], true))), Videoq });
         }
         if (YT_FILENAME != null) {
             links.put(-1, new String[] { YT_FILENAME });
         }
         return links;
+    }
+
+    private static String unescape(final String s) {
+        char ch;
+        final StringBuilder sb = new StringBuilder();
+        final StringBuilder sb2 = new StringBuilder();
+        int ii;
+        int i;
+        for (i = 0; i < s.length(); i++) {
+            ch = s.charAt(i);
+            switch (ch) {
+            case '\\':
+                ch = s.charAt(++i);
+                switch (ch) {
+                case 'u':
+                    sb2.delete(0, sb2.length());
+
+                    i++;
+                    ii = i + 4;
+                    for (; i < ii; i++) {
+                        ch = s.charAt(i);
+                        if (sb2.length() > 0 || ch != '0') {
+                            sb2.append(ch);
+                        }
+                    }
+                    i--;
+                    sb.append((char) Short.parseShort(sb2.toString(), 16));
+                    continue;
+                default:
+                    sb.append(ch);
+                    continue;
+                }
+
+            }
+            sb.append(ch);
+        }
+
+        return sb.toString();
     }
 
     @Override
