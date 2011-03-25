@@ -30,7 +30,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;
@@ -100,7 +99,6 @@ public class Multi implements IExtraction {
     public Multi() {
         crack = 0;
         inArchive = null;
-        logger = JDLogger.getLogger();
     }
 
     public Archive buildArchive(DownloadLink link) {
@@ -134,11 +132,7 @@ public class Multi implements IExtraction {
         // pattern = "^" + Regex.escape(pattern) + ".*";
 
         if (!pattern.equals("")) {
-            if (!link.getHost().equals(DUMMY_HOSTER)) {
-                for (DownloadLink l : JDUtilities.getController().getDownloadLinksByPathPattern(pattern)) {
-                    matches.add(l);
-                }
-            } else {
+            if (link instanceof DummyDownloadLink) {
                 archive.setFirstDownloadLink(link);
 
                 for (File f : new File(link.getFileOutput()).getParentFile().listFiles()) {
@@ -146,6 +140,10 @@ public class Multi implements IExtraction {
                     if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
                         matches.add(buildDownloadLinkFromFile(f.getAbsolutePath()));
                     }
+                }
+            } else {
+                for (DownloadLink l : JDUtilities.getController().getDownloadLinksByPathPattern(pattern)) {
+                    matches.add(l);
                 }
             }
         }
@@ -197,7 +195,7 @@ public class Multi implements IExtraction {
      */
     private DownloadLink buildDownloadLinkFromFile(String file) {
         File file0 = new File(file);
-        DummyDownloadLink link = new DummyDownloadLink(null, file0.getName(), DUMMY_HOSTER, "", true);
+        DummyDownloadLink link = new DummyDownloadLink(file0.getName());
         link.setFile(file0);
         return link;
     }
@@ -481,6 +479,12 @@ public class Multi implements IExtraction {
         return crack;
     }
 
+    /**
+     * Checks if the file should be upacked.
+     * 
+     * @param file
+     * @return
+     */
     private boolean filter(String file) {
         file = "/" + file;
         for (String entry : filter) {
@@ -789,5 +793,9 @@ public class Multi implements IExtraction {
         }
 
         return missing;
+    }
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
     }
 }

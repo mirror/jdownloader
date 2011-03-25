@@ -16,6 +16,12 @@
 
 package jd.plugins.optional.extraction;
 
+/**
+ * Various constants for the extraction system.
+ * 
+ * @author botzi
+ * 
+ */
 public class ExtractionConstants {
     public static final int    WRAPPER_ON_PROGRESS                             = 6;
     public static final int    WRAPPER_STARTED                                 = 7;

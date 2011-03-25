@@ -18,8 +18,6 @@ package jd.plugins.optional.extraction;
 
 import java.util.TimerTask;
 
-import jd.plugins.optional.jdunrar.JDUnrarConstants;
-
 /**
  * Is a {@link TimerTask} for updating the unpacking process. Will be executed
  * every second.
@@ -36,6 +34,6 @@ class UpdateDisplay extends TimerTask {
 
     @Override
     public void run() {
-        con.fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+        con.fireEvent(ExtractionConstants.WRAPPER_ON_PROGRESS);
     }
 }

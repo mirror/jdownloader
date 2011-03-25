@@ -70,6 +70,11 @@ class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword 
         }
     }
 
+    /**
+     * Closes all open files.
+     * 
+     * @throws IOException
+     */
     void close() throws IOException {
         for (RandomAccessFile file : openedRandomAccessFileList.values()) {
             file.close();

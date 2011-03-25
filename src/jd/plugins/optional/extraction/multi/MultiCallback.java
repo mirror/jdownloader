@@ -35,20 +35,13 @@ import net.sf.sevenzipjbinding.SevenZipException;
 class MultiCallback implements ISequentialOutStream {
     private FileOutputStream     fos = null;
     private ExtractionController con;
-    // private CRC32 crc;
-    // private boolean shouldCrc = false;
     private int                  priority;
 
     MultiCallback(File file, ExtractionController con, int priority, boolean shouldCrc) throws FileNotFoundException {
         this.con = con;
-        // this.shouldCrc = shouldCrc;
         this.priority = priority;
 
         fos = new FileOutputStream(file, true);
-
-        // if(shouldCrc) {
-        // crc = new CRC32();
-        // }
     }
 
     public int write(byte[] data) throws SevenZipException {
@@ -69,10 +62,6 @@ class MultiCallback implements ISequentialOutStream {
                     con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                 }
             }
-
-            // if(shouldCrc) {
-            // crc.update(data);
-            // }
         } catch (FileNotFoundException e) {
             con.setExeption(e);
             con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
@@ -100,13 +89,4 @@ class MultiCallback implements ISequentialOutStream {
         }
 
     }
-
-    /**
-     * Retruns the computed CRC.
-     * 
-     * @return The computed CRC.
-     */
-    // String getComputedCRC() {
-    // return Long.toHexString(crc.getValue());
-    // }
 }

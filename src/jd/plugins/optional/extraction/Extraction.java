@@ -16,7 +16,6 @@
 
 package jd.plugins.optional.extraction;
 
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -53,16 +52,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.plugins.PluginProgress;
-import jd.plugins.optional.extraction.hjsplit.HJSplt;
 import jd.plugins.optional.extraction.multi.Multi;
+import jd.plugins.optional.extraction.split.HJSplit;
+import jd.plugins.optional.extraction.split.Unix;
+import jd.plugins.optional.extraction.split.XtreamSplit;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = false, id = "extraction", interfaceversion = 7)
-public class Extraction extends PluginOptional implements ControlListener, ExtractionListener, ActionListener {
-    private static final String    DUMMY_HOSTER            = "dum.my";
-
+public class Extraction extends PluginOptional implements ControlListener, ActionListener {
     private static final int       EXTRACT_LINK            = 1000;
 
     private static final int       EXTRACT_PACKAGE         = 1001;
@@ -97,7 +95,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
      * Adds all internal extraction plugins.
      */
     private void initExtractors() {
-        setExtractor(new HJSplt());
+        setExtractor(new Unix());
+        setExtractor(new XtreamSplit());
+        setExtractor(new HJSplit());
         setExtractor(new Multi());
     }
 
@@ -140,7 +140,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
             if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
                 Archive archive = buildArchive(link);
 
-                if (archive.isComplete() && !archive.isActive()) {
+                if (!archive.isActive() && archive.getDownloadLinks().size() > 0 && archive.isComplete()) {
                     this.addToQueue(archive);
                 }
             }
@@ -152,7 +152,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
                     for (File archiveStartFile : list) {
                         if (isLinkSupported(archiveStartFile.getAbsolutePath())) {
                             Archive ar = buildDummyArchive(archiveStartFile);
-                            if (ar.isActive() || !ar.isComplete()) continue;
+                            if (ar.isActive() || ar.getDownloadLinks().size() < 1 || !ar.isComplete()) continue;
                             addToQueue(ar);
                         }
                     }
@@ -252,14 +252,16 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         archive.setOverwriteFiles(this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_OVERWRITE, true));
         archive.setExtractTo(dl);
 
-        ExtractionController controller = new ExtractionController(archive);
+        ExtractionController controller = new ExtractionController(archive, logger);
 
-        if (archive.getFirstDownloadLink().getHost().equals(DUMMY_HOSTER)) {
+        if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
             ProgressController progress = new ProgressController(JDL.LF("plugins.optional.extraction.progress.extractfile", "Extract %s", archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
             controller.setProgressController(progress);
-        }
 
-        controller.addExtractionListener(this);
+            controller.addExtractionListener(new ExtractionListenerFile(this));
+        } else {
+            controller.addExtractionListener(new ExtractionListenerList(this));
+        }
 
         controller.setRemoveAfterExtract(this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, false));
 
@@ -289,7 +291,7 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
      */
     private File getExtractToPath(DownloadLink link) {
         if (link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) return (File) link.getProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTTOPATH);
-        if (link.getHost().equals(DUMMY_HOSTER)) return new File(link.getFileOutput()).getParentFile();
+        if (link instanceof DummyDownloadLink) return new File(link.getFileOutput()).getParentFile();
         String path;
 
         if (!getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_EXTRACT_PATH, false)) {
@@ -327,6 +329,12 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         }
     }
 
+    /**
+     * Builds an archive for an {@link DownloadLink}.
+     * 
+     * @param link
+     * @return
+     */
     private Archive buildArchive(DownloadLink link) {
         for (Archive archive : archives) {
             if (archive.getDownloadLinks().contains(link)) { return archive; }
@@ -339,11 +347,17 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         return archive;
     }
 
+    /**
+     * Builds an dummy archive for an file.
+     * 
+     * @param file
+     * @return
+     */
     private Archive buildDummyArchive(File file) {
         DownloadLink link = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
         if (link == null) {
             /* link no longer in list */
-            DummyDownloadLink link0 = new DummyDownloadLink(null, file.getName(), DUMMY_HOSTER, "", true);
+            DummyDownloadLink link0 = new DummyDownloadLink(file.getName());
             link0.setFile(file);
             return buildArchive(link0);
         }
@@ -351,6 +365,11 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         return buildArchive(link);
     }
 
+    /**
+     * ActionListener for the menuitems.
+     * 
+     * @param source
+     */
     private void actionPerformedOnMenuItem(MenuAction source) {
         SubConfiguration cfg = this.getPluginConfig();
         ArrayList<DownloadLink> dlinks = (ArrayList<DownloadLink>) source.getProperty(MENU_LINKS);
@@ -529,6 +548,9 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         return true;
     }
 
+    /**
+     * Builds the config.
+     */
     private void initConfig() {
         ConfigEntry ce, conditionEntry;
         final SubConfiguration subConfig = getPluginConfig();
@@ -572,208 +594,12 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         JDUtilities.getController().removeControlListener(this);
     }
 
-    public void onExtractionEvent(int id, ExtractionController controller) {
-        LinkStatus ls = controller.getArchiv().getFirstDownloadLink().getLinkStatus();
-        // Falls der link entfernt wird während dem entpacken
-        if (controller.getArchiv().getFirstDownloadLink().getFilePackage() == FilePackage.getDefaultFilePackage() && controller.getProgressController() == null) {
-            logger.warning("LINK GOT REMOVED_: " + controller.getArchiv().getFirstDownloadLink());
-            ProgressController progress = new ProgressController(JDL.LF("plugins.optional.extraction.progress.extractfile", "Extract %s", controller.getArchiv().getFirstDownloadLink().getFileOutput()), 100, getIconKey());
-            controller.setProgressController(progress);
-        }
-
-        if (controller.getProgressController() != null) {
-            onExtractionDummyEvent(id, controller);
-            return;
-        }
-
-        switch (id) {
-        case ExtractionConstants.WRAPPER_STARTED:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-            break;
-        case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
-            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
-                if (link == null) continue;
-                LinkStatus lls = link.getLinkStatus();
-
-                if (controller.getException() != null) {
-                    lls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-                    lls.setErrorMessage("Extract failed: " + controller.getException().getMessage());
-                    link.requestGuiUpdate();
-                } else {
-                    lls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-                    lls.setErrorMessage("Extract failed");
-                    link.requestGuiUpdate();
-                }
-            }
-
-            for (File f : controller.getArchiv().getExtractedFiles()) {
-                if (f.exists()) {
-                    if (!f.delete()) {
-                        logger.warning("Could not delete file " + f.getAbsolutePath());
-                    }
-                }
-            }
-
-            controller.getArchiv().setActive(false);
-            this.onFinished(controller);
-            break;
-        case ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-
-            if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.extraction.askForPassword", "Password for %s?", controller.getArchiv().getFirstDownloadLink().getName()), "");
-                if (pass == null || pass.length() == 0) {
-                    ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-                    ls.setStatusText(JDL.L("plugins.optional.extraction.status.extractfailedpass", "Extract failed (password)"));
-                    this.onFinished(controller);
-                    break;
-                }
-                controller.getArchiv().setPassword(pass);
-            }
-            break;
-        case ExtractionConstants.WRAPPER_CRACK_PASSWORD:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-            break;
-        case ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.openingarchive", "Opening archive"));
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-            break;
-        case ExtractionConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
-            assignRealDownloadDir(controller);
-            break;
-        case ExtractionConstants.WRAPPER_PASSWORD_FOUND:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.passfound", "Password found"));
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-            controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
-            break;
-        case ExtractionConstants.WRAPPER_PASSWORT_CRACKING:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
-            if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
-                controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getCrackProgress(), controller.getPasswordList().size(), Color.GREEN.darker()));
-            } else {
-                controller.getArchiv().getFirstDownloadLink().getPluginProgress().setCurrent(controller.getCrackProgress());
-            }
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-            break;
-        case ExtractionConstants.WRAPPER_ON_PROGRESS:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.extracting", "Extracting"));
-            if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
-                controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getArchiv().getExtracted(), controller.getArchiv().getSize(), Color.YELLOW.darker()));
-            } else {
-                controller.getArchiv().getFirstDownloadLink().getPluginProgress().setCurrent(controller.getArchiv().getExtracted());
-            }
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-            break;
-        case ExtractionConstants.WRAPPER_EXTRACTION_FAILED_CRC:
-            if (controller.getArchiv().getCrcError().size() != 0) {
-                for (DownloadLink link : controller.getArchiv().getCrcError()) {
-                    if (link == null) continue;
-                    link.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                    link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                    link.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-                    link.getLinkStatus().setErrorMessage(JDL.LF("plugins.optional.extraction.crcerrorin", "Extract: failed (CRC in %s)", link.getName()));
-                    link.requestGuiUpdate();
-                }
-            } else {
-                for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
-                    if (link == null) continue;
-                    link.getLinkStatus().setErrorMessage(JDL.L("plugins.optional.extraction.error.extrfailedcrc", "Extract: failed (CRC in unknown file)"));
-                    link.requestGuiUpdate();
-                }
-            }
-
-            for (File f : controller.getArchiv().getExtractedFiles()) {
-                if (f.exists()) {
-                    if (!f.delete()) {
-                        logger.warning("Could not delete file " + f.getAbsolutePath());
-                    }
-                }
-            }
-
-            controller.getArchiv().setActive(false);
-            this.onFinished(controller);
-            break;
-        case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL:
-            File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
-            int i = 0;
-            for (File f : controller.getArchiv().getExtractedFiles()) {
-                files[i++] = f;
-            }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(wrapper, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
-
-            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
-                if (link == null) continue;
-                link.getLinkStatus().addStatus(LinkStatus.FINISHED);
-                link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-                link.getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.extractok", "Extract OK"));
-                link.requestGuiUpdate();
-            }
-
-            // TODO
-            // if
-            // (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE,
-            // false)) {
-            // File fileOutput = new
-            // File(controller.getArchiv().getFirstDownloadLink().getFileOutput());
-            // String packname =
-            // controller.getArchiv().getFirstDownloadLink().getFilePackage().getName();
-            // File infoFiles = new File(fileOutput.getParentFile(),
-            // packname.replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$",
-            // "") + ".info");
-            // if (infoFiles.exists() && infoFiles.delete()) {
-            // logger.info(infoFiles.getName() + " removed");
-            // }
-            // }
-            controller.getArchiv().setActive(false);
-            this.onFinished(controller);
-            break;
-        case ExtractionConstants.NOT_ENOUGH_SPACE:
-            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
-                if (link == null) continue;
-
-                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                link.getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.notenoughspace", "Not enough space to extract"));
-                link.requestGuiUpdate();
-            }
-
-            this.onFinished(controller);
-            break;
-        case ExtractionConstants.REMOVE_ARCHIVE_METADATA:
-            archives.remove(controller.getArchiv());
-            break;
-        case ExtractionConstants.WRAPPER_FILE_NOT_FOUND:
-            if (controller.getArchiv().getCrcError().size() != 0) {
-                for (DownloadLink link : controller.getArchiv().getCrcError()) {
-                    if (link == null) continue;
-                    link.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                    link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                    link.getLinkStatus().setErrorMessage(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
-                    link.requestGuiUpdate();
-                }
-            } else {
-                for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
-                    if (link == null) continue;
-                    link.getLinkStatus().setErrorMessage(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
-                    link.requestGuiUpdate();
-                }
-            }
-
-            controller.getArchiv().setActive(false);
-            this.onFinished(controller);
-            break;
-        }
-    }
-
     /**
      * Sets the extractionpath with subpahts.
      * 
      * @param controller
      */
-    private void assignRealDownloadDir(ExtractionController controller) {
+    void assignRealDownloadDir(ExtractionController controller) {
         Boolean usesub = this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_USE_SUBPATH, false);
         if (usesub) {
             if (this.getPluginConfig().getIntegerProperty(ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, 0) > controller.getArchiv().getNumberOfFiles()) { return; }
@@ -845,128 +671,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
     }
 
     /**
-     * Als Dummy wird ein downloadlink bezeicnet, der nicht ind er downloadliste
-     * war, sondern nur angelegt wurde um als container für ein externes archiv
-     * zu dienen. Zur Fortschrittsanzeige wird ein progresscontroller verwendet
-     * 
-     * @param id
-     * @param controller
-     */
-    private void onExtractionDummyEvent(int id, ExtractionController controller) {
-        ProgressController pc = controller.getProgressController();
-        switch (id) {
-        case ExtractionConstants.WRAPPER_STARTED:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));
-            break;
-        case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
-            if (controller.getException() != null) {
-                pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailed", "Extract failed") + ": " + controller.getException().getMessage());
-            } else {
-                pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailed", "Extract failed"));
-            }
-
-            for (File f : controller.getArchiv().getExtractedFiles()) {
-                if (f.exists()) {
-                    if (!f.delete()) {
-                        logger.warning("Could not delete file " + f.getAbsolutePath());
-                    }
-                }
-            }
-
-            controller.getArchiv().setActive(false);
-            this.onFinished(controller);
-
-            break;
-        case ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailedpass", "Extract failed (password)"));
-
-            if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.extraction.askForPassword", "Password for %s?", controller.getArchiv().getFirstDownloadLink().getName()), "");
-                if (pass == null || pass.length() == 0) {
-                    this.onFinished(controller);
-                    break;
-                }
-                controller.getArchiv().setPassword(pass);
-            }
-
-            break;
-        case ExtractionConstants.WRAPPER_PASSWORT_CRACKING:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
-            pc.setRange(controller.getPasswordList().size());
-            pc.setStatus(controller.getCrackProgress());
-            break;
-        case ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.openingarchive", "Opening archive"));
-            break;
-        case ExtractionConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
-            assignRealDownloadDir(controller);
-            break;
-        case ExtractionConstants.WRAPPER_PASSWORD_FOUND:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.passfound", "Password found"));
-            break;
-        case ExtractionConstants.WRAPPER_ON_PROGRESS:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extracting", "Extracting"));
-            pc.setRange(controller.getArchiv().getSize());
-            pc.setStatus(controller.getArchiv().getExtracted());
-            break;
-        case ExtractionConstants.WRAPPER_EXTRACTION_FAILED_CRC:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailedcrc", "Extract failed (CRC error)"));
-
-            for (File f : controller.getArchiv().getExtractedFiles()) {
-                if (f.exists()) {
-                    if (!f.delete()) {
-                        logger.warning("Could not delete file " + f.getAbsolutePath());
-                    }
-                }
-            }
-
-            controller.getArchiv().setActive(false);
-            this.onFinished(controller);
-            break;
-        case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL:
-            File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
-            int i = 0;
-            for (File f : controller.getArchiv().getExtractedFiles()) {
-                files[i++] = f;
-            }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(wrapper, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
-
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractok", "Extract OK"));
-
-            if (this.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
-                File fileOutput = new File(controller.getArchiv().getFirstDownloadLink().getFileOutput());
-                File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
-                if (infoFiles.exists() && infoFiles.delete()) {
-                    logger.info(infoFiles.getName() + " removed");
-                }
-            }
-            controller.getArchiv().setActive(false);
-            this.onFinished(controller);
-            break;
-        case ExtractionConstants.NOT_ENOUGH_SPACE:
-            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
-                if (link == null) continue;
-
-                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                link.getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.notenoughspace", "Not enough space to extract"));
-                link.requestGuiUpdate();
-            }
-
-            this.onFinished(controller);
-            break;
-        case ExtractionConstants.REMOVE_ARCHIVE_METADATA:
-            archives.remove(controller.getArchiv());
-            break;
-        case ExtractionConstants.WRAPPER_FILE_NOT_FOUND:
-            pc.setStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-            pc.setStatusText(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
-            controller.getArchiv().setActive(false);
-            this.onFinished(controller);
-            break;
-        }
-    }
-
-    /**
      * Returns the extractor for the {@link DownloadLink}.
      * 
      * @param link
@@ -986,18 +690,6 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         return null;
     }
 
-    /**
-     * Finishes the extraction process.
-     * 
-     * @param controller
-     */
-    private void onFinished(ExtractionController controller) {
-        controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
-        if (controller.getProgressController() != null) {
-            controller.getProgressController().doFinalize(8000);
-        }
-    }
-
     @Override
     public Object interact(String command, Object parameter) {
         if (command.equals("isWorking")) {
@@ -1005,5 +697,26 @@ public class Extraction extends PluginOptional implements ControlListener, Extra
         } else {
             return null;
         }
+    }
+
+    /**
+     * Finishes the extraction process.
+     * 
+     * @param controller
+     */
+    void onFinished(ExtractionController controller) {
+        controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
+        if (controller.getProgressController() != null) {
+            controller.getProgressController().doFinalize(8000);
+        }
+    }
+
+    /**
+     * Removes an {@link Archive} from the list.
+     * 
+     * @param archive
+     */
+    void removeArchive(Archive archive) {
+        archives.remove(archive);
     }
 }

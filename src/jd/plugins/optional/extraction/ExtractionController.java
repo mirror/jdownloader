@@ -50,7 +50,7 @@ public class ExtractionController extends Thread implements JDRunnable {
     private Timer                         timer;
     private Logger                        logger;
 
-    ExtractionController(Archive archiv) {
+    ExtractionController(Archive archiv, Logger logger) {
         this.archive = archiv;
 
         extractor = archive.getExtractor();
@@ -59,7 +59,8 @@ public class ExtractionController extends Thread implements JDRunnable {
 
         config = SubConfiguration.getConfig(JDL.L("plugins.optional.extraction.name", "Extraction"));
 
-        logger = JDLogger.getLogger();
+        this.logger = logger;
+        extractor.setLogger(logger);
         passwordList = new ArrayList<String>();
     }
 

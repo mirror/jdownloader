@@ -17,6 +17,7 @@
 package jd.plugins.optional.extraction;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
@@ -162,4 +163,11 @@ public interface IExtraction {
      * @return A list of parts which are missing.
      */
     public List<String> checkComplete(Archive archive);
+
+    /**
+     * The logger for the ouputs.
+     * 
+     * @param logger
+     */
+    public void setLogger(Logger logger);
 }
