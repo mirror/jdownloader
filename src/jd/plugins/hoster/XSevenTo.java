@@ -28,11 +28,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -51,7 +51,7 @@ public class XSevenTo extends PluginForHost {
         return "http://x7.to/legal";
     }
 
-    public static final Object LOCK = new Object();
+    public static final Object  LOCK            = new Object();
     private static final String PREMIUMONLYTEXT = "(only premium members will be able to download the file|The requested file is larger than|und kann nur von Premium-Benutzern herunter geladen werden)";
 
     public void correctDownloadLink(DownloadLink link) {
@@ -186,6 +186,10 @@ public class XSevenTo extends PluginForHost {
                 String filesize = br.getRegex("<b>(Download|Stream)</b>.*?\\((.*?)\\)").getMatch(1);
                 if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+                if (filesize.contains(",") && filesize.contains(".")) {
+                    /* workaround for 1.000,00 MB bug */
+                    filesize = filesize.replaceFirst("\\.", "");
+                }
                 downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", ".")));
                 if (br.containsHTML(PREMIUMONLYTEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
             } else {
@@ -291,7 +295,7 @@ public class XSevenTo extends PluginForHost {
                      * website checking
                      */
                     /* � cause issues for api, so we do fallback check here */
-                    if (id == null || id.contains("�")) {
+                    if (id == null || id.contains("�") || id.contains("%")) {
                         dl.isAvailable();
                         continue;
                     }
