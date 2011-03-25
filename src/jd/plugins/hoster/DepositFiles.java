@@ -35,12 +35,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -49,18 +49,18 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    private static final String UA = RandomUserAgent.generate();
-    private static final String FILE_NOT_FOUND = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
+    private static final String UA                       = RandomUserAgent.generate();
+    private static final String FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-    private static final String MAINPAGE = "http://depositfiles.com";
+    private static final String MAINPAGE                 = "http://depositfiles.com";
 
-    public String DLLINKREGEX2 = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private final Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
+    public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private final Pattern       FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    private final Pattern       FILE_INFO_SIZE           = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
 
-    private static final Object PREMLOCK = new Object();
+    private static final Object PREMLOCK                 = new Object();
 
-    private static int simultanpremium = 1;
+    private static int          simultanpremium          = 1;
 
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
@@ -103,6 +103,7 @@ public class DepositFiles extends PluginForHost {
             logger.info("GOLD users can download no more than 15 GB for the last 24 hours");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
+        if (br.containsHTML("Entweder existiert diese Datei nicht oder sie wurde aufgrund von")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override

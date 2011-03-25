@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -51,6 +52,7 @@ public class Usershare extends PluginForHost {
     private static final String COOKIE_HOST   = "http://usershare.net";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
+    private static String       AGENT         = RandomUserAgent.generate();
 
     @Override
     public String getAGBLink() {
@@ -67,9 +69,20 @@ public class Usershare extends PluginForHost {
         requestFileInformation(link);
         if (br.containsHTML("\"download1\"")) {
             logger.info("Sending Freeform....");
+            Form freeform = null;
+            Form[] allForms = br.getForms();
+            if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (Form ff : allForms) {
+                if (ff.containsHTML("download1")) {
+                    freeform = ff;
+                    break;
+                }
+            }
+            if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            freeform.remove("method_premium");
             // Ticket Time
             wait(link);
-            br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + getFileID(link.getDownloadURL()) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
+            br.submitForm(freeform);
         }
         String passCode = null;
         String linkurl = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
@@ -102,7 +115,10 @@ public class Usershare extends PluginForHost {
                 linkurl = getDllink();
             } else {
                 Form dlform = br.getFormbyProperty("name", "F1");
-                if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dlform == null) {
+                    logger.warning("dlform is null...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 if (password) {
                     logger.info("The downloadlink seems to be password protected.");
                     passCode = handlePassword(passCode, dlform, link);
@@ -145,7 +161,7 @@ public class Usershare extends PluginForHost {
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1001l, link);
+            if (tt > 0) sleep((tt + 3) * 1001l, link);
         }
     }
 
@@ -202,6 +218,7 @@ public class Usershare extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", AGENT);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(COOKIE_HOST + "/login.html");
         Form loginform = br.getForm(1);
@@ -271,9 +288,9 @@ public class Usershare extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", AGENT);
         br.setCookie(COOKIE_HOST, "lang", "english");
-        // We get a 500 error if there is no "/" at the end of the link
-        br.getPage(parameter.getDownloadURL() + "/");
+        br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("(File Not Found|No such user exist|>This file is either removed due to Copyright Claim, has Expired or is deleted by the uploader|>Reason for deletion<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex specialCase = br.getRegex("Size of the file \\'(.*?)\\' you are trying to download is (.*?)\\.You can download files");
         String filename = br.getRegex("class=\"hdr\"><TD colspan=2>(.*?)</TD>").getMatch(0);
@@ -445,12 +462,14 @@ public class Usershare extends PluginForHost {
         return true;
     }
 
-    private String getFileID(String dlurl) {
-        Regex fileidregex = new Regex(dlurl, COOKIE_HOST.replace("http://", "") + "/" + "(.*?)/(.*?)");
-        String fileid = fileidregex.getMatch(1);
-        if (fileid == null || !fileid.matches("[a-z0-9]+{12}")) fileid = fileidregex.getMatch(0);
-        return fileid;
-    }
+    // private String getFileID(String dlurl) {
+    // Regex fileidregex = new Regex(dlurl, COOKIE_HOST.replace("http://", "") +
+    // "/" + "(.*?)/(.*?)");
+    // String fileid = fileidregex.getMatch(1);
+    // if (fileid == null || !fileid.matches("[a-z0-9]+{12}")) fileid =
+    // fileidregex.getMatch(0);
+    // return fileid;
+    // }
 
     @Override
     public void reset() {
