@@ -57,7 +57,6 @@ public class YahooCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
         link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.yahoocom.only4registered", USERTEXT));
         return AvailableStatus.TRUE;
     }

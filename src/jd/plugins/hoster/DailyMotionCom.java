@@ -55,7 +55,6 @@ public class DailyMotionCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.getPage(downloadLink.getDownloadURL());
