@@ -57,7 +57,10 @@ public class GigaSizeCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         try {
             String token = br.getPage("http://www.gigasize.com/formtoken");
-            Thread.sleep(2000);
+            try {
+                Thread.sleep(2000);
+            } catch (final InterruptedException e) {
+            }
             br.postPage("http://www.gigasize.com/signin", "func=&token=" + token + "&signRem=1&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         } finally {
             br.getHeaders().put("X-Requested-With", null);

@@ -102,9 +102,10 @@ public class MegaFileUploadCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
+            if (br.getURL().contains("DL_FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

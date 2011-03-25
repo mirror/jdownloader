@@ -239,7 +239,7 @@ public class EasyShareCom extends PluginForHost {
         try {
             br.setCookie(MAINPAGE, "language", "en");
             con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             br.followConnection();
         } finally {
             try {

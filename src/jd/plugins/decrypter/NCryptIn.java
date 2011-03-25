@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/folder\\-.+|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
 
-    private static final String             RECAPTCHA      = "recaptcha_challenge_field";
+    private static final String             RECAPTCHA      = "recaptcha/api";
     private static final String             OTHERCAPTCHA   = "\"(/temp/anicaptcha/\\d+\\.gif)\"";
     private static final String             PASSWORDTEXT   = "password";
     private static final String             PASSWORDFAILED = "class=\"error\">\\&bull; Das Passwort ist ung\\&uuml;ltig";
@@ -61,7 +61,10 @@ public class NCryptIn extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getURL().contains("error=crypted_id_invalid")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
         // Handle Captcha and/or password
-        final Form allForm = br.getFormbyProperty("name", "protected");
+        Form allForm = br.getFormbyProperty("name", "protected");
+        if (allForm != null && !(allForm.containsHTML("captcha") && !allForm.containsHTML("recaptcha_challenge")) && (!allForm.containsHTML(RECAPTCHA))) {
+            allForm = br.getForm(2);
+        }
         if (allForm != null) {
             if (allForm.containsHTML(RECAPTCHA)) {
                 for (int i = 0; i <= 5; i++) {
@@ -83,7 +86,7 @@ public class NCryptIn extends PluginForDecrypt {
                 }
                 if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
                 if (br.containsHTML(RECAPTCHA)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-            } else if (allForm.containsHTML("captcha")) {
+            } else if (allForm.containsHTML("captcha") && !allForm.containsHTML("recaptcha_challenge")) {
                 for (int i = 0; i <= 3; i++) {
                     final String captchaLink = br.getRegex(OTHERCAPTCHA).getMatch(0);
                     if (captchaLink == null) { return null; }

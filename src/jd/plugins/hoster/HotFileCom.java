@@ -52,15 +52,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)?" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
-    private final String ua = RandomUserAgent.generate();
-    private static final Object LOCK = new Object();
+    private final String        ua              = RandomUserAgent.generate();
+    private static final Object LOCK            = new Object();
 
     private static final String UNLIMITEDMAXCON = "UNLIMITEDMAXCON";
 
-    private static final String TRY_IWL_BYPASS = "TRY_IWL_BYPASS";
-    private static final String CAPTCHARETRIES = "CAPTCHARETRIES";
+    private static final String TRY_IWL_BYPASS  = "TRY_IWL_BYPASS";
+    private static final String CAPTCHARETRIES  = "CAPTCHARETRIES";
 
-    private boolean directDownload = false;
+    private boolean             directDownload  = false;
 
     public HotFileCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -267,6 +267,7 @@ public class HotFileCom extends PluginForHost {
         requestFileInformation(link);
         if ("http://hotfile.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (directDownload) {
+            logger.info("use directdownload");
             /* use directDownloadLink */
             br.setFollowRedirects(true);
             try {
@@ -347,6 +348,7 @@ public class HotFileCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
+                if (br.containsHTML(">Your download expired, try again<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download-Session expired", 10 * 60 * 1000l);
                 if (br.containsHTML("You are currently downloading")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

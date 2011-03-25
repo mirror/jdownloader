@@ -62,6 +62,12 @@ public class LnkBCm extends PluginForDecrypt {
                     }
                 }
             }
+            if (title == null) {
+                String link = br.getRegex("skipBtn.*?urlholder' value='(http:/.*?)'").getMatch(0);
+                if (link != null) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
+            }
             return decryptedLinks;
         }
         if (found == null) return null;
