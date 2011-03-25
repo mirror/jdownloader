@@ -65,7 +65,12 @@ public class Usershare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (br.containsHTML("\"download1\"")) br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + getFileID(link.getDownloadURL()) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
+        if (br.containsHTML("\"download1\"")) {
+            logger.info("Sending Freeform....");
+            // Ticket Time
+            wait(link);
+            br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + getFileID(link.getDownloadURL()) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
+        }
         String passCode = null;
         String linkurl = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
         if (linkurl == null) {
@@ -105,6 +110,7 @@ public class Usershare extends PluginForHost {
                     logger.info("Put password \"" + passCode + "\" entered by user in the DLForm and submitted it.");
                 }
                 // Ticket Time
+                wait(link);
                 String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
                 if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
                 if (ttt != null) {
@@ -131,6 +137,16 @@ public class Usershare extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void wait(DownloadLink link) throws PluginException {
+        String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt != null) {
+            int tt = Integer.parseInt(ttt);
+            logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
+            if (tt > 0) sleep(tt * 1001l, link);
+        }
     }
 
     private String getDllink() {
@@ -256,7 +272,8 @@ public class Usershare extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(parameter.getDownloadURL());
+        // We get a 500 error if there is no "/" at the end of the link
+        br.getPage(parameter.getDownloadURL() + "/");
         if (br.containsHTML("(File Not Found|No such user exist|>This file is either removed due to Copyright Claim, has Expired or is deleted by the uploader|>Reason for deletion<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex specialCase = br.getRegex("Size of the file \\'(.*?)\\' you are trying to download is (.*?)\\.You can download files");
         String filename = br.getRegex("class=\"hdr\"><TD colspan=2>(.*?)</TD>").getMatch(0);

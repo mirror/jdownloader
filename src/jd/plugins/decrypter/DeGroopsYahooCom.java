@@ -17,19 +17,27 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?de\\.groups\\.yahoo\\.com/group/[a-z0-9]+/(files/([A-Za-z0-9/]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
 public class DeGroopsYahooCom extends PluginForDecrypt {
@@ -87,18 +95,15 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                     return null;
                 }
                 if (photos != null && photos.length != 0) {
-                    progress.setRange(photos.length);
                     for (String photo : photos) {
-                        photo = "http://de.groups.yahoo.com" + photo;
-                        br.getPage(photo);
-                        String finallink = br.getRegex("class=\"ygrp-photos-body-image\" style=\"height: 430px;\"><img src=\"(http://.*?)\"").getMatch(0);
-                        if (finallink == null) finallink = br.getRegex("\"(http://xa\\.yimg\\.com/kq/groups/\\d+/.*?)\"").getMatch(0);
-                        if (finallink == null) {
-                            logger.warning("Couldn't find final-photolink for detailed-link: " + photo + " for mainlink: " + parameter);
-                            return null;
-                        }
-                        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                        progress.increase(1);
+                        photo = "http://de.groups.decryptedhahoo.com" + photo.replaceAll("(picmode=.*?)\\&", "original") + "&picmode=original" + "yahoolink";
+                        DownloadLink dl = createDownloadlink(photo);
+                        dl.setAvailable(true);
+                        // Set this as name else we get problems with simultan
+                        // downloads (every link same name), read names are set
+                        // on downloadstart
+                        dl.setName(Integer.toString(new Random().nextInt(1000000)));
+                        decryptedLinks.add(dl);
                     }
                 }
             }
@@ -110,19 +115,34 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
 
     }
 
+    @SuppressWarnings("unchecked")
     private boolean getUserLogin() throws Exception {
         br.setFollowRedirects(true);
         String username = null;
         String password = null;
+        Form loginForm = null;
         synchronized (LOCK) {
             username = this.getPluginConfig().getStringProperty("user", null);
             password = this.getPluginConfig().getStringProperty("pass", null);
-            Form loginForm = br.getFormbyProperty("name", "login_form");
-            if (loginForm == null) {
-                logger.warning("Login broken!");
-                return false;
-            }
             if (username != null && password != null) {
+                // Load cookies
+                final Object ret = this.getPluginConfig().getProperty("cookies", null);
+                boolean acmatch = username.matches(this.getPluginConfig().getStringProperty("user"));
+                if (acmatch) acmatch = password.matches(this.getPluginConfig().getStringProperty("pass"));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (cookies.containsKey("SSL")) {
+                        for (final String key : cookies.keySet()) {
+                            this.br.setCookie(MAINPAGE, key, cookies.get(key));
+                        }
+                        return true;
+                    }
+                }
+                loginForm = br.getFormbyProperty("name", "login_form");
+                if (loginForm == null) {
+                    logger.warning("Login broken!");
+                    return false;
+                }
                 loginForm.put("login", username);
                 loginForm.put("passwd", password);
                 br.submitForm(loginForm);
@@ -144,10 +164,25 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                     loginForm.put("passwd", password);
                     br.submitForm(loginForm);
                 } else {
+                    // Save login/pass, save cookies, add account to
+                    // accountoverview
                     this.getPluginConfig().setProperty("user", username);
                     this.getPluginConfig().setProperty("pass", password);
+                    Account acc = new Account(username, password);
+                    final PluginForHost yahooHosterplugin = JDUtilities.getPluginForHost("yahoo.com");
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    final Cookies add = this.br.getCookies(MAINPAGE);
+                    for (final Cookie c : add.getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                    this.getPluginConfig().setProperty("cookies", cookies);
+                    acc.setProperty("name", acc.getUser());
+                    acc.setProperty("pass", acc.getPass());
+                    acc.setProperty("cookies", cookies);
+                    // Add account for the yahoo hosterplugin so user doesn't
+                    // have to do it
+                    AccountController.getInstance().addAccount(yahooHosterplugin, acc);
                     this.getPluginConfig().save();
-                    // br.getPage(parameter);
                     return true;
                 }
 
