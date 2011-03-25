@@ -55,7 +55,9 @@ public class PutLockerCom extends PluginForHost {
         if (filename == null) filename = br.getRegex("<title>PutLocker - (.*?)</title>").getMatch(0);
         String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        // User sometimes adds random stuff to filenames when downloading so we
+        // better set the final name here
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
