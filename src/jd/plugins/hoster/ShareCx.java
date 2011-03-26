@@ -30,11 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -215,6 +215,10 @@ public class ShareCx extends PluginForHost {
         } else {
             if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
             Form dlform = br.getFormbyProperty("name", "F1");
+            if (dlform == null) {
+                logger.warning("dlform is null...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.submitForm(dlform);
             dllink = br.getRegex("wenigen Sekunden automatisch... <a href=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) {
@@ -223,7 +227,10 @@ public class ShareCx extends PluginForHost {
                     dllink = br.getRegex("(\"|')(http://file\\d+\\.share\\.cx:\\d+/d/[a-z0-9]+/.*?)(\"|')").getMatch(1);
                 }
             }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                logger.warning("dllink is null...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
         if (dl.getConnection().getContentType().contains("html")) {
