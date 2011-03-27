@@ -31,11 +31,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -79,6 +79,7 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.setCookie("http://uploaded.to", "lang", "en");
+        br.getPage("http://uploaded.to");
         br.getPage("http://uploaded.to/language/en");
         br.postPage("http://uploaded.to/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("User and password do not match")) {
@@ -158,7 +159,8 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (br.getRedirectLocation() == null) {
-            if (br.containsHTML(">Traffic exhausted<")) {
+            /* ul does not take care of set language.... */
+            if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
                 logger.info("Traffic exhausted, temp disabled account");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
