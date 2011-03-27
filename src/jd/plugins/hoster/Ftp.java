@@ -29,13 +29,13 @@ import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface.Chunk;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
+import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.+/[^& \"]+" }, flags = { 0 })
@@ -214,8 +214,8 @@ public class Ftp extends PluginForHost {
             if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             try {
                 ftp.getBroadcaster().addListener(new FtpListener() {
-                    private long before = 0;
-                    private long last = 0;
+                    private long before   = 0;
+                    private long last     = 0;
                     private long lastTime = System.currentTimeMillis();
 
                     public void onDownloadProgress(FtpEvent event) {

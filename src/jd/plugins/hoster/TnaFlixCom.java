@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "http://[\\w\\.]*?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)" }, flags = { 2 })
@@ -43,8 +43,8 @@ public class TnaFlixCom extends PluginForHost {
     }
 
     private static final String FORMAT   = "WAIT1";
-    private static final String MP4REGEX = "\"(http://cdn\\.tnaflix\\.com/tnamp4/[a-z0-9]+/.*?\\.mp4\\?key=[a-z0-9]+)\"";
-    private static final String FLVREGEX = "\"(http://cdn\\.tnaflix\\.com/tnadl/[a-z0-9]+/.*?\\.flv\\?key=[a-z0-9]+)\"";
+    private static final String MP4REGEX = "\"(http://cdn[\\w\\.\\-]*?tnaflix\\.com/tnamp4/[a-z0-9]+/.*?\\.mp4\\?key=[a-z0-9]+)\"";
+    private static final String FLVREGEX = "\"(http://cdn[\\w\\.\\-]*?tnaflix\\.com/tnadl/[a-z0-9]+/.*?\\.flv\\?key=[a-z0-9]+)\"";
 
     private void setConfigElements() {
         ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORMAT, JDL.L("plugins.hoster.tnaflixcom.selectformat", "Prefer mp4 videos (download mp4 if available)")).setDefaultValue(false);
