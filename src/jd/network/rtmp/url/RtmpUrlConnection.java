@@ -1,12 +1,10 @@
 package jd.network.rtmp.url;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.SocketPermission;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.UnknownServiceException;
 import java.security.Permission;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -192,24 +190,6 @@ public class RtmpUrlConnection extends URLConnection {
         // video/quicktime
         // audio/mp4
         return null;
-    }
-
-    /**
-     * Returns an input stream that reads from this open connection. A
-     * SocketTimeoutException can be thrown when reading from the returned input
-     * stream if the read timeout expires before data is available for read.
-     * 
-     * @return an input stream that reads from this open connection.
-     * @exception IOException
-     *                if an I/O error occurs while creating the input stream.
-     * @exception UnknownServiceException
-     *                if the protocol does not support input.
-     * @see #setReadTimeout(int)
-     * @see #getReadTimeout()
-     */
-    @Override
-    public InputStream getInputStream() throws IOException {
-        return new RtmpInputStream(url, parameterMap);
     }
 
     public Permission getPermission() throws IOException {
