@@ -29,12 +29,12 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -206,12 +206,18 @@ public class FileBaseTo extends PluginForHost {
                 if (br.containsHTML("Code wurde falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             forms = br.getForm(0);
-            if (forms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = BrowserAdapter.openDownload(br, downloadLink, forms);
         }
         try {
             URLConnectionAdapter con = dl.getConnection();
             if (con.getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+                if (forms == null) {
+                    logger.warning("forms is null...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                logger.info("The finallink doesn't seem to be a file...");
                 br.getPage(forms.getAction());
                 if (br.containsHTML("error")) {
                     con.disconnect();
