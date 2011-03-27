@@ -1,0 +1,111 @@
+Index: rtmpdump.c
+===================================================================
+--- rtmpdump.c	(revision 563)
++++ rtmpdump.c	(working copy)
+@@ -25,9 +25,11 @@
+ #include <string.h>
+ #include <math.h>
+ #include <stdio.h>
++#include <tchar.h>
++#include <stdarg.h>
+ 
+ #include <signal.h>		// to catch Ctrl-C
+-#include <getopt.h>
++#include "getopt.h"
+ 
+ #include "rtmp.h"
+ #include "log.h"
+@@ -38,6 +40,7 @@
+ #define ftello ftello64
+ #include <io.h>
+ #include <fcntl.h>
++#include <windows.h>
+ #define	SET_BINMODE(f)	setmode(fileno(f), O_BINARY)
+ #else
+ #define	SET_BINMODE(f)
+@@ -542,7 +545,7 @@
+ }
+ 
+ int
+-OpenResumeFile(const char *flvFile,	// file name [in]
++OpenResumeFile(const wchar_t *flvFile,	// file name [in]
+ 	       FILE ** file,	// opened file [out]
+ 	       off_t * size,	// size of the file [out]
+ 	       char **metaHeader,	// meta data read from the file [out]
+@@ -555,7 +558,7 @@
+   *nMetaHeaderSize = 0;
+   *size = 0;
+ 
+-  *file = fopen(flvFile, "r+b");
++  *file = _wfopen(flvFile, L"r+b");
+   if (!*file)
+     return RD_SUCCESS;		// RD_SUCCESS, because we go to fresh file mode instead of quiting
+ 
+@@ -1164,7 +1167,7 @@
+ int
+ main(int argc, char **argv)
+ {
+-  extern char *optarg;
++  extern TCHAR *optarg;
+ 
+   int nStatus = RD_SUCCESS;
+   double percent = 0;
+@@ -1222,7 +1225,7 @@
+   unsigned char hash[HASHLEN];
+ #endif
+ 
+-  char *flvFile = 0;
++  wchar_t *flvFile = 0;
+ 
+ #undef OSS
+ #ifdef WIN32
+@@ -1264,6 +1267,24 @@
+ 
+   /* sleep(30); */
+ 
++  // parsing filepath and converting to unicode
++    wchar_t *uflvFile = 0;
++  #ifdef WIN32
++      wchar_t *cmdstr;
++      wchar_t **wargv;
++      int i;
++      // print parameters, including Unicode.
++      cmdstr = GetCommandLineW();
++      wargv = CommandLineToArgvW(cmdstr, &argc);
++      for (i = 0; i < argc; i++) {
++      	if (wcscmp(wargv[i], L"-o") == 0)
++      	{
++      		uflvFile = wargv[i + 1];
++      		break;
++      	}
++      }
++  #endif
++
+   int opt;
+   struct option longopts[] = {
+     {"help", 0, NULL, 'h'},
+@@ -1535,10 +1556,12 @@
+ 	  STR2AVAL(flashVer, optarg);
+ 	  break;
+ 	case 'o':
+-	  flvFile = optarg;
+-	  if (strcmp(flvFile, "-"))
++	  flvFile = (wchar_t*)optarg;
++	  if (wcscmp(flvFile, L"-"))
+ 	    bStdoutMode = false;
+-
++#ifdef WIN32
++	  flvFile = uflvFile;
++#endif
+ 	  break;
+ 	case 'e':
+ 	  bResume = true;
+@@ -1749,7 +1772,7 @@
+ 	}
+       else
+ 	{
+-	  file = fopen(flvFile, "w+b");
++      file = _wfopen(flvFile, L"w+b");
+ 	  if (file == 0)
+ 	    {
+ 	      LogPrintf("Failed to open file! %s\n", flvFile);

@@ -36,7 +36,7 @@ public class RuTubeRu extends PluginForHost {
 
     public RuTubeRu(final PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(5000l);
+        setStartIntervall(5000l);
     }
 
     @Override
@@ -51,19 +51,19 @@ public class RuTubeRu extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        this.requestFileInformation(downloadLink);
-        String linkurl = this.br.getRegex("player.swf\\?buffer_first=1\\.0&file=(.*?)&xurl").getMatch(0);
+        requestFileInformation(downloadLink);
+        String linkurl = br.getRegex("player.swf\\?buffer_first=1\\.0&file=(.*?)&xurl").getMatch(0);
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         linkurl = Encoding.urlDecode(linkurl, true);
         final String video_id = linkurl.substring(linkurl.lastIndexOf("/") + 1, linkurl.lastIndexOf("."));
         linkurl = linkurl.replaceFirst(linkurl.substring(linkurl.lastIndexOf(".") + 1, linkurl.length()), "xml");
         linkurl = linkurl + "?referer=" + Encoding.urlEncode(downloadLink.getDownloadURL() + "?v=" + video_id);
-        this.br.getPage(linkurl);
-        linkurl = this.br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
+        br.getPage(linkurl);
+        linkurl = br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (linkurl.startsWith("rtmp:")) {
-            this.dl = new RTMPDownload(this, downloadLink, linkurl);
-            final RtmpUrlConnection rtmp = ((RTMPDownload) this.dl).getRtmpConnection();
+            dl = new RTMPDownload(this, downloadLink, linkurl);
+            final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             // Parametersetup
             // StreamUrl:
@@ -74,48 +74,49 @@ public class RuTubeRu extends PluginForHost {
             final String playpath = linkurl.substring(linkurl.lastIndexOf("mp4:"));
             String host = new Regex(linkurl, "(.*?)(rutube.ru/|rutube.ru:1935/)").getMatch(-1);
             final String app = linkurl.replace(playpath, "").replace(host, "");
-            if ((playpath == null) || (host == null) || (app == null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (playpath == null || host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             if (host.endsWith("ru/")) {
                 host = host.replace("ru/", "ru:1935/");
             }
             if (app.equals("vod/")) {
                 rtmp.setLive(true);
+            } else {
+                rtmp.setResume(true);
             }
-            rtmp.setLive(app.equals("vod/"));
-            rtmp.setApp(app);
-            rtmp.setTcUrl(host + app);
-            rtmp.setSwfUrl("http://rutube.ru/player.swf");
-            rtmp.setSwfVfy(true);
             rtmp.setPlayPath(playpath);
-            ((RTMPDownload) this.dl).startDownload();
+            rtmp.setApp(app);
+            rtmp.setUrl(host + app);
+            rtmp.setSwfUrl("http://rutube.ru/player.swf");
+
+            ((RTMPDownload) dl).startDownload();
         } else {
-            this.br.setFollowRedirects(true);
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, linkurl, true, 0);
-            if (this.dl.getConnection().getContentType().contains("html")) {
-                this.br.followConnection();
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.dl.startDownload();
+            dl.startDownload();
         }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        this.br.setFollowRedirects(false);
-        this.br.getPage(downloadLink.getDownloadURL());
-        if (this.br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final String fsk18 = this.br.getRegex("<p><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        final String fsk18 = br.getRegex("<p><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
         if (fsk18 != null) {
-            this.br.getPage(fsk18);
+            br.getPage(fsk18);
         }
-        this.br.setFollowRedirects(true);
-        String filename = this.br.getRegex("<title>(.*?):: Видео на RuTube").getMatch(0);
+        br.setFollowRedirects(true);
+        String filename = br.getRegex("<title>(.*?):: Видео на RuTube").getMatch(0);
         if (filename == null) {
-            filename = this.br.getRegex("meta name=\"title\" content=\"(.*?):: Видео на RuTube").getMatch(0);
+            filename = br.getRegex("meta name=\"title\" content=\"(.*?):: Видео на RuTube").getMatch(0);
         }
-        final String filesize = this.br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
-        if ((filename == null) || (filesize == null)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        final String filesize = br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim() + ".flv");
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;

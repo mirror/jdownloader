@@ -33,9 +33,9 @@ import jd.plugins.PluginForHost;
 public class ARDMediathek extends PluginForHost {
 
     private String[] urlValues;
-    private String quality;
+    private String   quality;
 
-    public ARDMediathek(PluginWrapper wrapper) {
+    public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,7 +45,37 @@ public class ARDMediathek extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        final String[][] streams = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"(.*?)\", \"(.*?)\"\\);").getMatches();
+
+        String[] stream = null;
+        for (final String[] s : streams) {
+            if (s[3].contains("Web-" + quality)) {
+                stream = s;
+                break;
+            }
+        }
+        // quality not found
+        if (stream == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = new RTMPDownload(this, downloadLink, stream[2] + stream[3]);
+        final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+        rtmp.setPlayPath(stream[3]);
+        rtmp.setApp("ardfs/");
+        rtmp.setUrl(stream[2]);
+        rtmp.setResume(true);
+
+        ((RTMPDownload) dl).startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         // check if rtmp link is valid here
         urlValues = new Regex(downloadLink.getDownloadURL(), "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/(\\d+)\\?documentId=(\\d+)\\&q=(\\w)").getRow(0);
         quality = urlValues[2];
@@ -53,34 +83,8 @@ public class ARDMediathek extends PluginForHost {
         br.getPage("http://www.ardmediathek.de/ard/servlet/content/" + urlValues[0] + "?documentId=" + urlValues[1]);
         // invalid content
 
-        if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String[][] streams = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"(.*?)\", \"(.*?)\"\\);").getMatches();
-
-        String[] stream = null;
-        for (String[] s : streams) {
-            if (s[3].contains("Web-" + quality)) {
-                stream = s;
-                break;
-            }
-        }
-        // quality not found
-        if (stream == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = new RTMPDownload(this, downloadLink, stream[2] + stream[3]);
-        RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPlayPath(stream[3]);
-        rtmp.setApp("ardfs/");
-        ((RTMPDownload) dl).startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override
@@ -88,10 +92,10 @@ public class ARDMediathek extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

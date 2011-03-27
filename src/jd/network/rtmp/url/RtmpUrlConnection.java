@@ -9,58 +9,71 @@ import java.net.URLConnection;
 import java.net.UnknownServiceException;
 import java.security.Permission;
 import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * <tt>UrlConnection</tt> for the rtmp protocol
  * 
  * @author mike0007
+ * @author bismarck
  */
 public class RtmpUrlConnection extends URLConnection {
 
-    private final static int DEFAULT_PORT = 1935;
+    private final static int          DEFAULT_PORT  = 1935;
 
     // Connection Parameters
-    private String KEY_APP = "app";
-    private String KEY_TC_URL = "tcUrl";
-    private String KEY_PAGE_URL = "pageUrl";
-    private String KEY_FLASH_VER = "flashVer";
-    private String KEY_SWF_URL = "swfUrl";
-    private String KEY_CONN = "conn";
+    private final String              KEY_APP       = "a"; // app
+    private final String              KEY_TC_URL    = "t"; // tcUrl
+    private final String              KEY_PAGE_URL  = "p"; // pageUrl
+    private final String              KEY_FLASH_VER = "f"; // flashVer
+    private final String              KEY_SWF_URL   = "s"; // swfUrl
+    private final String              KEY_CONN      = "C"; // conn
+    private final String              KEY_RTMP      = "r"; // Url
 
     // Session Parameters
-    private String KEY_PLAYPATH = "playpath";
-    private String KEY_PLAYLIST = "playlist";
-    private String KEY_LIVE = "live";
-    private String KEY_SUBSCRIBE = "subscribe";
-    private String KEY_START = "start";
-    private String KEY_STOP = "stop";
-    private String KEY_BUFFER = "buffer";
-    private String KEY_TIMEOUT = "timeout";
+    private final String              KEY_PLAYPATH  = "y"; // playpath
+    private final String              KEY_LIVE      = "v"; // live
+    private final String              KEY_SUBSCRIBE = "d"; // subscribe
+    private final String              KEY_START     = "A"; // start
+    private final String              KEY_STOP      = "B"; // stop
+    private final String              KEY_BUFFER    = "b"; // buffer
+    private final String              KEY_TIMEOUT   = "m"; // timeout
+    private final String              KEY_RESUME    = "e"; // resume
 
     // Security Parameters
-    private String KEY_SWF_VFY = "swfVfy";
-    private String KEY_SWF_AGE = "swfAge";
-    private String KEY_TOKEN = "token";
+    private final String              KEY_SWF_VFY   = "W"; // swfVfy
+    private final String              KEY_SWF_AGE   = "X"; // swfAge"
+    private final String              KEY_TOKEN     = "T"; // token
 
     // Network Parameters
-    private String KEY_SOCKS = "socks";
+    private final String              KEY_SOCKS     = "S"; // socks
 
-    private HashMap<String, String> parameterMap = null;
+    protected HashMap<String, String> parameterMap  = null;
 
     /**
      * Constructor
      * <p>
-     * An example character string suitable for use with RTMP_SetupURL():
+     * An example character string suitable for use with RtmpDump:
      * <p>
      * <tt>
-     * "rtmp://flashserver:1935/ondemand/thefile swfUrl=http://flashserver/player.swf swfVfy=1"
+     * "rtmp://flashserver:1935/ondemand/___the_file___"
+     * </tt>
+     * </p>
+     * <p>
+     * <tt>
+     * "<----------Host--------><--App--><--Playpath-->"
+     * </tt>
+     * </p>
+     * <p>
+     * <tt>
+     * "<--------------TcUrl------------>"
      * </tt>
      * </p>
      * 
      * @param url
      *            rtmp <tt>URL</tt> to the rtmp source
      */
-    public RtmpUrlConnection(URL url) {
+    public RtmpUrlConnection(final URL url) {
         this(url, new HashMap<String, String>());
     }
 
@@ -79,200 +92,9 @@ public class RtmpUrlConnection extends URLConnection {
      * @param parameterMap
      *            <tt>HashMap</tt> with parameters for the stream
      */
-    public RtmpUrlConnection(URL url, HashMap<String, String> parameterMap) {
+    public RtmpUrlConnection(final URL url, final HashMap<String, String> parameterMap) {
         super(url);
         this.parameterMap = parameterMap;
-    }
-
-    /**
-     * Name of application to connect to on the RTMP server. Overrides the app
-     * in the RTMP URL. Sometimes the librtmp URL parser cannot determine the
-     * app name automatically, so it must be given explicitly using this option.
-     * 
-     * @param value
-     */
-    public void setApp(String value) {
-        parameterMap.put(KEY_APP, value);
-    }
-
-    /**
-     * URL of the web page in which the media was embedded. By default no value
-     * will be sent.
-     * 
-     * @param value
-     */
-    public void setPageUrl(String value) {
-        parameterMap.put(KEY_PAGE_URL, value);
-    }
-
-    /**
-     * Append arbitrary AMF data to the Connect message. The type must be B for
-     * Boolean, N for number, S for string, O for object, or Z for null. For
-     * Booleans the data must be either 0 or 1 for FALSE or TRUE, respectively.
-     * Likewise for Objects the data must be 0 or 1 to end or begin an object,
-     * respectively. Data items in subobjects may be named, by prefixing the
-     * type with 'N' and specifying the name before the value, e.g. NB:myFlag:1.
-     * This option may be used multiple times to construct arbitrary AMF
-     * sequences. E.g.
-     * <p>
-     * <tt>
-     * conn=B:1 conn=S:authMe conn=O:1 conn=NN:code:1.23 conn=NS:flag:ok conn=O:0
-     * </tt>
-     * </p>
-     * 
-     * @param value
-     */
-    public void setConn(String value) {
-        parameterMap.put(KEY_CONN, value);
-    }
-
-    public void setSocks(String value) {
-        parameterMap.put(KEY_SOCKS, value);
-    }
-
-    /**
-     * Version of the Flash plugin used to run the SWF player. The default is
-     * "LNX 10,0,32,18".
-     * 
-     * @param value
-     */
-    public void setFlashVer(String value) {
-        parameterMap.put(KEY_FLASH_VER, value);
-    }
-
-    /**
-     * Specify how many days to use the cached SWF info before re-checking. Use
-     * 0 to always check the SWF URL. Note that if the check shows that the SWF
-     * file has the same modification timestamp as before, it will not be
-     * retrieved again.
-     * 
-     * @param value
-     */
-    public void setSwfAge(String value) {
-        parameterMap.put(KEY_SWF_AGE, value);
-    }
-
-    /**
-     * URL of the SWF player for the media. By default no value will be sent.
-     * 
-     * @param value
-     */
-    public void setSwfUrl(String value) {
-        parameterMap.put(KEY_SWF_URL, value);
-    }
-
-    /**
-     * If the value is 1 or TRUE, the SWF player is retrieved from the specified
-     * swfUrl for performing SWF Verification. The SWF hash and size (used in
-     * the verification step) are computed automatically. Also the SWF
-     * information is cached in a .swfinfo file in the user's home directory, so
-     * that it doesn't need to be retrieved and recalculated every time. The
-     * .swfinfo file records the SWF URL, the time it was fetched, the
-     * modification timestamp of the SWF file, its size, and its hash. By
-     * default, the cached info will be used for 30 days before re-checking.
-     * 
-     * @param value
-     */
-    public void setSwfVfy(boolean value) {
-        parameterMap.put(KEY_SWF_VFY, (value ? "1" : "0"));
-    }
-
-    /**
-     * URL of the target stream. Defaults to rtmp[t][e|s]://host[:port]/app.
-     * 
-     * @param value
-     */
-    public void setTcUrl(String value) {
-        parameterMap.put(KEY_TC_URL, value);
-    }
-
-    /**
-     * Set buffer time to num milliseconds. The default is 30000.
-     * 
-     * @param value
-     */
-    public void setBuffer(int value) {
-        parameterMap.put(KEY_BUFFER, String.valueOf(value));
-    }
-
-    /**
-     * Timeout the session after num seconds without receiving any data from the
-     * server. The default is 120.
-     * 
-     * @param value
-     */
-    public void setTimeOut(int value) {
-        parameterMap.put(KEY_TIMEOUT, String.valueOf(value));
-    }
-
-    /**
-     * Stop at num seconds into the stream.
-     * 
-     * @param value
-     */
-    public void setStop(int value) {
-        parameterMap.put(KEY_STOP, String.valueOf(value));
-    }
-
-    /**
-     * Start at num seconds into the stream. Not valid for live streams.
-     * 
-     * @param value
-     */
-    public void setStart(int value) {
-        parameterMap.put(KEY_START, String.valueOf(value));
-    }
-
-    /**
-     * Key for SecureToken response, used if the server requires SecureToken
-     * authentication.
-     * 
-     * @param value
-     */
-    public void setToken(String value) {
-        parameterMap.put(KEY_TOKEN, value);
-    }
-
-    /**
-     * Name of live stream to subscribe to. Defaults to playpath.
-     * 
-     * @param value
-     */
-    public void setSubscribe(String value) {
-        parameterMap.put(KEY_SUBSCRIBE, value);
-    }
-
-    /**
-     * Specify that the media is a live stream. No resuming or seeking in live
-     * streams is possible.
-     * 
-     * @param value
-     */
-    public void setLive(boolean value) {
-        parameterMap.put(KEY_LIVE, (value ? "1" : "0"));
-    }
-
-    /**
-     * If the value is 1 or TRUE, issue a set_playlist command before sending
-     * the play command. The playlist will just contain the current playpath. If
-     * the value is 0 or FALSE, the set_playlist command will not be sent. The
-     * default is FALSE.
-     * 
-     * @param value
-     */
-    public void setPlayList(boolean value) {
-        parameterMap.put(KEY_PLAYLIST, (value ? "1" : "0"));
-    }
-
-    /**
-     * Overrides the playpath parsed from the RTMP URL. Sometimes the rtmpdump
-     * URL parser cannot determine the correct playpath automatically, so it
-     * must be given explicitly using this option.
-     * 
-     * @param value
-     */
-    public void setPlayPath(String value) {
-        parameterMap.put(KEY_PLAYPATH, value);
     }
 
     /**
@@ -311,6 +133,24 @@ public class RtmpUrlConnection extends URLConnection {
      */
     public void disconnect() {
         connected = false;
+    }
+
+    /**
+     * Create command line parameters.
+     */
+    public String getCommandLineParameter() {
+        String cmdargs = "";
+        if (parameterMap != null) {
+            final Iterator<String> keyIter = parameterMap.keySet().iterator();
+            while (keyIter.hasNext()) {
+                final String key = keyIter.next();
+                cmdargs += " -" + key;
+                if (parameterMap.get(key) != null) {
+                    cmdargs += " \"" + parameterMap.get(key) + "\"";
+                }
+            }
+        }
+        return cmdargs;
     }
 
     /**
@@ -375,9 +215,206 @@ public class RtmpUrlConnection extends URLConnection {
     public Permission getPermission() throws IOException {
         int port = url.getPort();
         port = port < 0 ? DEFAULT_PORT : port;
-        String host = url.getHost() + ":" + port;
-        Permission permission = new SocketPermission(host, "connect");
+        final String host = url.getHost() + ":" + port;
+        final Permission permission = new SocketPermission(host, "connect");
         return permission;
     }
 
+    /**
+     * Name of application to connect to on the RTMP server. Overrides the app
+     * in the RTMP URL. Sometimes the librtmp URL parser cannot determine the
+     * app name automatically, so it must be given explicitly using this option.
+     * 
+     * @param value
+     */
+    public void setApp(final String value) {
+        parameterMap.put(KEY_APP, value);
+    }
+
+    /**
+     * Set buffer time to num milliseconds. The default is 36000000.
+     * 
+     * @param value
+     */
+    public void setBuffer(final int value) {
+        parameterMap.put(KEY_BUFFER, String.valueOf(value));
+    }
+
+    /**
+     * Append arbitrary AMF data to the Connect message. The type must be B for
+     * Boolean, N for number, S for string, O for object, or Z for null. For
+     * Booleans the data must be either 0 or 1 for FALSE or TRUE, respectively.
+     * Likewise for Objects the data must be 0 or 1 to end or begin an object,
+     * respectively. Data items in subobjects may be named, by prefixing the
+     * type with 'N' and specifying the name before the value, e.g. NB:myFlag:1.
+     * This option may be used multiple times to construct arbitrary AMF
+     * sequences. E.g.
+     * <p>
+     * <tt>
+     * conn=B:1 conn=S:authMe conn=O:1 conn=NN:code:1.23 conn=NS:flag:ok conn=O:0
+     * </tt>
+     * </p>
+     * 
+     * @param value
+     */
+    public void setConn(final String value) {
+        parameterMap.put(KEY_CONN, value);
+    }
+
+    /**
+     * Version of the Flash plugin used to run the SWF player. The default is
+     * "LNX 10,0,32,18".
+     * 
+     * @param value
+     */
+    public void setFlashVer(final String value) {
+        parameterMap.put(KEY_FLASH_VER, value);
+    }
+
+    /**
+     * Specify that the media is a live stream. No resuming or seeking in live
+     * streams is possible.
+     * 
+     * @param value
+     */
+    public void setLive(final boolean value) {
+        parameterMap.put(KEY_LIVE, (value ? "1" : "0"));
+    }
+
+    /**
+     * URL of the web page in which the media was embedded. By default no value
+     * will be sent.
+     * 
+     * @param value
+     */
+    public void setPageUrl(final String value) {
+        parameterMap.put(KEY_PAGE_URL, value);
+    }
+
+    /**
+     * Overrides the playpath parsed from the RTMP URL. Sometimes the rtmpdump
+     * URL parser cannot determine the correct playpath automatically, so it
+     * must be given explicitly using this option.
+     * 
+     * @param value
+     */
+    public void setPlayPath(final String value) {
+        parameterMap.put(KEY_PLAYPATH, value);
+    }
+
+    /**
+     * Resume an incomplete RTMP download.
+     * 
+     * @param value
+     */
+    public void setResume(final boolean value) {
+        if (value) {
+            parameterMap.put(KEY_RESUME, null);
+        }
+    }
+
+    /**
+     * Use the specified SOCKS proxy.
+     * 
+     * @param value
+     *            host:port
+     */
+    public void setSocks(final String value) {
+        parameterMap.put(KEY_SOCKS, value);
+    }
+
+    /**
+     * Start at num seconds into the stream. Not valid for live streams.
+     * 
+     * @param value
+     */
+    public void setStart(final int value) {
+        parameterMap.put(KEY_START, String.valueOf(value));
+    }
+
+    /**
+     * Stop at num seconds into the stream.
+     * 
+     * @param value
+     */
+    public void setStop(final int value) {
+        parameterMap.put(KEY_STOP, String.valueOf(value));
+    }
+
+    /**
+     * Name of live stream to subscribe to. Defaults to playpath.
+     * 
+     * @param value
+     */
+    public void setSubscribe(final String value) {
+        parameterMap.put(KEY_SUBSCRIBE, value);
+    }
+
+    /**
+     * Specify how many days to use the cached SWF info before re-checking. Use
+     * 0 to always check the SWF URL. Note that if the check shows that the SWF
+     * file has the same modification timestamp as before, it will not be
+     * retrieved again.
+     * 
+     * @param value
+     */
+    public void setSwfAge(final String value) {
+        parameterMap.put(KEY_SWF_AGE, value);
+    }
+
+    /**
+     * URL of the SWF player for the media. By default no value will be sent.
+     * 
+     * @param value
+     */
+    public void setSwfUrl(final String value) {
+        parameterMap.put(KEY_SWF_URL, value);
+    }
+
+    /**
+     * URL to player swf file, compute hash/size automatically.
+     * 
+     * @param value
+     */
+    public void setSwfVfy(final String value) {
+        parameterMap.put(KEY_SWF_VFY, value);
+    }
+
+    /**
+     * URL of the target stream. Defaults to rtmp[t][e|s]://host[:port]/app.
+     * 
+     * @param value
+     */
+    public void setTcUrl(final String value) {
+        parameterMap.put(KEY_TC_URL, value);
+    }
+
+    /**
+     * Timeout the session after num seconds without receiving any data from the
+     * server. The default is 120.
+     * 
+     * @param value
+     */
+    public void setTimeOut(final int value) {
+        parameterMap.put(KEY_TIMEOUT, String.valueOf(value));
+    }
+
+    /**
+     * Key for SecureToken response, used if the server requires SecureToken
+     * authentication.
+     * 
+     * @param value
+     */
+    public void setToken(final String value) {
+        parameterMap.put(KEY_TOKEN, value);
+    }
+
+    /**
+     * URL (e.g. rtmp[t][e|s]://hostname[:port]/app/).
+     * 
+     * @param value
+     */
+    public void setUrl(final String value) {
+        parameterMap.put(KEY_RTMP, value);
+    }
 }

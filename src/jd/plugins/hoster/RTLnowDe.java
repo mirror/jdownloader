@@ -33,6 +33,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -40,7 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.w3c.dom.Document;
 
-@HostPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "rtl-now.rtl.de" }, urls = { "http://rtl-now\\.rtl\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "rtl-now.rtl.de", "voxnow.de", "superrtlnow.de" }, urls = { "http://rtl-now\\.rtl\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://www\\.voxnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://www\\.superrtlnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
 public class RTLnowDe extends PluginForHost {
 
     private static String MAINPAGE = "http://rtl-now.rtl.de";
@@ -93,7 +94,7 @@ public class RTLnowDe extends PluginForHost {
         final String fkcont = xPath.evaluate("/data/fkcontent", doc);
         final String timetp = xPath.evaluate("/data/timetype", doc);
         final String season = xPath.evaluate("/data/season", doc);
-        // final String param4 = xPath.evaluate("/data/para4", doc);
+
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         if (dllink.startsWith("rtmp")) {
@@ -106,7 +107,7 @@ public class RTLnowDe extends PluginForHost {
             // <----------Host---------><-App-><---------------------PlayPath---------------------------->
             // <-------------TcUrl------------>
 
-            String playpath = new Regex(dllink, "rtlnow/(.*?)$").getMatch(0);
+            String playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow)/(.*?)$").getMatch(1);
             String host = new Regex(dllink, "(.*?)(rtl.de/|rtl.de:1935/)").getMatch(-1);
             final String app = dllink.replace(playpath, "").replace(host, "");
             if (playpath == null || host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -129,13 +130,14 @@ public class RTLnowDe extends PluginForHost {
                 playpath = playpath + "&season=" + season;
             }
 
-            rtmp.setApp(app);
-            rtmp.setTcUrl(host + app);
-            rtmp.setSwfVfy(true);
-            rtmp.setSwfUrl(swfurl);
-            // rtmp.setToken(param4);
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
             rtmp.setPlayPath(playpath);
+            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setSwfVfy(swfurl);
+            rtmp.setFlashVer("WIN 10,1,102,64");
+            rtmp.setApp(app);
+            rtmp.setUrl(host + app);
+            rtmp.setResume(true);
+
             ((RTMPDownload) dl).startDownload();
         } else {
             br.setFollowRedirects(true);
@@ -151,14 +153,25 @@ public class RTLnowDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
+        final String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
-        if (folge != null && !folge.contains(filename)) {
-            filename += " - " + folge;
+        final String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
+        if (folge != null && filename.contains(folge)) {
+            filename = filename.substring(0, filename.lastIndexOf("-")).trim();
         }
-        downloadLink.setName(filename.trim() + ".flv");
+        final String season = dllink.contains("season=") ? new Regex(dllink, "season=(\\d+)").getMatch(0) : "0";
+        if (!season.equals("0")) {
+            filename += " - Staffel " + season;
+        }
+        filename = filename.trim();
+        if (downloadLink.isDefaultFilePackage()) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(filename.replaceAll(folge, ""));
+            downloadLink.setFilePackage(fp);
+        }
+        downloadLink.setName(folge + ".flv");
         return AvailableStatus.TRUE;
     }
 
