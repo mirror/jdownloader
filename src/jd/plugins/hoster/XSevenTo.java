@@ -28,11 +28,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -93,7 +93,10 @@ public class XSevenTo extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "yyyy-MM-dd HH:mm:ss", null));
             } else {
                 if (!br.containsHTML("img/sym/crown.png")) {
+                    account.setValid(false);
                     ai.setExpired(true);
+                } else {
+                    ai.setValidUntil(-1);
                 }
             }
             ai.setStatus("Premium User");

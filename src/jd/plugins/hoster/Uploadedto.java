@@ -31,11 +31,11 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -136,8 +136,8 @@ public class Uploadedto extends PluginForHost {
     private static void workAroundTimeOut(final Browser br) {
         try {
             if (br != null) {
-                br.setConnectTimeout(30000);
-                br.setReadTimeout(30000);
+                br.setConnectTimeout(45000);
+                br.setReadTimeout(45000);
             }
         } catch (final Throwable e) {
         }
@@ -170,12 +170,12 @@ public class Uploadedto extends PluginForHost {
             if (form.getAction() != null && form.getAction().contains("register")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             logger.info("Download from:" + form.getAction());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
             dl.setFileSizeVerified(true);
         } else {
             logger.info("Direct Downloads active");
             logger.info("Download from:" + br.getRedirectLocation());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
             dl.setFileSizeVerified(true);
         }
         try {

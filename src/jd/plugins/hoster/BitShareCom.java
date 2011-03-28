@@ -42,13 +42,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class BitShareCom extends PluginForHost {
 
     // private static final String RECAPTCHA = "/recaptcha/";
-    private static final String JSONHOST = "http://bitshare.com/files-ajax/";
+    private static final String JSONHOST    = "http://bitshare.com/files-ajax/";
     private static final String AJAXIDREGEX = "var ajaxdl = \"(.*?)\";";
     private static final String FILEIDREGEX = "bitshare\\.com/files/([a-z0-9]{8})/";
     private static final String DLLINKREGEX = "SUCCESS#(http://.+)";
-    private static final String MAINPAGE = "http://bitshare.com/";
+    private static final String MAINPAGE    = "http://bitshare.com/";
 
-    private static final String agent = RandomUserAgent.generate();
+    private static final String agent       = RandomUserAgent.generate();
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -178,7 +178,8 @@ public class BitShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", agent);
         br.setCookie(MAINPAGE, "language_selection", "EN");
-        br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+        br.getPage("http://bitshare.com");
+        br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=&submit=Login");
         if (!br.containsHTML("\\(<b>Premium</b>\\)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -191,6 +192,7 @@ public class BitShareCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://bitshare.com");
         br.getPage("http://bitshare.com/myaccount.html");
         String space = br.getRegex(">Used Space:</td>[\t\n\r ]+<td><b>(.*?)</b></td>").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());

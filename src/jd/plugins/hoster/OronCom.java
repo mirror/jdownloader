@@ -28,12 +28,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -94,7 +94,14 @@ public class OronCom extends PluginForHost {
         if (availableTraffic == null) {
             availableTraffic = br.getRegex("Traffic Available:</td>.*?<td>(.*?)</td>").getMatch(0);
         }
-        if (availableTraffic != null) ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+        if (availableTraffic != null) {
+            availableTraffic = availableTraffic.trim();
+            if (availableTraffic.startsWith("-")) {
+                ai.setTrafficLeft(0);
+            } else {
+                ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+            }
+        }
         if (!nopremium) {
             String expire = br.getRegex("<td>Premium Account expires:</td>.*?<td>(.*?)</td>").getMatch(0);
             if (expire == null) {
