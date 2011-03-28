@@ -37,7 +37,7 @@ public class DoriDroNet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (parameter.contains(".mp3")) {
+        if (parameter.substring(parameter.length() - 5, parameter.length()).equals(".html")) {
             String finallink = getFinallink();
             if (finallink == null) {
                 logger.warning("Single-Link failed: " + parameter);
@@ -45,7 +45,7 @@ public class DoriDroNet extends PluginForDecrypt {
             }
             String filename = getFilename();
             DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            if (filename != null) dl.setFinalFileName(filename + ".mp3");
+            if (filename != null) dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
             decryptedLinks.add(dl);
         } else {
             String fpName = br.getRegex("<title>(.*?) Album Download</title>").getMatch(0);
@@ -69,7 +69,7 @@ public class DoriDroNet extends PluginForDecrypt {
                     }
                     String filename = getFilename();
                     DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                    if (filename != null) dl.setFinalFileName(filename + ".mp3");
+                    if (filename != null) dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
                     decryptedLinks.add(dl);
                 }
                 progress.increase(1);
