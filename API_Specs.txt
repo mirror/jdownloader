@@ -9,7 +9,7 @@ JDownloader Premium API
 			
 	1.3		"Challenge" Parameter
 			To detect "Men in the middle", each request has to send a &challenge=<RANDOM STRING> parameter. 
-			The response has to be surounded by this value. A normal, "error-free" response thus looks like this:
+			The response has to be surrounded by this value. A normal, "error-free" response thus looks like this:
 
 			-----------------------------------------------------------------------
 			|
@@ -26,7 +26,7 @@ JDownloader Premium API
 			|
 			-----------------------------------------------------------------------
 	1.5		Encoding
-			Please make sure that all parameters are send and handled in UTF-8 Encoding. Please asure that your API is able to handle special chars correctly
+			Please make sure that all parameters are send and handled in UTF-8 Encoding. Please assure that your API is able to handle special chars correctly
 
 	1.6		Login
 			Login can be done by &user and &pass parameter in each request, or by sending the &session parameter (see "getAccountDetails")
@@ -50,38 +50,46 @@ JDownloader Premium API
 			|	}
 			|
 			-----------------------------------------------------------------------
-			type			[String]	
-				Free String that describes in short the accounttype (free, premium, gold, platin,...)
-			expireTime		[long]in milliseconds
-				Expire Time of this account in milliseconds unixtimestamp
-				-1 	= 	unlimited
-			traffic			[long] in bytes
-				Free traffic available for download. 
-			autoRefill		[boolean]
-				True if this account autorefills without user interaction. For example if the account has a daily limit, and auto  refills the next day
-			concurrentDownloads	[long]
-				How many simultane downloads can we start?
-				-1	=	unlimited
-			maxChunks		[long]
-				By loading one file with several connections, we can boost the users downloadspeed. The server has to support several connections, and http Range-Headers. We call this "chunkload"
-				-1	=	unlimited
-			concurrentConnections	[long]
-				If we use Chunkload, we have several connections per file. If there is a simultane connection limit, please set this here.
-				-1	=	unlimited
-			resume			[boolean]
-				Is Resuming broken downloads allowed? This Feature requires Serverside enabled range Headers
-			session			[String] OPTIONAL
-				To use auth protected API Features, we need to login. We use either &user and &pass parameters, or a &session parameter. If you want us to use the session parameter as often as possible, please return this parameter here. We will renew the session if we get a session invalid error.
+    			type			[String]	
+    				Free String that describes in short the accounttype (free, premium, gold, platin,...)
+    				
+    			expireTime		[long]in milliseconds
+    				Expire Time of this account in milliseconds unixtimestamp
+    				-1 	= 	unlimited
+    				
+    			traffic			[long] in bytes
+    				Free traffic available for download. 
+    				
+    			autoRefill		[boolean]
+    				True if this account autorefills without user interaction. For example if the account has a daily limit, and auto  refills the next day
+    			
+    			concurrentDownloads	[long]
+    				How many concurrent downloads can we start?
+    				-1	=	unlimited
+    			
+    			maxChunks		[long]
+    				By loading one file with several connections, we can boost the users downloadspeed. The server has to support several connections, and http Range-Headers. We call this "chunkload"
+    				-1	=	unlimited
+    			
+    			concurrentConnections	[long]
+    				If we use Chunkload, we have several connections per file. If there is a concurrent connection limit, please set this here.
+    				-1	=	unlimited
+    			
+    			resume			[boolean]
+    				Is Resuming broken downloads allowed? This Feature requires Serverside enabled range Headers
+    			
+    			session			[String] OPTIONAL
+    				To use auth protected API Features, we need to login. We use either &user and &pass parameters, or a &session parameter. If you want us to use the session parameter as often as possible, please return this parameter here. We will renew the session if we get a session invalid error.
 
 		2.1.2	Possible Errors
 				(Please see the Error Section to get a better description of each error)
-			1 	user unknown
-			2	password wrong
-			3	logins wrong
-			4	session invalid
-			5	IP blocked
-			0	API Error
-			6	Custom
+    			1 	user unknown
+    			2	password wrong
+    			3	logins wrong
+    			4	session invalid
+    			5	IP blocked
+    			0	API Error
+    			6	Custom
 
 		2.1.3	Example Request
 			2.1.3.1 Success
@@ -137,211 +145,218 @@ JDownloader Premium API
 				A newline (\r\n) separated list of all links(linkids). We do not have to use full links here, but can use link-IDs instead.
 
 		2.2.2	Response
-			The response is a map. Each linkid is mapped to a statusobject
-			
-			-----------------------------------------------------------------------
-			|
-			|	{
-			|		"linkid1"	:	{
-			|						"status"		:	"online",
-			|						"filename"		:	"myFile.zip",
-			|						"filesize"		:	134654654,
-			|						"md5"			:	"2fcab58712467eab4004583eb8fb7f89",
-			|						"sha1"			:	"2fd4e1c67a2d28fced849ee1bb76e7391b93eb12",
-			|						"custom"		:	"any additional fileinfos",
-			|						"password"	:	"true"
-			|					},
-			|		"linkid2"	:	{
-			|						"status"		:	"online",
-			|						"filename"		:	"myFile2.zip",
-			|						"filesize"		:	13465454654,
-			|						"md5"			:	"4004583eb2fcab58712467eab8fb7f89",
-			|						"sha1"			:	"e1bb76e73912fd4e1c67a2d28fced849eb93eb12",
-			|						"custom"		:	"any additional fileinfos",
-			|						"password"	:	"false"
-			|					},	…
-			|	}
-			|
-			-----------------------------------------------------------------------
-				status					[String] 	"online"|"offline"|"tempUnavailable"|"Invalid"
-					Possible values: 
-						online					File is online and can be downloaded
-						offline					File is offline, and cannot be downloaded any more
-						tempUnavailable		File is online, but not available atm.
-						Invalid					LinkID is not valid.
-				filename				[String]
-					Full filename of this file
-				filesize				[long] in bytes
-					Exact filesize
-				md5						[String] OPTIONAL
-					Md5 checksum of this file. We use this to find download errors
-				sha1					[String] OPTIONAL
-					Alternative to MD5
-				custom					[String] OPTIONAL
-					If you have any further information about this file, let us know here.
-				Password				[String] null|"true"|"false" OPTIONAL
-					If downloading this file is password protected, set this to "true", else to "false"
-				
+    			The response is a map. Each linkid is mapped to a statusobject
+    			
+    			-----------------------------------------------------------------------
+    			|
+    			|	{
+    			|		"linkid1"	:	{
+    			|						"status"		:	"online",
+    			|						"filename"		:	"myFile.zip",
+    			|						"filesize"		:	134654654,
+    			|						"md5"			:	"2fcab58712467eab4004583eb8fb7f89",
+    			|						"sha1"			:	"2fd4e1c67a2d28fced849ee1bb76e7391b93eb12",
+    			|						"custom"		:	"any additional fileinfos",
+    			|						"password"	:	"true"
+    			|					},
+    			|		"linkid2"	:	{
+    			|						"status"		:	"online",
+    			|						"filename"		:	"myFile2.zip",
+    			|						"filesize"		:	13465454654,
+    			|						"md5"			:	"4004583eb2fcab58712467eab8fb7f89",
+    			|						"sha1"			:	"e1bb76e73912fd4e1c67a2d28fced849eb93eb12",
+    			|						"custom"		:	"any additional fileinfos",
+    			|						"password"	:	"false"
+    			|					},	…
+    			|	}
+    			|
+    			-----------------------------------------------------------------------
+    				status					[String] 	"online"|"offline"|"tempUnavailable"|"Invalid"
+    					Possible values: 
+    						online					File is online and can be downloaded
+    						offline					File is offline, and cannot be downloaded any more
+    						tempUnavailable		File is online, but not available atm.
+    						Invalid					LinkID is not valid.
+    						
+    				filename				[String]
+    					Full filename of this file
+    					
+    				filesize				[long] in bytes
+    					Exact filesize
+    					
+    				md5						[String] OPTIONAL
+    					Md5 checksum of this file. We use this to find download errors
+    					
+    				sha1					[String] OPTIONAL
+    					Alternative to MD5
+    					
+    				custom					[String] OPTIONAL
+    					If you have any further information about this file, let us know here.
+    					
+    				Password				[String] null|"true"|"false" OPTIONAL
+    					If downloading this file is password protected, set this to "true", else to "false"
+    				
 
-		2.2.3	Possible Errors
-			13 – Invalid Links
+		2.2.3    Possible Errors
+			     13 – Invalid Links
 
 		2.2.4	Example Request
 
-			2.2.4.1	Success
-			-----------------------------------------------------------------------
-			|
-			|	----------------Request------------------
-			|		POST /api.php HTTP/1.1
-			|		Host: yourhost.com
-			|		Connection: close
-			|
-			|		cmd=getLinkStatus&challenge=dfhsds73hf&user=testuser&pass=testpassword&links=http://yourhost.com/file/123432
-			|		http://yourhost.com/file/123433
-			|		http://yourhost.com/file/123434
-			|
-			|	----------------Response------------------
-			|		HTTP/1.1 200 OK
-			|		Connection: close
-			|
-			|		dfhsds73hf{
-			|			"http://yourhost.com/file/123432" : 	{
-			|															"status"		:	"online",
-			|															"filename"		:	"myFile2.zip",
-			|															"filesize"		:	13465454654,
-			|															"md5"			:	"4004583eb2fcab58712467eab8fb7f89",
-			|															"sha1"			:	"e1bb76e73912fd4e1c67a2d28fced849eb93eb12",
-			|															"custom"		:	"any additional fileinfos",
-			|															"password"	:	"false"
-			|															}
-			|			"http://yourhost.com/file/123433" : 	{
-			|															"status"		:	"offline"	
-			|															}
-			|			"http://yourhost.com/file/123434" : 	{
-			|															"status"		:	"offline",
-			|															"filename"		:	"myFile3.zip",
-			|															"filesize"		:	13465454654,
-			|															"md5"			:	"400eb2fcab58712467eab45838fb7f89",
-			|															"sha1"			:	"6e73912fd4e1c67a2d28fced849eb93ee1bb7b12",
-			|															"custom"		:	"any additional fileinfos",
-			|															"password"	:	"false"
-			|															}
-			|		}dfhsds73hf
-			|
-			-----------------------------------------------------------------------
-			2.2.4.2	Error
-			-----------------------------------------------------------------------
-			|
-			|	----------------Request------------------
-			|		POST /api.php HTTP/1.1
-			|		Host: yourhost.com
-			|		Connection: close
-			|
-			|		cmd=getLinkStatus&challenge=dfhsds73hf&user=testuser&pass=testpassword&links=http://yourhost.com/file/123432
-			|		http://yourhost.com/file/123433
-			|		http://yourhost.com/file/123434
-			|
-			|	----------------Response------------------
-			|		HTTP/1.1 200 OK
-			|		Connection: close
-			|
-			|		dfhsds73hfERROR{
-			|			"code" 			: 	13,		
-			|			"msg" 			: 	"Invalid File Id(s)"	
-			|		}dfhsds73hf
-			|
-			-----------------------------------------------------------------------
+    			2.2.4.1	Success
+            			-----------------------------------------------------------------------
+            			|
+            			|	----------------Request------------------
+            			|		POST /api.php HTTP/1.1
+            			|		Host: yourhost.com
+            			|		Connection: close
+            			|
+            			|		cmd=getLinkStatus&challenge=dfhsds73hf&user=testuser&pass=testpassword&links=http://yourhost.com/file/123432
+            			|		http://yourhost.com/file/123433
+            			|		http://yourhost.com/file/123434
+            			|
+            			|	----------------Response------------------
+            			|		HTTP/1.1 200 OK
+            			|		Connection: close
+            			|
+            			|		dfhsds73hf{
+            			|			"http://yourhost.com/file/123432" : 	{
+            			|															"status"		:	"online",
+            			|															"filename"		:	"myFile2.zip",
+            			|															"filesize"		:	13465454654,
+            			|															"md5"			:	"4004583eb2fcab58712467eab8fb7f89",
+            			|															"sha1"			:	"e1bb76e73912fd4e1c67a2d28fced849eb93eb12",
+            			|															"custom"		:	"any additional fileinfos",
+            			|															"password"	:	"false"
+            			|															}
+            			|			"http://yourhost.com/file/123433" : 	{
+            			|															"status"		:	"offline"	
+            			|															}
+            			|			"http://yourhost.com/file/123434" : 	{
+            			|															"status"		:	"offline",
+            			|															"filename"		:	"myFile3.zip",
+            			|															"filesize"		:	13465454654,
+            			|															"md5"			:	"400eb2fcab58712467eab45838fb7f89",
+            			|															"sha1"			:	"6e73912fd4e1c67a2d28fced849eb93ee1bb7b12",
+            			|															"custom"		:	"any additional fileinfos",
+            			|															"password"	:	"false"
+            			|															}
+            			|		}dfhsds73hf
+            			|
+            			-----------------------------------------------------------------------
+    			2.2.4.2	Error
+            			-----------------------------------------------------------------------
+            			|
+            			|	----------------Request------------------
+            			|		POST /api.php HTTP/1.1
+            			|		Host: yourhost.com
+            			|		Connection: close
+            			|
+            			|		cmd=getLinkStatus&challenge=dfhsds73hf&user=testuser&pass=testpassword&links=http://yourhost.com/file/123432
+            			|		http://yourhost.com/file/123433
+            			|		http://yourhost.com/file/123434
+            			|
+            			|	----------------Response------------------
+            			|		HTTP/1.1 200 OK
+            			|		Connection: close
+            			|
+            			|		dfhsds73hfERROR{
+            			|			"code" 			: 	13,		
+            			|			"msg" 			: 	"Invalid File Id(s)"	
+            			|		}dfhsds73hf
+            			|
+            			-----------------------------------------------------------------------
 			
 	2.3	download
 		2.3.1	Parameters
-			2.3.1.1	downloadPass OPTIONAL
-				If the download is passwordprotected
-			2.3.1.2	linkid
-				Same linkid we use for linkcheck. This can be the whole http link, or only a part of it.
+    			2.3.1.1	downloadPass OPTIONAL
+    				If the download is passwordprotected
+    			2.3.1.2	linkid
+    				Same linkid we use for linkcheck. This can be the whole http link, or only a part of it.
 		2.3.2	Response
-			In errorcase, please do NOT send Content-Disposition, but a normal error response.
-			If everything is fine, we get the filedata as response. Please send these headers
-			2.3.2.1	Content-Disposition
-					see RFC2231, http://greenbytes.de/tech/tc2231/
-						Content-Disposition: attachment; filename*=UTF-8''test.html
-			2.3.2.2	Content-Length
-					Exact size of the file in bytes
-						Content-Length: 35678463
-			2.3.2.3	Content-MD5 (Optional)
-					Md5 checksum of this file. We use this to find download errors
-						Content-MD5:  4004583eb2fcab58712467eab8fb7f89
-			2.3.2.4	Content-SHA1 (Optional)
-					Alternative to MD5 Header
-						Content-SHA1:  e1bb76e73912fd4e1c67a2d28fced849eb93eb12
+    			In errorcase, please do NOT send Content-Disposition, but a normal error response.
+    			If everything is fine, we get the filedata as response. Please send these headers
+    			2.3.2.1	Content-Disposition
+    					see RFC2231, http://greenbytes.de/tech/tc2231/
+    						Content-Disposition: attachment; filename*=UTF-8''test.html
+    			2.3.2.2	Content-Length
+    					Exact size of the file in bytes
+    						Content-Length: 35678463
+    			2.3.2.3	Content-MD5 (Optional)
+    					Md5 checksum of this file. We use this to find download errors
+    						Content-MD5:  4004583eb2fcab58712467eab8fb7f89
+    			2.3.2.4	Content-SHA1 (Optional)
+    					Alternative to MD5 Header
+    						Content-SHA1:  e1bb76e73912fd4e1c67a2d28fced849eb93eb12
 					
 		2.3.3	Possible Errors
-			0 	API Error
-			1	user unknown
-			2	password wrong
-			3	logins wrong
-			4	session invalid
-			5	IP blocked
-			6	Custom
-			7	Download Password wrong
-			8	Traffic limit reached
-			9	account type invalid
-			10	link offline
-			11	link temp unavailable
-			12	connection limit reached
+    			0 	API Error
+    			1	user unknown
+    			2	password wrong
+    			3	logins wrong
+    			4	session invalid
+    			5	IP blocked
+    			6	Custom
+    			7	Download Password wrong
+    			8	Traffic limit reached
+    			9	account type invalid
+    			10	link offline
+    			11	link temp unavailable
+    			12	connection limit reached
 
 		2.3.4	Example Request
-			2.3.4.1	Success
-
-			-----------------------------------------------------------------------
-			|
-			|	----------------Request------------------
-			|		POST /api.php HTTP/1.1
-			|		Host: yourhost.com
-			|		Connection: close
-			|
-			|		cmd=download&challenge=dfhsds73hf&user=testuser&pass=testpassword&linkid=http://yourhost.com/file/123432
-			|
-			|
-			|	----------------Response------------------
-			|		HTTP/1.1 200 OK
-			|		Content-Disposition: attachment; filename*=UTF-8''<file name.zip>
-			|		Content-Length: 35678463
-			|		Content-MD5:  4004583eb2fcab58712467eab8fb7f89
-			|		Connection: close
-			|
-			|		...<data 35678463 bytes>...
-			|		
-			-----------------------------------------------------------------------
-			
-			2.3.4.2	Error
-			
-			-----------------------------------------------------------------------
-			|
-			|	----------------Request------------------
-			|		POST /api.php HTTP/1.1
-			|		Host: yourhost.com
-			|		Connection: close
-			|
-			|		cmd=download&challenge=dfhsds73hf&user=testuser&pass=testpassword&linkid=http://yourhost.com/file/123432
-			|
-			|	----------------Response------------------
-			|		HTTP/1.1 200 OK
-			|		Connection: close
-			|
-			|		dfhsds73hfERROR{
-			|			"code" 			: 	8,		
-			|			"msg" 			: 	"Traffic Limit reached. Try again in 3 hours"	
-			|		}dfhsds73hf
-			|		
-			-----------------------------------------------------------------------
+    			2.3.4.1	Success
+    
+            			-----------------------------------------------------------------------
+            			|
+            			|	----------------Request------------------
+            			|		POST /api.php HTTP/1.1
+            			|		Host: yourhost.com
+            			|		Connection: close
+            			|
+            			|		cmd=download&challenge=dfhsds73hf&user=testuser&pass=testpassword&linkid=http://yourhost.com/file/123432
+            			|
+            			|
+            			|	----------------Response------------------
+            			|		HTTP/1.1 200 OK
+            			|		Content-Disposition: attachment; filename*=UTF-8''<file name.zip>
+            			|		Content-Length: 35678463
+            			|		Content-MD5:  4004583eb2fcab58712467eab8fb7f89
+            			|		Connection: close
+            			|
+            			|		...<data 35678463 bytes>...
+            			|		
+            			-----------------------------------------------------------------------
+    			
+    			2.3.4.2	Error
+    			
+            			-----------------------------------------------------------------------
+            			|
+            			|	----------------Request------------------
+            			|		POST /api.php HTTP/1.1
+            			|		Host: yourhost.com
+            			|		Connection: close
+            			|
+            			|		cmd=download&challenge=dfhsds73hf&user=testuser&pass=testpassword&linkid=http://yourhost.com/file/123432
+            			|
+            			|	----------------Response------------------
+            			|		HTTP/1.1 200 OK
+            			|		Connection: close
+            			|
+            			|		dfhsds73hfERROR{
+            			|			"code" 			: 	8,		
+            			|			"msg" 			: 	"Traffic Limit reached. Try again in 3 hours"	
+            			|		}dfhsds73hf
+            			|		
+            			-----------------------------------------------------------------------
 
 3.	Errors
-
-		{	
-			"code"	:	5
-			"msg"	:	"IP Blocked. To many failed logins!"
-		}
-
+        -----------------------------------------------------------------------
+		|     {	
+		|	        "code"	:	5
+		|	        "msg"	:	"IP Blocked. To many failed logins!"
+		|     }
+        -----------------------------------------------------------------------
+        
 	Code 0		Technical API Error
 		If we use wrong parameters, or any other technical error occures
 
