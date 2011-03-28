@@ -1,6 +1,6 @@
 Index: rtmpdump.c
 ===================================================================
---- rtmpdump.c	(revision 563)
+--- rtmpdump.c	(revision 256)
 +++ rtmpdump.c	(working copy)
 @@ -25,9 +25,11 @@
  #include <string.h>

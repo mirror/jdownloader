@@ -12,8 +12,6 @@ import java.security.PrivilegedAction;
 
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.os.CrossSystem;
-
 public class NativeProcess {
 
     private static native int sendCtrlCEvent(int pid);
@@ -29,11 +27,16 @@ public class NativeProcess {
     private InputStream          stderr_stream;
 
     static {
-        if (CrossSystem.isWindows()) {
-            if (CrossSystem.is32BitArchitecture()) {
-                System.load(JDUtilities.getResourceFile("tools/Windows/rtmpdump/NativeProcessx86.dll").getAbsolutePath());
-            } else if (CrossSystem.is64BitArchitecture()) {
+        /* these libs are 32bit */
+        try {
+            System.load(JDUtilities.getResourceFile("tools/Windows/rtmpdump/NativeProcessx86.dll").getAbsolutePath());
+        } catch (final Throwable e) {
+            System.out.println("Error loading 32bit: " + e);
+            /* these libs are 64bit */
+            try {
                 System.load(JDUtilities.getResourceFile("tools/Windows/rtmpdump/NativeProcessx64.dll").getAbsolutePath());
+            } catch (final Throwable e2) {
+                System.out.println("Error loading 64bit: " + e2);
             }
         }
     }

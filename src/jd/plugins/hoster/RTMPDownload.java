@@ -43,7 +43,6 @@ public class RTMPDownload extends RAFDownload {
 
     public boolean startDownload() throws Exception {
         final RtmpDump rtmpdump = new RtmpDump(plugin, downloadLink, String.valueOf(url));
-        if (!rtmpdump.start(rtmpConnection)) { return false; }
-        return true;
+        return rtmpdump.start(rtmpConnection);
     }
 }
