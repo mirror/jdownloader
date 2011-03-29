@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3lemon.net" }, urls = { "http://(www\\.)?mp3lemon\\.net/(song|album)/\\d+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3lemon.net" }, urls = { "http://(www\\.)?mp3lemon\\.(net|org)/((song|album)/\\d+/|download\\.php\\?idfile=\\d+)" }, flags = { 0 })
 public class MpLemonNet extends PluginForDecrypt {
 
     public MpLemonNet(PluginWrapper wrapper) {
@@ -37,7 +37,8 @@ public class MpLemonNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("mp3lemon.org", "mp3lemon.net");
+        if (parameter.contains("download.php?idfile=")) parameter = parameter.replace("download.php?idfile=", "song/") + "/";
         br.setFollowRedirects(false);
         br.setCustomCharset("windows-1251");
         br.getPage(parameter);
@@ -45,7 +46,11 @@ public class MpLemonNet extends PluginForDecrypt {
             String filename = br.getRegex("<TD class=\"razdel\" width=\"100%\">Скачать песню: (.*?)</TD>").getMatch(0);
             if (filename == null) filename = br.getRegex("<table class=\"song\"><tr><td><h1 style=\"display: inline;\">(.*?)</h1></td>").getMatch(0);
             String finallink = decryptSingleLink(new Regex(parameter, "mp3lemon\\.net/song/(\\d+)/").getMatch(0));
-            if (filename == null || finallink == null) return null;
+            if (filename == null || finallink == null) {
+                logger.warning("mp3link-decrypt failed: " + parameter);
+                logger.warning(br.toString());
+                return null;
+            }
             DownloadLink dlllink = createDownloadlink("directhttp://" + finallink);
             dlllink.setFinalFileName(filename + ".mp3");
             decryptedLinks.add(dlllink);
