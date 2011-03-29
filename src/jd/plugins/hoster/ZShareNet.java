@@ -97,8 +97,8 @@ public class ZShareNet extends PluginForHost {
             Form download = br.getForm(0);
             if (download != null) {
                 // Formparameter setzen (zufällige Klickpositionen im Bild)
-                download.put("imageField.x", (Math.random() * 160) + "");
-                download.put("imageField.y", (Math.random() * 60) + "");
+                download.put("imageField.x", (Math.random() * 200) + "");
+                download.put("imageField.y", (Math.random() * 55) + "");
                 download.put("imageField", null);
                 // Form abschicken
                 br.submitForm(download);
@@ -164,8 +164,8 @@ public class ZShareNet extends PluginForHost {
         String dlUrl = null;
         if (download != null) {
             // Formparameter setzen (zufällige Klickpositionen im Bild)
-            download.put("imageField.x", (Math.random() * 160) + "");
-            download.put("imageField.y", (Math.random() * 60) + "");
+            download.put("imageField.x", (Math.random() * 200) + "");
+            download.put("imageField.y", (Math.random() * 55) + "");
             download.put("imageField", null);
             // Form abschicken
             br.submitForm(download);

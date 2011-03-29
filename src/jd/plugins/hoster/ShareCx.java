@@ -30,11 +30,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -67,13 +67,13 @@ public class ShareCx extends PluginForHost {
         try {
             requestFileInformation(downloadLink);
             this.setBrowserExclusive();
+            br.setCookie("http://www.share.cx", "lang", "deutsch");
             String p1 = br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
             br.setFollowRedirects(false);
             Form dlform0 = br.getForm(0);
             if (dlform0 == null) {
                 logger.warning("dlform0 could not be found!");
-
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dlform0.put("method_free", "Datei+herunterladen");
@@ -159,6 +159,7 @@ public class ShareCx extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setCookie("http://www.share.cx", "lang", "deutsch");
         br.getPage("http://www.share.cx");
         Form form = br.getFormbyProperty("name", "FL");
         if (form == null) {
@@ -217,6 +218,7 @@ public class ShareCx extends PluginForHost {
             Form dlform = br.getFormbyProperty("name", "F1");
             if (dlform == null) {
                 logger.warning("dlform is null...");
+                if (br.containsHTML("Premium Account kaufen")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.submitForm(dlform);
