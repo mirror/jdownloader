@@ -28,7 +28,6 @@ import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.nutils.jobber.JDRunnable;
 import jd.plugins.DownloadLink;
-import jd.plugins.optional.jdunrar.JDUnrarConstants;
 import jd.utils.locale.JDL;
 
 /**
@@ -39,9 +38,11 @@ import jd.utils.locale.JDL;
  * 
  */
 public class ExtractionController extends Thread implements JDRunnable {
-    private ArrayList<ExtractionListener> listener = new ArrayList<ExtractionListener>();
+    // taken form old JDUNrar
+    private static final int              WRAPPER_EXTRACTION_FAILED = 12;
+    private ArrayList<ExtractionListener> listener                  = new ArrayList<ExtractionListener>();
     private ArrayList<String>             passwordList;
-    private SubConfiguration              config   = null;
+    private SubConfiguration              config                    = null;
     private Exception                     exception;
     private boolean                       removeAfterExtraction;
     private ProgressController            progressController;
@@ -160,7 +161,7 @@ public class ExtractionController extends Thread implements JDRunnable {
                         logger.info("Found no password in passwordlist " + archive.getFirstDownloadLink().getFileOutput());
 
                         if (!extractor.findPassword(archive.getPassword())) {
-                            fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                            fireEvent(WRAPPER_EXTRACTION_FAILED);
                             logger.info("No password found for " + archive.getFirstDownloadLink().getFileOutput());
                             extractor.close();
                             return;
