@@ -127,7 +127,7 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
         /* try twojlimit.pl first */
         if (account == null) {
             if (handleTwojLimit(downloadLink)) return;
-        } else if (!JDPremium.preferLocalAccounts()) {
+        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
             if (handleTwojLimit(downloadLink)) return;
         }
         if (proxyused = true) {
@@ -188,7 +188,7 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!JDPremium.isEnabled() || !enabled) return false;
+            if (!PremiumCompoundExtension.isEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             acc = AccountController.getInstance().getValidAccount("twojlimit.pl");
@@ -440,11 +440,11 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
-            if (JDPremium.preferLocalAccounts() && account != null) {
+            if (PremiumCompoundExtension.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
 
                 return Integer.MAX_VALUE;
-            } else if (JDPremium.isEnabled() && enabled) {
+            } else if (PremiumCompoundExtension.isEnabled() && enabled) {
                 /* OchLoad */
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount

@@ -114,7 +114,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
         /* try speedload.cx first */
         if (account == null) {
             if (handleSpeedLoad(downloadLink)) return;
-        } else if (!JDPremium.preferLocalAccounts()) {
+        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
             if (handleSpeedLoad(downloadLink)) return;
         }
         if (proxyused = true) {
@@ -185,7 +185,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
             Account acc = null;
             synchronized (LOCK) {
                 /* jdpremium enabled */
-                if (!JDPremium.isEnabled() || !enabled) return false;
+                if (!PremiumCompoundExtension.isEnabled() || !enabled) return false;
                 /* premium available for this host */
                 if (!premiumHosts.contains(link.getHost())) return false;
                 acc = AccountController.getInstance().getValidAccount("speedload.cx");
@@ -365,10 +365,10 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
-            if (JDPremium.preferLocalAccounts() && account != null) {
+            if (PremiumCompoundExtension.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
-            } else if (JDPremium.isEnabled() && enabled) {
+            } else if (PremiumCompoundExtension.isEnabled() && enabled) {
                 /* SpeedLoad */
                 synchronized (LOCK) {
                     if (currentRunning.get() < MAXDOWNLOADS && premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("speedload.cx") != null) return MAXDOWNLOADS;

@@ -114,7 +114,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         /* try fast-debrid.com first */
         if (account == null) {
             if (handleFastDebrid(downloadLink)) return;
-        } else if (!JDPremium.preferLocalAccounts()) {
+        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
             if (handleFastDebrid(downloadLink)) return;
         }
         if (proxyused = true) {
@@ -181,7 +181,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!JDPremium.isEnabled() || !enabled) return false;
+            if (!PremiumCompoundExtension.isEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             acc = AccountController.getInstance().getValidAccount("fast-debrid.com");
@@ -420,10 +420,10 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
     @Override
     public int getMaxSimultanDownload(final Account account) {
         if (plugin != null) {
-            if (JDPremium.preferLocalAccounts() && account != null) {
+            if (PremiumCompoundExtension.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
-            } else if (JDPremium.isEnabled() && enabled) {
+            } else if (PremiumCompoundExtension.isEnabled() && enabled) {
                 /* FastDebrid */
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("fast-debrid.com") != null) return Integer.MAX_VALUE;

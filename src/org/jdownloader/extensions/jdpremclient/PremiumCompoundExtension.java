@@ -28,10 +28,10 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
-import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
 import jd.plugins.AddonPanel;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -42,98 +42,8 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-class PremShareHost extends HostPluginWrapper {
-
-    private HostPluginWrapper replacedone = null;
-
-    public PremShareHost(String host, String className, String patternSupported, int flags) {
-        super(host, "jd.plugins.optional.jdpremclient.", className, patternSupported, flags, "$Revision: 13924 $");
-        for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
-            if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
-        }
-        if (replacedone != null) {
-            HostPluginWrapper.getHostWrapper().remove(replacedone);
-        }
-    }
-
-    public HostPluginWrapper getReplacedPlugin() {
-        return replacedone;
-    }
-
-    @Override
-    public synchronized PluginForHost getPlugin() {
-        PluginForHost tmp = super.getPlugin();
-        if (replacedone != null) {
-            ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getPlugin());
-        }
-        return tmp;
-    }
-
-    @Override
-    public PluginForHost getNewPluginInstance() {
-        PluginForHost tmp = super.getNewPluginInstance();
-        if (replacedone != null) {
-            ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
-        }
-        return tmp;
-    }
-
-    @Override
-    public long getVersion() {
-        if (replacedone != null) return replacedone.getVersion();
-        return super.getVersion();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        if (replacedone != null) return replacedone.isEnabled();
-        return super.isEnabled();
-    }
-
-    @Override
-    public void setEnabled(final boolean bool) {
-        if (replacedone != null) {
-            replacedone.setEnabled(bool);
-        } else {
-            super.setEnabled(bool);
-        }
-    }
-
-    @Override
-    public SubConfiguration getPluginConfig() {
-        if (replacedone != null) {
-            return replacedone.getPluginConfig();
-        } else {
-            return super.getPluginConfig();
-        }
-    }
-
-    @Override
-    public boolean hasConfig() {
-        if (replacedone != null) {
-            return replacedone.hasConfig();
-        } else {
-            return super.hasConfig();
-        }
-    }
-
-    @Override
-    public String getConfigName() {
-        if (replacedone != null) {
-            return replacedone.getConfigName();
-        } else {
-            return super.getConfigName();
-        }
-    }
-
-}
-
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 7)
 public class PremiumCompoundExtension extends AbstractExtension {
-
-    @Override
-    public boolean isDefaultEnabled() {
-        return true;
-    }
 
     private static final Object                  LOCK                = new Object();
     private static boolean                       replaced            = false;
@@ -142,18 +52,10 @@ public class PremiumCompoundExtension extends AbstractExtension {
     private static String                        jdpremServer        = null;
     private static boolean                       preferLocalAccounts = false;
 
-    private static final HashMap<String, String> PREMSHARE_HOSTS     = new HashMap<String, String>();
+    private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
 
-    public ExtensionConfigPanel getConfigPanel() {
-        return null;
-    }
-
-    public boolean hasConfigPanel() {
-        return false;
-    }
-
-    public PremiumCompoundExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.jdpremclient.jdpremium", null));
+    public PremiumCompoundExtension() {
+        super(JDL.L("plugins.optional.jdpremium.name", "JDPremium"));
     }
 
     private void replaceHosterPlugin(String host, String with) {
@@ -164,7 +66,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
         }
     }
 
-    public static boolean isActive() {
+    public static boolean isEnabled() {
         return enabled;
     }
 
@@ -200,30 +102,35 @@ public class PremiumCompoundExtension extends AbstractExtension {
 
     @Override
     protected void start() throws StartException {
+    }
+
+    @Override
+    protected void initExtension() throws StartException {
+
         jdpremServer = getPluginConfig().getStringProperty("SERVER", null);
         preferLocalAccounts = getPluginConfig().getBooleanProperty("PREFERLOCALACCOUNTS", false);
         synchronized (LOCK) {
             if (Main.isInitComplete() && replaced == false) {
+                logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
+                throw new StartException("Restart needed!");
 
-                UserIO.getInstance().requestMessageDialog(0, "Restart needed!");
-                throw new StartException("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
             }
             if (!init) {
                 /* init our new plugins */
-                PREMSHARE_HOSTS.put("jdownloader.org", "PremShare");
-                PREMSHARE_HOSTS.put("speedload.cx", "SpeedLoadcx");
-                PREMSHARE_HOSTS.put("multishare.cz", "MultiShare");
-                PREMSHARE_HOSTS.put("linksnappy.com", "LinkSnappycom");
-                PREMSHARE_HOSTS.put("rehost.to", "ReHostto");
-                PREMSHARE_HOSTS.put("nopremium.pl", "NoPremium");
-                PREMSHARE_HOSTS.put("premget.pl", "PremGet");
-                PREMSHARE_HOSTS.put("twojlimit.pl", "TwojLimit");
-                PREMSHARE_HOSTS.put("fast-debrid.com", "FastDebridcom");
-                PREMSHARE_HOSTS.put("alldebrid.com", "AllDebridcom");
-                PREMSHARE_HOSTS.put("premium4.me", "Premium4me");
-
+                premShareHosts.put("jdownloader.org", "PremShare");
+                premShareHosts.put("speedload.cx", "SpeedLoadcx");
+                premShareHosts.put("multishare.cz", "MultiShare");
+                premShareHosts.put("linksnappy.com", "LinkSnappycom");
+                premShareHosts.put("rehost.to", "ReHostto");
+                premShareHosts.put("nopremium.pl", "NoPremium");
+                premShareHosts.put("premget.pl", "PremGet");
+                premShareHosts.put("twojlimit.pl", "TwojLimit");
+                premShareHosts.put("fast-debrid.com", "FastDebridcom");
+                premShareHosts.put("alldebrid.com", "AllDebridcom");
+                premShareHosts.put("premium4.me", "Premium4me");
+                premShareHosts.put("streammania.com", "Streammaniacom");
                 int replaceIndex = 0;
-                for (String key : PREMSHARE_HOSTS.keySet()) {
+                for (String key : premShareHosts.keySet()) {
                     /* init replacePlugin */
                     try {
                         /*
@@ -232,7 +139,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
                          */
                         if (key.equalsIgnoreCase("multishare.cz")) continue;
                         /* the premshareplugins never can be disabled */
-                        new PremShareHost(key, PREMSHARE_HOSTS.get(key), "NEVERUSETHISREGEX" + key + replaceIndex++ + ":\\)", 2 + PluginWrapper.ALWAYS_ENABLED);
+                        new PremShareHost(key, premShareHosts.get(key), "NEVERUSETHISREGEX" + key + replaceIndex++ + ":\\)", 2 + PluginWrapper.ALWAYS_ENABLED);
                     } catch (Throwable e) {
                     }
                 }
@@ -241,7 +148,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
             if (!replaced) {
                 /* get all current PremiumPlugins */
                 ArrayList<HostPluginWrapper> all = JDUtilities.getPremiumPluginsForHost();
-                for (String key : PREMSHARE_HOSTS.keySet()) {
+                for (String key : premShareHosts.keySet()) {
                     if (AccountController.getInstance().hasAccounts(key)) {
                         for (HostPluginWrapper plugin : all) {
                             /* we do not replace youtube */
@@ -251,10 +158,10 @@ public class PremiumCompoundExtension extends AbstractExtension {
                             /* and no ftp */
                             if (plugin.getHost().contains("ftp")) continue;
                             /* do not replace the premshare plugins ;) */
-                            if (PREMSHARE_HOSTS.containsKey(plugin.getHost()) && plugin.getPattern().pattern().startsWith("NEVERUSETHISREGEX" + plugin.getHost())) {
+                            if (premShareHosts.containsKey(plugin.getHost()) && plugin.getPattern().pattern().startsWith("NEVERUSETHISREGEX" + plugin.getHost())) {
                                 continue;
                             }
-                            replaceHosterPlugin(plugin.getHost(), PREMSHARE_HOSTS.get(key));
+                            replaceHosterPlugin(plugin.getHost(), premShareHosts.get(key));
                         }
                         PluginForHost ret = JDUtilities.getPluginForHost(key);
                         if (ret != null && ret instanceof JDPremInterface) {
@@ -273,7 +180,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
                 new Thread(new Runnable() {
                     public void run() {
                         try {
-                            for (String key : PREMSHARE_HOSTS.keySet()) {
+                            for (String key : premShareHosts.keySet()) {
                                 for (Account acc : AccountController.getInstance().getAllAccounts(key)) {
                                     AccountController.getInstance().updateAccountInfo(key, acc, true);
                                 }
@@ -291,6 +198,16 @@ public class PremiumCompoundExtension extends AbstractExtension {
     }
 
     @Override
+    public ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel() {
+        return null;
+    }
+
+    @Override
+    public boolean hasConfigPanel() {
+        return false;
+    }
+
+    @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer: (Restart required)").setPropertyType(PropertyType.NEEDS_RESTART));
@@ -300,17 +217,17 @@ public class PremiumCompoundExtension extends AbstractExtension {
 
     @Override
     public String getConfigID() {
-        return "jdpremium";
+        return null;
     }
 
     @Override
     public String getAuthor() {
-        return "Jiaz";
+        return null;
     }
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.jdpremclient.jdpremium.description", null);
+        return null;
     }
 
     @Override
@@ -323,8 +240,91 @@ public class PremiumCompoundExtension extends AbstractExtension {
         return null;
     }
 
-    @Override
-    protected void initExtension() {
-    }
+    class PremShareHost extends HostPluginWrapper {
 
+        private HostPluginWrapper replacedone = null;
+
+        public PremShareHost(String host, String className, String patternSupported, int flags) {
+            super(host, "jd.plugins.optional.jdpremclient.", className, patternSupported, flags, "$Revision$");
+            for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
+                if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
+            }
+            if (replacedone != null) {
+                HostPluginWrapper.getHostWrapper().remove(replacedone);
+            }
+        }
+
+        public HostPluginWrapper getReplacedPlugin() {
+            return replacedone;
+        }
+
+        @Override
+        public synchronized PluginForHost getPlugin() {
+            PluginForHost tmp = super.getPlugin();
+            if (replacedone != null) {
+                ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getPlugin());
+            }
+            return tmp;
+        }
+
+        @Override
+        public PluginForHost getNewPluginInstance() {
+            PluginForHost tmp = super.getNewPluginInstance();
+            if (replacedone != null) {
+                ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
+            }
+            return tmp;
+        }
+
+        @Override
+        public long getVersion() {
+            if (replacedone != null) return replacedone.getVersion();
+            return super.getVersion();
+        }
+
+        @Override
+        public boolean isEnabled() {
+            if (replacedone != null) return replacedone.isEnabled();
+            return super.isEnabled();
+        }
+
+        @Override
+        public void setEnabled(final boolean bool) {
+            if (replacedone != null) {
+                replacedone.setEnabled(bool);
+            } else {
+                super.setEnabled(bool);
+            }
+        }
+
+        @Override
+        public SubConfiguration getPluginConfig() {
+
+            if (replacedone != null) {
+                return replacedone.getPluginConfig();
+            } else {
+                return super.getPluginConfig();
+            }
+
+        }
+
+        @Override
+        public boolean hasConfig() {
+            if (replacedone != null) {
+                return replacedone.hasConfig();
+            } else {
+                return super.hasConfig();
+            }
+        }
+
+        @Override
+        public String getConfigName() {
+            if (replacedone != null) {
+                return replacedone.getConfigName();
+            } else {
+                return super.getConfigName();
+            }
+        }
+
+    }
 }
