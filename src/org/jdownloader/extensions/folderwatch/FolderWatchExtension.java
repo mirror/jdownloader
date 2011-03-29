@@ -54,8 +54,8 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownVetoException;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.folderwatch.core.FileMonitoring;
@@ -453,8 +453,8 @@ public class FolderWatchExtension extends AbstractExtension implements FileMonit
     public void onShutdown() {
     }
 
-    public boolean onShutdownRequest() throws ShutdownVetoException {
-        return false;
+    public void onShutdownRequest() throws ShutdownVetoException {
+
     }
 
     public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {

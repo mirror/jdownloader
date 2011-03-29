@@ -37,8 +37,8 @@ import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -306,8 +306,8 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
     public void onShutdown() {
     }
 
-    public boolean onShutdownRequest() throws ShutdownVetoException {
-        return false;
+    public void onShutdownRequest() throws ShutdownVetoException {
+
     }
 
     public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {

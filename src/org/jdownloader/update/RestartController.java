@@ -167,9 +167,8 @@ public class RestartController implements ShutdownVetoListener {
 
     }
 
-    public boolean onShutdownRequest() throws ShutdownVetoException {
+    public void onShutdownRequest() throws ShutdownVetoException {
 
-        return false;
     }
 
     public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
