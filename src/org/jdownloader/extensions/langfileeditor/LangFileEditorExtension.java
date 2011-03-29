@@ -60,7 +60,7 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
     private String               user;
     private String               pass;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<LangFileEditorExtension> getConfigPanel() {
         return null;
     }
 

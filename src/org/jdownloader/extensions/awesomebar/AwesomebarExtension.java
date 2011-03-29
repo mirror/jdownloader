@@ -33,7 +33,7 @@ public class AwesomebarExtension extends AbstractExtension implements ControlLis
         return awesome;
     }
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<AwesomebarExtension> getConfigPanel() {
         return null;
     }
 

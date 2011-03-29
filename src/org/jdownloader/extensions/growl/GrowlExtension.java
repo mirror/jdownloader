@@ -111,7 +111,7 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDGrowlNotification.";
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<GrowlExtension> getConfigPanel() {
         return null;
     }
 

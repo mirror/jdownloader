@@ -44,7 +44,7 @@ public class PremServExtension extends AbstractExtension implements ActionListen
 
     private JDPremServGui tab;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<PremServExtension> getConfigPanel() {
         return null;
     }
 

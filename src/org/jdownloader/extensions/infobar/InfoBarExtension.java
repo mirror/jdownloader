@@ -38,7 +38,7 @@ public class InfoBarExtension extends AbstractExtension {
 
     private InfoDialog          infoDialog;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
         return null;
     }
 

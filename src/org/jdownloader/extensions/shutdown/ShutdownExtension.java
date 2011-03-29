@@ -59,7 +59,7 @@ public class ShutdownExtension extends AbstractExtension {
     private static MenuAction   menuAction            = null;
     private static String[]     MODES_AVAIL           = null;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ShutdownExtension> getConfigPanel() {
         return null;
     }
 

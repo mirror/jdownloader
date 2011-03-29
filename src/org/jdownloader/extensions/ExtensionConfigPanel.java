@@ -6,7 +6,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
@@ -21,9 +20,7 @@ import org.jdownloader.extensions.settings.SettingsComponent;
 import org.jdownloader.translate.JDT;
 
 public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends SwitchPanel {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 1L;
     private JPanel            panel;
     private T                 extension;
@@ -33,9 +30,6 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
         this.extension = plg;
         panel = new VerticalScrollPanel(new MigLayout("ins 5, wrap 2", "[][grow,fill]", "[]"));
 
-        JScrollPane scroll = new JScrollPane(panel);
-        scroll.setBorder(null);
-        // add(scroll);
         add(panel);
         panel.add(new Header(plg.getName(), plg.getIcon(32)), "spanx,growx,pushx");
         if (plg.getDescription() != null) {

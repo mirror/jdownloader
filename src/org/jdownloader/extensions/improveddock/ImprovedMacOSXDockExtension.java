@@ -30,7 +30,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class ImrovedMacOSXDockExtension extends AbstractExtension implements ControlListener {
+public class ImprovedMacOSXDockExtension extends AbstractExtension implements ControlListener {
 
     @Override
     public boolean isLinuxRunnable() {
@@ -49,7 +49,7 @@ public class ImrovedMacOSXDockExtension extends AbstractExtension implements Con
 
     private MacDockIconChanger updateThread;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ImprovedMacOSXDockExtension> getConfigPanel() {
         return null;
     }
 
@@ -57,7 +57,7 @@ public class ImrovedMacOSXDockExtension extends AbstractExtension implements Con
         return false;
     }
 
-    public ImrovedMacOSXDockExtension() throws StartException {
+    public ImprovedMacOSXDockExtension() throws StartException {
         super(null);
     }
 

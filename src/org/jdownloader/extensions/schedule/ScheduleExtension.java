@@ -59,7 +59,7 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
 
     public static final Object                  LOCK    = new Object();
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ScheduleExtension> getConfigPanel() {
         return null;
     }
 

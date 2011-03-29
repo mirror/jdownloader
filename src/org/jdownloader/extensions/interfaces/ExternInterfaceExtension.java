@@ -128,7 +128,7 @@ public class ExternInterfaceExtension extends AbstractExtension {
     private final static String LOCALONLY = "localonly";
     private static String       jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ExternInterfaceExtension> getConfigPanel() {
         return null;
     }
 

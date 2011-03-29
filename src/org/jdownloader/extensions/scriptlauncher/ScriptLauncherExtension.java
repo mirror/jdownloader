@@ -55,7 +55,7 @@ public class ScriptLauncherExtension extends AbstractExtension implements Remote
 
     private static final String              ADD_CHECKBOX = "ADD_CHECKBOX";
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ScriptLauncherExtension> getConfigPanel() {
         return null;
     }
 

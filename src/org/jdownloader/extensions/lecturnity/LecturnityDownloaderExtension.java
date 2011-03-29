@@ -38,7 +38,7 @@ public class LecturnityDownloaderExtension extends AbstractExtension implements 
 
     private Browser            br;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<LecturnityDownloaderExtension> getConfigPanel() {
         return null;
     }
 

@@ -50,7 +50,7 @@ public class AntiReconnectExtension extends AbstractExtension {
     private JDAntiReconnectThread            asthread            = null;
     public static JDAntiReconnectTranslation T                   = TranslationFactory.create(JDAntiReconnectTranslation.class);
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<AntiReconnectExtension> getConfigPanel() {
         return null;
     }
 

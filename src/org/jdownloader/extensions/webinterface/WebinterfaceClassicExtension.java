@@ -48,7 +48,7 @@ public class WebinterfaceClassicExtension extends AbstractExtension {
 
     static final String                        PROPERTY_USER             = "PARAM_USER";
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<WebinterfaceClassicExtension> getConfigPanel() {
         return null;
     }
 

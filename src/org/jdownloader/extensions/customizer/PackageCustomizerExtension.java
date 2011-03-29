@@ -48,7 +48,7 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
 
     private CustomizerView        view;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<PackageCustomizerExtension> getConfigPanel() {
         return null;
     }
 

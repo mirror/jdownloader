@@ -83,7 +83,7 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
     private static JDFeedMeThread  thread         = null;
     private boolean                running        = false;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<FeedMeExtension> getConfigPanel() {
         return null;
     }
 

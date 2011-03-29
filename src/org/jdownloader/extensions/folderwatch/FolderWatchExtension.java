@@ -91,7 +91,7 @@ public class FolderWatchExtension extends AbstractExtension implements FileMonit
 
     private FileMonitoring      monitoringThread;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<FolderWatchExtension> getConfigPanel() {
         return null;
     }
 

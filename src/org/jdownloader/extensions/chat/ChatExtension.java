@@ -124,7 +124,6 @@ public class ChatExtension extends AbstractExtension {
         }
     }
 
-    private static final String              CHANNEL_LNG          = "CHANNEL_LNG3";
     private JLabel                           top;
 
     private IRCConnection                    conn;
@@ -153,7 +152,7 @@ public class ChatExtension extends AbstractExtension {
     private String                           currentChannel;
     private Thread                           awayChecker;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<ChatExtension> getConfigPanel() {
         return configPanel;
     }
 

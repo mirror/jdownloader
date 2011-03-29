@@ -207,7 +207,7 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
 
     private Timer               disableAlwaysonTop;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
         return null;
     }
 

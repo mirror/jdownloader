@@ -74,7 +74,7 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
 
     private JSonWrapper         subConfig           = null;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<InfoFileWriterExtension> getConfigPanel() {
         return null;
     }
 

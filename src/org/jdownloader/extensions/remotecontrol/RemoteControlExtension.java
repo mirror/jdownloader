@@ -54,7 +54,7 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
     private HttpServer          server;
     private MenuAction          activate;
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<RemoteControlExtension> getConfigPanel() {
         return null;
     }
 

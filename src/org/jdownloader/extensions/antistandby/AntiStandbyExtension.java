@@ -50,7 +50,7 @@ public class AntiStandbyExtension extends AbstractExtension {
         return getPluginConfig().getIntegerProperty(CONFIG_MODE, 0);
     }
 
-    public ExtensionConfigPanel getConfigPanel() {
+    public ExtensionConfigPanel<AntiStandbyExtension> getConfigPanel() {
         return null;
     }
 
