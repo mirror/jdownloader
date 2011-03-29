@@ -33,21 +33,21 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
@@ -72,11 +72,11 @@ public class Rapidshare extends PluginForHost {
             return ret;
         }
 
-        private int id;
+        private int          id;
 
-        private String name;
+        private String       name;
 
-        private String url;
+        private String       url;
 
         private DownloadLink link;
 
@@ -111,30 +111,30 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    private static final String WAIT_HOSTERFULL = "WAIT_HOSTERFULL";
+    private static final String                       WAIT_HOSTERFULL         = "WAIT_HOSTERFULL";
 
-    private static final String SSL_CONNECTION = "SSL_CONNECTION2";
+    private static final String                       SSL_CONNECTION          = "SSL_CONNECTION2";
 
-    private static final String HTTPS_WORKAROUND = "HTTPS_WORKAROUND";
+    private static final String                       HTTPS_WORKAROUND        = "HTTPS_WORKAROUND";
 
-    private static final Object LOCK = new Object();
+    private static final Object                       LOCK                    = new Object();
 
-    private static final ArrayList<Account> RESET_WAITING_ACCOUNTS = new ArrayList<Account>();
+    private static final ArrayList<Account>           RESET_WAITING_ACCOUNTS  = new ArrayList<Account>();
 
-    private static final Boolean HTMLWORKAROUND = new Boolean(false);
+    private static final Boolean                      HTMLWORKAROUND          = new Boolean(false);
 
-    private static long RS_API_WAIT = 0;
+    private static long                               RS_API_WAIT             = 0;
 
-    private static final String COOKIEPROP = "cookiesv2";
-    private static final Object menuLock = new Object();
+    private static final String                       COOKIEPROP              = "cookiesv2";
+    private static final Object                       menuLock                = new Object();
 
-    private static final HashMap<Integer, MenuAction> menuActionMap = new HashMap<Integer, MenuAction>();
+    private static final HashMap<Integer, MenuAction> menuActionMap           = new HashMap<Integer, MenuAction>();
 
-    private static final Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
+    private static final Account                      dummyAccount            = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private static final String PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
+    private static final String                       PROPERTY_ONLY_HAPPYHOUR = "PROPERTY_ONLY_HAPPYHOUR";
 
-    private static final String PRE_RESOLVE = "PRE_RESOLVE2";
+    private static final String                       PRE_RESOLVE             = "PRE_RESOLVE2";
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -145,11 +145,11 @@ public class Rapidshare extends PluginForHost {
         return ret;
     }
 
-    private String selectedServer = null;
+    private String         selectedServer = null;
 
-    private String accName = null;
+    private String         accName        = null;
 
-    private static boolean updateNeeded = false;
+    private static boolean updateNeeded   = false;
 
     public Rapidshare(final PluginWrapper wrapper) {
         super(wrapper);
@@ -461,7 +461,9 @@ public class Rapidshare extends PluginForHost {
             if (index > 0) error = error.substring(0, index).trim();
             final String ipwait = new Regex(error, "You need to wait (\\d+) seconds until you can download another file without having RapidPro.").getMatch(0);
             if (ipwait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l); }
-            if ("File not found.".equals(error)) {
+            if ("RapidPro expired.".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("File not found.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, error);
             } else if ("All free download slots are full. Please try again later.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("jd.plugins.hoster.Rapidshare.handleErrors.message.nofreeslots", "Download as freeuser currently not possible"), 5 * 60 * 1000l);
@@ -941,6 +943,7 @@ public class Rapidshare extends PluginForHost {
         /* reset expired flag */
         ai.setExpired(false);
         ai.setValidUntil(-1);
+        account.setValid(true);
         try {
             final String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
             final HashMap<String, String> data = this.getMap(matches);
@@ -967,6 +970,8 @@ public class Rapidshare extends PluginForHost {
                 nextBill = Long.parseLong(billedUntilTime) - Long.parseLong(serverTimeString);
                 if (nextBill <= 0) {
                     ai.setStatus("No RapidPro");
+                    ai.setExpired(true);
+                    account.setValid(false);
                 } else {
                     final String left = Formatter.formatSeconds(nextBill, false);
                     ai.setStatus((notenoughrapids ? "(Not enough rapids for autorefill)" : "") + "Valid for " + left);
@@ -975,7 +980,7 @@ public class Rapidshare extends PluginForHost {
         } catch (final Exception e) {
             logger.severe("RS-API change detected, please inform support!");
         }
-        account.setValid(true);
+
     }
 
     private void workAroundTimeOut(final Browser br) {
