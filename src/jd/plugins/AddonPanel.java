@@ -4,10 +4,10 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.plugins.optional.ExtensionGuiEnableAction;
-import jd.plugins.optional.PluginOptional;
 
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.extensions.ExtensionGuiEnableAction;
+import org.jdownloader.extensions.PluginOptional;
 
 public abstract class AddonPanel extends ClosableView {
 

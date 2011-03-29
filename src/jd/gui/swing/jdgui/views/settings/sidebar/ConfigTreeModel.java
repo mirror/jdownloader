@@ -22,9 +22,10 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.PluginOptional;
+
 import jd.controlling.reconnect.ReconnectPluginConfigGUI;
-import jd.plugins.optional.ExtensionController;
-import jd.plugins.optional.PluginOptional;
 import jd.utils.locale.JDL;
 
 

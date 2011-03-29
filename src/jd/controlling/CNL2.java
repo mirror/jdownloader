@@ -32,11 +32,11 @@ import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.optional.ExtensionController;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.extensions.ExtensionController;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -86,7 +86,7 @@ public final class CNL2 {
 
     private static boolean isExternInterfaceActive() {
 
-        return ExtensionController.getInstance().isExtensionActive(jd.plugins.optional.interfaces.ExternInterfaceExtension.class);
+        return ExtensionController.getInstance().isExtensionActive(org.jdownloader.extensions.interfaces.ExternInterfaceExtension.class);
     }
 
     public static String decrypt(final byte[] b, final byte[] key) {

@@ -21,7 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import jd.plugins.optional.PluginOptional;
+import org.jdownloader.extensions.PluginOptional;
+
 
 @Retention(value = RetentionPolicy.RUNTIME)
 @Target(value = ElementType.TYPE)
