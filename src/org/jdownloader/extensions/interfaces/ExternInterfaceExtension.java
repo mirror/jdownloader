@@ -49,7 +49,6 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -62,16 +61,6 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 public class ExternInterfaceExtension extends AbstractExtension {
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
-    }
 
     @Override
     protected void stop() throws StopException {

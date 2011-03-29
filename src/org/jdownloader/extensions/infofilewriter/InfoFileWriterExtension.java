@@ -42,7 +42,6 @@ import jd.utils.Replacer;
 import jd.utils.StringUtil;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -166,16 +165,6 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
     @Override
     public String getIconKey() {
         return "gui.images.list";
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

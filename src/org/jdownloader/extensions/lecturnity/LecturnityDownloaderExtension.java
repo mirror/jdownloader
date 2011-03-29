@@ -19,7 +19,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.utils.JDUtilities;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -156,16 +155,6 @@ public class LecturnityDownloaderExtension extends AbstractExtension implements 
         } catch (Exception e) {
             return 0;
         }
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

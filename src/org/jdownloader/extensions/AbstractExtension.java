@@ -34,14 +34,12 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.logging.LogController;
 
-public abstract class AbstractExtension implements ShutdownVetoListener {
+public abstract class AbstractExtension {
 
     public static final int ADDON_INTERFACE_VERSION = 8;
 
@@ -137,7 +135,6 @@ public abstract class AbstractExtension implements ShutdownVetoListener {
     public AbstractExtension(String name) {
         this.name = name == null ? JDL.L(getClass().getName(), getClass().getSimpleName()) : name;
         logger = createLogger(getClass());
-        ShutdownController.getInstance().addShutdownVetoListener(this);
 
         readVersion(getClass().getResource("version.dat"));
 
@@ -233,7 +230,6 @@ public abstract class AbstractExtension implements ShutdownVetoListener {
         initExtension();
         initSettings(settings);
 
-        isDefaultEnabled();
         if (store.isFreshInstall()) {
             store.setEnabled(this.isDefaultEnabled());
             store.setFreshInstall(false);

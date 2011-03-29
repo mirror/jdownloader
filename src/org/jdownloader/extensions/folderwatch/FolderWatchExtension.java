@@ -53,7 +53,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -448,16 +447,6 @@ public class FolderWatchExtension extends AbstractExtension implements FileMonit
          * t.setCommand("/addon/folderwatch/set/autoimport/(true|false)");
          * t.setInfo("");
          */
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

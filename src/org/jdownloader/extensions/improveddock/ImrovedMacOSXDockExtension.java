@@ -25,7 +25,6 @@ import jd.event.ControlListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -77,16 +76,6 @@ public class ImrovedMacOSXDockExtension extends AbstractExtension implements Con
             }
             break;
         }
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

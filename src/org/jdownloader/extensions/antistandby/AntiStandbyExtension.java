@@ -29,7 +29,6 @@ import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -70,16 +69,6 @@ public class AntiStandbyExtension extends AbstractExtension {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         menu.add(menuAction);
         return menu;
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

@@ -30,7 +30,6 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -105,16 +104,6 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
         } else {
             ctrl.attachToPackagesSecondStageInternal(link);
         }
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

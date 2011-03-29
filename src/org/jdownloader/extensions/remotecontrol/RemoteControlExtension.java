@@ -32,7 +32,6 @@ import jd.plugins.AddonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -100,16 +99,6 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
         }
 
         return null;
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

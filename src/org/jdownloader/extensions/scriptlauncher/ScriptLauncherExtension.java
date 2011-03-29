@@ -32,7 +32,6 @@ import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -211,16 +210,6 @@ public class ScriptLauncherExtension extends AbstractExtension implements Remote
 
         t.setCommand("/addon/scriptlauncher/launch/%X%");
         t.setInfo("Launches a script on the remote machine via JDScriptLauncher addon.");
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

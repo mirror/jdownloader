@@ -36,7 +36,6 @@ import jd.pluginloader.VirtualClass;
 import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -301,16 +300,6 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
                 JDLogger.exception(e);
             }
         }
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

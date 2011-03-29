@@ -11,7 +11,6 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -89,16 +88,6 @@ public class InfoBarExtension extends AbstractExtension {
     @Override
     public String getIconKey() {
         return "gui.images.addons.infobar";
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

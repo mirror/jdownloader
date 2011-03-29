@@ -31,7 +31,6 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -652,16 +651,6 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
          * t.setCommand("/addon/feedme/action/reset");
          * t.setInfo("Reset RSS feed");
          */
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

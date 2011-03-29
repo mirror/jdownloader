@@ -41,7 +41,6 @@ import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.extensions.AbstractExtension;
@@ -417,16 +416,6 @@ public class ShutdownExtension extends AbstractExtension {
     // if (command.equals("standby")) this.standby();
     // return null;
     // }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
-    }
 
     @Override
     protected void stop() throws StopException {

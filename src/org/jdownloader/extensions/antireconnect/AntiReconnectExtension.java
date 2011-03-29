@@ -27,7 +27,6 @@ import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.txtresource.TranslationFactory;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -63,16 +62,6 @@ public class AntiReconnectExtension extends AbstractExtension {
         super(JDL.L("jd.plugins.optional.antireconnect.jdantireconnect", "Anti Reconnect"));
         availableModes = new String[] { T.mode_disabled(), T.mode_ping(), T.mode_arp() };
 
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

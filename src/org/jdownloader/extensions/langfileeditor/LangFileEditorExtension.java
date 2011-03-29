@@ -39,7 +39,6 @@ import jd.plugins.AddonPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -117,16 +116,6 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
     @Override
     public String getIconKey() {
         return "gui.splash.languages";
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override

@@ -30,7 +30,6 @@ import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -70,16 +69,6 @@ public class WebinterfaceClassicExtension extends AbstractExtension {
         } else {
             return 0;
         }
-    }
-
-    public void onShutdown() {
-    }
-
-    public void onShutdownRequest() throws ShutdownVetoException {
-
-    }
-
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
     @Override
