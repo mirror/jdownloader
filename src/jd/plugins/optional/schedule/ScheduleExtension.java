@@ -36,7 +36,6 @@ import jd.pluginloader.VirtualClass;
 import jd.plugins.AddonPanel;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
@@ -77,7 +76,7 @@ public class ScheduleExtension extends PluginOptional implements ActionListener 
         modules = new ArrayList<SchedulerModuleInterface>();
         try {
             ArrayList<String> added = new ArrayList<String>();
-            for (final VirtualClass vc : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", JDUtilities.getJDClassLoader())) {
+            for (final VirtualClass vc : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", getClass().getClassLoader())) {
                 try {
                     // uncached plugin loading
                     Class<?> c = vc.loadClass();
