@@ -27,12 +27,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 public class MultiShare extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
+    private static final Object      LOCK         = new Object();
 
     public MultiShare(PluginWrapper wrapper) {
         super(wrapper);
@@ -221,7 +221,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
                  * resume is supported, chunks make no sense and did not work
                  * for me either
                  */
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, fUrl, true, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, fUrl, true, -10);
                 if (dl.getConnection().isContentDisposition()) {
                     /* contentdisposition, lets download it */
                     dl.startDownload();

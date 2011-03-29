@@ -126,14 +126,14 @@ class PremShareHost extends HostPluginWrapper {
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 7)
 public class JDPremium extends PluginOptional {
 
-    private static final Object LOCK = new Object();
-    private static boolean replaced = false;
-    private static boolean init = false;
-    private static boolean enabled = false;
-    private static String jdpremServer = null;
-    private static boolean preferLocalAccounts = false;
+    private static final Object                  LOCK                = new Object();
+    private static boolean                       replaced            = false;
+    private static boolean                       init                = false;
+    private static boolean                       enabled             = false;
+    private static String                        jdpremServer        = null;
+    private static boolean                       preferLocalAccounts = false;
 
-    private static final HashMap<String, String> premShareHosts = new HashMap<String, String>();
+    private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
 
     public JDPremium(PluginWrapper wrapper) {
         super(wrapper);
@@ -173,7 +173,7 @@ public class JDPremium extends PluginOptional {
                 premShareHosts.put("fast-debrid.com", "FastDebridcom");
                 premShareHosts.put("alldebrid.com", "AllDebridcom");
                 premShareHosts.put("premium4.me", "Premium4me");
-
+                premShareHosts.put("streammania.com", "Streammaniacom");
                 int replaceIndex = 0;
                 for (String key : premShareHosts.keySet()) {
                     /* init replacePlugin */
