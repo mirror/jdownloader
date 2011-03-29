@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
@@ -39,7 +38,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -49,17 +47,14 @@ import org.jdownloader.extensions.extraction.IExtraction;
  * @author botzi
  * 
  */
-public class XtreamSplit implements IExtraction {
+public class XtreamSplit extends IExtraction {
+
     private final static int        BUFFER = 2048;
 
-    private Archive                 archive;
-    private ExtractionController    controller;
-    JSonWrapper                     config;
     private boolean                 md5;
     private File                    file;
     private HashMap<String, String> hashes = new HashMap<String, String>();
     private List<String>            files  = new ArrayList<String>();
-    private Logger                  logger;
 
     public Archive buildArchive(DownloadLink link) {
         String pattern = "^" + Regex.escape(link.getFileOutput().replaceAll("(?i)\\.[\\d]+\\.xtm$", "")) + "\\.[\\d]+\\.xtm$";
@@ -68,16 +63,19 @@ public class XtreamSplit implements IExtraction {
         return a;
     }
 
+    @Override
     public Archive buildDummyArchive(String file) {
         Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[\\d]+\\.xtm$", ".*\\.001\\.xtm$");
         a.setExtractor(this);
         return a;
     }
 
+    @Override
     public boolean findPassword(String password) {
         return true;
     }
 
+    @Override
     public void extract() {
         byte[] buffer = new byte[BUFFER];
         Archive archive = controller.getArchiv();
@@ -196,14 +194,17 @@ public class XtreamSplit implements IExtraction {
         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
     }
 
+    @Override
     public boolean checkCommand() {
         return true;
     }
 
+    @Override
     public int getCrackProgress() {
         return 100;
     }
 
+    @Override
     public boolean prepare() {
         for (DownloadLink l : archive.getDownloadLinks()) {
             files.add(l.getFileOutput());
@@ -266,14 +267,6 @@ public class XtreamSplit implements IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public void setArchiv(Archive archive) {
-        this.archive = archive;
-    }
-
-    public void setExtractionController(ExtractionController controller) {
-        this.controller = controller;
-    }
-
     public String getArchiveName(DownloadLink link) {
         return new File(link.getFileOutput()).getName().replaceFirst("\\.[\\d]+\\.xtm$", "");
     }
@@ -286,10 +279,6 @@ public class XtreamSplit implements IExtraction {
     public boolean isArchivSupportedFileFilter(String file) {
         if (file.matches(".*\\.001\\.xtm$")) return true;
         return false;
-    }
-
-    public void setConfig(JSonWrapper config) {
-        this.config = config;
     }
 
     public void close() {
@@ -325,7 +314,4 @@ public class XtreamSplit implements IExtraction {
         return missing;
     }
 
-    public void setLogger(Logger logger) {
-        this.logger = logger;
-    }
 }

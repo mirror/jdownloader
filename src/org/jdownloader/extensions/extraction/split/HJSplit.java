@@ -19,7 +19,6 @@ package org.jdownloader.extensions.extraction.split;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
@@ -28,7 +27,6 @@ import jd.plugins.DownloadLink;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -38,10 +36,7 @@ import org.jdownloader.extensions.extraction.IExtraction;
  * @author botzi
  * 
  */
-public class HJSplit implements IExtraction {
-    private Archive              archive;
-    private ExtractionController controller;
-    JSonWrapper                  config;
+public class HJSplit extends IExtraction {
 
     public Archive buildArchive(DownloadLink link) {
         String pattern = "^" + Regex.escape(link.getFileOutput().replaceAll("(?i)\\.[\\d]+$", "")) + "\\.[\\d]+$";
@@ -50,16 +45,19 @@ public class HJSplit implements IExtraction {
         return a;
     }
 
+    @Override
     public Archive buildDummyArchive(String file) {
         Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[\\d]+$", ".*\\.001$");
         a.setExtractor(this);
         return a;
     }
 
+    @Override
     public boolean findPassword(String password) {
         return true;
     }
 
+    @Override
     public void extract() {
         File f = new File(archive.getFirstDownloadLink().getFileOutput().replaceFirst("\\.[\\d]+$", ""));
         String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstDownloadLink().getFileOutput()), archive.getDownloadLinks().size());
@@ -92,14 +90,6 @@ public class HJSplit implements IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public void setArchiv(Archive archive) {
-        this.archive = archive;
-    }
-
-    public void setExtractionController(ExtractionController controller) {
-        this.controller = controller;
-    }
-
     public String getArchiveName(DownloadLink link) {
         return new File(link.getFileOutput()).getName().replaceFirst("\\.[\\d]+$", "");
     }
@@ -120,6 +110,7 @@ public class HJSplit implements IExtraction {
         return false;
     }
 
+    @Override
     public boolean isArchivSupportedFileFilter(String file) {
         if (file.matches(".*\\.001$")) {
             if (file.matches("(?i).*\\.7z\\.001$")) {
@@ -129,10 +120,6 @@ public class HJSplit implements IExtraction {
             }
         }
         return false;
-    }
-
-    public void setConfig(JSonWrapper config) {
-        this.config = config;
     }
 
     public void close() {
@@ -168,6 +155,4 @@ public class HJSplit implements IExtraction {
         return missing;
     }
 
-    public void setLogger(Logger logger) {
-    }
 }

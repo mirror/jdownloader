@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
@@ -28,7 +27,6 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -38,10 +36,7 @@ import org.jdownloader.extensions.extraction.IExtraction;
  * @author botzi
  * 
  */
-public class Unix implements IExtraction {
-    private Archive              archive;
-    private ExtractionController controller;
-    JSonWrapper                  config;
+public class Unix extends IExtraction {
 
     public Archive buildArchive(DownloadLink link) {
         String pattern = "^" + Regex.escape(link.getFileOutput().replaceAll("(?i)\\.[a-z][a-z]$", "")) + "\\.[a-z][a-z]$";
@@ -50,16 +45,19 @@ public class Unix implements IExtraction {
         return a;
     }
 
+    @Override
     public Archive buildDummyArchive(String file) {
         Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[a-z][a-z]$", ".*\\.aa$");
         a.setExtractor(this);
         return a;
     }
 
+    @Override
     public boolean findPassword(String password) {
         return true;
     }
 
+    @Override
     public void extract() {
         File f = new File(archive.getFirstDownloadLink().getFileOutput().replaceFirst("\\.[a-z][a-z]$", ""));
         String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstDownloadLink().getFileOutput()), archive.getDownloadLinks().size());
@@ -92,14 +90,6 @@ public class Unix implements IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public void setArchiv(Archive archive) {
-        this.archive = archive;
-    }
-
-    public void setExtractionController(ExtractionController controller) {
-        this.controller = controller;
-    }
-
     public String getArchiveName(DownloadLink link) {
         return new File(link.getFileOutput()).getName().replaceFirst("\\.[a-z][a-z]$", "");
     }
@@ -112,10 +102,6 @@ public class Unix implements IExtraction {
     public boolean isArchivSupportedFileFilter(String file) {
         if (file.matches(".*\\.aa$")) return true;
         return false;
-    }
-
-    public void setConfig(JSonWrapper config) {
-        this.config = config;
     }
 
     public void close() {
@@ -175,6 +161,4 @@ public class Unix implements IExtraction {
         return newSuffix;
     }
 
-    public void setLogger(Logger logger) {
-    }
 }

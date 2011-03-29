@@ -23,7 +23,6 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -53,7 +52,6 @@ import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.DummyDownloadLink;
 import org.jdownloader.extensions.extraction.ExtractionConstants;
-import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -63,8 +61,7 @@ import org.jdownloader.extensions.extraction.IExtraction;
  * @author botzi
  * 
  */
-public class Multi implements IExtraction {
-    private static final String      DUMMY_HOSTER       = "dum.my";
+public class Multi extends IExtraction {
     private static final String      PRIORITY           = "PRIORITY";
 
     private static final String      PatternRar         = "(?i).*\\.rar$";
@@ -75,14 +72,9 @@ public class Multi implements IExtraction {
     private static final String      Pattern7z          = "(?i).*\\.7z$";
     private static final String      Pattern7zMulti     = "(?i).*\\.7z\\.\\d+$";
 
-    private Archive                  archive;
     private int                      crack;
-    private ExtractionController     con;
     private ISevenZipInArchive       inArchive;
-    private JSonWrapper              conf;
     private ArchiveFormat            format;
-
-    private Logger                   logger;
 
     // Indicates that the passwordcheck works with extracting the archive.
     private boolean                  passwordExtracting = false;
@@ -101,6 +93,7 @@ public class Multi implements IExtraction {
         inArchive = null;
     }
 
+    @Override
     public Archive buildArchive(DownloadLink link) {
         String file = link.getFileOutput();
         Archive archive = new Archive();
@@ -200,6 +193,7 @@ public class Multi implements IExtraction {
         return link;
     }
 
+    @Override
     public Archive buildDummyArchive(String file) {
         File file0 = new File(file);
         DownloadLink link = JDUtilities.getController().getDownloadLinkByFileOutput(file0, LinkStatus.FINISHED);
@@ -209,9 +203,10 @@ public class Multi implements IExtraction {
         return buildArchive(link);
     }
 
+    @Override
     public boolean findPassword(String password) {
         crack++;
-        con.fireEvent(ExtractionConstants.WRAPPER_PASSWORT_CRACKING);
+        controller.fireEvent(ExtractionConstants.WRAPPER_PASSWORT_CRACKING);
 
         try {
             if (inArchive != null) {
@@ -337,9 +332,10 @@ public class Multi implements IExtraction {
         }
     }
 
+    @Override
     public void extract() {
         try {
-            int priority = conf.getIntegerProperty(PRIORITY);
+            int priority = config.getIntegerProperty(PRIORITY);
 
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 // Skip 0 Byte files (folders)
@@ -373,7 +369,7 @@ public class Multi implements IExtraction {
 
                 archive.addExtractedFiles(extractTo);
 
-                MultiCallback call = new MultiCallback(extractTo, con, priority, item.getCRC() > 0 ? true : false);
+                MultiCallback call = new MultiCallback(extractTo, controller, priority, item.getCRC() > 0 ? true : false);
                 ExtractOperationResult res;
                 try {
                     if (item.isEncrypted()) {
@@ -466,6 +462,7 @@ public class Multi implements IExtraction {
         return result;
     }
 
+    @Override
     public boolean checkCommand() {
         try {
             SevenZip.initSevenZipFromPlatformJAR();
@@ -475,6 +472,7 @@ public class Multi implements IExtraction {
         return SevenZip.isInitializedSuccessfully();
     }
 
+    @Override
     public int getCrackProgress() {
         return crack;
     }
@@ -494,15 +492,16 @@ public class Multi implements IExtraction {
         return false;
     }
 
+    @Override
     public boolean prepare() {
         try {
-            if (archive.getFirstDownloadLink().getHost().equals(DUMMY_HOSTER)) {
+            if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
                 Archive a = buildArchive(archive.getFirstDownloadLink());
                 archive.setDownloadLinks(a.getDownloadLinks());
                 archive.setType(a.getType());
             }
 
-            String f = conf.getStringProperty(ExtractionConstants.CONFIG_KEY_MATCHER, null);
+            String f = config.getStringProperty(ExtractionConstants.CONFIG_KEY_MATCHER, null);
 
             if (f != null && f.length() > 0) {
                 String[] entries = Regex.getLines(f);
@@ -594,14 +593,7 @@ public class Multi implements IExtraction {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PRIORITY, priorities, JDL.L("plugins.optional.extraction.multi.priority", "Priority")).setDefaultValue(0));
     }
 
-    public void setArchiv(Archive archive) {
-        this.archive = archive;
-    }
-
-    public void setExtractionController(ExtractionController controller) {
-        con = controller;
-    }
-
+    @Override
     public String getArchiveName(DownloadLink link) {
         String match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.pa?r?t?\\.?[0-9]+.rar$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
@@ -621,6 +613,7 @@ public class Multi implements IExtraction {
         return match;
     }
 
+    @Override
     public boolean isArchivSupported(String file) {
         if (file.matches(PatternRarMulti)) return true;
         if (file.matches(PatternRar)) return true;
@@ -632,6 +625,7 @@ public class Multi implements IExtraction {
         return false;
     }
 
+    @Override
     public void close() {
         // Deleteing rar recovery volumes
         if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstDownloadLink().getFileOutput().matches(PatternRarMulti)) {
@@ -669,6 +663,7 @@ public class Multi implements IExtraction {
         }
     }
 
+    @Override
     public boolean isArchivSupportedFileFilter(String file) {
         if (file.matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) return true;
         if (file.matches("(?i).*\\.pa?r?t?\\.?[0-9]+.rar$")) return false;
@@ -679,10 +674,6 @@ public class Multi implements IExtraction {
         if (file.matches("(?i).*\\.tar\\.gz$")) return true;
         if (file.matches("(?i).*\\.tar\\.bz2$")) return true;
         return false;
-    }
-
-    public void setConfig(JSonWrapper config) {
-        conf = config;
     }
 
     /**
@@ -715,6 +706,7 @@ public class Multi implements IExtraction {
         }
     }
 
+    @Override
     public List<String> checkComplete(Archive archive) {
         List<String> missing = new ArrayList<String>();
 
@@ -795,7 +787,4 @@ public class Multi implements IExtraction {
         return missing;
     }
 
-    public void setLogger(Logger logger) {
-        this.logger = logger;
-    }
 }

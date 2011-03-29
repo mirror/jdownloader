@@ -29,7 +29,52 @@ import jd.plugins.DownloadLink;
  * @author botzi
  * 
  */
-public interface IExtraction {
+public abstract class IExtraction {
+
+    protected Archive              archive;
+    protected ExtractionController controller;
+    protected JSonWrapper          config;
+    protected Logger               logger;
+
+    /**
+     * Sets the {@link Archive} which should be extracted.
+     * 
+     * @param archive
+     *            The {@link Archive}.
+     */
+    public final void setArchiv(Archive archive) {
+        this.archive = archive;
+    }
+
+    /**
+     * Sets the {@link ExtractionController} which controlls the extraction.
+     * 
+     * @param controller
+     *            The {@link ExtractionController}.
+     */
+    public final void setExtractionController(ExtractionController controller) {
+        this.controller = controller;
+    }
+
+    /**
+     * Sets the pluginconfiguration.
+     * 
+     * @param config
+     *            The configuration.
+     */
+    public final void setConfig(JSonWrapper config) {
+        this.config = config;
+    }
+
+    /**
+     * The logger for the ouputs.
+     * 
+     * @param logger
+     */
+    public final void setLogger(Logger logger) {
+        this.logger = logger;
+    }
+
     /**
      * Builds an {@link Archive} with an finished {@link DownloadLink}. If the
      * {@link DownloadLink} contains only a part of an multipart archive, it has
@@ -39,7 +84,7 @@ public interface IExtraction {
      *            An complete downloaded file.
      * @return An {@link Archive} that contains all {@link Downloadlink}s.
      */
-    public Archive buildArchive(DownloadLink link);
+    public abstract Archive buildArchive(DownloadLink link);
 
     /**
      * Similar to the buildArchive, but contains only dummy {@link DownloadLink}
@@ -49,7 +94,7 @@ public interface IExtraction {
      *            Path the first archive.
      * @return An {@link Archive} that contains all dummy {@link Downloadlink}s.
      */
-    public Archive buildDummyArchive(String file);
+    public abstract Archive buildDummyArchive(String file);
 
     /**
      * Checks a single password if the archive is encrypted with it.
@@ -58,12 +103,12 @@ public interface IExtraction {
      *            The password.
      * @return True if the password is correct.
      */
-    public boolean findPassword(String password);
+    public abstract boolean findPassword(String password);
 
     /**
      * Starts the extraction of an {@link Archive}.
      */
-    public void extract();
+    public abstract void extract();
 
     /**
      * Checks if the extraction method can be used on the system. If it's not
@@ -73,14 +118,14 @@ public interface IExtraction {
      * 
      * @return True if all works.
      */
-    public boolean checkCommand();
+    public abstract boolean checkCommand();
 
     /**
      * Returns the percent of the tested passowords.
      * 
      * @return The percent of the tested passwords.
      */
-    public int getCrackProgress();
+    public abstract int getCrackProgress();
 
     /**
      * Is used to let the extraction method prepare for the extraction. Will be
@@ -89,7 +134,7 @@ public interface IExtraction {
      * 
      * @return False if it's not possible to extract that archive.
      */
-    public boolean prepare();
+    public abstract boolean prepare();
 
     /**
      * Sets a configuration.
@@ -97,23 +142,7 @@ public interface IExtraction {
      * @param config
      * @param subConfig
      */
-    public void initConfig(ConfigContainer config, JSonWrapper subConfig);
-
-    /**
-     * Sets the {@link Archive} which should be extracted.
-     * 
-     * @param archive
-     *            The {@link Archive}.
-     */
-    public void setArchiv(Archive archive);
-
-    /**
-     * Sets the {@link ExtractionController} which controlls the extraction.
-     * 
-     * @param controller
-     *            The {@link ExtractionController}.
-     */
-    public void setExtractionController(ExtractionController controller);
+    public abstract void initConfig(ConfigContainer config, JSonWrapper subConfig);
 
     /**
      * Returns the archivename of an {@link Archive}.
@@ -122,7 +151,7 @@ public interface IExtraction {
      *            The {@link Archive}.
      * @return The name of the archive.
      */
-    public String getArchiveName(DownloadLink link);
+    public abstract String getArchiveName(DownloadLink link);
 
     /**
      * Checks if the file is supported.
@@ -131,7 +160,7 @@ public interface IExtraction {
      *            The file which should be checked
      * @return
      */
-    public boolean isArchivSupported(String file);
+    public abstract boolean isArchivSupported(String file);
 
     /**
      * Checks if the file from the filefilter is supported.
@@ -140,20 +169,12 @@ public interface IExtraction {
      *            The file which should be checked.
      * @return
      */
-    public boolean isArchivSupportedFileFilter(String file);
-
-    /**
-     * Sets the pluginconfiguration.
-     * 
-     * @param config
-     *            The configuration.
-     */
-    public void setConfig(JSonWrapper config);
+    public abstract boolean isArchivSupportedFileFilter(String file);
 
     /**
      * Ends the extraction.
      */
-    public void close();
+    public abstract void close();
 
     /**
      * checks an Archive if any part is missing.
@@ -162,12 +183,6 @@ public interface IExtraction {
      *            The archive.
      * @return A list of parts which are missing.
      */
-    public List<String> checkComplete(Archive archive);
+    public abstract List<String> checkComplete(Archive archive);
 
-    /**
-     * The logger for the ouputs.
-     * 
-     * @param logger
-     */
-    public void setLogger(Logger logger);
 }
