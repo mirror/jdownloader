@@ -28,7 +28,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.utils.JDTheme;
 
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.translate.JDT;
 
 public class AddonsMenu extends JMenu {
@@ -58,15 +58,15 @@ public class AddonsMenu extends JMenu {
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        ArrayList<PluginOptional> pluginsOptional = ExtensionController.getInstance().getExtensions();
-        Collections.sort(pluginsOptional, new Comparator<PluginOptional>() {
+        ArrayList<AbstractExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        Collections.sort(pluginsOptional, new Comparator<AbstractExtension>() {
 
-            public int compare(PluginOptional o1, PluginOptional o2) {
+            public int compare(AbstractExtension o1, AbstractExtension o2) {
                 return o1.getName().compareTo(o2.getName());
             }
         });
 
-        for (final PluginOptional plg : pluginsOptional) {
+        for (final AbstractExtension plg : pluginsOptional) {
             if (!plg.isRunning()) continue;
             ArrayList<MenuAction> mis = plg.getMenuAction();
             if (mis != null && !mis.isEmpty()) {

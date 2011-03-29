@@ -7,7 +7,7 @@ import jd.gui.swing.jdgui.views.ClosableView;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionGuiEnableAction;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 
 public abstract class AddonPanel extends ClosableView {
 
@@ -16,10 +16,10 @@ public abstract class AddonPanel extends ClosableView {
      */
     private static final long        serialVersionUID = 1L;
     private boolean                  active           = false;
-    private PluginOptional           extension;
+    private AbstractExtension           extension;
     private ExtensionGuiEnableAction action;
 
-    public AddonPanel(PluginOptional plg) {
+    public AddonPanel(AbstractExtension plg) {
         extension = plg;
 
         getBroadcaster().addListener(new SwitchPanelListener() {

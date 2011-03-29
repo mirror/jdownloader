@@ -22,12 +22,12 @@ import jd.utils.JDUtilities;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
 @OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 7)
-public class LecturnityDownloaderExtension extends PluginOptional implements ActionListener {
+public class LecturnityDownloaderExtension extends AbstractExtension implements ActionListener {
 
     public final static String PROPERTY_DOWNLOADDIR = "PROPERTY_DOWNLOADDIR";
 

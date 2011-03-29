@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -53,7 +53,7 @@ import org.jdownloader.extensions.StopException;
  * @author coalado
  */
 
-public class LangFileEditorExtension extends PluginOptional implements ActionListener, ControlListener {
+public class LangFileEditorExtension extends AbstractExtension implements ActionListener, ControlListener {
 
     private final SingletonPanel lfe;
     private MenuAction           activateAction;

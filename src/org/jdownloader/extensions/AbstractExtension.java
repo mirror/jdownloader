@@ -41,7 +41,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.logging.LogController;
 
-public abstract class PluginOptional implements ShutdownVetoListener {
+public abstract class AbstractExtension implements ShutdownVetoListener {
 
     public static final int ADDON_INTERFACE_VERSION = 8;
 
@@ -134,7 +134,7 @@ public abstract class PluginOptional implements ShutdownVetoListener {
      * @throws
      * @throws StartException
      */
-    public PluginOptional(String name) {
+    public AbstractExtension(String name) {
         this.name = name == null ? JDL.L(getClass().getName(), getClass().getSimpleName()) : name;
         logger = createLogger(getClass());
         ShutdownController.getInstance().addShutdownVetoListener(this);
@@ -176,11 +176,11 @@ public abstract class PluginOptional implements ShutdownVetoListener {
 
     }
 
-    public abstract ExtensionConfigPanel<? extends PluginOptional> getConfigPanel();
+    public abstract ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel();
 
     public abstract boolean hasConfigPanel();
 
-    private Logger createLogger(Class<? extends PluginOptional> class1) {
+    private Logger createLogger(Class<? extends AbstractExtension> class1) {
         return LogController.getInstance().createLogger(class1);
     }
 

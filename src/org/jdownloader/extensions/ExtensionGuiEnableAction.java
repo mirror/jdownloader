@@ -16,12 +16,12 @@ import org.appwork.utils.images.IconIO;
 
 public class ExtensionGuiEnableAction extends AbstractAction {
 
-    private PluginOptional plg;
+    private AbstractExtension plg;
     private ImageIcon      icon16Enabled;
     private ImageIcon      icon16Disabled;
     private boolean        java15;
 
-    public ExtensionGuiEnableAction(PluginOptional plg) {
+    public ExtensionGuiEnableAction(AbstractExtension plg) {
         super(plg.getName());
         this.plg = plg;
         java15 = Application.getJavaVersion() < 16000000;

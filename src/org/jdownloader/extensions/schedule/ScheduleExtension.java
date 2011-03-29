@@ -38,11 +38,11 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class ScheduleExtension extends PluginOptional implements ActionListener {
+public class ScheduleExtension extends AbstractExtension implements ActionListener {
 
     private ArrayList<Actions>                  actions;
 

@@ -20,7 +20,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.settings.SettingsComponent;
 import org.jdownloader.translate.JDT;
 
-public abstract class ExtensionConfigPanel<T extends PluginOptional> extends SwitchPanel {
+public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends SwitchPanel {
     /**
      * 
      */

@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -128,7 +128,7 @@ class PremShareHost extends HostPluginWrapper {
 
 }
 
-public class PremiumCompoundExtension extends PluginOptional {
+public class PremiumCompoundExtension extends AbstractExtension {
 
     @Override
     public boolean isDefaultEnabled() {

@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.HttpServer;
@@ -44,7 +44,7 @@ import org.jdownloader.extensions.interfaces.HttpServer;
  * zu erhöhen.
  */
 @OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 7)
-public class RemoteControlExtension extends PluginOptional implements ActionListener {
+public class RemoteControlExtension extends AbstractExtension implements ActionListener {
 
     private static final String PARAM_PORT      = "PORT";
     private static final String PARAM_LOCALHOST = "LOCALHOST";

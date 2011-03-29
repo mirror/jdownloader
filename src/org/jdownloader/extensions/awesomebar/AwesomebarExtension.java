@@ -15,7 +15,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.awesomebar.awesome.Awesome;
@@ -23,7 +23,7 @@ import org.jdownloader.extensions.awesomebar.awesome.gui.AwesomeCustomToolbarAct
 import org.jdownloader.extensions.awesomebar.awesome.gui.AwesomeProposalPanel;
 import org.jdownloader.extensions.awesomebar.awesome.gui.AwesomeToolbarPanel;
 
-public class AwesomebarExtension extends PluginOptional implements ControlListener {
+public class AwesomebarExtension extends AbstractExtension implements ControlListener {
 
     private CustomToolbarAction  toolbarAction;
     private AwesomeToolbarPanel  toolbarPanel;

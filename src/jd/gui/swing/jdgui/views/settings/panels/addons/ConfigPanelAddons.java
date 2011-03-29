@@ -47,7 +47,7 @@ import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.appwork.utils.swing.table.columns.ExtLongColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 
 /**
  * @author JD-Team
@@ -63,25 +63,25 @@ public class ConfigPanelAddons extends ConfigPanel {
         return "gui.images.config.packagemanager";
     }
 
-    private class InternalTableModel extends ExtTableModel<PluginOptional> {
+    private class InternalTableModel extends ExtTableModel<AbstractExtension> {
 
         private static final long serialVersionUID = 5847076032639053531L;
 
         public InternalTableModel() {
             super("addonTable");
 
-            tableData = new ArrayList<PluginOptional>(pluginsOptional);
+            tableData = new ArrayList<AbstractExtension>(pluginsOptional);
         }
 
         @Override
         protected void initColumns() {
             this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Activate"), this, ConfigPanelAddons.this));
-            this.addColumn(new ExtTextColumn<PluginOptional>(JDL.L("gui.column_plugin", "Plugin"), this) {
+            this.addColumn(new ExtTextColumn<AbstractExtension>(JDL.L("gui.column_plugin", "Plugin"), this) {
 
                 private static final long serialVersionUID = -3960914415647488335L;
 
                 @Override
-                protected Icon getIcon(PluginOptional value) {
+                protected Icon getIcon(AbstractExtension value) {
                     ImageIcon icon = null;
                     if ((icon = JDTheme.II(value.getIconKey(), 16, 16)) != null) {
                         return icon;
@@ -91,17 +91,17 @@ public class ConfigPanelAddons extends ConfigPanel {
                 }
 
                 @Override
-                protected String getStringValue(PluginOptional value) {
+                protected String getStringValue(AbstractExtension value) {
                     return value.getName();
                 }
 
             });
-            this.addColumn(new ExtLongColumn<PluginOptional>(JDL.L("gui.column_version", "Version"), this) {
+            this.addColumn(new ExtLongColumn<AbstractExtension>(JDL.L("gui.column_version", "Version"), this) {
 
                 private static final long serialVersionUID = -7390851512040553114L;
 
                 @Override
-                protected long getLong(PluginOptional value) {
+                protected long getLong(AbstractExtension value) {
                     return value.getVersion();
                 }
 
@@ -115,9 +115,9 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private final ImageIcon                 smallDefaultIcon;
     private final ImageIcon                 defaultIcon;
-    private final ArrayList<PluginOptional> pluginsOptional;
+    private final ArrayList<AbstractExtension> pluginsOptional;
 
-    private ExtTable<PluginOptional>        table;
+    private ExtTable<AbstractExtension>        table;
 
     private JLabel                          lblName;
     private JLabel                          lblVersion;
@@ -128,11 +128,11 @@ public class ConfigPanelAddons extends ConfigPanel {
 
         smallDefaultIcon = JDTheme.II(ConfigPanel.getIconKey(), 16, 16);
         defaultIcon = JDTheme.II(ConfigPanel.getIconKey(), 24, 24);
-        pluginsOptional = new ArrayList<PluginOptional>(ExtensionController.getInstance().getExtensions());
+        pluginsOptional = new ArrayList<AbstractExtension>(ExtensionController.getInstance().getExtensions());
 
-        Collections.sort(pluginsOptional, new Comparator<PluginOptional>() {
+        Collections.sort(pluginsOptional, new Comparator<AbstractExtension>() {
 
-            public int compare(PluginOptional o1, PluginOptional o2) {
+            public int compare(AbstractExtension o1, AbstractExtension o2) {
                 return o1.getName().compareTo(o2.getName());
             }
         });
@@ -142,7 +142,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     @Override
     protected ConfigContainer setupContainer() {
-        table = new ExtTable<PluginOptional>(new InternalTableModel(), "addonTable");
+        table = new ExtTable<AbstractExtension>(new InternalTableModel(), "addonTable");
         table.addRowHighlighter(new SelectionHighlighter(null, new Color(200, 200, 200, 80)));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -189,7 +189,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         if (row < 0) return;
 
         table.getExtTableModel().fireTableRowsUpdated(row, row);
-        PluginOptional opw = table.getExtTableModel().getElementAt(row);
+        AbstractExtension opw = table.getExtTableModel().getElementAt(row);
         ImageIcon icon;
         if ((icon = JDTheme.II(opw.getIconKey(), 24, 24)) != null) {
             lblName.setIcon(icon);

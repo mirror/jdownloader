@@ -27,11 +27,11 @@ import jd.plugins.AddonPanel;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class ImrovedMacOSXDockExtension extends PluginOptional implements ControlListener {
+public class ImrovedMacOSXDockExtension extends AbstractExtension implements ControlListener {
 
     @Override
     public boolean isLinuxRunnable() {

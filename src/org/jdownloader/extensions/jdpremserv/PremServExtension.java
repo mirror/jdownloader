@@ -34,12 +34,12 @@ import jd.plugins.AddonPanel;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdpremserv.gui.JDPremServGui;
 
-public class PremServExtension extends PluginOptional implements ActionListener, ControlListener {
+public class PremServExtension extends AbstractExtension implements ActionListener, ControlListener {
 
     private MenuAction    activateAction;
 

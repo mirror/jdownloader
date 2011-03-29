@@ -36,8 +36,8 @@ public class ExtensionController {
         return ExtensionController.INSTANCE;
     }
 
-    private HashMap<Class<PluginOptional>, PluginOptional> map;
-    private ArrayList<PluginOptional>                      list;
+    private HashMap<Class<AbstractExtension>, AbstractExtension> map;
+    private ArrayList<AbstractExtension>                      list;
 
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
@@ -45,15 +45,15 @@ public class ExtensionController {
      */
     private ExtensionController() {
 
-        map = new HashMap<Class<PluginOptional>, PluginOptional>();
-        list = new ArrayList<PluginOptional>();
+        map = new HashMap<Class<AbstractExtension>, AbstractExtension>();
+        list = new ArrayList<AbstractExtension>();
         JDController.getInstance().addControlListener(new ControlListener() {
 
             public void controlEvent(ControlEvent event) {
                 if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE) {
                     JDController.getInstance().removeControlListener(this);
 
-                    for (PluginOptional plg : list) {
+                    for (AbstractExtension plg : list) {
                         if (plg.getGUI() != null) {
 
                             plg.getGUI().restore();
@@ -83,7 +83,7 @@ public class ExtensionController {
             try {
                 URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() });
 
-                final Enumeration<URL> urls = cl.getResources(PluginOptional.class.getPackage().getName().replace('.', '/'));
+                final Enumeration<URL> urls = cl.getResources(AbstractExtension.class.getPackage().getName().replace('.', '/'));
                 URL url;
                 while (urls.hasMoreElements()) {
                     url = urls.nextElement();
@@ -95,15 +95,15 @@ public class ExtensionController {
 
                         while ((e = jis.getNextJarEntry()) != null) {
                             try {
-                                Matcher matcher = Pattern.compile(Pattern.quote(PluginOptional.class.getPackage().getName().replace('.', '/')) + "/(\\w+)/(\\w+Extension)\\.class").matcher(e.getName());
+                                Matcher matcher = Pattern.compile(Pattern.quote(AbstractExtension.class.getPackage().getName().replace('.', '/')) + "/(\\w+)/(\\w+Extension)\\.class").matcher(e.getName());
                                 if (matcher.find()) {
                                     String pkg = matcher.group(1);
                                     String clazzName = matcher.group(2);
-                                    Class<?> clazz = cl.loadClass(PluginOptional.class.getPackage().getName() + "." + pkg + "." + clazzName);
+                                    Class<?> clazz = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
 
-                                    if (PluginOptional.class.isAssignableFrom(clazz)) {
+                                    if (AbstractExtension.class.isAssignableFrom(clazz)) {
 
-                                        initModule((Class<PluginOptional>) clazz);
+                                        initModule((Class<AbstractExtension>) clazz);
                                         continue main;
                                     }
 
@@ -140,7 +140,7 @@ public class ExtensionController {
             Log.L.finer("Did not load unpacked Extensions from " + ret);
             return;
         }
-        root = new File(root, PluginOptional.class.getPackage().getName().replace('.', '/'));
+        root = new File(root, AbstractExtension.class.getPackage().getName().replace('.', '/'));
         Log.L.finer("Load Extensions from: " + root.getAbsolutePath());
         File[] folders = root.listFiles(new FileFilter() {
 
@@ -161,11 +161,11 @@ public class ExtensionController {
 
                 Class<?> cls;
                 try {
-                    cls = cl.loadClass(PluginOptional.class.getPackage().getName() + "." + module.getParentFile().getName() + "." + module.getName().substring(0, module.getName().length() - 6));
+                    cls = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + module.getParentFile().getName() + "." + module.getName().substring(0, module.getName().length() - 6));
 
-                    if (PluginOptional.class.isAssignableFrom(cls)) {
+                    if (AbstractExtension.class.isAssignableFrom(cls)) {
                         loaded = true;
-                        initModule((Class<PluginOptional>) cls);
+                        initModule((Class<AbstractExtension>) cls);
                         continue main;
                     }
                 } catch (IllegalArgumentException e) {
@@ -181,9 +181,9 @@ public class ExtensionController {
 
     }
 
-    private void initModule(Class<PluginOptional> cls) throws InstantiationException, IllegalAccessException, StartException {
+    private void initModule(Class<AbstractExtension> cls) throws InstantiationException, IllegalAccessException, StartException {
 
-        PluginOptional plg = (PluginOptional) cls.newInstance();
+        AbstractExtension plg = (AbstractExtension) cls.newInstance();
         plg.init();
 
         if (!plg.isWindowsRunnable() && CrossSystem.isWindows()) throw new IllegalArgumentException("Module is not for windows");
@@ -196,13 +196,13 @@ public class ExtensionController {
 
     }
 
-    public boolean isExtensionActive(Class<? extends PluginOptional> class1) {
-        PluginOptional plg = map.get(class1);
+    public boolean isExtensionActive(Class<? extends AbstractExtension> class1) {
+        AbstractExtension plg = map.get(class1);
         if (plg != null && plg.isRunning()) return true;
         return false;
     }
 
-    public ArrayList<PluginOptional> getExtensions() {
+    public ArrayList<AbstractExtension> getExtensions() {
 
         return list;
     }

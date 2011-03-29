@@ -60,7 +60,7 @@ import jd.utils.WebUpdate;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.interfaces.Handler;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.interfaces.Request;
@@ -1102,10 +1102,10 @@ public class Serverhandler implements Handler {
             response.addContent(xml);
         } else if (requestUrl.matches("(?is).*/addon/.+")) {
             // search in addons
-            final ArrayList<PluginOptional> addons = ExtensionController.getInstance().getExtensions();
+            final ArrayList<AbstractExtension> addons = ExtensionController.getInstance().getExtensions();
             Object cmdResponse = null;
 
-            for (final PluginOptional addon : addons) {
+            for (final AbstractExtension addon : addons) {
                 if (addon.isRunning()) {
 
                     if (addon instanceof RemoteSupport) {

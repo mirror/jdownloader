@@ -29,7 +29,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.translate.JDT;
 
 public class WindowMenu extends JMenu {
@@ -55,15 +55,15 @@ public class WindowMenu extends JMenu {
 
     private void updateMenu() {
 
-        ArrayList<PluginOptional> pluginsOptional = ExtensionController.getInstance().getExtensions();
-        Collections.sort(pluginsOptional, new Comparator<PluginOptional>() {
+        ArrayList<AbstractExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        Collections.sort(pluginsOptional, new Comparator<AbstractExtension>() {
 
-            public int compare(PluginOptional o1, PluginOptional o2) {
+            public int compare(AbstractExtension o1, AbstractExtension o2) {
                 return o1.getName().compareTo(o2.getName());
             }
         });
 
-        for (final PluginOptional plg : pluginsOptional) {
+        for (final AbstractExtension plg : pluginsOptional) {
             if (!plg.isRunning()) continue;
 
             if (plg.getShowGuiAction() != null) {

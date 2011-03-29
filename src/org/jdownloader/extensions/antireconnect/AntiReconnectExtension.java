@@ -30,11 +30,11 @@ import jd.utils.locale.JDL;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.txtresource.TranslationFactory;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class AntiReconnectExtension extends PluginOptional {
+public class AntiReconnectExtension extends AbstractExtension {
     private static final String              CONFIG_MODE         = "CONFIG_MODE";
     private static final String              CONFIG_IPS          = "CONFIG_IPS";
     private static final String              CONFIG_TIMEOUT      = "CONFIG_TIMEOUT";

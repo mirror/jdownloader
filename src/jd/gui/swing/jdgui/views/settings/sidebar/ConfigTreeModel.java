@@ -23,7 +23,7 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 
 import jd.controlling.reconnect.ReconnectPluginConfigGUI;
 import jd.utils.locale.JDL;
@@ -119,7 +119,7 @@ public class ConfigTreeModel implements TreeModel {
     }
 
     private void initExtensions(final TreeEntry addons) {
-        for (final PluginOptional plg : ExtensionController.getInstance().getExtensions()) {
+        for (final AbstractExtension plg : ExtensionController.getInstance().getExtensions()) {
             if (!plg.isRunning() || (!plg.hasSettings() && !plg.hasConfigPanel())) {
                 continue;
             }

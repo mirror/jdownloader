@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.update.JDUpdater;
@@ -61,7 +61,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-public class ExternInterfaceExtension extends PluginOptional {
+public class ExternInterfaceExtension extends AbstractExtension {
 
     public void onShutdown() {
     }

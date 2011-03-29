@@ -38,12 +38,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 7)
-public class JDPremium extends PluginOptional {
+public class JDPremium extends AbstractExtension {
 
     private static final Object                  LOCK                = new Object();
     private static boolean                       replaced            = false;
@@ -198,7 +198,7 @@ public class JDPremium extends PluginOptional {
     }
 
     @Override
-    public ExtensionConfigPanel<? extends PluginOptional> getConfigPanel() {
+    public ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel() {
         return null;
     }
 

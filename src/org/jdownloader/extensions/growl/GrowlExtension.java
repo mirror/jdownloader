@@ -43,11 +43,11 @@ import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class GrowlExtension extends PluginOptional implements ControlListener {
+public class GrowlExtension extends AbstractExtension implements ControlListener {
 
     private static final String TMP_GROWL_NOTIFICATION_SCPT = "tmp/growlNotification.scpt";
 

@@ -21,7 +21,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 
 
 @Retention(value = RetentionPolicy.RUNTIME)
@@ -45,9 +45,9 @@ public @interface OptionalPlugin {
 
     /**
      * if set to true, the addon has to implement
-     * {@link PluginOptional#setGuiEnable(boolean)}
+     * {@link AbstractExtension#setGuiEnable(boolean)}
      * 
-     * @see PluginOptional#setGuiEnable(boolean)
+     * @see AbstractExtension#setGuiEnable(boolean)
      */
     boolean hasGui() default false;
 }

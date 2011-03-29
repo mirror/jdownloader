@@ -24,34 +24,34 @@ import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate.JDT;
 
-public class ActivateColumn extends ExtCheckColumn<PluginOptional> {
+public class ActivateColumn extends ExtCheckColumn<AbstractExtension> {
 
     private static final long       serialVersionUID = 658156218405204887L;
     private final ConfigPanelAddons addons;
 
-    public ActivateColumn(String name, ExtTableModel<PluginOptional> table, ConfigPanelAddons addons) {
+    public ActivateColumn(String name, ExtTableModel<AbstractExtension> table, ConfigPanelAddons addons) {
         super(name, table);
 
         this.addons = addons;
     }
 
     @Override
-    public boolean isEditable(PluginOptional obj) {
+    public boolean isEditable(AbstractExtension obj) {
         return true;
     }
 
     @Override
-    protected boolean getBooleanValue(PluginOptional value) {
+    protected boolean getBooleanValue(AbstractExtension value) {
         return value.isRunning();
     }
 
     @Override
-    protected void setBooleanValue(boolean value, PluginOptional object) {
+    protected void setBooleanValue(boolean value, AbstractExtension object) {
         if (value == object.isRunning()) return;
         if (value) {
             try {

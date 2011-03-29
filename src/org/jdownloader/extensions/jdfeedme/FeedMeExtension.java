@@ -34,7 +34,7 @@ import jd.plugins.FilePackage;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
@@ -50,7 +50,7 @@ import org.jdownloader.extensions.remotecontrol.helppage.Table;
 // enable CODE_FOR_INTERFACE_5-START-END and disable CODE_FOR_INTERFACE_7-START-END
 // don't forget to change interface version from 7 to 5
 
-public class FeedMeExtension extends PluginOptional implements RemoteSupport, ActionListener, ControlListener {
+public class FeedMeExtension extends AbstractExtension implements RemoteSupport, ActionListener, ControlListener {
     // / stop using config and use XML instead
     // public static final String PROPERTY_SETTINGS = "FEEDS";
     public static final String     STORAGE_FEEDS  = "cfg/jdfeedme/feeds.xml";

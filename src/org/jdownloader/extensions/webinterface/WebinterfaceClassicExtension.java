@@ -33,11 +33,11 @@ import jd.utils.locale.JDL;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class WebinterfaceClassicExtension extends PluginOptional {
+public class WebinterfaceClassicExtension extends AbstractExtension {
     static public WebinterfaceClassicExtension instance;
     static final String                        PROPERTY_HTTPS            = "PARAM_HTTPS";
     static final String                        PROPERTY_LOGIN            = "PARAM_LOGIN";

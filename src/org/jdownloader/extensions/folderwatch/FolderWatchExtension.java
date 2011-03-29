@@ -55,7 +55,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.folderwatch.core.FileMonitoring;
@@ -66,7 +66,7 @@ import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.remotecontrol.helppage.HelpPage;
 import org.jdownloader.extensions.remotecontrol.helppage.Table;
 
-public class FolderWatchExtension extends PluginOptional implements FileMonitoringListener, RemoteSupport, ActionListener {
+public class FolderWatchExtension extends AbstractExtension implements FileMonitoringListener, RemoteSupport, ActionListener {
 
     private static final String JDL_PREFIX           = "plugins.optional.folderwatch.JDFolderWatch.";
 

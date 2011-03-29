@@ -33,11 +33,11 @@ import jd.utils.locale.JDL;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class PackageCustomizerExtension extends PluginOptional implements LinkGrabberPackagingEvent {
+public class PackageCustomizerExtension extends AbstractExtension implements LinkGrabberPackagingEvent {
 
     private static final String   JDL_PREFIX        = "jd.plugins.optional.customizer.JDPackageCustomizer.";
 

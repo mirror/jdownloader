@@ -65,11 +65,11 @@ import jd.utils.locale.JDL;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class TrayExtension extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener, LinkGrabberControllerListener, WindowStateListener, ActionListener, ControlListener {
+public class TrayExtension extends AbstractExtension implements MouseListener, MouseMotionListener, WindowListener, LinkGrabberControllerListener, WindowStateListener, ActionListener, ControlListener {
 
     public void onShutdown() {
     }

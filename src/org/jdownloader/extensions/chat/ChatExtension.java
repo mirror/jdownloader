@@ -72,14 +72,14 @@ import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
 import org.jdownloader.extensions.chat.translation.T;
 import org.schwering.irc.lib.IRCConnection;
 
-public class ChatExtension extends PluginOptional {
+public class ChatExtension extends AbstractExtension {
     private static final long                AWAY_TIMEOUT         = 15 * 60 * 1000;
     private static final Pattern             CMD_ACTION           = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
     private static final Pattern             CMD_CONNECT          = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);

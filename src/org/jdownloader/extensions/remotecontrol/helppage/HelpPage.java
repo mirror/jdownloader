@@ -19,7 +19,7 @@ package org.jdownloader.extensions.remotecontrol.helppage;
 import java.util.ArrayList;
 
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.remotecontrol.RemoteControlExtension;
 
@@ -254,9 +254,9 @@ public class HelpPage {
 
         // Generates tables for all addons that are able to communicate with
         // RemoteControl
-        ArrayList<PluginOptional> addons = ExtensionController.getInstance().getExtensions();
+        ArrayList<AbstractExtension> addons = ExtensionController.getInstance().getExtensions();
 
-        for (PluginOptional addon : addons) {
+        for (AbstractExtension addon : addons) {
 
             if (addon.isRunning()) {
 

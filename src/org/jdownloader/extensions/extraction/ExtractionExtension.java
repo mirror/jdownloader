@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.PluginOptional;
+import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.multi.Multi;
@@ -62,7 +62,7 @@ import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translation.T;
 
-public class ExtractionExtension extends PluginOptional implements ControlListener, ActionListener {
+public class ExtractionExtension extends AbstractExtension implements ControlListener, ActionListener {
     private static final int             EXTRACT_LINK            = 1000;
 
     private static final int             EXTRACT_PACKAGE         = 1001;
@@ -754,7 +754,7 @@ public class ExtractionExtension extends PluginOptional implements ControlListen
     }
 
     @Override
-    public ExtensionConfigPanel<? extends PluginOptional> getConfigPanel() {
+    public ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel() {
         return null;
     }
 }
