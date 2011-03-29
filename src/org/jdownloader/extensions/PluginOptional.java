@@ -232,6 +232,12 @@ public abstract class PluginOptional implements ShutdownVetoListener {
         this.settings = new ConfigContainer(name);
         initExtension();
         initSettings(settings);
+
+        isDefaultEnabled();
+        if (store.isFreshInstall()) {
+            store.setEnabled(this.isDefaultEnabled());
+            store.setFreshInstall(false);
+        }
         if (store.isEnabled()) {
             try {
                 setRunning(true);
