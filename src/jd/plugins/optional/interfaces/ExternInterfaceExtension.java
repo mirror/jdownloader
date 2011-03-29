@@ -46,6 +46,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
@@ -53,8 +55,6 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 import org.jdownloader.update.JDUpdater;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;

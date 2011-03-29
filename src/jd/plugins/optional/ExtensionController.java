@@ -1,4 +1,4 @@
-package org.jdownloader.extensions;
+package jd.plugins.optional;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -18,7 +18,6 @@ import java.util.regex.Pattern;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.plugins.optional.PluginOptional;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;

@@ -50,6 +50,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.plugins.optional.extraction.multi.Multi;
 import jd.plugins.optional.extraction.split.HJSplit;
 import jd.plugins.optional.extraction.split.Unix;
@@ -59,8 +61,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 public class ExtractionExtension extends PluginOptional implements ControlListener, ActionListener {
     private static final int             EXTRACT_LINK            = 1000;

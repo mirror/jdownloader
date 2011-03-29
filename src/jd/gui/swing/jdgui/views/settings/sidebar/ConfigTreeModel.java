@@ -23,10 +23,10 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import jd.controlling.reconnect.ReconnectPluginConfigGUI;
+import jd.plugins.optional.ExtensionController;
 import jd.plugins.optional.PluginOptional;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.extensions.ExtensionController;
 
 public class ConfigTreeModel implements TreeModel {
     private static final String JDL_PREFIX   = "jd.gui.swing.jdgui.views.ConfigTreeModel.";

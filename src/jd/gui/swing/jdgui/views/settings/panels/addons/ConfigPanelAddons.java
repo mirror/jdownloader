@@ -37,6 +37,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.plugins.optional.ExtensionController;
 import jd.plugins.optional.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -47,7 +48,6 @@ import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.appwork.utils.swing.table.columns.ExtLongColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
-import org.jdownloader.extensions.ExtensionController;
 
 /**
  * @author JD-Team

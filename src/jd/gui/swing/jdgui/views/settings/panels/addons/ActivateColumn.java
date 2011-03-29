@@ -21,12 +21,12 @@ import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate.JDT;
 
 public class ActivateColumn extends ExtCheckColumn<PluginOptional> {

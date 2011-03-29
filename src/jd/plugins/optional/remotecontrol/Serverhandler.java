@@ -55,6 +55,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.optional.ExtensionController;
 import jd.plugins.optional.PluginOptional;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.RemoteSupport;
@@ -65,7 +66,6 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.update.RestartController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

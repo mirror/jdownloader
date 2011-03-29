@@ -28,7 +28,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
-import javax.swing.UIManager;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,6 +50,8 @@ import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.plugins.optional.folderwatch.core.FileMonitoring;
 import jd.plugins.optional.folderwatch.core.FileMonitoringListener;
 import jd.plugins.optional.folderwatch.data.History;
@@ -64,8 +65,6 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownVetoException;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 public class FolderWatchExtension extends PluginOptional implements FileMonitoringListener, RemoteSupport, ActionListener {
 
@@ -477,7 +476,6 @@ public class FolderWatchExtension extends PluginOptional implements FileMonitori
 
     @Override
     protected void initSettings(ConfigContainer config) {
-
 
         final JDFileChooser filechooser = new JDFileChooser();
         filechooser.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);

@@ -39,8 +39,6 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 import org.jdownloader.logging.LogController;
 
 public abstract class PluginOptional implements ShutdownVetoListener {

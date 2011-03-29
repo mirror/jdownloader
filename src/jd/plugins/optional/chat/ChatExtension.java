@@ -61,6 +61,8 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.plugins.optional.chat.settings.ChatConfigPanel;
 import jd.plugins.optional.chat.translation.T;
 import jd.utils.JDUtilities;
@@ -75,8 +77,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 import org.schwering.irc.lib.IRCConnection;
 
 public class ChatExtension extends PluginOptional {

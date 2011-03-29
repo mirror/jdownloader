@@ -32,6 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.plugins.optional.interfaces.RemoteSupport;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
@@ -39,8 +41,6 @@ import jd.plugins.optional.remotecontrol.helppage.Table;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 // notes: this module lets you download content automatically from RSS feeds
 // the module was developed after stable JDownloader 0.9.580 was released (SVN revision 9580)

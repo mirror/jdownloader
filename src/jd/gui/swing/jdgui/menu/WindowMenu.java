@@ -26,10 +26,10 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.plugins.optional.ExtensionController;
 import jd.plugins.optional.PluginOptional;
 
 import org.appwork.utils.Application;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.translate.JDT;
 
 public class WindowMenu extends JMenu {

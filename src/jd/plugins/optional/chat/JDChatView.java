@@ -19,10 +19,10 @@ package jd.plugins.optional.chat;
 import javax.swing.Icon;
 
 import jd.plugins.AddonPanel;
+import jd.plugins.optional.StopException;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.extensions.StopException;
 
 public class JDChatView extends AddonPanel {
 

@@ -26,10 +26,10 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 
 import org.appwork.shutdown.ShutdownVetoException;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 public class ImrovedMacOSXDockExtension extends PluginOptional implements ControlListener {
 

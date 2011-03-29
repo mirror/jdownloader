@@ -32,12 +32,12 @@ import jd.plugins.AddonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.plugins.optional.interfaces.HttpServer;
 import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 /**
  * Alle Ausgaben sollten lediglich eine Zeile lang sein, um die kompatibilität

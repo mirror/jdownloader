@@ -29,13 +29,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 public class PackageCustomizerExtension extends PluginOptional implements LinkGrabberPackagingEvent {
 

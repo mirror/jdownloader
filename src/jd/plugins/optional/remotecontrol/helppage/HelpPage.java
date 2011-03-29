@@ -18,11 +18,11 @@ package jd.plugins.optional.remotecontrol.helppage;
 
 import java.util.ArrayList;
 
+import jd.plugins.optional.ExtensionController;
 import jd.plugins.optional.PluginOptional;
 import jd.plugins.optional.interfaces.RemoteSupport;
 import jd.plugins.optional.remotecontrol.RemoteControlExtension;
 
-import org.jdownloader.extensions.ExtensionController;
 
 public class HelpPage {
 

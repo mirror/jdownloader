@@ -54,6 +54,7 @@ import jd.pluginloader.HosterPluginCache;
 import jd.pluginloader.VirtualClass;
 import jd.pluginloader.VirtualDecrypterClass;
 import jd.pluginloader.VirtualHosterClass;
+import jd.plugins.optional.ExtensionController;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -68,7 +69,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.plugins.scanner.PluginScanner;
 import org.lobobrowser.util.OS;
 

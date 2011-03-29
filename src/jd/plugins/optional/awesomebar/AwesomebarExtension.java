@@ -13,6 +13,8 @@ import jd.gui.swing.jdgui.views.settings.panels.gui.ToolbarController;
 import jd.plugins.AddonPanel;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.plugins.optional.awesomebar.awesome.Awesome;
 import jd.plugins.optional.awesomebar.awesome.gui.AwesomeCustomToolbarAction;
 import jd.plugins.optional.awesomebar.awesome.gui.AwesomeProposalPanel;
@@ -20,8 +22,6 @@ import jd.plugins.optional.awesomebar.awesome.gui.AwesomeToolbarPanel;
 import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 public class AwesomebarExtension extends PluginOptional implements ControlListener {
 

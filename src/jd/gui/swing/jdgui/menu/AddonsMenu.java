@@ -25,10 +25,10 @@ import javax.swing.JMenuItem;
 
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
+import jd.plugins.optional.ExtensionController;
 import jd.plugins.optional.PluginOptional;
 import jd.utils.JDTheme;
 
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.translate.JDT;
 
 public class AddonsMenu extends JMenu {

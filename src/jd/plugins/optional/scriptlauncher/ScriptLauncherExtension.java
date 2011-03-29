@@ -31,6 +31,8 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.plugins.optional.interfaces.RemoteSupport;
 import jd.plugins.optional.remotecontrol.helppage.HelpPage;
 import jd.plugins.optional.remotecontrol.helppage.Table;
@@ -39,8 +41,6 @@ import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

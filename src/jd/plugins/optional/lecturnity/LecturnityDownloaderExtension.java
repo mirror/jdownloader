@@ -19,12 +19,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.utils.JDUtilities;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 @OptionalPlugin(rev = "$Revision$", id = "lecturnity", interfaceversion = 7)
 public class LecturnityDownloaderExtension extends PluginOptional implements ActionListener {

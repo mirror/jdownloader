@@ -40,14 +40,14 @@ import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.plugins.optional.ExtensionConfigPanel;
 import jd.plugins.optional.PluginOptional;
+import jd.plugins.optional.StartException;
+import jd.plugins.optional.StopException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 
 public class ShutdownExtension extends PluginOptional {
 

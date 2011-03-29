@@ -1,4 +1,4 @@
-package org.jdownloader.extensions;
+package jd.plugins.optional;
 
 
 public class StartException extends Exception {

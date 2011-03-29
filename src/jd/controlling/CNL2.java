@@ -32,11 +32,11 @@ import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.optional.ExtensionController;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.ExtensionController;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
