@@ -18,12 +18,10 @@ package org.jdownloader.extensions.remotecontrol.helppage;
 
 import java.util.ArrayList;
 
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.remotecontrol.RemoteControlExtension;
-
-
 
 public class HelpPage {
 
@@ -258,7 +256,7 @@ public class HelpPage {
 
         for (AbstractExtension addon : addons) {
 
-            if (addon.isRunning()) {
+            if (addon.isEnabled()) {
 
                 if (addon instanceof RemoteSupport) {
                     ((RemoteSupport) addon).initCmdTable();

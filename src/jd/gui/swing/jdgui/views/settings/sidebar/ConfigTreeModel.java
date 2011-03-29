@@ -22,12 +22,11 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.AbstractExtension;
-
 import jd.controlling.reconnect.ReconnectPluginConfigGUI;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
 
 public class ConfigTreeModel implements TreeModel {
     private static final String JDL_PREFIX   = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
@@ -120,7 +119,7 @@ public class ConfigTreeModel implements TreeModel {
 
     private void initExtensions(final TreeEntry addons) {
         for (final AbstractExtension plg : ExtensionController.getInstance().getExtensions()) {
-            if (!plg.isRunning() || (!plg.hasSettings() && !plg.hasConfigPanel())) {
+            if (!plg.isEnabled() || (!plg.hasSettings() && !plg.hasConfigPanel())) {
                 continue;
             }
             if (plg.hasConfigPanel()) {

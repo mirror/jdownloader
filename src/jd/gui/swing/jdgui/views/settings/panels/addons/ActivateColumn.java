@@ -47,15 +47,15 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtension> {
 
     @Override
     protected boolean getBooleanValue(AbstractExtension value) {
-        return value.isRunning();
+        return value.isEnabled();
     }
 
     @Override
     protected void setBooleanValue(boolean value, AbstractExtension object) {
-        if (value == object.isRunning()) return;
+        if (value == object.isEnabled()) return;
         if (value) {
             try {
-                object.setRunning(true);
+                object.setEnabled(true);
 
                 if (object.getGUI() != null) {
                     int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
@@ -72,7 +72,7 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtension> {
         } else {
             try {
 
-                object.setRunning(false);
+                object.setEnabled(false);
             } catch (StartException e) {
                 e.printStackTrace();
             } catch (StopException e) {

@@ -59,8 +59,8 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.interfaces.Handler;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
 import org.jdownloader.extensions.interfaces.Request;
@@ -1106,7 +1106,7 @@ public class Serverhandler implements Handler {
             Object cmdResponse = null;
 
             for (final AbstractExtension addon : addons) {
-                if (addon.isRunning()) {
+                if (addon.isEnabled()) {
 
                     if (addon instanceof RemoteSupport) {
                         cmdResponse = ((RemoteSupport) addon).handleRemoteCmd(requestUrl);

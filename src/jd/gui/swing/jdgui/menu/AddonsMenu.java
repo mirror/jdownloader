@@ -27,8 +27,8 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.utils.JDTheme;
 
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.translate.JDT;
 
 public class AddonsMenu extends JMenu {
@@ -67,7 +67,7 @@ public class AddonsMenu extends JMenu {
         });
 
         for (final AbstractExtension plg : pluginsOptional) {
-            if (!plg.isRunning()) continue;
+            if (!plg.isEnabled()) continue;
             ArrayList<MenuAction> mis = plg.getMenuAction();
             if (mis != null && !mis.isEmpty()) {
                 if (mis.size() == 1) {

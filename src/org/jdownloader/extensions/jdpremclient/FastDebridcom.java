@@ -181,7 +181,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!PremiumCompoundExtension.isEnabled() || !enabled) return false;
+            if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             acc = AccountController.getInstance().getValidAccount("fast-debrid.com");
@@ -423,7 +423,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
             if (PremiumCompoundExtension.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
-            } else if (PremiumCompoundExtension.isEnabled() && enabled) {
+            } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
                 /* FastDebrid */
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("fast-debrid.com") != null) return Integer.MAX_VALUE;

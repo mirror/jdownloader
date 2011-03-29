@@ -39,18 +39,36 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.logging.LogController;
 
+/**
+ * Superclass for all extensions
+ * 
+ * @author thomas
+ * 
+ */
 public abstract class AbstractExtension {
 
     public static final int ADDON_INTERFACE_VERSION = 8;
 
-    private boolean         running                 = false;
+    private boolean         enabled                 = false;
 
-    public boolean isRunning() {
-        return running;
+    /**
+     * true if the extension is currently running.
+     * 
+     * @return
+     */
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setRunning(boolean enabled) throws StartException, StopException {
-        if (enabled == this.running) return;
+    /**
+     * start/stops the extension.
+     * 
+     * @param enabled
+     * @throws StartException
+     * @throws StopException
+     */
+    public void setEnabled(boolean enabled) throws StartException, StopException {
+        if (enabled == this.enabled) return;
         if (enabled) {
             start();
             store.setEnabled(true);
@@ -63,17 +81,25 @@ public abstract class AbstractExtension {
             stop();
         }
 
-        this.running = enabled;
+        this.enabled = enabled;
     }
 
+    /**
+     * Returns the internal storage. Most of the configvalues are for internal
+     * use only. This config only contains values which are valid for all
+     * extensions
+     * 
+     * @return
+     */
     public PlugionOptionalConfig getStore() {
         return store;
     }
 
-    public void setStore(PlugionOptionalConfig store) {
-        this.store = store;
-    }
-
+    /**
+     * use {@link #setEnabled(false)} to stop the extension.
+     * 
+     * @throws StopException
+     */
     protected abstract void stop() throws StopException;
 
     protected abstract void start() throws StartException;
@@ -236,7 +262,7 @@ public abstract class AbstractExtension {
         }
         if (store.isEnabled()) {
             try {
-                setRunning(true);
+                setEnabled(true);
             } catch (StopException e) {
                 // cannot happen
             }

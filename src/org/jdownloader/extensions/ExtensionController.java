@@ -37,7 +37,7 @@ public class ExtensionController {
     }
 
     private HashMap<Class<AbstractExtension>, AbstractExtension> map;
-    private ArrayList<AbstractExtension>                      list;
+    private ArrayList<AbstractExtension>                         list;
 
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
@@ -198,7 +198,7 @@ public class ExtensionController {
 
     public boolean isExtensionActive(Class<? extends AbstractExtension> class1) {
         AbstractExtension plg = map.get(class1);
-        if (plg != null && plg.isRunning()) return true;
+        if (plg != null && plg.isEnabled()) return true;
         return false;
     }
 

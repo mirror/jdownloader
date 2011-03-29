@@ -28,8 +28,8 @@ import javax.swing.JMenu;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 import org.appwork.utils.Application;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.translate.JDT;
 
 public class WindowMenu extends JMenu {
@@ -64,7 +64,7 @@ public class WindowMenu extends JMenu {
         });
 
         for (final AbstractExtension plg : pluginsOptional) {
-            if (!plg.isRunning()) continue;
+            if (!plg.isEnabled()) continue;
 
             if (plg.getShowGuiAction() != null) {
 

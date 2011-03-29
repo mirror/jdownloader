@@ -188,7 +188,7 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!PremiumCompoundExtension.isEnabled() || !enabled) return false;
+            if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             acc = AccountController.getInstance().getValidAccount("twojlimit.pl");
@@ -444,7 +444,7 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
                 /* user prefers usage of local account */
 
                 return Integer.MAX_VALUE;
-            } else if (PremiumCompoundExtension.isEnabled() && enabled) {
+            } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
                 /* OchLoad */
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount

@@ -171,7 +171,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!PremiumCompoundExtension.isEnabled() || !enabled) return false;
+            if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             acc = AccountController.getInstance().getValidAccount("rehost.to");
@@ -352,7 +352,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
             if (PremiumCompoundExtension.preferLocalAccounts() && account != null) {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
-            } else if (PremiumCompoundExtension.isEnabled() && enabled) {
+            } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
                 /* Rehost */
                 synchronized (LOCK) {
                     if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("rehost.to") != null) return Integer.MAX_VALUE;

@@ -65,7 +65,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
         }
     }
 
-    public static boolean isEnabled() {
+    public static boolean isStaticEnabled() {
         return enabled;
     }
 
