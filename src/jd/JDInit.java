@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +33,6 @@ import jd.controlling.DownloadController;
 import jd.controlling.GarbageController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.event.ControlEvent;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
@@ -56,8 +54,6 @@ import jd.pluginloader.HosterPluginCache;
 import jd.pluginloader.VirtualClass;
 import jd.pluginloader.VirtualDecrypterClass;
 import jd.pluginloader.VirtualHosterClass;
-import jd.plugins.OptionalPlugin;
-import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -65,12 +61,15 @@ import jd.utils.locale.JDL;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.update.updateclient.UpdaterConstants;
-import org.appwork.utils.Application;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.plugins.scanner.PluginScanner;
 import org.lobobrowser.util.OS;
 
 /**
@@ -187,7 +186,7 @@ public class JDInit {
             final String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
             if (!old.equals(JDUtilities.getRevision())) {
                 JDInit.LOG.info("Detected that JD just got updated");
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
+
                 final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), null, null, null);
                 dialog.setLeftActions(new AbstractAction(JDL.L("system.update.showchangelogv2", "What's new?")) {
 
@@ -296,7 +295,7 @@ public class JDInit {
     }
 
     public void initGUI(final JDController controller) {
-        LookAndFeelController.setUIManager();
+
         EDTEventQueue.initEventQueue();
         ActionController.initActions();
         SwingGui.setInstance(JDGui.getInstance());
@@ -305,30 +304,35 @@ public class JDInit {
     }
 
     public void initPlugins() {
-        try {
-            this.movePluginUpdates(JDUtilities.getResourceFile("update"));
-        } catch (final Throwable e) {
-            JDLogger.exception(e);
+
+        if (JDInitFlags.REFRESH_CACHE) {
+
+            ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
+
+                public void run() throws Exception {
+                    PluginScanner.getInstance().updateCache();
+                }
+
+                public String getString() {
+                    return "Please wait...";
+                }
+
+                public int getProgress() {
+                    return -1;
+                }
+            }, Dialog.BUTTONS_HIDE_CANCEL, "Refresh Plugincache", "JDownloader updates it's plugin cache. This may take a few minutes.", null, null, null);
+            try {
+                Dialog.getInstance().showDialog(dialog);
+            } catch (DialogClosedException e) {
+                e.printStackTrace();
+            } catch (DialogCanceledException e) {
+                e.printStackTrace();
+            }
         }
         try {
             this.loadCPlugins();
-            this.loadPluginOptional();
-            for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-                if (plg.isLoaded()) {
-                    try {
-                        if (plg.isEnabled() && !plg.getPlugin().startAddon()) {
-                            JDInit.LOG.severe("Error loading Optional Plugin:" + plg.getClassName());
-                            /* could not start, so set disabled again */
-                            plg.setEnabled(false);
-                        }
-                    } catch (final Throwable e) {
-                        JDInit.LOG.severe("Error loading Optional Plugin: " + e.getMessage());
-                        /* could not start, so set disabled again */
-                        plg.setEnabled(false);
-                        JDLogger.exception(e);
-                    }
-                }
-            }
+            // init Extensioncontroller
+            ExtensionController.getInstance().load();
         } catch (final Throwable e) {
             JDLogger.exception(e);
         }
@@ -364,9 +368,8 @@ public class JDInit {
             JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
 
             JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
 
-            LookAndFeelController.setUIManager();
+            LookAndFeelController.getInstance().setUIManager();
             final Installer inst = new Installer();
 
             if (!inst.isAborted()) {
@@ -417,86 +420,6 @@ public class JDInit {
             new CPluginWrapper("Amazon MP3", "AMZ", ".+\\.amz");
         } catch (final Throwable e) {
             e.printStackTrace();
-        }
-    }
-
-    public void loadPluginOptional() {
-
-        final ArrayList<String> list = new ArrayList<String>();
-        try {
-            for (final VirtualClass vc : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
-                try {
-
-                    Class<?> c = vc.loadClass();
-
-                    final String cName = c.getName();
-                    if (c.getSimpleName().contains("$")) {
-                        /* do not load inner classes */
-                        continue;
-                    }
-                    if (list.contains(cName)) {
-                        System.out.println("Already loaded: " + c);
-                        continue;
-                    }
-
-                    final OptionalPlugin help = c.getAnnotation(OptionalPlugin.class);
-                    if (help == null) {
-                        continue;
-                    }
-                    double cJavaV = Application.getJavaVersion() / 10000000.0d;
-                    if (help.windows() && OSDetector.isWindows() || (help.linux() && OSDetector.isLinux()) || help.mac() && OSDetector.isMac()) {
-                        if (cJavaV >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
-                            new OptionalPluginWrapper(c, help);
-                            list.add(cName);
-                        }
-                    }
-                } catch (final Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
-        } catch (final Throwable e) {
-            JDLogger.exception(e);
-        }
-    }
-
-    private void movePluginUpdates(final File dir) {
-        if (!JDUtilities.getResourceFile("update").exists() || !dir.isDirectory()) { return; }
-
-        for (final File f : dir.listFiles()) {
-            if (f.isDirectory()) {
-                this.movePluginUpdates(f);
-            } else {
-                // Create relativ path
-                final File update = JDUtilities.getResourceFile("update");
-                final File root = update.getParentFile();
-                String n = JDUtilities.getResourceFile("update").getAbsolutePath();
-                n = f.getAbsolutePath().replace(n, "").substring(1);
-                final File newFile = new File(root, n).getAbsoluteFile();
-                JDInit.LOG.info("./update -> real  " + n + " -> " + newFile.getAbsolutePath());
-                JDInit.LOG.info("Exists: " + newFile.exists());
-
-                if (!newFile.getParentFile().exists()) {
-                    JDInit.LOG.info("Parent Exists: false");
-                    if (newFile.getParentFile().mkdirs()) {
-                        JDInit.LOG.info("^^CREATED");
-                    } else {
-                        JDInit.LOG.info("^^CREATION FAILED");
-                    }
-                }
-
-                newFile.delete();
-                f.renameTo(newFile);
-                File parent = newFile.getParentFile();
-
-                while (parent.listFiles().length == 0) {
-                    parent.delete();
-                    parent = parent.getParentFile();
-                }
-            }
-        }
-        final String[] list = dir.list();
-        if (list != null && list.length == 0) {
-            dir.delete();
         }
     }
 

@@ -31,21 +31,21 @@ import org.schwering.irc.lib.IRCUser;
 
 class IRCListener implements IRCEventListener {
     public static Logger logger = jd.controlling.JDLogger.getLogger();
-    private final JDChat owner;
+    private final ChatExtension owner;
 
-    public IRCListener(final JDChat owner) {
+    public IRCListener(final ChatExtension owner) {
         this.owner = owner;
     }
 
     public void onDisconnected() {
         // logger.info("Disconnected");
         this.owner.setLoggedIn(false);
-        this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Connection lost. type /connect if jd does not connect by itself");
+        this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Connection lost. type /connect if jd does not connect by itself");
 
     }
 
     public void onError(final int num, final String msg) {
-        this.owner.addToText(null, JDChat.STYLE_ERROR, msg);
+        this.owner.addToText(null, ChatExtension.STYLE_ERROR, msg);
         // logger.info("Error #" + num + ": " + Utils.prepareMsg(msg));
         switch (num) {
         case IRCConstants.ERR_NICKNAMEINUSE:
@@ -59,7 +59,7 @@ class IRCListener implements IRCEventListener {
     }
 
     public void onError(final String msg) {
-        this.owner.addToText(null, JDChat.STYLE_ERROR, Utils.prepareMsg(msg));
+        this.owner.addToText(null, ChatExtension.STYLE_ERROR, Utils.prepareMsg(msg));
         // logger.info("Error: " + msg);
     }
 
@@ -69,7 +69,7 @@ class IRCListener implements IRCEventListener {
 
     public void onJoin(final String chan, final IRCUser u) {
         // logger.info(chan + "> " + u.getNick() + " joins");
-        this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " joins");
+        this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " joins");
         this.owner.addUser(u.getNick());
         // owner.requestNameList();
     }
@@ -77,13 +77,13 @@ class IRCListener implements IRCEventListener {
     public void onKick(final String chan, final IRCUser u, final String nickPass, final String msg) {
         // logger.info(chan + "> " + u.getNick() + " kicks " + nickPass);
 
-        this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " kicks " + nickPass + " (" + msg + ")");
+        this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " kicks " + nickPass + " (" + msg + ")");
     }
 
     public void onMode(final IRCUser u, final String nickPass, final String mode) {
         // logger.info("Mode: " + u.getNick() + " sets modes " + mode + " " +
         // nickPass);
-        this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " sets modes " + mode + " " + nickPass);
+        this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " sets modes " + mode + " " + nickPass);
 
     }
 
@@ -95,12 +95,12 @@ class IRCListener implements IRCEventListener {
             this.owner.onMode(mp.getOperatorAt(i), mp.getModeAt(i), mp.getArgAt(i));
         }
 
-        this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " sets mode: " + mp.getLine());
+        this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " sets mode: " + mp.getLine());
     }
 
     public void onNick(final IRCUser u, final String nickNew) {
         // logger.info("Nick: " + u.getNick() + " is now known as " + nickNew);
-        this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " is now known as " + nickNew);
+        this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " is now known as " + nickNew);
         this.owner.renameUser(u.getNick(), nickNew);
         if (this.owner.getPms().containsKey(u.getNick().toLowerCase())) {
             this.owner.renamePMS(u.getNick().toLowerCase(), nickNew);
@@ -113,7 +113,7 @@ class IRCListener implements IRCEventListener {
             // owner.addToText(JDChat.COLOR_NOTICE,"System" + " (notice): " +
             // Utils.prepareMsg(msg));
         } else {
-            this.owner.addToText(null, JDChat.STYLE_NOTICE, u.getNick() + " (notice): " + Utils.prepareMsg(msg));
+            this.owner.addToText(null, ChatExtension.STYLE_NOTICE, u.getNick() + " (notice): " + Utils.prepareMsg(msg));
         }
         if (msg.endsWith("has been ghosted.")) {
             this.owner.removeUser(msg.substring(0, msg.indexOf("has been ghosted.")).trim());
@@ -123,9 +123,9 @@ class IRCListener implements IRCEventListener {
     public void onPart(final String chan, final IRCUser u, final String msg) {
         // logger.info(chan + "> " + u.getNick() + " parts");
         if (msg != null && msg.trim().length() > 0) {
-            this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel (" + msg + ")");
+            this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel (" + msg + ")");
         } else {
-            this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel");
+            this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel");
         }
         this.owner.removeUser(u.getNick());
         // owner.requestNameList();
@@ -164,7 +164,7 @@ class IRCListener implements IRCEventListener {
             }).start();
 
         } else if (msg.trim().startsWith("ACTION ")) {
-            this.owner.addToText(null, JDChat.STYLE_ACTION, user.getNickLink("pmnick") + " " + Utils.prepareMsg(msg.trim().substring(6).trim()));
+            this.owner.addToText(null, ChatExtension.STYLE_ACTION, user.getNickLink("pmnick") + " " + Utils.prepareMsg(msg.trim().substring(6).trim()));
 
         } else if (chan.equals(this.owner.getNick())) {
             TreeMap<String, JDChatPMS> pms = this.owner.getPms();
@@ -186,22 +186,22 @@ class IRCListener implements IRCEventListener {
         // logger.info("Quit: " + u.getNick());
         if (this.owner.getPms().containsKey(u.getNick().toLowerCase())) {
             if (msg != null && msg.trim().length() > 0) {
-                this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel (" + msg + ")", this.owner.getPms().get(u.getNick().toLowerCase()).getTextArea(), this.owner.getPms().get(u.getNick().toLowerCase()).getSb());
+                this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel (" + msg + ")", this.owner.getPms().get(u.getNick().toLowerCase()).getTextArea(), this.owner.getPms().get(u.getNick().toLowerCase()).getSb());
             } else {
-                this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel", this.owner.getPms().get(u.getNick().toLowerCase()).getTextArea(), this.owner.getPms().get(u.getNick().toLowerCase()).getSb());
+                this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel", this.owner.getPms().get(u.getNick().toLowerCase()).getTextArea(), this.owner.getPms().get(u.getNick().toLowerCase()).getSb());
             }
         }
         if (msg != null && msg.trim().length() > 0) {
-            this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel (" + msg + ")");
+            this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel (" + msg + ")");
         } else {
-            this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel");
+            this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel");
         }
         this.owner.removeUser(u.getNick());
     }
 
     public void onRegistered() {
         // logger.info("Connected");
-        this.owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Connection estabilished");
+        this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Connection estabilished");
         this.owner.onConnected();
     }
 

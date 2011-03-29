@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -40,9 +39,11 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us", "relink.us" }, urls = { "http://[\\w\\.]*?relink\\.us/(go\\.php\\?id=[\\w]+|f/[\\w]+)", "http://[\\w\\.]*?relink\\.us/view\\.php\\?id=\\w+" }, flags = { PluginWrapper.CNL_2, PluginWrapper.CNL_2 })
 public class Rlnks extends PluginForDecrypt {
 
-    private static boolean isExternInterfaceActive() {
-        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
-        return ((plg != null) && plg.isLoaded() && plg.isEnabled());
+    private boolean isExternInterfaceActive() {
+        // DO NOT check for the plugin here. compatzibility reasons to 0.9*
+        // better: check port 9666 for a httpserver
+
+        return true;
     }
 
     ProgressController progress;
@@ -96,7 +97,7 @@ public class Rlnks extends PluginForDecrypt {
         if (okay == false) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         progress.setRange(0);
         /* use cnl2 button if available */
-        if (this.br.containsHTML("cnl2.swf") && Rlnks.isExternInterfaceActive()) {
+        if (this.br.containsHTML("cnl2.swf") && isExternInterfaceActive()) {
             final String flashVars = this.br.getRegex("flashVars\" value=\"(.*?)\"").getMatch(0);
             if (flashVars != null) {
                 final Browser cnlbr = new Browser();

@@ -16,59 +16,76 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.addons;
 
-import jd.OptionalPluginWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
+import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
-import jd.utils.locale.JDL;
+import jd.plugins.optional.PluginOptional;
 
+import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
+import org.jdownloader.translate.JDT;
 
-public class ActivateColumn extends ExtCheckColumn<OptionalPluginWrapper> {
+public class ActivateColumn extends ExtCheckColumn<PluginOptional> {
 
     private static final long       serialVersionUID = 658156218405204887L;
     private final ConfigPanelAddons addons;
 
-    public ActivateColumn(String name, ExtTableModel<OptionalPluginWrapper> table, ConfigPanelAddons addons) {
+    public ActivateColumn(String name, ExtTableModel<PluginOptional> table, ConfigPanelAddons addons) {
         super(name, table);
 
         this.addons = addons;
     }
 
     @Override
-    public boolean isEditable(OptionalPluginWrapper obj) {
+    public boolean isEditable(PluginOptional obj) {
         return true;
     }
 
     @Override
-    protected boolean getBooleanValue(OptionalPluginWrapper value) {
-        return value.isEnabled();
+    protected boolean getBooleanValue(PluginOptional value) {
+        return value.isRunning();
     }
 
     @Override
-    protected void setBooleanValue(boolean value, OptionalPluginWrapper object) {
-        if (value == object.isEnabled()) return;
+    protected void setBooleanValue(boolean value, PluginOptional object) {
+        if (value == object.isRunning()) return;
         if (value) {
-            if (object.getPlugin().startAddon()) {
-                if (object.getAnnotation().hasGui()) {
-                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getHost(), JDL.LF("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.askafterinit", "Show %s now?\r\nYou may open it later using Mainmenu->Addon", object.getHost()));
+            try {
+                object.setRunning(true);
+
+                if (object.getGUI() != null) {
+                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
 
                     if (UserIO.isOK(ret)) {
-                        object.getPlugin().setGuiEnable(true);
+                        object.getGUI().setActive(true);
                     }
                 }
+            } catch (StartException e) {
+                Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e.getMessage(), e);
+            } catch (StopException e) {
+                e.printStackTrace();
             }
         } else {
-            object.getPlugin().setGuiEnable(false);
-            object.getPlugin().stopAddon();
+            try {
+
+                object.setRunning(false);
+            } catch (StartException e) {
+                e.printStackTrace();
+            } catch (StopException e) {
+                Dialog.getInstance().showExceptionDialog(JDT._.dialog_title_exception(), e.getMessage(), e);
+            }
         }
         /*
          * we save enabled/disabled status here, plugin must be running when
          * enabled
          */
-        object.setEnabled(object.getPlugin().isRunning());
+
         AddonsMenu.getInstance().update();
+        WindowMenu.getInstance().update();
         ConfigSidebar.getInstance(null).updateAddons();
         addons.updateShowcase();
     }

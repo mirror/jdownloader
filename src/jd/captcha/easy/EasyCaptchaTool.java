@@ -51,10 +51,10 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class EasyCaptchaTool {
-    public static SubConfiguration config = SubConfiguration.getConfig("EasyCaptcha");
-    public static final String CONFIG_LASTSESSION = "CONFIG_LASTSESSION";
-    public static final String CONFIG_AUTHOR = "AUTHOR";
-    public static JFrame ownerFrame = DummyFrame.getDialogParent();
+    public static SubConfiguration config             = SubConfiguration.getConfig("EasyCaptcha");
+    public static final String     CONFIG_LASTSESSION = "CONFIG_LASTSESSION";
+    public static final String     CONFIG_AUTHOR      = "AUTHOR";
+    public static JFrame           ownerFrame         = DummyFrame.getDialogParent();
 
     public static EasyMethodFile showMethodes() {
         final EasyMethodFile ef = new EasyMethodFile();
@@ -365,7 +365,7 @@ public class EasyCaptchaTool {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        LookAndFeelController.setUIManager();
+        LookAndFeelController.getInstance().setUIManager();
         EDTEventQueue.initEventQueue();
 
         EasyMethodFile meth = EasyCaptchaTool.getCaptchaMethode();

@@ -42,7 +42,7 @@ public class Linkgrabber extends ConfigPanel {
     public Linkgrabber() {
         super();
 
-        init();
+        init(true);
     }
 
     @Override

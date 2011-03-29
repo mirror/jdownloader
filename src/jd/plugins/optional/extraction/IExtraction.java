@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.DownloadLink;
 
 /**
@@ -97,7 +97,7 @@ public interface IExtraction {
      * @param config
      * @param subConfig
      */
-    public void initConfig(ConfigContainer config, SubConfiguration subConfig);
+    public void initConfig(ConfigContainer config, JSonWrapper subConfig);
 
     /**
      * Sets the {@link Archive} which should be extracted.
@@ -148,7 +148,7 @@ public interface IExtraction {
      * @param config
      *            The configuration.
      */
-    public void setConfig(SubConfiguration config);
+    public void setConfig(JSonWrapper config);
 
     /**
      * Ends the extraction.

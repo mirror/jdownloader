@@ -27,7 +27,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -53,9 +52,11 @@ public class ShrLnksBz extends PluginForDecrypt {
 
     private static String MAINPAGE = "http://share-links.biz/";
 
-    private static boolean isExternInterfaceActive() {
-        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
-        return plg != null && plg.isLoaded() && plg.isEnabled();
+    private boolean isExternInterfaceActive() {
+        // DO NOT check for the plugin here. compatzibility reasons to 0.9*
+        // better: check port 9666 for a httpserver
+
+        return true;
     }
 
     public ShrLnksBz(final PluginWrapper wrapper) {

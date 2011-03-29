@@ -22,9 +22,11 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-import jd.OptionalPluginWrapper;
 import jd.controlling.reconnect.ReconnectPluginConfigGUI;
+import jd.plugins.optional.PluginOptional;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.ExtensionController;
 
 public class ConfigTreeModel implements TreeModel {
     private static final String JDL_PREFIX   = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
@@ -37,7 +39,7 @@ public class ConfigTreeModel implements TreeModel {
     private TreeEntry           plugins;
 
     public ConfigTreeModel() {
-        this.root = new TreeEntry("_ROOT_", null);
+        this.root = new TreeEntry("_ROOT_", null, null);
 
         TreeEntry teTop, teLeaf;
         this.root.add(teTop = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "basics.title", "Basics"), "gui.images.config.home"));
@@ -116,11 +118,15 @@ public class ConfigTreeModel implements TreeModel {
     }
 
     private void initExtensions(final TreeEntry addons) {
-        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!plg.isLoaded() || !plg.isEnabled() || !plg.hasConfig()) {
+        for (final PluginOptional plg : ExtensionController.getInstance().getExtensions()) {
+            if (!plg.isRunning() || (!plg.hasSettings() && !plg.hasConfigPanel())) {
                 continue;
             }
-            addons.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), "", true), plg.getHost(), plg.getPlugin().getIconKey()));
+            if (plg.hasConfigPanel()) {
+                addons.add(new TreeEntry(plg.getConfigPanel(), plg.getName(), plg.getIcon(16), plg.getIcon(20)));
+            } else {
+                addons.add(new TreeEntry(AddonConfig.getInstance(plg.getSettings(), "", true), plg.getName(), plg.getIcon(16), plg.getIcon(20)));
+            }
         }
     }
 

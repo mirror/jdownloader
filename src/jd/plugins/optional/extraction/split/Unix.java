@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.optional.extraction.Archive;
 import jd.plugins.optional.extraction.ExtractionController;
@@ -41,7 +41,7 @@ import org.appwork.utils.Regex;
 public class Unix implements IExtraction {
     private Archive              archive;
     private ExtractionController controller;
-    SubConfiguration             config;
+    JSonWrapper                  config;
 
     public Archive buildArchive(DownloadLink link) {
         String pattern = "^" + Regex.escape(link.getFileOutput().replaceAll("(?i)\\.[a-z][a-z]$", "")) + "\\.[a-z][a-z]$";
@@ -89,7 +89,7 @@ public class Unix implements IExtraction {
         return true;
     }
 
-    public void initConfig(ConfigContainer config, SubConfiguration subConfig) {
+    public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
     public void setArchiv(Archive archive) {
@@ -114,7 +114,7 @@ public class Unix implements IExtraction {
         return false;
     }
 
-    public void setConfig(SubConfiguration config) {
+    public void setConfig(JSonWrapper config) {
         this.config = config;
     }
 

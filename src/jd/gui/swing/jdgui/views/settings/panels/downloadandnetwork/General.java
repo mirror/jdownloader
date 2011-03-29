@@ -45,7 +45,7 @@ public class General extends ConfigPanel {
     public General() {
         super();
 
-        init();
+        init(true);
     }
 
     @Override

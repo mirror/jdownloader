@@ -51,8 +51,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
+import jd.plugins.optional.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 

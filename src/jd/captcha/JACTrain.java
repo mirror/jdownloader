@@ -41,7 +41,7 @@ public class JACTrain {
         final String hoster = "nrdr";
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
-        LookAndFeelController.setUIManager();
+        LookAndFeelController.getInstance().setUIManager();
         EDTEventQueue.initEventQueue();
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
 

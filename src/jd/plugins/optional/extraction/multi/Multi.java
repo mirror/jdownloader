@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.config.SubConfiguration;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;
@@ -79,7 +79,7 @@ public class Multi implements IExtraction {
     private int                      crack;
     private ExtractionController     con;
     private ISevenZipInArchive       inArchive;
-    private SubConfiguration         conf;
+    private JSonWrapper              conf;
     private ArchiveFormat            format;
 
     private Logger                   logger;
@@ -587,7 +587,7 @@ public class Multi implements IExtraction {
         return true;
     }
 
-    public void initConfig(ConfigContainer config, SubConfiguration subConfig) {
+    public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
         config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.multi.config", "Multi unpacker settings"), "gui.images.addons.unrar"));
 
         String[] priorities = new String[] { JDL.L("plugins.optional.extraction.multi.priority.high", "High"), JDL.L("plugins.optional.extraction.multi.priority.middle", "Middle"), JDL.L("plugins.optional.extraction.multi.priority.low", "Low") };
@@ -681,7 +681,7 @@ public class Multi implements IExtraction {
         return false;
     }
 
-    public void setConfig(SubConfiguration config) {
+    public void setConfig(JSonWrapper config) {
         conf = config;
     }
 

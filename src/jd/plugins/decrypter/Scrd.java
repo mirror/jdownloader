@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -38,9 +37,11 @@ public class Scrd extends PluginForDecrypt {
 
     static private final String MAINPAGE = "http://secured.in";
 
-    private static boolean isExternInterfaceActive() {
-        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
-        return plg != null && plg.isLoaded() && plg.isEnabled();
+    private boolean isExternInterfaceActive() {
+        // DO NOT check for the plugin here. compatzibility reasons to 0.9*
+        // better: check port 9666 for a httpserver
+
+        return true;
     }
 
     public Scrd(final PluginWrapper wrapper) {

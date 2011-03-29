@@ -39,7 +39,7 @@ public class AddonConfig extends ConfigPanel {
         this.container = container;
         this.showGroups = showGroups;
 
-        init();
+        init(true);
     }
 
     @Override

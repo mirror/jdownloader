@@ -41,9 +41,7 @@ import javax.xml.transform.stream.StreamResult;
 import jd.CPluginWrapper;
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
-import jd.JDClassLoader;
 import jd.Main;
-import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.controlling.DownloadController;
@@ -89,25 +87,20 @@ public class JDUtilities {
         DB_CONNECT = dB_CONNECT;
     }
 
-    /**
-     * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
-     */
-    private static JDClassLoader JD_CLASSLOADER      = null;
+    public static final int    RUNTYPE_LOCAL       = 1;
 
-    public static final int      RUNTYPE_LOCAL       = 1;
+    public static final int    RUNTYPE_LOCAL_JARED = 2;
 
-    public static final int      RUNTYPE_LOCAL_JARED = 2;
-
-    private static File          JD_HOME             = null;
+    private static File        JD_HOME             = null;
 
     /**
      * nur 1 UserIO Dialog gleichzeitig (z.b. PW, Captcha)
      */
-    public static final Object   USERIO_LOCK         = new Object();
+    public static final Object USERIO_LOCK         = new Object();
 
-    private static String        REVISION;
+    private static String      REVISION;
 
-    private static long          REVISIONINT         = -1;
+    private static long        REVISIONINT         = -1;
 
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
@@ -224,25 +217,6 @@ public class JDUtilities {
      */
     public static String getJACMethodsDirectory() {
         return "jd/captcha/methods/";
-    }
-
-    /**
-     * Liefert einen URLClassLoader zurueck, um Dateien aus dem Stammverzeichnis
-     * zu laden
-     * 
-     * @return URLClassLoader
-     */
-
-    public static JDClassLoader getJDClassLoader() {
-        if (JD_CLASSLOADER == null) {
-            final File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
-            // String url = null;
-            // Url Encode des pfads fuer den Classloader
-            LOGGER.finest("Create Classloader: for: " + homeDir.getAbsolutePath());
-            JD_CLASSLOADER = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
-
-        }
-        return JD_CLASSLOADER;
     }
 
     /**
@@ -367,13 +341,6 @@ public class JDUtilities {
         return null;
     }
 
-    public static OptionalPluginWrapper getOptionalPlugin(final String id) {
-        for (final OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (wrapper.getID() != null && wrapper.getID().equalsIgnoreCase(id)) return wrapper;
-        }
-        return null;
-    }
-
     public static ArrayList<HostPluginWrapper> getPremiumPluginsForHost() {
         try {
             HostPluginWrapper.readLock.lock();
@@ -416,12 +383,8 @@ public class JDUtilities {
     }
 
     private static URL getResourceURL(final String resource) {
-        final JDClassLoader cl = JDUtilities.getJDClassLoader();
-        if (cl == null) {
-            System.err.println("Classloader == null");
-            return null;
-        }
-        return cl.getResource(resource);
+
+        return Application.getRessourceURL(resource);
     }
 
     /**
@@ -433,14 +396,8 @@ public class JDUtilities {
      * @return File zu arg
      */
     public static File getResourceFile(final String resource) {
-        final URL clURL = getResourceURL(resource);
-        if (clURL != null) {
-            try {
-                return new File(clURL.toURI());
-            } catch (URISyntaxException e) {
-            }
-        }
-        return null;
+        return Application.getResource(resource);
+
     }
 
     public static File getResourceFile(final String resource, final boolean mkdirs) {

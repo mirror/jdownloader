@@ -20,6 +20,8 @@ import java.io.Serializable;
 
 import jd.utils.JDGeoCode;
 
+import org.appwork.storage.Storable;
+
 /**
  * This class represents a Language and is used by {@link jd.utils.locale.JDL}
  * Locale System
@@ -27,7 +29,7 @@ import jd.utils.JDGeoCode;
  * @author unkown
  * 
  */
-public class JDLocale implements Serializable {
+public class JDLocale implements Serializable, Storable {
 
     private static final long serialVersionUID = 1116656232817008992L;
     /**
@@ -36,9 +38,14 @@ public class JDLocale implements Serializable {
      * @see jd.utils.JDGeoCode.parseLanguageCode(String)
      * 
      */
-    private String[] codes;
+    private String[]          codes;
 
-    private String lngGeoCode;
+    private String            lngGeoCode;
+
+    private JDLocale() {
+        // required by Storable
+
+    }
 
     /**
      * Creates a new JDLocale INstance

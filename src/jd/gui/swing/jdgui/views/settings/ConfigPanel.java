@@ -58,16 +58,19 @@ public abstract class ConfigPanel extends SwitchPanel {
         panel = new JPanel(new MigLayout("ins 5, wrap 2", "[fill,grow 10]10[fill,grow]"));
     }
 
-    public void init() {
+    public void init(boolean useScrollPane) {
         for (ConfigEntry cfgEntry : setupContainer().getEntries()) {
             addConfigEntry(cfgEntry);
         }
+        if (useScrollPane) {
+            JScrollPane scroll = new JScrollPane(panel);
+            scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            scroll.setBorder(null);
 
-        JScrollPane scroll = new JScrollPane(panel);
-        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.setBorder(null);
-
-        this.add(scroll);
+            this.add(scroll);
+        } else {
+            add(panel);
+        }
         this.load();
     }
 

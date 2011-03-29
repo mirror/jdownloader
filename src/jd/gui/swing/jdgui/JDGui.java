@@ -40,7 +40,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
-import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
@@ -569,13 +568,19 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     public void windowClosing(final WindowEvent e) {
         if (e.getComponent() == this.getMainFrame()) {
             /* dont close/exit if trayicon minimizing is enabled */
-            final OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("trayicon");
-            if (addon != null && addon.isEnabled() && addon.getPlugin().isRunning()) {
-                if ((Boolean) addon.getPlugin().interact("closetotray", null) == true) {
-                    UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.noclose", "JDownloader will be minimized to tray!"));
-                    return;
-                }
-            }
+            // final OptionalPluginWrapper addon =
+            // JDUtilities.getOptionalPlugin("trayicon");
+            // if (addon != null && addon.isEnabled() &&
+            // addon.getPlugin().isRunning()) {
+            // if ((Boolean) addon.getPlugin().interact("closetotray", null) ==
+            // true) {
+            // UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN
+            // | UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION,
+            // JDL.L("sys.warning.noclose",
+            // "JDownloader will be minimized to tray!"));
+            // return;
+            // }
+            // }
             /*
              * without trayicon also dont close/exit for macos
              */

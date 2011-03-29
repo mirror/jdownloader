@@ -22,7 +22,6 @@ import java.util.Set;
 
 import javax.swing.ImageIcon;
 
-import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -103,10 +102,12 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         downloadDirectory = JDUtilities.getDefaultDownloadDirectory();
         name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
-        OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
-        if (addon != null && addon.isEnabled()) {
-            postProcessing = addon.getPluginConfig().getBooleanProperty("ACTIVATED", true);
-        }
+        // TODO
+        // OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
+        // if (addon != null && addon.isEnabled()) {
+        // postProcessing =
+        // addon.getPluginConfig().getBooleanProperty("ACTIVATED", true);
+        // }
         broadcaster = new LinkGrabberFilePackageBroadcaster();
         broadcaster.addListener(this);
 

@@ -23,13 +23,12 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
-import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -52,11 +51,11 @@ import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginOptional;
-import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.optional.PluginOptional;
 import jd.plugins.optional.interfaces.Handler;
 import jd.plugins.optional.interfaces.RemoteSupport;
 import jd.plugins.optional.interfaces.Request;
@@ -66,23 +65,30 @@ import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.update.RestartController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public class Serverhandler implements Handler {
 
-    private final OptionalPluginWrapper rc                          = JDUtilities.getOptionalPlugin("remotecontrol");
-    private static Logger               logger                      = JDLogger.getLogger();
+    private static Logger          logger                      = JDLogger.getLogger();
 
-    private static final String         LINK_TYPE_OFFLINE           = "offline";
-    private static final String         LINK_TYPE_AVAIL             = "available";
+    private static final String    LINK_TYPE_OFFLINE           = "offline";
+    private static final String    LINK_TYPE_AVAIL             = "available";
 
-    private static final String         ERROR_MALFORMED_REQUEST     = "JDRemoteControl - Malformed request. Use /help";
-    private static final String         ERROR_LINK_GRABBER_RUNNING  = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
-    private static final String         ERROR_UNKNOWN_RESPONSE_TYPE = "Error: Unknown response type. Please inform us.";
+    private static final String    ERROR_MALFORMED_REQUEST     = "JDRemoteControl - Malformed request. Use /help";
+    private static final String    ERROR_LINK_GRABBER_RUNNING  = "ERROR: Link grabber is currently running. Please try again in a few seconds.";
+    private static final String    ERROR_UNKNOWN_RESPONSE_TYPE = "Error: Unknown response type. Please inform us.";
 
-    private final DecimalFormat         f                           = new DecimalFormat("#0.00");
+    private final DecimalFormat    f                           = new DecimalFormat("#0.00");
+
+    private RemoteControlExtension owner;
+
+    public Serverhandler(RemoteControlExtension remoteControlModule) {
+        owner = remoteControlModule;
+        HelpPage.OWNER = remoteControlModule;
+    }
 
     private Element addDownloadLink(final Document xml, final DownloadLink dl) {
         final Element element = xml.createElement("file");
@@ -170,7 +176,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/rcversion")) {
             // Get JDRemoteControl version
 
-            response.addContent(this.rc.getVersion());
+            response.addContent(this.owner.getVersion());
         } else if (requestUrl.equals("/get/version")) {
             // Get version
 
@@ -1096,16 +1102,14 @@ public class Serverhandler implements Handler {
             response.addContent(xml);
         } else if (requestUrl.matches("(?is).*/addon/.+")) {
             // search in addons
-            final ArrayList<OptionalPluginWrapper> addons = OptionalPluginWrapper.getOptionalWrapper();
+            final ArrayList<PluginOptional> addons = ExtensionController.getInstance().getExtensions();
             Object cmdResponse = null;
 
-            for (final OptionalPluginWrapper addon : addons) {
+            for (final PluginOptional addon : addons) {
+                if (addon.isRunning()) {
 
-                if (addon != null && addon.isLoaded() && addon.isEnabled()) {
-                    final PluginOptional addonIntance = addon.getPlugin();
-
-                    if (addonIntance instanceof RemoteSupport) {
-                        cmdResponse = ((RemoteSupport) addonIntance).handleRemoteCmd(requestUrl);
+                    if (addon instanceof RemoteSupport) {
+                        cmdResponse = ((RemoteSupport) addon).handleRemoteCmd(requestUrl);
                     }
                 }
             }

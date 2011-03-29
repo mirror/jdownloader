@@ -14,7 +14,7 @@ import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaSolver;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
-import jd.plugins.PluginOptional;
+import jd.plugins.optional.PluginOptional;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision: 42$", id = "captchapush", interfaceversion = PluginOptional.ADDON_INTERFACE_VERSION)

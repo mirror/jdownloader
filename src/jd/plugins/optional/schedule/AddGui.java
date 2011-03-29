@@ -51,7 +51,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private static final long serialVersionUID = 8080132393187788526L;
 
     private MainGui gui;
-    private Schedule schedule;
+    private ScheduleExtension schedule;
     private MyTableModel tableModel;
     private JXTable table;
     private Actions orgact;
@@ -79,7 +79,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
     private boolean edit;
     private Actions editact;
 
-    public AddGui(Schedule schedule, MainGui gui, Actions act, boolean edit) {
+    public AddGui(ScheduleExtension schedule, MainGui gui, Actions act, boolean edit) {
         this.schedule = schedule;
         this.gui = gui;
         this.orgact = act;

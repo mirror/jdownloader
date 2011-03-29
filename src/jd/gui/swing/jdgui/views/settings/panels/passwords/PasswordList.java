@@ -40,7 +40,7 @@ public class PasswordList extends ConfigPanel {
     public PasswordList() {
         super();
 
-        init();
+        init(true);
     }
 
     @Override

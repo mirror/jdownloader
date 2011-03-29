@@ -290,11 +290,11 @@ public class JDSimpleWebserver extends Thread {
 
     public JDSimpleWebserver() {
         SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
-        Boolean https = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_HTTPS, false);
-        AuthUser = "Basic " + Encoding.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
-        NeedAuth = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOGIN, true);
-        boolean localhostonly = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOCALHOST_ONLY, false);
-        int port = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 8765);
+        Boolean https = subConfig.getBooleanProperty(WebinterfaceClassicExtension.PROPERTY_HTTPS, false);
+        AuthUser = "Basic " + Encoding.Base64Encode(subConfig.getStringProperty(WebinterfaceClassicExtension.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(WebinterfaceClassicExtension.PROPERTY_PASS, "JD"));
+        NeedAuth = subConfig.getBooleanProperty(WebinterfaceClassicExtension.PROPERTY_LOGIN, true);
+        boolean localhostonly = subConfig.getBooleanProperty(WebinterfaceClassicExtension.PROPERTY_LOCALHOST_ONLY, false);
+        int port = subConfig.getIntegerProperty(WebinterfaceClassicExtension.PROPERTY_PORT, 8765);
         try {
             if (!https) {
                 if (localhostonly) {

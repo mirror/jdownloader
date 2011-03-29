@@ -29,7 +29,7 @@ public class PriorityAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return DownloadTable.prioDescs[priority + 1];
+        return DownloadTable.PRIO_DESCS[priority + 1];
     }
 
     @Override

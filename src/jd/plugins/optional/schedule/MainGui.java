@@ -37,7 +37,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     private static final String JDL_PREFIX = "jd.plugins.optional.schedule.MainGui.";
 
-    private Schedule schedule;
+    private ScheduleExtension schedule;
 
     private SchedulerTable table;
 
@@ -49,7 +49,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     private JTabbedPane tabs;
 
-    public MainGui(Schedule schedule) {
+    public MainGui(ScheduleExtension schedule) {
         this.schedule = schedule;
 
         tabs = new JTabbedPane();

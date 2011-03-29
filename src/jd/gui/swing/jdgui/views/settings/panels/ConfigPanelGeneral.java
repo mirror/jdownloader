@@ -47,7 +47,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         this.configuration = JDUtilities.getConfiguration();
 
-        init();
+        init(true);
     }
 
     @Override

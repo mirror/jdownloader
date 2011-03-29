@@ -32,11 +32,11 @@ import jd.utils.locale.JDL;
 
 public class ConfigurationView extends ClosableView {
 
-    private static final long serialVersionUID = -5607304856678049342L;
+    private static final long        serialVersionUID = -5607304856678049342L;
 
-    private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.configurationview.";
+    private static final String      IDENT_PREFIX     = "jd.gui.swing.jdgui.views.configurationview.";
 
-    private static ConfigurationView INSTANCE = null;
+    private static ConfigurationView INSTANCE         = null;
 
     public synchronized static ConfigurationView getInstance() {
         if (INSTANCE == null) INSTANCE = new ConfigurationView();
@@ -62,6 +62,7 @@ public class ConfigurationView extends ClosableView {
             }
         });
         init();
+
     }
 
     @Override

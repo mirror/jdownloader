@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.optional.extraction.Archive;
 import jd.plugins.optional.extraction.ExtractionController;
@@ -54,7 +54,7 @@ public class XtreamSplit implements IExtraction {
 
     private Archive                 archive;
     private ExtractionController    controller;
-    SubConfiguration                config;
+    JSonWrapper                     config;
     private boolean                 md5;
     private File                    file;
     private HashMap<String, String> hashes = new HashMap<String, String>();
@@ -263,7 +263,7 @@ public class XtreamSplit implements IExtraction {
         return true;
     }
 
-    public void initConfig(ConfigContainer config, SubConfiguration subConfig) {
+    public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
     public void setArchiv(Archive archive) {
@@ -288,7 +288,7 @@ public class XtreamSplit implements IExtraction {
         return false;
     }
 
-    public void setConfig(SubConfiguration config) {
+    public void setConfig(JSonWrapper config) {
         this.config = config;
     }
 

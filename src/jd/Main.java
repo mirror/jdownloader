@@ -44,8 +44,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.JDImage;
@@ -99,7 +97,7 @@ public class Main {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
 
         // native Mac just if User Choose Aqua as Skin
-        if (LookAndFeelController.getPlaf().getName().equals("Apple Aqua")) {
+        if (LookAndFeelController.getInstance().getPlaf().getName().equals("Apple Aqua")) {
             // Mac Java from 1.3
             System.setProperty("com.apple.macos.useScreenMenuBar", "true");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "true");
@@ -264,10 +262,9 @@ public class Main {
                 JDInitFlags.SWITCH_DEBUG = true;
                 Browser.setGlobalVerbose(true);
                 Main.LOG.info("Browser DEBUG Modus aktiv");
-            } else if (p.equalsIgnoreCase("-config")) {
-                new Config();
 
-                return;
+            } else if (p.equalsIgnoreCase("-scan") || p.equalsIgnoreCase("--scan")) {
+                JDInitFlags.REFRESH_CACHE = true;
             } else if (p.equalsIgnoreCase("-trdebug")) {
                 JDL.DEBUG = true;
                 Main.LOG.info("Translation DEBUG Modus aktiv");
@@ -348,8 +345,6 @@ public class Main {
                 JACController.showDialog(true);
                 JDInitFlags.STOP = true;
 
-            } else if (JDInitFlags.SHOW_SPLASH && args[i].matches("(--add-.*|--start-download|-[dDmfHr]|--stop-download|--minimize|--focus|--hide|--reconnect)")) {
-                JDInitFlags.SHOW_SPLASH = false;
             }
 
         }
@@ -375,23 +370,6 @@ public class Main {
 
         if (Main.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
             JDTheme.setTheme("default");
-            if (JDInitFlags.SHOW_SPLASH) {
-                if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPLASH, true)) {
-                    Main.LOG.info("init Splash");
-                    new GuiRunnable<Object>() {
-                        @Override
-                        public Object runSave() {
-                            try {
-                                new SplashScreen(JDController.getInstance());
-                            } catch (final Exception e) {
-                                JDLogger.exception(e);
-                            }
-                            return null;
-                        }
-
-                    }.waitForEDT();
-                }
-            }
 
             Main.start(args);
         } else {
@@ -448,21 +426,20 @@ public class Main {
             JDLogger.removeConsoleHandler();
         }
 
-        Main.LOG.info("init Webupdate");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.webupdate", "Check updates")));
-
-        Main.LOG.info("init plugins");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.initplugins", "Init plugins")));
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                LookAndFeelController.getInstance().setUIManager();
+                // SyntheticaLookAndFeel.setLookAndFeel();
+                return null;
+            }
+        }.waitForEDT();
 
         init.initPlugins();
 
         Locale.setDefault(Locale.ENGLISH);
 
-        Main.LOG.info("init downloadqueue");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.controller", "Start controller")));
         init.initControllers();
-        Main.LOG.info("init gui");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.paintgui", "Paint user interface")));
 
         new GuiRunnable<Object>() {
             @Override

@@ -16,15 +16,18 @@
 
 package jd.gui.swing.laf;
 
-import java.io.Serializable;
-
 import javax.swing.UIManager.LookAndFeelInfo;
 
-public class LookAndFeelWrapper implements Serializable {
+import org.appwork.storage.Storable;
+
+public class LookAndFeelWrapper implements Storable {
+    private LookAndFeelWrapper() {
+        // required by Storable
+    }
 
     private static final long serialVersionUID = 8010506524416796786L;
-    private String className;
-    private String name;
+    private String            className;
+    private String            name;
 
     public LookAndFeelWrapper(LookAndFeelInfo lafi) {
         this.className = lafi.getClassName();

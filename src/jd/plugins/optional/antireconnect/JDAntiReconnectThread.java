@@ -38,9 +38,9 @@ public class JDAntiReconnectThread extends Thread implements Runnable {
     private String                lastIpsString = "";
     private String                lastIp        = "";
     private final Logger          logger;
-    private final JDAntiReconnect jdAntiReconnect;
+    private final AntiReconnectExtension jdAntiReconnect;
 
-    public JDAntiReconnectThread(JDAntiReconnect jdAntiReconnect) {
+    public JDAntiReconnectThread(AntiReconnectExtension jdAntiReconnect) {
         super();
         this.logger = JDLogger.getLogger();
         this.jdAntiReconnect = jdAntiReconnect;

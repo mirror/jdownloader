@@ -55,10 +55,12 @@ public class TreeEntry {
         }
 
         try {
-            this.setIcon(clazz.getMethod("getIconKey").invoke(null).toString());
+            String key = clazz.getMethod("getIconKey").invoke(null).toString();
+            this.setIcon(JDTheme.II(key, 16, 16), JDTheme.II(key, 20, 20));
+
         } catch (final Exception e) {
             e.printStackTrace();
-            this.setIcon("gui.images.taskpanes.configuration");
+            this.setIcon(JDTheme.II("gui.images.taskpanes.configuration", 16, 16), JDTheme.II("gui.images.taskpanes.configuration", 20, 20));
         }
 
         TreeEntry.PANELS.put(clazz, this);
@@ -66,10 +68,10 @@ public class TreeEntry {
         this.clazz = clazz;
     }
 
-    public TreeEntry(final String title, final String iconKey) {
+    public TreeEntry(final String title, final ImageIcon icon16, final ImageIcon icon20) {
         this();
         this.setTitle(title);
-        this.setIcon(iconKey);
+        this.setIcon(icon16, icon20);
     }
 
     /**
@@ -79,10 +81,18 @@ public class TreeEntry {
      * @param title
      * @param iconKey
      */
-    public TreeEntry(final SwitchPanel panel, final String title, final String iconKey) {
-        this(title, iconKey);
+    public TreeEntry(final SwitchPanel panel, final String title, final ImageIcon icon16, ImageIcon icon20) {
+        this(title, icon16, icon20);
 
         this.panel = panel;
+    }
+
+    public TreeEntry(String title, String iconKey) {
+        this(title, JDTheme.II(iconKey, 16, 16), JDTheme.II(iconKey, 20, 20));
+    }
+
+    public TreeEntry(SwitchPanel panel, String title, String iconKey) {
+        this(panel, title, JDTheme.II(iconKey, 16, 16), JDTheme.II(iconKey, 20, 20));
     }
 
     public void add(final TreeEntry treeEntry) {
@@ -128,11 +138,10 @@ public class TreeEntry {
         return this.entries.indexOf(child);
     }
 
-    private void setIcon(final String iconKey) {
-        if (iconKey != null) {
-            this.iconSmall = JDTheme.II(iconKey, 16, 16);
-            this.icon = JDTheme.II(iconKey, 20, 20);
-        }
+    private void setIcon(ImageIcon icon16, ImageIcon icon20) {
+        this.iconSmall = icon16;
+        this.icon = icon20;
+
     }
 
     private void setTitle(final String title) {

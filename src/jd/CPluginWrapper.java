@@ -19,10 +19,8 @@ package jd;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
-import jd.controlling.JDLogger;
 import jd.nutils.JDFlags;
 import jd.plugins.PluginsC;
-import jd.utils.JDUtilities;
 
 public class CPluginWrapper extends PluginWrapper {
     private static final ArrayList<CPluginWrapper> C_WRAPPER = new ArrayList<CPluginWrapper>();
@@ -56,12 +54,11 @@ public class CPluginWrapper extends PluginWrapper {
     }
 
     public PluginsC loadPlugin() {
-        final JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
         logger.finer("Try to initialize " + this.getClassName());
         try {
 
-            final Class<?> plgClass = jdClassLoader.loadClass(this.getClassName());
+            final Class<?> plgClass = getClass().getClassLoader().loadClass(this.getClassName());
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
@@ -73,8 +70,8 @@ public class CPluginWrapper extends PluginWrapper {
             logger.finer("Successfully loaded " + this.getClassName());
             return (PluginsC) loadedPlugin;
         } catch (Exception e) {
-            logger.info("Plugin Exception!");
-            JDLogger.exception(e);
+            logger.info("Plugin Exception! " + e.getMessage());
+            // JDLogger.exception(e);
         }
 
         return null;

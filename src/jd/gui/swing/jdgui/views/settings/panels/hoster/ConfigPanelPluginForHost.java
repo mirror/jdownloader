@@ -186,7 +186,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         pluginsForHost = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         Collections.sort(pluginsForHost);
 
-        init();
+        init(true);
     }
 
     public void actionPerformed(ActionEvent e) {

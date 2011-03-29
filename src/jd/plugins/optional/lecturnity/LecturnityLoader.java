@@ -36,7 +36,7 @@ public class LecturnityLoader extends PluginForHost {
          * Reset download directory. (dirty hack)
          */
         FilePackage fp = link.getFilePackage();
-        fp.setDownloadDirectory(link.getStringProperty(LecturnityDownloader.PROPERTY_DOWNLOADDIR, fp.getDownloadDirectory()));
+        fp.setDownloadDirectory(link.getStringProperty(LecturnityDownloaderExtension.PROPERTY_DOWNLOADDIR, fp.getDownloadDirectory()));
 
         /*
          * We know the Download-URL, so simply start the download.

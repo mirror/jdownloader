@@ -2,7 +2,7 @@ package jd.plugins.optional.awesomebar.awesome.gui;
 
 import javax.swing.JPanel;
 
-import jd.plugins.optional.awesomebar.Awesomebar;
+import jd.plugins.optional.awesomebar.AwesomebarExtension;
 import net.miginfocom.swing.MigLayout;
 
 public class AwesomeToolbarPanel extends JPanel {
@@ -24,12 +24,12 @@ public class AwesomeToolbarPanel extends JPanel {
     }
 
     private final AwesomeDescription awesomeDescription;
-    private final Awesomebar awesomebar;
-    public Awesomebar getAwesomebar() {
+    private final AwesomebarExtension awesomebar;
+    public AwesomebarExtension getAwesomebar() {
         return awesomebar;
     }
     
-    public AwesomeToolbarPanel(Awesomebar awesomebar) {
+    public AwesomeToolbarPanel(AwesomebarExtension awesomebar) {
         super(new MigLayout("ins 1"));
 
         this.setOpaque(false);

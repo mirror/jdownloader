@@ -28,100 +28,19 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
-import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
+import jd.plugins.AddonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginOptional;
+import jd.plugins.optional.ExtensionConfigPanel;
+import jd.plugins.optional.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-class PremShareHost extends HostPluginWrapper {
-
-    private HostPluginWrapper replacedone = null;
-
-    public PremShareHost(String host, String className, String patternSupported, int flags) {
-        super(host, "jd.plugins.optional.jdpremclient.", className, patternSupported, flags, "$Revision$");
-        for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
-            if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
-        }
-        if (replacedone != null) {
-            HostPluginWrapper.getHostWrapper().remove(replacedone);
-        }
-    }
-
-    public HostPluginWrapper getReplacedPlugin() {
-        return replacedone;
-    }
-
-    @Override
-    public synchronized PluginForHost getPlugin() {
-        PluginForHost tmp = super.getPlugin();
-        if (replacedone != null) {
-            ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getPlugin());
-        }
-        return tmp;
-    }
-
-    @Override
-    public PluginForHost getNewPluginInstance() {
-        PluginForHost tmp = super.getNewPluginInstance();
-        if (replacedone != null) {
-            ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
-        }
-        return tmp;
-    }
-
-    @Override
-    public long getVersion() {
-        if (replacedone != null) return replacedone.getVersion();
-        return super.getVersion();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        if (replacedone != null) return replacedone.isEnabled();
-        return super.isEnabled();
-    }
-
-    @Override
-    public void setEnabled(final boolean bool) {
-        if (replacedone != null) {
-            replacedone.setEnabled(bool);
-        } else {
-            super.setEnabled(bool);
-        }
-    }
-
-    @Override
-    public SubConfiguration getPluginConfig() {
-        if (replacedone != null) {
-            return replacedone.getPluginConfig();
-        } else {
-            return super.getPluginConfig();
-        }
-    }
-
-    @Override
-    public boolean hasConfig() {
-        if (replacedone != null) {
-            return replacedone.hasConfig();
-        } else {
-            return super.hasConfig();
-        }
-    }
-
-    @Override
-    public String getConfigName() {
-        if (replacedone != null) {
-            return replacedone.getConfigName();
-        } else {
-            return super.getConfigName();
-        }
-    }
-
-}
+import org.appwork.shutdown.ShutdownVetoException;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 7)
 public class JDPremium extends PluginOptional {
@@ -135,11 +54,8 @@ public class JDPremium extends PluginOptional {
 
     private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
 
-    public JDPremium(PluginWrapper wrapper) {
-        super(wrapper);
-        config.setGroup(new ConfigGroup(getHost(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer: (Restart required)").setPropertyType(PropertyType.NEEDS_RESTART));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), "PREFERLOCALACCOUNTS", "Prefer local Premium Accounts(restart required)?").setDefaultValue(false).setPropertyType(PropertyType.NEEDS_RESTART));
+    public JDPremium() {
+        super(JDL.L("plugins.optional.jdpremium.name", "JDPremium"));
     }
 
     private void replaceHosterPlugin(String host, String with) {
@@ -150,15 +66,54 @@ public class JDPremium extends PluginOptional {
         }
     }
 
+    public static boolean isEnabled() {
+        return enabled;
+    }
+
     @Override
-    public boolean initAddon() {
+    public String getIconKey() {
+        return "gui.images.premium";
+    }
+
+    public static String getJDPremServer() {
+        return jdpremServer;
+    }
+
+    public static boolean preferLocalAccounts() {
+        return preferLocalAccounts;
+    }
+
+    public void onShutdown() {
+    }
+
+    public boolean onShutdownRequest() throws ShutdownVetoException {
+        return false;
+    }
+
+    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
+    }
+
+    @Override
+    protected void stop() throws StopException {
+        synchronized (LOCK) {
+            enabled = false;
+        }
+    }
+
+    @Override
+    protected void start() throws StartException {
+    }
+
+    @Override
+    protected void initExtension() throws StartException {
+
         jdpremServer = getPluginConfig().getStringProperty("SERVER", null);
         preferLocalAccounts = getPluginConfig().getBooleanProperty("PREFERLOCALACCOUNTS", false);
         synchronized (LOCK) {
             if (Main.isInitComplete() && replaced == false) {
                 logger.info("JDPremium: cannot be initiated during runtime. JDPremium must be enabled at startup!");
-                UserIO.getInstance().requestMessageDialog(0, "Restart needed!");
-                return true;
+                throw new StartException("Restart needed!");
+
             }
             if (!init) {
                 /* init our new plugins */
@@ -240,46 +195,136 @@ public class JDPremium extends PluginOptional {
             }
         }
 
-        return true;
     }
 
     @Override
-    public void onExit() {
-        synchronized (LOCK) {
-            enabled = false;
-        }
-    }
-
-    public static boolean isEnabled() {
-        return enabled;
-    }
-
-    @Override
-    public String getIconKey() {
-        return "gui.images.premium";
-    }
-
-    @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.jdpremium.name", "JDPremium");
-    }
-
-    @Override
-    public long getVersion() {
-        return getVersion("$Revision$");
-    }
-
-    @Override
-    public ArrayList<MenuAction> createMenuitems() {
+    public ExtensionConfigPanel<? extends PluginOptional> getConfigPanel() {
         return null;
     }
 
-    public static String getJDPremServer() {
-        return jdpremServer;
+    @Override
+    public boolean hasConfigPanel() {
+        return false;
     }
 
-    public static boolean preferLocalAccounts() {
-        return preferLocalAccounts;
+    @Override
+    protected void initSettings(ConfigContainer config) {
+        config.setGroup(new ConfigGroup(getName(), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "SERVER", "JDPremServer: (Restart required)").setPropertyType(PropertyType.NEEDS_RESTART));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), "PREFERLOCALACCOUNTS", "Prefer local Premium Accounts(restart required)?").setDefaultValue(false).setPropertyType(PropertyType.NEEDS_RESTART));
+
     }
 
+    @Override
+    public String getConfigID() {
+        return null;
+    }
+
+    @Override
+    public String getAuthor() {
+        return null;
+    }
+
+    @Override
+    public String getDescription() {
+        return null;
+    }
+
+    @Override
+    public AddonPanel getGUI() {
+        return null;
+    }
+
+    @Override
+    public ArrayList<MenuAction> getMenuAction() {
+        return null;
+    }
+
+    class PremShareHost extends HostPluginWrapper {
+
+        private HostPluginWrapper replacedone = null;
+
+        public PremShareHost(String host, String className, String patternSupported, int flags) {
+            super(host, "jd.plugins.optional.jdpremclient.", className, patternSupported, flags, "$Revision$");
+            for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
+                if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
+            }
+            if (replacedone != null) {
+                HostPluginWrapper.getHostWrapper().remove(replacedone);
+            }
+        }
+
+        public HostPluginWrapper getReplacedPlugin() {
+            return replacedone;
+        }
+
+        @Override
+        public synchronized PluginForHost getPlugin() {
+            PluginForHost tmp = super.getPlugin();
+            if (replacedone != null) {
+                ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getPlugin());
+            }
+            return tmp;
+        }
+
+        @Override
+        public PluginForHost getNewPluginInstance() {
+            PluginForHost tmp = super.getNewPluginInstance();
+            if (replacedone != null) {
+                ((JDPremInterface) tmp).setReplacedPlugin(replacedone.getNewPluginInstance());
+            }
+            return tmp;
+        }
+
+        @Override
+        public long getVersion() {
+            if (replacedone != null) return replacedone.getVersion();
+            return super.getVersion();
+        }
+
+        @Override
+        public boolean isEnabled() {
+            if (replacedone != null) return replacedone.isEnabled();
+            return super.isEnabled();
+        }
+
+        @Override
+        public void setEnabled(final boolean bool) {
+            if (replacedone != null) {
+                replacedone.setEnabled(bool);
+            } else {
+                super.setEnabled(bool);
+            }
+        }
+
+        @Override
+        public SubConfiguration getPluginConfig() {
+
+            if (replacedone != null) {
+                return replacedone.getPluginConfig();
+            } else {
+                return super.getPluginConfig();
+            }
+
+        }
+
+        @Override
+        public boolean hasConfig() {
+            if (replacedone != null) {
+                return replacedone.hasConfig();
+            } else {
+                return super.hasConfig();
+            }
+        }
+
+        @Override
+        public String getConfigName() {
+            if (replacedone != null) {
+                return replacedone.getConfigName();
+            } else {
+                return super.getConfigName();
+            }
+        }
+
+    }
 }

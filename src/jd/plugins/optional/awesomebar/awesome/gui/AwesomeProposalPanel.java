@@ -9,7 +9,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
 import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.optional.awesomebar.Awesomebar;
+import jd.plugins.optional.awesomebar.AwesomebarExtension;
 import jd.plugins.optional.awesomebar.awesome.gui.jlist.AwesomeProposalJList;
 import jd.plugins.optional.awesomebar.awesome.gui.jlist.AwesomeProposalListModel;
 import jd.plugins.optional.awesomebar.awesome.gui.jlist.AwesomeProposalListSelectionModel;
@@ -20,14 +20,14 @@ import net.miginfocom.swing.MigLayout;
 public class AwesomeProposalPanel extends JPanel{
     private static final long serialVersionUID = 7051440058679012728L;
     
-    private final Awesomebar awesomebar;
+    private final AwesomebarExtension awesomebar;
     private final AwesomeProposalJList proposalList;
     private final AwesomeProposalDetailPanel detailPanel;
     private final String detailPanelHeight = "100";
     private final String width = "400";
     private final Dimension panelDimension = new Dimension(Integer.valueOf(width),300);
 
-    public Awesomebar getAwesomebar() {
+    public AwesomebarExtension getAwesomebar() {
         return awesomebar;
     }
     
@@ -39,7 +39,7 @@ public class AwesomeProposalPanel extends JPanel{
         return detailPanel;
     }
     
-    public AwesomeProposalPanel(Awesomebar awesomebar){        
+    public AwesomeProposalPanel(AwesomebarExtension awesomebar){        
     super(new MigLayout(new LC().insets("0").fill()));
     
     this.awesomebar = awesomebar;

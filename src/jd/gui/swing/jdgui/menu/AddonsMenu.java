@@ -18,15 +18,18 @@ package jd.gui.swing.jdgui.menu;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import jd.OptionalPluginWrapper;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
+import jd.plugins.optional.PluginOptional;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.translate.JDT;
 
 public class AddonsMenu extends JMenu {
 
@@ -34,8 +37,7 @@ public class AddonsMenu extends JMenu {
     private static AddonsMenu INSTANCE         = null;
 
     private AddonsMenu() {
-        super(JDL.L("gui.menu.addons", "Addons"));
-
+        super(JDT._.gui_menu_extensions());
         updateMenu();
     }
 
@@ -56,22 +58,28 @@ public class AddonsMenu extends JMenu {
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        ArrayList<OptionalPluginWrapper> pluginsOptional = new ArrayList<OptionalPluginWrapper>(OptionalPluginWrapper.getOptionalWrapper());
-        Collections.sort(pluginsOptional);
-        for (final OptionalPluginWrapper plg : pluginsOptional) {
-            if (!plg.isLoaded() || !plg.isEnabled()) continue;
-            ArrayList<MenuAction> mis = plg.getPlugin().createMenuitems();
+        ArrayList<PluginOptional> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        Collections.sort(pluginsOptional, new Comparator<PluginOptional>() {
+
+            public int compare(PluginOptional o1, PluginOptional o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+
+        for (final PluginOptional plg : pluginsOptional) {
+            if (!plg.isRunning()) continue;
+            ArrayList<MenuAction> mis = plg.getMenuAction();
             if (mis != null && !mis.isEmpty()) {
                 if (mis.size() == 1) {
                     JMenuItem c = mis.get(0).toJMenuItem();
-                    c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
+                    c.setIcon(JDTheme.II(plg.getIconKey(), 16, 16));
                     if (mis.get(0).getType() == Types.TOGGLE) {
                         itemsToggle.add(c);
                     } else {
                         itemsPress.add(c);
                     }
                 } else {
-                    MenuAction m = new MenuAction(plg.getID(), plg.getHost(), plg.getPlugin().getIconKey());
+                    MenuAction m = new MenuAction(plg.getConfigID(), plg.getName(), plg.getIconKey());
                     m.setItems(mis);
 
                     JMenuItem mi = m.toJMenuItem();

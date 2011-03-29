@@ -31,9 +31,9 @@ public class SchedulerTableModel extends JDTableModel {
     private static final long serialVersionUID = 4878129559346795192L;
     private static final String JDL_PREFIX = "jd.plugins.optional.schedule.SchedulerTableModel.";
 
-    private Schedule schedule = null;
+    private ScheduleExtension schedule = null;
 
-    public SchedulerTableModel(String configname, Schedule schedule) {
+    public SchedulerTableModel(String configname, ScheduleExtension schedule) {
         super(configname);
         this.schedule = schedule;
     }
@@ -51,7 +51,7 @@ public class SchedulerTableModel extends JDTableModel {
     @Override
     public void refreshModel() {
         synchronized (list) {
-            synchronized (Schedule.LOCK) {
+            synchronized (ScheduleExtension.LOCK) {
                 list.clear();
                 list.addAll(schedule.getActions());
             }

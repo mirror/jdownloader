@@ -24,16 +24,17 @@ import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class Advanced extends ConfigPanel {
 
-    private static final long serialVersionUID = 3383448498625377495L;
+    private static final long   serialVersionUID = 3383448498625377495L;
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.advanced.";
+    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.advanced.";
 
-    private SubConfiguration subConfig;
+    private JSonWrapper         subConfig;
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.advanced.title", "Advanced");
@@ -48,7 +49,7 @@ public class Advanced extends ConfigPanel {
 
         subConfig = GUIUtils.getConfig();
 
-        init();
+        init(true);
     }
 
     @Override

@@ -41,7 +41,7 @@ public class DLPriorityColumn extends ExtColumn<CustomizeSetting> {
         jlr = new JRendererLabel();
         jlr.setBorder(null);
 
-        prio = new JComboBox(prioDescs = DownloadTable.prioDescs);
+        prio = new JComboBox(prioDescs = DownloadTable.PRIO_DESCS);
         prio.setBorder(null);
     }
 

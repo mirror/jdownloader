@@ -27,7 +27,7 @@ import java.awt.event.MouseMotionListener;
 
 public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
-    private JDLightTray deligate;
+    private TrayExtension deligate;
     private boolean mouseover;
     private Thread mouseLocationObserver;
     // private TrayIcon trayIcon;
@@ -38,7 +38,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     private Component dummy;
     private static int TOOLTIP_DELAY = 1000;
 
-    public TrayMouseAdapter(JDLightTray lightTray, TrayIcon trayIcon) {
+    public TrayMouseAdapter(TrayExtension lightTray, TrayIcon trayIcon) {
         deligate = lightTray;
         // this.trayIcon = trayIcon;
         dummy = new Component() {

@@ -23,13 +23,13 @@ import java.io.File;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -38,9 +38,9 @@ import jd.utils.locale.JDL;
 
 public class Browser extends ConfigPanel {
 
-    private static final long serialVersionUID = 3383448498625377495L;
+    private static final long   serialVersionUID = 3383448498625377495L;
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.Browser.";
+    private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.Browser.";
 
     public static String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.browser.title", "Browser");
@@ -50,14 +50,14 @@ public class Browser extends ConfigPanel {
         return "gui.images.config.host";
     }
 
-    private SubConfiguration subConfig;
+    private JSonWrapper subConfig;
 
     public Browser() {
         super();
 
         subConfig = GUIUtils.getConfig();
 
-        init();
+        init(true);
     }
 
     @Override

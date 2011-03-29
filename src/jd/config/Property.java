@@ -35,16 +35,16 @@ import jd.utils.JDUtilities;
  */
 public class Property implements Serializable {
 
-    private static final long serialVersionUID = -6093927038856757256L;
+    private static final long        serialVersionUID = -6093927038856757256L;
     /**
      * Nullvalue used to remove a key completly.
      */
-    public static final Object NULL = new Object();
+    public static final Object       NULL             = new Object();
 
-    private HashMap<String, Object> properties;
+    private HashMap<String, Object>  properties;
     private HashMap<String, Integer> propertiesHashes;
 
-    protected transient boolean changes = false;
+    protected transient boolean      changes          = false;
 
     public Property() {
         properties = new HashMap<String, Object>();
@@ -187,6 +187,7 @@ public class Property implements Serializable {
      * @param key
      * @return Value for key
      */
+    @Deprecated
     public Object getProperty(final String key) {
         // if (properties == null) {
         // properties = new HashMap<String, Object>();

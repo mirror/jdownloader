@@ -29,11 +29,11 @@ public class JDAntiStandbyThread extends Thread implements Runnable {
     private boolean             run      = false;
     private static final int    sleep    = 5000;
     private final Logger        logger;
-    private final JDAntiStandby jdAntiStandby;
+    private final AntiStandbyExtension jdAntiStandby;
 
     private Kernel32            kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
 
-    public JDAntiStandbyThread(JDAntiStandby jdAntiStandby) {
+    public JDAntiStandbyThread(AntiStandbyExtension jdAntiStandby) {
         super();
         this.logger = JDLogger.getLogger();
         this.jdAntiStandby = jdAntiStandby;

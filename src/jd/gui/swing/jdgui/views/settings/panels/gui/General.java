@@ -29,6 +29,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -50,14 +51,14 @@ public class General extends ConfigPanel {
         return JDL.L(General.JDL_PREFIX + "gui.title", "User Interface");
     }
 
-    private final SubConfiguration subConfig;
+    private final JSonWrapper subConfig;
 
     public General() {
         super();
 
         this.subConfig = GUIUtils.getConfig();
 
-        this.init();
+        this.init(true);
     }
 
     @Override
@@ -83,9 +84,9 @@ public class General extends ConfigPanel {
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
 
-        if (LookAndFeelController.getSupportedLookAndFeels().length > 1) {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this.subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style (Restart required)")));
-            ce.setDefaultValue(LookAndFeelController.getPlaf());
+        if (LookAndFeelController.getInstance().getSupportedLookAndFeels().length > 1) {
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this.subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getInstance().getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style (Restart required)")));
+            ce.setDefaultValue(LookAndFeelController.getInstance().getPlaf());
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
 

@@ -147,7 +147,7 @@ public class ToolbarController extends ConfigPanel {
 
         actions = new ArrayList<ToolBarAction>();
 
-        init();
+        init(true);
     }
 
     @Override

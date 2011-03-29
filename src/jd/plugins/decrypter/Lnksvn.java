@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.captcha.specials.Linksave;
 import jd.controlling.ProgressController;
@@ -45,9 +44,11 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
 
-    private static boolean isExternInterfaceActive() {
-        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
-        return plg != null && plg.isLoaded() && plg.isEnabled();
+    private boolean isExternInterfaceActive() {
+        // DO NOT check for the plugin here. compatzibility reasons to 0.9*
+        // better: check port 9666 for a httpserver
+
+        return true;
     }
 
     public Lnksvn(final PluginWrapper wrapper) {
@@ -169,7 +170,7 @@ public class Lnksvn extends PluginForDecrypt {
         // alle verschlüsseleten Links in einem Rutsch entschlüsseln
         final class LsDirektLinkTH extends Thread {
             Browser browser;
-            String result;
+            String  result;
 
             public LsDirektLinkTH(final Browser browser) {
                 this.browser = browser;

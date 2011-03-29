@@ -45,7 +45,7 @@ public class Advanced extends ConfigPanel {
     public Advanced() {
         super();
 
-        this.init();
+        this.init(true);
     }
 
     @Override

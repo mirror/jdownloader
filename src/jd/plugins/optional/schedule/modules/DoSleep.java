@@ -1,10 +1,7 @@
 package jd.plugins.optional.schedule.modules;
 
-import jd.OptionalPluginWrapper;
-import jd.controlling.JDLogger;
 import jd.plugins.optional.schedule.SchedulerModule;
 import jd.plugins.optional.schedule.SchedulerModuleInterface;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @SchedulerModule
@@ -18,12 +15,13 @@ public class DoSleep implements SchedulerModuleInterface {
 
     public void execute(String parameter) {
 
-        OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("shutdown");
-        if (addon == null) {
-            JDLogger.getLogger().info("JDShutdown addon not loaded! Cannot sleep!");
-            return;
-        }
-        addon.getPlugin().interact("Sleep", null);
+        // OptionalPluginWrapper addon =
+        // JDUtilities.getOptionalPlugin("shutdown");
+        // if (addon == null) {
+        // JDLogger.getLogger().info("JDShutdown addon not loaded! Cannot sleep!");
+        // return;
+        // }
+        // addon.getPlugin().interact("Sleep", null);
     }
 
     public String getTranslation() {

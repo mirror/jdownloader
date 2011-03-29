@@ -22,7 +22,7 @@ public class SchedulerTable extends JDTable {
 
     private static final long serialVersionUID = -9118598915864230546L;
 
-    public SchedulerTable(Schedule schedule) {
+    public SchedulerTable(ScheduleExtension schedule) {
         super(new SchedulerTableModel("schedulerview", schedule));
     }
 

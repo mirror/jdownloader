@@ -1,22 +1,28 @@
 package jd.gui.swing.jdgui.views.settings.panels;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Vector;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
+import jd.gui.swing.laf.LookAndFeelWrapper;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storage;
 import org.appwork.storage.StorageEvent;
 import org.appwork.storage.StorageKeyAddedEvent;
 import org.appwork.storage.StorageKeyRemovedEvent;
 import org.appwork.storage.StorageValueChangeEvent;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.reflection.Clazz;
 
 /**
  * A Wrapperclass that wrapps a (Old) JD- Property class around the new appwork
@@ -29,15 +35,20 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
-    private static HashMap<Storage, JSonWrapper> MAP = new HashMap<Storage, JSonWrapper>();
-    private Storage storage;
-    private JDController jdController;
+    private static final long                    serialVersionUID = 1L;
+    private static HashMap<Storage, JSonWrapper> MAP              = new HashMap<Storage, JSonWrapper>();
+    private Storage                              storage;
+    private JDController                         jdController;
+    private String                               path;
+    private boolean                              plain;
 
     private JSonWrapper(Storage json) {
         this.storage = json;
         jdController = JDController.getInstance();
         storage.getEventSender().addListener(this);
+        String str = ((JsonKeyValueStorage) storage).getFile().getAbsolutePath();
+        path = str.substring(0, str.length() - (str.endsWith(".json") ? 5 : 4));
+        plain = ((JsonKeyValueStorage) storage).isPlain();
 
     }
 
@@ -87,7 +98,12 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     }
 
     public <E> E getGenericProperty(final String key, final E def) {
-        return storage.get(key, def);
+        if (def == null || Clazz.isPrimitive(def.getClass())) {
+            return storage.get(key, def);
+        } else {
+            System.out.println("Read " + path + "." + key + (plain ? ".json" : ".ejs"));
+            return JSonStorage.restoreFrom(new File(path + "." + key + (plain ? ".json" : ".ejs")), def);
+        }
     }
 
     public Boolean getBooleanProperty(final String key) {
@@ -120,7 +136,9 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
 
     public Object getProperty(final String key) {
         try {
-            if (this.hasProperty(key)) return this.storage.get(key, (String) null);
+            if (storage.hasProperty(key)) {
+                return this.storage.get(key, (String) null);
+            } else if (getObjectKey(key).exists()) { return getProperty(key, null); }
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -128,7 +146,43 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     }
 
     public Object getProperty(final String key, final Object def) {
-        return storage.get(key, def);
+        try {
+            if (storage.hasProperty(key)) {
+                return this.storage.get(key, (String) null);
+            } else if (getObjectKey(key).exists()) {
+
+                if (def != null) {
+                    return JSonStorage.restoreFrom(getObjectKey(key), def);
+                } else {
+                    TypeRef<?> ref = getType(key);
+                    System.out.println("Read " + path + "." + key + (plain ? ".json" : ".ejs"));
+                    if (ref == null) {
+                        Log.exception(new Exception(path + ".json." + key + " type missing"));
+                    }
+                    return JSonStorage.restoreFrom(getObjectKey(key), true, null, ref, null);
+                }
+
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return def;
+
+    }
+
+    private static final HashMap<String, TypeRef<?>> MAPPING = new HashMap<String, TypeRef<?>>();
+    static {
+        // convertermappings
+        MAPPING.put("jdgui.json.PLAF5", new TypeRef<LookAndFeelWrapper>() {
+        });
+
+        MAPPING.put("folderwatch.json.FOLDER_LIST", new TypeRef<Vector<String>>() {
+        });
+
+    }
+
+    private TypeRef<?> getType(String key) {
+        return MAPPING.get(((JsonKeyValueStorage) storage).getFile().getName() + "." + key);
     }
 
     public String getStringProperty(final String key) {
@@ -140,7 +194,11 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     }
 
     public boolean hasProperty(final String key) {
-        return storage.hasProperty(key);
+        if (storage.hasProperty(key)) {
+            return true;
+        } else {
+            return getObjectKey(key).exists();
+        }
     }
 
     public void setProperties(final HashMap<String, Object> properties) {
@@ -170,9 +228,18 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
             } else if (value instanceof Double) {
                 storage.put(key, (Double) value);
             } else {
-                throw new RuntimeException("Type " + value.getClass() + " not supported");
+                System.out.println("Write " + path + "." + key + (plain ? ".json" : ".ejs"));
+                JSonStorage.saveTo(getObjectKey(key), value);
             }
+
+            // throw new RuntimeException("Type " + value.getClass() +
+            // " not supported");
+            // }
         }
+    }
+
+    private File getObjectKey(String key) {
+        return new File(path + "." + key + (plain ? ".json" : ".ejs"));
     }
 
     public boolean hasChanges() {

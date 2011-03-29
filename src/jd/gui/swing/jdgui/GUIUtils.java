@@ -23,8 +23,8 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
-import jd.config.SubConfiguration;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Screen;
 
 public class GUIUtils {
@@ -51,8 +51,8 @@ public class GUIUtils {
      * 
      * @return
      */
-    public static SubConfiguration getConfig() {
-        return SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
+    public static JSonWrapper getConfig() {
+        return JSonWrapper.get(JDGuiConstants.CONFIG_PARAMETER);
     }
 
     public static Point getLastLocation(Component parent, Component child) {
@@ -61,8 +61,11 @@ public class GUIUtils {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
-        Point point = getConfig().getGenericProperty("LOCATION_OF_" + key, (Point) null);
-        if (point != null) {
+        Integer x = getConfig().getGenericProperty("XLOCATION_OF_" + key, -1);
+        Integer y = getConfig().getGenericProperty("YLOCATION_OF_" + key, -1);
+
+        if (x > 0 && y > 0) {
+            Point point = new Point(x, y);
             if (point.x < 0) point.x = 0;
             if (point.y < 0) point.y = 0;
 
@@ -90,7 +93,9 @@ public class GUIUtils {
             dim.width = Math.min(dim.width, screenSize.width);
             dim.height = Math.min(dim.height, screenSize.height);
             component.setSize(dim);
-            if (component instanceof JFrame) ((JFrame) component).setExtendedState(getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + component.getName(), JFrame.NORMAL));
+            if (component instanceof JFrame) {
+                ((JFrame) component).setExtendedState(getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + component.getName(), JFrame.NORMAL));
+            }
         } else {
             component.validate();
         }
@@ -108,7 +113,11 @@ public class GUIUtils {
             }
         }
         // do not save dimension if frame is not in normal state
-        if (!max) getConfig().setProperty("DIMENSION_OF_" + key, child.getSize());
+        if (!max) {
+
+            getConfig().setProperty("XDIMENSION_OF_" + key, child.getSize().width);
+            getConfig().setProperty("YDIMENSION_OF_" + key, child.getSize().height);
+        }
         getConfig().save();
     }
 
@@ -118,7 +127,9 @@ public class GUIUtils {
         // do not save location if frame is not in normal state
         if (parent instanceof JFrame && ((JFrame) parent).getExtendedState() != JFrame.NORMAL) return;
         if (parent.isShowing()) {
-            getConfig().setProperty("LOCATION_OF_" + key, parent.getLocationOnScreen());
+            getConfig().setProperty("XLOCATION_OF_" + key, parent.getLocationOnScreen().x);
+            getConfig().setProperty("YLOCATION_OF_" + key, parent.getLocationOnScreen().y);
+
             getConfig().save();
         }
     }

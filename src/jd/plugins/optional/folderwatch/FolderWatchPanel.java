@@ -4,17 +4,16 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.JScrollPane;
 
-import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.plugins.optional.folderwatch.data.History;
 import jd.plugins.optional.folderwatch.data.HistoryEntry;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -24,13 +23,13 @@ public class FolderWatchPanel extends SwitchPanel {
 
     private static final String         JDL_PREFIX       = "plugins.optional.folderwatch.panel.";
 
-    private final JDFolderWatch         fwInstance       = (JDFolderWatch) JDUtilities.getOptionalPlugin("folderwatch").getPlugin();
-
     private static FolderWatchTable     table;
     private static FolderWatchInfoPanel infoPanel;
-    private static SubConfiguration     config;
+    private static JSonWrapper          config;
 
     private static FolderWatchPanel     INSTANCE;
+
+    private FolderWatchExtension           owner;
 
     private FolderWatchPanel() {
     }
@@ -40,9 +39,10 @@ public class FolderWatchPanel extends SwitchPanel {
         return INSTANCE;
     }
 
-    public FolderWatchPanel(SubConfiguration config) {
+    public FolderWatchPanel(JSonWrapper jSonWrapper, FolderWatchExtension owner) {
+        this.owner = owner;
         FolderWatchPanel.table = new FolderWatchTable();
-        FolderWatchPanel.config = config;
+        FolderWatchPanel.config = jSonWrapper;
 
         initActions();
         initGUI();
@@ -98,7 +98,7 @@ public class FolderWatchPanel extends SwitchPanel {
 
                             for (int row : rows) {
                                 HistoryEntry container = (HistoryEntry) table.getValueAt(row, 2);
-                                fwInstance.importContainer(container.getAbsolutePath());
+                                owner.importContainer(container.getAbsolutePath());
                             }
                         }
                         return null;

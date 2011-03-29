@@ -36,9 +36,9 @@ import jd.utils.locale.JDL;
  */
 public class ExtractionListenerFile implements ExtractionListener {
     private Logger     logger;
-    private Extraction ex;
+    private ExtractionExtension ex;
 
-    ExtractionListenerFile(Extraction ex) {
+    ExtractionListenerFile(ExtractionExtension ex) {
         this.ex = ex;
     }
 

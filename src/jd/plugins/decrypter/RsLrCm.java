@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.swing.components.Balloon;
@@ -42,11 +41,11 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs-layer.com" }, urls = { "http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html" }, flags = { 0 })
 public class RsLrCm extends PluginForDecrypt {
 
-    private static Pattern linkPattern = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
-    private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static long LATEST_OPENED_CNL_TIME = 0;
-    private static HashMap<String, Boolean> CNL_URL_MAP = new HashMap<String, Boolean>();
+    private static Pattern                  linkPattern            = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
+    private static String                   strCaptchaPattern      = "<img src=\"(captcha-[^\"]*\\.png)\" ";
+    private Pattern                         patternSupported       = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static long                     LATEST_OPENED_CNL_TIME = 0;
+    private static HashMap<String, Boolean> CNL_URL_MAP            = new HashMap<String, Boolean>();
 
     public RsLrCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -96,11 +95,10 @@ public class RsLrCm extends PluginForDecrypt {
             boolean cont = false;
             for (int i = 1; i < 6; i++) {
                 Form[] forms = br.getForms();
-                if (forms != null && forms.length != 0 && forms[0] != null && br.getRegex(linkPattern).getColumn(0).length == 0&&!br.containsHTML("\\/img\\/button")) {
+                if (forms != null && forms.length != 0 && forms[0] != null && br.getRegex(linkPattern).getColumn(0).length == 0 && !br.containsHTML("\\/img\\/button")) {
                     Form captchaForm = forms[0];
                     String captchaFileName = br.getRegex(strCaptchaPattern).getMatch(0);
-                    if (captchaFileName == null) { 
-                        return null; }
+                    if (captchaFileName == null) { return null; }
                     String captchaUrl = "http://rs-layer.com/" + captchaFileName;
                     String captchaCode = getCaptchaCode(captchaUrl, param);
                     captchaForm.put("captcha_input", captchaCode);
@@ -153,9 +151,11 @@ public class RsLrCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private static boolean isExternInterfaceActive() {
-        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
-        return (plg != null && plg.isLoaded() && plg.isEnabled());
+    private boolean isExternInterfaceActive() {
+        // DO NOT check for the plugin here. compatzibility reasons to 0.9*
+        // better: check port 9666 for a httpserver
+
+        return true;
     }
 
 }

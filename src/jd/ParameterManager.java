@@ -122,15 +122,16 @@ public class ParameterManager {
                 ParameterManager.LOG.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--focus") || currentArg.equals("-f")) {
-                final OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("trayicon");
-                if (addon != null && addon.isEnabled()) {
-                    addon.getPlugin().interact("refresh", null);
-                }
-                addLinksSwitch = false;
-                addContainersSwitch = false;
-                addPasswordsSwitch = false;
-                ParameterManager.LOG.info(currentArg + " parameter");
-                UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                // final OptionalPluginWrapper addon =
+                // JDUtilities.getOptionalPlugin("trayicon");
+                // if (addon != null && addon.isEnabled()) {
+                // addon.getPlugin().interact("refresh", null);
+                // }
+                // addLinksSwitch = false;
+                // addContainersSwitch = false;
+                // addPasswordsSwitch = false;
+                // ParameterManager.LOG.info(currentArg + " parameter");
+                // UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
 
             } else if (currentArg.equals("--hide") || currentArg.equals("-H")) {
 

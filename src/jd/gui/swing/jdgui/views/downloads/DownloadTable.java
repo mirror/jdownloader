@@ -91,7 +91,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
     private final DownloadLinksPanel panel;
 
-    public static String[]           prioDescs;
+    public static String[]           PRIO_DESCS        = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "Default Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
 
     private final PropMenuItem       propItem;
 
@@ -112,7 +112,6 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
         this.addPostErrorHighlighter();
         this.addWaitHighlighter();
         this.addPackageHighlighter();
-        DownloadTable.prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "Default Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
         this.propItem = new PropMenuItem(panel);
     }
 

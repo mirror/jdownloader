@@ -25,7 +25,7 @@ import javax.swing.SwingConstants;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.plugins.optional.jdfeedme.JDFeedMe;
+import jd.plugins.optional.jdfeedme.FeedMeExtension;
 import jd.plugins.optional.jdfeedme.JDFeedMeFeed;
 import jd.plugins.optional.jdfeedme.posts.JDFeedMePost;
 import jd.plugins.optional.jdfeedme.posts.PostsTableModel;
@@ -128,7 +128,7 @@ public class DownloadColumn extends JDTableColumn
     	// temporarily mark as added (until we know for sure)
     	post.setAdded(JDFeedMePost.ADDED_YES);
     	JDFeedMeFeed feed = table.getFeed();
-    	JDFeedMe.downloadPostThreaded(feed, post, "", table);
+    	FeedMeExtension.downloadPostThreaded(feed, post, "", table);
     }
     
     

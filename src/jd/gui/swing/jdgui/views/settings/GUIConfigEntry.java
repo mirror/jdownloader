@@ -138,8 +138,8 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                 }
             }
 
-            ((JComboBox) input).addActionListener(this);
-            if (configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()) instanceof String) {
+            Object v = configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName());
+            if (v instanceof String) {
                 for (int i = 0; i < configEntry.getList().length; i++) {
                     if (configEntry.getList()[i].toString().equals(configEntry.getPropertyInstance().getStringProperty(configEntry.getPropertyName()))) {
                         ((JComboBox) input).setSelectedIndex(i);
@@ -147,8 +147,9 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                     }
                 }
             } else {
+
                 for (int i = 0; i < configEntry.getList().length; i++) {
-                    if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
+                    if (configEntry.getList()[i].equals(v)) {
                         ((JComboBox) input).setSelectedIndex(i);
                         break;
                     }

@@ -40,7 +40,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     public ConfigPanelCaptcha() {
         super();
 
-        init();
+        init(true);
     }
 
     @Override

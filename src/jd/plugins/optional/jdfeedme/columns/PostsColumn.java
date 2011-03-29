@@ -27,7 +27,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.plugins.optional.jdfeedme.JDFeedMe;
+import jd.plugins.optional.jdfeedme.FeedMeExtension;
 import jd.plugins.optional.jdfeedme.JDFeedMeFeed;
 import jd.plugins.optional.jdfeedme.JDFeedMeTableModel;
 import jd.plugins.optional.jdfeedme.dialogs.PostsDialog;
@@ -147,7 +147,7 @@ public class PostsColumn extends JDTableColumn {
         dialog.displayDialog();
         /* CODE_FOR_INTERFACE_7_END */
     	
-    	JDFeedMe.getGui().setFeedNewposts(feed, false);
+    	FeedMeExtension.getGui().setFeedNewposts(feed, false);
     	this.fireEditingStopped();
     }
     

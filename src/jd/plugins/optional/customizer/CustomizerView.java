@@ -18,17 +18,17 @@ package jd.plugins.optional.customizer;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.views.ClosableView;
+import jd.plugins.AddonPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class CustomizerView extends ClosableView {
+public class CustomizerView extends AddonPanel {
 
-    private static final long serialVersionUID = -8077441680881378656L;
-    private static final String JDL_PREFIX = "jd.plugins.optional.customizer.CustomizerView.";
+    private static final long   serialVersionUID = -8077441680881378656L;
+    private static final String JDL_PREFIX       = "jd.plugins.optional.customizer.CustomizerView.";
 
-    public CustomizerView() {
-        super();
+    public CustomizerView(PackageCustomizerExtension packageCustomizerExtension) {
+        super(packageCustomizerExtension);
 
         init();
     }
@@ -59,6 +59,14 @@ public class CustomizerView extends ClosableView {
     @Override
     public String getID() {
         return "customizerview";
+    }
+
+    @Override
+    protected void onDeactivated() {
+    }
+
+    @Override
+    protected void onActivated() {
     }
 
 }

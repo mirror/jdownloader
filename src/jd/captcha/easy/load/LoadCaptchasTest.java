@@ -23,7 +23,7 @@ import jd.gui.userio.DummyFrame;
 public class LoadCaptchasTest {
 
     public static void main(String[] args) throws Exception {
-        LookAndFeelController.setUIManager();
+        LookAndFeelController.getInstance().setUIManager();
         EDTEventQueue.initEventQueue();
         new LoadCaptchas(DummyFrame.getDialogParent(), null, true).start();
 

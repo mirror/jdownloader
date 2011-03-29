@@ -26,7 +26,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
 
-import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
@@ -420,13 +419,10 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             url = new Regex(url, "(.+\\.tmpl)").getMatch(0);
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
-            t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
-            t.setParam("page_refresh", JDWebinterface.getRefreshRate());
-
-            boolean hasUnrar = false;
-            OptionalPluginWrapper wrapper = JDUtilities.getOptionalPlugin("unrar");
-            if (wrapper != null && wrapper.isEnabled()) hasUnrar = true;
-            t.setParam("unrar_available", hasUnrar ? "unrarAvailable" : "unrarUnavailable");
+            t.setParam("webinterface_version", WebinterfaceClassicExtension.instance.getVersion());
+            t.setParam("page_refresh", WebinterfaceClassicExtension.getRefreshRate());
+            // TODO
+            t.setParam("unrar_available", "unrarUnavailable");
 
             if (url.startsWith("single_info.tmpl") == true) {
                 add_single_info(t, requestParameter);

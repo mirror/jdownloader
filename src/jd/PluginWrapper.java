@@ -198,7 +198,7 @@ public abstract class PluginWrapper implements Comparable<PluginWrapper> {
                 } catch (ClassNotFoundException e) {
                     // fallback classloader.
                     logger.severe("Fallback cloassloader used");
-                    plgClass = JDUtilities.getJDClassLoader().loadClass(getClassName());
+                    plgClass = getClass().getClassLoader().loadClass(getClassName());
                 }
 
                 if (plgClass == null) {

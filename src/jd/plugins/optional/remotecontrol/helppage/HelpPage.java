@@ -18,17 +18,19 @@ package jd.plugins.optional.remotecontrol.helppage;
 
 import java.util.ArrayList;
 
-import jd.OptionalPluginWrapper;
-import jd.plugins.PluginOptional;
+import jd.plugins.optional.PluginOptional;
 import jd.plugins.optional.interfaces.RemoteSupport;
-import jd.utils.JDUtilities;
+import jd.plugins.optional.remotecontrol.RemoteControlExtension;
+
+import org.jdownloader.extensions.ExtensionController;
 
 public class HelpPage {
 
     private static final long            serialVersionUID = -7554703678938558791L;
 
     private static ArrayList<Table>      tables           = null;
-    private static OptionalPluginWrapper rc               = JDUtilities.getOptionalPlugin("remotecontrol");
+
+    public static RemoteControlExtension OWNER;
 
     public static ArrayList<Table> getTables() {
         return tables;
@@ -251,15 +253,14 @@ public class HelpPage {
 
         // Generates tables for all addons that are able to communicate with
         // RemoteControl
-        ArrayList<OptionalPluginWrapper> addons = OptionalPluginWrapper.getOptionalWrapper();
+        ArrayList<PluginOptional> addons = ExtensionController.getInstance().getExtensions();
 
-        for (OptionalPluginWrapper addon : addons) {
+        for (PluginOptional addon : addons) {
 
-            if (addon != null && addon.isLoaded() && addon.isEnabled()) {
-                PluginOptional addonIntance = addon.getPlugin();
+            if (addon.isRunning()) {
 
-                if (addonIntance instanceof RemoteSupport) {
-                    ((RemoteSupport) addonIntance).initCmdTable();
+                if (addon instanceof RemoteSupport) {
+                    ((RemoteSupport) addon).initCmdTable();
                 }
             }
         }
@@ -293,7 +294,7 @@ public class HelpPage {
 
         // begin of body
         html.append("<body>");
-        html.append("<h1>JDRemoteControl " + rc.getVersion() + "</h1>");
+        html.append("<h1>JDRemoteControl " + OWNER.getVersion() + "</h1>");
         html.append("<p>&nbsp;</p>");
         html.append("<p>Replace %X% and %Y% with specific values e.g. /action/save/container/C:\\backup.dlc<br/>Replace (true|false) with true or false<br/>Replace (value) with value => optional parameter<p/>");
 

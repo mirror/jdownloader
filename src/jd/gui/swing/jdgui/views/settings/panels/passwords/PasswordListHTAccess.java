@@ -40,7 +40,7 @@ public class PasswordListHTAccess extends ConfigPanel {
     public PasswordListHTAccess() {
         super();
 
-        init();
+        init(true);
     }
 
     @Override

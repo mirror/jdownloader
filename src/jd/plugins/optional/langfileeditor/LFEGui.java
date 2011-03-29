@@ -45,7 +45,6 @@ import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
@@ -55,6 +54,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.dialog.TwoTextFieldDialog;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.ResolveHandler;
@@ -83,7 +83,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
     private static final String           LOCALE_PREFIX            = "plugins.optional.langfileeditor.";
 
-    private final SubConfiguration        subConfig;
+    private final JSonWrapper             subConfig;
 
     public final static String            PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
     public final static String            PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
@@ -123,9 +123,9 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
     private JButton                       warning;
 
-    private final LangFileEditor          plugin;
+    private final LangFileEditorExtension          plugin;
 
-    public LFEGui(final LangFileEditor plugin) {
+    public LFEGui(final LangFileEditorExtension plugin) {
         this.plugin = plugin;
         this.subConfig = plugin.getPluginConfig();
         this.infoPanel = LFEInfoPanel.getInstance();
@@ -450,7 +450,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 while (true) {
                     while (LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER) == null || LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER).trim().length() == 0) {
                         if (!cfgRequested) {
-                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, LFEGui.this.plugin.getConfig());
+                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, LFEGui.this.plugin.getSettings());
                         }
                         cfgRequested = true;
                         try {

@@ -58,7 +58,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     public Premium() {
         super();
 
-        init();
+        init(true);
     }
 
     @Override

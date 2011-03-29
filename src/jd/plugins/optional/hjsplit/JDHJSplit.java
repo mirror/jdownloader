@@ -24,7 +24,6 @@ import java.util.Collections;
 
 import javax.swing.filechooser.FileFilter;
 
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,7 +46,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginOptional;
+import jd.plugins.optional.PluginOptional;
 import jd.plugins.optional.hjsplit.jaxe.JAxeJoiner;
 import jd.plugins.optional.hjsplit.jaxe.JoinerFactory;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEvent;

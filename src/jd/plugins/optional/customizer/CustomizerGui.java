@@ -28,13 +28,14 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
-import jd.config.SubConfiguration;
+import jd.config.Property;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -50,15 +51,15 @@ public class CustomizerGui extends SwitchPanel {
     private static final String   JDL_PREFIX       = "jd.plugins.optional.customizer.CustomizerGui.";
 
     private final CustomizerTable table;
-    private SubConfiguration      config;
+    private Property              config;
 
     public CustomizerInfoPanel getInfoPanel() {
         return new CustomizerInfoPanel();
     }
 
-    public CustomizerGui(SubConfiguration config) {
+    public CustomizerGui(Property property) {
         table = new CustomizerTable();
-        this.config = config;
+        this.config = property;
         initActions();
         initGUI();
     }
@@ -121,8 +122,8 @@ public class CustomizerGui extends SwitchPanel {
 
     @Override
     protected void onHide() {
-        config.setProperty(JDPackageCustomizer.PROPERTY_SETTINGS, CustomizeSetting.getSettings());
-        config.save();
+        config.setProperty(PackageCustomizerExtension.PROPERTY_SETTINGS, CustomizeSetting.getSettings());
+        ((JSonWrapper) config).save();
     }
 
     @Override

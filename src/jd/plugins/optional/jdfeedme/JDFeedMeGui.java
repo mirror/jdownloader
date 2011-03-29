@@ -75,12 +75,12 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
         // this.add(new JScrollPane(table = new
         // JDFeedMeTable(config.getGenericProperty(JDFeedMe.PROPERTY_SETTINGS,
         // new ArrayList<JDFeedMeSetting>()))));
-        ArrayList<JDFeedMeFeed> feeds = JDFeedMeFeed.loadXML(JDFeedMe.STORAGE_FEEDS);
-        HashMap<String, ArrayList<JDFeedMePost>> posts = JDFeedMePost.loadXML(JDFeedMe.STORAGE_POSTS);
+        ArrayList<JDFeedMeFeed> feeds = JDFeedMeFeed.loadXML(FeedMeExtension.STORAGE_FEEDS);
+        HashMap<String, ArrayList<JDFeedMePost>> posts = JDFeedMePost.loadXML(FeedMeExtension.STORAGE_POSTS);
         this.add(new JScrollPane(table = new JDFeedMeTable(feeds, posts)), "grow");
 
         // config panel appears on the bottom
-        JDFeedMeConfig config = JDFeedMeConfig.loadXML(JDFeedMe.STORAGE_CONFIG);
+        JDFeedMeConfig config = JDFeedMeConfig.loadXML(FeedMeExtension.STORAGE_CONFIG);
         JPanel bottom = new JPanel(new MigLayout("ins 0", "[][]15[]"));
         bottom.setOpaque(true);
 
@@ -255,7 +255,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
 
                     @Override
                     public Object runSave() {
-                        JDFeedMe.syncNowEvent();
+                        FeedMeExtension.syncNowEvent();
                         return null;
                     }
                 }.start();
@@ -323,7 +323,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
 
     // TODO: add locking here
     public void saveFeeds() {
-        JDFeedMeFeed.saveXML(table.getModel().getFeeds(), JDFeedMe.STORAGE_FEEDS);
+        JDFeedMeFeed.saveXML(table.getModel().getFeeds(), FeedMeExtension.STORAGE_FEEDS);
     }
 
     public JDFeedMeConfig getConfig() {
@@ -334,7 +334,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
     }
 
     public void saveConfig() {
-        JDFeedMeConfig.saveXML(getConfig(), JDFeedMe.STORAGE_CONFIG);
+        JDFeedMeConfig.saveXML(getConfig(), FeedMeExtension.STORAGE_CONFIG);
     }
 
     // TODO: add locking here
@@ -355,7 +355,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
             // make sure the posts are sorted (according to timestamp)
             Collections.sort(feed_posts);
             // remove the oldest post if needed
-            if (feed_posts.size() > JDFeedMe.MAX_POSTS) feed_posts.remove(feed_posts.size() - 1);
+            if (feed_posts.size() > FeedMeExtension.MAX_POSTS) feed_posts.remove(feed_posts.size() - 1);
         } else {
             // a new feed, let's create an array
             ArrayList<JDFeedMePost> feed_posts = new ArrayList<JDFeedMePost>();
@@ -421,7 +421,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
 
     // TODO: add locking here
     public void savePosts() {
-        JDFeedMePost.saveXML(table.getModel().getPosts(), JDFeedMe.STORAGE_POSTS);
+        JDFeedMePost.saveXML(table.getModel().getPosts(), FeedMeExtension.STORAGE_POSTS);
     }
 
     @Override
@@ -442,7 +442,7 @@ public class JDFeedMeGui extends SwitchPanel implements KeyListener, ActionListe
         // / stop using config and use XML instead
         // table.getModel().setSettings(config.getGenericProperty(JDFeedMe.PROPERTY_SETTINGS,
         // new ArrayList<JDFeedMeSetting>()));
-        table.getModel().setFeeds(JDFeedMeFeed.loadXML(JDFeedMe.STORAGE_FEEDS));
+        table.getModel().setFeeds(JDFeedMeFeed.loadXML(FeedMeExtension.STORAGE_FEEDS));
 
         table.getModel().refreshModel();
         table.getModel().fireTableDataChanged();

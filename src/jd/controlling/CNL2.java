@@ -24,7 +24,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.DecryptPluginWrapper;
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.gui.swing.components.Balloon;
@@ -34,10 +33,10 @@ import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.extensions.ExtensionController;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
@@ -86,8 +85,8 @@ public final class CNL2 {
     }
 
     private static boolean isExternInterfaceActive() {
-        final OptionalPluginWrapper plg = JDUtilities.getOptionalPlugin("externinterface");
-        return (plg != null && plg.isLoaded() && plg.isEnabled());
+
+        return ExtensionController.getInstance().isExtensionActive(jd.plugins.optional.interfaces.ExternInterfaceExtension.class);
     }
 
     public static String decrypt(final byte[] b, final byte[] key) {

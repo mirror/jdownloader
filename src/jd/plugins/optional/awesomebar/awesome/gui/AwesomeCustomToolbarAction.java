@@ -4,14 +4,14 @@ import javax.swing.JPanel;
 
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
-import jd.plugins.optional.awesomebar.Awesomebar;
+import jd.plugins.optional.awesomebar.AwesomebarExtension;
 
 public class AwesomeCustomToolbarAction extends CustomToolbarAction {
 
-    private final Awesomebar awesomebar;
+    private final AwesomebarExtension awesomebar;
     private final JPanel awesomePanel;
 
-    public AwesomeCustomToolbarAction(Awesomebar awesomebar) {
+    public AwesomeCustomToolbarAction(AwesomebarExtension awesomebar) {
         super("addons.awesomebar");
         this.awesomebar = awesomebar;
 
