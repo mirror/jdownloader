@@ -116,6 +116,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
                 premShareHosts.put("alldebrid.com", "AllDebridcom");
                 premShareHosts.put("premium4.me", "Premium4me");
                 premShareHosts.put("streammania.com", "Streammaniacom");
+                premShareHosts.put("fireload.org", "Fireloadorg");
                 int replaceIndex = 0;
                 for (String key : premShareHosts.keySet()) {
                     /* init replacePlugin */

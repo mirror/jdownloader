@@ -880,7 +880,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         boolean hasTempDisabledLinks;
                         boolean waitingNewIP;
                         boolean resetWaitingNewIP;
-                        int stopCounter = 5;
+                        int stopCounter = 2;
                         int inProgress = 0;
                         /*
                          * TODO: optimize for less ressource using, eg only walk
@@ -1044,7 +1044,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                      * reset countdown, because we new downloads
                                      * got started
                                      */
-                                    stopCounter = 5;
+                                    stopCounter = 2;
                                 }
                             } catch (final Exception e) {
                                 JDLogger.exception(e);

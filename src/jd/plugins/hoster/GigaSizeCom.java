@@ -40,7 +40,7 @@ public class GigaSizeCom extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.gigasize.com/page.php?p=terms";
 
-    public String agent = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
+    public String               agent    = "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
 
     public GigaSizeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,6 +56,10 @@ public class GigaSizeCom extends PluginForHost {
         br.getPage("http://www.gigasize.com");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         try {
+            try {
+                Thread.sleep(1000);
+            } catch (final InterruptedException e) {
+            }
             String token = br.getPage("http://www.gigasize.com/formtoken");
             try {
                 Thread.sleep(2000);
@@ -67,11 +71,6 @@ public class GigaSizeCom extends PluginForHost {
         }
         if (br.getCookie("http://gigasize.com", "MIIS_GIGASIZE_AUTH") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML("premium\":1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    public boolean isPremium() throws IOException {
-        br.getPage("http://www.gigasize.com/myfiles.php");
-        return br.getRegex("<div class=\"logged pu\"><em class=\"png\">").matches();
     }
 
     @Override

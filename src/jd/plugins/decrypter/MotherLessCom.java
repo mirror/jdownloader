@@ -61,10 +61,15 @@ public class MotherLessCom extends PluginForDecrypt {
         if (br.containsHTML("player\\.swf")) {
             String parm = parameter.toString();
             String filelink = br.getRegex("s1\\.addParam\\(\\'flashvars\\',\\'file=(http://.*?\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
-            if (filelink == null) filelink = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
+            if (filelink != null) {
+                filelink = filelink.replace(REPLACE, "motherless");
+                filelink = filelink.replace("motherless", "motherlessvideos");
+            }
+            if (filelink == null) {
+                filelink = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
+            }
             if (filelink == null) return null;
-            filelink = filelink.replace(REPLACE, "motherless");
-            DownloadLink dlink = createDownloadlink(filelink.replace("motherless", "motherlessvideos"));
+            DownloadLink dlink = createDownloadlink(filelink);
             dlink.setBrowserUrl(parm);
             String finalName = new Regex(filelink, "([A-Za-z0-9]+\\.flv)$").getMatch(0);
             if (finalName != null) dlink.setFinalFileName(finalName);

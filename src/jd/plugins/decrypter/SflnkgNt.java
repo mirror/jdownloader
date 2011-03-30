@@ -46,11 +46,11 @@ public class SflnkgNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
-    private static String CAPTCHAREGEX1 = "\"(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?sid=[a-z0-9]+)\"";
-    private static String CAPTCHAREGEX2 = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
-    private static String CAPTCHATEXT3 = "fancycaptcha\\.css\"";
-    private static String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
+    private static final String RECAPTCHATEXT         = "api\\.recaptcha\\.net";
+    private static String       CAPTCHAREGEX1         = "\"(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?sid=[a-z0-9]+)\"";
+    private static String       CAPTCHAREGEX2         = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
+    private static String       CAPTCHATEXT3          = "fancycaptcha\\.css\"";
+    private static String       PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -116,7 +116,7 @@ public class SflnkgNt extends PluginForDecrypt {
             // Webprotection decryption
             String[] links = br.getRegex("class=\"linked\">(http://safelinking\\.net/d/.*?)</a>").getColumn(0);
             if (links == null || links.length == 0) {
-                String allLinks = br.getRegex("class=\"link-box\" id=\"direct-links\" >(.*?<a href=\".*?)</div>").getMatch(0);
+                String allLinks = br.getRegex("class=\"link-box\" id=\"direct-links\".*?>(.*?<a href=\".*?)</div>").getMatch(0);
                 if (allLinks != null) links = new Regex(allLinks, "<a href=\"(.*?)\"").getColumn(0);
                 if (links == null || links.length == 0) {
                     links = br.getRegex("\"(http://safelinking\\.net/d/[a-z0-9]+)\"").getColumn(0);

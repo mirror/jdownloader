@@ -25,7 +25,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 
-public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
+public class Fireloadorg extends PluginForHost implements JDPremInterface {
 
     private boolean                       proxyused      = false;
     private String                        infostring     = null;
@@ -36,15 +36,15 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
     private volatile static int           MAXDOWNLOADS   = 5;
     private volatile static AtomicInteger currentRunning = new AtomicInteger(0);
 
-    public SpeedLoadcx(PluginWrapper wrapper) {
+    public Fireloadorg(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.speedload.cx/Premium");
-        infostring = "SpeedLoad.cx @ " + wrapper.getHost();
+        this.enablePremium("http://fireload.org");
+        infostring = "Fireload.org @ " + wrapper.getHost();
     }
 
     @Override
     public String getAGBLink() {
-        if (plugin == null) return "http://www.speedload.cx/";
+        if (plugin == null) return "http://fireload.org";
         return plugin.getAGBLink();
     }
 
@@ -77,7 +77,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getHost() {
-        if (plugin == null) return "speedload.cx";
+        if (plugin == null) return "fireload.org";
         return plugin.getHost();
     }
 
@@ -89,7 +89,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getBuyPremiumUrl() {
-        if (plugin == null) return "http://www.speedload.cx";
+        if (plugin == null) return "http://fireload.org";
         return plugin.getBuyPremiumUrl();
     }
 
@@ -111,11 +111,11 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        /* try speedload.cx first */
+        /* try fireload.org first */
         if (account == null) {
-            if (handleSpeedLoad(downloadLink)) return;
+            if (handleFireload(downloadLink)) return;
         } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
-            if (handleSpeedLoad(downloadLink)) return;
+            if (handleFireload(downloadLink)) return;
         }
         if (proxyused = true) {
             /* failed, now try normal */
@@ -176,7 +176,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
         link.requestGuiUpdate();
     }
 
-    private boolean handleSpeedLoad(DownloadLink link) throws Exception {
+    private boolean handleFireload(DownloadLink link) throws Exception {
         synchronized (LOCK) {
             if (currentRunning.get() > MAXDOWNLOADS) return false;
             currentRunning.incrementAndGet();
@@ -188,7 +188,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
                 if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
                 /* premium available for this host */
                 if (!premiumHosts.contains(link.getHost())) return false;
-                acc = AccountController.getInstance().getValidAccount("speedload.cx");
+                acc = AccountController.getInstance().getValidAccount("fireload.org");
                 /* enabled account found? */
                 if (acc == null || !acc.isEnabled()) return false;
             }
@@ -207,7 +207,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
             while (true) {
                 showMessage(link, "ConnectTry: " + conTry);
                 try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://speedload.cx/?action=api&method=startDownload&nick=" + user + "&pass=" + pw + "&url=" + url, resumePossible(this.getHost()), 1);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://dl.fireload.org/srv_dl.php?name=" + user + "&pass=" + pw + "&url=" + url, false, 1);
                     break;
                 } catch (Throwable e) {
                     try {
@@ -227,7 +227,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
                 /* unknown error */
                 br.followConnection();
                 if (br.containsHTML("The file is offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                logger.severe("SpeedLoad: error!");
+                logger.severe("Fireload: error!");
                 logger.severe(br.toString());
                 synchronized (LOCK) {
                     premiumHosts.remove(link.getHost());
@@ -286,45 +286,44 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
             String page = null;
             String hosts = null;
             try {
-                page = br.getPage("http://speedload.cx/?action=api&method=checkLogin&nick=" + username + "&pass=" + pass);
-                hosts = br.getPage("http://speedload.cx/?action=api&method=getHoster&nick=" + username);
+                page = br.getPage("http://fireload.org/srv_acc.php?name=" + username + "&pass=" + pass);
+                hosts = br.getPage("http://fireload.org/srv_hoster.php");
             } catch (Exception e) {
                 account.setTempDisabled(true);
                 account.setValid(true);
                 resetAvailablePremium();
-                ac.setStatus("SpeedLoad Server Error, temp disabled" + restartReq);
+                ac.setStatus("Fireload Server Error, temp disabled" + restartReq);
                 return ac;
             } finally {
                 br.setFollowRedirects(follow);
             }
-            if (page.startsWith("-1") || page.startsWith("0")) {
-                account.setValid(false);
-                account.setTempDisabled(false);
-                ac.setStatus("Account invalid");
-                resetAvailablePremium();
-                MAXDOWNLOADS = 5;
-            } else {
-                String infos[] = new Regex(page, "(.*?);(.+)").getRow(0);
-                ac.setValidUntil(Long.parseLong(infos[0]) * 1000);
-                MAXDOWNLOADS = Integer.parseInt(infos[1]);
+            if (page.startsWith("1:")) {
+                account.setValid(true);
+                String valid = new Regex(page, "1:(.+)").getMatch(0);
+                ac.setValidUntil(Long.parseLong(valid) * 1000);
                 synchronized (LOCK) {
                     premiumHosts.clear();
                     if (hosts != null) {
-                        String hoster[] = new Regex(hosts, "(.*?)(;|$)").getColumn(0);
+                        String hoster[] = new Regex(hosts, "(.+?)(;|$)").getColumn(0);
                         if (hosts != null) {
                             for (String host : hoster) {
                                 if (hosts == null || host.length() == 0) continue;
+                                host = host.replaceFirst("freakshare\\.com", "freakshare.net");
                                 premiumHosts.add(host.trim());
                             }
                         }
                     }
                 }
-                account.setValid(true);
                 if (premiumHosts.size() == 0) {
-                    ac.setStatus(restartReq + "Account valid: 0 Hosts via SpeedLoad.cx available");
+                    ac.setStatus(restartReq + "Account valid: 0 Hosts via Fireload.org available");
                 } else {
-                    ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via SpeedLoad.cx available");
+                    ac.setStatus(restartReq + "Account valid: " + premiumHosts.size() + " Hosts via Fireload.org available");
                 }
+            } else {
+                account.setValid(false);
+                account.setTempDisabled(false);
+                ac.setStatus("Account invalid");
+                resetAvailablePremium();
             }
             return ac;
         } else
@@ -366,31 +365,14 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
                 /* user prefers usage of local account */
                 return plugin.getMaxSimultanDownload(account);
             } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
-                /* SpeedLoad */
+                /* Fireload */
                 synchronized (LOCK) {
-                    if (currentRunning.get() < MAXDOWNLOADS && premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("speedload.cx") != null) return MAXDOWNLOADS;
+                    if (currentRunning.get() < MAXDOWNLOADS && premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("fireload.org") != null) return MAXDOWNLOADS;
                 }
             }
             return plugin.getMaxSimultanDownload(account);
         }
         return 0;
-    }
-
-    private boolean resumePossible(String hoster) {
-        if (hoster != null) {
-            if (hoster.contains("megaupload.com")) return true;
-            if (hoster.contains("rapidshare.com")) return true;
-            if (hoster.contains("oron.com")) return true;
-            if (hoster.contains("netload.in")) return true;
-            if (hoster.contains("uploaded.to")) return true;
-            if (hoster.contains("x7.to")) return true;
-            if (hoster.contains("shragle.com")) return true;
-            if (hoster.contains("freakshare.")) return true;
-            if (hoster.contains("fileserve.com")) return true;
-            if (hoster.contains("bitshare.com")) return true;
-            if (hoster.contains("hotfile.com")) return true;
-        }
-        return false;
     }
 
     @Override
@@ -445,7 +427,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getCustomFavIconURL() {
-        if (proxyused) return "speedload.cx";
+        if (proxyused) return "fireload.org";
         if (plugin != null) return plugin.getCustomFavIconURL();
         return null;
     }
