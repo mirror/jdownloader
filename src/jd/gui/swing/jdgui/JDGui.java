@@ -57,7 +57,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.components.JDCollapser;
-import jd.gui.swing.jdgui.components.JDStatusBar;
+import jd.gui.swing.jdgui.components.StatusBar;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -110,7 +110,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private JDMenuBar menuBar;
 
-    private JDStatusBar statusBar;
+    private StatusBar statusBar;
     private MainTabbedPane mainTabbedPane;
     private DownloadView downloadView;
 
@@ -279,7 +279,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private void initComponents() {
         this.menuBar = new JDMenuBar();
-        this.statusBar = new JDStatusBar();
+        this.statusBar = new StatusBar();
         this.waitingPane = new JPanel();
         this.waitingPane.setOpaque(false);
         this.mainTabbedPane = MainTabbedPane.getInstance();

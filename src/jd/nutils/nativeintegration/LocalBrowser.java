@@ -28,6 +28,7 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 
+import org.appwork.storage.Storable;
 import org.appwork.utils.Regex;
 import org.appwork.utils.swing.dialog.Dialog;
 
@@ -35,7 +36,12 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public abstract class LocalBrowser implements Serializable {
+public abstract class LocalBrowser implements Serializable, Storable {
+    private LocalBrowser() {
+        // this class is Storable, only for compatibility reasons to old
+        // Serializable system
+        // required by Storable
+    }
 
     private static final long     serialVersionUID = 7153058016440180347L;
     private static LocalBrowser[] BROWSERLIST      = null;

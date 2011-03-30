@@ -55,7 +55,7 @@ public class WindowMenu extends JMenu {
 
     private void updateMenu() {
 
-        ArrayList<AbstractExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        ArrayList<AbstractExtension> pluginsOptional = ExtensionController.getInstance().getEnabledExtensions();
         Collections.sort(pluginsOptional, new Comparator<AbstractExtension>() {
 
             public int compare(AbstractExtension o1, AbstractExtension o2) {

@@ -13,4 +13,8 @@ public class JDT {
     public static void main(final String[] args) throws URISyntaxException, IOException {
         TranslationUtils.createFiles(false, JDTranslation.class);
     }
+
+    public static String getLanguage() {
+        return TranslationFactory.getDesiredLanguage();
+    }
 }

@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -37,7 +36,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -46,8 +44,8 @@ import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.SelectionHighlighter;
 import org.appwork.utils.swing.table.columns.ExtLongColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
+import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.AbstractExtension;
 
 /**
  * @author JD-Team
@@ -63,45 +61,40 @@ public class ConfigPanelAddons extends ConfigPanel {
         return "gui.images.config.packagemanager";
     }
 
-    private class InternalTableModel extends ExtTableModel<AbstractExtension> {
+    private class InternalTableModel extends ExtTableModel<AbstractExtensionWrapper> {
 
         private static final long serialVersionUID = 5847076032639053531L;
 
         public InternalTableModel() {
             super("addonTable");
 
-            tableData = new ArrayList<AbstractExtension>(pluginsOptional);
+            tableData = new ArrayList<AbstractExtensionWrapper>(pluginsOptional);
         }
 
         @Override
         protected void initColumns() {
             this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Activate"), this, ConfigPanelAddons.this));
-            this.addColumn(new ExtTextColumn<AbstractExtension>(JDL.L("gui.column_plugin", "Plugin"), this) {
+            this.addColumn(new ExtTextColumn<AbstractExtensionWrapper>(JDL.L("gui.column_plugin", "Plugin"), this) {
 
                 private static final long serialVersionUID = -3960914415647488335L;
 
                 @Override
-                protected Icon getIcon(AbstractExtension value) {
-                    ImageIcon icon = null;
-                    if ((icon = JDTheme.II(value.getIconKey(), 16, 16)) != null) {
-                        return icon;
-                    } else {
-                        return smallDefaultIcon;
-                    }
+                protected Icon getIcon(AbstractExtensionWrapper value) {
+                    return value._getIcon(16);
                 }
 
                 @Override
-                protected String getStringValue(AbstractExtension value) {
+                protected String getStringValue(AbstractExtensionWrapper value) {
                     return value.getName();
                 }
 
             });
-            this.addColumn(new ExtLongColumn<AbstractExtension>(JDL.L("gui.column_version", "Version"), this) {
+            this.addColumn(new ExtLongColumn<AbstractExtensionWrapper>(JDL.L("gui.column_version", "Version"), this) {
 
                 private static final long serialVersionUID = -7390851512040553114L;
 
                 @Override
-                protected long getLong(AbstractExtension value) {
+                protected long getLong(AbstractExtensionWrapper value) {
                     return value.getVersion();
                 }
 
@@ -111,28 +104,24 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     }
 
-    private static final long               serialVersionUID = 4145243293360008779L;
+    private static final long                         serialVersionUID = 4145243293360008779L;
 
-    private final ImageIcon                 smallDefaultIcon;
-    private final ImageIcon                 defaultIcon;
-    private final ArrayList<AbstractExtension> pluginsOptional;
+    private final ArrayList<AbstractExtensionWrapper> pluginsOptional;
 
-    private ExtTable<AbstractExtension>        table;
+    private ExtTable<AbstractExtensionWrapper>        table;
 
-    private JLabel                          lblName;
-    private JLabel                          lblVersion;
-    private JTextPane                       txtDescription;
+    private JLabel                                    lblName;
+    private JLabel                                    lblVersion;
+    private JTextPane                                 txtDescription;
 
     public ConfigPanelAddons() {
         super();
 
-        smallDefaultIcon = JDTheme.II(ConfigPanel.getIconKey(), 16, 16);
-        defaultIcon = JDTheme.II(ConfigPanel.getIconKey(), 24, 24);
-        pluginsOptional = new ArrayList<AbstractExtension>(ExtensionController.getInstance().getExtensions());
+        pluginsOptional = new ArrayList<AbstractExtensionWrapper>(ExtensionController.getInstance().getExtensions());
 
-        Collections.sort(pluginsOptional, new Comparator<AbstractExtension>() {
+        Collections.sort(pluginsOptional, new Comparator<AbstractExtensionWrapper>() {
 
-            public int compare(AbstractExtension o1, AbstractExtension o2) {
+            public int compare(AbstractExtensionWrapper o1, AbstractExtensionWrapper o2) {
                 return o1.getName().compareTo(o2.getName());
             }
         });
@@ -142,7 +131,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     @Override
     protected ConfigContainer setupContainer() {
-        table = new ExtTable<AbstractExtension>(new InternalTableModel(), "addonTable");
+        table = new ExtTable<AbstractExtensionWrapper>(new InternalTableModel(), "addonTable");
         table.addRowHighlighter(new SelectionHighlighter(null, new Color(200, 200, 200, 80)));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -152,7 +141,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         });
 
         lblName = new JLabel();
-        lblName.setIcon(defaultIcon);
+
         lblName.setFont(lblName.getFont().deriveFont(Font.BOLD));
         lblName.setHorizontalAlignment(JLabel.LEADING);
 
@@ -189,13 +178,8 @@ public class ConfigPanelAddons extends ConfigPanel {
         if (row < 0) return;
 
         table.getExtTableModel().fireTableRowsUpdated(row, row);
-        AbstractExtension opw = table.getExtTableModel().getElementAt(row);
-        ImageIcon icon;
-        if ((icon = JDTheme.II(opw.getIconKey(), 24, 24)) != null) {
-            lblName.setIcon(icon);
-        } else {
-            lblName.setIcon(defaultIcon);
-        }
+        AbstractExtensionWrapper opw = table.getExtTableModel().getElementAt(row);
+        lblName.setIcon(opw._getIcon(24));
         lblName.setText(opw.getName());
         lblVersion.setText(JDL.LF(JDL_PREFIX + ".version", "Version: %s", opw.getVersion()));
         txtDescription.setText(opw.getDescription());

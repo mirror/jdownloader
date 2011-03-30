@@ -1,6 +1,5 @@
 package org.jdownloader.extensions;
 
-
 public class StartException extends Exception {
 
     /**
@@ -12,7 +11,7 @@ public class StartException extends Exception {
         super(msg);
     }
 
-    public StartException(Exception e) {
+    public StartException(Throwable e) {
         super(e);
     }
 

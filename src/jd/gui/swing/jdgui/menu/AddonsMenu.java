@@ -58,7 +58,7 @@ public class AddonsMenu extends JMenu {
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        ArrayList<AbstractExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        ArrayList<AbstractExtension> pluginsOptional = ExtensionController.getInstance().getEnabledExtensions();
         Collections.sort(pluginsOptional, new Comparator<AbstractExtension>() {
 
             public int compare(AbstractExtension o1, AbstractExtension o2) {
@@ -67,7 +67,7 @@ public class AddonsMenu extends JMenu {
         });
 
         for (final AbstractExtension plg : pluginsOptional) {
-            if (!plg.isEnabled()) continue;
+
             ArrayList<MenuAction> mis = plg.getMenuAction();
             if (mis != null && !mis.isEmpty()) {
                 if (mis.size() == 1) {

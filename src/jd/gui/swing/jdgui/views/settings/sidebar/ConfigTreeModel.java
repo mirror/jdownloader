@@ -116,8 +116,8 @@ public class ConfigTreeModel implements TreeModel {
     }
 
     private void initExtensions(final TreeEntry addons) {
-        for (final AbstractExtension plg : ExtensionController.getInstance().getExtensions()) {
-            if (!plg.isEnabled() || (!plg.hasSettings() && !plg.hasConfigPanel())) {
+        for (final AbstractExtension plg : ExtensionController.getInstance().getEnabledExtensions()) {
+            if ((!plg.hasSettings() && !plg.hasConfigPanel())) {
                 continue;
             }
             if (plg.hasConfigPanel()) {

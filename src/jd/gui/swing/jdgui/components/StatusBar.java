@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class JDStatusBar extends JPanel implements ChangeListener, ControlListener {
+public class StatusBar extends JPanel implements ChangeListener, ControlListener {
 
     private static final long serialVersionUID = 3676496738341246846L;
 
@@ -52,7 +52,7 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
 
     private JDSpinner         spMaxSpeed;
 
-    public JDStatusBar() {
+    public StatusBar() {
         dlConfig = JSonWrapper.get("DOWNLOAD");
 
         initGUI();

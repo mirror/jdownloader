@@ -24,44 +24,44 @@ import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.columns.ExtCheckColumn;
-import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.AbstractExtensionWrapper;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate.JDT;
 
-public class ActivateColumn extends ExtCheckColumn<AbstractExtension> {
+public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
 
     private static final long       serialVersionUID = 658156218405204887L;
     private final ConfigPanelAddons addons;
 
-    public ActivateColumn(String name, ExtTableModel<AbstractExtension> table, ConfigPanelAddons addons) {
+    public ActivateColumn(String name, ExtTableModel<AbstractExtensionWrapper> table, ConfigPanelAddons addons) {
         super(name, table);
 
         this.addons = addons;
     }
 
     @Override
-    public boolean isEditable(AbstractExtension obj) {
+    public boolean isEditable(AbstractExtensionWrapper obj) {
         return true;
     }
 
     @Override
-    protected boolean getBooleanValue(AbstractExtension value) {
-        return value.isEnabled();
+    protected boolean getBooleanValue(AbstractExtensionWrapper value) {
+        return value._isEnabled();
     }
 
     @Override
-    protected void setBooleanValue(boolean value, AbstractExtension object) {
-        if (value == object.isEnabled()) return;
+    protected void setBooleanValue(boolean value, AbstractExtensionWrapper object) {
+        if (value == object._isEnabled()) return;
         if (value) {
             try {
-                object.setEnabled(true);
+                object._setEnabled(true);
 
-                if (object.getGUI() != null) {
+                if (object._getExtension().getGUI() != null) {
                     int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
 
                     if (UserIO.isOK(ret)) {
-                        object.getGUI().setActive(true);
+                        object._getExtension().getGUI().setActive(true);
                     }
                 }
             } catch (StartException e) {
@@ -72,7 +72,7 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtension> {
         } else {
             try {
 
-                object.setEnabled(false);
+                object._setEnabled(false);
             } catch (StartException e) {
                 e.printStackTrace();
             } catch (StopException e) {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -19,9 +20,11 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.translate.JDT;
 
 public class ExtensionController {
     private static final ExtensionController INSTANCE = new ExtensionController();
@@ -36,8 +39,8 @@ public class ExtensionController {
         return ExtensionController.INSTANCE;
     }
 
-    private HashMap<Class<AbstractExtension>, AbstractExtension> map;
-    private ArrayList<AbstractExtension>                         list;
+    private HashMap<Class<AbstractExtension>, AbstractExtensionWrapper> map;
+    private ArrayList<AbstractExtensionWrapper>                         list;
 
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
@@ -45,18 +48,18 @@ public class ExtensionController {
      */
     private ExtensionController() {
 
-        map = new HashMap<Class<AbstractExtension>, AbstractExtension>();
-        list = new ArrayList<AbstractExtension>();
+        map = new HashMap<Class<AbstractExtension>, AbstractExtensionWrapper>();
+        list = new ArrayList<AbstractExtensionWrapper>();
         JDController.getInstance().addControlListener(new ControlListener() {
 
             public void controlEvent(ControlEvent event) {
                 if (event.getEventID() == ControlEvent.CONTROL_INIT_COMPLETE) {
                     JDController.getInstance().removeControlListener(this);
 
-                    for (AbstractExtension plg : list) {
-                        if (plg.getGUI() != null) {
+                    for (AbstractExtensionWrapper plg : list) {
+                        if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
 
-                            plg.getGUI().restore();
+                            plg._getExtension().getGUI().restore();
                         }
                     }
                 }
@@ -181,30 +184,57 @@ public class ExtensionController {
 
     }
 
-    private void initModule(Class<AbstractExtension> cls) throws InstantiationException, IllegalAccessException, StartException {
+    private void initModule(Class<AbstractExtension> cls) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
 
-        AbstractExtension plg = (AbstractExtension) cls.newInstance();
-        plg.init();
+        AbstractExtensionWrapper cached = getCache(cls);
 
-        if (!plg.isWindowsRunnable() && CrossSystem.isWindows()) throw new IllegalArgumentException("Module is not for windows");
-        if (!plg.isMacRunnable() && CrossSystem.isMac()) throw new IllegalArgumentException("Module is not for mac");
-        if (!plg.isLinuxRunnable() && CrossSystem.isLinux()) throw new IllegalArgumentException("Module is not for linux");
+        if (cached._isEnabled()) {
+            cached.init();
+        }
+        map.put(cls, cached);
 
-        map.put(cls, plg);
+        list.add(cached);
 
-        list.add(plg);
+    }
 
+    private AbstractExtensionWrapper getCache(Class<AbstractExtension> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
+        File cache = Application.getResource("tmp/extensioncache/" + cls.getName() + ".lng_" + JDT.getLanguage() + ".v" + AbstractExtension.readVersion(cls) + ".json");
+        AbstractExtensionWrapper cached = JSonStorage.restoreFrom(cache, true, (byte[]) null, new TypeRef<AbstractExtensionWrapper>() {
+
+        }, null);
+
+        if (cached == null) {
+            Log.L.info("Update Cache " + cache);
+            cached = AbstractExtensionWrapper.create(cls);
+            JSonStorage.saveTo(cache, cached);
+        } else {
+            cached._setClazz(cls);
+        }
+        return cached;
     }
 
     public boolean isExtensionActive(Class<? extends AbstractExtension> class1) {
-        AbstractExtension plg = map.get(class1);
-        if (plg != null && plg.isEnabled()) return true;
+        AbstractExtensionWrapper plg = map.get(class1);
+        if (plg != null && plg._getExtension() != null && plg._getExtension().isEnabled()) return true;
         return false;
     }
 
-    public ArrayList<AbstractExtension> getExtensions() {
+    public ArrayList<AbstractExtensionWrapper> getExtensions() {
 
         return list;
+    }
+
+    /**
+     * Returns a list of all currently running extensions
+     * 
+     * @return
+     */
+    public ArrayList<AbstractExtension> getEnabledExtensions() {
+        ArrayList<AbstractExtension> ret = new ArrayList<AbstractExtension>();
+        for (AbstractExtensionWrapper aew : list) {
+            if (aew._getExtension() != null && aew._getExtension().isEnabled()) ret.add(aew._getExtension());
+        }
+        return ret;
     }
 
 }

@@ -120,6 +120,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private DownloadWatchDog() {
         this.connectionManager = new ThrottledConnectionManager();
         this.connectionManager.setIncommingBandwidthLimit(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
+
         stateMachine = new StateMachine(this, IDLE_STATE, STOPPED_STATE);
         stateMonitor = new StateMonitor(stateMachine);
         this.dlc = DownloadController.getInstance();

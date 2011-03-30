@@ -11,6 +11,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.swing.laf.LookAndFeelWrapper;
+import jd.nutils.nativeintegration.LocalBrowser;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonKeyValueStorage;
@@ -181,6 +182,8 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
         });
 
         MAPPING.put("folderwatch.json.FOLDER_LIST", new TypeRef<Vector<String>>() {
+        });
+        MAPPING.put("jdgui.json.BROWSER2", new TypeRef<LocalBrowser>() {
         });
 
     }

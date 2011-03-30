@@ -16,90 +16,67 @@
 
 package jd.gui.swing.jdgui.components.speedmeter;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.Color;
 
-import javax.swing.BorderFactory;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
+import javax.swing.JLabel;
 
 import jd.config.ConfigPropertyListener;
+import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.DownloadWatchDog;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
-import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+import jd.controlling.JDController;
+import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.Graph;
+import org.appwork.utils.swing.graph.Limiter;
 
-public class SpeedMeterPanel extends Graph implements ActionListener, MouseListener {
+public class SpeedMeterPanel extends Graph {
 
     private static final long serialVersionUID = 5571694800446993879L;
 
-    private boolean           show;
+    private Limiter           speedLimiter;
+
+    public static void main(String[] args) {
+
+    }
 
     public SpeedMeterPanel(boolean contextMenu, boolean start) {
-        show = contextMenu ? GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true) : true;
-
+        super();
+        SpeedMeterConfig config = JsonConfig.create(SpeedMeterConfig.class);
+        this.setCapacity(config.getTimeFrame() * config.getFramesPerSecond());
+        this.setInterval(1000 / config.getFramesPerSecond());
+        setColorA(new Color((int) Long.parseLong(config.getCurrentColorA(), 16), true));
+        setColorB(new Color((int) Long.parseLong(config.getCurrentColorB(), 16), true));
+        setAverageColor(new Color((int) Long.parseLong(config.getAverageGraphColor(), 16), true));
+        Color col = new JLabel().getForeground();
+        setAverageTextColor(col);
+        setTextColor(col);
         setOpaque(false);
-        setBorder(show ? BorderFactory.createEtchedBorder() : null);
+        Color a = new Color((int) Long.parseLong(config.getLimitColorA(), 16), true);
+        Color b = new Color((int) Long.parseLong(config.getLimitColorB(), 16), true);
+        speedLimiter = new Limiter(a, b);
+        speedLimiter.setValue(JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024);
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
 
-        if (contextMenu) {
-            addMouseListener(this);
-            JDUtilities.getController().addControlListener(new ConfigPropertyListener(JDGuiConstants.PARAM_SHOW_SPEEDMETER) {
+            @Override
+            public void onPropertyChanged(Property source, String key) {
 
-                @Override
-                public void onPropertyChanged(Property source, String key) {
-                    show = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true);
-                    setBorder(show ? BorderFactory.createEtchedBorder() : null);
-                }
+                resetAverage();
+                speedLimiter.setValue(source.getIntegerProperty(key, 0) * 1024);
+                // repaint immediately
+                new EDTRunner() {
 
-            });
-        }
-
+                    @Override
+                    protected void runInEDT() {
+                        repaint();
+                    }
+                };
+            }
+        });
+        setLimiter(new Limiter[] { speedLimiter });
         if (start) start();
-    }
-
-    public void start() {
-        super.start();
-    }
-
-    public void stop() {
-        super.stop();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof JMenuItem) {
-            GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, !show);
-            GUIUtils.getConfig().save();
-        }
-    }
-
-    public void mouseClicked(MouseEvent e) {
-        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            if (DownloadWatchDog.getInstance().getStateMonitor().isStartState() || DownloadWatchDog.getInstance().getStateMonitor().isFinal()) return;
-            JMenuItem mi = new JMenuItem(show ? JDL.L("gui.speedmeter.hide", "Hide Speedmeter") : JDL.L("gui.speedmeter.show", "Show Speedmeter"));
-            mi.addActionListener(this);
-
-            JPopupMenu popup = new JPopupMenu();
-            popup.add(mi);
-            popup.show(this, e.getPoint().x, e.getPoint().y);
-        }
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
     }
 
     @Override

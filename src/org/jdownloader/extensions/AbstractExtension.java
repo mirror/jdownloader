@@ -16,9 +16,7 @@
 
 package org.jdownloader.extensions;
 
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
@@ -162,9 +160,9 @@ public abstract class AbstractExtension {
         this.name = name == null ? JDL.L(getClass().getName(), getClass().getSimpleName()) : name;
         logger = createLogger(getClass());
 
-        readVersion(getClass().getResource("version.dat"));
+        readVersion(getClass());
 
-        store = JsonConfig.create(Application.getResource("cfg/" + getClass().getName()), PlugionOptionalConfig.class);
+        store = createStore(getClass());
         logger.info("Loaded");
 
         if (JDUtilities.getConfiguration().hasProperty("OPTIONAL_PLUGIN2_" + getConfigID())) {
@@ -177,16 +175,26 @@ public abstract class AbstractExtension {
 
     }
 
+    public static PlugionOptionalConfig createStore(Class<? extends AbstractExtension> class1) {
+        return JsonConfig.create(Application.getResource("cfg/" + class1.getName()), PlugionOptionalConfig.class);
+    }
+
     protected abstract void initExtension() throws StartException;
 
-    private void readVersion(URL resource) {
-        if (resource != null) {
-            try {
-                version = Integer.parseInt(IO.readURLToString(resource).trim());
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, "Could not read Version", e);
-            }
+    /**
+     * Reads the version.dat in the same directory as class1
+     * 
+     * @param class1
+     * @return
+     */
+    public static int readVersion(Class<? extends AbstractExtension> class1) {
+
+        try {
+            return Integer.parseInt(IO.readURLToString(class1.getResource("version.dat")).trim());
+        } catch (Throwable e) {
+            return -1;
         }
+
     }
 
     @Deprecated

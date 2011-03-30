@@ -1102,16 +1102,15 @@ public class Serverhandler implements Handler {
             response.addContent(xml);
         } else if (requestUrl.matches("(?is).*/addon/.+")) {
             // search in addons
-            final ArrayList<AbstractExtension> addons = ExtensionController.getInstance().getExtensions();
+            final ArrayList<AbstractExtension> addons = ExtensionController.getInstance().getEnabledExtensions();
             Object cmdResponse = null;
 
             for (final AbstractExtension addon : addons) {
-                if (addon.isEnabled()) {
 
-                    if (addon instanceof RemoteSupport) {
-                        cmdResponse = ((RemoteSupport) addon).handleRemoteCmd(requestUrl);
-                    }
+                if (addon instanceof RemoteSupport) {
+                    cmdResponse = ((RemoteSupport) addon).handleRemoteCmd(requestUrl);
                 }
+
             }
 
             if (cmdResponse != null) {
