@@ -5,11 +5,12 @@ import org.jdownloader.extensions.settings.TextInput;
 
 public class CaptchaPushConfigPanel extends ExtensionConfigPanel<CaptchaPushExtension> {
 
-    private static final long serialVersionUID = 1L;
-    private CaptchaPushConfig config;
-    private TextInput         brokerHost;
+    private static final long       serialVersionUID = 1L;
 
-    private TextInput         brokerTopic;
+    private final CaptchaPushConfig config;
+
+    private TextInput               brokerHost;
+    private TextInput               brokerTopic;
 
     public CaptchaPushConfigPanel(CaptchaPushExtension extension, CaptchaPushConfig config) {
         super(extension);

@@ -6,7 +6,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import jd.HostPluginWrapper;
-import jd.config.ConfigContainer;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
@@ -168,7 +167,6 @@ public class LecturnityDownloaderExtension extends AbstractExtension implements 
 
     @Override
     protected void start() throws StartException {
-
         hpw = new HostPluginWrapper("lecturnity-loader", "jd.plugins.optional.lecturnity.", "LecturnityLoader", "HIDE_ME", 0, "$Revision$");
         logger.finest("Lecturnity: Loaded Host-Plugin!");
 
@@ -177,21 +175,16 @@ public class LecturnityDownloaderExtension extends AbstractExtension implements 
         inputAction.setIcon(this.getIconKey());
 
         logger.info("Lecturnity: OK!");
-
-    }
-
-    @Override
-    protected void initSettings(ConfigContainer config) {
     }
 
     @Override
     public String getConfigID() {
-        return null;
+        return "lecturnity";
     }
 
     @Override
     public String getAuthor() {
-        return null;
+        return "Greeny";
     }
 
     @Override
