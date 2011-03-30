@@ -123,7 +123,7 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
         super(JDL.L("jd.plugins.optional.jdgrowlnotification", null));
     }
 
-    public void onControlEvent(ControlEvent event) {
+    public void controlEvent(ControlEvent event) {
         switch (event.getEventID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
             growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader started..."), getDateAndTime(), "Programstart");
@@ -156,9 +156,6 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
     private String getDateAndTime() {
         DateFormat dfmt = new SimpleDateFormat("EEEE dd.MM.yy hh:mm:ss");
         return dfmt.format(new Date());
-    }
-
-    public void controlEvent(ControlEvent event) {
     }
 
     @Override

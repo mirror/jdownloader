@@ -31,6 +31,7 @@ import javax.swing.filechooser.FileFilter;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
@@ -620,10 +621,12 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
 
     @Override
     protected void stop() throws StopException {
+        JDController.getInstance().removeControlListener(this);
     }
 
     @Override
     protected void start() throws StartException {
+        JDController.getInstance().addControlListener(this);
     }
 
     @Override

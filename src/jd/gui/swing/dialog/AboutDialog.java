@@ -101,7 +101,7 @@ public class AboutDialog extends JDialog {
         this.setLayout(new MigLayout("ins 10, wrap 3", "[]15[]push[right]"));
         this.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "aligny center, spany 6");
         this.add(lbl, "spanx");
-        this.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2010"), "spanx");
+        this.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2011"), "spanx");
         this.add(new JLabel(version), "gaptop 10");
         this.add(btn, "aligny center, spany 3");
         this.add(new JLabel("JRE Vendor: " + System.getProperty("java.vendor")));

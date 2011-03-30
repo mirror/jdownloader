@@ -35,21 +35,20 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
         }
     }
 
-    private static final long serialVersionUID = 8512889396415100663L;
-    private static final String JDL_PREFIX = "jd.gui.swing.dialog.ProxyDialog.";
+    private static final long   serialVersionUID = 8512889396415100663L;
+    private static final String JDL_PREFIX       = "jd.gui.swing.dialog.ProxyDialog.";
 
-    private JComboBox cmbType;
-    private JTextField txtHost;
-    private JTextField txtPort;
-    private JTextField txtUser;
-    private JTextField txtPass;
+    private JComboBox           cmbType;
+    private JTextField          txtHost;
+    private JTextField          txtPort;
+    private JTextField          txtUser;
+    private JTextField          txtPass;
 
-    private final String[] types = new String[] { JDL.L(JDL_PREFIX + "http", "HTTP"), JDL.L(JDL_PREFIX + "socks5", "Socks5"), JDL.L(JDL_PREFIX + "localip", "Local IP") };
-    private String[] localIPs = null;
-    private JLabel lblUser;
-    private JLabel lblPass;
-    private JLabel lblPort;
-    private JLabel lblHost;
+    private final String[]      types            = new String[] { JDL.L(JDL_PREFIX + "http", "HTTP"), JDL.L(JDL_PREFIX + "socks5", "Socks5"), JDL.L(JDL_PREFIX + "localip", "Local IP") };
+    private JLabel              lblUser;
+    private JLabel              lblPass;
+    private JLabel              lblPort;
+    private JLabel              lblHost;
 
     public ProxyDialog() {
         super(0, JDL.L(JDL_PREFIX + "title", "Add new Proxy"), JDTheme.II("gui.images.proxy", 32, 32), null, null);

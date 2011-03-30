@@ -30,6 +30,7 @@ import jd.config.ConfigGroup;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -48,7 +49,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class ShutdownExtension extends AbstractExtension {
+public class ShutdownExtension extends AbstractExtension implements ControlListener {
 
     private static final int    count                 = 60;
     private static final String CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
@@ -71,7 +72,6 @@ public class ShutdownExtension extends AbstractExtension {
         super(JDL.L("jd.plugins.optional.jdshutdown", null));
         MODES_AVAIL = new String[] { JDL.L("gui.config.jdshutdown.shutdown", "Shutdown"), JDL.L("gui.config.jdshutdown.standby", "Standby (Not for all OS)"), JDL.L("gui.config.jdshutdown.hibernate", "Hibernate (Not for all OS)"), JDL.L("gui.config.jdshutdown.close", "Close JD") };
         shutdownEnabled = getPluginConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
-
     }
 
     public void controlEvent(ControlEvent event) {
@@ -419,6 +419,7 @@ public class ShutdownExtension extends AbstractExtension {
 
     @Override
     protected void stop() throws StopException {
+        JDController.getInstance().removeControlListener(this);
     }
 
     @Override
@@ -450,6 +451,7 @@ public class ShutdownExtension extends AbstractExtension {
             }
         };
         menuAction.setSelected(shutdownEnabled);
+        JDController.getInstance().addControlListener(this);
         logger.info("Shutdown OK");
     }
 

@@ -56,24 +56,14 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
     public static final String     STORAGE_CONFIG = "cfg/jdfeedme/config.xml";
     public static final String     STORAGE_POSTS  = "cfg/jdfeedme/posts.xml";
 
-    public static final int        MAX_POSTS      = 100;                      // max
-    // number
-    // of
-    // last
-    // posts
-    // we
-    // save
-    // per
-    // feed
-    // (history)
-    public static final boolean    VERBOSE        = false;                    // should
-    // we
-    // spit
-    // up
-    // lots
-    // of
-    // log
-    // messages
+    /**
+     * max number of last posts we save per feed (history)
+     */
+    public static final int        MAX_POSTS      = 100;
+    /**
+     * should we spit up lots of log messages
+     */
+    public static final boolean    VERBOSE        = false;
 
     private JDFeedMeView           view;
     private JDFeedMeGui            gui            = null;
@@ -106,7 +96,7 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
         if (thread != null && thread.isSleeping()) thread.interrupt();
     }
 
-    public void initConfig() {
+    private void initConfig() {
         /*
          * SubConfiguration subConfig = getPluginConfig(); ConfigEntry ce;
          * 
@@ -138,21 +128,11 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
 
                 @Override
                 public void onPanelEvent(SwitchPanelEvent event) {
-
-                    /*
-                     * CODE_FOR_INTERFACE_5_START if (event.getID() ==
-                     * SwitchPanelEvent.ON_REMOVE)
-                     * showAction.setSelected(false); CODE_FOR_INTERFACE_5_END
-                     */
-                    /* CODE_FOR_INTERFACE_7_START */
                     if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) showAction.setSelected(false);
-                    /* CODE_FOR_INTERFACE_7_END */
-
                 }
 
             });
 
-            // gui = new JDFeedMeGui(getPluginConfig());
             gui = new JDFeedMeGui();
 
             view.setContent(gui);
@@ -171,15 +151,7 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
 
     @Override
     public String getIconKey() {
-
-        /*
-         * CODE_FOR_INTERFACE_5_START return "gui.images.reconnect";
-         * CODE_FOR_INTERFACE_5_END
-         */
-        /* CODE_FOR_INTERFACE_7_START */
         return "gui.images.rss";
-        /* CODE_FOR_INTERFACE_7_END */
-
     }
 
     private void syncRss() {

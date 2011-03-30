@@ -120,12 +120,12 @@ public class CaptchaPushExtension extends AbstractExtension implements ActionLis
 
     @Override
     public ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel() {
-        return null;
+        return configPanel;
     }
 
     @Override
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     @Override

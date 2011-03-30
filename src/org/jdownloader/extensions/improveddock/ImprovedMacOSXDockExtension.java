@@ -61,7 +61,7 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension implements Co
         super(null);
     }
 
-    public void onControlEvent(ControlEvent event) {
+    public void controlEvent(ControlEvent event) {
         switch (event.getEventID()) {
         case ControlEvent.CONTROL_DOWNLOAD_START:
             if (updateThread == null) {
@@ -89,7 +89,6 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension implements Co
     @Override
     protected void start() throws StartException {
         JDController.getInstance().addControlListener(this);
-
     }
 
     @Override
@@ -120,9 +119,6 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension implements Co
     @Override
     public ArrayList<MenuAction> getMenuAction() {
         return null;
-    }
-
-    public void controlEvent(ControlEvent event) {
     }
 
     @Override

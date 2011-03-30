@@ -25,9 +25,11 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Property;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
@@ -47,7 +49,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class InfoFileWriterExtension extends AbstractExtension implements ActionListener {
+public class InfoFileWriterExtension extends AbstractExtension implements ActionListener, ControlListener {
 
     private static final String JDL_PREFIX          = "jd.plugins.optional.JDInfoFileWriter.";
 
@@ -90,7 +92,7 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
     }
 
     @SuppressWarnings("unchecked")
-    public void onControlEvent(ControlEvent event) {
+    public void controlEvent(ControlEvent event) {
         switch (event.getEventID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
@@ -169,10 +171,12 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
 
     @Override
     protected void stop() throws StopException {
+        JDController.getInstance().removeControlListener(this);
     }
 
     @Override
     protected void start() throws StartException {
+        JDController.getInstance().addControlListener(this);
     }
 
     @Override
