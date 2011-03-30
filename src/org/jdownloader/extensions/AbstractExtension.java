@@ -159,9 +159,7 @@ public abstract class AbstractExtension {
     public AbstractExtension(String name) {
         this.name = name == null ? JDL.L(getClass().getName(), getClass().getSimpleName()) : name;
         logger = createLogger(getClass());
-
-        readVersion(getClass());
-
+        version = readVersion(getClass());
         store = createStore(getClass());
         logger.info("Loaded");
 

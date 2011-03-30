@@ -21,7 +21,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.translate.JDT;
@@ -41,6 +40,9 @@ public class ExtensionController {
 
     private HashMap<Class<AbstractExtension>, AbstractExtensionWrapper> map;
     private ArrayList<AbstractExtensionWrapper>                         list;
+    private HashMap<String, AbstractExtensionWrapper>                   cache;
+    private File                                                        cacheFile;
+    private boolean                                                     cacheChanged;
 
     /**
      * Create a new instance of ExtensionController. This is a singleton class.
@@ -65,12 +67,17 @@ public class ExtensionController {
                 }
             }
         });
+        cacheFile = Application.getResource("tmp/extensioncache/cache.json");
+        cache = JSonStorage.restoreFrom(cacheFile, new HashMap<String, AbstractExtensionWrapper>());
     }
 
     public void load() {
-
+        cacheChanged = false;
         loadUnpacked();
         loadJared();
+        if (cacheChanged) {
+            JSonStorage.saveTo(cacheFile, cache);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -198,15 +205,24 @@ public class ExtensionController {
     }
 
     private AbstractExtensionWrapper getCache(Class<AbstractExtension> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
-        File cache = Application.getResource("tmp/extensioncache/" + cls.getName() + ".lng_" + JDT.getLanguage() + ".v" + AbstractExtension.readVersion(cls) + ".json");
-        AbstractExtensionWrapper cached = JSonStorage.restoreFrom(cache, true, (byte[]) null, new TypeRef<AbstractExtensionWrapper>() {
+        String id = cls.getName().substring(27);
+        // File cache = Application.getResource("tmp/extensioncache/" + id +
+        // ".json");
+        // AbstractExtensionWrapper cached = JSonStorage.restoreFrom(cache,
+        // true, (byte[]) null, new TypeRef<AbstractExtensionWrapper>() {
 
-        }, null);
+        AbstractExtensionWrapper cached = cache.get(id);
 
+        int v = AbstractExtension.readVersion(cls);
+        if (cached != null && (cached.getVersion() != v || !cached.getLng().equals(JDT.getLanguage()))) {
+            // update cache
+            cached = null;
+        }
         if (cached == null) {
             Log.L.info("Update Cache " + cache);
-            cached = AbstractExtensionWrapper.create(cls);
-            JSonStorage.saveTo(cache, cached);
+            cached = AbstractExtensionWrapper.create(id, cls);
+            cache.put(id, cached);
+            cacheChanged = true;
         } else {
             cached._setClazz(cls);
         }

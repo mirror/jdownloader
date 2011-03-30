@@ -1,5 +1,6 @@
 package org.jdownloader.extensions;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -9,6 +10,7 @@ import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
+import org.jdownloader.translate.JDT;
 
 /**
  * Wraps around an extension to avoid extension init if the extension is not
@@ -21,18 +23,22 @@ public class AbstractExtensionWrapper implements Storable {
 
     private Class<AbstractExtension> clazz;
 
-    public static AbstractExtensionWrapper create(Class<AbstractExtension> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
+    public static AbstractExtensionWrapper create(String id, Class<AbstractExtension> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
         AbstractExtensionWrapper ret = new AbstractExtensionWrapper();
         AbstractExtension plg = (AbstractExtension) cls.newInstance();
 
-        ret.classPath = cls.getName();
         ret.clazz = cls;
+        String path = "tmp/extensioncache/" + id + ".png";
+        File iconCache = Application.getResource(path);
+        iconCache.getParentFile().mkdirs();
+        iconCache.delete();
         ret.description = plg.getDescription();
-        ImageIO.write(ImageProvider.resizeWorkSpace(plg.getIcon(32).getImage(), 32, 32), "png", Application.getResource("tmp/extensioncache/" + cls.getName() + ".png"));
-        ret.iconPath = "tmp/" + cls.getName() + ".png";
+        ImageIO.write(IconIO.toBufferedImage(plg.getIcon(32).getImage()), "png", iconCache);
+        ret.iconPath = path;
         ret.linuxRunnable = plg.isLinuxRunnable();
         ret.macRunnable = plg.isMacRunnable();
         ret.name = plg.getName();
+        ret.lng = JDT.getLanguage();
         ret.version = plg.getVersion();
         ret.windowsRunnable = plg.isWindowsRunnable();
         ret.extension = plg;
@@ -54,21 +60,30 @@ public class AbstractExtensionWrapper implements Storable {
     }
 
     private String            author;
-    private String            classPath;
+
     private String            description;
     private AbstractExtension extension = null;
+    private String            lng;
 
-    private String            iconPath;
+    public String getLng() {
+        return lng;
+    }
 
-    private boolean           linuxRunnable;
+    public void setLng(String lng) {
+        this.lng = lng;
+    }
 
-    private boolean           macRunnable;
+    private String  iconPath;
 
-    private String            name;
+    private boolean linuxRunnable;
 
-    private int               version;
+    private boolean macRunnable;
 
-    private boolean           windowsRunnable;
+    private String  name;
+
+    private int     version;
+
+    private boolean windowsRunnable;
 
     public AbstractExtensionWrapper() {
         // required for Storable
@@ -107,10 +122,6 @@ public class AbstractExtensionWrapper implements Storable {
         return extension == null ? author : extension.getAuthor();
     }
 
-    public String getClassPath() {
-        return classPath;
-    }
-
     public String getDescription() {
         return extension == null ? description : extension.getDescription();
     }
@@ -142,10 +153,6 @@ public class AbstractExtensionWrapper implements Storable {
 
     public void setAuthor(String author) {
         this.author = author;
-    }
-
-    public void setClassPath(String clazz) {
-        this.classPath = clazz;
     }
 
     public void setDescription(String description) {
@@ -187,7 +194,7 @@ public class AbstractExtensionWrapper implements Storable {
      */
     public void init() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
         if (extension != null) return;
-        AbstractExtension plg = (AbstractExtension) Class.forName(classPath).newInstance();
+        AbstractExtension plg = (AbstractExtension) _getClazz().newInstance();
 
         plg.init();
         extension = plg;

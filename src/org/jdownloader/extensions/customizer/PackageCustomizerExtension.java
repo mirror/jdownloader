@@ -27,10 +27,9 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.images.IconIO;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -43,7 +42,7 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
     public static final String    PROPERTY_SETTINGS = "SETTINGS";
 
     private LinkGrabberController ctrl;
-    private final ImageIcon       customIcon;
+
     private final String          customIconText;
 
     private CustomizerView        view;
@@ -59,7 +58,6 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
     public PackageCustomizerExtension() throws StartException {
         super(JDL.L("jd.plugins.optional.customizer.jdpackagecustomizer", null));
 
-        customIcon = JDTheme.II("gui.images.newpackage", 16, 16);
         customIconText = JDL.L(JDL_PREFIX + "customized", "Customized with the Regex %s");
     }
 
@@ -97,8 +95,8 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
             fp.add(link);
             link.setPriority(setting.getDLPriority());
 
-            fp.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
-            link.setCustomIcon(customIcon, String.format(customIconText, setting.getRegex()));
+            fp.setCustomIcon(getIcon(16), String.format(customIconText, setting.getRegex()));
+            link.setCustomIcon(getIcon(16), String.format(customIconText, setting.getRegex()));
 
             setting.incMatchCount();
         } else {
@@ -142,7 +140,7 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
 
     @Override
     public ImageIcon getIcon(int size) {
-        return ImageProvider.scaleImageIcon(customIcon, size, size);
+        return IconIO.getImageIcon(PackageCustomizerExtension.class.getResource("img/icon.png"), size);
     }
 
     @Override
