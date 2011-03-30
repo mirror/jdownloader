@@ -30,8 +30,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com" }, urls = { "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+" }, flags = { 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com" }, urls = { "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/",
+        "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(PluginWrapper wrapper) {
@@ -110,6 +110,12 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("turboimagehost.com/")) {
             finallink = br.getRegex("<a href=\"http://www\\.turboimagehost\\.com\"><img src=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("\"(http://s\\d+d\\d+\\.turboimagehost\\.com/sp/[a-z0-9]+/.*?)\"").getMatch(0);
+        } else if (parameter.contains("pimpandhost.com/")) {
+            String picID = new Regex(parameter, "pimpandhost\\.com/image/show/id/(\\d+)").getMatch(0);
+            if (picID == null) picID = new Regex(parameter, "pimpandhost\\.com/image/(\\d+)\\-").getMatch(0);
+            br.getPage("http://pimpandhost.com/image/" + picID + "-original.html");
+            finallink = br.getRegex("pointer;\" alt=\"\" id=\"image\" src=\"(http://.*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\"(http://ist\\d+\\-\\d+\\.filesor\\.com/pimpandhost\\.com/.*?)\"").getMatch(0);
         }
         if (finallink == null) {
             logger.warning("Imagehoster-Decrypter broken for link: " + parameter);

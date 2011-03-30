@@ -24,12 +24,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -117,7 +116,10 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!");
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
         if (dllink == null) {
-            if (br.containsHTML(">Stahování zdarma je možné jen přes náš")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.sharerapidcz.only4downloadmanager", "This file can only be downloaded with the share-rapid downloadmanager!"));
+            if (br.containsHTML(">Stahování zdarma je možné jen přes náš")) {
+                logger.info("No traffic left, disabling premium...");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink);
