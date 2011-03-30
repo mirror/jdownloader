@@ -7,7 +7,6 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.utils.locale.JDL;
 
 public class ResumeAction extends ContextMenuAction {
@@ -42,8 +41,7 @@ public class ResumeAction extends ContextMenuAction {
             public void run() {
                 for (DownloadLink link : links) {
                     if (!link.getLinkStatus().isPluginActive() && link.getLinkStatus().isFailed()) {
-                        link.getLinkStatus().setStatus(LinkStatus.TODO);
-                        link.getLinkStatus().resetWaitTime();
+                        link.getLinkStatus().reset(true);
                         String host = link.getHost();
                         DownloadWatchDog.getInstance().resetIPBlockWaittime(host);
                         DownloadWatchDog.getInstance().resetTempUnavailWaittime(host);
