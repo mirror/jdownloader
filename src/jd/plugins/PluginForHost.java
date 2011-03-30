@@ -37,7 +37,6 @@ import jd.controlling.JDPluginLogger;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.captcha.CaptchaController;
 import jd.gui.UserIF;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -51,6 +50,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien
@@ -143,26 +143,26 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         }
     }
 
-    private static int currentConnections = 0;
+    private static int                         currentConnections     = 0;
 
-    public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
-    protected DownloadInterface dl = null;
-    private int maxConnections = 50;
+    public static final String                 PARAM_MAX_RETRIES      = "MAX_RETRIES";
+    protected DownloadInterface                dl                     = null;
+    private int                                maxConnections         = 50;
 
-    private static final HashMap<String, Long> LAST_CONNECTION_TIME = new HashMap<String, Long>();
-    private static final HashMap<String, Long> LAST_STARTED_TIME = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_CONNECTION_TIME   = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_STARTED_TIME      = new HashMap<String, Long>();
 
-    private Long WAIT_BETWEEN_STARTS = 0L;
+    private Long                               WAIT_BETWEEN_STARTS    = 0L;
 
-    private boolean enablePremium = false;
+    private boolean                            enablePremium          = false;
 
-    private boolean accountWithoutUsername = false;
+    private boolean                            accountWithoutUsername = false;
 
-    private String premiumurl = null;
+    private String                             premiumurl             = null;
 
-    protected ImageIcon hosterIcon = null;
-    protected boolean hosterIconRequested = false;
-    private DownloadLink link = null;
+    protected ImageIcon                        hosterIcon             = null;
+    protected boolean                          hosterIconRequested    = false;
+    private DownloadLink                       link                   = null;
 
     public boolean checkLinks(final DownloadLink[] urls) {
         return false;
@@ -203,10 +203,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         }
         if (eID == 3) {
             UserIF.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
-            try {
-                JLink.openURL(getBuyPremiumUrl());
-            } catch (Exception ex) {
-            }
+            CrossSystem.openURLOrShowMessage(getBuyPremiumUrl());
             return;
         }
         final ArrayList<Account> accounts = getPremiumAccounts();

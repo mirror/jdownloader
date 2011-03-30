@@ -43,7 +43,6 @@ import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.JDImage;
@@ -56,6 +55,7 @@ import jd.utils.locale.JDL;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
@@ -72,11 +72,11 @@ public class Main {
         Application.setApplication(".jd_home");
         Application.getRoot(Main.class);
     }
-    private static Logger LOG;
-    private static boolean instanceStarted = false;
+    private static Logger           LOG;
+    private static boolean          instanceStarted            = false;
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
 
-    private static boolean Init_Complete = false;
+    private static boolean          Init_Complete              = false;
 
     // private static JSonWrapper webConfig;
 
@@ -143,14 +143,18 @@ public class Main {
             Main.LOG.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
-        if (Application.getJavaVersion() < 16000000 && !OSDetector.isMac()) {
+        long java = Application.getJavaVersion();
+        boolean outdated = (java < 16000000 && !OSDetector.isMac());
+        if (outdated == false) {
+            if (java >= 16018000 && java <= 16018999) {
+                /* 1.6 update 18 has bug in garbage collector */
+                outdated = true;
+            }
+        }
+        if (outdated) {
             final int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.LF("gui.javacheck.newerjavaavailable.title", "Outdated Javaversion found: %s!", Application.getJavaVersion()), JDL.L("gui.javacheck.newerjavaavailable.msg", "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning", 32, 32), null, null);
             if ((returnValue & UserIO.RETURN_DONT_SHOW_AGAIN) == 0) {
-                try {
-                    JLink.openURL("http://jdownloader.org/download/index?updatejava=1");
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
+                CrossSystem.openURLOrShowMessage("http://jdownloader.org/download/index?updatejava=1");
             }
         }
     }

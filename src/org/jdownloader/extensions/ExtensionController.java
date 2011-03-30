@@ -21,6 +21,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.translate.JDT;
@@ -68,7 +69,8 @@ public class ExtensionController {
             }
         });
         cacheFile = Application.getResource("tmp/extensioncache/cache.json");
-        cache = JSonStorage.restoreFrom(cacheFile, new HashMap<String, AbstractExtensionWrapper>());
+        cache = JSonStorage.restoreFrom(cacheFile, true, null, new TypeRef<HashMap<String, AbstractExtensionWrapper>>() {
+        }, new HashMap<String, AbstractExtensionWrapper>());
     }
 
     public void load() {

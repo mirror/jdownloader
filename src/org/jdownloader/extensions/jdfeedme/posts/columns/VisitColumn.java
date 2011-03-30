@@ -22,34 +22,33 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.SwingConstants;
 
-import jd.controlling.JDLogger;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.utils.JDTheme;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.extensions.jdfeedme.posts.JDFeedMePost;
 
 public class VisitColumn extends JDTableColumn {
 
     private static final long serialVersionUID = 8660656283327573254L;
-    
-    private JRendererLabel labelRend;
-    private JRendererLabel labelLink;
-    private Object obj;
+
+    private JRendererLabel    labelRend;
+    private JRendererLabel    labelLink;
+    private Object            obj;
 
     public VisitColumn(String name, JDTableModel table) {
         super(name, table);
-        
+
         labelRend = new JRendererLabel();
         labelRend.setBorder(null);
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
         labelRend.setIcon(JDTheme.II("gui.images.browse", 16, 16));
         labelRend.setToolTipText("Open post in browser");
         labelRend.setOpaque(false);
-        
+
         labelLink = new JRendererLabel();
         labelLink.setBorder(null);
         labelLink.setHorizontalAlignment(SwingConstants.CENTER);
@@ -61,7 +60,7 @@ public class VisitColumn extends JDTableColumn {
 
             @Override
             public void mouseEntered(MouseEvent evt) {
-            	
+
             }
 
             @Override
@@ -97,7 +96,7 @@ public class VisitColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
-    	this.obj = value;
+        this.obj = value;
         return labelLink;
     }
 
@@ -113,20 +112,13 @@ public class VisitColumn extends JDTableColumn {
     @Override
     public void sort(Object obj, boolean sortingToggle) {
     }
-    
+
     public void actionPerformed() {
-    	JDFeedMePost post = ((JDFeedMePost)this.obj);
-    	try 
-    	{
-			JLink.openURL(post.getLink());
-		} catch (Exception e) 
-		{
-			JDLogger.getLogger().severe("JDFeedMe cannot visit link: "+post.getLink());
-		}
-		this.fireEditingStopped();
+        JDFeedMePost post = ((JDFeedMePost) this.obj);
+        CrossSystem.openURLOrShowMessage(post.getLink());
+        this.fireEditingStopped();
     }
-    
-    
+
     @Override
     protected int getMaxWidth() {
         return 50;

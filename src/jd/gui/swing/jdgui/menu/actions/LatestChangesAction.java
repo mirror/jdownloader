@@ -18,8 +18,9 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+
+import org.appwork.utils.os.CrossSystem;
 
 public class LatestChangesAction extends ToolBarAction {
 
@@ -31,11 +32,7 @@ public class LatestChangesAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        try {
-            JLink.openURL("http://jdownloader.org/changes/index");
-        } catch (Exception e1) {
-            e1.printStackTrace();
-        }
+        CrossSystem.openURLOrShowMessage("http://jdownloader.org/changes/index");
     }
 
     @Override

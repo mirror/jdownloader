@@ -37,7 +37,6 @@ import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect;
 import jd.gui.UserIO;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -45,6 +44,7 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -220,11 +220,7 @@ public class Gui extends AbstractDialog<Object> {
         help.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
-                try {
-                    JLink.openURL("http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder");
-                } catch (final Exception e1) {
-                    e1.printStackTrace();
-                }
+                CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder");
             }
 
         });
@@ -325,14 +321,10 @@ public class Gui extends AbstractDialog<Object> {
                 IPController.getInstance().invalidate();
                 ReconnectRecorder.startServer(host, this.rawmode.isSelected());
 
-                try {
-                    if (startwithhttps) {
-                        JLink.openURL("http://localhost:" + (SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + 1));
-                    } else {
-                        JLink.openURL("http://localhost:" + SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972));
-                    }
-                } catch (final Exception e1) {
-                    JDLogger.exception(e1);
+                if (startwithhttps) {
+                    CrossSystem.openURLOrShowMessage("http://localhost:" + (SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + 1));
+                } else {
+                    CrossSystem.openURLOrShowMessage("http://localhost:" + SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972));
                 }
                 try {
                     Dialog.getInstance().showDialog(new JDRRInfoPopup());

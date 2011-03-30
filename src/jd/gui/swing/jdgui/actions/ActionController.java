@@ -39,7 +39,6 @@ import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.AccountDialog;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
@@ -57,6 +56,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.os.CrossSystem;
 
 /**
  * Class to control toolbar actions
@@ -556,11 +556,7 @@ public class ActionController {
                     }
                 }.getReturnValue();
                 if (selection < 0) { return; }
-
-                try {
-                    JLink.openURL(data[selection].getPlugin().getBuyPremiumUrl());
-                } catch (final Exception ex) {
-                }
+                CrossSystem.openURLOrShowMessage(data[selection].getPlugin().getBuyPremiumUrl());
             }
         };
 

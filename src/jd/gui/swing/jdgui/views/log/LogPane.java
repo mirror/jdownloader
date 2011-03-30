@@ -27,12 +27,13 @@ import javax.swing.text.EditorKit;
 
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.encoding.Encoding;
 import jd.utils.Upload;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.os.CrossSystem;
 
 /**
  * The panel for the log file.
@@ -79,12 +80,8 @@ public class LogPane extends SwitchPanel implements ActionListener {
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             String url = Upload.toJDownloader(content, question);
             if (url != null) {
-                try {
-                    JLink.openURL(url);
-                    append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n" + url);
-                } catch (Exception e1) {
-                    JDLogger.exception(e1);
-                }
+                CrossSystem.openURLOrShowMessage(url);
+                append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n" + url);
             } else {
                 UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.loguploadfailed", "Upload of logfile failed!"));
                 append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));

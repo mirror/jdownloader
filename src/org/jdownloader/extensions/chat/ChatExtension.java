@@ -55,7 +55,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
@@ -430,11 +429,7 @@ public class ChatExtension extends AbstractExtension {
                             return;
                         }
                     } else {
-                        try {
-                            JLink.openURL(e.getURL());
-                        } catch (final Exception e1) {
-                            JDLogger.exception(e1);
-                        }
+                        CrossSystem.openURL(e.getURL());
                     }
                 }
 

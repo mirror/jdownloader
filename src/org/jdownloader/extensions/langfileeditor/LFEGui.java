@@ -29,7 +29,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,7 +55,6 @@ import jd.gui.swing.dialog.TwoTextFieldDialog;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
-import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;
 import jd.utils.JDGeoCode;
@@ -65,6 +63,7 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -123,7 +122,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
     private JButton                       warning;
 
-    private final LangFileEditorExtension          plugin;
+    private final LangFileEditorExtension plugin;
 
     public LFEGui(final LangFileEditorExtension plugin) {
         this.plugin = plugin;
@@ -430,7 +429,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
             public void actionPerformed(final ActionEvent e) {
                 try {
-                    LocalBrowser.openURL(null, new URL("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader"));
+                    CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
                 } catch (final Exception e1) {
                     e1.printStackTrace();
                     UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), "http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");

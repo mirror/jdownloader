@@ -3,15 +3,15 @@ package jd.gui.swing.jdgui.views.downloads.contextmenu;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.controlling.JDLogger;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.os.CrossSystem;
+
 public class OpenInBrowserAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = 7911375550836173693L;
+    private static final long             serialVersionUID = 7911375550836173693L;
 
     private final ArrayList<DownloadLink> links;
 
@@ -33,15 +33,11 @@ public class OpenInBrowserAction extends ContextMenuAction {
 
     @Override
     public boolean isEnabled() {
-        return links.size() == 1 && links.get(0).getLinkType() == DownloadLink.LINKTYPE_NORMAL;
+        return links.size() == 1 && links.get(0).getLinkType() == DownloadLink.LINKTYPE_NORMAL && CrossSystem.isOpenBrowserSupported();
     }
 
     public void actionPerformed(ActionEvent e) {
-        try {
-            JLink.openURL(links.get(0).getBrowserUrl());
-        } catch (Exception e1) {
-            JDLogger.exception(e1);
-        }
+        CrossSystem.openURLOrShowMessage(links.get(0).getBrowserUrl());
     }
 
 }

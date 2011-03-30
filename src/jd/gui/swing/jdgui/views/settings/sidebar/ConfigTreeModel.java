@@ -29,14 +29,14 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 
 public class ConfigTreeModel implements TreeModel {
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
+    private static final String JDL_PREFIX   = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
 
-    private final TreeEntry root;
+    private final TreeEntry     root;
     /** Listeners. */
     protected EventListenerList listenerList = new EventListenerList();
-    private TreeEntry addons;
+    private TreeEntry           addons;
 
-    private TreeEntry plugins;
+    private TreeEntry           plugins;
 
     public ConfigTreeModel() {
         this.root = new TreeEntry("_ROOT_", null, null);
@@ -50,7 +50,6 @@ public class ConfigTreeModel implements TreeModel {
         teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.General.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.ToolbarController.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Linkgrabber.class));
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Browser.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Advanced.class));
 
         this.root.add(teTop = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "modules.title", "Modules"), "gui.images.config.home"));

@@ -31,17 +31,13 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.table.TableCellRenderer;
 
-import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.swing.components.JDUnderlinedText;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.nutils.Executer;
-import jd.nutils.nativeintegration.LocalBrowser;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEvent;
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.os.CrossSystem;
 
 class JLinkButtonRenderer implements TableCellRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -52,7 +48,7 @@ class JLinkButtonRenderer implements TableCellRenderer {
 public class JLink extends JLabel {
 
     private static final long serialVersionUID = 1L;
-    public static final int CLICKED = 0;
+    public static final int   CLICKED          = 0;
 
     public static JLinkButtonEditor getJLinkButtonEditor() {
         return new JLinkButtonEditor();
@@ -62,31 +58,8 @@ public class JLink extends JLabel {
         return new JLinkButtonRenderer();
     }
 
-    public static void openURL(String url) throws Exception {
-        if (url == null) return;
-        JLink.openURL(new URL(url));
-    }
-
-    public static void openURL(URL url) throws Exception {
-        if (url == null) return;
-        SubConfiguration cfg = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
-        if (cfg.getBooleanProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, false)) {
-            Executer exec = new Executer(cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER));
-            exec.setLogger(JDLogger.getLogger());
-            String params = cfg.getStringProperty(JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
-            exec.addParameters(Regex.getLines(params));
-            exec.start();
-            exec.setWaitTimeout(1);
-            exec.waitTimeout();
-            if (exec.getException() != null) throw exec.getException();
-        } else {
-            String browser = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getStringProperty(JDGuiConstants.PARAM_BROWSER, null);
-            LocalBrowser.openURL(browser, url);
-        }
-    }
-
-    private URL url;
-    private JDUnderlinedText mouseListener;
+    private URL                                                 url;
+    private JDUnderlinedText                                    mouseListener;
     private transient Eventsender<ActionListener, DefaultEvent> broadcaster;
 
     public JLink() {
@@ -178,7 +151,7 @@ public class JLink extends JLabel {
 
             public void mouseClicked(MouseEvent e) {
                 try {
-                    if (getUrl() != null) JLink.openURL(getUrl());
+                    if (getUrl() != null) CrossSystem.openURL(getUrl());
                     getBroadcaster().fireEvent(null);
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
@@ -210,11 +183,7 @@ public class JLink extends JLabel {
         return new HyperlinkListener() {
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                    try {
-                        JLink.openURL(e.getURL());
-                    } catch (Exception e1) {
-                        JDLogger.exception(e1);
-                    }
+                    CrossSystem.openURL(e.getURL());
                 }
             }
         };
