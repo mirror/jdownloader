@@ -30,13 +30,11 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
@@ -60,13 +58,13 @@ public class JDController implements ControlListener {
     private class EventSender extends Eventsender<ControlListener, ControlEvent> {
 
         protected static final long MAX_EVENT_TIME = 10000;
-        private ControlListener     currentListener;
-        private ControlEvent        event;
-        private long                eventStart     = 0;
-        public boolean              waitFlag       = true;
-        private Thread              watchDog;
-        private Thread              runDog;
-        private final Object        LOCK           = new Object();
+        private ControlListener currentListener;
+        private ControlEvent event;
+        private long eventStart = 0;
+        public boolean waitFlag = true;
+        private Thread watchDog;
+        private Thread runDog;
+        private final Object LOCK = new Object();
 
         public Object getLOCK() {
             return LOCK;
@@ -176,25 +174,25 @@ public class JDController implements ControlListener {
      * {@link #fireControlEvent(ControlEvent)} ein Event losgeschickt wird.
      */
 
-    private final ArrayList<ControlEvent> eventQueue       = new ArrayList<ControlEvent>();
+    private final ArrayList<ControlEvent> eventQueue = new ArrayList<ControlEvent>();
 
-    private EventSender                   eventSender      = null;
+    private EventSender eventSender = null;
 
     /**
      * Der Logger
      */
-    private static final Logger           LOGGER           = JDLogger.getLogger();
+    private static final Logger LOGGER = JDLogger.getLogger();
 
-    private boolean                       alreadyAutostart = false;
+    private boolean alreadyAutostart = false;
 
     /**
      * Der Download Watchdog verwaltet die Downloads
      */
 
-    private static ArrayList<String>      delayMap         = new ArrayList<String>();
-    private static JDController           INSTANCE         = new JDController();
+    private static ArrayList<String> delayMap = new ArrayList<String>();
+    private static JDController INSTANCE = new JDController();
 
-    private static final Object           SHUTDOWNLOCK     = new Object();
+    private static final Object SHUTDOWNLOCK = new Object();
 
     /**
      * Private constructor. Use singleton method instead!
@@ -450,19 +448,6 @@ public class JDController implements ControlListener {
     public void fireControlEvent(final int controlID, final Object param) {
         final ControlEvent c = new ControlEvent(this, controlID, param);
         fireControlEvent(c);
-    }
-
-    public int getForbiddenReconnectDownloadNum() {
-        final boolean allowinterrupt = JSonWrapper.get("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
-
-        int ret = 0;
-        final ArrayList<DownloadLink> links = DownloadWatchDog.getInstance().getRunningDownloads();
-        for (final DownloadLink link : links) {
-            if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                if (!(link.getTransferStatus().supportsResume() && allowinterrupt)) ret++;
-            }
-        }
-        return ret;
     }
 
     /**

@@ -5,18 +5,20 @@ import java.util.List;
 
 import javax.swing.JLabel;
 
+import jd.controlling.DownloadWatchDog;
+import jd.gui.swing.SwingGui;
+
 import org.jdownloader.extensions.awesomebar.awesome.AwesomeAction;
 import org.jdownloader.extensions.awesomebar.awesome.AwesomeProposal;
 import org.jdownloader.extensions.awesomebar.awesome.AwesomeProposalRequest;
 import org.jdownloader.extensions.awesomebar.awesome.AwesomeProposalRequestListener;
 import org.jdownloader.extensions.awesomebar.awesome.AwesomeUtils;
 
-import jd.controlling.DownloadWatchDog;
-import jd.gui.swing.SwingGui;
-
 public class AwesomeStartStopListener implements AwesomeProposalRequestListener {
     private enum actionid {
-        STARTDL, STOPDL, STOPJD
+        STARTDL,
+        STOPDL,
+        STOPJD
     }
 
     public void performAction(AwesomeAction action) {
@@ -36,7 +38,7 @@ public class AwesomeStartStopListener implements AwesomeProposalRequestListener 
 
     public void requestProposal(AwesomeProposalRequest request) {
         new AwesomeProposal(this, request, new JLabel("Stop JDownloader."), actionid.STOPJD, AwesomeUtils.createProposalListElement(request, "stop"), 0.1f);
-        if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) {
+        if (DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
             new AwesomeProposal(this, request, new JLabel("Start your downloads."), actionid.STARTDL, (request.getCommand().startsWith("sta")) ? 2.0f : 1.0f);
         } else {
             new AwesomeProposal(this, request, new JLabel("Stop your downloads."), actionid.STOPDL, (request.getCommand().startsWith("sto")) ? 2.0f : 1.0f);

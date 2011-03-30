@@ -161,16 +161,10 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]"));
-        switch (DownloadWatchDog.getInstance().getDownloadStatus()) {
-        case NOT_RUNNING:
-            addMenuEntry(entryPanel, "toolbar.control.start");
-            addMenuEntry(entryPanel, "toolbar.control.stop");
-            break;
-        case RUNNING:
+        if (DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.RUNNING_STATE)) {
             addMenuEntry(entryPanel, "toolbar.control.stop");
             addMenuEntry(entryPanel, "toolbar.control.pause");
-            break;
-        default:
+        } else if (DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
             addMenuEntry(entryPanel, "toolbar.control.start");
             addMenuEntry(entryPanel, "toolbar.control.pause");
         }

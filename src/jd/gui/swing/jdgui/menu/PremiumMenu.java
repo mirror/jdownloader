@@ -87,7 +87,8 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
             plugin = wrapper.getPlugin();
             pluginPopup = new JMenu(wrapper.getHost());
             pluginPopup.setIcon(plugin.getHosterIconScaled());
-            for (MenuAction next : plugin.createMenuitems()) {
+            ArrayList<MenuAction> nexts = plugin.createMenuitems();
+            for (MenuAction next : nexts) {
                 mi = next.toJMenuItem();
                 if (mi == null) {
                     pluginPopup.addSeparator();
@@ -125,7 +126,9 @@ public class PremiumMenu extends JMenu implements ActionListener, AccountControl
             plugin = wrapper.getPlugin();
             pluginPopup = new JMenu(wrapper.getHost());
             pluginPopup.setIcon(plugin.getHosterIconScaled());
-            for (MenuAction next : plugin.createMenuitems()) {
+            ArrayList<MenuAction> nexts = plugin.createMenuitems();
+
+            for (MenuAction next : nexts) {
                 mi = next.toJMenuItem();
                 if (mi == null) {
                     pluginPopup.addSeparator();

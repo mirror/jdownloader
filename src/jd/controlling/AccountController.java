@@ -140,10 +140,14 @@ public class AccountController extends SubConfiguration implements ActionListene
         AccountInfo ai = account.getAccountInfo();
         if (!forceupdate) {
             if (account.lastUpdateTime() != 0 && ai != null && ai.isExpired()) {
+                account.setEnabled(false);
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_EXPIRED, hostname, account));
                 /* account is expired, no need to update */
                 return ai;
             }
             if (!account.isValid() && account.lastUpdateTime() != 0) {
+                account.setEnabled(false);
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
                 /* account is invalid, no need to update */
                 return ai;
             }

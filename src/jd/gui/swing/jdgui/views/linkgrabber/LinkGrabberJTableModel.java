@@ -21,7 +21,6 @@ import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.linkgrabber.columns.FileColumn;
 import jd.gui.swing.jdgui.views.linkgrabber.columns.HosterColumn;
 import jd.gui.swing.jdgui.views.linkgrabber.columns.PartColumn;
-import jd.gui.swing.jdgui.views.linkgrabber.columns.RequestTimeColumn;
 import jd.gui.swing.jdgui.views.linkgrabber.columns.SizeColumn;
 import jd.gui.swing.jdgui.views.linkgrabber.columns.StatusColumn;
 import jd.plugins.DownloadLink;
@@ -42,7 +41,6 @@ public class LinkGrabberJTableModel extends JDTableModel {
         this.addColumn(new SizeColumn(JDL.L("gui.treetable.header.size", "Size"), this));
         this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Host"), this));
         this.addColumn(new StatusColumn(JDL.L("gui.treetable.status", "Status"), this));
-        this.addColumn(new RequestTimeColumn(JDL.L("gui.treetable.requesttime", "RequestTime"), this));
     }
 
     public void refreshModel() {

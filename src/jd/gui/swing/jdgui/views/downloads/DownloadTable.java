@@ -39,7 +39,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import jd.controlling.DownloadController;
-import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
@@ -149,7 +148,12 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
                 if (o == null || !(o instanceof DownloadLink)) { return false; }
                 final DownloadLink dl = (DownloadLink) o;
                 if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED) || !dl.isEnabled() || dl.getLinkStatus().isPluginActive()) { return false; }
-                return DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(dl.getHost()) > 0 || DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(dl.getHost()) > 0;
+                return false;
+                /* TODO: PROXYTODO */
+                // return
+                // ProxyController.getInstance().hasRemainingIPBlockWaittime(dl.getHost())
+                // ||
+                // ProxyController.getInstance().hasRemainingIPBlockWaittime(dl.getHost());
             }
         });
     }

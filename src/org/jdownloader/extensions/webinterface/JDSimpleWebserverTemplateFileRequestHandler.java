@@ -31,6 +31,7 @@ import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
+import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
@@ -227,10 +228,14 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             if (downloadLink.getFileOutput() != null) {
                 addEntry(JDL.L("gui.linkinfo.saveto", "Save to"), downloadLink.getFileOutput());
             }
-            if (DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0) {
-                addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "%s sec", DownloadWatchDog.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) / 1000));
-            } else if (DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0) {
-                addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "%s sec", DownloadWatchDog.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) / 1000));
+            long wait = ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost());
+            if (wait > 0) {
+                addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "%s sec", wait / 1000));
+            } else {
+                wait = ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost());
+                if (wait > 0) {
+                    addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "%s sec", wait / 1000));
+                }
             }
             if (downloadLink.getLinkStatus().isPluginActive()) {
                 addEntry(JDL.L("gui.linkinfo.download", "Download"), JDL.L("gui.linkinfo.download.underway", "is in process"));
@@ -394,10 +399,10 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             t.setParam("config_autoreconnect", "");
         }
 
-        if (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.RUNNING) {
-            t.setParam("config_startstopbutton", "stop");
-        } else {
+        if (DownloadWatchDog.getInstance().getStateMonitor().isStartState() || DownloadWatchDog.getInstance().getStateMonitor().isFinal()) {
             t.setParam("config_startstopbutton", "start");
+        } else {
+            t.setParam("config_startstopbutton", "stop");
         }
 
         // t.setParam("message_status", "show");

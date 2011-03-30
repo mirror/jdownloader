@@ -164,7 +164,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     if (!link.isEnabled()) synchronized (links_Disabled) {
                         links_Disabled++;
                     }
-                    link.getBroadcaster().addListener(this);
                     broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
                 }
             }
@@ -202,7 +201,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     links_Disabled++;
                 }
                 link.setFilePackage(this);
-                link.getBroadcaster().addListener(this);
                 broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_ADDED, link));
             } else {
                 broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
@@ -488,7 +486,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     if (!link.isEnabled()) synchronized (links_Disabled) {
                         links_Disabled--;
                     }
-                    link.getBroadcaster().removeListener(this);
                     link.setFilePackage(null);
                     broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.DOWNLOADLINK_REMOVED, link));
                     if (downloadLinkList.size() == 0) broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_EMPTY));

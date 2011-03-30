@@ -96,31 +96,31 @@ class DownloadControllerBroadcaster extends Eventsender<DownloadControllerListen
 
 public class DownloadController implements FilePackageListener, DownloadControllerListener, ActionListener {
 
-    public static final byte MOVE_BEFORE = 1;
-    public static final byte MOVE_AFTER = 2;
-    public static final byte MOVE_BEGIN = 3;
-    public static final byte MOVE_END = 4;
-    public static final byte MOVE_TOP = 5;
-    public static final byte MOVE_BOTTOM = 6;
-    public static final byte MOVE_UP = 7;
-    public static final byte MOVE_DOWN = 8;
+    public static final byte                        MOVE_BEFORE    = 1;
+    public static final byte                        MOVE_AFTER     = 2;
+    public static final byte                        MOVE_BEGIN     = 3;
+    public static final byte                        MOVE_END       = 4;
+    public static final byte                        MOVE_TOP       = 5;
+    public static final byte                        MOVE_BOTTOM    = 6;
+    public static final byte                        MOVE_UP        = 7;
+    public static final byte                        MOVE_DOWN      = 8;
 
-    public final static Object ControllerLock = new Object();
+    public final static Object                      ControllerLock = new Object();
 
-    private static DownloadController INSTANCE = new DownloadController();
+    private static DownloadController               INSTANCE       = new DownloadController();
 
-    private ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
+    private ArrayList<FilePackage>                  packages       = new ArrayList<FilePackage>();
 
-    private Logger logger = null;
+    private Logger                                  logger         = null;
 
-    private transient DownloadControllerBroadcaster broadcaster = new DownloadControllerBroadcaster();
+    private transient DownloadControllerBroadcaster broadcaster    = new DownloadControllerBroadcaster();
 
     /**
      * Async-Save, Linkliste wird verzögert gespeichert
      */
-    private final Timer asyncSaveIntervalTimer;
+    private final Timer                             asyncSaveIntervalTimer;
 
-    private boolean saveinprogress;
+    private boolean                                 saveinprogress;
 
     /**
      * darf erst nachdem der JDController init wurde, aufgerufen werden
@@ -176,9 +176,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
         for (final FilePackage filePackage : packages) {
             filePackage.addListener(this);
             filePackage.update_linksDisabled();
-            for (final DownloadLink downloadLink : filePackage.getDownloadLinkList()) {
-                downloadLink.getBroadcaster().addListener(filePackage);
-            }
         }
         return;
     }

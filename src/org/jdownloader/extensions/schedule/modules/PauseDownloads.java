@@ -16,11 +16,11 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-import org.jdownloader.extensions.schedule.SchedulerModule;
-import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
-
 import jd.controlling.DownloadWatchDog;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.schedule.SchedulerModule;
+import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 
 @SchedulerModule
 public class PauseDownloads implements SchedulerModuleInterface {
@@ -32,7 +32,7 @@ public class PauseDownloads implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        DownloadWatchDog.getInstance().pauseDownloads(true);
+        DownloadWatchDog.getInstance().pauseDownloadWatchDog(true);
     }
 
     public String getTranslation() {

@@ -29,14 +29,14 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 
 public class ConfigTreeModel implements TreeModel {
-    private static final String JDL_PREFIX   = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
 
-    private final TreeEntry     root;
+    private final TreeEntry root;
     /** Listeners. */
     protected EventListenerList listenerList = new EventListenerList();
-    private TreeEntry           addons;
+    private TreeEntry addons;
 
-    private TreeEntry           plugins;
+    private TreeEntry plugins;
 
     public ConfigTreeModel() {
         this.root = new TreeEntry("_ROOT_", null, null);
@@ -44,10 +44,9 @@ public class ConfigTreeModel implements TreeModel {
         TreeEntry teTop, teLeaf;
         this.root.add(teTop = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "basics.title", "Basics"), "gui.images.config.home"));
 
-        teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral.class));
-
-        teTop.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.General.class));
-
+        teTop.add((new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral.class)));
+        teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.General.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig.class));
         teTop.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.General.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.ToolbarController.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.gui.Linkgrabber.class));
@@ -64,12 +63,11 @@ public class ConfigTreeModel implements TreeModel {
         teTop.add(teLeaf = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "passwordsAndLogins", "Passwords & Logins"), "gui.images.list"));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList.class));
         teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordListHTAccess.class));
+        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.premium.Premium.class));
 
         this.root.add(this.plugins = new TreeEntry(JDL.L(ConfigTreeModel.JDL_PREFIX + "plugins.title", "Plugins & Add-ons"), "gui.images.config.home"));
 
-        this.plugins.add(teLeaf = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPluginForHost.class));
-
-        teLeaf.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.premium.Premium.class));
+        this.plugins.add(new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin.class));
 
         this.plugins.add(this.addons = new TreeEntry(jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons.class));
 

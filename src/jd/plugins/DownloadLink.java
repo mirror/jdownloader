@@ -32,7 +32,6 @@ import javax.swing.ImageIcon;
 
 import jd.config.Property;
 import jd.controlling.DownloadController;
-import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.http.Browser;
@@ -45,16 +44,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.event.Eventsender;
-
-class DownloadLinkBroadcaster extends Eventsender<DownloadLinkListener, DownloadLinkEvent> {
-
-    @Override
-    protected void fireEvent(DownloadLinkListener listener, DownloadLinkEvent event) {
-        listener.onDownloadLinkEvent(event);
-    }
-
-}
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download
@@ -65,133 +54,132 @@ class DownloadLinkBroadcaster extends Eventsender<DownloadLinkListener, Download
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
 
     public static enum AvailableStatus {
-        UNCHECKED, FALSE, UNCHECKABLE, TRUE;
+        UNCHECKED,
+        FALSE,
+        UNCHECKABLE,
+        TRUE;
     }
 
-    public static final int LINKTYPE_CONTAINER = 1;
+    public static final int                    LINKTYPE_CONTAINER       = 1;
 
-    public static final int LINKTYPE_NORMAL = 0;
+    public static final int                    LINKTYPE_NORMAL          = 0;
 
-    private transient static Logger logger = JDLogger.getLogger();
+    private transient static Logger            logger                   = JDLogger.getLogger();
 
-    private static final long serialVersionUID = 1981079856214268373L;
+    private static final long                  serialVersionUID         = 1981079856214268373L;
 
-    public static final String UNKNOWN_FILE_NAME = "unknownFileName.file";
+    public static final String                 UNKNOWN_FILE_NAME        = "unknownFileName.file";
 
-    public static final String STATIC_OUTPUTFILE = "STATIC_OUTPUTFILE";
+    public static final String                 STATIC_OUTPUTFILE        = "STATIC_OUTPUTFILE";
 
-    private transient AvailableStatus availableStatus = AvailableStatus.UNCHECKED;
+    private transient AvailableStatus          availableStatus          = AvailableStatus.UNCHECKED;
 
-    private long[] chunksProgress = null;
-
-    private transient DownloadLinkBroadcaster broadcaster = new DownloadLinkBroadcaster();
+    private long[]                             chunksProgress           = null;
 
     /** Containername */
-    private String container;
+    private String                             container;
 
     /** Dateiname des Containers */
-    private String containerFile = null;
+    private String                             containerFile            = null;
 
     /** Index dieses DownloadLinks innerhalb der Containerdatei */
-    private int containerIndex = -1;
+    private int                                containerIndex           = -1;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long downloadCurrent = 0;
+    private long                               downloadCurrent          = 0;
 
-    private transient DownloadInterface downloadInstance;
+    private transient DownloadInterface        downloadInstance;
 
     private transient SingleDownloadController downloadLinkController;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long downloadMax = 0;
+    private long                               downloadMax              = 0;
 
-    private String subdirectory = null;
+    private String                             subdirectory             = null;
 
-    private String browserurl = null;
+    private String                             browserurl               = null;
 
-    private FilePackage filePackage;
+    private FilePackage                        filePackage;
 
     /** Hoster des Downloads */
-    private String host;
+    private String                             host;
 
     /** Zeigt an, ob dieser Downloadlink aktiviert ist */
-    private boolean isEnabled;
+    private boolean                            isEnabled;
 
-    private LinkStatus linkStatus;
+    private LinkStatus                         linkStatus;
 
-    private TransferStatus transferstatus;
+    private TransferStatus                     transferstatus;
 
-    private int linkType = LINKTYPE_NORMAL;
+    private int                                linkType                 = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
-    private String name;
+    private String                             name;
 
-    private transient PluginForHost defaultplugin;
+    private transient PluginForHost            defaultplugin;
 
-    private transient PluginForHost liveplugin;
+    private transient PluginForHost            liveplugin;
 
     /**
      * Falls vorhanden, das Plugin fuer den Container, aus der dieser Download
      * geladen wurde
      */
-    private transient PluginsC pluginForContainer;
+    private transient PluginsC                 pluginForContainer;
 
-    private String sourcePluginComment = null;
+    private String                             sourcePluginComment      = null;
 
-    private ArrayList<String> sourcePluginPasswordList = null;
+    private ArrayList<String>                  sourcePluginPasswordList = null;
 
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
      * Pfad) abgespeichert. (z.b. Plugins, DownloadSystem)
      */
-    private String finalFileName;
+    private String                             finalFileName;
 
     /**
      * if filename is set by jd (eg autorename) or user (manual rename of
      * filename), then this filename has highest priority
      */
-    private String forcedFileName = null;
+    private String                             forcedFileName           = null;
 
     /**
      * /** Von hier soll der Download stattfinden
      */
-    private String urlDownload;
+    private String                             urlDownload;
 
     /**
      * Password welches einem weiteren Decrypter-Plugin uebergeben werden soll
      * (zb FolderPassword)
      */
-    private String decrypterPassword;
+    private String                             decrypterPassword;
 
-    private String mD5Hash;
+    private String                             mD5Hash;
 
-    private transient PluginProgress pluginProgress;
+    private transient PluginProgress           pluginProgress;
 
-    private String sha1Hash;
+    private String                             sha1Hash;
 
-    private int priority = 0;
+    private int                                priority                 = 0;
 
-    private transient ImageIcon icon = null;
+    private transient ImageIcon                icon                     = null;
 
-    private long requestTime;
+    private String                             partnum2                 = null;
 
-    private String partnum2 = null;
+    private long                               created                  = -1l;
 
-    private long created = -1l;
-
-    private long finishedDate = -1l;
+    private long                               finishedDate             = -1l;
 
     /**
      * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
      * icon to be shown
      */
-    private ImageIcon customIcon = null;
+    private ImageIcon                          customIcon               = null;
     /**
      * can be set via {@link #setCustomIcon(ImageIcon, String)} to set a custom
      * tooltip to be shown
      */
-    private String customIconText = null;
+    private String                             customIconText           = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -252,15 +240,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setCreated(long created) {
         this.created = created;
-    }
-
-    private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
-        stream.defaultReadObject();
-        broadcaster = new DownloadLinkBroadcaster();
-    }
-
-    public Eventsender<DownloadLinkListener, DownloadLinkEvent> getBroadcaster() {
-        return broadcaster;
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
@@ -365,7 +344,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Die Groesse der Datei
      */
     public long getDownloadSize() {
-
         return Math.max(getDownloadCurrent(), downloadMax);
     }
 
@@ -608,9 +586,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             plg.init();
             for (int retry = 0; retry < 5; retry++) {
                 try {
-                    long startTime = System.currentTimeMillis();
                     availableStatus = plg.requestFileInformation(this);
-                    this.requestTime = System.currentTimeMillis() - startTime;
                     try {
                         plg.getBrowser().getHttpConnection().disconnect();
                     } catch (Exception e) {
@@ -653,19 +629,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return availableStatus;
     }
 
-    /**
-     * 
-     * @return requesttime. TIme the downloadlink took for it's latest request.
-     *         Usually set by linkgrabber
-     */
-    public long getRequestTime() {
-        return requestTime;
-    }
-
-    public void setRequestTime(long requestTime) {
-        this.requestTime = requestTime;
-    }
-
     public void setAvailableStatus(AvailableStatus availableStatus) {
         this.availableStatus = availableStatus;
     }
@@ -685,17 +648,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /** Setzt alle DownloadWErte zurueck */
     public void reset() {
-        if (getLinkStatus().isPluginActive()) {
-            setAborted(true);
-            while (getLinkStatus().isPluginActive()) {
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    JDLogger.exception(e);
-                }
-            }
-        }
-
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
@@ -707,12 +659,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.getTransferStatus().setResumeSupport(false);
         deleteFile(true, true);
         finalFileName = null;
-        /*
-         * change this, we dont want downloadlink be depending on
-         * downloadwatchdog
-         */
-        DownloadWatchDog.getInstance().resetIPBlockWaittime(getHost());
-        DownloadWatchDog.getInstance().resetTempUnavailWaittime(getHost());
         PluginForHost plg = liveplugin;
         if (plg == null) {
             plg = defaultplugin.getWrapper().getNewPluginInstance();
@@ -865,13 +811,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Soll dieser DownloadLink aktiviert sein oder nicht
      */
     public void setEnabled(boolean isEnabled) {
-        if (this.isEnabled != isEnabled) {
-            if (!isEnabled) {
-                this.getBroadcaster().fireEvent(new DownloadLinkEvent(this, DownloadLinkEvent.DISABLED));
-            } else {
-                this.getBroadcaster().fireEvent(new DownloadLinkEvent(this, DownloadLinkEvent.ENABLED));
-            }
-        }
+
         this.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
 
         this.isEnabled = isEnabled;
@@ -1121,16 +1061,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return sha1Hash;
     }
 
-    /**
-     * ermittel das icon zur datei . ACHTUNG UNCACHED
-     * 
-     * @return
-     */
-    public ImageIcon getUnscaledIcon() {
-        return JDImage.getFileIcon(JDIO.getFileExtension(getFileOutput()));
-
-    }
-
+    /* TODO: memfresser, anders machen */
     /**
      * ermittel das icon zur datei
      * 

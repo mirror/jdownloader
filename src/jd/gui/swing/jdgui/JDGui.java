@@ -87,7 +87,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private static final long serialVersionUID = 1048792964102830601L;
-    private static JDGui      INSTANCE;
+    private static JDGui INSTANCE;
 
     /**
      * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits
@@ -108,17 +108,17 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         return JDGui.INSTANCE;
     }
 
-    private JDMenuBar       menuBar;
+    private JDMenuBar menuBar;
 
-    private JDStatusBar     statusBar;
-    private MainTabbedPane  mainTabbedPane;
-    private DownloadView    downloadView;
+    private JDStatusBar statusBar;
+    private MainTabbedPane mainTabbedPane;
+    private DownloadView downloadView;
 
     private LinkgrabberView linkgrabberView;
-    private MainToolBar     toolBar;
-    private JPanel          waitingPane;
+    private MainToolBar toolBar;
+    private JPanel waitingPane;
 
-    private boolean         exitRequested = false;
+    private boolean exitRequested = false;
 
     private JDGui() {
         super("");
@@ -248,13 +248,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 }
             }.start();
             break;
-        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            JDLogger.getLogger().info("All downloads finished");
-            break;
         case ControlEvent.CONTROL_DOWNLOAD_START:
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.started", "Download started"));
             break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
+            JDLogger.getLogger().info("All downloads finished");
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.stop", 32, 32), JDL.L("ballon.download.finished.stopped", "Download stopped"));
             break;
         }

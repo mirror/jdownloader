@@ -21,7 +21,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.Property;
-import jd.controlling.ByteBufferController;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
@@ -86,7 +85,7 @@ public class General extends ConfigPanel {
         /* File Writing */
         container.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), "gui.images.save"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc", "SFV/CRC check when possible")).setDefaultValue(true));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000, 100).setDefaultValue(500));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAXBUFFERSIZE", JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000, 100).setDefaultValue(500));
 
         return container;
     }

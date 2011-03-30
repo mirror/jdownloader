@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 
 import jd.config.Configuration;
-import jd.config.DatabaseConnector;
 import jd.controlling.DownloadController;
 import jd.controlling.GarbageController;
 import jd.controlling.JDController;
@@ -58,8 +57,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -88,9 +85,9 @@ public class JDInit {
 
     private static final boolean TEST_INSTALLER = false;
 
-    private static final Logger  LOG            = JDLogger.getLogger();
+    private static final Logger LOG = JDLogger.getLogger();
 
-    private static ClassLoader   CL;
+    private static ClassLoader CL;
 
     /**
      * Returns a classloader to load plugins (class files); Depending on runtype
@@ -271,27 +268,6 @@ public class JDInit {
     public void initControllers() {
         GarbageController.getInstance();
         DownloadController.getInstance();
-        /* add ShutdownHook so we have chance to save database properly */
-
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-            @Override
-            public void run() {
-                try {
-                    if (DatabaseConnector.isDatabaseShutdown()) {
-                        System.out.println("ShutDownHook: normal shutdown event, nothing to do.");
-                        return;
-                    } else {
-                        System.out.println("ShutDownHook: unexpected shutdown event, hurry up and save database!");
-                        JDController.getInstance().prepareShutdown(true);
-                        System.out.println("ShutDownHook: unexpected shutdown event, could finish saving database!");
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-            }
-        });
-
     }
 
     public void initGUI(final JDController controller) {

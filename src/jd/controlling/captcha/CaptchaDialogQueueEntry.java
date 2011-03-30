@@ -1,6 +1,7 @@
 package jd.controlling.captcha;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -17,6 +18,15 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
+    private final static AtomicLong IDCounter = new AtomicLong(0);
+    private final long ID;
+
+    /**
+     * @return the iD
+     */
+    public long getID() {
+        return ID;
+    }
 
     private final CaptchaController captchaController;
     private final int               flag;
@@ -28,6 +38,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         this.captchaController = captchaController;
         this.flag = flag;
         this.def = def;
+        this.ID = IDCounter.incrementAndGet();
     }
 
     public String getHost() {

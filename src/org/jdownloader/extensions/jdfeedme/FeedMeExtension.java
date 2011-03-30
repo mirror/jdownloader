@@ -488,11 +488,9 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
         new DistributeData(linksText, skipGrabber).start();
 
         // see if we need to start downloads
-        if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) {
-            // check if we need to start downloads right now
-            if (gui.getConfig().getStartdownloads()) {
-                DownloadWatchDog.getInstance().startDownloads();
-            }
+
+        if (gui.getConfig().getStartdownloads()) {
+            DownloadWatchDog.getInstance().startDownloads();
         }
 
         return true;

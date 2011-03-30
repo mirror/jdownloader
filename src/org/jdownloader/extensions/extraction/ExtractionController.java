@@ -91,25 +91,7 @@ public class ExtractionController extends Thread implements JDRunnable {
      * @return True if it's enough space.
      */
     private boolean checkSize() {
-        if (System.getProperty("java.version").contains("1.5")) { return true; }
-
-        File f = archive.getExtractTo();
-
-        while (!f.exists()) {
-            f = f.getParentFile();
-
-            if (f == null) return false;
-        }
-
-        long size = 1024L * 1024 * config.getIntegerProperty(ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, 512);
-
-        for (DownloadLink dlink : DownloadWatchDog.getInstance().getRunningDownloads()) {
-            size += dlink.getDownloadSize() - dlink.getDownloadCurrent();
-        }
-
-        if (f.getUsableSpace() < size + archive.getSize()) { return false; }
-
-        return true;
+        return DownloadWatchDog.getInstance().checkFreeDiskSpace(archive.getExtractTo(), archive.getSize());
     }
 
     @Override

@@ -21,7 +21,6 @@ public class CaptchaDialogQueue extends Queue {
 
     public String addWait(final CaptchaDialogQueueEntry item) {
         if (PluginForDecrypt.isAborted(item.getInitTime(), item.getHost())) return null;
-
         return super.addWait(item);
     }
 

@@ -128,7 +128,7 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
         case ControlEvent.CONTROL_INIT_COMPLETE:
             growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader started..."), getDateAndTime(), "Programstart");
             break;
-        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+        case ControlEvent.CONTROL_DOWNLOAD_STOP:
             if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(JDL.L(JDL_PREFIX + "allfinished", "All downloads stopped"), "", "All downloads finished");
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:

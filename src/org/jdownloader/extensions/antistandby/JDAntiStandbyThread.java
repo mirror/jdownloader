@@ -25,13 +25,13 @@ import com.sun.jna.Native;
 
 public class JDAntiStandbyThread extends Thread implements Runnable {
 
-    private boolean             running  = true;
-    private boolean             run      = false;
-    private static final int    sleep    = 5000;
-    private final Logger        logger;
+    private boolean                    running  = true;
+    private boolean                    run      = false;
+    private static final int           sleep    = 5000;
+    private final Logger               logger;
     private final AntiStandbyExtension jdAntiStandby;
 
-    private Kernel32            kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
+    private Kernel32                   kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
 
     public JDAntiStandbyThread(AntiStandbyExtension jdAntiStandby) {
         super();
@@ -46,7 +46,7 @@ public class JDAntiStandbyThread extends Thread implements Runnable {
                 if (jdAntiStandby.isStatus()) {
                     switch (jdAntiStandby.getMode()) {
                     case 0:
-                        if (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.RUNNING) {
+                        if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
                             if (!run) {
                                 run = true;
                                 logger.fine("JDAntiStandby: Start");

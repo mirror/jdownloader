@@ -23,7 +23,6 @@ import java.awt.Insets;
 import java.io.File;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -401,17 +400,13 @@ public class JDUtilities {
     }
 
     public static File getResourceFile(final String resource, final boolean mkdirs) {
-        final URL clURL = getResourceURL(resource);
-        if (clURL != null) {
-            try {
-                final File f = new File(clURL.toURI());
-                if (mkdirs) {
-                    final File f2 = f.getParentFile();
-                    if (f2 != null && !f2.exists()) f2.mkdirs();
-                }
-                return f;
-            } catch (URISyntaxException e) {
+        final File f = getResourceFile(resource);
+        if (f != null) {
+            if (mkdirs) {
+                final File f2 = f.getParentFile();
+                if (f2 != null && !f2.exists()) f2.mkdirs();
             }
+            return f;
         }
         return null;
     }

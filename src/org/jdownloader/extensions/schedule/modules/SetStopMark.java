@@ -16,11 +16,11 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-import org.jdownloader.extensions.schedule.SchedulerModule;
-import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
-
 import jd.controlling.DownloadWatchDog;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.extensions.schedule.SchedulerModule;
+import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 
 @SchedulerModule
 public class SetStopMark implements SchedulerModuleInterface {
@@ -32,10 +32,7 @@ public class SetStopMark implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
-            Object obj = DownloadWatchDog.getInstance().getRunningDownloads().get(0);
-            DownloadWatchDog.getInstance().setStopMark(obj);
-        }
+        DownloadWatchDog.getInstance().setStopMark(DownloadWatchDog.STOPMARK.RANDOM);
     }
 
     public String getTranslation() {

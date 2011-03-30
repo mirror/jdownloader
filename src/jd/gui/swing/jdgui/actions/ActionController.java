@@ -195,7 +195,7 @@ public class ActionController {
             @Override
             public void onAction(final ActionEvent e) {
                 final boolean b = ActionController.getToolBarAction("toolbar.control.pause").isSelected();
-                DownloadWatchDog.getInstance().pauseDownloads(b);
+                DownloadWatchDog.getInstance().pauseDownloadWatchDog(b);
             }
 
         };
@@ -227,27 +227,37 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(final ActionEvent e) {
+                if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
                 final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."), null);
                 final Thread test = new Thread() {
                     @Override
                     public void run() {
-                        while (true) {
-                            pc.increase(1);
-                            try {
-                                Thread.sleep(1000);
-                            } catch (final InterruptedException e) {
-                                break;
+                        try {
+                            while (true) {
+                                pc.increase(1);
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (final InterruptedException e) {
+                                    break;
+                                }
+                                if (isInterrupted() || DownloadWatchDog.getInstance().getStateMonitor().isFinal() || DownloadWatchDog.getInstance().getStateMonitor().isStartState()) {
+                                    break;
+                                }
                             }
-                            if (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.NOT_RUNNING) {
-                                break;
-                            }
+                        } finally {
+                            pc.doFinalize();
                         }
                     }
                 };
                 test.start();
+                DownloadWatchDog.getInstance().getStateMonitor().executeOnceOnState(new Runnable() {
+
+                    public void run() {
+                        test.interrupt();
+                    }
+
+                }, DownloadWatchDog.STOPPED_STATE);
                 DownloadWatchDog.getInstance().stopDownloads();
-                test.interrupt();
-                pc.doFinalize();
             }
 
         };
@@ -413,14 +423,16 @@ public class ActionController {
                 if (DownloadWatchDog.getInstance().isStopMarkSet()) {
                     DownloadWatchDog.getInstance().setStopMark(null);
                 } else if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
-                    final Object obj = DownloadWatchDog.getInstance().getRunningDownloads().get(0);
-                    DownloadWatchDog.getInstance().setStopMark(obj);
+                    DownloadWatchDog.getInstance().setStopMark(DownloadWatchDog.STOPMARK.RANDOM);
                 } else {
                     this.setSelected(false);
                 }
-                if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING && !DownloadWatchDog.getInstance().isStopMarkSet()) {
-                    this.setEnabled(false);
-                }
+                /* TODO:TODO */
+                // if (DownloadWatchDog.getInstance().getDownloadStatus() !=
+                // DownloadWatchDog.STATE.RUNNING &&
+                // !DownloadWatchDog.getInstance().isStopMarkSet()) {
+                // this.setEnabled(false);
+                // }
             }
 
         };

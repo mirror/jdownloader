@@ -47,17 +47,16 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.swing.table.ExtTable;
 import org.appwork.utils.swing.table.ExtTableModel;
 import org.appwork.utils.swing.table.SelectionHighlighter;
-import org.appwork.utils.swing.table.columns.ExtCheckColumn;
 import org.appwork.utils.swing.table.columns.ExtIconColumn;
 import org.appwork.utils.swing.table.columns.ExtLongColumn;
 import org.appwork.utils.swing.table.columns.ExtTextColumn;
 
-public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
+public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, MouseListener {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost.";
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPlugin.";
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "host.title", "Hoster & Premium");
+        return JDL.L(JDL_PREFIX + "plugins.title", "Plugins");
     }
 
     public static String getIconKey() {
@@ -75,7 +74,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         @Override
         protected void initColumns() {
-            this.addColumn(new ExtTextColumn<HostPluginWrapper>(JDL.L("gui.column_host", "Host"), this) {
+            this.addColumn(new ExtTextColumn<HostPluginWrapper>(JDL.L("gui.column_plugin", "Plugin"), this) {
 
                 private static final long serialVersionUID = -7209180150340921804L;
 
@@ -100,48 +99,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 }
 
             });
-            this.addColumn(new ExtCheckColumn<HostPluginWrapper>(JDL.L("gui.column_useplugin", "Use Plugin"), this) {
-
-                private static final long serialVersionUID = 4765934516215953012L;
-
-                @Override
-                public boolean isEditable(HostPluginWrapper obj) {
-                    return true;
-                }
-
-                @Override
-                protected boolean getBooleanValue(HostPluginWrapper value) {
-                    return value.isEnabled();
-                }
-
-                @Override
-                protected void setBooleanValue(boolean value, HostPluginWrapper object) {
-                    object.setEnabled(value);
-                    PremiumMenu.getInstance().update();
-                }
-
-            });
-            this.addColumn(new ExtCheckColumn<HostPluginWrapper>(JDL.L("gui.column_agbchecked", "Accepted"), this) {
-
-                private static final long serialVersionUID = 6843580898685333774L;
-
-                @Override
-                public boolean isEditable(HostPluginWrapper obj) {
-                    return true;
-                }
-
-                @Override
-                protected boolean getBooleanValue(HostPluginWrapper value) {
-                    return value.isAGBChecked();
-                }
-
-                @Override
-                protected void setBooleanValue(boolean value, HostPluginWrapper object) {
-                    object.setAGBChecked(value);
-                }
-
-            });
-            this.addColumn(new PremiumColumn(JDL.L("gui.column_premium", "Premium"), this));
             this.addColumn(new ExtIconColumn<HostPluginWrapper>(JDL.L("gui.column_settings", "Settings"), this) {
 
                 private static final long serialVersionUID = 4948749148702891718L;
@@ -180,13 +137,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JCheckBox                          chkUseAll;
 
-    public ConfigPanelPluginForHost() {
+    public ConfigPanelPlugin() {
         super();
 
         pluginsForHost = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
         Collections.sort(pluginsForHost);
 
-        init(true);
+        init(false);
     }
 
     public void actionPerformed(ActionEvent e) {

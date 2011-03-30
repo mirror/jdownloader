@@ -42,14 +42,14 @@ public class CaptchaController {
     }
 
     private final String methodname;
-    private final File   captchafile;
+    private final File captchafile;
     private final String explain;
     private final String suggest;
     private final String host;
-    /**
-     * When the plugin calling this contgroller has been initiated
-     */
-    private final long   initTime;
+
+    private final long initTime;
+    private CaptchaDialogQueueEntry dialog = null;
+    private String response = null;
 
     public CaptchaController(long initTime, final String host, final String method, final File file, final String suggest, final String explain) {
         this.host = host;
@@ -94,9 +94,7 @@ public class CaptchaController {
     }
 
     public String getCode(final int flag) {
-
         if (!hasMethod()) { return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? null : addCaptchaToQueue(flag, suggest); }
-
         final JAntiCaptcha jac = new JAntiCaptcha(methodname);
         try {
             final Image captchaImage = ImageIO.read(captchafile);
@@ -135,8 +133,19 @@ public class CaptchaController {
         }
     }
 
+    public void setResponse(String code) {
+        this.response = code;
+        if (dialog != null) dialog.setResponse(code);
+    }
+
     private String addCaptchaToQueue(final int flag, final String def) {
-        return CaptchaDialogQueue.getInstance().addWait(new CaptchaDialogQueueEntry(this, flag, def));
+        CaptchaEventSender.getInstance().fireEvent(new CaptchaTodoEvent(this));
+        try {
+            response = CaptchaDialogQueue.getInstance().addWait(dialog = new CaptchaDialogQueueEntry(this, flag, def));
+        } finally {
+            CaptchaEventSender.getInstance().fireEvent(new CaptchaFinishEvent(this));
+        }
+        return response;
     }
 
 }

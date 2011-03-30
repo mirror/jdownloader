@@ -72,11 +72,11 @@ public class Main {
         Application.setApplication(".jd_home");
         Application.getRoot(Main.class);
     }
-    private static Logger           LOG;
-    private static boolean          instanceStarted            = false;
+    private static Logger LOG;
+    private static boolean instanceStarted = false;
     public static SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
 
-    private static boolean          Init_Complete              = false;
+    private static boolean Init_Complete = false;
 
     // private static JSonWrapper webConfig;
 

@@ -23,7 +23,6 @@ public class JDGuiConstants {
     public static final String PARAM_CUSTOM_BROWSER                = "CUSTOM_ROWSER";
     public static final String PARAM_CUSTOM_BROWSER_USE            = "PARAM_CUSTOM_ROWSER_USE";
     public static final String PARAM_SHOW_SPEEDMETER               = "PARAM_SHOW_SPEEDMETER";
-    public static final String PARAM_SHOW_SPEEDMETER_WINDOWSIZE    = "PARAM_SHOW_SPEEDMETER_WINDOWSIZE";
     public static final String PARAM_INPUTTIMEOUT                  = "PARAM_INPUTTIMEOUT";
     public static final String PARAM_THEME                         = "THEME2";
     public static final String PARAM_START_DOWNLOADS_AFTER_START   = "START_DOWNLOADS_AFTER_START";

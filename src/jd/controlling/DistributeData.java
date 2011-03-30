@@ -30,7 +30,6 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.html.HTMLParser;
@@ -78,6 +77,22 @@ public class DistributeData extends Thread {
     private final ArrayList<String> foundPasswords = new ArrayList<String>();
 
     private boolean autostart = false;
+    private String url = null;
+
+    /**
+     * @return the url
+     */
+    protected String getUrl() {
+        return url;
+    }
+
+    /**
+     * @param url
+     *            the url to set
+     */
+    protected void setUrl(String url) {
+        this.url = url;
+    }
 
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
@@ -175,7 +190,7 @@ public class DistributeData extends Thread {
                 String url = link.getDownloadURL();
 
                 if (url != null) {
-                    url = HTMLParser.getHttpLinkList(url);
+                    url = HTMLParser.getHttpLinkList(url, url);
                     url = Encoding.urlDecode(url, true);
                 }
                 boolean coulddecrypt = false;
@@ -275,7 +290,7 @@ public class DistributeData extends Thread {
                 return ret;
             }
         }
-        data = HTMLEntities.unhtmlentities(data);
+        // data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
         ret = findLinksIntern();
         data = Encoding.urlDecode(data, true);
@@ -469,7 +484,7 @@ public class DistributeData extends Thread {
      */
     private void reformDataString() {
         if (data != null) {
-            final String tmp = HTMLParser.getHttpLinkList(data);
+            final String tmp = HTMLParser.getHttpLinkList(data, url);
             if (!(tmp.length() == 0)) {
                 data = tmp;
             }
@@ -499,8 +514,7 @@ public class DistributeData extends Thread {
                 final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDL.L("gui.btn_continue", "Continue"), null);
 
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
-                    data = getLoadLinkString(ls);
-                    links = findLinks();
+                    links = getLoadLinkString(ls);
                 }
             }
 
@@ -513,45 +527,49 @@ public class DistributeData extends Thread {
         return data;
     }
 
-    private String getLoadLinkString(String[] links) {
-        if (links == null || links.length == 0) return "";
+    private ArrayList<DownloadLink> getLoadLinkString(String[] links) {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (links == null || links.length == 0) return ret;
         final StringBuffer sb = new StringBuffer();
-        final ProgressController pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length, null);
-        int count = 0;
+        ProgressController pc = null;
+        try {
+            pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length, null);
+            int count = 0;
 
-        for (final String l : links) {
-            final Browser br = new Browser();
+            for (final String l : links) {
+                final Browser br = new Browser();
 
-            try {
-                new URL(l);
-                pc.setStatusText(JDL.LF("gui.addurls.progress.get", "Parse %s URL(s). Get %s links", links.length, l));
-
-                br.openGetConnection(l);
-                if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
-                    /* downloadable content, use directhttp */
-                    sb.append("directhttp://" + l + "\r\n");
-                    count++;
-                } else {
-                    /* parse webpage for links */
-                    br.followConnection();
-                    final String[] found = HTMLParser.getHttpLinks(br.toString(), l);
-                    for (final String link : found) {
-                        sb.append(link + "\r\n");
-                    }
-                    count += found.length;
-                }
-            } catch (Throwable e) {
-            } finally {
                 try {
-                    br.getHttpConnection().disconnect();
+                    new URL(l);
+                    pc.setStatusText(JDL.LF("gui.addurls.progress.get", "Parse %s URL(s). Get %s links", links.length, l));
+
+                    br.openGetConnection(l);
+                    if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
+                        /* downloadable content, use directhttp */
+                        sb.append("directhttp://" + l + "\r\n");
+                        count++;
+                    } else {
+                        /* parse webpage for links */
+                        br.followConnection();
+                        DistributeData internSearch = new DistributeData(br.toString());
+                        ArrayList<DownloadLink> internLinks = internSearch.findLinks();
+                        ret.addAll(internLinks);
+                        count += internLinks.size();
+                    }
                 } catch (Throwable e) {
+                } finally {
+                    try {
+                        br.getHttpConnection().disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
+                pc.setStatusText(JDL.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, count));
+                pc.increase(1);
             }
-            pc.setStatusText(JDL.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, count));
-            pc.increase(1);
+            JDLogger.getLogger().info("Found Links " + sb);
+        } finally {
+            if (pc != null) pc.doFinalize(2000);
         }
-        JDLogger.getLogger().info("Found Links " + sb);
-        pc.doFinalize(2000);
-        return sb.toString();
+        return ret;
     }
 }

@@ -25,6 +25,7 @@ import jd.gui.swing.jdgui.views.downloads.columns.HosterColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.LoadedColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.PartColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.ProgressColumn;
+import jd.gui.swing.jdgui.views.downloads.columns.ProxyColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.RemainingColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.SizeColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.StatusColumn;
@@ -51,6 +52,7 @@ public class DownloadJTableModel extends JDTableModel {
         this.addColumn(new DateFinishedColumn(JDL.L("gui.treetable.finished", "Finished date"), this));
         this.addColumn(new StatusColumn(JDL.L("gui.treetable.status", "Status"), this));
         this.addColumn(new ProgressColumn(JDL.L("gui.treetable.progress", "Progress"), this));
+        this.addColumn(new ProxyColumn(JDL.L("gui.treetable.proxy", "Proxy"), this));
     }
 
     public void refreshModel() {

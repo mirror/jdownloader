@@ -26,15 +26,14 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.ProxyInfo;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.dialog.AgbDialog;
 import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettings;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
@@ -48,6 +47,9 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.controlling.StateMachine;
+import org.appwork.controlling.StateMachineInterface;
+import org.appwork.controlling.StateMonitor;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
@@ -56,31 +58,47 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
  * 
  * @author astaldo/JD-Team
  */
-public class SingleDownloadController extends Thread implements BrowserSettings {
-    public static final String              WAIT_TIME_ON_CONNECTION_LOSS = "WAIT_TIME_ON_CONNECTION_LOSS";
+public class SingleDownloadController extends Thread implements BrowserSettings, StateMachineInterface {
+    public static final String                        WAIT_TIME_ON_CONNECTION_LOSS = "WAIT_TIME_ON_CONNECTION_LOSS";
 
-    private static final Object             DUPELOCK                     = new Object();
+    private static final Object                       DUPELOCK                     = new Object();
 
-    private boolean                         aborted                      = false;
+    private boolean                                   aborted                      = false;
 
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
-    private PluginForHost                   currentPlugin;
+    private PluginForHost                             currentPlugin;
 
-    private DownloadLink                    downloadLink;
+    private DownloadLink                              downloadLink;
 
-    private LinkStatus                      linkStatus;
+    private LinkStatus                                linkStatus;
 
     /**
      * Der Logger
      */
-    private JDPluginLogger                  logger                       = null;
+    private JDPluginLogger                            logger                       = null;
 
-    private long                            startTime;
+    private long                                      startTime;
 
-    private Account                         account                      = null;
-    private SingleDownloadControllerHandler handler                      = null;
+    private Account                                   account                      = null;
+    private SingleDownloadControllerHandler           handler                      = null;
+
+    private ProxyInfo                                 proxyInfo                    = null;
+
+    private HTTPProxy                                 httpproxy                    = null;
+
+    private StateMachine                              stateMachine;
+
+    private StateMonitor                              stateMonitor;
+
+    public static final org.appwork.controlling.State IDLE_STATE                   = new org.appwork.controlling.State("IDLE");
+    public static final org.appwork.controlling.State RUNNING_STATE                = new org.appwork.controlling.State("RUNNING");
+    public static final org.appwork.controlling.State FINAL_STATE                  = new org.appwork.controlling.State("FINAL_STATE");
+    static {
+        IDLE_STATE.addChildren(RUNNING_STATE);
+        RUNNING_STATE.addChildren(FINAL_STATE);
+    }
 
     public SingleDownloadControllerHandler getHandler() {
         return handler;
@@ -99,12 +117,33 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
      *            Link, der heruntergeladen werden soll
      */
     public SingleDownloadController(DownloadLink dlink, Account account) {
+        this(dlink, account, null);
+    }
+
+    public SingleDownloadController(DownloadLink dlink, Account account, ProxyInfo proxy) {
         super("JD-StartDownloads");
+        stateMachine = new StateMachine(this, IDLE_STATE, FINAL_STATE);
+        stateMonitor = new StateMonitor(stateMachine);
         downloadLink = dlink;
         linkStatus = downloadLink.getLinkStatus();
+        /* mark link plugin active */
+        linkStatus.setActive(true);
         setPriority(Thread.MIN_PRIORITY);
         downloadLink.setDownloadLinkController(this);
         this.account = account;
+        this.proxyInfo = proxy;
+        if (proxyInfo != null) {
+            /* mark this host active in proxyInfo */
+            setCurrentProxy(proxyInfo.getProxy());
+            proxyInfo.increaseActiveDownloads(dlink.getHost());
+        }
+    }
+
+    /**
+     * @return the proxyInfo
+     */
+    public ProxyInfo getProxyInfo() {
+        return proxyInfo;
     }
 
     /**
@@ -145,13 +184,21 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
                 try {
                     try {
                         currentPlugin.handle(downloadLink, account);
-                    } catch (BrowserException e) {
+                    } catch (jd.http.Browser.BrowserException e) {
                         /* damit browserexceptions korrekt weitergereicht werden */
                         e.closeConnection();
                         if (e.getException() != null) {
                             throw e.getException();
                         } else {
                             throw e;
+                        }
+                    } finally {
+                        if (proxyInfo != null && !proxyInfo.getProxy().getStatus().equals(HTTPProxy.STATUS.OK)) {
+                            /*
+                             * disable proxy in case something went wrong with
+                             * it
+                             */
+                            ProxyController.getInstance().setEnabled(proxyInfo, false);
                         }
                     }
                 } catch (PluginException e) {
@@ -186,6 +233,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
                     linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
                 }
             } else {
+                /* TODO: */
                 /*
                  * we assume the plugin to be broken when download failed too
                  * often
@@ -218,9 +266,6 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
                 break;
             case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
                 onErrorHostTemporarilyUnavailable(downloadLink, currentPlugin);
-                break;
-            case LinkStatus.ERROR_AGB_NOT_SIGNED:
-                onErrorAGBNotSigned(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 if (SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fnf.message", "<b>%s<b><hr>File not found", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
@@ -346,37 +391,6 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
             }
         }
 
-    }
-
-    public static void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) throws InterruptedException {
-        downloadLink2.getLinkStatus().setStatusText(JDL.L("controller.status.agb_tos", "TOS haven't been accepted."));
-        if (!plugin.isAGBChecked()) {
-            synchronized (JDUtilities.USERIO_LOCK) {
-                if (!plugin.isAGBChecked()) {
-                    showAGBDialog(downloadLink2);
-                } else {
-                    downloadLink2.getLinkStatus().reset();
-                }
-            }
-        } else {
-            downloadLink2.getLinkStatus().reset();
-        }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink2);
-    }
-
-    /**
-     * blockiert EDT sicher bis der Dialog bestätigt wurde
-     * 
-     * @param downloadLink2
-     */
-    public static void showAGBDialog(final DownloadLink downloadLink2) {
-        new GuiRunnable<Object>() {
-            @Override
-            public Object runSave() {
-                AgbDialog.showDialog(downloadLink2);
-                return null;
-            }
-        }.waitForEDT();
     }
 
     /**
@@ -600,7 +614,10 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
         }
         logger.warning("Error occurred: Download from this host is currently not possible: Please wait " + milliSeconds + " ms for a retry");
         status.setWaitTime(milliSeconds);
-        DownloadWatchDog.getInstance().setTempUnavailWaittime(plugin.getHost(), milliSeconds);
+        if (proxyInfo != null) {
+            /* set remaining waittime for host-temp unavailable */
+            proxyInfo.setRemainingTempUnavail(plugin.getHost(), milliSeconds);
+        }
         if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
@@ -621,7 +638,11 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
             milliSeconds = 3600000l;
         }
         status.setWaitTime(milliSeconds);
-        DownloadWatchDog.getInstance().setIPBlockWaittime(plugin.getHost(), milliSeconds);
+        status.setStatusText(null);
+        if (proxyInfo != null) {
+            /* set remaining waittime for host-temp unavailable */
+            proxyInfo.setRemainingIPBlockWaittime(plugin.getHost(), milliSeconds);
+        }
         if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
@@ -634,6 +655,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
     @Override
     public void run() {
         try {
+            stateMachine.setStatus(RUNNING_STATE);
             /**
              * Das Plugin, das den aktuellen Download steuert
              */
@@ -698,28 +720,39 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
             }
             if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
         } finally {
-            fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
-            linkStatus.setInProgress(false);
-            linkStatus.setActive(false);
-            /* cleanup the DownloadInterface/Controller references */
-            downloadLink.setDownloadLinkController(null);
-            downloadLink.setDownloadInstance(null);
-            if (currentPlugin != null) {
-                currentPlugin.setBrowser(null);
+            try {
+                fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
+                linkStatus.setInProgress(false);
+                /* cleanup the DownloadInterface/Controller references */
+                downloadLink.setDownloadLinkController(null);
+                downloadLink.setDownloadInstance(null);
+                if (currentPlugin != null) {
+                    currentPlugin.setBrowser(null);
+                }
+                if (currentPlugin != null) {
+                    /* clear log history for this download */
+                    currentPlugin.getLogger().clear();
+                }
+                downloadLink.setLivePlugin(null);
+                if (proxyInfo != null) {
+                    if (!proxyInfo.getProxy().getStatus().equals(HTTPProxy.STATUS.OK)) {
+                        ProxyController.getInstance().setEnabled(proxyInfo, false);
+                    }
+                    proxyInfo.decreaseActiveDownloads(downloadLink.getHost());
+                }
+            } finally {
+                stateMachine.setStatus(FINAL_STATE);
+                linkStatus.setActive(false);
             }
-            if (currentPlugin != null) {
-                /* clear log history for this download */
-                currentPlugin.getLogger().clear();
-            }
-            downloadLink.setLivePlugin(null);
         }
     }
 
     public HTTPProxy getCurrentProxy() {
-        return null;
+        return httpproxy;
     }
 
     public void setCurrentProxy(HTTPProxy proxy) {
+        this.httpproxy = proxy;
     }
 
     public void setVerbose(boolean b) {
@@ -741,6 +774,24 @@ public class SingleDownloadController extends Thread implements BrowserSettings 
 
     public Logger getLogger() {
         return logger;
+    }
+
+    /**
+     * returns StateMonitor for this SingleDownloadController
+     * 
+     * @return
+     */
+    public StateMonitor getStateMonitor() {
+        return stateMonitor;
+    }
+
+    /**
+     * throws an UnsupportedOperationException, only needed for the internal
+     * StateMachine, use getStateMonitor() instead
+     */
+    @Deprecated
+    public StateMachine getStateMachine() {
+        throw new UnsupportedOperationException("statemachine not accessible");
     }
 
 }

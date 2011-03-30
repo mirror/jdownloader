@@ -52,7 +52,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
     private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
 
     public PremiumCompoundExtension() {
-        super(JDL.L("plugins.optional.jdpremium.name", "JDPremium"));
+        super(JDL.L("jd.plugins.optional.jdpremium.name", "JDPremium"));
     }
 
     private void replaceHosterPlugin(String host, String with) {
@@ -237,7 +237,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
         private HostPluginWrapper replacedone = null;
 
         public PremShareHost(String host, String className, String patternSupported, int flags) {
-            super(host, "jd.plugins.optional.jdpremclient.", className, patternSupported, flags, "$Revision$");
+            super(host, "org.jdownloader.extensions.jdpremclient.", className, patternSupported, flags, "$Revision$");
             for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
                 if (wrapper.getPattern().toString().equalsIgnoreCase(patternSupported) && wrapper != this) replacedone = wrapper;
             }

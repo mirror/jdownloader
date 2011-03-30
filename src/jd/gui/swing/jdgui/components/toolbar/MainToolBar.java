@@ -24,8 +24,8 @@ import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 
 public class MainToolBar extends ToolBar {
 
-    private static final long serialVersionUID = 922971719957349497L;
-    private static MainToolBar INSTANCE = null;
+    private static final long     serialVersionUID = 922971719957349497L;
+    private static MainToolBar    INSTANCE         = null;
 
     private final SpeedMeterPanel speedmeter;
 
@@ -72,7 +72,7 @@ public class MainToolBar extends ToolBar {
 
     @Override
     protected void updateSpecial() {
-        add(speedmeter, "hidemode 3, width 32:200:300");
+        add(speedmeter, "hidemode 3, width 32:300:300");
     }
 
 }

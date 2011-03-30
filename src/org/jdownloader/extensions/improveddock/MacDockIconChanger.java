@@ -22,26 +22,25 @@ import java.awt.image.BufferedImage;
 
 import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.DownloadWatchDog.STATE;
 import jd.nutils.JDImage;
 
 import com.apple.eawt.Application;
 
 public class MacDockIconChanger extends Thread implements Runnable {
 
-    private final BufferedImage dockImage = JDImage.getImage("logo/jd_logo_128_128");
+    private final BufferedImage        dockImage       = JDImage.getImage("logo/jd_logo_128_128");
 
-    private final Color frameColor = Color.BLACK;
+    private final Color                frameColor      = Color.BLACK;
 
-    private final Color backgroundColor = Color.WHITE;
+    private final Color                backgroundColor = Color.WHITE;
 
-    private final Color foregroundColor = Color.RED;
+    private final Color                foregroundColor = Color.RED;
 
     // private final Color fontColor = Color.BLACK;
 
     private final DownloadInformations downloadInfo;
 
-    private boolean interrupt = false;
+    private boolean                    interrupt       = false;
 
     public MacDockIconChanger() {
         super("Improved Mac OSX Dock Updater");
@@ -51,7 +50,7 @@ public class MacDockIconChanger extends Thread implements Runnable {
 
     @Override
     public void run() {
-        while (DownloadWatchDog.getInstance().getDownloadStatus() == STATE.RUNNING) {
+        while (DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.RUNNING_STATE)) {
             if (interrupt) break;
 
             updateDockIcon();

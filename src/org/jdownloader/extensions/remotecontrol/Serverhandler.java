@@ -430,7 +430,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/action/pause")) {
             // Do Pause downloads
 
-            DownloadWatchDog.getInstance().pauseDownloads(!DownloadWatchDog.getInstance().isPaused());
+            DownloadWatchDog.getInstance().pauseDownloadWatchDog(!DownloadWatchDog.getInstance().isPaused());
             response.addContent("Downloads paused");
         } else if (requestUrl.equals("/action/stop")) {
             // Do Stop downloads

@@ -16,7 +16,7 @@
 
 package jd.controlling.reconnect;
 
-import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
@@ -27,9 +27,6 @@ import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -45,10 +42,10 @@ import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
 
 public final class Reconnecter implements StateMachineInterface {
-    public static final String       RECONNECT_SUCCESS_COUNTER        = "RECONNECT_SUCCESS_COUNTER";
-    public static final String       RECONNECT_FAILED_COUNTER         = "RECONNECT_FAILED_COUNTER";
-    private static final State       IDLE                             = new State("IDLE");
-    private static final State       RECONNECT_RUNNING                = new State("RECONNECT_RUNNING");
+    public static final String         RECONNECT_SUCCESS_COUNTER        = "RECONNECT_SUCCESS_COUNTER";
+    public static final String         RECONNECT_FAILED_COUNTER         = "RECONNECT_FAILED_COUNTER";
+    private static final State         IDLE                             = new State("IDLE");
+    private static final State         RECONNECT_RUNNING                = new State("RECONNECT_RUNNING");
     // private static final State RECONNECT_REQUESTED = new
     // State("RECONNECT_REQUESTED");
 
@@ -58,11 +55,13 @@ public final class Reconnecter implements StateMachineInterface {
         Reconnecter.RECONNECT_RUNNING.addChildren(Reconnecter.IDLE);
 
     }
-    private static final Reconnecter INSTANCE                         = new Reconnecter();
+    private static final Reconnecter   INSTANCE                         = new Reconnecter();
 
-    private static final Logger      LOG                              = JDLogger.getLogger();
-    public static final String       RECONNECT_FAILED_COUNTER_GLOBAL  = "RECONNECT_FAILED_COUNTER_GLOBAL";
-    public static final String       RECONNECT_SUCCESS_COUNTER_GLOBAL = "RECONNECT_SUCCESS_COUNTER_GLOBAL";
+    private static final Logger        LOG                              = JDLogger.getLogger();
+    public static final String         RECONNECT_FAILED_COUNTER_GLOBAL  = "RECONNECT_FAILED_COUNTER_GLOBAL";
+    public static final String         RECONNECT_SUCCESS_COUNTER_GLOBAL = "RECONNECT_SUCCESS_COUNTER_GLOBAL";
+
+    private static final AtomicInteger reconnectCounter                 = new AtomicInteger(0);
 
     /*
      * TODO: eyxternal IP check if automode is disabled
@@ -139,6 +138,13 @@ public final class Reconnecter implements StateMachineInterface {
     // return ret;
     // }
 
+    /**
+     * @return the reconnectcounter
+     */
+    public static int getReconnectCounter() {
+        return reconnectCounter.get();
+    }
+
     public static Reconnecter getInstance() {
         return Reconnecter.INSTANCE;
     }
@@ -153,8 +159,6 @@ public final class Reconnecter implements StateMachineInterface {
     public static boolean waitForNewIP(final int i, final boolean b) {
         return Reconnecter.getInstance().forceReconnect();
     }
-
-    private ArrayList<DownloadLink>                    disabledLinks;
 
     private final DefaultEventSender<ReconnecterEvent> eventSender;
     private final StateMachine                         statemachine;
@@ -190,7 +194,7 @@ public final class Reconnecter implements StateMachineInterface {
 
         Reconnecter.LOG.info("Try to reconnect...");
         this.statemachine.setStatus(Reconnecter.RECONNECT_RUNNING);
-        this.prepareForReconnect();
+        DownloadWatchDog.getInstance().abortAllSingleDownloadControllers();
 
         int retry;
         int maxretries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RETRIES, 5);
@@ -211,6 +215,7 @@ public final class Reconnecter implements StateMachineInterface {
                 progress.setStatusText(JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginController.doReconnect_1", "Reconnect #") + (retry + 1));
                 ret = ReconnectPluginController.getInstance().doReconnect();
                 if (ret) {
+                    reconnectCounter.incrementAndGet();
                     break;
                 }
             }
@@ -223,7 +228,6 @@ public final class Reconnecter implements StateMachineInterface {
             ret = false;
         } finally {
             progress.doFinalize(1000);
-            this.restoreAfterReconnect(ret);
         }
 
         this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.AFTER, ret));
@@ -249,7 +253,6 @@ public final class Reconnecter implements StateMachineInterface {
      * @return
      */
     public boolean forceReconnect() {
-        // this.prepareForReconnect();
         final boolean ret = this.doReconnect();
 
         return ret;
@@ -284,7 +287,7 @@ public final class Reconnecter implements StateMachineInterface {
     public boolean isReconnectAllowed() {
         boolean ret = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
         ret &= !LinkCheck.getLinkChecker().isRunning();
-        ret &= JDUtilities.getController().getForbiddenReconnectDownloadNum() == 0;
+        ret &= DownloadWatchDog.getInstance().getForbiddenReconnectDownloadNum() == 0;
         return ret;
     }
 
@@ -295,71 +298,6 @@ public final class Reconnecter implements StateMachineInterface {
      */
     public boolean isReconnectInProgress() {
         return this.statemachine.isState(Reconnecter.RECONNECT_RUNNING);
-    }
-
-    /**
-     * Stops all downloads
-     */
-    private void prepareForReconnect() {
-        this.disabledLinks = DownloadWatchDog.getInstance().getRunningDownloads();
-        if (!this.disabledLinks.isEmpty()) {
-            Reconnecter.LOG.info("Stopping all running downloads!");
-
-            for (final DownloadLink link : this.disabledLinks) {
-                link.setEnabled(false);
-            }
-            /* warte bis alle gestoppt sind */
-            for (int wait = 0; wait < 10; wait++) {
-                if (DownloadWatchDog.getInstance().getActiveDownloads() == 0) {
-                    break;
-                }
-                try {
-                    Thread.sleep(1000);
-                    Reconnecter.LOG.info("Still waiting for all downloads to stop!");
-                } catch (final InterruptedException e) {
-                    break;
-                }
-            }
-            if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
-                Reconnecter.LOG.severe("Could not stop all running downloads!");
-            }
-        }
-    }
-
-    /**
-     * reset ipblocked links
-     */
-    private void resetAllLinks() {
-        final ArrayList<FilePackage> packages = JDUtilities.getController().getPackages();
-        /* reset hoster ipblock waittimes */
-        DownloadWatchDog.getInstance().resetIPBlockWaittime(null);
-        synchronized (packages) {
-            for (final FilePackage fp : packages) {
-                for (final DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
-                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                        nextDownloadLink.getLinkStatus().resetWaitTime();
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Restarts previously stopped downloads
-     * 
-     * @param ipChangeSuccess
-     */
-    private void restoreAfterReconnect(final boolean ipChangeSuccess) {
-        /* gestoppte downloads wieder aufnehmen */
-        if (this.disabledLinks != null) {
-            for (final DownloadLink link : this.disabledLinks) {
-                link.setEnabled(true);
-            }
-        }
-        if (ipChangeSuccess) {
-            this.resetAllLinks();
-        }
     }
 
     /**

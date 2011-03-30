@@ -126,6 +126,10 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
         return storage.get(key, -1);
     }
 
+    public long getLongProperty(final String key, final long def) {
+        return storage.get(key, def);
+    }
+
     public int getIntegerProperty(final String key, final int def) {
         return storage.get(key, def);
     }

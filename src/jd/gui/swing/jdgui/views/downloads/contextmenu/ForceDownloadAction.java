@@ -10,16 +10,12 @@ import jd.utils.locale.JDL;
 
 public class ForceDownloadAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = 7107840091963427544L;
+    private static final long             serialVersionUID = 7107840091963427544L;
 
     private final ArrayList<DownloadLink> links;
 
-    public ForceDownloadAction(ArrayList<DownloadLink> links) {
-        this.links = new ArrayList<DownloadLink>();
-        for (DownloadLink link : links) {
-            if (!link.getLinkStatus().isPluginActive()) this.links.add(link);
-        }
-
+    public ForceDownloadAction(final ArrayList<DownloadLink> links) {
+        this.links = links;
         init();
     }
 
@@ -35,7 +31,7 @@ public class ForceDownloadAction extends ContextMenuAction {
 
     @Override
     public boolean isEnabled() {
-        return !links.isEmpty() && DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.STOPPING;
+        return !links.isEmpty() && DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPED_STATE);
     }
 
     public void actionPerformed(ActionEvent e) {

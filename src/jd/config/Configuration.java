@@ -56,6 +56,7 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST   = "DOWNLOAD_MAX_SIMULTAN_PER_HOST";
 
     public static final String PARAM_DOWNLOAD_MAX_SPEED               = "DOWNLOAD_MAX_SPEED_V2";
+    public static final String PARAM_SAVESPACE                        = "PARAM_SAVESPACE2";
 
     public static final String PARAM_FILE_EXISTS                      = "FILE_EXISTS";
 

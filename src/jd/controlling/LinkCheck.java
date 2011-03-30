@@ -144,7 +144,6 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             PluginForHost plg = link.getDefaultPlugin().getWrapper().getNewPluginInstance();
             plg.setBrowser(new Browser());
             plg.init();
-            long timer = System.currentTimeMillis();
             try {
                 boolean ret = plg.checkLinks(hosterList.toArray(new DownloadLink[] {}));
                 if (!ret) {
@@ -158,10 +157,6 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                         pc.increase(1);
                     }
                 } else {
-                    long reqtime = System.currentTimeMillis() - timer;
-                    for (DownloadLink d : hosterList) {
-                        d.setRequestTime(reqtime);
-                    }
                     getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
                     pc.increase(hosterList.size());
                 }
