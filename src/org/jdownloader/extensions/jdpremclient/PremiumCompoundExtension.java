@@ -31,7 +31,6 @@ import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
 import jd.plugins.AddonPanel;
-import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -41,7 +40,6 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "jdpremium", interfaceversion = 7)
 public class PremiumCompoundExtension extends AbstractExtension {
 
     private static final Object                  LOCK                = new Object();
@@ -187,6 +185,11 @@ public class PremiumCompoundExtension extends AbstractExtension {
     }
 
     @Override
+    public boolean isDefaultEnabled() {
+        return true;
+    }
+
+    @Override
     public ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel() {
         return null;
     }
@@ -206,17 +209,17 @@ public class PremiumCompoundExtension extends AbstractExtension {
 
     @Override
     public String getConfigID() {
-        return null;
+        return "jdpremium";
     }
 
     @Override
     public String getAuthor() {
-        return null;
+        return "Jiaz";
     }
 
     @Override
     public String getDescription() {
-        return null;
+        return "Allows Compount Hoster Plugins. So called Proxy Hosters.";
     }
 
     @Override
