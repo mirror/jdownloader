@@ -55,14 +55,7 @@ public class UndeadLinkCom extends PluginForDecrypt {
             veryEasy();
         }
         if (DLLINK == null) { return null; }
-
         decryptedLinks.add(createDownloadlink(DLLINK));
-
-        if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
-        }
-
         return decryptedLinks;
     }
 
@@ -128,6 +121,7 @@ public class UndeadLinkCom extends PluginForDecrypt {
             eb.eval(br);
             DLLINK = eb.getRegex("FRAME SRC=\"(http.*?)\"").getMatch(0);
         } catch (final ExtBrowserException e) {
+            DLLINK = null;
             e.printStackTrace();
         }
         return DLLINK;
