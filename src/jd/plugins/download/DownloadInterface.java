@@ -68,34 +68,34 @@ abstract public class DownloadInterface {
          * kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu
          * verstaerkt intervalartigem laden und ist ungewuenscht
          */
-        public static final long MIN_CHUNKSIZE = 1 * 1024 * 1024;
+        public static final long            MIN_CHUNKSIZE        = 1 * 1024 * 1024;
 
-        protected ByteArray buffer = null;
+        protected ByteArray                 buffer               = null;
 
-        private long chunkBytesLoaded = 0;
+        private long                        chunkBytesLoaded     = 0;
 
-        private URLConnectionAdapter connection;
+        private URLConnectionAdapter        connection;
 
-        private long endByte;
+        private long                        endByte;
 
-        private int id = -1;
+        private int                         id                   = -1;
 
         private MeteredThrottledInputStream inputStream;
 
-        private int MAX_BUFFERSIZE = 4 * 1024 * 1024;
+        private int                         MAX_BUFFERSIZE       = 4 * 1024 * 1024;
 
-        private long startByte;
-        private long bytes2Do = -1;
+        private long                        startByte;
+        private long                        bytes2Do             = -1;
 
-        private DownloadInterface dl;
+        private DownloadInterface           dl;
 
-        private boolean connectionclosed = false;
+        private boolean                     connectionclosed     = false;
 
-        private boolean addedtoStartedChunks = false;
+        private boolean                     addedtoStartedChunks = false;
 
-        private boolean chunkinprogress = false;
+        private boolean                     chunkinprogress      = false;
 
-        private boolean clonedconnection = false;
+        private boolean                     clonedconnection     = false;
 
         /**
          * Die Connection wird entsprechend der start und endbytes neu
@@ -273,7 +273,7 @@ abstract public class DownloadInterface {
                 chunkinprogress = true;
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
-                inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter());
+                inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
                 DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputStream(inputStream);
 
                 int miniblock = 0;
@@ -677,67 +677,67 @@ abstract public class DownloadInterface {
 
     }
 
-    public static final int ERROR_REDIRECTED = -1;
+    public static final int        ERROR_REDIRECTED                 = -1;
 
-    public Logger logger = null;
+    public Logger                  logger                           = null;
 
-    protected int chunkNum = 1;
+    protected int                  chunkNum                         = 1;
 
-    private Vector<Chunk> chunks = new Vector<Chunk>();
+    private Vector<Chunk>          chunks                           = new Vector<Chunk>();
 
-    private int chunksDownloading = 0;
+    private int                    chunksDownloading                = 0;
 
-    private int chunksInProgress = 0;
+    private int                    chunksInProgress                 = 0;
 
     protected URLConnectionAdapter connection;
 
-    protected DownloadLink downloadLink;
+    protected DownloadLink         downloadLink;
 
-    private Vector<Integer> errors = new Vector<Integer>();
+    private Vector<Integer>        errors                           = new Vector<Integer>();
 
-    private Vector<Exception> exceptions = null;
+    private Vector<Exception>      exceptions                       = null;
 
-    protected long fileSize = -1;
+    protected long                 fileSize                         = -1;
 
-    protected LinkStatus linkStatus;
+    protected LinkStatus           linkStatus;
 
-    protected PluginForHost plugin;
+    protected PluginForHost        plugin;
 
-    private int readTimeout = 100000;
-    private int requestTimeout = 100000;
+    private int                    readTimeout                      = 100000;
+    private int                    requestTimeout                   = 100000;
 
-    private boolean resume = false;
+    private boolean                resume                           = false;
 
-    private boolean fixWrongContentDispositionHeader = false;
+    private boolean                fixWrongContentDispositionHeader = false;
 
-    private boolean allowFilenameFromURL = false;
+    private boolean                allowFilenameFromURL             = false;
 
-    protected boolean speedDebug = false;
+    protected boolean              speedDebug                       = false;
 
-    protected long totaleLinkBytesLoaded = 0;
+    protected long                 totaleLinkBytesLoaded            = 0;
 
-    private boolean waitFlag = true;
+    private boolean                waitFlag                         = true;
 
-    private boolean fatalErrorOccured = false;
+    private boolean                fatalErrorOccured                = false;
 
-    private boolean doFileSizeCheck = true;
+    private boolean                doFileSizeCheck                  = true;
 
-    private boolean fakeContentRangeHeader_flag = false;
+    private boolean                fakeContentRangeHeader_flag      = false;
 
-    private Request request = null;
+    private Request                request                          = null;
 
-    private boolean fileSizeVerified = false;
+    private boolean                fileSizeVerified                 = false;
 
-    private boolean connected;
+    private boolean                connected;
 
-    private boolean firstChunkRangeless;
+    private boolean                firstChunkRangeless;
 
-    private int chunksStarted = 0;
+    private int                    chunksStarted                    = 0;
 
-    private Browser browser;
+    private Browser                browser;
 
     /** normal stop of download (eg manually or reconnect request) */
-    private volatile boolean externalStop = false;
+    private volatile boolean       externalStop                     = false;
 
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
@@ -1301,6 +1301,10 @@ abstract public class DownloadInterface {
         if (!externalDownloadStop()) logger.severe("A critical Downloaderror occured. Terminate...");
         synchronized (chunks) {
             for (Chunk ch : chunks) {
+                try {
+                    ch.connection.disconnect();
+                } catch (final Throwable e) {
+                }
                 ch.interrupt();
             }
         }
@@ -1380,6 +1384,7 @@ abstract public class DownloadInterface {
         if (externalStop) return;
         logger.severe("externalStop recieved");
         externalStop = true;
+        terminate();
     }
 
     public synchronized boolean externalDownloadStop() {
