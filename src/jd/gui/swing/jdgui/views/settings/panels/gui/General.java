@@ -113,7 +113,7 @@ public class General extends ConfigPanel {
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.barrierfree", "Barrier-Free"), "gui.images.barrierfree"));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this.subConfig, JDGuiConstants.PARAM_GENERAL_FONT_SIZE, JDL.L("gui.config.gui.font size", "Font Size [%]"), 10, 200, 10).setDefaultValue(100));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this.subConfig, JDGuiConstants.PARAM_GENERAL_FONT_SIZE, JDL.L("gui.config.gui.font size", "Font Size [%]"), 50, 200, 10).setDefaultValue(100));
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         return look;

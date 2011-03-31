@@ -25,10 +25,10 @@ import jd.utils.locale.JDL;
 
 public class DownloadInfoPanel extends InfoPanel {
 
-    private static final long serialVersionUID = 6127915881119236559L;
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.info.DownloadInfoPanel.";
+    private static final long    serialVersionUID = 6127915881119236559L;
+    private static final String  JDL_PREFIX       = "jd.gui.swing.jdgui.views.info.DownloadInfoPanel.";
     private DownloadInformations ds;
-    private long speed;
+    private long                 speed;
 
     public DownloadInfoPanel() {
         super("gui.images.taskpanes.download");
@@ -63,7 +63,11 @@ public class DownloadInfoPanel extends InfoPanel {
             @Override
             public Object runSave() {
                 ds.updateInformations();
-                speed = DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
+                if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
+                    speed = DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
+                } else {
+                    speed = 0;
+                }
                 updateInfo(JDL.L(JDL_PREFIX + "speed", "Downloadspeed"), Formatter.formatReadable(speed) + "/s");
                 updateInfo(JDL.L(JDL_PREFIX + "eta", "Download complete in"), Formatter.formatSeconds(speed == 0 ? -1 : ds.getETA()));
                 updateInfo(JDL.L(JDL_PREFIX + "packages", "Package(s)"), ds.getPackagesCount());

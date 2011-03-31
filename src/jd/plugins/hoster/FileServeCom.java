@@ -54,8 +54,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
-    public String FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
-    public static String agent = RandomUserAgent.generate();
+    public String        FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
+    public static String agent       = RandomUserAgent.generate();
 
     public FileServeCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -113,7 +113,7 @@ public class FileServeCom extends PluginForHost {
                     final Regex linkinformation = new Regex(theData, "<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
                     final String status = linkinformation.getMatch(3);
                     String filename = linkinformation.getMatch(1);
-                    final String filesize = linkinformation.getMatch(2);
+                    String filesize = linkinformation.getMatch(2);
                     if (filename == null || filesize == null) {
                         logger.warning("Fileserve availablecheck is broken!");
                         dl.setAvailable(false);
@@ -124,7 +124,13 @@ public class FileServeCom extends PluginForHost {
                         dl.setAvailable(true);
                     }
                     dl.setName(filename);
-                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                    if (filesize != null) {
+                        if (filesize.contains(",") && filesize.contains(".")) {
+                            /* workaround for 1.000,00 MB bug */
+                            filesize = filesize.replaceFirst("\\.", "");
+                        }
+                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                    }
                 }
                 if (index == urls.length) {
                     break;
