@@ -84,7 +84,7 @@ public class ShareFlareNet extends PluginForHost {
         requestFileInformation(downloadLink);
         String waittime = br.getRegex("You can wait download for ([\t\n\r0-9]+) minutes or upgrade to premium").getMatch(0);
         if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime.trim()) * 60 * 1001l);
-        if (br.containsHTML("You reached your hourly traffic limit\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        if (br.containsHTML("You reached your hourly traffic limit\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
         if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         br.setFollowRedirects(false);
         Form dlform = br.getFormbyProperty("id", "dvifree");
