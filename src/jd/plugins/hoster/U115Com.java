@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -90,13 +89,18 @@ public class U115Com extends PluginForHost {
         requestFileInformation(link);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
+        // I don't know what this text means (google couldn't help) so i handle
+        // it like that
+        if (br.containsHTML("为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。")) {
+            logger.warning("Unknown error for link: " + link.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, unknown error!");
+        }
         String dllink = findLink();
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.urlDecode(dllink, true);
-        dllink = Encoding.htmlDecode(dllink);
+        // dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
