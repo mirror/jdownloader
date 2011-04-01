@@ -16,10 +16,11 @@ import org.appwork.utils.images.IconIO;
 
 public class ExtensionGuiEnableAction extends AbstractAction {
 
+    private static final long serialVersionUID = 6997360773808826159L;
     private AbstractExtension plg;
-    private ImageIcon      icon16Enabled;
-    private ImageIcon      icon16Disabled;
-    private boolean        java15;
+    private ImageIcon         icon16Enabled;
+    private ImageIcon         icon16Disabled;
+    private boolean           java15;
 
     public ExtensionGuiEnableAction(AbstractExtension plg) {
         super(plg.getName());
@@ -29,7 +30,6 @@ public class ExtensionGuiEnableAction extends AbstractAction {
         icon16Enabled = getCheckBoxImage(20, true);
         icon16Disabled = getCheckBoxImage(20, false);
         updateIcon();
-
     }
 
     private void updateIcon() {
@@ -38,7 +38,6 @@ public class ExtensionGuiEnableAction extends AbstractAction {
         } else {
             putValue(AbstractAction.SMALL_ICON, icon16Disabled);
         }
-
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -46,7 +45,6 @@ public class ExtensionGuiEnableAction extends AbstractAction {
             this.setSelected(!this.isSelected());
         } else {
             updateIcon();
-
         }
 
         plg.getGUI().setActive(!plg.getGUI().isActive());
@@ -63,9 +61,7 @@ public class ExtensionGuiEnableAction extends AbstractAction {
     }
 
     public ImageIcon getCheckBoxImage(final int size, boolean selected) {
-
         try {
-
             final Image img = plg.getIcon(32).getImage();
             Image checkBox;
 
@@ -79,11 +75,8 @@ public class ExtensionGuiEnableAction extends AbstractAction {
             Graphics2D g = (Graphics2D) ret.getGraphics();
             g.drawImage(img, 0, 0, null);
             g.drawImage(checkBox, 0, ret.getHeight() - checkBox.getHeight(null), null);
-            // return new ImageIcon(img);
             return new ImageIcon(JDImage.getScaledImage(ret, size, size));
-
         } catch (Exception e) {
-
             JDLogger.exception(e);
         }
 

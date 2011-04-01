@@ -23,6 +23,8 @@ import org.jdownloader.translate.JDT;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {
 
+    private static final long serialVersionUID = -8483438886830392777L;
+
     public AbstractConfigPanel() {
         super(new MigLayout("ins 15, wrap 2", "[][grow,fill]", "[]"));
     }
@@ -50,9 +52,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
             Dialog.getInstance().showConfirmDialog(0, JDT._.dialog_optional_showRestartRequiredMessage_title(), JDT._.dialog_optional_showRestartRequiredMessage_msg(), null, JDT._.basics_yes(), JDT._.basics_no());
             JDController.getInstance().exit();
         } catch (DialogClosedException e) {
-
         } catch (DialogCanceledException e) {
-
         }
     }
 
@@ -119,8 +119,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     }
 
     protected void addHeader(String name, ImageIcon icon) {
-
         add(new Header(name, icon), "spanx,newline,growx,pushx");
-
     }
+
 }

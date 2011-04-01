@@ -31,25 +31,15 @@ import jd.gui.UserIO;
 
 public class CaptchaController {
 
-    private static CaptchaSolver captchaSolver = null;
+    private final String            methodname;
+    private final File              captchafile;
+    private final String            explain;
+    private final String            suggest;
+    private final String            host;
 
-    public static void setCaptchaSolver(CaptchaSolver captchaSolver) {
-        CaptchaController.captchaSolver = captchaSolver;
-    }
-
-    public static CaptchaSolver getCaptchaSolver() {
-        return captchaSolver;
-    }
-
-    private final String methodname;
-    private final File captchafile;
-    private final String explain;
-    private final String suggest;
-    private final String host;
-
-    private final long initTime;
-    private CaptchaDialogQueueEntry dialog = null;
-    private String response = null;
+    private final long              initTime;
+    private CaptchaDialogQueueEntry dialog   = null;
+    private String                  response = null;
 
     public CaptchaController(long initTime, final String host, final String method, final File file, final String suggest, final String explain) {
         this.host = host;

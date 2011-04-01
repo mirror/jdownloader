@@ -71,8 +71,6 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
         if (c >= 0) {
             b2 = ColorUtils.getAlphaInstance((new Color(c)), 230);
-            ;
-
         }
         b = lbl.getBackground();
         a = ColorUtils.getAlphaInstance(lbl.getForeground(), 4);

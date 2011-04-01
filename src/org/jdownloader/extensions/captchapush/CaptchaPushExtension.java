@@ -1,11 +1,11 @@
 package org.jdownloader.extensions.captchapush;
 
 import java.awt.event.ActionEvent;
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.controlling.captcha.CaptchaController;
-import jd.controlling.captcha.CaptchaSolver;
+import jd.controlling.captcha.CaptchaEventListener;
+import jd.controlling.captcha.CaptchaEventSender;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
@@ -15,7 +15,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class CaptchaPushExtension extends AbstractExtension implements CaptchaSolver {
+public class CaptchaPushExtension extends AbstractExtension implements CaptchaEventListener {
 
     private CaptchaPushConfig      config;
     private CaptchaPushConfigPanel configPanel;
@@ -30,18 +30,14 @@ public class CaptchaPushExtension extends AbstractExtension implements CaptchaSo
         return "gui.images.config.ocr";
     }
 
-    public String solveCaptcha(String host, File captchaFile, String suggestion, String explain) {
-        return null;
-    }
-
     @Override
     protected void stop() throws StopException {
-        CaptchaController.setCaptchaSolver(null);
+        CaptchaEventSender.getInstance().removeListener(this);
     }
 
     @Override
     protected void start() throws StartException {
-        CaptchaController.setCaptchaSolver(this);
+        CaptchaEventSender.getInstance().addListener(this);
     }
 
     @Override
@@ -52,9 +48,9 @@ public class CaptchaPushExtension extends AbstractExtension implements CaptchaSo
             @Override
             public void onAction(ActionEvent e) {
                 if (activateAction.isSelected()) {
-                    CaptchaController.setCaptchaSolver(CaptchaPushExtension.this);
+                    CaptchaEventSender.getInstance().addListener(CaptchaPushExtension.this);
                 } else {
-                    CaptchaController.setCaptchaSolver(null);
+                    CaptchaEventSender.getInstance().removeListener(CaptchaPushExtension.this);
                 }
             }
         };
@@ -104,6 +100,14 @@ public class CaptchaPushExtension extends AbstractExtension implements CaptchaSo
         menu.add(activateAction);
 
         return menu;
+    }
+
+    public void captchaTodo(CaptchaController controller) {
+        /* TODO: Push Captcha to Broker! */
+    }
+
+    public void captchaFinish(CaptchaController controller) {
+        /* TODO: Push Finish to Broker! */
     }
 
 }

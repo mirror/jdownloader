@@ -215,7 +215,6 @@ public class PluginScanner {
 
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayList<HosterPluginInfo> getHoster() throws MalformedURLException {
 
         final File[] files = Application.getResource(HOSTERPATH).listFiles(new FilenameFilter() {

@@ -19,7 +19,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
     private final static AtomicLong IDCounter = new AtomicLong(0);
-    private final long ID;
+    private final long              ID;
 
     /**
      * @return the iD
@@ -68,10 +68,6 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     }
 
     private String viaGUI() {
-        if (CaptchaController.getCaptchaSolver() != null) {
-            String result = CaptchaController.getCaptchaSolver().solveCaptcha(captchaController.getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain());
-            if (result != null && result.length() > 0) return result;
-        }
         UserIO.setCountdownTime(SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         try {
             this.dialog = new CaptchaDialog(flag | Dialog.LOGIC_COUNTDOWN, captchaController.getHost(), captchaController.getCaptchafile(), def, captchaController.getExplain());
