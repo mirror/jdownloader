@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import javax.swing.Icon;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
@@ -36,6 +37,7 @@ import jd.gui.swing.jdgui.views.ViewToolbar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class Premium extends ConfigPanel implements ActionListener, AccountControllerListener {
@@ -47,8 +49,13 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private JScrollPane         scrollPane;
     private Timer               updateAsync;
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(JDL_PREFIX + "title2", "Accounts");
+    }
+
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     public static String getIconKey() {

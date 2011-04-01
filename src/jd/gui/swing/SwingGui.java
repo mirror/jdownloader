@@ -139,7 +139,7 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
 
     abstract public void closeWindow();
 
-    abstract public void setContent(View view);
+    abstract public void setContent(View view, boolean setActive);
 
     /**
      * Throws an RuntimeException if the current thread is not the edt

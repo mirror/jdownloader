@@ -7,13 +7,13 @@ import javax.swing.JScrollPane;
 import org.jdownloader.extensions.folderwatch.data.History;
 import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
 
+import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;

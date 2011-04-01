@@ -27,13 +27,13 @@ import jd.config.ConfigGroup;
 import jd.config.Property;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.GUIConfigEntry;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.io.JDIO;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
@@ -44,8 +44,8 @@ import jd.utils.Replacer;
 import jd.utils.StringUtil;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -76,7 +76,7 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
 
     private JSonWrapper         subConfig           = null;
 
-    public ExtensionConfigPanel<InfoFileWriterExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

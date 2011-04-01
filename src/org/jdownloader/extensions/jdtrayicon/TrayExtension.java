@@ -44,6 +44,7 @@ import jd.config.ConfigGroup;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
@@ -54,7 +55,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -63,8 +63,8 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -207,7 +207,7 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
 
     private Timer               disableAlwaysonTop;
 
-    public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

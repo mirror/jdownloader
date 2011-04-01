@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.views.settings.panels.addons;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.menu.WindowMenu;
-import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.table.ExtTableModel;
@@ -61,7 +60,11 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
                     int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), JDT._.gui_settings_extensions_show_now(object.getName()));
 
                     if (UserIO.isOK(ret)) {
+                        // activate panel
                         object._getExtension().getGUI().setActive(true);
+                        // bring panel to front
+                        object._getExtension().getGUI().toFront();
+
                     }
                 }
             } catch (StartException e) {
@@ -86,7 +89,7 @@ public class ActivateColumn extends ExtCheckColumn<AbstractExtensionWrapper> {
 
         AddonsMenu.getInstance().update();
         WindowMenu.getInstance().update();
-        ConfigSidebar.getInstance(null).updateAddons();
+        // ConfigSidebar.getInstance(null).updateAddons();
         addons.updateShowcase();
     }
 

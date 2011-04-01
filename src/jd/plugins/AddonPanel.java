@@ -6,9 +6,15 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.extensions.ExtensionGuiEnableAction;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionGuiEnableAction;
 
+/**
+ * Abstract Superclass which should be used for all Extension Gui Panels
+ * 
+ * @author thomas
+ * 
+ */
 public abstract class AddonPanel extends ClosableView {
 
     /**
@@ -16,7 +22,7 @@ public abstract class AddonPanel extends ClosableView {
      */
     private static final long        serialVersionUID = 1L;
     private boolean                  active           = false;
-    private AbstractExtension           extension;
+    private AbstractExtension        extension;
     private ExtensionGuiEnableAction action;
 
     public AddonPanel(AbstractExtension plg) {
@@ -35,10 +41,21 @@ public abstract class AddonPanel extends ClosableView {
 
     }
 
+    /**
+     * If gui is active and available in the main tabbed pane
+     * 
+     * @return
+     */
     public boolean isActive() {
         return active;
     }
 
+    /**
+     * Enables the gui and adds it top the main tabbed pane. use
+     * {@link #toFront()} to make the gui the currently selected Tab afterwards
+     * 
+     * @param b
+     */
     public void setActive(final boolean b) {
         active = b;
         getEnabledAction().setSelected(b);
@@ -57,7 +74,7 @@ public abstract class AddonPanel extends ClosableView {
                 extension.getStore().setGuiEnabled(b);
 
                 if (b) {
-                    SwingGui.getInstance().setContent(AddonPanel.this);
+                    SwingGui.getInstance().setContent(AddonPanel.this, false);
 
                 } else {
                     SwingGui.getInstance().disposeView(AddonPanel.this);
@@ -68,10 +85,22 @@ public abstract class AddonPanel extends ClosableView {
 
     }
 
+    /**
+     * is called if the gui gets closed
+     */
     abstract protected void onDeactivated();
 
+    /**
+     * is called as soon as the gui gets activated and visible in the main
+     * tabbed pane
+     */
     abstract protected void onActivated();
 
+    /**
+     * returns the action which can be used as toggleaction to show/hide the gui
+     * 
+     * @return
+     */
     public synchronized ExtensionGuiEnableAction getEnabledAction() {
         if (action == null) {
             action = new ExtensionGuiEnableAction(extension);
@@ -79,6 +108,12 @@ public abstract class AddonPanel extends ClosableView {
         return action;
     }
 
+    /**
+     * if this returns true, the guis visibility is stored across sessions. This
+     * means that the pannel will be reactivated after JDownloader restart
+     * 
+     * @return
+     */
     public boolean isKeepGuiEnabledStatusAcrossSessions() {
         return true;
     }
@@ -92,6 +127,21 @@ public abstract class AddonPanel extends ClosableView {
 
         }
 
+    }
+
+    /**
+     * Sets the gui active. The panel will become the active tab in the main
+     * tabbed pane
+     */
+    public void toFront() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                SwingGui.getInstance().setContent(AddonPanel.this, true);
+
+            }
+        };
     }
 
 }

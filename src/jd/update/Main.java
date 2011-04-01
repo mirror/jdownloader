@@ -43,10 +43,10 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
+import jd.controlling.JSonWrapper;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;

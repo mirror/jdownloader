@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
+import javax.swing.Icon;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -42,6 +43,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.JXTable;
@@ -126,8 +128,13 @@ public class ToolbarController extends ConfigPanel {
     private static final long              serialVersionUID = -7024581410075950497L;
     private static final String            JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(JDL_PREFIX + "toolbarController.title", "Toolbar Manager");
+    }
+
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     public static String getIconKey() {

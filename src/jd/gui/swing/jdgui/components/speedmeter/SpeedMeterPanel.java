@@ -25,7 +25,7 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.controlling.JSonWrapper;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;

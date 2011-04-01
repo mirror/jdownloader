@@ -1,13 +1,14 @@
 package org.jdownloader.extensions.chat.settings;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.TextArea;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.chat.ChatConfig;
 import org.jdownloader.extensions.chat.ChatExtension;
 import org.jdownloader.extensions.chat.translation.T;
-import org.jdownloader.extensions.settings.Checkbox;
-import org.jdownloader.extensions.settings.ComboBox;
-import org.jdownloader.extensions.settings.TextArea;
-import org.jdownloader.extensions.settings.TextInput;
 
 public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
 

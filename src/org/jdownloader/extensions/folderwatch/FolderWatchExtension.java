@@ -35,6 +35,7 @@ import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.JDGui;
@@ -43,7 +44,6 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
@@ -53,8 +53,8 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.folderwatch.core.FileMonitoring;
@@ -91,7 +91,7 @@ public class FolderWatchExtension extends AbstractExtension implements FileMonit
 
     private FileMonitoring      monitoringThread;
 
-    public ExtensionConfigPanel<FolderWatchExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 
@@ -187,7 +187,7 @@ public class FolderWatchExtension extends AbstractExtension implements FileMonit
             view.setInfoPanel(historyGui.getInfoPanel());
         }
         showGuiAction.setSelected(true);
-        JDGui.getInstance().setContent(view);
+        JDGui.getInstance().setContent(view, true);
     }
 
     private boolean startWatching(boolean param) {

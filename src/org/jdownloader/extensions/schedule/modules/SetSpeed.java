@@ -20,7 +20,7 @@ import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 
 import jd.config.Configuration;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.controlling.JSonWrapper;
 import jd.utils.locale.JDL;
 
 @SchedulerModule

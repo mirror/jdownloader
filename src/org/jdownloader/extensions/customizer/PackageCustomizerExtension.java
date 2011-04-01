@@ -30,8 +30,8 @@ import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.images.IconIO;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -47,7 +47,7 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
 
     private CustomizerView        view;
 
-    public ExtensionConfigPanel<PackageCustomizerExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

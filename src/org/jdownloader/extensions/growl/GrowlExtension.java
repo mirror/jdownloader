@@ -41,8 +41,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -111,7 +111,7 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
 
     private static final String JDL_PREFIX = "jd.plugins.optional.JDGrowlNotification.";
 
-    public ExtensionConfigPanel<GrowlExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

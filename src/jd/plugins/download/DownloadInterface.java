@@ -33,7 +33,7 @@ import jd.controlling.ByteArray;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.controlling.JSonWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;

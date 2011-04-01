@@ -16,12 +16,12 @@ import javax.swing.SwingUtilities;
 
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

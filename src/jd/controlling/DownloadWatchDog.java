@@ -32,7 +32,6 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

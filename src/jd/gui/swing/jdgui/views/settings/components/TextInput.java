@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.settings;
+package jd.gui.swing.jdgui.views.settings.components;
 
 import javax.swing.JTextField;
 
@@ -19,6 +19,10 @@ public class TextInput extends JTextField implements SettingsComponent {
 
     public String getConstraints() {
         return null;
+    }
+
+    public boolean isMultiline() {
+        return false;
     }
 
 }

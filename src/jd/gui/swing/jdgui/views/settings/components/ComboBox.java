@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.settings;
+package jd.gui.swing.jdgui.views.settings.components;
 
 import javax.swing.JComboBox;
 
@@ -10,5 +10,9 @@ public class ComboBox extends JComboBox implements SettingsComponent {
 
     public String getConstraints() {
         return null;
+    }
+
+    public boolean isMultiline() {
+        return false;
     }
 }

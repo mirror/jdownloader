@@ -10,8 +10,8 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -68,7 +68,7 @@ public class CaptchaPushExtension extends AbstractExtension implements CaptchaSo
     }
 
     @Override
-    public ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return configPanel;
     }
 

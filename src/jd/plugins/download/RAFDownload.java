@@ -23,7 +23,7 @@ import java.io.RandomAccessFile;
 
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.controlling.JSonWrapper;
 import jd.http.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;

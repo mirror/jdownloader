@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.config.ConfigContainer;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.controlling.JSonWrapper;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;

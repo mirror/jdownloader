@@ -29,12 +29,12 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
+import jd.controlling.JSonWrapper;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
@@ -44,8 +44,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -60,7 +60,7 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
     private static MenuAction   menuAction            = null;
     private static String[]     MODES_AVAIL           = null;
 
-    public ExtensionConfigPanel<ShutdownExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

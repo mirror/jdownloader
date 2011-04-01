@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.controlling.JSonWrapper;
 
 public class IP {
     private static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";

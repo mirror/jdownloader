@@ -20,16 +20,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+import javax.swing.Icon;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
+import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -47,8 +49,13 @@ public class General extends ConfigPanel {
         return "gui.images.config.gui";
     }
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(General.JDL_PREFIX + "gui.title", "User Interface");
+    }
+
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     private final JSonWrapper subConfig;

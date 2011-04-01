@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -34,6 +35,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -42,6 +44,8 @@ import org.jdownloader.update.RestartController;
 public abstract class ConfigPanel extends SwitchPanel {
 
     private static final long         serialVersionUID = 3383448498625377495L;
+
+    public static final int           ICON_SIZE        = 32;
 
     private ArrayList<GUIConfigEntry> entries          = new ArrayList<GUIConfigEntry>();
 
@@ -213,12 +217,12 @@ public abstract class ConfigPanel extends SwitchPanel {
         }
     }
 
-    public static String getTitle() {
+    public String getTitle() {
         return "No Title set!";
     }
 
-    public static String getIconKey() {
-        return "gui.images.taskpanes.configuration";
+    public Icon getIcon() {
+        return JDTheme.II("gui.images.taskpanes.configuration", 32, 32);
     }
 
 }

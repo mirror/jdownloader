@@ -17,4 +17,5 @@ public class JDT {
     public static String getLanguage() {
         return TranslationFactory.getDesiredLanguage();
     }
+
 }

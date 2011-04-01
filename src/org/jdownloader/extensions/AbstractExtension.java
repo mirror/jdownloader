@@ -24,8 +24,8 @@ import javax.swing.ImageIcon;
 import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.AddonPanel;
 import jd.plugins.PlugionOptionalConfig;
 import jd.utils.JDTheme;
@@ -205,7 +205,7 @@ public abstract class AbstractExtension {
 
     }
 
-    public abstract ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel();
+    public abstract AbstractConfigPanel getConfigPanel();
 
     public abstract boolean hasConfigPanel();
 

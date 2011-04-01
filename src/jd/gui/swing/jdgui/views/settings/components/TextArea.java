@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.settings;
+package jd.gui.swing.jdgui.views.settings.components;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -30,6 +30,10 @@ public class TextArea extends JScrollPane implements SettingsComponent {
 
     public String getText() {
         return txt.getText();
+    }
+
+    public boolean isMultiline() {
+        return true;
     }
 
 }

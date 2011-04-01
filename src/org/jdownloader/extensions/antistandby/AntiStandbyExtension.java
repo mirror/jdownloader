@@ -29,8 +29,8 @@ import jd.nutils.OSDetector;
 import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -50,7 +50,7 @@ public class AntiStandbyExtension extends AbstractExtension {
         return getPluginConfig().getIntegerProperty(CONFIG_MODE, 0);
     }
 
-    public ExtensionConfigPanel<AntiStandbyExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

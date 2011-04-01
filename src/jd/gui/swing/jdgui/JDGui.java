@@ -68,12 +68,10 @@ import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
 import jd.gui.swing.jdgui.views.log.LogView;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
-import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDTheme;
@@ -87,7 +85,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private static final long serialVersionUID = 1048792964102830601L;
-    private static JDGui INSTANCE;
+    private static JDGui      INSTANCE;
 
     /**
      * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits
@@ -108,17 +106,17 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         return JDGui.INSTANCE;
     }
 
-    private JDMenuBar menuBar;
+    private JDMenuBar       menuBar;
 
-    private StatusBar statusBar;
-    private MainTabbedPane mainTabbedPane;
-    private DownloadView downloadView;
+    private StatusBar       statusBar;
+    private MainTabbedPane  mainTabbedPane;
+    private DownloadView    downloadView;
 
     private LinkgrabberView linkgrabberView;
-    private MainToolBar toolBar;
-    private JPanel waitingPane;
+    private MainToolBar     toolBar;
+    private JPanel          waitingPane;
 
-    private boolean exitRequested = false;
+    private boolean         exitRequested = false;
 
     private JDGui() {
         super("");
@@ -407,22 +405,25 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.linkgrabberView);
                     break;
                 case PREMIUMCONFIG:
-                    ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry(Premium.class);
-                    JDGui.this.openSettings();
-                    if (param != null && param instanceof Account) {
-                        final Premium p = (Premium) ConfigurationView.getInstance().getContent();
-                        p.setSelectedAccount((Account) param);
-                    }
-                    break;
+                    // ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry(Premium.class);
+                    // JDGui.this.openSettings();
+                    // if (param != null && param instanceof Account) {
+                    // final Premium p = (Premium)
+                    // ConfigurationView.getInstance().getContent();
+                    // p.setSelectedAccount((Account) param);
+                    // }
+                    // break;
                 case CONFIGPANEL:
-                    if (param instanceof ConfigContainer) {
-                        if (((ConfigContainer) param).getEntries().isEmpty()) { return null; }
-                        JDGui.this.showConfigPanel((ConfigContainer) param);
-                    } else if (param instanceof Class<?>) {
-                        ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry((Class<?>) param);
-                        JDGui.this.openSettings();
-                    }
-                    break;
+                    // if (param instanceof ConfigContainer) {
+                    // if (((ConfigContainer) param).getEntries().isEmpty()) {
+                    // return null; }
+                    // JDGui.this.showConfigPanel((ConfigContainer) param);
+                    // } else if (param instanceof Class<?>) {
+                    // ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry((Class<?>)
+                    // param);
+                    // JDGui.this.openSettings();
+                    // }
+                    // break;
                 default:
                     JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.downloadView);
                 }
@@ -431,12 +432,17 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }.start();
     }
 
+    /**
+     * Adds view to the main tabbedpane if setActive is true, the enw panel will
+     * be selected
+     */
     @Override
-    public void setContent(final View view) {
+    public void setContent(final View view, boolean setActive) {
+
         if (!this.mainTabbedPane.contains(view)) {
             this.mainTabbedPane.addTab(view);
         }
-        this.mainTabbedPane.setSelectedComponent(view);
+        if (setActive) this.mainTabbedPane.setSelectedComponent(view);
     }
 
     @Override

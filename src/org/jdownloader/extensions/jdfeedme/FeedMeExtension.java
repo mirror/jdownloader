@@ -32,8 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.RemoteSupport;
@@ -73,7 +73,7 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
     private static JDFeedMeThread  thread         = null;
     private boolean                running        = false;
 
-    public ExtensionConfigPanel<FeedMeExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 
@@ -138,7 +138,7 @@ public class FeedMeExtension extends AbstractExtension implements RemoteSupport,
             view.setContent(gui);
         }
         showAction.setSelected(true);
-        JDGui.getInstance().setContent(view);
+        JDGui.getInstance().setContent(view, true);
     }
 
     public void setGuiEnable(boolean b) {

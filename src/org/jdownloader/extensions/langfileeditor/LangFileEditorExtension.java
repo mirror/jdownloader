@@ -38,8 +38,8 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -59,7 +59,7 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
     private String               user;
     private String               pass;
 
-    public ExtensionConfigPanel<LangFileEditorExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 
@@ -94,7 +94,7 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
 
                 });
             }
-            JDGui.getInstance().setContent(lfeView);
+            JDGui.getInstance().setContent(lfeView, true);
         } else {
             if (lfeView != null) {
                 lfeView.getLFEGui().saveChanges(false);

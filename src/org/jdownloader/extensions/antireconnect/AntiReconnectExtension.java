@@ -28,8 +28,8 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.txtresource.TranslationFactory;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -50,7 +50,7 @@ public class AntiReconnectExtension extends AbstractExtension {
     private JDAntiReconnectThread            asthread            = null;
     public static JDAntiReconnectTranslation T                   = TranslationFactory.create(JDAntiReconnectTranslation.class);
 
-    public ExtensionConfigPanel<AntiReconnectExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

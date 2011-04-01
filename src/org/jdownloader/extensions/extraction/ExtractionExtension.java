@@ -33,6 +33,7 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
@@ -42,7 +43,6 @@ import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.downloads.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.downloads.DownloadTable;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
@@ -52,8 +52,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.multi.Multi;
@@ -746,7 +746,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
     }
 
     @Override
-    public ExtensionConfigPanel<? extends AbstractExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 }

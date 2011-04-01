@@ -25,15 +25,15 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.plugins.AddonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.interfaces.HttpServer;
@@ -54,7 +54,7 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
     private HttpServer          server;
     private MenuAction          activate;
 
-    public ExtensionConfigPanel<RemoteControlExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

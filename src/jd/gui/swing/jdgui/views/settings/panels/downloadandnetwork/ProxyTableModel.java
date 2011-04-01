@@ -28,7 +28,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> implements Default
     public ProxyTableModel() {
         super("proxyTable");
         tableData = new ArrayList<ProxyInfo>(ProxyController.getInstance().getList());
-        icon = JDTheme.II("gui.images.proxy", 32, 32);
+        icon = JDTheme.II("gui.images.proxy", 20, 20);
         ProxyController.getInstance().getEventSender().addListener(this);
     }
 

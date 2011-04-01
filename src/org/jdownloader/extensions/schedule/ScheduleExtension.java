@@ -36,8 +36,8 @@ import jd.pluginloader.VirtualClass;
 import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -59,7 +59,7 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
 
     public static final Object                  LOCK    = new Object();
 
-    public ExtensionConfigPanel<ScheduleExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 
@@ -181,7 +181,7 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
 
         }
         activateAction.setSelected(true);
-        JDGui.getInstance().setContent(view);
+        JDGui.getInstance().setContent(view, true);
     }
 
     public void setGuiEnable(boolean b) {

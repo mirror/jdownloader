@@ -69,8 +69,8 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
@@ -151,7 +151,7 @@ public class ChatExtension extends AbstractExtension {
     private String                           currentChannel;
     private Thread                           awayChecker;
 
-    public ExtensionConfigPanel<ChatExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return configPanel;
     }
 
@@ -443,6 +443,7 @@ public class ChatExtension extends AbstractExtension {
         this.textArea.addHyperlinkListener(hyp);
         this.right.addHyperlinkListener(hyp);
         this.scrollPane = new JScrollPane(this.textArea);
+        scrollPane.setBorder(null);
         this.tabbedPane = new JTabbedPane(SwingConstants.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
         this.tabbedPane.add("JDChat", this.scrollPane);
         this.tabbedPane.addChangeListener(new ChangeListener() {

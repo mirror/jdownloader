@@ -12,8 +12,8 @@ import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
@@ -38,7 +38,7 @@ public class InfoBarExtension extends AbstractExtension {
 
     private InfoDialog          infoDialog;
 
-    public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

@@ -72,7 +72,7 @@
 
 		</javac>
 
-		<javac srcdir="src" debug="${debug}" excludes="jd/plugins/optional/neembuu/**/*,jd/plugins/optional/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
+		<javac srcdir="src" debug="${debug}" excludes="org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5">
 			<classpath refid="classpath" />
 
 		</javac>
@@ -171,7 +171,7 @@
 				<exclude name="jd/nutils/**" />
 				<exclude name="jd/plugins/hoster/**" />
 				<exclude name="jd/plugins/decrypter/**" />
-				<exclude name="jd/plugins/optional/**" />
+				<exclude name="org/jdownloader/extensions/**" />
 				<exclude name="jd/utils/dev/**" />
 				<exclude name="tests/**" />
 				<exclude name="**/test/**" />
@@ -298,10 +298,10 @@
 
 			<jar jarfile="${dist}/plugins/@{package}.jar" manifest="${dist}/Manifest.MF">
 				<fileset dir="${cls}">
-					<include name="jd/plugins/optional/@{include}" />
+					<include name="org/jdownloader/extensions/@{include}" />
 				</fileset>
 				<fileset dir="src">
-					<include name="jd/plugins/optional/@{include}" />
+					<include name="org/jdownloader/extensions/@{include}" />
 					<exclude name="**/*.java" />
 				</fileset>
 			</jar>
@@ -318,7 +318,7 @@
 		<!-- Build optional addon plugins -->
 		<mkdir dir="${dist}/plugins/webinterface/" />
 		<copy todir="${dist}/plugins/webinterface/">
-			<fileset dir="src/jd/plugins/optional/webinterface/html">
+			<fileset dir="src/org/jdownloader/extensions/webinterface/html">
 				<exclude name="**/*.java" />
 			</fileset>
 		</copy>

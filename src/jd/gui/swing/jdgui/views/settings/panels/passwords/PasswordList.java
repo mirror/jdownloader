@@ -16,23 +16,31 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.passwords;
 
+import javax.swing.Icon;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class PasswordList extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.PasswordList.";
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(JDL_PREFIX + "general.title", "Archive passwords");
     }
 
     public static String getIconKey() {
         return "gui.images.config.passwordlist";
+    }
+
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     private static final long serialVersionUID = 3383448498625377495L;

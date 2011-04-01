@@ -88,11 +88,11 @@ public class TreeEntry {
     }
 
     public TreeEntry(String title, String iconKey) {
-        this(title, JDTheme.II(iconKey, 16, 16), JDTheme.II(iconKey, 20, 20));
+        this(title, JDTheme.II(iconKey, 16, 16), JDTheme.II(iconKey, 32, 32));
     }
 
     public TreeEntry(SwitchPanel panel, String title, String iconKey) {
-        this(panel, title, JDTheme.II(iconKey, 16, 16), JDTheme.II(iconKey, 20, 20));
+        this(panel, title, JDTheme.II(iconKey, 16, 16), JDTheme.II(iconKey, 32, 20));
     }
 
     public void add(final TreeEntry treeEntry) {

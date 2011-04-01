@@ -18,12 +18,8 @@ package jd.gui.swing.jdgui.interfaces;
 
 import java.awt.Component;
 
-import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.border.Border;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
@@ -41,8 +37,7 @@ public abstract class View extends SwitchPanel {
     public static final int   ICON_SIZE        = 16;
 
     private JPanel            rightPane;
-    private JScrollPane       sidebar;
-    private SwitchPanel       sidebarContent;
+
     private SwitchPanel       content;
     private JPanel            topContent;
     private JPanel            bottomContent;
@@ -51,15 +46,7 @@ public abstract class View extends SwitchPanel {
 
     public View() {
         SwingGui.checkEDT();
-        this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
-
-        this.add(this.sidebar = new JScrollPane(), "w 225!,hidemode 2");
-        this.sidebar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        this.sidebar.setVisible(false);
-        final Border insideBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
-        final Border outsideBorder = BorderFactory.createMatteBorder(0, 0, 0, 2, this.getBackground().darker());
-        final Border compoundBorder = BorderFactory.createCompoundBorder(outsideBorder, insideBorder);
-        this.sidebar.setBorder(compoundBorder);
+        this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
         this.add(this.rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));
 
@@ -98,10 +85,6 @@ public abstract class View extends SwitchPanel {
 
     public SwitchPanel getInfoPanel() {
         return this.infoPanel;
-    }
-
-    public SwitchPanel getSidebar() {
-        return this.sidebarContent;
     }
 
     /**
@@ -189,31 +172,6 @@ public abstract class View extends SwitchPanel {
         this.infoPanel = info;
         if (this.infoPanel != null && this.isShown()) {
             this.infoPanel.setShown();
-        }
-    }
-
-    /**
-     * SIDEBAR WEST CONTENT sets the left sidebar
-     * 
-     * @param left
-     */
-    public void setSideBar(final SwitchPanel left) {
-        SwingGui.checkEDT();
-        if (left == this.sidebarContent) { return; }
-        if (left == null) {
-            this.sidebar.setVisible(false);
-        } else {
-            this.sidebar.setVisible(true);
-            this.sidebar.setViewportView(left);
-        }
-
-        if (this.sidebarContent != null && this.isShown()) {
-            this.sidebarContent.setHidden();
-        }
-
-        this.sidebarContent = left;
-        if (this.isShown()) {
-            left.setShown();
         }
     }
 

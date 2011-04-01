@@ -50,8 +50,8 @@ import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.update.JDUpdater;
@@ -128,7 +128,7 @@ public class ExternInterfaceExtension extends AbstractExtension {
     private final static String LOCALONLY = "localonly";
     private static String       jdpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
-    public ExtensionConfigPanel<ExternInterfaceExtension> getConfigPanel() {
+    public AbstractConfigPanel getConfigPanel() {
         return null;
     }
 

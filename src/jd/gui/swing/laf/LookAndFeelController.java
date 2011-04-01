@@ -11,7 +11,6 @@
 //    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 //    GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
 //     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.gui.swing.laf;
@@ -43,14 +42,18 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.OSDetector;
 import jd.utils.JDHexUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
 
 import de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel;
 import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
 
 public class LookAndFeelController {
-    private static final LookAndFeelController INSTANCE = new LookAndFeelController();
+    private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel";
+    private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
 
     /**
      * get the only existing instance of LookAndFeelController. This is a
@@ -63,6 +66,8 @@ public class LookAndFeelController {
     }
 
     private LookAndFeelWrapper[] supportedLookAndFeels;
+    private boolean              defaultLAF;
+    private LAFOptions           lafOptions;
 
     /**
      * Create a new instance of LookAndFeelController. This is a singleton
@@ -207,7 +212,7 @@ public class LookAndFeelController {
         ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Mauve Metallic", "de.javasoft.plaf.synthetica.SyntheticaMauveMetallicLookAndFeel")));
         ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Orange Metallic", "de.javasoft.plaf.synthetica.SyntheticaOrangeMetallicLookAndFeel")));
         ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Silver Moon", "de.javasoft.plaf.synthetica.SyntheticaSilverMoonLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica JDownloader", "de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel")));
+        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica JDownloader", LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL)));
         ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Sky Metallic", "de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel")));
         ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica White Vision", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel")));
         ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Black Eye", "de.javasoft.plaf.synthetica.SyntheticaBlackEyeLookAndFeel")));
@@ -248,7 +253,7 @@ public class LookAndFeelController {
      * @return
      */
     private static LookAndFeelWrapper getDefaultLAFM() {
-        return new LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel");
+        return new LookAndFeelWrapper(LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
     }
 
     /**
@@ -269,7 +274,19 @@ public class LookAndFeelController {
             if (laf.contains("Synthetica")) {
 
                 try {
+                    defaultLAF = laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
+                    URL u = LookAndFeelController.class.getResource(laf + ".json");
+                    if (u != null) {
+                        String str = IO.readURLToString(u);
+                        lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {
+                        }, new LAFOptions());
 
+                    } else {
+                        Log.L.warning("Not LAF Options found: " + laf + ".json");
+
+                        lafOptions = new LAFOptions();
+                        Log.L.info(JSonStorage.toString(lafOptions));
+                    }
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel(laf);
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setExtendedFileChooserEnabled(false);
 
@@ -303,6 +320,14 @@ public class LookAndFeelController {
         } finally {
             System.out.println("LAF init: " + (System.currentTimeMillis() - t));
         }
+    }
+
+    public LAFOptions getLAFOptions() {
+        return lafOptions;
+    }
+
+    public boolean isDefaultLAF() {
+        return defaultLAF;
     }
 
     /**

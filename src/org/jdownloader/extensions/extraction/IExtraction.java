@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import jd.config.ConfigContainer;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.controlling.JSonWrapper;
 import jd.plugins.DownloadLink;
 
 /**

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.controlling.reconnect.ReconnectPluginController;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 
 public class IPController extends ArrayList<IPConnectionState> {
     /**

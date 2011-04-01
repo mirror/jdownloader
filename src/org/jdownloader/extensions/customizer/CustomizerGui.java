@@ -29,13 +29,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 import jd.config.Property;
+import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

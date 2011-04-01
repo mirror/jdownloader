@@ -1,7 +1,8 @@
 package org.jdownloader.extensions.captchapush;
 
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.settings.TextInput;
 
 public class CaptchaPushConfigPanel extends ExtensionConfigPanel<CaptchaPushExtension> {
 

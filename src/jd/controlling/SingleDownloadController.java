@@ -32,7 +32,6 @@ import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.http.BrowserSettings;
 import jd.nutils.Formatter;

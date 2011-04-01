@@ -16,25 +16,25 @@
 
 package jd.gui.swing.jdgui.views.settings.panels;
 
-import java.util.logging.Level;
+import javax.swing.ImageIcon;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
 import jd.config.Configuration;
-import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class ConfigPanelGeneral extends ConfigPanel {
+import org.jdownloader.extensions.AbstractConfigPanel;
+import org.jdownloader.translate.JDT;
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.";
+public class ConfigPanelGeneral extends AbstractConfigPanel {
 
-    public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "general.title", "General");
+    public String getTitle() {
+        return JDT._.gui_settings_general_title();
     }
 
-    public static String getIconKey() {
+    public String getIconKey() {
         return "gui.images.configuration";
     }
 
@@ -42,36 +42,46 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
     private Configuration     configuration;
 
+    private FolderChooser     downloadFolder;
+
+    private Checkbox          subfolder;
+
+    private Checkbox          autoCRC;
+
     public ConfigPanelGeneral() {
         super();
 
         this.configuration = JDUtilities.getConfiguration();
+        downloadFolder = new FolderChooser("downloadfolder");
+        subfolder = new Checkbox();
 
-        init(true);
+        this.addHeader(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.userhome");
+        this.addDescription(JDT._.gui_settings_downloadpath_description());
+        this.add(downloadFolder);
+        this.addPair(JDL.L("gui.config.general.createsubfolders", "Create Subfolder with packagename if possible"), subfolder);
+
+        /* File Writing */
+        autoCRC = new Checkbox();
+        this.addHeader(JDL.L("gui.config.download.write", "File writing"), "gui.images.save");
+        this.addDescription(JDT._.gui_settings_filewriting_description());
+        this.addPair(JDL.L("gui.config.download.crc", "SFV/CRC check when possible"), autoCRC);
+
+        // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc",
+        // "SFV/CRC check when possible")).setDefaultValue(true));
+
     }
 
     @Override
-    protected ConfigContainer setupContainer() {
-        ConfigContainer look = new ConfigContainer();
-
-        look.setGroup(new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), "gui.images.terminal"));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO));
-
-        look.setGroup(new ConfigGroup(JDL.L("gui.config.general.update", "Update"), "gui.images.update"));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JSonWrapper.get("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable2", "Do not inform me about important updates")).setDefaultValue(false));
-
-        // look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART,
-        // JDL.L("gui.config.general.webupdate.auto",
-        // "Webupdate: start automatically!")).setDefaultValue(false).setEnabledCondidtion(conditionEntry,
-        // false));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true));
-
-        return look;
+    public ImageIcon getIcon() {
+        return JDTheme.II(getIconKey(), 32, 32);
     }
 
     @Override
-    protected void saveSpecial() {
-        logger.setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
+    protected void onShow() {
+    }
+
+    @Override
+    protected void onHide() {
     }
 }

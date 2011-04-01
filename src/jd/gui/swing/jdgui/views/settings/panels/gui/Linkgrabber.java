@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
+import javax.swing.Icon;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
@@ -23,18 +25,24 @@ import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class Linkgrabber extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.";
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.linkgrabber.title", "Linkgrabber");
     }
 
     public static String getIconKey() {
         return "gui.images.taskpanes.linkgrabber";
+    }
+
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     private static final long serialVersionUID = 3383448498625377495L;

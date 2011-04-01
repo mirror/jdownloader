@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.panels;
+package jd.controlling;
 
 import java.io.File;
 import java.util.HashMap;
@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.swing.laf.LookAndFeelWrapper;
 

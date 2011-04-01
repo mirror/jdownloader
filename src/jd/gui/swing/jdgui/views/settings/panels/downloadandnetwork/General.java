@@ -16,27 +16,31 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
+import javax.swing.Icon;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class General extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.";
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(JDL_PREFIX + "download.title", "Download & Network");
     }
 
-    public static String getIconKey() {
-        return "gui.images.config.network_local";
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II("gui.images.config.network_local", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     private static final long serialVersionUID = 3383448498625377495L;

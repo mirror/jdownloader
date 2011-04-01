@@ -20,10 +20,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
 public class JDChatPMS {
-    private String Username;
+    private String        Username;
     private StringBuilder sb;
-    private JTextPane TextArea;
-    private JScrollPane scrollPane;
+    private JTextPane     TextArea;
+    private JScrollPane   scrollPane;
 
     public JDChatPMS(String username) {
         super();
@@ -32,6 +32,7 @@ public class JDChatPMS {
         TextArea.setEditable(false);
         TextArea.setContentType("text/html");
         scrollPane = new JScrollPane(TextArea);
+        scrollPane.setBorder(null);
         sb = new StringBuilder();
     }
 

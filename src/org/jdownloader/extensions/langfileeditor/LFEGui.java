@@ -45,6 +45,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
@@ -53,7 +54,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.dialog.TwoTextFieldDialog;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.JDFlags;
 import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;

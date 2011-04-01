@@ -55,8 +55,13 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, Mo
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPlugin.";
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(JDL_PREFIX + "plugins.title", "Plugins");
+    }
+
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     public static String getIconKey() {

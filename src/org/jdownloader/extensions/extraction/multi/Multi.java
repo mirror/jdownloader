@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.controlling.JSonWrapper;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import jd.plugins.DownloadLink;

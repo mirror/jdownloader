@@ -29,12 +29,13 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.DownloadWatchDog;
+import jd.controlling.JSonWrapper;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.components.modules.ModuleStatus;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -60,7 +61,13 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
 
     private void initGUI() {
         setLayout(new MigLayout("ins 0", "[fill,grow,left][fill,grow,right][][shrink,right][shrink,right][shrink,right]", "[22!]"));
-        setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
+        if (LookAndFeelController.getInstance().getLAFOptions().isPaintStatusbarTopBorder()) {
+            setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
+
+        } else {
+            setBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, getBackground().darker()));
+
+        }
 
         JDUtilities.getController().addControlListener(this);
         spMaxSpeed = new JDSpinner(JDL.L("gui.statusbar.speed", "Max. Speed"));

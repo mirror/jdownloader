@@ -16,14 +16,17 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
+import javax.swing.Icon;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -35,12 +38,13 @@ public class Advanced extends ConfigPanel {
 
     private JSonWrapper         subConfig;
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.advanced.title", "Advanced");
     }
 
-    public static String getIconKey() {
-        return "gui.images.config.gui.advanced";
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II("gui.images.config.gui.advanced", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     public Advanced() {

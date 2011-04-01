@@ -23,8 +23,8 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
+import jd.controlling.JSonWrapper;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Screen;
 
 public class GUIUtils {

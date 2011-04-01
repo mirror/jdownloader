@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 
+import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 
 import jd.config.ConfigContainer;
@@ -23,9 +24,10 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -38,8 +40,13 @@ public class Advanced extends ConfigPanel {
         return "gui.images.reconnect_settings";
     }
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(Advanced.JDL_PREFIX + "reconnect.advanced.title", "Advanced");
+    }
+
+    @Override
+    public Icon getIcon() {
+        return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     public Advanced() {

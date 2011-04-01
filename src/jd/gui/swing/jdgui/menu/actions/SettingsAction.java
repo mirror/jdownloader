@@ -36,7 +36,7 @@ public class SettingsAction extends ToolBarAction {
     public void onAction(ActionEvent e) {
         GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_CONFIG_SHOWN, true);
         GUIUtils.getConfig().save();
-        SwingGui.getInstance().setContent(ConfigurationView.getInstance());
+        SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
     }
 
     @Override

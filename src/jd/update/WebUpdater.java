@@ -29,10 +29,10 @@ import java.util.Vector;
 import javax.swing.JProgressBar;
 
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;

@@ -7,10 +7,10 @@ import java.util.logging.Level;
 import javax.swing.JFrame;
 
 import jd.JDInitFlags;
+import jd.controlling.JSonWrapper;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;

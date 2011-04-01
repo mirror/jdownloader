@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -36,6 +37,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -53,12 +55,12 @@ import org.jdownloader.extensions.ExtensionController;
 public class ConfigPanelAddons extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.";
 
-    public static String getTitle() {
+    public String getTitle() {
         return JDL.L(JDL_PREFIX + "addons.title", "Extensions");
     }
 
-    public static String getIconKey() {
-        return "gui.images.config.packagemanager";
+    public ImageIcon getIcon() {
+        return JDTheme.II("gui.images.config.packagemanager", ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
     private class InternalTableModel extends ExtTableModel<AbstractExtensionWrapper> {
@@ -167,7 +169,7 @@ public class ConfigPanelAddons extends ConfigPanel {
 
         ConfigContainer container = new ConfigContainer();
 
-        container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
+        container.setGroup(new ConfigGroup(getTitle(), "gui.images.config.packagemanager"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, panel, "growy, pushy"));
 
         return container;

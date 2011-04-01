@@ -21,8 +21,8 @@ import java.util.Calendar;
 
 import jd.config.Configuration;
 import jd.controlling.JDLogger;
+import jd.controlling.JSonWrapper;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.gui.swing.jdgui.views.settings.panels.JSonWrapper;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;

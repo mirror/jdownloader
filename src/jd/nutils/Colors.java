@@ -223,7 +223,7 @@ public class Colors {
     public static int mixColors(int a, int b) {
         int[] av = Colors.hexToRgb(a);
         int[] bv = Colors.hexToRgb(b);
-        int[] ret = { (int) (((long) av[0] + (long) bv[0]) >>1), (int) (((long) av[1] + (long) bv[1]) >>1), (int) (((long) av[2] + (long) bv[2]) >>1) };
+        int[] ret = { (int) (((long) av[0] + (long) bv[0]) >> 1), (int) (((long) av[1] + (long) bv[1]) >> 1), (int) (((long) av[2] + (long) bv[2]) >> 1) };
         return rgbToHex(ret);
     }
 
@@ -234,7 +234,9 @@ public class Colors {
      * @return RGB Werte
      */
     public static int[] hexToRgb(int value) {
-//        int[] v = { (value / 65536), ((value - value / 65536 * 65536) / 256), (value - value / 65536 * 65536 - (value - value / 65536 * 65536) / 256 * 256), 0 };
+        // int[] v = { (value / 65536), ((value - value / 65536 * 65536) / 256),
+        // (value - value / 65536 * 65536 - (value - value / 65536 * 65536) /
+        // 256 * 256), 0 };
 
         return new int[] { (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF, 0 };
     }
@@ -453,4 +455,5 @@ public class Colors {
         double dif3 = cmyk1[3] - cmyk2[3];
         return Math.sqrt(dif0 * dif0 + dif1 * dif1 + dif2 * dif2 + dif3 * dif3);
     }
+
 }
