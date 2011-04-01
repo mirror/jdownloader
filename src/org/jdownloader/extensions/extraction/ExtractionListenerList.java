@@ -163,7 +163,7 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;
-        case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL:
+        case ExtractionConstants.WRAPPER_FINISHED_SUCCESSFUL:
             File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
             int i = 0;
             for (File f : controller.getArchiv().getExtractedFiles()) {

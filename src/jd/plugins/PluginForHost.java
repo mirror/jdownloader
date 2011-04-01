@@ -723,7 +723,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
 
     /* override this if you want to change a link to use this plugin */
     /* dont forget to change host with setHost */
-    /* must return true if changing was successfull */
+    /* must return true if changing was successful */
     /* if this function needs a browser, it must create an instance on its own */
     public boolean rewriteHost(DownloadLink link) {
         return false;

@@ -325,7 +325,7 @@ public class Main {
     // pa.setDownloaded(false);
     // pa.setInstalledVersion(Integer.parseInt(pa.getStringProperty("version")));
     //
-    // Main.log(log, "Installation successfull: " + zip +
+    // Main.log(log, "Installation successful: " + zip +
     // System.getProperty("line.separator"));
     //
     // System.out.println("Delete " + zip.delete());

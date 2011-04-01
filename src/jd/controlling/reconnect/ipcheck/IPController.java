@@ -176,7 +176,7 @@ public class IPController extends ArrayList<IPConnectionState> {
     public boolean validate() {
         if (!this.invalidated) { return true; }
         if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            // IP check disabled. each validate request is successfull
+            // IP check disabled. each validate request is successful
             return !(this.invalidated = false);
         }
         return !(this.invalidated = !this.changedIP());
@@ -202,7 +202,7 @@ public class IPController extends ArrayList<IPConnectionState> {
         }
         if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             Thread.sleep(waitForIPTime);
-            // IP check disabled. each validate request is successfull
+            // IP check disabled. each validate request is successful
             return !(this.invalidated = false);
         }
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;

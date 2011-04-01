@@ -82,7 +82,7 @@ public class LiveHeaderDetectionWizard {
             try {
                 if (this.txtUser.getText().trim().length() < 2 || this.txtPass.getText().trim().length() < 2) {
 
-                    Dialog.getInstance().showConfirmDialog(0, "Warning", "Username and Password are not set. In most cases, \r\nthese information is required for a successfull reconnection.\r\n\r\nContinue anyway?");
+                    Dialog.getInstance().showConfirmDialog(0, "Warning", "Username and Password are not set. In most cases, \r\nthese information is required for a successful reconnection.\r\n\r\nContinue anyway?");
 
                 }
 

@@ -360,7 +360,7 @@ public class SingleDownloadController extends Thread implements BrowserSettings,
     }
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
-        if ((System.currentTimeMillis() - startTime) > 30000 && SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.successfull.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDL.LF("ballon.download.successfull.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+        if ((System.currentTimeMillis() - startTime) > 30000 && SwingGui.getInstance() != null) Balloon.showIfHidden(JDL.L("ballon.download.successful.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDL.LF("ballon.download.successful.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
         downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
 
         // set all links to disabled that point to the same file location

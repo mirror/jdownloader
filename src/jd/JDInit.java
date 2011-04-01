@@ -184,7 +184,7 @@ public class JDInit {
             if (!old.equals(JDUtilities.getRevision())) {
                 JDInit.LOG.info("Detected that JD just got updated");
 
-                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), null, null, null);
+                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successful"), null, null, null);
                 dialog.setLeftActions(new AbstractAction(JDL.L("system.update.showchangelogv2", "What's new?")) {
 
                     private static final long serialVersionUID = 1L;

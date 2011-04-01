@@ -642,7 +642,7 @@ public class WebUpdater implements Serializable {
                 this.broadcaster.fireEvent(new MessageEvent(this, 0, String.format("Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
                 if (this.updateUpdatefile(file)) {
                     this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, WebUpdater.formatPathReadable(file.toString())));
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, "Successfull"));
+                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, "Successful"));
                 } else {
                     this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
                     this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Failed"));

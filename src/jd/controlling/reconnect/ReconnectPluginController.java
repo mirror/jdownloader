@@ -228,7 +228,7 @@ public class ReconnectPluginController {
         if (this.getActivePlugin() != DummyRouterPlugin.getInstance()) {
 
             try {
-                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.success", "Successfull!\r\nJDownloader performs the reconnect by using '%s'.", this.getActivePlugin().getName()), JDTheme.II("gui.images.ok", 32, 32), null, null);
+                Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, Loc.L("jd.controlling.reconnect.ReconnectPluginController.autoFind.title", "Reconnect Wizard"), Loc.LF("jd.controlling.reconnect.ReconnectPluginController.autoFind.success", "Successful!\r\nJDownloader performs the reconnect by using '%s'.", this.getActivePlugin().getName()), JDTheme.II("gui.images.ok", 32, 32), null, null);
             } catch (DialogClosedException e1) {
                 e1.printStackTrace();
             } catch (DialogCanceledException e1) {

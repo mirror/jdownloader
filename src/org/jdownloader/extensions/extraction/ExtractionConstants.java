@@ -31,7 +31,7 @@ public class ExtractionConstants {
     public static final int    WRAPPER_EXTRACTION_FAILED                       = 12;
     public static final int    WRAPPER_START_EXTRACTION                        = 13;
     public static final int    WRAPPER_PASSWORD_NEEDED_TO_CONTINUE             = 14;
-    public static final int    WRAPPER_FINISHED_SUCCESSFULL                    = 15;
+    public static final int    WRAPPER_FINISHED_SUCCESSFUL                    = 15;
     public static final int    WRAPPER_EXTRACTION_FAILED_CRC                   = 16;
     public static final int    WRAPPER_CRACK_PASSWORD                          = 17;
     public static final int    WRAPPER_PASSWORT_CRACKING                       = 18;

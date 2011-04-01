@@ -120,7 +120,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
         // only listen to system to autosend script
         JDController.getInstance().addControlListener(this);
-        // Send routerscript if there were 3 successfull recoinnects in a row
+        // Send routerscript if there were 3 successful recoinnects in a row
         Reconnecter.getInstance().getStorage().getEventSender().addListener(new DefaultEventListener<StorageEvent<?>>() {
 
             private boolean dosession = true;

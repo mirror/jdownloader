@@ -174,11 +174,11 @@ public class ExtractionController extends Thread implements JDRunnable {
 
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
-                    logger.info("Unpacking successfull for " + archive.getFirstDownloadLink().getFileOutput());
+                    logger.info("Unpacking successful for " + archive.getFirstDownloadLink().getFileOutput());
                     if (!archive.getGotInterrupted() && removeAfterExtraction) {
                         removeArchiveFiles();
                     }
-                    fireEvent(ExtractionConstants.WRAPPER_FINISHED_SUCCESSFULL);
+                    fireEvent(ExtractionConstants.WRAPPER_FINISHED_SUCCESSFUL);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
                     JDLogger.getLogger().warning("A CRC error occurred when unpacking " + archive.getFirstDownloadLink().getFileOutput());

@@ -600,7 +600,7 @@ public class JDController implements ControlListener {
             JDIO.writeLocalFile(file, cipher);
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false)) {
                 // Nur Falls Die Meldung nicht deaktiviert wurde {
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?")), UserIO.RETURN_OK)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("sys.dlc.success", "DLC encryption successful. Run Testdecrypt now?")), UserIO.RETURN_OK)) {
                     loadContainerFile(file);
                     return;
                 }

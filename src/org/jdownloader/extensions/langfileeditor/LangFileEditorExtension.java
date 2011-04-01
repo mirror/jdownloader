@@ -172,7 +172,7 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
                 boolean ret = Subversion.checkLogin(LFEGui.LANGUAGE_SVN, user, pass);
 
                 if (ret) {
-                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.succeeded", "Successfull!"));
+                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.succeeded", "Successful!"));
                     getPluginConfig().setProperty(LFEGui.PROPERTY_SVN_ACCESS_USER, user);
 
                     getPluginConfig().setProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS, pass);

@@ -138,7 +138,7 @@ public abstract class RouterPlugin {
      * @param progressGetter
      * 
      * @return returns the time the reconnect took. returns -1 if the action has
-     *         not been successfull
+     *         not been successful
      * @throws InterruptedException
      */
     public int runDetectionWizard(ReconnectWizardProgress progressGetter) throws InterruptedException {

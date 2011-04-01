@@ -277,7 +277,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                     dialog.setPreferredSize(new Dimension(500, 150));
                     Dialog.getInstance().showDialog(dialog);
 
-                    // test is done here. if we found a successfull
+                    // test is done here. if we found a successful
                     // device, it
                     // is already set
 
@@ -287,7 +287,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                         final ImageIcon icon = JDTheme.II("gui.images.ok", 32, 32);
 
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.title", "Successfull"), JDL.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.message", "JD set up the reconnection settings successfully!\r\n\r\nYour Router is \r\n'%s'", UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
+                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.title", "Successful"), JDL.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.message", "JD set up the reconnection settings successfully!\r\n\r\nYour Router is \r\n'%s'", UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
 
                         d.setPreferredSize(new Dimension(500, 150));
                         Dialog.getInstance().showDialog(d);

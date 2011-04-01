@@ -221,7 +221,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                     if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                         progress.setStatusText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
                     } else {
-                        progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                        progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successful"));
                     }
                     new EDTRunner() {
 
@@ -230,7 +230,7 @@ public class ReconnectPluginConfigGUI extends SwitchPanel implements ActionListe
                             if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                                 ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectunknown", "Reconnect unknown"));
                             } else {
-                                ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                                ReconnectPluginConfigGUI.this.lblStatusMessage.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successful"));
                             }
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setIcon(JDTheme.II("gui.images.selected", 32, 32));
                             ReconnectPluginConfigGUI.this.lblSuccessIcon.setEnabled(true);
