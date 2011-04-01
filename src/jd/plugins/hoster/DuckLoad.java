@@ -24,16 +24,17 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?duckload\\.com/(download/[a-z0-9]+(/.+)?|(divx|play|dl)/[a-zA-Z0-9\\.-]+|[a-zA-Z0-9\\.]+\\.html)" }, flags = { 2 })
 public class DuckLoad extends PluginForHost {
 
-    private static final String UA = RandomUserAgent.generate();
+    private static final String UA        = RandomUserAgent.generate();
+    private boolean             isPremium = true;
 
     public DuckLoad(final PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +55,8 @@ public class DuckLoad extends PluginForHost {
                 }
                 sb.append(d.getDownloadURL());
             }
-            this.br.postPage("http://www.duckload.com/jDownloader/checkOnlineStatus.php", "list=" + Encoding.urlEncode(sb.toString()));
+            String isPremium = "isPremium=" + (this.isPremium == true ? "1" : "0");
+            this.br.postPage("http://www.duckload.com/jDownloader/checkOnlineStatus.php", isPremium + "&list=" + Encoding.urlEncode(sb.toString()));
             final String[] results = Regex.getLines(this.br.toString());
             for (int i = 0; i < results.length; i++) {
                 final String result = results[i];
@@ -123,6 +125,7 @@ public class DuckLoad extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         br.forceDebug(true);
+        isPremium = false;
         this.requestFileInformation(downloadLink);
         final String[] values = this.br.postPage("http://www.duckload.com/jDownloader/getFree.php", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL())).toString().split("\\;\\s*");
         this.trim(values);
@@ -151,6 +154,7 @@ public class DuckLoad extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        isPremium = true;
         this.requestFileInformation(downloadLink);
         this.br.forceDebug(true);
         this.br.setFollowRedirects(true);
