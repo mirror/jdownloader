@@ -37,12 +37,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -57,14 +57,14 @@ public class DirectHTTP extends PluginForHost {
     public static class Recaptcha {
 
         private static final int MAX_TRIES = 10;
-        private final Browser br;
-        private String challenge;
-        private String server;
-        private String captchaAddress;
-        private String id;
-        private Browser rcBr;
-        private Form form;
-        private int tries = 0;
+        private final Browser    br;
+        private String           challenge;
+        private String           server;
+        private String           captchaAddress;
+        private String           id;
+        private Browser          rcBr;
+        private Form             form;
+        private int              tries     = 0;
 
         public Recaptcha(final Browser br) {
             this.br = br;
@@ -190,7 +190,7 @@ public class DirectHTTP extends PluginForHost {
                 } else {
                     this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
                     if (this.id == null || this.id.equals("") || this.id.contains("\\")) {
-                        this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+]+)\"").getMatch(0);
+                        this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     }
                     if (this.id == null || this.id.equals("")) {
                         JDLogger.getLogger().warning("reCaptcha ID couldn't be found...");
@@ -256,14 +256,14 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
-    private static final String JDL_PREFIX = "jd.plugins.hoster.DirectHTTP.";
+    private static final String JDL_PREFIX     = "jd.plugins.hoster.DirectHTTP.";
 
-    public static final String ENDINGS = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bz2|cbr|cbz|ccf|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gsd|gif|gz|iwd|iso|ipsw|java|jar|jpg|jpeg|jdeatme|load|mws|mw|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|rev|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+$)";
-    public static final String NORESUME = "nochunkload";
-    public static final String NOCHUNKS = "nochunk";
-    public static final String FORCE_NORESUME = "forcenochunkload";
-    public static final String FORCE_NOCHUNKS = "forcenochunk";
-    public static final String TRY_ALL = "tryall";
+    public static final String  ENDINGS        = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bz2|cbr|cbz|ccf|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|f4v|gsd|gif|gz|iwd|iso|ipsw|java|jar|jpg|jpeg|jdeatme|load|mws|mw|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|rev|rnd|r\\d+|rpm|run|rsdf|rtf|sh|srt|snd|sfv|swf|tar|tif|tiff|ts|txt|viv|vivo|vob|wav|wmv|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+$)";
+    public static final String  NORESUME       = "nochunkload";
+    public static final String  NOCHUNKS       = "nochunk";
+    public static final String  FORCE_NORESUME = "forcenochunkload";
+    public static final String  FORCE_NOCHUNKS = "forcenochunk";
+    public static final String  TRY_ALL        = "tryall";
 
     /**
      * TODO: Remove with next major-update!
@@ -337,9 +337,9 @@ public class DirectHTTP extends PluginForHost {
         return tmplinks;
     }
 
-    private String contentType = "";
+    private String         contentType       = "";
 
-    private String customFavIconHost = null;
+    private String         customFavIconHost = null;
 
     private static boolean hotFixSynthethica = true;
 

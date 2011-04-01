@@ -27,12 +27,12 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -51,8 +51,8 @@ public class TenUploadCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    private static final String COOKIE_HOST = "http://10upload.com";
-    public boolean nopremium = false;
+    private static final String COOKIE_HOST   = "http://10upload.com";
+    public boolean              nopremium     = false;
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
 
@@ -90,6 +90,7 @@ public class TenUploadCom extends PluginForHost {
             filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) filesize = br.getRegex("<strong>File size:</strong>(.*?)<br />").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -131,14 +132,17 @@ public class TenUploadCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Ticket Time
-        String ttt = new Regex(br.toString(), "countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = new Regex(br.toString(), "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt + " seconds from now on...");
-            int tt = Integer.parseInt(ttt);
-            sleep(tt * 1001, downloadLink);
-        }
+        // Ticket Time (skippable at the moment)
+        // String ttt = new Regex(br.toString(),
+        // "countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        // if (ttt == null) ttt = new Regex(br.toString(),
+        // "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        // if (ttt != null) {
+        // logger.info("Waittime detected, waiting " + ttt +
+        // " seconds from now on...");
+        // int tt = Integer.parseInt(ttt);
+        // sleep(tt * 1001, downloadLink);
+        // }
         String passCode = null;
         boolean password = false;
         boolean recaptcha = false;
@@ -187,14 +191,20 @@ public class TenUploadCom extends PluginForHost {
             String code = getCaptchaCode(captchaurl, downloadLink);
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-        } else if (br.containsHTML("api.recaptcha.net") && !br.containsHTML("api\\.recaptcha\\.net.*?<Textarea.*?<input type=\"submit\" value.*?</Form>")) {
+        } else if (br.containsHTML("api.recaptcha.net") || br.containsHTML("google.com/recaptcha/api/")) {
             // Some hosters also got commentfields with captchas, therefore is
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
+            rc.setForm(DLForm);
+            String reCaptchaId = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            if (reCaptchaId == null) {
+                logger.warning("reCaptcha id is null...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            rc.setId(reCaptchaId);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
