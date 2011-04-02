@@ -22,13 +22,13 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginUtils;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -85,7 +85,7 @@ public class DivShareCom extends PluginForHost {
             String infolink2 = infolink.replaceAll("divshare\\.com/(download|image)", "divshare.com/download/launch");
             br.getPage(infolink2);
             String dllink = br.getRegex("class=\"download_message\">Your download will start momentarily\\. If it doesn\\'t, <a href=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://storagestart\\d+\\.divshare\\.com/launch\\.php\\?f=\\d+\\&s=[a-z0-9]+)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://storagestart\\.divshare\\.com/launch\\.php\\?f=.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
