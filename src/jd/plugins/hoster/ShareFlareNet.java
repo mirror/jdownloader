@@ -87,13 +87,14 @@ public class ShareFlareNet extends PluginForHost {
         if (br.containsHTML("You reached your hourly traffic limit\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
         if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         br.setFollowRedirects(false);
+        String debug = br.toString();
         Form dlform = br.getFormbyProperty("id", "dvifree");
         if (dlform == null) {
             if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
             logger.warning("dlform is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.submitForm(dlform);
+        debug = debug + br.submitForm(dlform);
         Form captchaform = br.getFormbyProperty("id", "dvifree");
         if (captchaform == null) {
             logger.warning("captchaform is null...");
@@ -142,6 +143,7 @@ public class ShareFlareNet extends PluginForHost {
         }
         if (dllink == null) {
             logger.warning("dllink is null");
+            logger.info(debug);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);

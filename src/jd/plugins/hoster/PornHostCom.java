@@ -19,12 +19,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://[\\w\\.]*?GhtjGEuzrjTU\\.com/([0-9]+/[0-9]+\\.html|[0-9]+)" }, flags = { 0 })
 public class PornHostCom extends PluginForHost {
@@ -62,7 +63,7 @@ public class PornHostCom extends PluginForHost {
         }
         String ending = br.getRegex("<label>download this file</label>.*?<a href=\".*?\">.*?(\\..*?)</a>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (ending != null) {
+        if (ending != null && ending.length() > 1) {
             downloadLink.setName(filename.trim() + ending);
         } else {
             downloadLink.setName(filename.trim());
@@ -87,6 +88,7 @@ public class PornHostCom extends PluginForHost {
             if (dllink == null) dllink = br.getRegex("\"(http://file[0-9]+\\.pornhost\\.com/[0-9]+/.*?)\"").getMatch(0);
         }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dllink = Encoding.urlDecode(dllink, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.setAllowFilenameFromURL(true);
         if (dl.getConnection().getContentType().contains("html")) {

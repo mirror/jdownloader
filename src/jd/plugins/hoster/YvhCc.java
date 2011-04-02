@@ -54,7 +54,7 @@ public class YvhCc extends PluginForHost {
         DLLINK = br.getRegex("addParam\\(\\'flashvars\\',\\'file=(.*?)\\&").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\.empflix\\.com/empdl/.*?/.*?key=[a-z0-9]+)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = "http://st1.yvh.cc/" + DLLINK;
+        DLLINK = "http://flp.yvh.cc/" + DLLINK;
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
         Browser br2 = br.cloneBrowser();
