@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2011  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -42,18 +42,15 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "http://(www\\.)?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "omegave.org" }, urls = { "http://(www\\.)?omegave\\.org/[a-z0-9]{12}" }, flags = { 2 })
+public class OmegAveOrg extends PluginForHost {
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public OmegAveOrg(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // XfileSharingProBasic Version 2.1.1.4
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
+    // XfileSharingProBasic Version 2.1.1.4, extended errorhandling
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -62,7 +59,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String              BRBEFORE      = "";
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private static final String COOKIE_HOST   = "http://ForDevsToPlayWith.com";
+    private static final String COOKIE_HOST   = "http://omegave.org";
     public boolean              NOPREMIUM     = false;
 
     @Override
@@ -137,7 +134,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (dllink == null) {
             Form DLForm = br.getFormbyProperty("name", "F1");
             if (DLForm == null) {
-                if (BRBEFORE.contains("Easy way to share your files</Title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                if (BRBEFORE.contains("Easy way to share your files</Title>") || BRBEFORE.contains("value=\"Create Download Link\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             long timeBefore = System.currentTimeMillis();
@@ -228,6 +225,7 @@ public class XFileSharingProBasic extends PluginForHost {
             dllink = getDllink();
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                if (BRBEFORE.contains("upload\\.cgi\\?upload_id") || BRBEFORE.contains("for=\"r_url\">Remote URL upload</label>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 10 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -253,7 +251,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 4;
     }
 
     private void login(Account account) throws Exception {
@@ -265,7 +263,7 @@ public class XFileSharingProBasic extends PluginForHost {
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
         if (!BRBEFORE.contains("Premium-Account expire") && !BRBEFORE.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -302,6 +300,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if (!NOPREMIUM) {
             String expire = new Regex(BRBEFORE, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) expire = new Regex(BRBEFORE, "Premium\\-Account is valid until <b>(.*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -313,6 +312,11 @@ public class XFileSharingProBasic extends PluginForHost {
             ai.setStatus("Premium User");
         } else {
             ai.setStatus("Registered (free) User");
+            try {
+                account.setMaxSimultanDownloads(4);
+            } catch (Exception e) {
+
+            }
         }
         return ai;
     }
@@ -366,7 +370,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 4;
     }
 
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {

@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rappers.in" }, urls = { "http://[\\w\\.]*?rappers\\.in/beat-[0-9]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rappers.in" }, urls = { "http://(www\\.)?rappers\\.in/.*?\\-beat\\-\\d+\\.html" }, flags = { 0 })
 public class RpprsIn extends PluginForDecrypt {
 
     public RpprsIn(PluginWrapper wrapper) {
@@ -39,8 +39,8 @@ public class RpprsIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String id = new Regex(parameter, "beat-(\\d+)\\.html").getMatch(0);
-        br.getPage("http://www.rappers.in/playbeat-" + id + "-1808.xml?&" + new Random().nextInt(10) + "s=undefined");
+        String id = new Regex(parameter, "beat\\-(\\d+)\\.html").getMatch(0);
+        br.getPage("http://www.rappers.in/playbeat-" + id + "-1808.xml?" + new Random().nextInt(10) + "s=undefined");
         String finallink = br.getRegex("<filename>(http.*?)</filename>").getMatch(0);
         if (finallink == null) return null;
         // Errorhandling for invalid links
