@@ -70,7 +70,9 @@ public class FickPornoNet extends PluginForDecrypt {
                 return null;
             }
             DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
-            dl.setFinalFileName(filename + ".flv");
+            String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
+            if (type == null) type = "flv";
+            dl.setFinalFileName(filename + "." + type);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

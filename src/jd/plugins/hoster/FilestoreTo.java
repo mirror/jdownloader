@@ -82,10 +82,8 @@ public class FilestoreTo extends PluginForHost {
         requestFileInformation(downloadLink);
         String sid = br.getRegex("name=\"sid\" value=\"(.*?)\"").getMatch(0);
         String fid = new Regex(downloadLink.getDownloadURL(), "filestore\\.to/\\?d=([A-Z0-9]+)").getMatch(0);
-        // String ajaxFun = "http://filestore.to/ajax/download.php?a=1&f=" + fid
-        // + "&s=" + sid;
-        // br.getPage(ajaxFun);
-        String ajaxDownload = "http://filestore.to/ajax/download.php?d=" + fid + "&s=" + sid;
+        // If plugin breaks most times this link is changed
+        String ajaxDownload = "http://filestore.to/ajax/download.php?f=" + fid + "&s=" + sid;
         br.getPage(ajaxDownload);
         br.setFollowRedirects(true);
         String dllink = br.toString().trim();
