@@ -2,18 +2,23 @@ package org.jdownloader.extensions.captchapush;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 
 public interface CaptchaPushConfig extends ConfigInterface {
 
+    @DefaultStringValue("update1.jdownloader.org")
     String getBrokerHost();
 
-    @DefaultIntValue(19732)
+    @DefaultIntValue(31263)
     int getBrokerPort();
 
+    @DefaultStringValue("Test123")
     String getBrokerTopic();
 
     @DefaultIntValue(120)
     int getTimeout();
+
+    boolean isSelected();
 
     void setBrokerHost(String brokerHost);
 
@@ -22,5 +27,7 @@ public interface CaptchaPushConfig extends ConfigInterface {
     void setBrokerTopic(String brokerTopic);
 
     void setTimeout(int timeout);
+
+    void setSelected(boolean selected);
 
 }

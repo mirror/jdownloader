@@ -88,5 +88,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JDUpdater"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/UpdateClient"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/mqtt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

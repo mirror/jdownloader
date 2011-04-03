@@ -3,8 +3,8 @@ package org.jdownloader.extensions.captchapush;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.controlling.captcha.CaptchaController;
-import jd.controlling.captcha.CaptchaEventListener;
+import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.captcha.CaptchaEventSender;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
@@ -15,11 +15,15 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class CaptchaPushExtension extends AbstractExtension implements CaptchaEventListener {
+public class CaptchaPushExtension extends AbstractExtension {
 
     private CaptchaPushConfig      config;
     private CaptchaPushConfigPanel configPanel;
     private MenuAction             activateAction;
+
+    private CaptchaPushService     service;
+
+    private int                    oldValue;
 
     public CaptchaPushExtension() {
         super("Captcha Push");
@@ -32,33 +36,66 @@ public class CaptchaPushExtension extends AbstractExtension implements CaptchaEv
 
     @Override
     protected void stop() throws StopException {
-        CaptchaEventSender.getInstance().removeListener(this);
+        if (activateAction.isSelected()) stopService();
     }
 
     @Override
     protected void start() throws StartException {
-        CaptchaEventSender.getInstance().addListener(this);
+        if (activateAction.isSelected()) startService();
+    }
+
+    private void startService() {
+        logger.info("Start the MQTT Service ...");
+        logger.info("Broker " + config.getBrokerHost() + ":" + config.getBrokerPort() + " on Topic " + config.getBrokerTopic());
+
+        service.connect();
+
+        CaptchaEventSender.getInstance().addListener(service);
+
+        oldValue = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT);
+        if (oldValue < config.getTimeout()) {
+            SubConfiguration.getConfig("JAC").setProperty(Configuration.JAC_SHOW_TIMEOUT, config.getTimeout());
+            SubConfiguration.getConfig("JAC").save();
+        } else {
+            oldValue = -1;
+        }
+    }
+
+    private void stopService() {
+        logger.info("Stop the MQTT Service ...");
+
+        service.disconnect();
+
+        CaptchaEventSender.getInstance().removeListener(service);
+
+        if (oldValue != -1) {
+            SubConfiguration.getConfig("JAC").setProperty(Configuration.JAC_SHOW_TIMEOUT, oldValue);
+            SubConfiguration.getConfig("JAC").save();
+        }
     }
 
     @Override
     protected void initExtension() throws StartException {
+        config = JsonConfig.create(CaptchaPushConfig.class);
+        configPanel = new CaptchaPushConfigPanel(this, config);
+
         activateAction = new MenuAction("captchapush", 0) {
             private static final long serialVersionUID = 3252473048646596851L;
 
             @Override
             public void onAction(ActionEvent e) {
-                if (activateAction.isSelected()) {
-                    CaptchaEventSender.getInstance().addListener(CaptchaPushExtension.this);
+                if (isSelected()) {
+                    startService();
                 } else {
-                    CaptchaEventSender.getInstance().removeListener(CaptchaPushExtension.this);
+                    stopService();
                 }
+                config.setSelected(isSelected());
             }
         };
         activateAction.setIcon(this.getIconKey());
-        activateAction.setSelected(true);
+        activateAction.setSelected(config.isSelected());
 
-        config = JsonConfig.create(CaptchaPushConfig.class);
-        configPanel = new CaptchaPushConfigPanel(this, config);
+        service = new CaptchaPushService(this);
 
         logger.info("CaptchaPush: OK");
     }
@@ -66,6 +103,10 @@ public class CaptchaPushExtension extends AbstractExtension implements CaptchaEv
     @Override
     public AbstractConfigPanel getConfigPanel() {
         return configPanel;
+    }
+
+    public CaptchaPushConfig getConfig() {
+        return config;
     }
 
     @Override
@@ -100,14 +141,6 @@ public class CaptchaPushExtension extends AbstractExtension implements CaptchaEv
         menu.add(activateAction);
 
         return menu;
-    }
-
-    public void captchaTodo(CaptchaController controller) {
-        /* TODO: Push Captcha to Broker! */
-    }
-
-    public void captchaFinish(CaptchaController controller) {
-        /* TODO: Push Finish to Broker! */
     }
 
 }
