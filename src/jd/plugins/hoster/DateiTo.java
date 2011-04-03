@@ -16,12 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -30,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -46,6 +49,7 @@ public class DateiTo extends PluginForHost {
     private static final String APIPAGE          = "http://api.datei.to/";
     private static final String FILEIDREGEX      = "datei\\.to/datei/(.*?)\\.html";
     private static final String DOWNLOADPOSTPAGE = "http://datei.to/ajax/download.php";
+    private static final String RECAPTCHATEXT    = "(Versuche es erneut, indem du|klickst und das Captcha erneut eingibst|>Deine Eingabe war leider falsch)";
 
     @Override
     public String getAGBLink() {
@@ -131,18 +135,56 @@ public class DateiTo extends PluginForHost {
         if (br.containsHTML("(Aktuell lädst du bereits eine Datei herunter|Als Free-User kannst du nur 1 Datei gleichzeitig downloaden.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.dateito.toomanysimultandownloads", "Too many simultan downloads"), 10 * 60 * 1000l);
         String reconnectWaittime = br.getRegex("Du musst <span style=\"font-weight:bold; color:#DD0000;\">(\\d+) Minuten</span>").getMatch(0);
         if (reconnectWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 60 * 1001l);
-        String postId = br.getRegex("data: \"P=III\\&ID=(.*?)\"").getMatch(0);
-        if (postId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String postData = br.getRegex("data: \"(.*?)\"").getMatch(0);
+        if (postData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int wait = 30;
         String waittimeRegexed = br.getRegex("id=\"CDD\">(\\d+)</span> Sekunden").getMatch(0);
         if (waittimeRegexed != null) wait = Integer.parseInt(waittimeRegexed);
         sleep(wait * 1001l, downloadLink);
-        // Can be skipped
-        // br.postPage(DOWNLOADPOSTPAGE, "P=III&ID=" + postId);
-        br.postPage(DOWNLOADPOSTPAGE, "P=IV&ID=" + postId);
+        br.postPage(DOWNLOADPOSTPAGE, postData);
         if (br.containsHTML("(Bitte versuche es in ein paar Minuten erneut|>Dies kann verschiedene Ursachen haben)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        String iD = br.getRegex("\"\\&ID=(.*?)\"").getMatch(0);
+        if (iD == null) {
+            logger.warning("ID is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        boolean failed = true;
+        for (int i = 0; i <= 5; i++) {
+            if (br.containsHTML("(Da hat etwas nicht geklappt|>Hast du etwa versucht, die Wartezeit zu umgehen)")) {
+                logger.info("Countdown or server-error");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            String reCaptchaId = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+            if (reCaptchaId == null) {
+                logger.warning("reCaptchaId is null...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            Form reCaptchaForm = new Form();
+            reCaptchaForm.setMethod(Form.MethodType.POST);
+            reCaptchaForm.setAction("http://datei.to/ajax/recaptcha.php");
+            reCaptchaForm.put("Doing", "CheckCaptcha");
+            reCaptchaForm.put("ID", iD);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setForm(reCaptchaForm);
+            rc.setId(reCaptchaId);
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.setCode(c);
+            if (!br.containsHTML(RECAPTCHATEXT)) {
+                failed = false;
+                break;
+            }
+            br.postPage(DOWNLOADPOSTPAGE, postData);
+        }
+        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        br.postPage(DOWNLOADPOSTPAGE, "P=IV&ID=" + iD);
         String dllink = br.toString();
-        if (!dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!dllink.startsWith("http") || dllink.length() > 500) {
+            logger.warning("Invalid dllink...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
