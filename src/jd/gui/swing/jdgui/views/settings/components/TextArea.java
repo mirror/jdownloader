@@ -5,7 +5,8 @@ import javax.swing.JTextArea;
 
 public class TextArea extends JScrollPane implements SettingsComponent {
 
-    private JTextArea txt;
+    private static final long serialVersionUID = -5196573922145630308L;
+    private JTextArea         txt;
 
     public TextArea(String txt) {
         super();

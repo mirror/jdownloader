@@ -6,7 +6,6 @@ import jd.controlling.SingleDownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
@@ -14,7 +13,6 @@ public class ProxyColumn extends JDTableColumn {
 
     private static final long serialVersionUID = 2228210790952050305L;
     private DownloadLink      dLink;
-    private FilePackage       fp;
     private JRendererLabel    jlr;
 
     public ProxyColumn(String name, JDTableModel table) {
@@ -46,6 +44,7 @@ public class ProxyColumn extends JDTableColumn {
             if (dlc != null) {
                 jlr.setText("" + dlc.getCurrentProxy());
                 jlr.setToolTipText("" + dlc.getCurrentProxy());
+                return jlr;
             }
         }
         jlr.setText(null);

@@ -18,11 +18,9 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
-import jd.config.Configuration;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
@@ -40,8 +38,6 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
-    private Configuration     configuration;
-
     private FolderChooser     downloadFolder;
 
     private Checkbox          subfolder;
@@ -51,7 +47,6 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
     public ConfigPanelGeneral() {
         super();
 
-        this.configuration = JDUtilities.getConfiguration();
         downloadFolder = new FolderChooser("downloadfolder");
         subfolder = new Checkbox();
 

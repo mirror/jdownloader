@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.views.settings.sidebar;
 
 import java.util.HashMap;
 
+import javax.swing.Icon;
 import javax.swing.JPanel;
 
 import jd.config.ConfigContainer;
@@ -25,13 +26,13 @@ import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
 public class AddonConfig extends ConfigPanel {
 
-    private static final long serialVersionUID = 5561326475681668634L;
+    private static final long                   serialVersionUID = 5561326475681668634L;
 
     private static HashMap<String, AddonConfig> MAP;
 
-    private final ConfigContainer container;
+    private final ConfigContainer               container;
 
-    private final boolean showGroups;
+    private final boolean                       showGroups;
 
     private AddonConfig(ConfigContainer container, boolean showGroups) {
         super();
@@ -54,6 +55,16 @@ public class AddonConfig extends ConfigPanel {
 
     public JPanel getPanel() {
         return panel;
+    }
+
+    @Override
+    public String getTitle() {
+        return container.getEntries().get(0).getGroup().getName();
+    }
+
+    @Override
+    public Icon getIcon() {
+        return container.getEntries().get(0).getGroup().getIcon();
     }
 
     /**

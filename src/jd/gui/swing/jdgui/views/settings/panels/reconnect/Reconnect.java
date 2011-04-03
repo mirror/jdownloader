@@ -31,7 +31,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class Advanced extends ConfigPanel {
+public class Reconnect extends ConfigPanel {
 
     private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";
     private static final long   serialVersionUID = 3383448498625377495L;
@@ -41,7 +41,7 @@ public class Advanced extends ConfigPanel {
     }
 
     public String getTitle() {
-        return JDL.L(Advanced.JDL_PREFIX + "reconnect.advanced.title", "Advanced");
+        return JDL.L(Reconnect.JDL_PREFIX + "reconnect.advanced.title", "Reconnection");
     }
 
     @Override
@@ -49,7 +49,7 @@ public class Advanced extends ConfigPanel {
         return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
-    public Advanced() {
+    public Reconnect() {
         super();
 
         this.init(true);

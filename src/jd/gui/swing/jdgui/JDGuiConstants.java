@@ -22,7 +22,6 @@ public class JDGuiConstants {
     public static final String PARAM_INPUTTIMEOUT                  = "PARAM_INPUTTIMEOUT";
     public static final String PARAM_THEME                         = "THEME2";
     public static final String PARAM_START_DOWNLOADS_AFTER_START   = "START_DOWNLOADS_AFTER_START";
-    public static final String PARAM_SHOW_SPLASH                   = "SHOW_SPLASH";
     public static final String DECORATION_ENABLED                  = "DECORATION_ENABLED2";
     public static final String PARAM_INSERT_NEW_LINKS_AT           = "PARAM_INSERT_NEW_LINKS_AT2";
     public static final String PARAM_START_AFTER_ADDING_LINKS      = "PARAM_START_AFTER_ADDING_LINKS";

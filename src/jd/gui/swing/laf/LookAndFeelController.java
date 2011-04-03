@@ -16,17 +16,9 @@
 package jd.gui.swing.laf;
 
 import java.awt.Font;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -48,7 +40,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
 
-import de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel;
 import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
 
 public class LookAndFeelController {
@@ -74,9 +65,7 @@ public class LookAndFeelController {
      * class. Access the only existing instance by using {@link #getInstance()}.
      */
     private LookAndFeelController() {
-
         this.supportedLookAndFeels = collectSupportedLookAndFeels();
-
     }
 
     public LookAndFeelWrapper[] getSupportedLookAndFeels() {
@@ -94,81 +83,11 @@ public class LookAndFeelController {
     public static final String DEFAULT_PREFIX = "LAF_CFG";
     private static boolean     uiInitated     = false;
 
-    private static void printSyntheticaLAFS() throws IOException, URISyntaxException {
-
-        Package jpkg = SyntheticaBlackMoonLookAndFeel.class.getPackage();
-        final Enumeration<URL> urls = LookAndFeelController.class.getClassLoader().getResources(jpkg.getName().replace('.', '/'));
-        URL url;
-        while (urls.hasMoreElements()) {
-            url = urls.nextElement();
-            if (url.getProtocol().equalsIgnoreCase("jar")) {
-                // jarred addon (JAR)
-                File jarFile = new File(new URL(url.toString().substring(4, url.toString().lastIndexOf('!'))).toURI());
-                final JarInputStream jis = new JarInputStream(new FileInputStream(jarFile));
-                JarEntry e;
-
-                while ((e = jis.getNextJarEntry()) != null) {
-                    try {
-                        Matcher matcher = Pattern.compile(Pattern.quote(jpkg.getName().replace('.', '/')) + "/(\\w+LookAndFeel)\\.class").matcher(e.getName());
-                        // System.out.println(e);
-                        if (matcher.find()) {
-                            String pkg = matcher.group(1);
-                            // String clazzName = matcher.group(2);
-                            System.out.println("ret.add(new LookAndFeelWrapper(new LookAndFeelInfo(\"Name\",\"" + jpkg.getName() + "." + pkg + "\")));");
-                            // Class<?> clazz =
-                            // cl.loadClass(PluginOptional.class.getPackage().getName()
-                            // + "." + pkg + "." + clazzName);
-
-                        }
-                    } catch (Throwable e1) {
-                        Log.exception(e1);
-                    }
-
-                }
-            }
-        }
-    }
-
-    private static void printSubstanceLAFS() throws IOException, URISyntaxException {
-        Package jpkg = org.pushingpixels.substance.api.skin.SubstanceBusinessBlueSteelLookAndFeel.class.getPackage();
-        final Enumeration<URL> urls = LookAndFeelController.class.getClassLoader().getResources(jpkg.getName().replace('.', '/'));
-        URL url;
-        while (urls.hasMoreElements()) {
-            url = urls.nextElement();
-            if (url.getProtocol().equalsIgnoreCase("jar")) {
-                // jarred addon (JAR)
-                File jarFile = new File(new URL(url.toString().substring(4, url.toString().lastIndexOf('!'))).toURI());
-                final JarInputStream jis = new JarInputStream(new FileInputStream(jarFile));
-                JarEntry e;
-
-                while ((e = jis.getNextJarEntry()) != null) {
-                    try {
-                        Matcher matcher = Pattern.compile(Pattern.quote(jpkg.getName().replace('.', '/')) + "/(\\w+LookAndFeel)\\.class").matcher(e.getName());
-                        // System.out.println(e);
-                        if (matcher.find()) {
-                            String pkg = matcher.group(1);
-                            // String clazzName = matcher.group(2);
-                            System.out.println("ret.add(new LookAndFeelWrapper(new LookAndFeelInfo(\"Name\",\"" + jpkg.getName() + "." + pkg + "\")));");
-                            // Class<?> clazz =
-                            // cl.loadClass(PluginOptional.class.getPackage().getName()
-                            // + "." + pkg + "." + clazzName);
-
-                        }
-                    } catch (Throwable e1) {
-                        Log.exception(e1);
-                    }
-
-                }
-            }
-        }
-    }
-
     /**
      * Collects all supported LAFs for the current system
      * 
      * @return
      */
-
     private LookAndFeelWrapper[] collectSupportedLookAndFeels() {
         LookAndFeelInfo[] lafis = UIManager.getInstalledLookAndFeels();
 
@@ -200,7 +119,6 @@ public class LookAndFeelController {
             ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Raven", "org.pushingpixels.substance.api.skin.SubstanceRavenLookAndFeel")));
             ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Sahara", "org.pushingpixels.substance.api.skin.SubstanceSaharaLookAndFeel")));
             ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Twilight", "org.pushingpixels.substance.api.skin.SubstanceTwilightLookAndFeel")));
-
         }
 
         ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Classic", "de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel")));
@@ -300,9 +218,6 @@ public class LookAndFeelController {
                     try {
                         UIManager.setLookAndFeel(laf);
                     } catch (Exception e2) {
-                        GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_SHOW_SPLASH, false);
-                        GUIUtils.getConfig().save();
-                        JDLogger.warning("Disabled Splashscreen cause it cases LAF errors");
                         JDLogger.exception(e2);
                         uiInitated = false;
                         return;

@@ -14,9 +14,11 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 
 public class ConfigurationPanel extends SwitchPanel implements ListSelectionListener {
-    private ConfigSidebar sidebar;
-    private SwitchPanel   panel;
-    private GuiConfig     cfg;
+
+    private static final long serialVersionUID = -6554600142198250742L;
+    private ConfigSidebar     sidebar;
+    private SwitchPanel       panel;
+    private GuiConfig         cfg;
 
     public ConfigurationPanel() {
         super(new MigLayout("ins 0", "[150!,grow,fill][grow,fill]", "[grow,fill]"));
@@ -47,12 +49,10 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     public void setOpaque(boolean isOpaque) {
-        //
     }
 
     @Override
     protected void onShow() {
-
     }
 
     @Override
@@ -60,16 +60,13 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     public void valueChanged(ListSelectionEvent e) {
-
         setContent(sidebar.getSelectedPanel());
 
         // invalidate();
     }
 
     private void setContent(SwitchPanel selectedPanel) {
-
         if (panel != null) {
-
             panel.setHidden();
             panel.setVisible(false);
         }

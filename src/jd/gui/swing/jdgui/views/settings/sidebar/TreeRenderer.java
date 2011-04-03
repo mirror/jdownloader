@@ -47,8 +47,6 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
     private Color             a;
 
-    private Color             b;
-
     private Color             b2;
 
     public TreeRenderer() {
@@ -72,7 +70,6 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         if (c >= 0) {
             b2 = ColorUtils.getAlphaInstance((new Color(c)), 230);
         }
-        b = lbl.getBackground();
         a = ColorUtils.getAlphaInstance(lbl.getForeground(), 4);
         lbl.setOpaque(false);
         setOpaque(false);
@@ -80,7 +77,6 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         lbl.setBackground(null);
 
         // this.setPreferredSize(new Dimension(200, 60));
-
     }
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -95,7 +91,6 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
             setText(te.getTitle());
             setIcon(te.getIcon());
-
         }
 
         if (isSelected) {

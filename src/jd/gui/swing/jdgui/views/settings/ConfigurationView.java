@@ -24,8 +24,6 @@ import javax.swing.JComponent;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -46,25 +44,8 @@ public class ConfigurationView extends ClosableView {
     private ConfigurationView() {
         super();
         setBackground(new Color(0xF5FCFF));
-        getBroadcaster().addListener(new SwitchPanelListener() {
-            @Override
-            public void onPanelEvent(SwitchPanelEvent event) {
-                // if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
-                // GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_CONFIG_SHOWN,
-                // false);
-                // GUIUtils.getConfig().save();
-                // getBroadcaster().removeListener(this);
-                // synchronized (ConfigurationView.this) {
-                // INSTANCE = null;
-                // ConfigSidebar.removeInstance();
-                // GarbageController.requestGC();
-                // }
-                // }
-            }
-        });
         init();
         this.setContent(new ConfigurationPanel());
-
     }
 
     @Override
