@@ -16,8 +16,6 @@ import javax.swing.WindowConstants;
 import jd.gui.swing.jdgui.JDGui;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.controlling.StateEvent;
-import org.appwork.update.exchange.UpdatePackage;
 import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
@@ -41,15 +39,6 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
     private JButton           cancel;
     private JButton           ok2;
     private WindowFlasher     flasher;
-    private UpdatePackage     updates;
-
-    public void onStateUpdate(StateEvent event) {
-    }
-
-    public void onStateChange(StateEvent event) {
-
-        flash();
-    }
 
     public UpdaterGUI() {
         super("Updater");
@@ -209,13 +198,6 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
     }
 
     public void onUpdaterEvent(UpdaterEvent event) {
-
-        switch (event.getType()) {
-
-        // case EXIT_REQUEST:
-        // cancel();
-        // break;
-        }
     }
 
     public void onUpdaterModuleEnd(UpdaterEvent event) {
@@ -293,7 +275,6 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
     // }
 
     public void onStateEnter(UpdaterState state) {
-
     }
 
     public void onStateExit(UpdaterState state) {

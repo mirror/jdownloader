@@ -9,8 +9,8 @@ import org.appwork.utils.Application;
 
 public class PluginClassLoader extends URLClassLoader {
 
-    private ClassLoader parentClassLoader;
-
+    // private ClassLoader parentClassLoader;
+    //
     // @Override
     // protected synchronized Class<?> loadClass(String name, boolean resolve)
     // throws ClassNotFoundException {
@@ -42,7 +42,7 @@ public class PluginClassLoader extends URLClassLoader {
 
     public PluginClassLoader() throws MalformedURLException {
         super(new URL[] { new File(Application.getRoot()).toURI().toURL() }, PluginClassLoader.class.getClassLoader());
-        parentClassLoader = PluginClassLoader.class.getClassLoader();
+        // parentClassLoader = PluginClassLoader.class.getClassLoader();
     }
 
 }

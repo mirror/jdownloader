@@ -17,7 +17,6 @@
 package jd.config;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.controlling.JDLogger;
@@ -25,48 +24,11 @@ import jd.utils.JDUtilities;
 
 public class SubConfiguration extends Property implements Serializable {
 
-    private static final long serialVersionUID = 7803718581558607222L;
-    transient private static boolean SUBCONFIG_LOCK = false;
-    protected String name;
-    transient private ArrayList<ConfigurationListener> listener = null;
-    transient boolean valid = false;
-    transient private static HashMap<String, SubConfiguration> SUB_CONFIGS = new HashMap<String, SubConfiguration>();
-
-    /**
-     * adds a configurationlistener to this subconfig. A configurationlistener
-     * gets informed before, AND after each save process.
-     * 
-     * @param listener
-     */
-    public void addConfigurationListener(final ConfigurationListener listener) {
-        if (this.listener == null) {
-            this.listener = new ArrayList<ConfigurationListener>();
-        }
-        this.removeConfigurationListener(listener);
-        this.listener.add(listener);
-    }
-
-    private void fireEventPreSave() {
-        if (listener != null) {
-            for (final ConfigurationListener listener : this.listener) {
-                listener.onPreSave(this);
-            }
-        }
-    }
-
-    private void fireEventPostSave() {
-        if (listener != null) {
-            for (final ConfigurationListener listener : this.listener) {
-                listener.onPostSave(this);
-            }
-        }
-    }
-
-    public void removeConfigurationListener(final ConfigurationListener listener) {
-        if (listener != null) {
-            this.listener.remove(listener);
-        }
-    }
+    private static final long                                  serialVersionUID = 7803718581558607222L;
+    transient private static boolean                           SUBCONFIG_LOCK   = false;
+    protected String                                           name;
+    transient boolean                                          valid            = false;
+    transient private static HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
 
     public SubConfiguration() {
     }
@@ -88,9 +50,7 @@ public class SubConfiguration extends Property implements Serializable {
 
     public void save() {
         if (valid) {
-            this.fireEventPreSave();
             JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
-            this.fireEventPostSave();
             changes = false;
         }
     }

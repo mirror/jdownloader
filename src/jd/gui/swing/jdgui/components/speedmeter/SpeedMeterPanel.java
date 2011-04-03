@@ -38,10 +38,6 @@ public class SpeedMeterPanel extends Graph {
 
     private Limiter           speedLimiter;
 
-    public static void main(String[] args) {
-
-    }
-
     public SpeedMeterPanel(boolean contextMenu, boolean start) {
         super();
         SpeedMeterConfig config = JsonConfig.create(SpeedMeterConfig.class);
