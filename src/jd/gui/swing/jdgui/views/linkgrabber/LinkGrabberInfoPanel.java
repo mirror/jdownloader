@@ -24,22 +24,22 @@ import javax.swing.JCheckBox;
 
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.nutils.Formatter;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.config.JsonConfig;
+
 public class LinkGrabberInfoPanel extends InfoPanel {
 
-    private static final long serialVersionUID = 2276105693934789404L;
+    private static final long                   serialVersionUID = 2276105693934789404L;
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.info.LinkGrabberInfoPanel.";
-    private LinkGrabberController lgi;
-    protected long links;
-    protected long tot;
-    protected ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>();
+    private static final String                 JDL_PREFIX       = "jd.gui.swing.jdgui.views.info.LinkGrabberInfoPanel.";
+    private LinkGrabberController               lgi;
+    protected long                              links;
+    protected long                              tot;
+    protected ArrayList<LinkGrabberFilePackage> fps              = new ArrayList<LinkGrabberFilePackage>();
 
     public LinkGrabberInfoPanel() {
         super("gui.images.taskpanes.linkgrabber");
@@ -73,14 +73,13 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         topOrBottom.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, topOrBottom.isSelected());
-                GUIUtils.getConfig().save();
+
+                JsonConfig.create(LinkgrabberSettings.class).setAddNewLinksOnTop(topOrBottom.isSelected());
             }
 
         });
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-            topOrBottom.setSelected(true);
-        }
+        topOrBottom.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop());
+
         topOrBottom.setToolTipText(JDL.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
         topOrBottom.setIconTextGap(3);
 
@@ -89,14 +88,12 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         startAfterAdding.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, startAfterAdding.isSelected());
-                GUIUtils.getConfig().save();
+
+                JsonConfig.create(LinkgrabberSettings.class).setAutoDownloadStartAfterAddingEnabled(startAfterAdding.isSelected());
             }
 
         });
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
-            startAfterAdding.setSelected(true);
-        }
+        startAfterAdding.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAutoDownloadStartAfterAddingEnabled());
 
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
         startAfterAdding.setIconTextGap(3);
@@ -106,14 +103,12 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         autoStart.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, autoStart.isSelected());
-                GUIUtils.getConfig().save();
+                JsonConfig.create(LinkgrabberSettings.class).setAutoaddLinksAfterLinkcheck(autoStart.isSelected());
             }
 
         });
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, false)) {
-            autoStart.setSelected(true);
-        }
+        autoStart.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck());
+
         autoStart.setToolTipText(JDL.L("gui.tooltips.linkgrabber.autostart", "if selected, links will get added and started automatically"));
         autoStart.setIconTextGap(3);
 

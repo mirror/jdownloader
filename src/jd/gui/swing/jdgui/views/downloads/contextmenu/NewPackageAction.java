@@ -4,17 +4,18 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberSettings;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.config.JsonConfig;
+
 public class NewPackageAction extends ContextMenuAction {
 
-    private static final long serialVersionUID = -8544759375428602013L;
+    private static final long             serialVersionUID = -8544759375428602013L;
 
     private final ArrayList<DownloadLink> links;
 
@@ -50,7 +51,7 @@ public class NewPackageAction extends ContextMenuAction {
             link.setFilePackage(nfp);
         }
 
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+        if (JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop()) {
             JDUtilities.getDownloadController().addPackageAt(nfp, 0, 0);
         } else {
             JDUtilities.getDownloadController().addPackage(nfp);

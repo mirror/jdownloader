@@ -68,4 +68,20 @@ public interface JDTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Using the hashcheck option, JDownloader to verify your downloads for correctness after download.", "Über den automatischen Hashcheck kann JDownloader die geladenen Dateien automatisch auf Korrektheit überprüfen." })
     String gui_settings_filewriting_description();
 
+    @Default(lngs = { "en", "de" }, values = { "Internet Connection", "Internet Verbindung" })
+    String gui_settings_proxy_title();
+
+    @Default(lngs = { "en", "de" }, values = { "Autostart Downloads?", "Downloads automatisch starten?" })
+    String dialog_rly_forAutoaddAfterLinkcheck_title();
+
+    @Default(lngs = { "en", "de" }, values = { "After adding links, JDownloader lists them in the Linkgrabber View to find file/package information likeOnlinestatus, Filesize, or Filename. Afterwards, Links are sorted into packages. Please choose whether JDownloader shall auto start download to your default downloadfolder (skip linkgabber) \"(%s1)\"afterwards, or keep links in Linkgrabber until you click [continue] manually (Use Linkgrabber). You can change this option at any time in the Linkgrabber View.",
+            "JDownloader verwaltet neue Links in der \"Linksammler\" Ansicht. Hier werden Datei/Paket Informationen wie Onlinestatus, Dateigröße oder Dateiname ermittelt. Anschließend werde die Links in Pakete eingeordnet. Bitte wähle jetzt ob JDownloader nach dieser \"Dateiprüfung\" automatisch mit dem Download in deiner Standarddownloadordner(%s1) beginnt (Linksammler überspringen), oder ob die Links vorerst im Linksammler bleiben sollen, bis du auf [Weiter] klickst.(Linksammler verwenden)" })
+    String dialog_rly_forAutoaddAfterLinkcheck_msg(String downloadfolder);
+
+    @Default(lngs = { "en", "de" }, values = { "Skip Linkgrabber", "Linksammler überspringen" })
+    String dialog_rly_forAutoaddAfterLinkcheck_ok();
+
+    @Default(lngs = { "en", "de" }, values = { "Use Linkgrabber", "Linksammler verwenden" })
+    String dialog_rly_forAutoaddAfterLinkcheck_cancel();
+
 }

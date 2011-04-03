@@ -44,8 +44,6 @@ import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
@@ -63,6 +61,8 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.storage.config.JsonConfig;
 
 public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 
@@ -467,19 +467,18 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             confirmPackage(all.get(i), null, i);
         }
         LGINSTANCE.throwLinksAdded();
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
+        if (JsonConfig.create(LinkgrabberSettings.class).isAutoDownloadStartAfterAddingEnabled()) {
             DownloadWatchDog.getInstance().startDownloads();
         }
     }
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
         if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getDefaultDownloadDirectory())) return;
-        getDownloadDirList().add(new String[] { downloadDirectory, packageName });
-        GUIUtils.getConfig().save();
-    }
+        LinkgrabberSettings storage = JsonConfig.create(LinkgrabberSettings.class);
+        ArrayList<String[]> history = storage.getDownloadFolderHistory();
 
-    private ArrayList<String[]> getDownloadDirList() {
-        return GUIUtils.getConfig().getGenericProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>());
+        history.add(new String[] { downloadDirectory, packageName });
+        storage.setDownloadFolderHistory(history);
     }
 
     public void confirmPackage(LinkGrabberFilePackage fpv2, String host, int index) {
@@ -546,7 +545,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         /* set same add date to package and files */
         fp.setCreated(fpv2.getCreated());
         if (!fpv2.isIgnored()) {
-            if (GUIUtils.getConfig() != null && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+            if (JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop()) {
                 JDUtilities.getDownloadController().addPackageAt(fp, index, 0);
             } else {
                 JDUtilities.getDownloadController().addPackage(fp);

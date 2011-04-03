@@ -20,8 +20,11 @@ import java.io.File;
 
 import javax.swing.JFileChooser;
 
+import jd.DownloadSettings;
 import jd.config.Configuration;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.config.JsonConfig;
 
 /**
  * Ein Wrapper um JFileChooser
@@ -31,7 +34,7 @@ import jd.utils.JDUtilities;
 public class JDFileChooser extends JFileChooser {
 
     private static final long serialVersionUID = 3315263822025280362L;
-    private final String id;
+    private final String      id;
 
     public JDFileChooser() {
         this(null);
@@ -82,7 +85,7 @@ public class JDFileChooser extends JFileChooser {
         final String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + (id == null ? "" : id), null);
         if (lastDir != null) return new File(lastDir);
 
-        final String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+        final String dlDir = JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder();
         if (dlDir != null) return new File(dlDir);
 
         return new File("");

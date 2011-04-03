@@ -29,7 +29,6 @@ import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -58,12 +57,12 @@ public class General extends ConfigPanel {
         return JDTheme.II(getIconKey(), ConfigPanel.ICON_SIZE, ConfigPanel.ICON_SIZE);
     }
 
-    private final JSonWrapper subConfig;
+    private JSonWrapper subConfig;
 
     public General() {
         super();
 
-        this.subConfig = GUIUtils.getConfig();
+        // this.subConfig = GUIUtils.getConfig();
 
         this.init(true);
     }
@@ -101,7 +100,9 @@ public class General extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this.subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600, 5));
         ce.setDefaultValue(20);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.subConfig, JDGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")));
+        // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // this.subConfig, JDGuiConstants.PARAM_SHOW_BALLOON,
+        // JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")));
         ce.setDefaultValue(false);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 

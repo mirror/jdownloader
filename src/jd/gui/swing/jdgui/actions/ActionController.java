@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import jd.DownloadSettings;
 import jd.HostPluginWrapper;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
@@ -55,6 +56,7 @@ import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.StorageValueChangeEvent;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.os.CrossSystem;
 
@@ -383,7 +385,7 @@ public class ActionController {
 
             @Override
             public void onAction(final ActionEvent e) {
-                final String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+                final String dlDir = JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder();
                 if (dlDir == null) { return; }
                 JDUtilities.openExplorer(new File(dlDir));
             }

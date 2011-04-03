@@ -155,6 +155,12 @@ public final class JDTheme {
         return currentTheme == null ? "default" : currentTheme;
     }
 
+    /**
+     * Theme System will be removed
+     * 
+     * @param themeID
+     */
+    @Deprecated
     public static void setTheme(String themeID) {
         File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".icl");
 

@@ -32,21 +32,21 @@ import javax.swing.JWindow;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.jdesktop.swingworker.SwingWorker;
 
 public class Balloon {
-    private static final int MAX = 5;
-    private static ArrayList<JWindow> WINDOWS = null;
-    public static int COUNTDOWN = 10 * 1000;
-    private static String LASTSTRING;
+    private static final int          MAX       = 5;
+    private static ArrayList<JWindow> WINDOWS   = null;
+    public static int                 COUNTDOWN = 10 * 1000;
+    private static String             LASTSTRING;
 
     /**
      * Displays only if mainframe is hidden
@@ -59,7 +59,7 @@ public class Balloon {
     }
 
     public static void show(final String title, final ImageIcon icon, final String message) {
-        if (!GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_BALLOON, true)) return;
+        if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isBalloonNotificationEnabled()) return;
 
         if (LASTSTRING != null && LASTSTRING.equals(title + message)) return;
 
@@ -72,7 +72,7 @@ public class Balloon {
 
                 final JWindow w = new JWindow() {
 
-                    private static final long serialVersionUID = 8925461815465551749L;
+                    private static final long                     serialVersionUID = 8925461815465551749L;
                     private transient SwingWorker<Object, Object> timer;
 
                     @Override

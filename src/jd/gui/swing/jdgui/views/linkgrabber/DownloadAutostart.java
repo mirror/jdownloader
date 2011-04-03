@@ -23,6 +23,7 @@ package jd.gui.swing.jdgui.views.linkgrabber;
 
 import java.util.ArrayList;
 
+import jd.DownloadSettings;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
@@ -30,16 +31,19 @@ import jd.controlling.LinkGrabberControllerListener;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.translate.JDT;
 
 public class DownloadAutostart implements LinkGrabberControllerListener {
 
     private final static DownloadAutostart instance = new DownloadAutostart();
 
-    private ProgressController pc = null;
+    private ProgressController             pc       = null;
 
     public static DownloadAutostart getInstance() {
         return instance;
@@ -51,7 +55,7 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
 
     public synchronized void launchAutostart() {
         if (pc != null) abortAutostart();
-        if (!GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, false)) return;
+        if (!JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck()) return;
         if (LinkGrabberController.getInstance().size() == 0) return;
         pc = new ProgressController(JDL.L("controller.downloadautostart", "Autostart downloads in few seconds..."), null);
         pc.getBroadcaster().addListener(new ProgressControllerListener() {
@@ -60,9 +64,24 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
                     pc.setStatusText("Autostart aborted!");
                 } else if (event.getEventID() == ProgressControllerEvent.FINISHED) {
                     if (!pc.isAbort()) {
+
                         ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+                        boolean asked = false;
                         for (int i = 0; i < fps.size(); i++) {
-                            LinkGrabberPanel.getLinkGrabber().confirmPackage(fps.get(i), null, i);
+                            if (fps.get(i).isComplete()) {
+                                if (!asked) {
+                                    try {
+                                        asked = true;
+                                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDT._.dialog_rly_forAutoaddAfterLinkcheck_title(), JDT._.dialog_rly_forAutoaddAfterLinkcheck_msg(JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder()), null, JDT._.dialog_rly_forAutoaddAfterLinkcheck_ok(), JDT._.dialog_rly_forAutoaddAfterLinkcheck_cancel());
+
+                                    } catch (DialogNoAnswerException e) {
+                                        JsonConfig.create(LinkgrabberSettings.class).setAutoaddLinksAfterLinkcheck(false);
+                                        return;
+                                    }
+                                }
+
+                                LinkGrabberPanel.getLinkGrabber().confirmPackage(fps.get(i), null, i);
+                            }
                         }
                         DownloadWatchDog.getInstance().startDownloads();
                     }

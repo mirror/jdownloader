@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.GarbageController;
 import jd.controlling.JDController;
@@ -36,9 +37,7 @@ import jd.controlling.JSonWrapper;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -57,6 +56,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -85,9 +85,9 @@ public class JDInit {
 
     private static final boolean TEST_INSTALLER = false;
 
-    private static final Logger LOG = JDLogger.getLogger();
+    private static final Logger  LOG            = JDLogger.getLogger();
 
-    private static ClassLoader CL;
+    private static ClassLoader   CL;
 
     /**
      * Returns a classloader to load plugins (class files); Depending on runtype
@@ -320,50 +320,64 @@ public class JDInit {
         if (obj == null) {
             JDInit.LOG.finest("Fresh install?");
         }
-
-        if (!JDInit.TEST_INSTALLER && obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
-            final Configuration configuration = (Configuration) obj;
-            JDUtilities.setConfiguration(configuration);
-            JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
-        } else {
-            final File cfg = JDUtilities.getResourceFile("config");
-            if (!cfg.exists()) {
-                if (!cfg.mkdirs()) {
-                    System.err.println("Could not create configdir");
-                    return null;
-                }
-                if (!cfg.canWrite()) {
-                    System.err.println("Cannot write to configdir");
-                    return null;
-                }
-            }
-            final Configuration configuration = new Configuration();
-            JDUtilities.setConfiguration(configuration);
-            JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
-
-            JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
-
-            LookAndFeelController.getInstance().setUIManager();
-            final Installer inst = new Installer();
-
-            if (!inst.isAborted()) {
-                final File home = JDUtilities.getResourceFile(".");
-                if (!home.canWrite()) {
-                    JDInit.LOG.severe("INSTALL abgebrochen");
-                    UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
-                    JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
-                    System.exit(1);
-                }
+        try {
+            if (!JDInit.TEST_INSTALLER && obj != null && (((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null || JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder() != null)) {
+                final Configuration configuration = (Configuration) obj;
+                JDUtilities.setConfiguration(configuration);
+                JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+                JDTheme.setTheme("default");
             } else {
-                JDInit.LOG.severe("INSTALL abgebrochen2");
-                UserIO.getInstance().requestMessageDialog(JDL.L("installer.abortInstallation", "Error. User aborted installation."));
-                JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
-                System.exit(0);
+                final File cfg = JDUtilities.getResourceFile("config");
+                if (!cfg.exists()) {
+                    if (!cfg.mkdirs()) {
+                        System.err.println("Could not create configdir");
+                        return null;
+                    }
+                    if (!cfg.canWrite()) {
+                        System.err.println("Cannot write to configdir");
+                        return null;
+                    }
+                }
+                final Configuration configuration = new Configuration();
+                JDUtilities.setConfiguration(configuration);
+                JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+                JDTheme.setTheme("default");
+                JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
+
+                LookAndFeelController.getInstance().setUIManager();
+                final Installer inst = new Installer();
+
+                if (!inst.isAborted()) {
+                    final File home = JDUtilities.getResourceFile(".");
+                    if (!home.canWrite()) {
+                        JDInit.LOG.severe("INSTALL abgebrochen");
+                        UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
+                        JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                        System.exit(1);
+                    }
+                } else {
+                    JDInit.LOG.severe("INSTALL abgebrochen2");
+                    UserIO.getInstance().requestMessageDialog(JDL.L("installer.abortInstallation", "Error. User aborted installation."));
+                    JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                    System.exit(0);
+                }
             }
+            return JDUtilities.getConfiguration();
+        } finally {
+
+            convert();
         }
-        return JDUtilities.getConfiguration();
+    }
+
+    private void convert() {
+        String ddl = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+        if (true || JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder() == null) {
+            JsonConfig.create(DownloadSettings.class).setDefaultDownloadFolder(ddl);
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, Property.NULL);
+        }
+        System.out.println("HH");
+        ddl = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+        JDUtilities.getConfiguration().save();
     }
 
     public void loadCPlugins() {

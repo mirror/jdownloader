@@ -24,8 +24,6 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.controlling.JSonWrapper;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -82,7 +80,11 @@ public class General extends ConfigPanel {
         String[] fileExists = new String[] { JDL.L("system.download.triggerfileexists.overwrite", "Overwrite"), JDL.L("system.download.triggerfileexists.skip", "Skip Link"), JDL.L("system.download.triggerfileexists.rename", "Auto rename"), JDL.L("system.download.triggerfileexists.askpackage", "Ask for each package"), JDL.L("system.download.triggerfileexists.ask", "Ask for each file") };
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, Configuration.PARAM_FILE_EXISTS, fileExists, JDL.L("system.download.triggerfileexists", "If the file already exists:")).setDefaultValue(1));
 
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, GUIUtils.getConfig(), JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDL.L("gui.config.download.startdownloadsonstartUp", "Start Downloads on Startup")).setDefaultValue(false));
+        // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // GUIUtils.getConfig(),
+        // JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START,
+        // JDL.L("gui.config.download.startdownloadsonstartUp",
+        // "Start Downloads on Startup")).setDefaultValue(false));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JSonWrapper.get("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in KiB/s"), 10, 500, 10).setDefaultValue(10));
 

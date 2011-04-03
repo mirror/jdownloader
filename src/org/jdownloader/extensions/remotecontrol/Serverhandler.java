@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
+import jd.DownloadSettings;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -43,9 +44,8 @@ import jd.controlling.captcha.CaptchaDialogQueue;
 import jd.controlling.captcha.CaptchaDialogQueueEntry;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberSettings;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -58,6 +58,7 @@ import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
@@ -265,12 +266,12 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.equals("/get/grabber/isset/startafteradding")) {
             // Get whether start after adding option is set or not
 
-            final boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true);
+            final boolean value = JsonConfig.create(LinkgrabberSettings.class).isAutoDownloadStartAfterAddingEnabled();
             response.addContent(value);
         } else if (requestUrl.equals("/get/grabber/isset/autoadding")) {
             // Get whether auto-adding option is set or not
 
-            final boolean value = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true);
+            final boolean value = JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck();
             response.addContent(value);
         } else if (requestUrl.equals("/get/downloads/all/count")) {
             // Get number of all DLs in DL-list
@@ -378,9 +379,7 @@ public class Serverhandler implements Handler {
         } else if (requestUrl.matches("(?is).*/set/downloaddir/general/.+")) {
             final String dir = new Regex(requestUrl, ".*/set/downloaddir/general/(.+)").getMatch(0);
 
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dir);
-            JDUtilities.getConfiguration().save();
-
+            JsonConfig.create(DownloadSettings.class).setDefaultDownloadFolder(dir);
             response.addContent("PARAM_DOWNLOAD_DIRECTORY=" + dir);
         } else if (requestUrl.matches("(?is).*/set/download/limit/[0-9]+")) {
             // Set download limit
@@ -404,11 +403,9 @@ public class Serverhandler implements Handler {
             final boolean value = Boolean.parseBoolean(new Regex(requestUrl, ".*/set/grabber/startafteradding/(true|false)").getMatch(0));
 
             Serverhandler.logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS: " + value);
+            //
 
-            if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
-                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, value);
-                GUIUtils.getConfig().save();
-            }
+            JsonConfig.create(LinkgrabberSettings.class).setAutoDownloadStartAfterAddingEnabled(value);
 
             response.addContent("PARAM_START_AFTER_ADDING_LINKS=" + value);
         } else if (requestUrl.matches("(?is).*/set/grabber/autoadding/(true|false)")) {
@@ -416,10 +413,7 @@ public class Serverhandler implements Handler {
 
             Serverhandler.logger.fine("RemoteControl - Set PARAM_START_AFTER_ADDING_LINKS_AUTO: " + value);
 
-            if (value != GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, true)) {
-                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS_AUTO, value);
-                GUIUtils.getConfig().save();
-            }
+            JsonConfig.create(LinkgrabberSettings.class).setAutoaddLinksAfterLinkcheck(value);
 
             response.addContent("PARAM_START_AFTER_ADDING_LINKS_AUTO=" + value);
         } else if (requestUrl.equals("/action/start")) {

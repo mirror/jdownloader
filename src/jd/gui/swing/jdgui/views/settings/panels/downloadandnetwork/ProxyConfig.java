@@ -15,7 +15,6 @@ import javax.swing.ListSelectionModel;
 import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.table.ExtTable;
@@ -25,10 +24,8 @@ import org.jdownloader.translate.JDT;
 
 public class ProxyConfig extends AbstractConfigPanel {
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.proxyconfig.";
-
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "proxy.title", "ProxySettings");
+        return JDT._.gui_settings_proxy_title();
     }
 
     private static final long   serialVersionUID = -521958649780869375L;
@@ -42,7 +39,7 @@ public class ProxyConfig extends AbstractConfigPanel {
     public ProxyConfig() {
         super();
 
-        this.addHeader(getTitle(), "gui.images.proxy");
+        this.addHeader(getTitle(), IconIO.getImageIcon(ProxyConfig.class.getResource("/org/jdownloader/img/proxy.png"), 32));
         this.addDescription(JDT._.gui_settings_proxy_description());
 
         table = new ExtTable<ProxyInfo>(new ProxyTableModel(), "proxyTable") {

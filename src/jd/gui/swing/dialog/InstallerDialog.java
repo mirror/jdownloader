@@ -16,10 +16,10 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.DownloadSettings;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.components.BrowseFile;
@@ -29,6 +29,7 @@ import jd.utils.locale.JDL;
 import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -43,7 +44,7 @@ public class InstallerDialog extends AbstractDialog<Object> {
         final InstallerDialog dialog = new InstallerDialog(dlFolder);
         try {
             Dialog.getInstance().showDialog(dialog);
-            return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null) != null;
+            return JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder() != null;
 
         } catch (DialogClosedException e) {
             e.printStackTrace();
@@ -168,8 +169,8 @@ public class InstallerDialog extends AbstractDialog<Object> {
         super.setReturnmask(b);
 
         if (b) {
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, this.browseFile.getText());
-            JDUtilities.getConfiguration().save();
+
+            JsonConfig.create(DownloadSettings.class).setDefaultDownloadFolder(browseFile.getText());
         }
     }
 }

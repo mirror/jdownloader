@@ -39,6 +39,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import jd.CPluginWrapper;
 import jd.DecryptPluginWrapper;
+import jd.DownloadSettings;
 import jd.HostPluginWrapper;
 import jd.Main;
 import jd.config.Configuration;
@@ -56,6 +57,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.jdownloader.update.JDUpdater;
@@ -546,7 +548,11 @@ public class JDUtilities {
     }
 
     public static String getDefaultDownloadDirectory() {
-        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
+        String ret = JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder();
+        if (ret == null) {
+            ret = JDUtilities.getResourceFile("downloads").getAbsolutePath();
+        }
+        return ret;
     }
 
 }

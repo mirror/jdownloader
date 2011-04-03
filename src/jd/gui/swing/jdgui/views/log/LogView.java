@@ -19,13 +19,14 @@ package jd.gui.swing.jdgui.views.log;
 import javax.swing.Icon;
 
 import jd.controlling.GarbageController;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.config.JsonConfig;
 
 /**
  * The tab for the log.
@@ -62,8 +63,8 @@ public class LogView extends ClosableView {
             @Override
             public void onPanelEvent(SwitchPanelEvent event) {
                 if (event.getEventID() == SwitchPanelEvent.ON_REMOVE) {
-                    GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, false);
-                    GUIUtils.getConfig().save();
+
+                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setLogViewVisible(false);
                     getBroadcaster().removeListener(this);
                     synchronized (LogView.this) {
                         INSTANCE = null;
@@ -96,8 +97,7 @@ public class LogView extends ClosableView {
 
     @Override
     protected void onShow() {
-        GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, true);
-        GUIUtils.getConfig().save();
+        JsonConfig.create(GraphicalUserInterfaceSettings.class).setLogViewVisible(true);
     }
 
     @Override

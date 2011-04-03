@@ -35,7 +35,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.CustomToolbarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -189,8 +188,10 @@ public class ToolbarController extends ConfigPanel {
             }
         });
 
-        ArrayList<String> list = new ArrayList<String>(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST));
-
+        // ArrayList<String> list = new
+        // ArrayList<String>(GUIUtils.getConfig().getGenericProperty("TOOLBAR",
+        // ToolBar.DEFAULT_LIST));
+        ArrayList<String> list = ToolBar.DEFAULT_LIST;
         boolean resortRequired = false;
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
             ToolBarAction a = it.next();
@@ -333,8 +334,8 @@ public class ToolbarController extends ConfigPanel {
                     while (list.remove(actions.get(row).getID())) {
                     }
                 }
-                GUIUtils.getConfig().setProperty("TOOLBAR", list);
-                GUIUtils.getConfig().save();
+                // GUIUtils.getConfig().setProperty("TOOLBAR", list);
+                // GUIUtils.getConfig().save();
                 list = resort(list);
                 MainToolBar.getInstance().setList(list.toArray(new String[] {}));
             }

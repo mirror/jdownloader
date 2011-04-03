@@ -8,7 +8,6 @@ import jd.gui.swing.jdgui.views.settings.panels.addons.ConfigPanelAddons;
 import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.gui.Advanced;
 import jd.gui.swing.jdgui.views.settings.panels.gui.Linkgrabber;
-import jd.gui.swing.jdgui.views.settings.panels.gui.ToolbarController;
 import jd.gui.swing.jdgui.views.settings.panels.hoster.ConfigPanelPlugin;
 import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordList;
 import jd.gui.swing.jdgui.views.settings.panels.passwords.PasswordListHTAccess;
@@ -32,7 +31,7 @@ public class ConfigListModel extends DefaultListModel {
 
         addElement(new ConfigPanelGeneral());
         addElement(new ProxyConfig());
-        addElement(new ToolbarController());
+        // addElement(new ToolbarController());
         addElement(new Linkgrabber());
         addElement(new Advanced());
         addElement(new ConfigPanelCaptcha());

@@ -23,11 +23,14 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
-import jd.controlling.JSonWrapper;
 import jd.gui.swing.SwingGui;
 import jd.nutils.Screen;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+
 public class GUIUtils {
+    public static final Storage STORAGE = JSonStorage.getPlainStorage("gui.windows.dimensionsandlocations");
 
     public static Dimension getLastDimension(Component child) {
         String key = child.getName();
@@ -35,24 +38,16 @@ public class GUIUtils {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
-        Dimension dim = getConfig().getGenericProperty("DIMENSION_OF_" + key, (Dimension) null);
-        if (dim != null) {
-            if (dim.width > width) dim.width = width;
-            if (dim.height > height) dim.height = height;
+        Integer x = STORAGE.get("dimension." + key + ".width", -1);
+        Integer y = STORAGE.get("dimension." + key + ".height", -1);
+        if (x >= 0 && y > 0) {
+            if (x > width) x = width;
+            if (y > height) y = height;
 
-            return dim;
+            return new Dimension(x, y);
         }
 
         return null;
-    }
-
-    /**
-     * Returns the gui subconfiguration
-     * 
-     * @return
-     */
-    public static JSonWrapper getConfig() {
-        return JSonWrapper.get(JDGuiConstants.CONFIG_PARAMETER);
     }
 
     public static Point getLastLocation(Component parent, Component child) {
@@ -61,8 +56,9 @@ public class GUIUtils {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
-        Integer x = getConfig().getGenericProperty("XLOCATION_OF_" + key, -1);
-        Integer y = getConfig().getGenericProperty("YLOCATION_OF_" + key, -1);
+
+        Integer x = STORAGE.get("location." + key + ".x", -1);
+        Integer y = STORAGE.get("location." + key + ".y", -1);
 
         if (x > 0 && y > 0) {
             Point point = new Point(x, y);
@@ -94,7 +90,7 @@ public class GUIUtils {
             dim.height = Math.min(dim.height, screenSize.height);
             component.setSize(dim);
             if (component instanceof JFrame) {
-                ((JFrame) component).setExtendedState(getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + component.getName(), JFrame.NORMAL));
+                ((JFrame) component).setExtendedState(STORAGE.get("extendedstate." + component.getName(), JFrame.NORMAL));
             }
         } else {
             component.validate();
@@ -107,18 +103,17 @@ public class GUIUtils {
 
         boolean max = false;
         if (child instanceof JFrame) {
-            getConfig().setProperty("MAXIMIZED_STATE_OF_" + key, ((JFrame) child).getExtendedState());
+            STORAGE.put("extendedstate." + key, ((JFrame) child).getExtendedState());
             if (((JFrame) child).getExtendedState() != JFrame.NORMAL) {
                 max = true;
             }
         }
         // do not save dimension if frame is not in normal state
         if (!max) {
-
-            getConfig().setProperty("XDIMENSION_OF_" + key, child.getSize().width);
-            getConfig().setProperty("YDIMENSION_OF_" + key, child.getSize().height);
+            STORAGE.put("dimension." + key + ".x", child.getSize().width);
+            STORAGE.put("dimension." + key + ".y", child.getSize().height);
         }
-        getConfig().save();
+
     }
 
     public static void saveLastLocation(Component parent) {
@@ -127,10 +122,8 @@ public class GUIUtils {
         // do not save location if frame is not in normal state
         if (parent instanceof JFrame && ((JFrame) parent).getExtendedState() != JFrame.NORMAL) return;
         if (parent.isShowing()) {
-            getConfig().setProperty("XLOCATION_OF_" + key, parent.getLocationOnScreen().x);
-            getConfig().setProperty("YLOCATION_OF_" + key, parent.getLocationOnScreen().y);
-
-            getConfig().save();
+            STORAGE.put("location." + key + ".x", parent.getLocationOnScreen().x);
+            STORAGE.put("location." + key + ".y", parent.getLocationOnScreen().y);
         }
     }
 

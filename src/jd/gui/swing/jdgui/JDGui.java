@@ -40,6 +40,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
+import jd.DownloadSettings;
 import jd.config.ConfigContainer;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
@@ -65,6 +66,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.views.downloads.DownloadView;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberSettings;
 import jd.gui.swing.jdgui.views.linkgrabber.LinkgrabberView;
 import jd.gui.swing.jdgui.views.log.LogView;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -79,6 +81,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 
@@ -190,7 +193,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                         }
                     }
                     LinkCheck.getLinkChecker().checkLinksandWait(links);
-                    if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+                    if (JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop()) {
+
                         DownloadController.getInstance().addAllAt(fps, 0);
                     } else {
                         DownloadController.getInstance().addAll(fps);
@@ -224,7 +228,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     return null;
                 }
             }.start();
-            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
+            if (JsonConfig.create(DownloadSettings.class).isAutoStartDownloadsOnStartupEnabled()) {
                 /* autostart downloads when no autoupdate is enabled */
                 JDController.getInstance().autostartDownloadsonStartup();
             }
@@ -238,7 +242,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     JDGui.this.mainTabbedPane.onClose();
                     GUIUtils.saveLastLocation(JDGui.this.getMainFrame());
                     GUIUtils.saveLastDimension(JDGui.this.getMainFrame());
-                    GUIUtils.getConfig().save();
+
                     JDController.releaseDelayExit(id);
                     JDGui.this.getMainFrame().setVisible(false);
                     JDGui.this.getMainFrame().dispose();
@@ -289,15 +293,17 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.mainTabbedPane.addTab(this.downloadView);
         this.mainTabbedPane.addTab(this.linkgrabberView);
 
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_CONFIG_SHOWN, true)) {
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
             this.mainTabbedPane.addTab(ConfigurationView.getInstance());
         }
-        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_LOGVIEW_SHOWN, true)) {
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
             this.mainTabbedPane.addTab(LogView.getInstance());
         }
         this.mainTabbedPane.setSelectedComponent(this.downloadView);
-        this.toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
-
+        // TODO
+        // this.toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR",
+        // ToolBar.DEFAULT_LIST).toArray(new String[] {}));
+        this.toolBar.setList(ToolBar.DEFAULT_LIST.toArray(new String[] {}));
         if (OSDetector.isMac()) {
             // add handling for Command+W for closing window on Mac OS
             KeyStroke closeKey = KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
@@ -341,10 +347,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.mainFrame.setMinimumSize(new Dimension(400, 100));
         this.mainFrame.setLocation(GUIUtils.getLastLocation(null, this.mainFrame));
 
-        if (GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.mainFrame.getName(), Frame.NORMAL) == Frame.ICONIFIED) {
+        if (GUIUtils.STORAGE.get("extendedstate." + mainFrame.getName(), JFrame.NORMAL) == Frame.ICONIFIED) {
             this.mainFrame.setExtendedState(Frame.NORMAL);
         } else {
-            this.mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.mainFrame.getName(), Frame.NORMAL));
+            this.mainFrame.setExtendedState(GUIUtils.STORAGE.get("extendedstate." + mainFrame.getName(), JFrame.NORMAL));
         }
 
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {

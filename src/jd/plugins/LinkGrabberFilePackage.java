@@ -509,4 +509,14 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         return this.customIcon != null && this.customIconText != null;
     }
 
+    /**
+     * Cheks if this package contains splitted archives. if yes, this methods
+     * tries to check whether the archive iscomplete.
+     * 
+     * @return
+     */
+    public boolean isComplete() {
+        return true;
+    }
+
 }

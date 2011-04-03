@@ -26,12 +26,12 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.ClickPositionDialog;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.GraphicalUserInterfaceSettings;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -120,6 +120,7 @@ public class UserIO {
 
     public UserIO() {
         Dialog.getInstance().setCountdownTime(UserIO.getUserCountdownTime());
+
     }
 
     /**
@@ -136,7 +137,7 @@ public class UserIO {
     }
 
     private static int getUserCountdownTime() {
-        return Math.max(2, GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
+        return Math.max(2, JsonConfig.create(GraphicalUserInterfaceSettings.class).getDialogDefaultTimeout());
     }
 
     public static UserIO getInstance() {

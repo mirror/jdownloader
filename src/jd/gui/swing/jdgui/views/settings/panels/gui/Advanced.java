@@ -23,6 +23,7 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -34,7 +35,8 @@ public class Advanced extends ConfigPanel {
 
     private static final String JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.advanced.";
 
-    @Override
+    private JSonWrapper         subConfig;
+
     public String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.advanced.title", "Advanced");
     }
@@ -47,6 +49,8 @@ public class Advanced extends ConfigPanel {
     public Advanced() {
         super();
 
+        // subConfig = GUIUtils.getConfig();
+
         init(true);
     }
 
@@ -54,7 +58,7 @@ public class Advanced extends ConfigPanel {
     protected ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
 
-        ConfigEntry ce;
+        ConfigEntry ce, cond;
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"), "gui.images.container"));
 
