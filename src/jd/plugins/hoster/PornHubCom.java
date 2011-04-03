@@ -84,6 +84,7 @@ public class PornHubCom extends PluginForHost {
         br.postPageRaw(url, postdata);
 
         final byte[] raw = br.toString().getBytes();
+        if (raw == null || raw.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         for (int i = 0; i <= raw.length - 1; i++) {
             if (raw[i] < 32 || raw[i] > 176) {
                 raw[i] = 35; // #
