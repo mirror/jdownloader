@@ -26,12 +26,12 @@ import org.appwork.utils.Regex;
 
 public class Premium4me extends PluginForHost implements JDPremInterface {
 
-    private boolean proxyused = false;
-    private String infostring = null;
-    private PluginForHost plugin = null;
-    private static boolean enabled = false;
+    private boolean                  proxyused    = false;
+    private String                   infostring   = null;
+    private PluginForHost            plugin       = null;
+    private static boolean           enabled      = false;
     private static ArrayList<String> premiumHosts = new ArrayList<String>();
-    private static final Object LOCK = new Object();
+    private static final Object      LOCK         = new Object();
 
     public Premium4me(PluginWrapper wrapper) {
         super(wrapper);
@@ -206,9 +206,15 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
                 acc.setValid(false);
                 return false;
             }
-            br.setFollowRedirects(false);
-            br.getPage("http://premium4.me/getfile.php?link=" + url);
-            if (br.getRedirectLocation() == null) {
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium4.me/getfile.php?link=" + url, true, 1);
+            if (dl.getConnection().getResponseCode() == 404) {
+                /* file offline */
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
                 logger.severe("Premium4Me(Error): " + br.toString());
                 /*
                  * after x retries we disable this host and retry with normal
@@ -224,22 +230,6 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
                 }
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
-            }
-            br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 1);
-            if (dl.getConnection().getResponseCode() == 404) {
-                /* file offline */
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!dl.getConnection().isContentDisposition()) {
-                /* unknown error */
-                br.followConnection();
-                logger.severe("Premium4Me(Error): " + br.toString());
-                synchronized (LOCK) {
-                    premiumHosts.remove(link.getHost());
-                }
-                return false;
             }
 
             link.getTransferStatus().usePremium(true);

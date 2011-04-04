@@ -378,6 +378,7 @@ public class SpeedLoadcx extends PluginForHost implements JDPremInterface {
 
     private boolean resumePossible(String hoster) {
         if (hoster != null) {
+            if (hoster.contains("share-online.biz")) return true;
             if (hoster.contains("megaupload.com")) return true;
             if (hoster.contains("rapidshare.com")) return true;
             if (hoster.contains("oron.com")) return true;
