@@ -221,7 +221,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
                  * resume is supported, chunks make no sense and did not work
                  * for me either
                  */
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, fUrl, true, -10);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, fUrl, true, 1);
                 if (dl.getConnection().isContentDisposition()) {
                     /* contentdisposition, lets download it */
                     dl.startDownload();
