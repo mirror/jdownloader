@@ -19,16 +19,16 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://[//w//.]*?soundcloud\\.com/.*?/[a-z\\-_0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://(www\\.)?soundclouddecrypted\\.com/[a-z\\-_0-9]+/[a-z\\-_0-9]+" }, flags = { 0 })
 public class SoundcloudCom extends PluginForHost {
 
     private String url;
@@ -46,8 +46,11 @@ public class SoundcloudCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
-
         dl.startDownload();
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
     }
 
     @Override
