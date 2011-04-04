@@ -19,21 +19,8 @@ import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 
 public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListener {
-
-    public static void main(String[] args) {
-        JDTheme.setTheme("default");
-        try {
-            Dialog.getInstance().showDialog(new ProxyDialog());
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
-    }
 
     private static final long   serialVersionUID = 8512889396415100663L;
     private static final String JDL_PREFIX       = "jd.gui.swing.dialog.ProxyDialog.";

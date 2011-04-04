@@ -54,10 +54,7 @@ import org.appwork.utils.Regex;
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode {
 
     public static enum AvailableStatus {
-        UNCHECKED,
-        FALSE,
-        UNCHECKABLE,
-        TRUE;
+        UNCHECKED, FALSE, UNCHECKABLE, TRUE;
     }
 
     public static final int                    LINKTYPE_CONTAINER       = 1;
@@ -163,8 +160,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int                                priority                 = 0;
 
     private transient ImageIcon                icon                     = null;
-
-    private String                             partnum2                 = null;
 
     private long                               created                  = -1l;
 

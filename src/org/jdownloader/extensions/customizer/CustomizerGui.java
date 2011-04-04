@@ -51,7 +51,7 @@ public class CustomizerGui extends SwitchPanel {
     private static final String   JDL_PREFIX       = "jd.plugins.optional.customizer.CustomizerGui.";
 
     private final CustomizerTable table;
-    private Property              config;
+    private final Property        config;
 
     public CustomizerInfoPanel getInfoPanel() {
         return new CustomizerInfoPanel();

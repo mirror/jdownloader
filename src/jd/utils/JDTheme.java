@@ -20,20 +20,15 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 import jd.controlling.JDLogger;
 import jd.nutils.JDImage;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Regex;
 
@@ -49,29 +44,13 @@ public final class JDTheme {
 
     private static final String                         THEME_DIR            = "jd/themes/";
 
-    private static String                               currentTheme;
-
     private static HashMap<String, String>              data                 = new HashMap<String, String>();
 
     private static final HashMap<String, BufferedImage> BUFFERED_IMAGE_CACHE = new HashMap<String, BufferedImage>();
 
-    public static ArrayList<String> getThemeIDs() {
-        final File dir = JDUtilities.getResourceFile(THEME_DIR);
-        if (!dir.exists()) return null;
-
-        final File[] files = dir.listFiles(new JDFileFilter(null, ".icl", false));
-        final ArrayList<String> ret = new ArrayList<String>();
-
-        for (File element : files) {
-            ret.add(element.getName().split("\\.")[0]);
-        }
-        return ret;
-    }
-
     public static String getThemeValue(final String key, String def) {
         if (data == null) {
-            LOG.severe("Use setTheme() first!");
-            setTheme("default");
+            setTheme();
         }
 
         if (data.containsKey(key)) return Encoding.UTF8Decode(data.get(key));
@@ -151,24 +130,15 @@ public final class JDTheme {
         return null;
     }
 
-    public static String getTheme() {
-        return currentTheme == null ? "default" : currentTheme;
-    }
-
     /**
      * Theme System will be removed
      * 
      * @param themeID
      */
     @Deprecated
-    public static void setTheme(String themeID) {
-        File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".icl");
+    public static void setTheme() {
+        File file = JDUtilities.getResourceFile(THEME_DIR + "default.icl");
 
-        if (!file.exists()) {
-            LOG.severe("Theme " + themeID + " not installed, switch to default theme");
-            themeID = "default";
-        }
-        currentTheme = themeID;
         data = new HashMap<String, String>();
         String str = JDIO.readFileToString(file);
         String[] lines = Regex.getLines(str);
@@ -207,25 +177,6 @@ public final class JDTheme {
         return JDTheme.getThemeValue(key, def);
     }
 
-    public static void main(String[] args) {
-        JDTheme.setTheme("default");
-
-        JFrame f = new JFrame("Tester");
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setLayout(new MigLayout("ins 0"));
-
-        f.add(new JLabel(getCheckBoxImage("gui.images.logout", true, 32, 32)));
-        f.add(new JLabel(getCheckBoxImage("gui.images.logout", false, 32, 32)));
-
-        f.add(new JLabel(getCheckBoxImage("gui.images.logout", true, 16, 16)));
-        f.add(new JLabel(getCheckBoxImage("gui.images.logout", false, 16, 16)));
-
-        f.pack();
-        f.setResizable(false);
-
-        f.setVisible(true);
-    }
-
     public static ImageIcon getCheckBoxImage(final String string, final boolean selected, final int width, final int height) {
         if (string != null) {
             try {
@@ -249,6 +200,10 @@ public final class JDTheme {
             }
         }
         return null;
+    }
+
+    public static String getTheme() {
+        return "default";
     }
 
 }

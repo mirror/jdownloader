@@ -245,6 +245,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
      * 
      * @param source
      */
+    @SuppressWarnings("unchecked")
     private void actionPerformedOnMenuItem(MenuAction source) {
         JSonWrapper cfg = this.getPluginConfig();
         ArrayList<DownloadLink> dlinks = (ArrayList<DownloadLink>) source.getProperty(MENU_LINKS);
@@ -512,6 +513,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
         archives.remove(archive);
     }
 
+    @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
         DownloadLink link;
         switch (event.getEventID()) {

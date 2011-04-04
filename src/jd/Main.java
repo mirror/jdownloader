@@ -365,7 +365,7 @@ public class Main {
         JDController.getInstance();
 
         if (Main.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
-            JDTheme.setTheme("default");
+            JDTheme.setTheme();
 
             Main.start(args);
         } else {

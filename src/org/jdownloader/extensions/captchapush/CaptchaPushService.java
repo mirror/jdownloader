@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.captchapush;
 
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.controlling.captcha.CaptchaController;
@@ -10,22 +11,23 @@ import com.ibm.mqtt.MqttClient;
 
 public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
 
-    private MqttClient                 mqtt = null;
+    private MqttClient                         mqtt = null;
 
-    private Thread                     reconnectThread;
+    private Thread                             reconnectThread;
 
-    private final CaptchaPushExtension extension;
-    private final Logger               logger;
+    private final CaptchaPushExtension         extension;
+    private final Logger                       logger;
 
-    private final String               clientId;
+    private final String                       clientId;
 
-    private CaptchaController          currentController;
-    private Thread                     waiterThread;
+    private final ArrayList<CaptchaController> currentController;
+    private Thread                             waiterThread;
 
     public CaptchaPushService(CaptchaPushExtension extension) {
         this.extension = extension;
         this.logger = extension.getLogger();
         this.clientId = "JD_" + extension.getConfig().getBrokerTopic();
+        this.currentController = new ArrayList<CaptchaController>();
     }
 
     public boolean isConnected() {
@@ -117,9 +119,6 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
                     if (connect()) break;
                 }
 
-                // TODO
-                // gui.enableButtons(mqtt.isConnected());
-
                 reconnectThread = null;
             }
 
@@ -133,39 +132,49 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
         logger.info("  --> PUBLISH received, TOPIC: " + topic + ", QoS: " + QoS + ", Retained: " + retained);
         logger.info("                        DATA: " + result);
 
-        if (currentController != null) {
-            currentController.setResponse(result);
-            currentController = null;
+        if (!currentController.isEmpty()) {
+            currentController.remove(0).setResponse(result);
+
             waiterThread.interrupt();
+            waiterThread = null;
+
+            if (!currentController.isEmpty()) {
+                try {
+                    startNewPublish(currentController.get(0));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         } else {
             logger.info("Data arrived without active CaptchaController! " + result);
         }
     }
 
-    public void captchaTodo(CaptchaController controller) {
-        /* While there is already a CaptchaPush on the way: Wait 1 second. */
-        while (currentController != null) {
-            try {
-                Thread.sleep(1000);
-            } catch (Exception e) {
-            }
-        }
+    private void startNewPublish(CaptchaController controller) throws Exception {
+        publish(new CaptchaSolveRequest(controller.getHost(), controller.getSuggest(), controller.getExplain(), controller.getCaptchafile()).getByteArray());
 
-        try {
-            publish(new CaptchaSolveRequest(controller.getHost(), controller.getSuggest(), controller.getExplain(), controller.getCaptchafile()).getByteArray());
-            currentController = controller;
-            waiterThread = new Thread(new Runnable() {
+        waiterThread = new Thread(new Runnable() {
 
-                public void run() {
-                    try {
-                        Thread.sleep(extension.getConfig().getTimeout() * 1000);
-                    } catch (Exception e) {
-                    }
-                    currentController = null;
+            public void run() {
+                try {
+                    Thread.sleep(extension.getConfig().getTimeout() * 1000);
+                    currentController.remove(0);
+                    waiterThread = null;
+                } catch (Exception e) {
                 }
+            }
 
-            });
-            waiterThread.start();
+        });
+        waiterThread.start();
+    }
+
+    public void captchaTodo(CaptchaController controller) {
+        try {
+            currentController.add(controller);
+
+            if (currentController.size() == 1) {
+                startNewPublish(controller);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

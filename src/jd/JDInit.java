@@ -325,7 +325,7 @@ public class JDInit {
                 final Configuration configuration = (Configuration) obj;
                 JDUtilities.setConfiguration(configuration);
                 JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-                JDTheme.setTheme("default");
+                JDTheme.setTheme();
             } else {
                 final File cfg = JDUtilities.getResourceFile("config");
                 if (!cfg.exists()) {
@@ -341,7 +341,7 @@ public class JDInit {
                 final Configuration configuration = new Configuration();
                 JDUtilities.setConfiguration(configuration);
                 JDInit.LOG.setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-                JDTheme.setTheme("default");
+                JDTheme.setTheme();
                 JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
 
                 LookAndFeelController.getInstance().setUIManager();
@@ -375,8 +375,6 @@ public class JDInit {
             JsonConfig.create(DownloadSettings.class).setDefaultDownloadFolder(ddl);
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, Property.NULL);
         }
-        System.out.println("HH");
-        ddl = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
         JDUtilities.getConfiguration().save();
     }
 

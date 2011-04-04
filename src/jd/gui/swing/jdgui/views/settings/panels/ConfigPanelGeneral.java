@@ -50,20 +50,16 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         downloadFolder = new FolderChooser("downloadfolder");
         subfolder = new Checkbox();
 
-        this.addHeader(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.userhome");
+        this.addHeader(JDL.L("gui.config.general.downloaddirectory", "Download directory"), JDTheme.II("gui.images.userhome", 32, 32));
         this.addDescription(JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
         this.addPair(JDL.L("gui.config.general.createsubfolders", "Create Subfolder with packagename if possible"), subfolder);
 
         /* File Writing */
         autoCRC = new Checkbox();
-        this.addHeader(JDL.L("gui.config.download.write", "File writing"), "gui.images.save");
+        this.addHeader(JDL.L("gui.config.download.write", "File writing"), JDTheme.II("gui.images.save", 32, 32));
         this.addDescription(JDT._.gui_settings_filewriting_description());
         this.addPair(JDL.L("gui.config.download.crc", "SFV/CRC check when possible"), autoCRC);
-
-        // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc",
-        // "SFV/CRC check when possible")).setDefaultValue(true));
 
     }
 

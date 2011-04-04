@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.views.settings.panels.gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 import javax.swing.Icon;
 
@@ -78,18 +77,6 @@ public class General extends ConfigPanel {
         ce.setDefaultValue(JDL.DEFAULT_LOCALE);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
-        final ArrayList<String> themeIDs = JDTheme.getThemeIDs();
-        if (themeIDs.size() == 0) {
-            this.logger.info("You have to update your resources dir! No Themefiles (*.icl) found!");
-        } else if (themeIDs.size() == 1) {
-            this.subConfig.setProperty(JDGuiConstants.PARAM_THEME, themeIDs.get(0));
-            this.subConfig.save();
-        } else {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this.subConfig, JDGuiConstants.PARAM_THEME, themeIDs.toArray(new String[] {}), JDL.L("gui.config.gui.theme", "Theme")));
-            ce.setDefaultValue("default");
-            ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        }
-
         if (LookAndFeelController.getInstance().getSupportedLookAndFeels().length > 1) {
             look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this.subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getInstance().getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style (Restart required)")));
             ce.setDefaultValue(LookAndFeelController.getInstance().getPlaf());
@@ -97,13 +84,16 @@ public class General extends ConfigPanel {
         }
 
         look.setGroup(new ConfigGroup(JDL.L("gui.config.gui.feel", "Feel"), "gui.images.configuration"));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this.subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600, 5));
-        ce.setDefaultValue(20);
-        ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER,
+        // this.subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT,
+        // JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0,
+        // 600, 5));
+        // ce.setDefaultValue(20);
+        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
         // this.subConfig, JDGuiConstants.PARAM_SHOW_BALLOON,
         // JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")));
-        ce.setDefaultValue(false);
+        // ce.setDefaultValue(false);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
