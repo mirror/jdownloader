@@ -51,7 +51,7 @@ import org.appwork.utils.Regex;
  * 
  * @author astaldo
  */
-public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
+public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, PackageLinkNode {
 
     public static enum AvailableStatus {
         UNCHECKED,
@@ -180,6 +180,23 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * tooltip to be shown
      */
     private String                             customIconText           = null;
+
+    private transient int                      listOrderID              = 0;
+
+    /**
+     * @return the listOrderID
+     */
+    public int getListOrderID() {
+        return listOrderID;
+    }
+
+    /**
+     * @param listOrderID
+     *            the listOrderID to set
+     */
+    public void setListOrderID(int listOrderID) {
+        this.listOrderID = listOrderID;
+    }
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -896,7 +913,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         this.setIcon(null);
 
-        setPart(name);
     }
 
     /*
@@ -909,35 +925,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             setFinalFileName(name);
             this.forcedFileName = finalFileName;
         }
-    }
-
-    /**
-     * sets the part String (e.g. part12 >12)
-     * 
-     * @param name2
-     */
-    private void setPart(String name2) {
-        if (name2 == null) {
-            partnum2 = null;
-            return;
-        }
-        partnum2 = new Regex(name2, ".*\\.pa?r?t?(\\d+)").getMatch(0);
-        if (partnum2 == null) {
-            partnum2 = new Regex(name2, ".*\\.r(\\d+)").getMatch(0);
-        }
-        if (partnum2 == null) {
-            partnum2 = new Regex(name2, ".*\\.(\\d+)").getMatch(0);
-        }
-        if (partnum2 == null) {
-            partnum2 = "";
-        }
-    }
-
-    public String getPart() {
-        if (partnum2 == null) {
-            setPart(getName());
-        }
-        return partnum2;
     }
 
     private void setIcon(ImageIcon icon) {
@@ -975,7 +962,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else {
             finalFileName = null;
         }
-        setPart(finalFileName);
     }
 
     /**

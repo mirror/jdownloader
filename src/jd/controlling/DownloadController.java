@@ -154,6 +154,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
     private void initDownloadLinks() {
         try {
             packages = loadDownloadLinks();
+            reorderListOrderIDS();
         } catch (final Exception e) {
             packages = null;
         }
@@ -311,6 +312,22 @@ public class DownloadController implements FilePackageListener, DownloadControll
             return packages;
         }
         throw new Exception("Linklist incompatible");
+    }
+
+    private void reorderListOrderIDS() {
+        synchronized (packages) {
+            int id = 0;
+            Iterator<FilePackage> it = packages.iterator();
+            while (it.hasNext()) {
+                FilePackage fp = it.next();
+                fp.setListOrderID(id++);
+                Iterator<DownloadLink> it2 = fp.getDownloadLinkList().iterator();
+                while (it2.hasNext()) {
+                    DownloadLink dl = it2.next();
+                    dl.setListOrderID(id++);
+                }
+            }
+        }
     }
 
     public ArrayList<FilePackage> getPackages() {

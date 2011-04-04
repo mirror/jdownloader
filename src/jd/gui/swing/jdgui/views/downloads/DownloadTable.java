@@ -507,17 +507,17 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     }
 
     public void toggleFilePackageExpand(final FilePackage fp, final byte mode) {
-        final boolean cur = !fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
+        final boolean cur = !fp.isExpanded();
         switch (mode) {
         case EXPCOL_CUR:
-            fp.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
+            fp.setExpanded(cur);
             break;
         case EXPCOL_TOP: {
             final ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
             final int indexfp = DownloadController.getInstance().indexOf(fp);
             for (int index = 0; index <= indexfp; index++) {
                 final FilePackage fp2 = packages.get(index);
-                fp2.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
+                fp.setExpanded(cur);
             }
         }
             break;
@@ -526,7 +526,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
             final int indexfp = DownloadController.getInstance().indexOf(fp);
             for (int index = indexfp; index < packages.size(); index++) {
                 final FilePackage fp2 = packages.get(index);
-                fp2.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
+                fp.setExpanded(cur);
             }
         }
             break;

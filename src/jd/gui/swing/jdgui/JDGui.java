@@ -84,6 +84,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.views.DownloadsView;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
@@ -291,6 +292,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.linkgrabberView = LinkgrabberView.getInstance();
 
         this.mainTabbedPane.addTab(this.downloadView);
+        this.mainTabbedPane.addTab(new DownloadsView());
         this.mainTabbedPane.addTab(this.linkgrabberView);
 
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {

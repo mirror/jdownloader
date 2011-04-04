@@ -371,7 +371,7 @@ public class JDInit {
 
     private void convert() {
         String ddl = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
-        if (true || JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder() == null) {
+        if (JsonConfig.create(DownloadSettings.class).getDefaultDownloadFolder() == null) {
             JsonConfig.create(DownloadSettings.class).setDefaultDownloadFolder(ddl);
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, Property.NULL);
         }

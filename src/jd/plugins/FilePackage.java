@@ -27,6 +27,7 @@ import java.util.Set;
 
 import jd.config.Property;
 import jd.controlling.DownloadController;
+import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -47,7 +48,7 @@ class FilePackageBroadcaster extends Eventsender<FilePackageListener, FilePackag
  * 
  * @author JD-Team
  */
-public class FilePackage extends Property implements Serializable, DownloadLinkListener, FilePackageListener {
+public class FilePackage extends Property implements Serializable, DownloadLinkListener, FilePackageListener, PackageLinkNode {
 
     private static final long            serialVersionUID = -8859842964299890820L;
 
@@ -102,6 +103,25 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private long                             finishedDate         = -1l;
 
+    private transient boolean                isExpanded           = false;
+
+    private transient int                    listOrderID          = 0;
+
+    /**
+     * @return the listOrderID
+     */
+    public int getListOrderID() {
+        return listOrderID;
+    }
+
+    /**
+     * @param listOrderID
+     *            the listOrderID to set
+     */
+    public void setListOrderID(int listOrderID) {
+        this.listOrderID = listOrderID;
+    }
+
     public void addListener(FilePackageListener l) {
         broadcaster.addListener(l);
     }
@@ -137,6 +157,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         resetUpdateTimer();
         broadcaster = new FilePackageBroadcaster();
         broadcaster.addListener(this);
+        isExpanded = getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
     }
 
     public long getCreated() {
@@ -556,6 +577,16 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     @Override
     public String toString() {
         return this.getName();
+    }
+
+    public boolean isExpanded() {
+        return isExpanded;
+    }
+
+    public void setExpanded(boolean b) {
+        if (this.isExpanded == b) return;
+        this.isExpanded = b;
+        setProperty(DownloadTable.PROPERTY_EXPANDED, b);
     }
 
     public void updateCollectives() {

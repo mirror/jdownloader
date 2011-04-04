@@ -36,9 +36,9 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 public class StatusLabel extends JPanel {
 
     private static final long serialVersionUID = -378709535509849986L;
-    public static final int ICONCOUNT = 5;
-    private JRendererLabel left;
-    private JRendererLabel[] rights = new JRendererLabel[ICONCOUNT];
+    public static final int   ICONCOUNT        = 5;
+    private JRendererLabel    left;
+    private JRendererLabel[]  rights           = new JRendererLabel[ICONCOUNT];
 
     public StatusLabel() {
         super(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
@@ -48,7 +48,7 @@ public class StatusLabel extends JPanel {
             add(rights[i] = new JRendererLabel(), "dock east");
             rights[i].setOpaque(false);
         }
-        this.setOpaque(true);
+        this.setOpaque(false);
     }
 
     /**

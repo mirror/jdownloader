@@ -47,7 +47,6 @@ import jd.gui.swing.components.Balloon;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
-import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.nutils.jobber.Jobber;
@@ -493,7 +492,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             link.setProperty("forcecheck", Property.NULL);
         }
         FilePackage fp = FilePackage.getInstance();
-        fp.setProperty(DownloadTable.PROPERTY_EXPANDED, fpv2.getBooleanProperty(LinkGrabberController.PROPERTY_EXPANDED, false));
+        fp.setExpanded(fpv2.getBooleanProperty(LinkGrabberController.PROPERTY_EXPANDED, false));
         fp.setName(fpv2.getName());
         fp.setComment(fpv2.getComment());
         fp.setPassword(fpv2.getPassword());

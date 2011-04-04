@@ -29,7 +29,6 @@ import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.components.StatusLabel;
-import jd.gui.swing.jdgui.views.downloads.DownloadTable;
 import jd.nutils.NaturalOrderComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -38,15 +37,15 @@ import jd.utils.JDTheme;
 public class FileColumn extends JDTableColumn {
 
     private static final long serialVersionUID = 2228210790952050305L;
-    private DownloadLink dLink;
-    private Border leftGap;
-    private ImageIcon icon_fp_open;
-    private ImageIcon icon_fp_open_error;
-    private ImageIcon icon_fp_closed;
-    private ImageIcon icon_fp_closed_error;
-    private ImageIcon imgFileFailed;
-    private FilePackage fp;
-    private StatusLabel jlr;
+    private DownloadLink      dLink;
+    private Border            leftGap;
+    private ImageIcon         icon_fp_open;
+    private ImageIcon         icon_fp_open_error;
+    private ImageIcon         icon_fp_closed;
+    private ImageIcon         icon_fp_closed_error;
+    private ImageIcon         imgFileFailed;
+    private FilePackage       fp;
+    private StatusLabel       jlr;
 
     public FileColumn(String name, JDTableModel table) {
         super(name, table);
@@ -75,9 +74,9 @@ public class FileColumn extends JDTableColumn {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
             if (fp.getLinksFailed() > 0) {
-                jlr.setText(fp.getName(), !fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
+                jlr.setText(fp.getName(), !fp.isExpanded() ? icon_fp_closed_error : icon_fp_open_error);
             } else {
-                jlr.setText(fp.getName(), !fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
+                jlr.setText(fp.getName(), !fp.isExpanded() ? icon_fp_closed : icon_fp_open);
             }
             jlr.setIcon(0, null, fp.getFilePackageInfo().getSize(), null);
             jlr.clearIcons(1);

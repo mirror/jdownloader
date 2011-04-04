@@ -23,7 +23,6 @@ import jd.gui.swing.jdgui.views.downloads.columns.DateFinishedColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.FileColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.HosterColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.LoadedColumn;
-import jd.gui.swing.jdgui.views.downloads.columns.PartColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.ProgressColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.ProxyColumn;
 import jd.gui.swing.jdgui.views.downloads.columns.RemainingColumn;
@@ -43,7 +42,6 @@ public class DownloadJTableModel extends JDTableModel {
 
     protected void initColumns() {
         this.addColumn(new FileColumn(JDL.L("gui.treetable.name", "Package / Filename"), this));
-        this.addColumn(new PartColumn(JDL.L("gui.treetable.part", "Part"), this));
         this.addColumn(new SizeColumn(JDL.L("gui.treetable.size", "FileSize"), this));
         this.addColumn(new LoadedColumn(JDL.L("gui.treetable.loaded", "Loaded"), this));
         this.addColumn(new RemainingColumn(JDL.L("gui.treetable.remaining", "Remaining"), this));
@@ -62,7 +60,7 @@ public class DownloadJTableModel extends JDTableModel {
                     list.clear();
                     for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                         list.add(fp);
-                        if (fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false)) {
+                        if (fp.isExpanded()) {
                             for (DownloadLink dl : fp.getDownloadLinkList()) {
                                 list.add(dl);
                             }
