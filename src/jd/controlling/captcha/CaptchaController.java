@@ -18,6 +18,7 @@ package jd.controlling.captcha;
 
 import java.awt.Image;
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 
@@ -31,23 +32,31 @@ import jd.gui.UserIO;
 
 public class CaptchaController {
 
-    private final String            methodname;
-    private final File              captchafile;
-    private final String            explain;
-    private final String            suggest;
-    private final String            host;
+    private static final AtomicInteger captchaCounter = new AtomicInteger(0);
 
-    private final long              initTime;
-    private CaptchaDialogQueueEntry dialog   = null;
-    private String                  response = null;
+    private final int                  id;
+    private final String               methodname;
+    private final File                 captchafile;
+    private final String               explain;
+    private final String               suggest;
+    private final String               host;
+
+    private final long                 initTime;
+    private CaptchaDialogQueueEntry    dialog         = null;
+    private String                     response       = null;
 
     public CaptchaController(long initTime, final String host, final String method, final File file, final String suggest, final String explain) {
+        this.id = captchaCounter.getAndIncrement();
         this.host = host;
         this.methodname = method;
         this.captchafile = file;
         this.explain = explain;
         this.suggest = suggest;
         this.initTime = initTime;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getMethodname() {

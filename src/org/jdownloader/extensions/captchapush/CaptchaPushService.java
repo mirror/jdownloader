@@ -151,7 +151,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
     }
 
     private void startNewPublish(CaptchaController controller) throws Exception {
-        publish(new CaptchaSolveRequest(controller.getHost(), controller.getSuggest(), controller.getExplain(), controller.getCaptchafile()).getByteArray());
+        publish(new CaptchaSolveRequest(controller).toByteArray());
 
         waiterThread = new Thread(new Runnable() {
 
