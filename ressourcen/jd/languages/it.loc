@@ -1080,7 +1080,6 @@ jd.plugins.optional.schedule.wait = aspetta un momento
 jd.plugins.optional.scriptlauncher.jdscriptlauncher = JD avvio script
 jd.plugins.optional.scriptlauncher.jdscriptlauncher.description = (Addon sviluppatori)
 jd.plugins.optional.webinterface.jdwebinterface = Interfaccia web JD
-jd.plugins.optional.webinterface.jdwebinterface.description = 
 jd.plugins.pluginfordecrypt.decrypting = Decripta %s: %s
 jd.plugins.pluginfordecrypt.error.connection = Nessuna connessione internet?
 jd.plugins.pluginfordecrypt.error.outofdate = Decriptatore obsoleto: %s
