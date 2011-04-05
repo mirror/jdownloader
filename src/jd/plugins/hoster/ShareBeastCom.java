@@ -28,12 +28,12 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -80,7 +80,10 @@ public class ShareBeastCom extends PluginForHost {
                         filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
                             filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                            if (filename == null) filename = new Regex(BRBEFORE, "style=\"margin:auto;width:640px;font-size:18px;font-weight:bold;text-align:left;\">(.*?)</span></div>").getMatch(0);
+                            if (filename == null) {
+                                filename = new Regex(BRBEFORE, "style=\"margin:auto;width:640px;font-size:18px;font-weight:bold;text-align:left;\">(.*?)</span></div>").getMatch(0);
+                                if (filename == null) filename = new Regex(BRBEFORE, "<div class=\"innerBlockMid\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
+                            }
                         }
                     }
                 }

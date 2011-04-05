@@ -77,8 +77,12 @@ public class DateiTo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://datei.to/ajax/login.php", "User=" + Encoding.urlEncode(account.getUser()) + "&Pass=" + Encoding.urlEncode(account.getPass()));
-        if (!br.toString().trim().equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://api.datei.to/", "info=jdLogin&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
+        if (br.containsHTML("free")) {
+            logger.info("Free account found->Not support->Disable");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (!br.containsHTML("premium") || br.containsHTML("false")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -90,10 +94,9 @@ public class DateiTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.postPage("http://datei.to/ajax/account.php", "Menue=0&Seite=");
-        String expireDate = br.getRegex("align=\"right\"><strong><span style=\"color:#009900;\">(.*?) Uhr</span>").getMatch(0);
+        String expireDate = br.getRegex("premium;(\\d+)").getMatch(0);
         if (expireDate != null)
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyy | HH:mm", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate));
         else
             ai.setExpired(true);
         ai.setUnlimitedTraffic();
@@ -103,20 +106,9 @@ public class DateiTo extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account);
-        br.getPage(downloadLink.getDownloadURL());
-        // If direct-download is enabled it works like this
-        String dlUrl = br.getRedirectLocation();
-        if (dlUrl == null) {
-            String postData = br.getRegex("url: \"ajax/download\\.php\", data: \"(.*?)\"").getMatch(0);
-            if (postData == null) {
-                logger.warning("Couldn't find postData!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.postPage("http://datei.to/ajax/download.php", postData);
-            dlUrl = br.toString();
-        }
-        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://api.datei.to/", "info=jdPremDown&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&datei=" + new Regex(downloadLink.getDownloadURL(), "datei\\.to/datei/(.*?)\\.html").getMatch(0));
+        String dlUrl = br.toString();
+        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
         br.setFollowRedirects(true);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
@@ -148,37 +140,39 @@ public class DateiTo extends PluginForHost {
             logger.warning("ID is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        boolean failed = true;
-        for (int i = 0; i <= 5; i++) {
-            if (br.containsHTML("(Da hat etwas nicht geklappt|>Hast du etwa versucht, die Wartezeit zu umgehen)")) {
-                logger.info("Countdown or server-error");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+        if (!br.containsHTML("P=III")) {
+            boolean failed = true;
+            for (int i = 0; i <= 5; i++) {
+                if (br.containsHTML("(Da hat etwas nicht geklappt|>Hast du etwa versucht, die Wartezeit zu umgehen)")) {
+                    logger.info("Countdown or server-error");
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                String reCaptchaId = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+                if (reCaptchaId == null) {
+                    logger.warning("reCaptchaId is null...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                Form reCaptchaForm = new Form();
+                reCaptchaForm.setMethod(Form.MethodType.POST);
+                reCaptchaForm.setAction("http://datei.to/ajax/recaptcha.php");
+                reCaptchaForm.put("Doing", "CheckCaptcha");
+                reCaptchaForm.put("ID", iD);
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setForm(reCaptchaForm);
+                rc.setId(reCaptchaId);
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
+                if (!br.containsHTML(RECAPTCHATEXT)) {
+                    failed = false;
+                    break;
+                }
+                br.postPage(DOWNLOADPOSTPAGE, postData);
             }
-            String reCaptchaId = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
-            if (reCaptchaId == null) {
-                logger.warning("reCaptchaId is null...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            Form reCaptchaForm = new Form();
-            reCaptchaForm.setMethod(Form.MethodType.POST);
-            reCaptchaForm.setAction("http://datei.to/ajax/recaptcha.php");
-            reCaptchaForm.put("Doing", "CheckCaptcha");
-            reCaptchaForm.put("ID", iD);
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setForm(reCaptchaForm);
-            rc.setId(reCaptchaId);
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
-            if (!br.containsHTML(RECAPTCHATEXT)) {
-                failed = false;
-                break;
-            }
-            br.postPage(DOWNLOADPOSTPAGE, postData);
+            if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.postPage(DOWNLOADPOSTPAGE, "P=IV&ID=" + iD);
         String dllink = br.toString();
         if (!dllink.startsWith("http") || dllink.length() > 500) {

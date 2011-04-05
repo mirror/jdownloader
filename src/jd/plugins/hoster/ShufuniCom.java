@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shufuni.com" }, urls = { "http://[\\w\\.]*?shufuni\\.com/[\\w-+]+" }, flags = { 2 })
 public class ShufuniCom extends PluginForHost {
@@ -46,13 +46,22 @@ public class ShufuniCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("addVariable\\(\"videoName\", \"(.*?)\"\\);").getMatch(0);
-        dllink = br.getRegex("addVariable\\(\"CDNUrl\", \"(.*?)\"\\);").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(filename.trim() + ".flv");
         URLConnectionAdapter con = null;
+        con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getResponseCode() == 500) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.followConnection();
+        if (br.containsHTML("(<title>500 \\- Internal server error\\.</title>|<h2>500 \\- Internal server error\\.</h2>|<h3>There is a problem with the resource you are looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- Free Porn Video[\t\n\r ]+</title>").getMatch(0);
+        }
+        dllink = br.getRegex("addVariable\\(\"CDNUrl\", \"(.*?)\"\\);").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://media\\d+\\.shufuni\\.com/.*?)\"").getMatch(0);
+        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setFinalFileName(filename.trim() + ".flv");
         try {
             con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html"))

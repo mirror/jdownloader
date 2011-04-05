@@ -29,12 +29,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-import org.appwork.utils.Hash;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+public class MofoSexCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+" }, flags = { 0 })
-public class AlphaPornoCom extends PluginForHost {
-
-    public AlphaPornoCom(PluginWrapper wrapper) {
+    public MofoSexCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,23 +40,23 @@ public class AlphaPornoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.alphaporno.com/";
+        return "http://www.mofosex.com/terms-of-use.php";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<h2>Sorry, this video is no longer available|<title></title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        boolean pluginBroken = true;
-        if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String magic = getLink();
-        String filename = br.getRegex("<h2><span></span>(.*?)</h2>").getMatch(0);
+        if (br.containsHTML("(<h2>The porn you are looking for has been removed|<title>Free Porn Videos, Porn Tube, Sex Videos, Sex \\&amp; Free XXX Porno Clips</title>)") || br.getURL().contains("/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div id=\"videotitle\">(.*?)</div>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("video_url: encodeURIComponent\\(\\'(http://.*?)\\'\\)").getMatch(0);
-        DLLINK += "?time=This var is unknown, we have to find out how that works!&ahv=" + magic;
+        String fid = br.getRegex("\\?v=([a-z0-9_\\-]+)%2").getMatch(0);
+        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.mofosex.com/playlist.php?v=" + fid);
+        DLLINK = br.getRegex("<url>(http://.*?)</url>").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();
@@ -90,41 +88,6 @@ public class AlphaPornoCom extends PluginForHost {
         }
         dl.startDownload();
     }
-
-    private String getLink() {
-        int one = 668;
-        int two = 501;
-        int var1 = (one + two) * 2;
-        String var2 = "http://www.alphaporno.com/get_file/1/d13a3cd18ab6b7ad88f409f2b6b30767/7000/7274/7274.flv/";
-        String var3 = var2.substring(7);
-        var3 = var3.substring(0, var3.indexOf("/", 0));
-        if (var3.indexOf("www.") == 0) {
-            var3 = var3.substring(4);
-        }
-        if (var3.indexOf(".") != var3.lastIndexOf(".")) {
-            var3 = var3.substring((var3.indexOf(".") + 1));
-        }
-        String finalfinalfinal = Hash.getMD5(var1 + var3 + var1);
-        return finalfinalfinal;
-    }
-
-    // {
-    // var _loc_3:* = param2.substring(7);
-    // _loc_3 = _loc_3.substring(0, _loc_3.indexOf("/", 0));
-    // if (_loc_3.indexOf("www.") == 0)
-    // {
-    // _loc_3 = _loc_3.substring(4);
-    // }
-    // if (_loc_3.indexOf(".") != _loc_3.lastIndexOf("."))
-    // {
-    // _loc_3 = _loc_3.substring((_loc_3.indexOf(".") + 1));
-    // }
-    // trace("B.init(): domain=" + _loc_3);
-    // lc = MD5.hash(_loc_3 + param1);
-    // lrc = MD5.hash(param1 + _loc_3);
-    // ahv = MD5.hash(param1 + _loc_3 + param1);
-    // return;
-    //    
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
