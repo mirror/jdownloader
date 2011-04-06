@@ -41,11 +41,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -314,7 +314,8 @@ public class FileServeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
         }
         if (br2.containsHTML("landing-406\\.php")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
-        if (br2.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry\\.\\.\\.</p>|<p>The page you were trying to reach wasn't there\\.</p>|<p>You can only download 1 file at a time|URL=http://www\\.fileserve\\.com/landing-403\\.php\"|landing-error\\.php\\?error_code=404)") || br2.getURL().contains("landing-error.php?error_code=404")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
+        if (br.containsHTML("<p>You can only download 1 file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+        if (br2.containsHTML("(<h1>404 - Page not found</h1>|<p>We are sorry\\.\\.\\.</p>|<p>The page you were trying to reach wasn't there\\.</p>|URL=http://www\\.fileserve\\.com/landing-403\\.php\"|landing-error\\.php\\?error_code=404)") || br2.getURL().contains("landing-error.php?error_code=404")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error, contact fileserve support");
         if (br2.containsHTML("(landing-error\\.php\\?error_code=2702|is already downloading a file</li>|is already downloading a file <br>)") || br2.getURL().contains("landing-2702.html") || br.getURL().contains("landing-1403.php")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP is already downloading", 5 * 60 * 1000l);
         if (br2.containsHTML("landing-error\\.php\\?error_code=1703")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
         if (br2.containsHTML("landing-error\\.php") || br.getURL().contains("landing-")) {
