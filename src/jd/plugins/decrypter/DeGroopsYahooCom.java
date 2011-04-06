@@ -27,7 +27,6 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -80,6 +79,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(aLink));
                 }
             } else {
+                String fpName = br.getRegex("<div class=\"ygrp-box-content\">[\t\n\r ]+<h3>(.*?)</h3>").getMatch(0);
                 // Handling for photos and albums
                 String[] galleries = br.getRegex("<div class=\"ygrp-right-album\">[\t\n\r ]+<div>[\t\n\r]+<a href=\"(/.*?)\"").getColumn(0);
                 if (galleries == null || galleries.length == 0) galleries = br.getRegex("<a href=\"(/group/[a-z0-9]+/photos/album/\\d+/pic/list)\"").getColumn(0);
@@ -103,13 +103,17 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                         // downloads (every link same name), read names are set
                         // on downloadstart
                         dl.setName(Integer.toString(new Random().nextInt(1000000)));
+                        if (fpName != null) {
+                            FilePackage fp = FilePackage.getInstance();
+                            fp.setName(fpName.trim());
+                            dl.setFilePackage(fp);
+                        } else {
+                            logger.warning("fpName regex failed...");
+                        }
                         decryptedLinks.add(dl);
                     }
                 }
             }
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(new Regex(parameter, "yahoo\\.com/group/(.*?)/").getMatch(0));
-            fp.addLinks(decryptedLinks);
             return decryptedLinks;
         }
 
