@@ -49,6 +49,7 @@ public class CZShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("IP adresy bohu")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000);
         if (!br.containsHTML("value=\"FREE download\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
         Form down = br.getFormBySubmitvalue("FREE+download");
         if (down == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/trust_me.php"));

@@ -460,7 +460,10 @@ public class Rapidshare extends PluginForHost {
             int index = error.lastIndexOf("(");
             if (index > 0) error = error.substring(0, index).trim();
             final String ipwait = new Regex(error, "You need to wait (\\d+) seconds until you can download another file without having RapidPro.").getMatch(0);
-            if (ipwait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l); }
+            if (ipwait != null) {
+                logger.info(error);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l);
+            }
             if ("RapidPro expired.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if ("File not found.".equals(error)) {

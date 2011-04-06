@@ -38,6 +38,17 @@ public class MdfrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        this.setBrowserExclusive();
+        if (parameter.matches("http://download\\d+\\.mediafire.+")) {
+            /* direct download */
+            String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
+            if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
+            if (ID != null) {
+                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
+        }
         if (parameter.contains("imageview.php")) {
             String ID = new Regex(parameter, "\\.com/.*?quickkey=(.+)").getMatch(0);
             if (ID != null) {
@@ -56,12 +67,14 @@ public class MdfrFldr extends PluginForDecrypt {
             }
             return null;
         }
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             String red = br.getRedirectLocation();
             if (red.matches("http://download\\d+\\.mediafire.+")) {
                 /* direct download */
                 String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
+                if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
                 if (ID != null) {
                     DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
                     decryptedLinks.add(link);
@@ -72,10 +85,12 @@ public class MdfrFldr extends PluginForDecrypt {
             }
         }
         if (br.containsHTML("The page cannot be found")) return decryptedLinks;
+        br.setFollowRedirects(true);
         Thread.sleep(500);
         String reqlink = br.getRegex(Pattern.compile("LoadJS\\(\".*?/js/myfiles\\.php/(.*?)\"")).getMatch(0);
         if (reqlink == null) {
             String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
+            if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
             if (ID != null) {
                 DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
                 decryptedLinks.add(link);

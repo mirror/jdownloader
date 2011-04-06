@@ -56,11 +56,16 @@ import de.savemytube.flv.FLV;
 public class TbCm extends PluginForDecrypt {
 
     public static enum DestinationFormat {
-        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEOWEBM("Video (Webm)", new String[] { ".webm" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" }), UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
+        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),
+        VIDEOFLV("Video (FLV)", new String[] { ".flv" }),
+        VIDEOMP4("Video (MP4)", new String[] { ".mp4" }),
+        VIDEOWEBM("Video (Webm)", new String[] { ".webm" }),
+        VIDEO3GP("Video (3GP)", new String[] { ".3gp" }),
+        UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
 
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
 
-        private String text;
+        private String   text;
         private String[] ext;
 
         DestinationFormat(final String text, final String[] ext) {
@@ -85,20 +90,22 @@ public class TbCm extends PluginForDecrypt {
 
     static class Info {
         public String link;
-        public long size;
-        public int fmt;
+        public long   size;
+        public int    fmt;
         public String desc;
     }
 
-    private final Pattern StreamingShareLink = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
+    private final Pattern                       StreamingShareLink  = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
 
-    static public final Pattern YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    static public final Pattern                 YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
-    HashMap<DestinationFormat, ArrayList<Info>> possibleconverts = null;
+    HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
 
-    private static final Logger LOG = JDLogger.getLogger();
+    private static final Logger                 LOG                 = JDLogger.getLogger();
 
-    private static final String TEMP_EXT = ".tmp$";
+    private static final String                 TEMP_EXT            = ".tmp$";
+
+    ArrayList<String>                           done                = new ArrayList<String>();
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -162,8 +169,10 @@ public class TbCm extends PluginForDecrypt {
     }
 
     private void addVideosCurrentPage(final ArrayList<DownloadLink> links) {
-        final String[] videos = this.br.getRegex("id=\"video-long-.*?href=\"(/watch\\?v=.*?)&").getColumn(0);
+        final String[] videos = this.br.getRegex("href=\"(/watch\\?v=.*?)&").getColumn(0);
         for (final String video : videos) {
+            if (done.contains(video)) continue;
+            done.add(video);
             links.add(this.createDownloadlink("http://www.youtube.com" + video));
         }
     }
