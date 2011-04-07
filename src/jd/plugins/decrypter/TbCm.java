@@ -52,7 +52,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch.*?v=[a-z-_A-Z0-9]+|(view_play_list|playlist)\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
     public static enum DestinationFormat {
@@ -187,7 +187,8 @@ public class TbCm extends PluginForDecrypt {
         if (parameter.contains("watch#")) {
             parameter = parameter.replace("watch#", "watch?");
         }
-        if (parameter.contains("view_play_list")) {
+        if (parameter.contains("view_play_list") || parameter.contains("playlist")) {
+            parameter = parameter.replaceFirst("playlist\\?", "view_play_list?");
             this.br.getPage(parameter);
             this.addVideosCurrentPage(decryptedLinks);
             if (!parameter.contains("page=")) {
