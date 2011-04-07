@@ -23,6 +23,7 @@ import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -68,7 +69,16 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (finallink == null) finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);
             if (finallink == null) finallink = br.getRegex("window\\.location = \\'(.*?)\\';").getMatch(0);
             if (finallink == null) finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("G\\(\".*?href.*?'(http://.*?)'").getMatch(0);
+            // Use this because they often change the page
+            String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
+            for (String aLink : lol) {
+                if (!aLink.contains("http://adf.ly/") && !aLink.contains("/javascript/")) decryptedLinks.add(createDownloadlink(aLink));
+            }
+            if (finallink == null) finallink = br.getRegex("var url = \\'(.*?)\\'").getMatch(0);
+            if (finallink == null) {
+                logger.warning("adf.ly single regex broken");
+                finallink = "dummytext";
+            }
         } else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
             finallink = br.getRedirectLocation();
             dh = true;
