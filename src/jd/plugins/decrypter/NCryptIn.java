@@ -34,6 +34,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -44,16 +45,17 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/folder\\-.+|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
 
-    private static final String             RECAPTCHA      = "recaptcha/api";
+    private static final String             RECAPTCHA      = "recaptcha/api/challenge";
     private static final String             OTHERCAPTCHA   = "\"(/temp/anicaptcha/\\d+\\.gif)\"";
     private static final String             PASSWORDTEXT   = "password";
-    private static final String             PASSWORDFAILED = "class=\"error\">\\&bull; Das Passwort ist ung\\&uuml;ltig";
+    private static final String             PASSWORDFAILED = "<td class=\"error\">&bull; Das Passwort ist ung\\&uuml;ltig";
     private static HashMap<String, Boolean> CNL_URL_MAP    = new HashMap<String, Boolean>();
 
     public NCryptIn(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
@@ -61,34 +63,37 @@ public class NCryptIn extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getURL().contains("error=crypted_id_invalid")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
         // Handle Captcha and/or password
-        Form allForm = br.getFormbyProperty("name", "protected");
-        if (allForm != null && !(allForm.containsHTML("captcha") && !allForm.containsHTML("recaptcha_challenge")) && (!allForm.containsHTML(RECAPTCHA))) {
-            allForm = br.getForm(2);
+        Form allForm = null;
+        for (final Form tempForm : br.getForms()) {
+            if (tempForm.getStringProperty("name").equals("protected") && tempForm.getAction() != null) {
+                allForm = tempForm;
+                break;
+            }
         }
         if (allForm != null) {
-            if (allForm.containsHTML(RECAPTCHA)) {
+            if (allForm.containsHTML(NCryptIn.RECAPTCHA)) {
                 for (int i = 0; i <= 5; i++) {
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     rc.parse();
                     rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, param);
-                    if (allForm.containsHTML(PASSWORDTEXT)) {
+                    final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
+                    final String c = this.getCaptchaCode(cf, param);
+                    if (allForm.containsHTML(NCryptIn.PASSWORDTEXT)) {
                         final String passCode = getPassword(param);
-                        rc.getForm().put(PASSWORDTEXT, passCode);
+                        rc.getForm().put(NCryptIn.PASSWORDTEXT, passCode);
                     }
                     rc.setCode(c);
-                    if (br.containsHTML(RECAPTCHA)) {
+                    if (br.containsHTML(NCryptIn.RECAPTCHA)) {
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                if (br.containsHTML(RECAPTCHA)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                if (br.containsHTML(NCryptIn.PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (br.containsHTML(NCryptIn.RECAPTCHA)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
             } else if (allForm.containsHTML("captcha") && !allForm.containsHTML("recaptcha_challenge")) {
                 for (int i = 0; i <= 3; i++) {
-                    final String captchaLink = br.getRegex(OTHERCAPTCHA).getMatch(0);
+                    final String captchaLink = br.getRegex(NCryptIn.OTHERCAPTCHA).getMatch(0);
                     if (captchaLink == null) { return null; }
 
                     final File captchaFile = this.getLocalCaptchaFile(".gif");
@@ -98,35 +103,37 @@ public class NCryptIn extends PluginForDecrypt {
                     } catch (final Throwable e) {
                         /* not existing in 09581 stable */
                     }
-                    final String code = getCaptchaCode(captchaFile, param);
+                    final String code = this.getCaptchaCode(captchaFile, param);
 
                     allForm.setAction(parameter);
                     allForm.put("captcha", code);
-                    if (allForm.containsHTML(PASSWORDTEXT)) {
+                    if (allForm.containsHTML(NCryptIn.PASSWORDTEXT)) {
                         final String passCode = getPassword(param);
-                        allForm.put(PASSWORDTEXT, passCode);
+                        allForm.put(NCryptIn.PASSWORDTEXT, passCode);
                     }
                     br.submitForm(allForm);
-                    if (br.containsHTML(OTHERCAPTCHA)) {
+                    if (br.containsHTML(NCryptIn.OTHERCAPTCHA)) {
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                if (br.getRegex(OTHERCAPTCHA).getMatch(0) != null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-            } else if (br.containsHTML(PASSWORDTEXT)) {
+                if (br.containsHTML(NCryptIn.PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (br.getRegex(NCryptIn.OTHERCAPTCHA).getMatch(0) != null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            } else if (br.containsHTML(NCryptIn.PASSWORDTEXT)) {
                 for (int i = 0; i <= 3; i++) {
                     br.postPage(parameter, "password=" + getPassword(param) + "&submit_protected=Best%C3%A4tigen...+&submit_protected=Best%C3%A4tigen...+");
-                    if (br.containsHTML(PASSWORDFAILED)) {
+                    if (br.containsHTML(NCryptIn.PASSWORDFAILED)) {
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (br.containsHTML(NCryptIn.PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
             }
         }
         String fpName = br.getRegex("<h1>(.*?)<img").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("name=\"cnl2_output\"></iframe>[\t\n\r ]+<h2><span class=\"arrow\">(.*?)<img src=\"").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("name=\"cnl2_output\"></iframe>[\t\n\r ]+<h2><span class=\"arrow\">(.*?)<img src=\"").getMatch(0);
+        }
         // Container handling
         final String[] containerIDs = br.getRegex("/container/(rsdf|dlc|ccf)/([a-z0-9]+)\\.").getColumn(1);
         if (containerIDs != null && containerIDs.length != 0) {
@@ -181,7 +188,7 @@ public class NCryptIn extends PluginForDecrypt {
     }
 
     private String getPassword(final CryptedLink param) throws DecrypterException {
-        final String passCode = getUserInput(null, param);
+        final String passCode = Plugin.getUserInput(null, param);
         return passCode;
     }
 
