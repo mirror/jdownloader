@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -29,10 +29,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/view\\.php\\?id=\\d+" }, flags = { 0 })
-public class EmpFlixCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vid2c.com" }, urls = { "http://(www\\.)?vid2c\\.com/video/\\d+" }, flags = { 0 })
+public class Vid2CCom extends PluginForHost {
 
-    public EmpFlixCom(PluginWrapper wrapper) {
+    public Vid2CCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -40,7 +40,7 @@ public class EmpFlixCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.empflix.com/terms.php";
+        return "http://www.vid2c.com/static/terms";
     }
 
     @Override
@@ -48,15 +48,11 @@ public class EmpFlixCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?), Free Streaming Porn</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=\"leftSideView\">.*?<div class=\"line\">.*?<h2>(.*?)</h2>").getMatch(0);
-        DLLINK = br.getRegex("addVariable\\(\\'config\\', \\'(http://.*?)\\'\\)").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://cdn\\.empflix\\.com/empflv/.*?)\\'").getMatch(0);
+        if (br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos - Vid2C</title>") || br.getURL().equals("http://www.vid2c.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div class=\"left span\\-630\">[\t\n\r ]+<h1>(.*?)</h1").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at Vid2C Porn Tube</title>").getMatch(0);
+        DLLINK = br.getRegex("VID=\\d+%26file=(http://.*?)(\\'|\")").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
