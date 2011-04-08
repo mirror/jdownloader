@@ -29,11 +29,11 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -222,6 +222,7 @@ public class ShareOnlineBiz extends PluginForHost {
         final String linkID = getID(parameter);
         br.setCookie("http://www.share-online.biz", "dl", infos.get("dl"));
         final String response = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=download&lid=" + linkID);
+        if (response.contains("EXCEPTION request download link not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final HashMap<String, String> dlInfos = getInfos(response, ": ");
         final String filename = dlInfos.get("NAME");
         final String size = dlInfos.get("SIZE");
