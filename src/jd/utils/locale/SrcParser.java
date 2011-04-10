@@ -167,41 +167,6 @@ public class SrcParser {
         currentContent = currentContent.replace("this.getClass().getSimpleName()", "\"" + simple + "\"");
         currentContent = currentContent.replace("getClass().getSimpleName()", "\"" + simple + "\"");
         currentContent = currentContent.replace("\"+\"", "");
-        if (this.currentContent.contains("jd.gui.swing.jdgui.menu.actions;")) {
-            String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
-            if (menukey != null) {
-                currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
-                currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".name\",\"" + menukey + "\");";
-                currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".mnem\",\"-\");";
-                currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".accel\",\"-\");";
-                currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".tooltip\",\"gui.menu." + menukey + ".tooltip\");";
-            }
-        }
-        if (this.currentContent.contains("jd.gui.swing.jdgui.menu;")) {
-            String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
-            currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
-            currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
-        }
-        if (this.currentContent.contains(" ThreadedAction") || this.currentContent.contains(" ToolBarAction") || this.currentContent.contains(" MenuAction")) {
-            String[] keys = new Regex(currentContent, " (Threaded|ToolBar|Menu)Action\\s*\\(\"(.*?)\"").getColumn(1);
-
-            for (String k : keys) {
-                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".name\",\"gui.menu." + k + ".name\");";
-                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".mnem\",\"-\");";
-                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".accel\",\"-\");";
-                currentContent += "\r\nJDL.L(\"gui.menu." + k + ".tooltip\",\"gui.menu." + k + ".tooltip\");";
-            }
-        }
-        if (this.currentContent.contains("extends PluginOptional") && !this.currentContent.contains("SrcParser")) {
-            /*
-             * Support for localized plugin names
-             */
-            currentContent += "\r\nJDL.L(\"" + cl + "\",\"" + simple + "\");";
-            /*
-             * Support for localized plugin descriptions
-             */
-            currentContent += "\r\nJDL.L(\"" + cl + ".description\",\"" + simple + "\");";
-        }
 
     }
 
