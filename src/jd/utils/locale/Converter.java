@@ -56,6 +56,39 @@ public class Converter implements MessageListener {
 
     }
 
+    private String getValueOf(String variable, String content, String clazz) {
+        /*
+         * Workaround for JDL prefixes with static access. Simple remove the
+         * static prefix!
+         */
+        variable = variable.replace(clazz + ".", "");
+
+        String[] matches = new Regex(content, variable + "\\s*=(.*?);").getColumn(0);
+        String ret = matches[matches.length - 1].trim();
+        while (ret.startsWith("\"")) {
+            ret = ret.substring(1);
+        }
+        while (ret.endsWith("\"")) {
+            ret = ret.substring(0, ret.length() - 1);
+        }
+
+        return ret;
+    }
+
+    private String prepareContent(String content, File f, ConvertEntry c) {
+        String[] stats = new Regex(content, "JDL\\.L\\(([^\"].*?) +").getColumn(0);
+
+        for (String s : stats) {
+
+            String v = this.getValueOf(s, content, f.getName().substring(0, f.getName().length() - 5));
+            System.out.println("Replaced " + s + " <" + v);
+            content = content.replace(s + " + \"", "\"" + v);
+        }
+        int found = content.split("PREFIX").length - 2;
+        return content;
+
+    }
+
     private void convert() throws IOException {
         for (TInterface ti : InterfaceCache.list()) {
             System.gc();
@@ -74,7 +107,7 @@ public class Converter implements MessageListener {
                 lngfiles.put(f.getName().substring(0, f.getName().length() - 4), new HashMap<String, String>());
             }
             for (ConvertEntry c : ti.getMap().values()) {
-                System.out.println(c);
+
                 String defValue = c.getValue();
                 if (defValue == null || defValue.equals("null")) {
                     defValue = readValue("en", c.getKey());
@@ -111,6 +144,7 @@ public class Converter implements MessageListener {
 
                 for (File f : c.getFiles()) {
                     String content = IO.readFileToString(f);
+                    content = prepareContent(content, f, c);
                     String pkg = ti.getPath().toString().substring(4).replace("\\", ".").replace("/", ".");
 
                     if (!content.contains("import " + pkg + ".*")) {
@@ -118,7 +152,9 @@ public class Converter implements MessageListener {
                         content = content.substring(0, i) + "\r\n import " + pkg + ".*;\r\n" + content.substring(i);
                     }
                     String pat;
-
+                    if (content.indexOf("\"" + c.getKey() + "\"") < 0) {
+                        System.out.println("error");
+                    }
                     int found;
                     int matches = content.split("T\\._\\.").length;
                     pat = "JDL\\.L\\(\"" + Pattern.quote(c.getKey()) + "\",\\s\"" + Pattern.quote(defValue) + "\"\\)";
