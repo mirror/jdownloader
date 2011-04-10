@@ -26,6 +26,25 @@ public class Converter implements MessageListener {
         new Converter().start();
     }
 
+    private HashMap<String, String[]> old;
+
+    public Converter() throws IOException {
+
+        old = new HashMap<String, String[]>();
+
+        for (File f : new File("ressourcen/jd/languages/").listFiles(new FilenameFilter() {
+
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".loc");
+            }
+        })) {
+
+            old.put(f.getName().substring(0, f.getName().length() - 4), Regex.getLines(IO.readFileToString(f)));
+
+        }
+        System.gc();
+    }
+
     private SrcParser sourceParser;
 
     private void start() throws IOException {
@@ -39,6 +58,7 @@ public class Converter implements MessageListener {
 
     private void convert() throws IOException {
         for (TInterface ti : InterfaceCache.list()) {
+            System.gc();
             if (ti.getMap().size() == 0) continue;
             if (ti.getPath().toString().contains(".java")) continue;
             System.out.println("--->" + ti.getPath());
@@ -91,9 +111,12 @@ public class Converter implements MessageListener {
 
                 for (File f : c.getFiles()) {
                     String content = IO.readFileToString(f);
-                    int i = content.indexOf("import ");
                     String pkg = ti.getPath().toString().substring(4).replace("\\", ".").replace("/", ".");
-                    content = content.substring(0, i) + "\r\n import " + pkg + ".*;\r\n" + content.substring(i);
+
+                    if (!content.contains("import " + pkg + ".*")) {
+                        int i = content.indexOf("import ");
+                        content = content.substring(0, i) + "\r\n import " + pkg + ".*;\r\n" + content.substring(i);
+                    }
                     String pat;
 
                     int found;
@@ -140,13 +163,13 @@ public class Converter implements MessageListener {
             sb2.append("public interface " + ti.getClassName() + "Translation extends " + ti.getClassName() + "Interface {\r\n");
             sb2.append(sb + "\r\n");
             sb2.append("}");
-
+            ti.getTranslationFile().getParentFile().mkdirs();
             IO.writeStringToFile(ti.getTranslationFile(), sb2.toString());
             for (String s : lngfiles.keySet()) {
                 HashMap<String, String> lsb = lngfiles.get(s);
 
                 ti.getShortFile().delete();
-                ti.getTranslationFile().getParentFile().mkdirs();
+
                 File lngF = new File(ti.getPath(), ti.getClassName() + "Translation." + s + ".lng");
                 lngF.delete();
                 IO.writeStringToFile(lngF, JSonStorage.toString(lsb));
@@ -179,9 +202,8 @@ public class Converter implements MessageListener {
     }
 
     private String readValue(String lng, String key) throws IOException {
-        File file = new File("ressourcen/jd/languages/" + lng + ".loc");
-        String[] content = Regex.getLines(IO.readFileToString(file));
-        for (String l : content) {
+
+        for (String l : old.get(lng)) {
             l = l.trim();
             int i = l.indexOf("=");
             if (key.equals(l.substring(0, i).trim())) {
