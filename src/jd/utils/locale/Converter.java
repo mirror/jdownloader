@@ -13,6 +13,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging.Log;
 
 public class Converter implements MessageListener {
     static {
@@ -82,12 +83,15 @@ public class Converter implements MessageListener {
         String[] stats = new Regex(content, "JDL\\.LF?\\(([^\"].*?) +").getColumn(0);
 
         for (String s : stats) {
+            try {
+                String v = this.getValueOf(s, content, f.getName().substring(0, f.getName().length() - 5));
+                if (v != null) {
+                    System.out.println("Replaced " + s + " <" + v);
+                    content = content.replace(s + " + \"", "\"" + v);
 
-            String v = this.getValueOf(s, content, f.getName().substring(0, f.getName().length() - 5));
-            if (v != null) {
-                System.out.println("Replaced " + s + " <" + v);
-                content = content.replace(s + " + \"", "\"" + v);
-
+                }
+            } catch (Exception e) {
+                Log.exception(e);
             }
         }
         content = content.replace("\" + \"", "");
