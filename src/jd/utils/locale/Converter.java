@@ -165,7 +165,7 @@ public class Converter implements MessageListener {
             sb2.append("}");
             ti.getTranslationFile().getParentFile().mkdirs();
             IO.writeStringToFile(ti.getTranslationFile(), sb2.toString());
-
+            System.out.println("Write " + ti.getTranslationFile());
             sb2 = new StringBuilder();
 
             sb2.append("package " + pkg + ";\r\n");
@@ -173,7 +173,9 @@ public class Converter implements MessageListener {
             sb2.append("public class T {\r\n");
             sb2.append("public static final " + ti.getClassName() + "Translation _ = TranslationFactory.create(" + ti.getClassName() + "Translation.class);\r\n");
             sb2.append("}");
+            ti.getShortFile().delete();
             IO.writeStringToFile(ti.getShortFile(), sb2.toString());
+            System.out.println("Write " + ti.getShortFile());
             for (String s : lngfiles.keySet()) {
                 HashMap<String, String> lsb = lngfiles.get(s);
 
