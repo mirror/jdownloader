@@ -18,13 +18,14 @@ package jd.gui.swing.jdgui.menu;
 
 import jd.gui.swing.jdgui.menu.actions.BackupAction;
 import jd.gui.swing.jdgui.menu.actions.BackupLinkListAction;
+import jd.utils.locale.JDL;
 
 public class SaveMenu extends JStartMenu {
 
     private static final long serialVersionUID = -153884445300435027L;
 
     public SaveMenu() {
-        super("gui.menu.save", "gui.images.save");
+        super(JDL.L("gui.menu.save", null), "gui.images.save");
         this.add(new BackupAction());
         this.add(new BackupLinkListAction());
     }

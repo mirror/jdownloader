@@ -19,14 +19,13 @@ package jd.gui.swing.jdgui.menu;
 import javax.swing.JMenu;
 
 import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 
 public class JStartMenu extends JMenu {
 
     private static final long serialVersionUID = -7833871754471332953L;
 
     public JStartMenu(String name, String icon) {
-        super(JDL.L(name, name));
+        super(name);
 
         this.setIcon(JDTheme.II(icon, 16, 16));
     }

@@ -22,13 +22,14 @@ import jd.gui.swing.jdgui.menu.actions.RemoveDisabledAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveDupesAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveFailedAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveOfflineAction;
+import jd.utils.locale.JDL;
 
 public class CleanupMenu extends JStartMenu {
 
     private static final long serialVersionUID = 2238339685705371437L;
 
     public CleanupMenu() {
-        super("gui.menu.remove", "gui.images.delete");
+        super(JDL.L("gui.menu.remove", null), "gui.images.delete");
 
         this.add(new CleanupDownloads());
         this.add(new CleanupPackages());
