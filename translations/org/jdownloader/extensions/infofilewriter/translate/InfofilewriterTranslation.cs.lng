@@ -1,0 +1,9 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "Komentář: %LAST_FINISHED_PACKAGE.COMMENT%\\r\\nHeslo: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nAuto-heslo: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nUkončeno %SYSTEM.DATE% v %SYSTEM.TIME% hodin",
+  "jd_plugins_optional_jdinfofilewriter" : "Info File Writer",
+  "plugins_optional_infofilewriter_content" : "Obsah:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Použít pouze v případě, že je přítomno heslo",
+  "jd_plugins_optional_jdinfofilewriter_description" : "JD Info File Writer",
+  "plugins_optional_infofilewriter_variables" : "Dostupné proměnné",
+  "plugins_optional_infofilewriter_filename" : "Jméno souboru:"
+}

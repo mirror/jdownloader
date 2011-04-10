@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Icona JD barra di sistema",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Permette di minimizzare o chiudere JDownloader nell'area di notifica, insieme ad altre funzioni relative come protezione con password e altro.",
+  "plugins_trayicon_popup_bottom_simdls" : "Download simultanei",
+  "plugins_trayicon_popup_bottom_speed" : "Limitazione velocità (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Connessioni contemporanee",
+  "gui_tooltip_statusbar_simultan_downloads" : "Download simultanei",
+  "gui_tooltip_statusbar_speedlimiter" : "Velocità  (KiB/s) [0:infinito]",
+  "gui_tooltip_statusbar_max_chunks" : "Connessioni max per file"
+}

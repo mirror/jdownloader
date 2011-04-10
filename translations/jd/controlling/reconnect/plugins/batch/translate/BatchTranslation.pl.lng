@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "Uruchom w (folder aplikacji)",
+  "interaction_batchreconnect_batch" : "Skrypt wsadowy",
+  "interaction_batchreconnect_terminal" : "Interpreter"
+}

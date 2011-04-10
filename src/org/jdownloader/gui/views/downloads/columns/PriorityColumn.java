@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
@@ -32,10 +34,10 @@ public class PriorityColumn extends ExtIconColumn<PackageLinkNode> {
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
-        strPriorityS = JDL.L("gui.treetable.tooltip.priority-1", "Low Priority");
-        strPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
-        strPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
-        strPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
+        strPriorityS = T._.gui_treetable_tooltip_priority_1();
+        strPriority1 = T._.gui_treetable_tooltip_priority1();
+        strPriority2 = T._.gui_treetable_tooltip_priority2();
+        strPriority3 = T._.gui_treetable_tooltip_priority3();
 
         this.setRowSorter(new ExtDefaultRowSorter<PackageLinkNode>() {
             /**

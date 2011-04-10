@@ -1,0 +1,22 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "예시: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Raw모드?",
+  "gui_btn_yes" : "예",
+  "gui_config_routeripfinder_ready" : "IP 찾아냄: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "라우터 불러오기",
+  "gui_config_jdrr_success" : "성공!",
+  "gui_config_jdrr_reconnectfaild" : "재연결 실패",
+  "gui_btn_help" : "도움말",
+  "gui_btn_start" : "시작",
+  "gui_config_jdrr_savereconnect" : "재연결 성공, 저장합니까?",
+  "gui_config_jdrr_popup_title" : "JDRR팝업",
+  "gui_fengshuiconfig_routerip" : "라우터 IP",
+  "gui_config_jdrr_title" : "레코더 재연결",
+  "gui_config_jdrr_status_title" : "레코딩 상태",
+  "gui_config_routeripfinder_notfound" : "라우터의 호스트 이름을 찾지 못함",
+  "gui_btn_no" : "아니오",
+  "gui_btn_cancel" : "취소",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP 검사 비활성화!",
+  "gui_btn_abort" : "종료시키다",
+  "gui_config_reconnect_selectrouter" : "라우터 모델 검색"
+}

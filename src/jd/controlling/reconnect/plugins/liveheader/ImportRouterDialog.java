@@ -16,6 +16,8 @@
 
 package jd.controlling.reconnect.plugins.liveheader;
 
+
+ import jd.controlling.reconnect.plugins.liveheader.translate.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -58,7 +60,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
     private JList                     list;
 
     public ImportRouterDialog(final ArrayList<String[]> scripts) {
-        super(UserIO.NO_COUNTDOWN, JDL.L("gui.config.liveheader.dialog.importrouter", "Import Router"), JDTheme.II("gui.images.search", 32, 32), null, null);
+        super(UserIO.NO_COUNTDOWN, T._.gui_config_liveheader_dialog_importrouter(), JDTheme.II("gui.images.search", 32, 32), null, null);
 
         this.scripts = scripts;
         Collections.sort(this.scripts, new Comparator<String[]>() {
@@ -98,7 +100,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
 
         final JPanel panel = new JPanel(new MigLayout("ins 10,wrap 3", "[grow 30,fill]5[grow 0,fill]10[grow,fill,300!]", "[fill]5[]5[fill,grow]"));
         final DefaultListModel defaultListModel = new DefaultListModel();
-        final String text = JDL.L("gui.config.reconnect.selectrouter", "Search Router Model");
+        final String text = T._.gui_config_reconnect_selectrouter();
         final JTextField searchField = new JTextField();
 
         this.list = new JList(defaultListModel);
@@ -179,7 +181,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
             }
 
         });
-        final JLabel example = new JLabel(JDL.L("gui.config.reconnect.selectrouter.example", "Example: 3Com ADSL"));
+        final JLabel example = new JLabel(T._.gui_config_reconnect_selectrouter_example());
 
         for (final String element : d) {
             defaultListModel.addElement(element);

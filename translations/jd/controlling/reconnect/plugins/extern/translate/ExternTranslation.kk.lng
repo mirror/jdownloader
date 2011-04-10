@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Команда (каталогтарға дұрыс жолдарды қолданыңыз)",
+  "interaction_externreconnect_parameter" : "Параметр (әр жолға 1 параметрден)",
+  "interaction_externreconnect_dummybat" : "Windows арналған басқа бағдарламаны қолдану"
+}

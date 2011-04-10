@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Vypnout",
+  "gui_config_jdshutdown_forceshutdown" : "Vynutit vypnutí (ne ve všech OS)",
+  "interaction_shutdown_dialog_title_standby" : "Úsporný režim?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Systém se vypne!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Nainstalovat Vynucení vypunutí (pouze pro Mac OS X)",
+  "interaction_shutdown_dialog_title_hibernate" : "Hibernovat?",
+  "interaction_shutdown_dialog_title_shutdown" : "Vypnout?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader se zavře!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Systém se NEVYPNE pomocí JD",
+  "gui_config_jdshutdown_hibernate" : "Hibernovat (ne na všech OS)",
+  "gui_config_jdshutdown_close" : "Zavřít JDownloader",
+  "gui_config_jdshutdown_standby" : "Spánek (ne ve všech OS)",
+  "gui_config_jdshutdown_osx_force_short" : "Instalovat",
+  "jd_plugins_optional_jdshutdown" : "JD Shutdown",
+  "interaction_shutdown_dialog_title_closejd" : "Zavřít JDownloader?",
+  "gui_config_jdshutdown_mode" : "Režim:",
+  "addons_jdshutdown_statusmessage_enabled" : "JD vypne systém po dokončení stahování",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Systém se přepne do Úsporného režimu!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Systém se přepne do Režimu spánku!</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "Automaticky vypne nebo uspí Váš počítač nebo zavře JD, když jsou všechna stahování dokončena."
+}

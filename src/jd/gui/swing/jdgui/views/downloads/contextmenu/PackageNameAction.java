@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -27,11 +29,11 @@ public class PackageNameAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.editpackagename", "Change Package Name") + " (" + packages.size() + ")";
+        return T._.gui_table_contextmenu_editpackagename() + " (" + packages.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
-        String name = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.editpackagename.message", "New Package Name"), packages.get(0).getName());
+        String name = UserIO.getInstance().requestInputDialog(0, T._.gui_linklist_editpackagename_message(), packages.get(0).getName());
         if (name == null) return;
 
         for (FilePackage packagee : packages) {

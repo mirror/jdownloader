@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Insert the name for the new setting:",
+  "action_customize_removesetting_ask" : "Remove selected settings? (%s1)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Package Customizer",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Package Customizer"
+}

@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.extraction;
 
+
+ import org.jdownloader.extensions.extraction.translate.*;
 import java.awt.Color;
 import java.io.File;
 import java.util.logging.Logger;
@@ -49,13 +51,13 @@ public class ExtractionListenerList implements ExtractionListener {
         // Falls der link entfernt wird während dem entpacken
         if (controller.getArchiv().getFirstDownloadLink().getFilePackage() == FilePackage.getDefaultFilePackage() && controller.getProgressController() == null) {
             logger.warning("LINK GOT REMOVED_: " + controller.getArchiv().getFirstDownloadLink());
-            ProgressController progress = new ProgressController(JDL.LF("plugins.optional.extraction.progress.extractfile", "Extract %s", controller.getArchiv().getFirstDownloadLink().getFileOutput()), 100, ex.getIconKey());
+            ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile( controller.getArchiv().getFirstDownloadLink().getFileOutput()), 100, ex.getIconKey());
             controller.setProgressController(progress);
         }
 
         switch (id) {
         case ExtractionConstants.WRAPPER_STARTED:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));
+            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_queued());
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
@@ -89,10 +91,10 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
 
             if (ex.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.extraction.askForPassword", "Password for %s?", controller.getArchiv().getFirstDownloadLink().getName()), "");
+                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword( controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-                    ls.setStatusText(JDL.L("plugins.optional.extraction.status.extractfailedpass", "Extract failed (password)"));
+                    ls.setStatusText(T._.plugins_optional_extraction_status_extractfailedpass());
                     ex.onFinished(controller);
                     break;
                 }
@@ -100,23 +102,23 @@ public class ExtractionListenerList implements ExtractionListener {
             }
             break;
         case ExtractionConstants.WRAPPER_CRACK_PASSWORD:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
+            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_crackingpass());
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
         case ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.openingarchive", "Opening archive"));
+            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_openingarchive());
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
         case ExtractionConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
             ex.assignRealDownloadDir(controller);
             break;
         case ExtractionConstants.WRAPPER_PASSWORD_FOUND:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.passfound", "Password found"));
+            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_passfound());
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
             break;
         case ExtractionConstants.WRAPPER_PASSWORT_CRACKING:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
+            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_crackingpass());
             if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
                 controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getCrackProgress(), controller.getPasswordList().size(), Color.GREEN.darker()));
             } else {
@@ -125,7 +127,7 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
             break;
         case ExtractionConstants.WRAPPER_ON_PROGRESS:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.extracting", "Extracting"));
+            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extracting());
             if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
                 controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getArchiv().getExtracted(), controller.getArchiv().getSize(), Color.YELLOW.darker()));
             } else {
@@ -141,13 +143,13 @@ public class ExtractionListenerList implements ExtractionListener {
                     link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
                     link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
                     link.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-                    link.getLinkStatus().setErrorMessage(JDL.LF("plugins.optional.extraction.crcerrorin", "Extract: failed (CRC in %s)", link.getName()));
+                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_crcerrorin( link.getName()));
                     link.requestGuiUpdate();
                 }
             } else {
                 for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
                     if (link == null) continue;
-                    link.getLinkStatus().setErrorMessage(JDL.L("plugins.optional.extraction.error.extrfailedcrc", "Extract: failed (CRC in unknown file)"));
+                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_error_extrfailedcrc());
                     link.requestGuiUpdate();
                 }
             }
@@ -175,7 +177,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 if (link == null) continue;
                 link.getLinkStatus().addStatus(LinkStatus.FINISHED);
                 link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-                link.getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.extractok", "Extract OK"));
+                link.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extractok());
                 link.requestGuiUpdate();
             }
 
@@ -187,7 +189,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 if (link == null) continue;
 
                 link.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                link.getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.notenoughspace", "Not enough space to extract"));
+                link.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_notenoughspace());
                 link.requestGuiUpdate();
             }
 
@@ -203,13 +205,13 @@ public class ExtractionListenerList implements ExtractionListener {
                     link.getLinkStatus().removeStatus(LinkStatus.FINISHED);
                     link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
                     link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                    link.getLinkStatus().setErrorMessage(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
+                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_filenotfound());
                     link.requestGuiUpdate();
                 }
             } else {
                 for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
                     if (link == null) continue;
-                    link.getLinkStatus().setErrorMessage(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
+                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_filenotfound());
                     link.requestGuiUpdate();
                 }
             }

@@ -1,0 +1,7 @@
+{
+  "gui_config_antistandby_mode" : "Mod:",
+  "gui_config_antistandby_whiledl" : "Dosya indirirken beklemede/uyku moduna geçirme engellensin",
+  "jd_plugins_optional_antistandby_jdantistandby_description" : "Anti Bekleme",
+  "gui_config_antistandby_whilejd" : "JD çalışırken beklemede/uyku moduna geçirme engellensin",
+  "jd_plugins_optional_antistandby_jdantistandby" : "Anti Beklemede/Uyku Modu"
+}

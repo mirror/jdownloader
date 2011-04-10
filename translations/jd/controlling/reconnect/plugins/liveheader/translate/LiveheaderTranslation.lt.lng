@@ -1,0 +1,19 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Example: 3Com ADSL",
+  "gui_btn_yes" : "Yes",
+  "gui_config_routeripfinder_ready" : "IP found: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Import Router",
+  "gui_config_jdrr_success" : "Success!",
+  "gui_config_jdrr_reconnectfaild" : "Reconnection failed",
+  "gui_btn_help" : "Help",
+  "gui_btn_start" : "Start",
+  "gui_config_jdrr_savereconnect" : "Reconnection was successful. Save now?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "Router-IP",
+  "gui_config_jdrr_title" : "Reconnection Recorder",
+  "gui_config_routeripfinder_notfound" : "Can't find your router's hostname",
+  "gui_btn_cancel" : "Cancel",
+  "gui_btn_no" : "No",
+  "gui_btn_abort" : "Abort",
+  "gui_config_reconnect_selectrouter" : "Search Router Model"
+}

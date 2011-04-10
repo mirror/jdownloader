@@ -16,6 +16,8 @@
 
 package jd.gui.swing.components.table;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -251,7 +253,7 @@ public class JDTable extends JXTable {
 
     private void installColumnControlButton() {
         final JButton button = new JButton(((JButton) this.getColumnControl()).getIcon());
-        button.setToolTipText(JDL.L(JDTable.JDL_PREFIX + "columnControl", "Change Columns"));
+        button.setToolTipText(T._.jd_gui_swing_components_table_JDTable_columnControl());
         button.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent event) {

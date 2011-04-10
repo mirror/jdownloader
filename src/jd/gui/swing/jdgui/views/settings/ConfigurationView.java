@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 
 import javax.swing.Icon;
@@ -56,12 +58,12 @@ public class ConfigurationView extends ClosableView {
 
     @Override
     public String getTitle() {
-        return JDL.L(IDENT_PREFIX + "tab.title", "Settings");
+        return T._.jd_gui_swing_jdgui_views_configurationview_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(IDENT_PREFIX + "tab.tooltip", "All options and settings for JDownloader");
+        return T._.jd_gui_swing_jdgui_views_configurationview_tab_tooltip();
     }
 
     @Override

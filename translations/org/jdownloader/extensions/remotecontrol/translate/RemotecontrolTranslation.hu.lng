@@ -1,0 +1,5 @@
+{
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 indítva a %s2 porton\\nhttp://127.0.0.1:%s3\\n/segítség Fejlesztői információkért.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 leállítva.",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "JDownoader távirányító"
+}

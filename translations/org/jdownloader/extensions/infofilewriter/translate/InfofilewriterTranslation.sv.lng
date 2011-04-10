@@ -1,0 +1,7 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nLösenord: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nAuto-Lösenord: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nSlutförd %SYSTEM.DATE% to %SYSTEM.TIME% Klockan",
+  "jd_plugins_optional_jdinfofilewriter" : "JDInfo filskrivare",
+  "plugins_optional_infofilewriter_content" : "Innehåll:",
+  "plugins_optional_infofilewriter_variables" : "Tillgängliga variabler",
+  "plugins_optional_infofilewriter_filename" : "Filnamn"
+}

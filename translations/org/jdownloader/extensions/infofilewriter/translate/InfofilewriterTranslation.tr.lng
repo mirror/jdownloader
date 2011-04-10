@@ -1,0 +1,8 @@
+{
+  "jd_plugins_optional_jdinfofilewriter" : "Dosya Bilgi Yazıcısı",
+  "plugins_optional_infofilewriter_content" : "İçerik:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Sadece parola etkinleştirildiğinde kullan",
+  "jd_plugins_optional_jdinfofilewriter_description" : "Dosya Bilgi Yazıcısı",
+  "plugins_optional_infofilewriter_variables" : "Mevcut değişkenler",
+  "plugins_optional_infofilewriter_filename" : "Dosya adı:"
+}

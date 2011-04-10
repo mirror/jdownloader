@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_infobar_docking" : "Abilita l'aggancio della barra d'informazione",
+  "jd_plugins_optional_infobar_jdinfobar_description" : "Un piccolo pannello volante di informazioni con lo stato dei download in tempo reale, zona Drag'N'Drop dove è possibile aggiungere collegamenti, URL o file DLC.",
+  "jd_plugins_optional_infobar_jdinfobar" : "Barra JD Info",
+  "jd_plugins_optional_infobar_opacity" : "Opacità della finestra (in percentuale)"
+}

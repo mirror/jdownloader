@@ -1,0 +1,16 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Girtin",
+  "interaction_shutdown_dialog_title_standby" : "Li bendê?",
+  "gui_config_jdshutdown_forceshutdown" : "Bi zorê bigire (Ne ji bo hemûyan OSyan)",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">System will be shut down!</font></h2>",
+  "interaction_shutdown_dialog_title_hibernate" : "Xewa zivistanê?",
+  "interaction_shutdown_dialog_title_shutdown" : "Girtin?",
+  "addons_jdshutdown_statusmessage_disabled" : "Wê pergal ji aliyê JDownloader ve neyê girtin",
+  "gui_config_jdshutdown_hibernate" : "Xewa zivistanê (Ne ji bo hemû OSyan)",
+  "gui_config_jdshutdown_standby" : "Xew (Ne ji bo hemû OSyan)",
+  "jd_plugins_optional_jdshutdown" : "JD Bigire",
+  "gui_config_jdshutdown_mode" : "Mod:",
+  "addons_jdshutdown_statusmessage_enabled" : "Piştî ku daxistin qediya wê JDownloader pergalê bigire",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">System will be put into standby mode!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">System will be put into hibernate mode!</font></h2>"
+}

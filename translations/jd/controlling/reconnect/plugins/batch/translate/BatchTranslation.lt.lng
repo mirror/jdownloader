@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "Start in (application folder)",
+  "interaction_batchreconnect_batch" : "Batch Script",
+  "interaction_batchreconnect_terminal" : "Interpreter"
+}

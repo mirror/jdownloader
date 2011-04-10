@@ -16,6 +16,8 @@
 
 package jd.gui;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Point;
 import java.io.File;
 
@@ -236,7 +238,7 @@ public class UserIO {
     private ImageIcon getDefaultIcon(final String text) {
         if (text.contains("?")) {
             return this.getIcon(UserIO.ICON_QUESTION);
-        } else if (text.matches(JDL.L("userio.errorregex", ".*(error|failed).*"))) {
+        } else if (text.matches(T._.userio_errorregex())) {
             return this.getIcon(UserIO.ICON_ERROR);
         } else if (text.contains("!")) {
             return this.getIcon(UserIO.ICON_WARNING);
@@ -301,7 +303,7 @@ public class UserIO {
     }
 
     public int requestConfirmDialog(final int flag, final String question) {
-        return this.requestConfirmDialog(flag, JDL.L("jd.gui.userio.defaulttitle.confirm", "Please confirm!"), question, this.getDefaultIcon(question), null, null);
+        return this.requestConfirmDialog(flag, T._.jd_gui_userio_defaulttitle_confirm(), question, this.getDefaultIcon(question), null, null);
     }
 
     public int requestConfirmDialog(final int flag, final String title, final String question) {
@@ -366,7 +368,7 @@ public class UserIO {
      * @return
      */
     public String requestInputDialog(final int flag, final String question, final String defaultvalue) {
-        return this.requestInputDialog(flag, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
+        return this.requestInputDialog(flag, T._.jd_gui_userio_defaulttitle_input(), question, defaultvalue, this.getDefaultIcon(question), null, null);
     }
 
     public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
@@ -385,7 +387,7 @@ public class UserIO {
     }
 
     public void requestMessageDialog(final int flag, final String message) {
-        this.requestMessageDialog(flag, JDL.L("gui.dialogs.message.title", "Message"), message);
+        this.requestMessageDialog(flag, T._.gui_dialogs_message_title(), message);
     }
 
     public void requestMessageDialog(final int flag, final String title, final String message) {
@@ -393,7 +395,7 @@ public class UserIO {
     }
 
     public void requestMessageDialog(final String message) {
-        this.requestMessageDialog(0, JDL.L("gui.dialogs.message.title", "Message"), message);
+        this.requestMessageDialog(0, T._.gui_dialogs_message_title(), message);
     }
 
     public void requestMessageDialog(final String title, final String message) {

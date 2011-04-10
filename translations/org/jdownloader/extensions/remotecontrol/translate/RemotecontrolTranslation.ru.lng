@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Удаленный контроль",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 запущено на порте %s2\\nhttp://127.0.0.1:%s3\\n/Справка для информации разработчиков.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 остановлено.",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Удалённое управление JD (JDRemoteControl)"
+}

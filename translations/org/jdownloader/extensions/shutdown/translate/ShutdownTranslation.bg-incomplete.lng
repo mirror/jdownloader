@@ -1,0 +1,16 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Изключване",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Ситемата ще бъде изключена!</font></h2>",
+  "interaction_shutdown_dialog_title_shutdown" : "Изключи?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader ще бъде изключен!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Системата НЯМА да бъде изключена от JDownloader.",
+  "gui_config_jdshutdown_close" : "Затвори JDownloader",
+  "jd_plugins_optional_jdshutdown" : "JDShutdown",
+  "gui_config_jdshutdown_osx_force_short" : "Инсталирай",
+  "interaction_shutdown_dialog_title_closejd" : "Затвори JDownloader?",
+  "gui_config_jdshutdown_mode" : "Начин:",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader ще излючи системата след като всички файлове за сваляне бъдат завършени.",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Системата ще бъде сложена да спи!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Системата ще бъде сложена да хибернира!</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "JDShutdown"
+}

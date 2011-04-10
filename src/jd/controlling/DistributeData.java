@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+
+ import org.jdownloader.translate.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -509,9 +511,9 @@ public class DistributeData extends Thread {
                 }
                 LOG.warning("No supported links found -> search for links in source code of all urls");
 
-                final String title = JDL.L("gui.dialog.deepdecrypt.title", "Deep decryption?");
-                final String message = JDL.LF("gui.dialog.deepdecrypt.message", "JDownloader has not found anything on %s\r\n-------------------------------\r\nJD now loads this page to look for further links.", txt);
-                final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDL.L("gui.btn_continue", "Continue"), null);
+                final String title = T._.gui_dialog_deepdecrypt_title();
+                final String message = T._.gui_dialog_deepdecrypt_message( txt);
+                final int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), T._.gui_btn_continue(), null);
 
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
                     links = getLoadLinkString(ls);
@@ -533,7 +535,7 @@ public class DistributeData extends Thread {
         final StringBuffer sb = new StringBuffer();
         ProgressController pc = null;
         try {
-            pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length, null);
+            pc = new ProgressController(T._.gui_addurls_progress( links.length), links.length, null);
             int count = 0;
 
             for (final String l : links) {
@@ -541,7 +543,7 @@ public class DistributeData extends Thread {
 
                 try {
                     new URL(l);
-                    pc.setStatusText(JDL.LF("gui.addurls.progress.get", "Parse %s URL(s). Get %s links", links.length, l));
+                    pc.setStatusText(T._.gui_addurls_progress_get( links.length, l));
 
                     br.openGetConnection(l);
                     if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
@@ -563,7 +565,7 @@ public class DistributeData extends Thread {
                     } catch (Throwable e) {
                     }
                 }
-                pc.setStatusText(JDL.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, count));
+                pc.setStatusText(T._.gui_addurls_progress_found( links.length, count));
                 pc.increase(1);
             }
             JDLogger.getLogger().info("Found Links " + sb);

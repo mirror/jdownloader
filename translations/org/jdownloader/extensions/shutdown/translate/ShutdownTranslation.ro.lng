@@ -1,0 +1,8 @@
+{
+  "jd_plugins_optional_jdshutdown" : "JD Shutdown",
+  "gui_config_jdshutdown_forceshutdown" : "Force Shutdown (Not for all OS)",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader va opri calculatorul dupa ce download-urile s-au terminat",
+  "gui_config_jdshutdown_hibernate" : "Hibernate (Not for all OS)",
+  "addons_jdshutdown_statusmessage_disabled" : "Calculatorul NU va fi oprit de JDownloader",
+  "gui_config_jdshutdown_standby" : "Standby (Not for all OS)"
+}

@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.chat;
 
+
+ import org.jdownloader.extensions.chat.translate.*;
 import javax.swing.Icon;
 
 import org.jdownloader.extensions.StopException;
@@ -44,12 +46,12 @@ public class JDChatView extends AddonPanel {
 
     @Override
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "title", "JD Support Chat");
+        return T._.jd_plugins_optional_jdchat_JDChatView_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(JDL_PREFIX + "tooltip", "JD Support Chat");
+        return T._.jd_plugins_optional_jdchat_JDChatView_tooltip();
 
     }
 

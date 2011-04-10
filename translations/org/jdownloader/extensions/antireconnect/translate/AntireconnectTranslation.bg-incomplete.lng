@@ -1,0 +1,14 @@
+{
+  "gui_config_antireconnect_newreconnect" : "Позволи повторно връзване:",
+  "gui_config_antireconnect_each" : "Провери на всеки (милисек.):",
+  "gui_config_antireconnect_olddownloads" : "Едновременно сваляне:",
+  "gui_config_antireconnect_mode" : "Начин:",
+  "gui_config_antireconnect_oldspeed" : "Скорост на свалянето в kb/s",
+  "gui_config_antireconnect_ips" : "Провери следните ИП-та (192.168.1.20-80)",
+  "gui_config_antireconnect_newgroup" : "Ако друг клиент е на линия",
+  "gui_config_antireconnect_newdownloads" : "Едновременно сваляне:",
+  "gui_config_antireconnect_oldgroup" : "Нормално",
+  "gui_config_antireconnect_newspeed" : "Скорост на свалянето в kb/s",
+  "gui_config_antireconnect_timeout" : "Пауза преди повторна проверка (милисек.):",
+  "gui_config_antireconnect_oldreconnect" : "Позволи повторно връзване:"
+}

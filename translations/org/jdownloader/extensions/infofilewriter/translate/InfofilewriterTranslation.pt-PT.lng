@@ -1,0 +1,9 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "Comentário: %LAST_FINISHED_PACKAGE.COMMENT%\\r\\nPalavra-passe: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nPalavra-passe Automática: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nFinalizados em %SYSTEM.DATE% às %SYSTEM.TIME%",
+  "jd_plugins_optional_jdinfofilewriter" : "JD Escritor de Informações do Ficheiro",
+  "plugins_optional_infofilewriter_content" : "Conteúdo:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Usar apenas se a palavra-passe está definida",
+  "jd_plugins_optional_jdinfofilewriter_description" : "Criar Informações do Ficheiro",
+  "plugins_optional_infofilewriter_variables" : "Variáveis disponíveis",
+  "plugins_optional_infofilewriter_filename" : "Nome do ficheiro:"
+}

@@ -1,0 +1,7 @@
+{
+  "gui_config_antistandby_mode" : "النمط:",
+  "gui_config_antistandby_whiledl" : "منع خضوع الكمبيوتر لوضع الاستعداد عند التحميل",
+  "jd_plugins_optional_antistandby_jdantistandby_description" : "بكل بساطة , امنع جهازك من الذهاب الى حالة Stand By او Sleep Mode لابقاء التحميل فعال",
+  "gui_config_antistandby_whilejd" : "يعمل JD منع خضوع الجهاز لوضع الاستعداد عندما يكون برنامج",
+  "jd_plugins_optional_antistandby_jdantistandby" : "Anti StandBy"
+}

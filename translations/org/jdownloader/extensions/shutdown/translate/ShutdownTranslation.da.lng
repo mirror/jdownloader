@@ -1,0 +1,15 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Luk ned",
+  "interaction_shutdown_dialog_title_standby" : "Standby?",
+  "gui_config_jdshutdown_forceshutdown" : "Tving Lukning (Virker ikke i alle OS)",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Systemet vil blive lukket ned!</font></h2>",
+  "interaction_shutdown_dialog_title_hibernate" : "Dvale?",
+  "interaction_shutdown_dialog_title_shutdown" : "Luk ned?",
+  "addons_jdshutdown_statusmessage_disabled" : "Systemet vil IKKE blive lukket ned af jdownloader",
+  "gui_config_jdshutdown_hibernate" : "Dvale (Virker ikke i alle OS)",
+  "gui_config_jdshutdown_standby" : "Standby (Virker ikke i alle OS)",
+  "jd_plugins_optional_jdshutdown" : "JDShutdown",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader vil lukke din computer ned efter endt download",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Systemet vil blive sat i standby tilstand!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Systemet vil blive sat i dvale tilstand!</font></h2>"
+}

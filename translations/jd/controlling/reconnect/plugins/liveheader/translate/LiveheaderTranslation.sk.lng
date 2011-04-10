@@ -1,0 +1,22 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Príklad: 3Com ADSL",
+  "gui_btn_yes" : "Áno",
+  "gui_config_routeripfinder_ready" : "IP nájdená: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importovať Router",
+  "gui_config_jdrr_success" : "Úspešný!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Zakázali ste Kontrolu IP. Týmto dramaticky zvýšite množstvo znovupripojení!\\r\\n\\r\\nNiekoľko modulov ako Záznam Znovupripojení bolo zakázaných.",
+  "gui_config_jdrr_reconnectfaild" : "Znovupripojenie zlyhalo",
+  "gui_btn_help" : "Nápoveda",
+  "gui_btn_start" : "Začať",
+  "gui_config_jdrr_savereconnect" : "Znovupripojenie bolo úspešné. Uložiť teraz?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "IP Routra",
+  "gui_config_jdrr_title" : "Záznam Znovupripojenia",
+  "gui_config_jdrr_status_title" : "Stav Záznamu",
+  "gui_config_routeripfinder_notfound" : "Nedokážem nájsť meno hostiteľa",
+  "gui_btn_no" : "Nie",
+  "gui_btn_cancel" : "Zrušiť",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Kontrola IP zakázaná!",
+  "gui_btn_abort" : "Prerušiť",
+  "gui_config_reconnect_selectrouter" : "Hľadať model Routra"
+}

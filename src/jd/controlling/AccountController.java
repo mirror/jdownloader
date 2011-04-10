@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+
+ import org.jdownloader.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -509,7 +511,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         if (ret != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             if (System.currentTimeMillis() - lastballoon > BALLOON_INTERVAL) {
                 lastballoon = System.currentTimeMillis();
-                Balloon.show(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.accounts", 32, 32), JDL.L("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help."));
+                Balloon.show(T._.gui_ballon_accountmanager_title(), JDTheme.II("gui.images.accounts", 32, 32), T._.gui_accountcontroller_globpremdisabled());
             }
             ret = null;
         }

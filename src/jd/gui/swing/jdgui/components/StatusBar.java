@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.components;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 
 import javax.swing.BorderFactory;
@@ -70,7 +72,7 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
         }
 
         JDUtilities.getController().addControlListener(this);
-        spMaxSpeed = new JDSpinner(JDL.L("gui.statusbar.speed", "Max. Speed"));
+        spMaxSpeed = new JDSpinner(T._.gui_statusbar_speed());
         spMaxSpeed.getSpinner().addChangeListener(this);
         spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 50));
         try {
@@ -80,10 +82,10 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
             dlConfig.save();
         }
-        spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Speed Limit (KiB/s) [0 = Infinite]"));
+        spMaxSpeed.setToolTipText(T._.gui_tooltip_statusbar_speedlimiter());
         colorizeSpinnerSpeed();
 
-        spMaxDls = new JDSpinner(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."), "h 20!");
+        spMaxDls = new JDSpinner(T._.gui_statusbar_sim_ownloads(), "h 20!");
         spMaxDls.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
         try {
             spMaxDls.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
@@ -92,10 +94,10 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
             dlConfig.save();
         }
-        spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Maximum simultaneous Downloads [1..20]"));
+        spMaxDls.setToolTipText(T._.gui_tooltip_statusbar_simultan_downloads());
         spMaxDls.getSpinner().addChangeListener(this);
 
-        spMaxChunks = new JDSpinner(JDL.L("gui.statusbar.maxChunks", "Max. Con."), "h 20!");
+        spMaxChunks = new JDSpinner(T._.gui_statusbar_maxChunks(), "h 20!");
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
         try {
             spMaxChunks.setValue(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
@@ -103,7 +105,7 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
             dlConfig.save();
         }
-        spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
+        spMaxChunks.setToolTipText(T._.gui_tooltip_statusbar_max_chunks());
         spMaxChunks.getSpinner().addChangeListener(this);
 
         add(PremiumStatus.getInstance());
@@ -166,7 +168,7 @@ public class StatusBar extends JPanel implements ChangeListener, ControlListener
      */
     public void setSpeed(int speed) {
         if (speed <= 0) {
-            spMaxSpeed.setText(JDL.L("gui.statusbar.speed", "Max. Speed"));
+            spMaxSpeed.setText(T._.gui_statusbar_speed());
         } else {
             spMaxSpeed.setText("(" + Formatter.formatReadable(speed) + "/s)");
         }

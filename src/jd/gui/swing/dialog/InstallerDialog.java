@@ -1,5 +1,7 @@
 package jd.gui.swing.dialog;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Font;
 import java.io.File;
@@ -60,7 +62,7 @@ public class InstallerDialog extends AbstractDialog<Object> {
     private BrowseFile browseFile;
 
     private InstallerDialog(final File dlFolder) {
-        super(UserIO.NO_ICON, JDL.L("installer.gui.title", "JDownloader Installation"), null, null, null);
+        super(UserIO.NO_ICON, T._.installer_gui_title(), null, null, null);
 
         final String countryCode = JDL.getCountryCodeByIP();
         final String languageCode = countryCode != null ? countryCode.toLowerCase(Locale.getDefault()) : null;
@@ -130,12 +132,12 @@ public class InstallerDialog extends AbstractDialog<Object> {
         });
 
         final ConfigContainer container = new ConfigContainer();
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.language", "Language"), "gui.splash.languages"));
+        container.setGroup(new ConfigGroup(T._.gui_config_gui_language(), "gui.splash.languages"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new JScrollPane(list), "growx,pushx"));
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.userhome"));
+        container.setGroup(new ConfigGroup(T._.gui_config_general_downloaddirectory(), "gui.images.userhome"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, this.browseFile, "growx,pushx"));
 
-        final JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
+        final JLabel lbl = new JLabel(T._.installer_gui_message());
         lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
         lbl.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -143,11 +145,11 @@ public class InstallerDialog extends AbstractDialog<Object> {
             final String dir = JDUtilities.getResourceFile("downloads").getParent().substring(3).toLowerCase();
 
             if (!JDUtilities.getResourceFile("uninstall.exe").exists() && (dir.startsWith("programme\\") || dir.startsWith("program files\\"))) {
-                lbl.setText(JDL.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads").getParent()));
+                lbl.setText(T._.installer_vistaDir_warning( JDUtilities.getResourceFile("downloads").getParent()));
                 lbl.setForeground(Color.RED);
             }
             if (!JDUtilities.getResourceFile("Updater.jar").canWrite()) {
-                lbl.setText(JDL.LF("installer.nowriteDir.warning", "Warning! JD cannot write to %s. Check rights!", JDUtilities.getResourceFile("downloads").getParent()));
+                lbl.setText(T._.installer_nowriteDir_warning( JDUtilities.getResourceFile("downloads").getParent()));
                 lbl.setForeground(Color.RED);
             }
         }

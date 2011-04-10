@@ -16,6 +16,8 @@
 
 package jd.plugins;
 
+
+ import org.jdownloader.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -231,7 +233,7 @@ public abstract class Plugin implements ActionListener {
      */
     public static String getUserInput(final String message, final DownloadLink link) throws PluginException {
         final String password = PluginUtils.askPassword(message, link);
-        if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong")); }
+        if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, T._.plugins_errors_wrongpassword()); }
         return password;
     }
 

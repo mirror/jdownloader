@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Eksempel: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "RAW Mode?",
+  "gui_btn_yes" : "Ja",
+  "gui_config_routeripfinder_ready" : "IP funnet: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importer Ruter",
+  "gui_config_jdrr_success" : "Vellykket!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "You disabled the IPCheck. This will increase the reconnection times dramatically!\\r\\n\\r\\nSeveral further modules like Reconnect Recorder are disabled.",
+  "gui_config_jdrr_reconnectfaild" : "Gjentilkobling feilet",
+  "gui_btn_help" : "Hjelp",
+  "gui_btn_start" : "Start",
+  "gui_config_jdrr_savereconnect" : "Gjentilkobling var vellykket. Lagre nå?",
+  "gui_config_jdrr_popup_title" : "RRPopup",
+  "gui_fengshuiconfig_routerip" : "Ruter-IP",
+  "gui_config_jdrr_title" : "Gjentilkobling opptager",
+  "gui_config_jdrr_status_title" : "OpptaksStatus",
+  "gui_config_routeripfinder_notfound" : "Finner ikke ruterens vertsnavn",
+  "gui_btn_no" : "Nei",
+  "gui_btn_cancel" : "Avbryt",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP Check disabled!",
+  "gui_btn_abort" : "Stopp",
+  "gui_config_reconnect_selectrouter" : "Søk etter  Ruter Modell"
+}

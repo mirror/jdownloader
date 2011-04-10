@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.extraction;
 
+
+ import org.jdownloader.extensions.extraction.translate.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Timer;
@@ -58,7 +60,7 @@ public class ExtractionController extends Thread implements JDRunnable {
         extractor.setArchiv(archiv);
         extractor.setExtractionController(this);
 
-        config = SubConfiguration.getConfig(JDL.L("plugins.optional.extraction.name", "Extraction"));
+        config = SubConfiguration.getConfig(T._.plugins_optional_extraction_name());
 
         this.logger = logger;
         extractor.setLogger(logger);

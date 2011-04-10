@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Пример: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Режим raw?",
+  "gui_btn_yes" : "Да",
+  "gui_config_routeripfinder_ready" : "Имя хоста найдено: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Импортировать маршрутизатор",
+  "gui_config_jdrr_success" : "Успешно!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Вы отключили проверку ip. Это позволить резко увеличить кол-во переподключений. Некоторые другие модули типа Записи переподключений отключены.",
+  "gui_config_jdrr_reconnectfaild" : "Повторное подключение не удалось!",
+  "gui_btn_help" : "Помощь",
+  "gui_btn_start" : "Запуск",
+  "gui_config_jdrr_savereconnect" : "Повторное подключение было успешно, сохранить?",
+  "gui_config_jdrr_popup_title" : "Всплывающие окна JDownloader",
+  "gui_fengshuiconfig_routerip" : "IP маршрутизатора",
+  "gui_config_jdrr_title" : "Журнал повторных подключений",
+  "gui_config_jdrr_status_title" : "Статус записи",
+  "gui_config_routeripfinder_notfound" : "Не могу найти имя маршрутизатора",
+  "gui_btn_no" : "Нет",
+  "gui_btn_cancel" : "Отмена",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Проверка IP отключена!",
+  "gui_btn_abort" : "Прервать",
+  "gui_config_reconnect_selectrouter" : "Искать модель маршрутизатора"
+}

@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 
@@ -44,7 +46,7 @@ public class SetSpeed implements SchedulerModuleInterface {
     }
 
     public String getTranslation() {
-        return JDL.L("jd.plugins.optional.schedule.modules.setDownloadSpeed", "Set Downloadspeed");
+        return T._.jd_plugins_optional_schedule_modules_setDownloadSpeed();
     }
 
     public boolean needParameter() {

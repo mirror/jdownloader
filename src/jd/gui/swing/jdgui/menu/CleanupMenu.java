@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu;
 
+
+ import org.jdownloader.gui.translate.*;
 import jd.gui.swing.jdgui.menu.actions.CleanupDownloads;
 import jd.gui.swing.jdgui.menu.actions.CleanupPackages;
 import jd.gui.swing.jdgui.menu.actions.RemoveDisabledAction;
@@ -29,7 +31,7 @@ public class CleanupMenu extends JStartMenu {
     private static final long serialVersionUID = 2238339685705371437L;
 
     public CleanupMenu() {
-        super(JDL.L("gui.menu.remove", null), "gui.images.delete");
+        super(T._.gui_menu_remove(), "gui.images.delete");
 
         this.add(new CleanupDownloads());
         this.add(new CleanupPackages());

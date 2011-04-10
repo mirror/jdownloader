@@ -1,0 +1,12 @@
+{
+  "jd_plugins_optional_folderwatch_tablemodel_filetype" : "Vrsta kontejnera",
+  "jd_plugins_optional_folderwatch_tablemodel_filepath" : "Putanja",
+  "plugins_optional_folderwatch_panel_filestatus_notexists" : "Datoteka ne postoji",
+  "jd_plugins_optional_folderwatch_tablemodel_importdate" : "Uvezi datum",
+  "plugins_optional_folderwatch_view_title" : "Istorijat Pretrage fascikli",
+  "jd_plugins_optional_folderwatch_tablemodel_filename" : "Naziv datoteke",
+  "action_folderwatch_clear_message" : "Da li ste sigurni da želite obrisati istorijat?",
+  "plugins_optional_folderwatch_panel_filestatus" : "Stanje datoteke",
+  "plugins_optional_folderwatch_view_tooltip" : "Prikazuje sve kontejnere koje je Pretraga fascikli pronašla",
+  "plugins_optional_folderwatch_panel_filestatus_exists" : "Datoteka postoji"
+}

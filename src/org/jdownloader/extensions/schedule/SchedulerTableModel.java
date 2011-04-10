@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import org.jdownloader.extensions.schedule.columns.ActionColumn;
 import org.jdownloader.extensions.schedule.columns.DateColumn;
 import org.jdownloader.extensions.schedule.columns.EnabledColumn;
@@ -40,13 +42,13 @@ public class SchedulerTableModel extends JDTableModel {
     }
 
     protected void initColumns() {
-        this.addColumn(new EnabledColumn(JDL.L(JDL_PREFIX + "onoff", "On/Off"), this));
-        this.addColumn(new NameColumn(JDL.L(JDL_PREFIX + "name", "Name"), this));
-        this.addColumn(new ActionColumn(JDL.L(JDL_PREFIX + "action", "Action"), this));
-        this.addColumn(new DateColumn(JDL.L(JDL_PREFIX + "date", "Date"), this));
-        this.addColumn(new TimeColumn(JDL.L(JDL_PREFIX + "time", "Time"), this));
-        this.addColumn(new NextExeColumn(JDL.L(JDL_PREFIX + "nextexecution", "Next Execution"), this));
-        this.addColumn(new RepeatsColumn(JDL.L(JDL_PREFIX + "repeats", "Repeats"), this));
+        this.addColumn(new EnabledColumn(T._.jd_plugins_optional_schedule_SchedulerTableModel_onoff(), this));
+        this.addColumn(new NameColumn(T._.jd_plugins_optional_schedule_SchedulerTableModel_name(), this));
+        this.addColumn(new ActionColumn(T._.jd_plugins_optional_schedule_SchedulerTableModel_action(), this));
+        this.addColumn(new DateColumn(T._.jd_plugins_optional_schedule_SchedulerTableModel_date(), this));
+        this.addColumn(new TimeColumn(T._.jd_plugins_optional_schedule_SchedulerTableModel_time(), this));
+        this.addColumn(new NextExeColumn(T._.jd_plugins_optional_schedule_SchedulerTableModel_nextexecution(), this));
+        this.addColumn(new RepeatsColumn(T._.jd_plugins_optional_schedule_SchedulerTableModel_repeats(), this));
     }
 
     @Override

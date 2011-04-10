@@ -1,0 +1,4 @@
+{
+  "interaction_externreconnect_command" : "命令行 (直接路径)",
+  "interaction_externreconnect_parameter" : "参数 (每行1个参数)"
+}

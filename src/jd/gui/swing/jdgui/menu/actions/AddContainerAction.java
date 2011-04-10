@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
@@ -36,7 +38,7 @@ public class AddContainerAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", JDL.L("gui.filechooser.loaddlc", "Load DLC file"), UserIO.FILES_ONLY, new JDFileFilter(null, JDUtilities.getContainerExtensions(null), true), true);
+        File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", T._.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, JDUtilities.getContainerExtensions(null), true), true);
         if (ret == null) return;
         for (File r : ret) {
             JDController.loadContainerFile(r);

@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "يرجى إدخال اسم للإعداد الجديد:",
+  "action_customize_removesetting_ask" : "(هل تريد حذف الإعدادات المحددة؟ (%s1",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "مخصص الحزمة",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "مخصص الحزمة"
+}

@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -49,12 +51,12 @@ public class DownloadView extends View {
 
     @Override
     public String getTitle() {
-        return JDL.L(IDENT_PREFIX + "tab.title", "Download");
+        return T._.jd_gui_swing_jdgui_views_downloadview_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(IDENT_PREFIX + "tab.tooltip", "Downloadlist and Progress");
+        return T._.jd_gui_swing_jdgui_views_downloadview_tab_tooltip();
     }
 
     @Override

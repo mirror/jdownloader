@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "Indítás (program mappája)",
+  "interaction_batchreconnect_batch" : "Adat újracsatlakozás",
+  "interaction_batchreconnect_terminal" : "Tolmács"
+}

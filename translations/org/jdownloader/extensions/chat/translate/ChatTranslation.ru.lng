@@ -1,0 +1,7 @@
+{
+  "sys_warning_loguploadfailed" : "Выгрузка журнала не удалась!",
+  "jd_plugins_optional_jdchat_newmessage" : "Новое сообщение от %s1:<hr> %s2",
+  "plugins_optional_jdchat_enternick" : "Ваш псевдоним",
+  "jd_plugins_optional_jdchat_jdchat" : "Чат поддержки",
+  "plugin_optional_jdchat_getlog" : "%s1 запрашивает файл журнала чтобы решить Вашу проблему. Отослать файл журнала?"
+}

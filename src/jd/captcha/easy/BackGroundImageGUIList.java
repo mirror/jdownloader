@@ -16,6 +16,8 @@
 
 package jd.captcha.easy;
 
+
+ import jd.captcha.translate.*;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -72,8 +74,8 @@ public class BackGroundImageGUIList implements ActionListener {
                 final ImageComponent ic = new ImageComponent(bgio.getImage(manager.methode));
                 tmpPanel.add(ic, BorderLayout.WEST);
 
-                final JButton edit = new JButton(JDL.L("jd.plugins.optional.schedule.maingui.edit", "Edit"));
-                final JButton del = new JButton(JDL.L("gui.component.textarea.context.delete", "Delete"));
+                final JButton edit = new JButton(T._.jd_plugins_optional_schedule_maingui_edit());
+                final JButton del = new JButton(T._.gui_component_textarea_context_delete());
 
                 edit.addActionListener(new ActionListener() {
 
@@ -141,7 +143,7 @@ public class BackGroundImageGUIList implements ActionListener {
                 panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
                 mainDialog.setLayout(new BorderLayout());
                 mainDialog.add(new JScrollPane(panel), BorderLayout.CENTER);
-                mainDialog.setTitle(JDL.L("easycaptcha.backgroundimagetrainer.title", "BackgroundImage Trainer"));
+                mainDialog.setTitle(T._.easycaptcha_backgroundimagetrainer_title());
                 return null;
             }
         }.waitForEDT();
@@ -149,8 +151,8 @@ public class BackGroundImageGUIList implements ActionListener {
         showImages();
         new GuiRunnable<Object>() {
             public Object runSave() {
-                btAdd = new JButton(JDL.L("gui.menu.add", "Add"));
-                btExit = new JButton(JDL.L("easycaptcha.backgroundimagetrainer.saveandexit", "Save and Exit"));
+                btAdd = new JButton(T._.gui_menu_add());
+                btExit = new JButton(T._.easycaptcha_backgroundimagetrainer_saveandexit());
                 Box box = new Box(BoxLayout.X_AXIS);
                 box.add(btAdd);
                 box.add(btExit);

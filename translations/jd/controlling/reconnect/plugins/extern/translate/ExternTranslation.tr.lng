@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Komut (salt dizin yolları kullan)",
+  "interaction_externreconnect_parameter" : "Parametre (her satıra tek parametre)",
+  "interaction_externreconnect_dummybat" : "Windows için özel yürütülebilir dosya kullan (örn .bat .exe)"
+}

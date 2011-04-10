@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Actualitzar a la versió beta ara?",
+  "updater_beta_rlyupdate_message" : "Voleu actualitzar a JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Denegar l’accés!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Sol·licitud externa de %s1 a %s2 interfície!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Permetre!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Una aplicació externa intenta afegir enllaços. Veure registre per detalls."
+}

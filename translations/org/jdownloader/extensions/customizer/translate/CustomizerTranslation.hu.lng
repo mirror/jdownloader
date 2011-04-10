@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "Adja meg az új beállítás nevét:",
+  "action_customize_removesetting_ask" : "Törli a kijelölt beállítás(ok)at? (%s1 fiók(ok))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JD Csomagszerkesztő"
+}

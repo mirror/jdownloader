@@ -16,6 +16,8 @@
 
 package jd.gui.swing.components;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -202,7 +204,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
         }
 
-        btnBrowse = new JButton(JDL.L("gui.btn_select", "Browse"));
+        btnBrowse = new JButton(T._.gui_btn_select());
         btnBrowse.addActionListener(this);
 
         this.add(cmboInput, "grow");

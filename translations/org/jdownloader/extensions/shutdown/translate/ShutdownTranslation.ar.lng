@@ -1,0 +1,17 @@
+{
+  "gui_config_jdshutdown_shutdown" : "إطفاء",
+  "interaction_shutdown_dialog_title_standby" : "إستعد؟",
+  "gui_config_jdshutdown_forceshutdown" : "إغلاق الجهاز عنوة  (ليس فى كل الأنظمة)",
+  "gui_config_jdshutdown_osx_force_long" : "تثبيت إيقاف التشغيل بالقوة (MacOSX فقط)",
+  "interaction_shutdown_dialog_title_hibernate" : "وضع السبات؟",
+  "interaction_shutdown_dialog_title_shutdown" : "إطفاء؟",
+  "addons_jdshutdown_statusmessage_disabled" : "بإيقاف تشغيل الكمبيوتر JDownloader لن يقوم",
+  "gui_config_jdshutdown_hibernate" : "وضع السبات (ليس لجميع الأنظمة)",
+  "gui_config_jdshutdown_close" : "إغلاق JDownloader",
+  "gui_config_jdshutdown_standby" : "الذهاب لوضع الإستعداد  (ليس فى كل الأنظمة)",
+  "jd_plugins_optional_jdshutdown" : "أطفئ JD",
+  "gui_config_jdshutdown_osx_force_short" : "تثبيت",
+  "interaction_shutdown_dialog_title_closejd" : "إغلاق JDownloader؟",
+  "gui_config_jdshutdown_mode" : "الوضع:",
+  "addons_jdshutdown_statusmessage_enabled" : "بإيقاف تشغيل الجهاز بعد اكتمال التحميلات JDownloader سيقوم"
+}

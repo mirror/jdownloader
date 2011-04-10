@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.downloads.columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 
 import javax.swing.ImageIcon;
@@ -67,14 +69,14 @@ public class StatusColumn extends JDTableColumn {
         imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
-        strStopMark = JDL.L(JDL_PREFIX + "stopmark", "Stopmark is set");
-        strFinished = JDL.L(JDL_PREFIX + "finished", "Download finished");
-        strFailed = JDL.L(JDL_PREFIX + "failed", "Download failed");
-        strExtract = JDL.L(JDL_PREFIX + "extract", "Extracting");
-        strPriorityS = JDL.L("gui.treetable.tooltip.priority-1", "Low Priority");
-        strPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
-        strPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
-        strPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
+        strStopMark = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark();
+        strFinished = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_finished();
+        strFailed = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_failed();
+        strExtract = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_extract();
+        strPriorityS = T._.gui_treetable_tooltip_priority_1();
+        strPriority1 = T._.gui_treetable_tooltip_priority1();
+        strPriority2 = T._.gui_treetable_tooltip_priority2();
+        strPriority3 = T._.gui_treetable_tooltip_priority3();
 
     }
 

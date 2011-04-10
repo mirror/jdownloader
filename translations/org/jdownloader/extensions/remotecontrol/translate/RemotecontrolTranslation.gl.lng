@@ -1,0 +1,4 @@
+{
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 iniciado no porto %s2\\nhttp://127.0.0.1:%s3\\n/help para informacion de desenroladores.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 detido."
+}

@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.extraction.multi;
 
+
+ import org.jdownloader.extensions.extraction.translate.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -587,10 +589,10 @@ public class Multi extends IExtraction {
     }
 
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
-        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.multi.config", "Multi unpacker settings"), "gui.images.addons.unrar"));
+        config.setGroup(new ConfigGroup(T._.plugins_optional_extraction_multi_config(), "gui.images.addons.unrar"));
 
-        String[] priorities = new String[] { JDL.L("plugins.optional.extraction.multi.priority.high", "High"), JDL.L("plugins.optional.extraction.multi.priority.middle", "Middle"), JDL.L("plugins.optional.extraction.multi.priority.low", "Low") };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PRIORITY, priorities, JDL.L("plugins.optional.extraction.multi.priority", "Priority")).setDefaultValue(0));
+        String[] priorities = new String[] { T._.plugins_optional_extraction_multi_priority_high(), T._.plugins_optional_extraction_multi_priority_middle(), T._.plugins_optional_extraction_multi_priority_low() };
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PRIORITY, priorities, T._.plugins_optional_extraction_multi_priority()).setDefaultValue(0));
     }
 
     @Override

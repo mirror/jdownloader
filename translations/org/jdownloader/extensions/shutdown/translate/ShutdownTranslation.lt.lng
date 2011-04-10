@@ -1,0 +1,8 @@
+{
+  "jd_plugins_optional_jdshutdown" : "JDShutdown",
+  "gui_config_jdshutdown_forceshutdown" : "Force Shutdown (Not for all OS)",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader will shut down your System after downloads finished",
+  "gui_config_jdshutdown_hibernate" : "Hibernate (Not for all OS)",
+  "addons_jdshutdown_statusmessage_disabled" : "The System will NOT be shut down by JDownloader",
+  "gui_config_jdshutdown_standby" : "Standby (Not for all OS)"
+}

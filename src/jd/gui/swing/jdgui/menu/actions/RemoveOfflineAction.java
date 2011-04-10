@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -44,7 +46,7 @@ public class RemoveOfflineAction extends ThreadedAction {
 
     @Override
     public void threadedActionPerformed(ActionEvent e) {
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.gui.swing.jdgui.menu.actions.RemoveOfflineAction.message", "Do you really want to remove all offline DownloadLinks?")))) return;
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.jd_gui_swing_jdgui_menu_actions_RemoveOfflineAction_message()))) return;
 
         if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
             synchronized (LinkGrabberController.ControllerLock) {

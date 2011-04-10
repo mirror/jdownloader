@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Commando (usa percorso assoluto)",
+  "interaction_externreconnect_parameter" : "Parametro (1 comando per riga)",
+  "interaction_externreconnect_dummybat" : "Usa esecuzione speciale per windows"
+}

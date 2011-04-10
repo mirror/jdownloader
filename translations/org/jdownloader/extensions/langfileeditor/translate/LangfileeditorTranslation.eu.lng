@@ -1,0 +1,13 @@
+{
+  "plugins_optional_langfileeditor_keychart_missing" : "Faltan",
+  "plugins_optional_langfileeditor_keychart_done" : "Egina",
+  "jd_plugins_optional_langfileeditor_langfileeditor" : "Hizkuntza fitxategi editorea",
+  "plugins_optional_langfileeditor_title" : "Hizkuntza editorea",
+  "plugins_optional_langfileeditor_file" : "Fitxategia",
+  "plugins_optional_langfileeditor_test" : "Froga",
+  "plugins_optional_langfileeditor_keychart_old" : "Zaharra",
+  "gui_btn_yes" : "Bai",
+  "plugins_optional_langfileeditor_load" : "Hizkuntza kargatu",
+  "gui_btn_no" : "Ez",
+  "plugins_optional_langfileeditor_savelocale" : "Lineaz kanpo gorde"
+}

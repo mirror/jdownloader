@@ -1,0 +1,7 @@
+{
+  "gui_config_antistandby_mode" : "Modo:",
+  "gui_config_antistandby_whiledl" : "Previene lo standby durante il downlaod",
+  "jd_plugins_optional_antistandby_jdantistandby_description" : "Impedisce al computer di andare in Stand By o in modo Sleep per mantenere i download attivi.",
+  "gui_config_antistandby_whilejd" : "Previene lo standby mentre JD è in esecuzione",
+  "jd_plugins_optional_antistandby_jdantistandby" : "JDAntistandby"
+}

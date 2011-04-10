@@ -1,0 +1,4 @@
+{
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 začal na porte %s2\\nhttp://127.0.0.1:%s3\\n/pomoc pre Vývojárov.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 sa zastavil."
+}

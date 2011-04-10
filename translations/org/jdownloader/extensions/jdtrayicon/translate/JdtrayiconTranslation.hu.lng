@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD Tálcaikon",
+  "plugins_trayicon_popup_bottom_simdls" : "Egyidejű letöltések",
+  "plugins_trayicon_popup_bottom_speed" : "Sebesség korlátozása (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Egyidejű kapcsolatok",
+  "gui_tooltip_statusbar_simultan_downloads" : "Max. egyidejű letöltés",
+  "gui_tooltip_statusbar_speedlimiter" : "Sebességkorlátozás (KiB/s) [0:nincs korlátozva]",
+  "gui_tooltip_statusbar_max_chunks" : "Max. kapcsolat fájlonként"
+}

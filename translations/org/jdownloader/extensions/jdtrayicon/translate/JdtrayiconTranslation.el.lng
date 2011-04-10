@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Εικονίδιο (JDLightTray)",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Επιτρέπει την ελαχιστοποίηση του JD στην περιοχή ειδοποιήσεων, μαζί με κάποια ακόμα χαρακτηριστικά, όπως προστασία του προγράμματος με κωδικό.",
+  "plugins_trayicon_popup_bottom_simdls" : "Ταυτόχρονες Λήψεις",
+  "plugins_trayicon_popup_bottom_speed" : "Όριο ταχύτητας (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Ταυτόχρονες Συνδέσεις",
+  "gui_tooltip_statusbar_simultan_downloads" : "Μέγιστος αριθμός ταυτόχρονων λήψεων [1...20]",
+  "gui_tooltip_statusbar_speedlimiter" : "Όριο ταχύτητας (KiB/s) [0 = άπειρη]",
+  "gui_tooltip_statusbar_max_chunks" : "Μέγιστος αριθμός Συνδέσεων ανά Αρχείο [1...20]"
+}

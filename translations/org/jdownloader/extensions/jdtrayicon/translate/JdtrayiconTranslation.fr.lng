@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD Zone de notification",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Permet de réduire ou fermer JDownloader dans la zone de notification. Verrouillage possible par mot de passe",
+  "plugins_trayicon_popup_bottom_simdls" : "Téléchargements simultanés",
+  "plugins_trayicon_popup_bottom_speed" : "Limite de vitesse (ko/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Connexions simultanées",
+  "gui_tooltip_statusbar_simultan_downloads" : "Max. Téléchargements simultanés",
+  "gui_tooltip_statusbar_speedlimiter" : "Limite de vitesse (ko/s) [0 :infini]",
+  "gui_tooltip_statusbar_max_chunks" : "Max. Connexions/Fichier"
+}

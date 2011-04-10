@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Kommando (använd absolut sökväg)",
+  "interaction_externreconnect_parameter" : "Parametrar (1 parameter per linje)",
+  "interaction_externreconnect_dummybat" : "Använd speciell exekverare för Windows"
+}

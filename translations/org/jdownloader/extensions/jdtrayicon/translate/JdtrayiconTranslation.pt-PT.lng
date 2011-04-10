@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD Ícone na Área de Notificação",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Permite a minimização ou o fecho do JD para a área de notificação. Pode activar protecção com palavra-passe e mais...",
+  "plugins_trayicon_popup_bottom_simdls" : "Transferências simultâneas",
+  "plugins_trayicon_popup_bottom_speed" : "Limite de velocidade (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Ligações Actuais",
+  "gui_tooltip_statusbar_simultan_downloads" : "Máximo de transferências simultâneas",
+  "gui_tooltip_statusbar_speedlimiter" : "Limite de velocidade (KiB/s) [0 = infinito]",
+  "gui_tooltip_statusbar_max_chunks" : "Máximo de ligações por ficheiro"
+}

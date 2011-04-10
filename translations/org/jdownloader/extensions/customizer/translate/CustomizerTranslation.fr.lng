@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Veuillez entrer le nom du nouveau paramétrage :",
+  "action_customize_removesetting_ask" : "Supprimer le(s) paramétrage(s) sélectionné(s) ? (%s1 Compte(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Personnalisateur de Paquets",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Personnalisateur de Paquets"
+}

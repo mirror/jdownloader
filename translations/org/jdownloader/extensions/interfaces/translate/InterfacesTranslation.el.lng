@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Ενημέρωση σε BETA έκδοση τώρα;",
+  "updater_beta_rlyupdate_message" : "Επιθυμείτε να γίνει Ενημέρωση στην έκδοση JD-%s1 ;",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Άρνηση πρόσβασης!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Εξωτερική αίτηση από %s1 στο %s2 περιβάλλον!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Επιτρέψτε το!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Μια εξωτερική εφαρμογή προσπαθεί να προσθέσει συνδέσμους. Δείτε το Αρχείο Σφαλμάτων για λεπτομέρειες."
+}

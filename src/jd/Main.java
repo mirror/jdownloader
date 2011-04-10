@@ -17,6 +17,8 @@
 
 package jd;
 
+
+ import org.jdownloader.translate.*;
 import java.awt.EventQueue;
 import java.io.File;
 import java.io.IOException;
@@ -144,7 +146,7 @@ public class Main {
         }
 
         if (Application.isOutdatedJavaVersion(true)) {
-            final int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.LF("gui.javacheck.newerjavaavailable.title", "Outdated Javaversion found: %s!", Application.getJavaVersion()), JDL.L("gui.javacheck.newerjavaavailable.msg", "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning", 32, 32), null, null);
+            final int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, T._.gui_javacheck_newerjavaavailable_title( Application.getJavaVersion()), T._.gui_javacheck_newerjavaavailable_msg(), JDTheme.II("gui.images.warning", 32, 32), null, null);
             if ((returnValue & UserIO.RETURN_DONT_SHOW_AGAIN) == 0) {
                 CrossSystem.openURLOrShowMessage("http://jdownloader.org/download/index?updatejava=1");
             }

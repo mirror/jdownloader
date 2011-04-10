@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 
 import javax.swing.ImageIcon;
@@ -34,9 +36,9 @@ public class HosterIconColumn extends ExtColumn<PackageLinkNode> {
         imgResume = JDTheme.II("gui.images.resume", 16, 16);
         imgMissing = JDTheme.II("gui.images.bad", 16, 16);
         imgPremium = JDTheme.II("gui.images.premium", 16, 16);
-        strResume = JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.resume", "Resumable download");
-        strPremium = JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.premium", "Loading with Premium");
-        strMissing = JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.missing", "Plugin missing");
+        strResume = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_resume();
+        strPremium = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_premium();
+        strMissing = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_missing();
     }
 
     @Override

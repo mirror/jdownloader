@@ -16,6 +16,8 @@
 
 package jd.gui.swing.components;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -129,7 +131,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
 
-        btnBrowse = new JButton(JDL.L("gui.btn_select", "Browse"));
+        btnBrowse = new JButton(T._.gui_btn_select());
         btnBrowse.addActionListener(this);
 
         add(txtInput, "grow");

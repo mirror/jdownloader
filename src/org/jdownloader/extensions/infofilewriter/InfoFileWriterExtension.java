@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.infofilewriter;
 
+
+ import org.jdownloader.extensions.infofilewriter.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -58,7 +60,7 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
     /**
      * Usually overridden by localization
      */
-    private static final String INFO_STRING_DEFAULT = JDL.L("plugins.optional.infofilewriter.contentdefault", "Comment: %LAST_FINISHED_PACKAGE.COMMENT%\r\nPassword: %LAST_FINISHED_PACKAGE.PASSWORD%\r\nAuto-Password: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFinalized %SYSTEM.DATE% to %SYSTEM.TIME% Clock");
+    private static final String INFO_STRING_DEFAULT = T._.plugins_optional_infofilewriter_contentdefault();
 
     private static final String PARAM_CREATION      = "CREATION";
 
@@ -85,7 +87,7 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
     }
 
     public InfoFileWriterExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.jdinfofilewriter", null));
+        super(T._.jd_plugins_optional_jdinfofilewriter());
 
         subConfig = JSonWrapper.get("JDInfoFileWriter");
 
@@ -120,7 +122,7 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
             if (event.getCaller() instanceof FilePackage && subConfig.getIntegerProperty(PARAM_CREATION, 0) == 1) return;
 
             final Property obj = (Property) event.getCaller();
-            final MenuAction m = new MenuAction(JDL.L(JDL_PREFIX + "createInfoFile", "Create Info File"), 1337);
+            final MenuAction m = new MenuAction(T._.jd_plugins_optional_JDInfoFileWriter_createInfoFile(), 1337);
             m.setIcon(this.getIconKey());
             m.setSelected(obj.getBooleanProperty(PARAM_CREATE_FILE, true));
             m.setActionListener(new ActionListener() {
@@ -182,15 +184,15 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
     @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_CREATION, new String[] { JDL.L(JDL_PREFIX + "packages", "packages"), JDL.L(JDL_PREFIX + "downloadlinks", "downloadlinks") }, "Create info file for complete ...").setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, PARAM_CREATION, new String[] { T._.jd_plugins_optional_JDInfoFileWriter_packages(), T._.jd_plugins_optional_JDInfoFileWriter_downloadlinks() }, "Create info file for complete ...").setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_ONLYPASSWORD, JDL.L("plugins.optional.infofilewriter.onlywithpassword", "Use only if password is enabled")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_ONLYPASSWORD, T._.plugins_optional_infofilewriter_onlywithpassword()).setDefaultValue(false));
 
-        config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, "VARS", Replacer.getKeyList(), JDL.L("plugins.optional.infofilewriter.variables", "Available variables")));
+        config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, "VARS", Replacer.getKeyList(), T._.plugins_optional_infofilewriter_variables()));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infofilewriter.insertKey.short", "Insert"), JDL.L("plugins.optional.infofilewriter.insertKey", "Insert selected Key into the Content"), JDTheme.II("gui.icons.paste", 16, 16)));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDL.L("plugins.optional.infofilewriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
-        config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDL.L("plugins.optional.infofilewriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, T._.plugins_optional_infofilewriter_insertKey_short(), T._.plugins_optional_infofilewriter_insertKey(), JDTheme.II("gui.icons.paste", 16, 16)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, T._.plugins_optional_infofilewriter_filename()).setDefaultValue(FILENAME_DEFAULT));
+        config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, T._.plugins_optional_infofilewriter_content()).setDefaultValue(INFO_STRING_DEFAULT));
 
     }
 
@@ -206,7 +208,7 @@ public class InfoFileWriterExtension extends AbstractExtension implements Action
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.jdinfofilewriter.description", null);
+        return T._.jd_plugins_optional_jdinfofilewriter_description();
     }
 
     @Override

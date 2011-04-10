@@ -1,0 +1,9 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nHasło: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nAuto-Hasło: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nZakończony %SYSTEM.DATE% %SYSTEM.TIME%",
+  "jd_plugins_optional_jdinfofilewriter" : "Zapis pliku info",
+  "plugins_optional_infofilewriter_content" : "Zawartość:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Użyj jedynie gdy hasło jest aktywne",
+  "jd_plugins_optional_jdinfofilewriter_description" : "Zapis pliku info JD",
+  "plugins_optional_infofilewriter_variables" : "Dostępne zmienne",
+  "plugins_optional_infofilewriter_filename" : "Nazwa pliku:"
+}

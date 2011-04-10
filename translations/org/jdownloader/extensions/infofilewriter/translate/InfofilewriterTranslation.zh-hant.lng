@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_jdinfofilewriter" : "JDInfoFileWriter",
+  "plugins_optional_infofilewriter_content" : "內容：",
+  "plugins_optional_infofilewriter_variables" : "可用的變數",
+  "plugins_optional_infofilewriter_filename" : "檔案名稱："
+}

@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Örnek: Airties Rt-103",
+  "gui_config_jdrr_rawmode" : "HamMod?",
+  "gui_btn_yes" : "Evet",
+  "gui_config_routeripfinder_ready" : "IP bulundu: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Yönlendirici seç (yönlendirici listede yoksa kaydedici'yi kullan)",
+  "gui_config_jdrr_success" : "Başarılı!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "IP-Denetimini devre dışı bırkatınız. Bu tekrar bağlanma sürelerini oldukça uzatır!\\r\\n\\r\\nTekrar bağlan kaydedici modülü de devre dışı bırakıldı.",
+  "gui_config_jdrr_reconnectfaild" : "Tekrar Bağlan Başarısız?",
+  "gui_btn_help" : "Yardım",
+  "gui_btn_start" : "Başlat",
+  "gui_config_jdrr_savereconnect" : "Tekrar Bağlan Başarılı! Şimdi kaydedilsin mi ?",
+  "gui_config_jdrr_popup_title" : "TBK Popup",
+  "gui_fengshuiconfig_routerip" : "Yönlendirici-IP",
+  "gui_config_jdrr_title" : "Tekrar Bağlan kaydedici",
+  "gui_config_jdrr_status_title" : "Durum Kaydediliyor",
+  "gui_config_routeripfinder_notfound" : "Yönlendirici'nizin sunucu adı bulunamadı",
+  "gui_btn_no" : "Hayır",
+  "gui_btn_cancel" : "İptal",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP Denetimi devre dışı bırakıldı!",
+  "gui_btn_abort" : "Vazgeç",
+  "gui_config_reconnect_selectrouter" : "Yönlendirici Modeli Ara"
+}

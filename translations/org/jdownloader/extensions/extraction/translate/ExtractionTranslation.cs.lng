@@ -1,0 +1,19 @@
+{
+  "plugins_optional_extraction_status_extractfailed" : "Rozbalení selhalo",
+  "plugins_optional_extraction_status_passfound" : "Heslo nalezeno",
+  "plugins_optional_extraction_status_extractfailedcrc" : "Rozbalení selhalo (CRC error)",
+  "plugins_optional_extraction_status_queued" : "Přidáno na frontu k rozbalení",
+  "plugins_optional_extraction_status_crackingpass" : "Zkouším hesla...",
+  "plugins_optional_extraction_status_extracting" : "Rozbalování...",
+  "plugins_optional_extraction_messages" : "Cesta %s1 neexistuje.",
+  "plugins_optional_extraction_progress_extractfile" : "Rozbalit %s1",
+  "plugins_optional_extraction_name" : "Rozbalení",
+  "plugins_optional_extraction_filefilter" : "Všechny podporované formáty",
+  "plugins_optional_extraction_status_openingarchive" : "Otevírám archiv...",
+  "plugins_optional_extraction_status_extractfailedpass" : "Rozbalení selhalo (heslo)",
+  "plugins_optional_extraction_status_notenoughspace" : "Není kam rozbalovat - málo místa",
+  "plugins_optional_extraction_status_extractok" : "Rozbalení OK",
+  "plugins_optional_extraction_error_extrfailedcrc" : "Rozbalení selhalo (CRC neznámého souboru)",
+  "plugins_optional_extraction_filefilter_extractto" : "Složka k rozbalení",
+  "plugins_optional_extraction_crcerrorin" : "Rozbalení selhalo (CRC u %s1)"
+}

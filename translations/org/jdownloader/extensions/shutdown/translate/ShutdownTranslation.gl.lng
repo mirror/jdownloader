@@ -1,0 +1,8 @@
+{
+  "jd_plugins_optional_jdshutdown" : "JD Apagado",
+  "gui_config_jdshutdown_forceshutdown" : "Apagar (non para todos os Sistemas Operativos)",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader apagará o equipo ó finalizar as descargas",
+  "gui_config_jdshutdown_hibernate" : "Hibernar (non para todos os Sistemas Operativos)",
+  "addons_jdshutdown_statusmessage_disabled" : "JDownloader NON apagará o sistema",
+  "gui_config_jdshutdown_standby" : "Suspender (non para todos os Sistemas Operativos)"
+}

@@ -1,0 +1,15 @@
+{
+  "gui_config_antireconnect_newreconnect" : "Дозволи поновно успостављање везе:",
+  "gui_config_antireconnect_each" : "Провера сваке (мс)",
+  "gui_config_antireconnect_oldspeed" : "Брзина преузимања у кб/с",
+  "gui_config_antireconnect_newgroup" : "Ако су и други клијенти на вези",
+  "gui_config_antireconnect_newspeed" : "Брзина преузимања у кб/с",
+  "gui_config_antireconnect_newdownloads" : "Истовремених преузимања:",
+  "gui_config_antireconnect_oldreconnect" : "Дозволи поновно успостављање везе:",
+  "gui_config_antireconnect_mode" : "Начин:",
+  "gui_config_antireconnect_olddownloads" : "Истовремених преузимања:",
+  "gui_config_antireconnect_ips" : "Провера IP адреса (192.168.1.20-80)",
+  "gui_config_antireconnect_oldgroup" : "Нормално",
+  "gui_config_antireconnect_timeout" : "Интервал провере (мс)",
+  "jd_plugins_optional_antireconnect_jdantireconnect" : "Спречавање поновног успостављања везе"
+}

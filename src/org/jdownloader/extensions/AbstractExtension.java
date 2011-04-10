@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions;
 
+
+ import org.jdownloader.translate.*;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 

@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Příkaz (použijte úplnou cestu)",
+  "interaction_externreconnect_parameter" : "Parametr (jeden na řádek)",
+  "interaction_externreconnect_dummybat" : "Použít speciální spouštěč pro Windows"
+}

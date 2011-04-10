@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JDLightTray",
+  "plugins_trayicon_popup_bottom_simdls" : "Gelijktijdige Downloads",
+  "plugins_trayicon_popup_bottom_speed" : "snelheidsbegrenzing",
+  "plugins_trayicon_popup_bottom_simchunks" : "Gelijktijdige Verbindingen",
+  "gui_tooltip_statusbar_simultan_downloads" : "Max. gelijktijdige Downloads",
+  "gui_tooltip_statusbar_speedlimiter" : "Snelheidslimiet instellen (KiB/s) [0:oneindig]",
+  "gui_tooltip_statusbar_max_chunks" : "Max. Verbindingen/Bestand"
+}

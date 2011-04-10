@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Задавање наредби програму JD са удаљеног рачунара преко HTTP протокола",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 покренут на порту %s2\\nhttp://127.0.0.1:%s3\\n/помоћ за развојне информације",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 је заустављен.",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Даљинско управљање"
+}

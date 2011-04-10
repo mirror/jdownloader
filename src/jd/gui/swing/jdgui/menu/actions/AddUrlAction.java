@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -50,7 +52,7 @@ public class AddUrlAction extends ToolBarAction {
             }
         } catch (Exception e2) {
         }
-        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, JDL.L("gui.dialog.addurl.title", "Add URL(s)"), JDL.L("gui.dialog.addurl.message", "Add a URL(s). JDownloader will load and parse them for further links."), def.toString(), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), JDL.L("gui.dialog.addurl.okoption_parse", "Parse URL(s)"), null);
+        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, T._.gui_dialog_addurl_title(), T._.gui_dialog_addurl_message(), def.toString(), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), T._.gui_dialog_addurl_okoption_parse(), null);
         if (link == null || link.length() == 0) return;
         if (CNL2.checkText(link)) return;
         DistributeData tmp = new DistributeData(link, false);

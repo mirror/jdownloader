@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD ikona u traci",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Omogućuje minimiziranje ili zatvaranje JDownloader-a u području obavijesti, zajedno s drugim srodnim značajkama kao što su zaštita lozinkom i još mnogo toga.",
+  "plugins_trayicon_popup_bottom_simdls" : "Istovremena preuzimanja",
+  "plugins_trayicon_popup_bottom_speed" : "Ograničenje brzine (kb/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Istovremene veze",
+  "gui_tooltip_statusbar_simultan_downloads" : "Najviše istovremenih preuzimanja",
+  "gui_tooltip_statusbar_speedlimiter" : "Ograničenje brzine (kb/s) [0:neograničeno]",
+  "gui_tooltip_statusbar_max_chunks" : "Najviše veza po datoteci"
+}

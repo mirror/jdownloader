@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "是否立即更新 BETA版本？",
+  "updater_beta_rlyupdate_message" : "您是否想要升級至 JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "拒絕存取！",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "外部請求從介面 %s1 到 %s2 ！",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "允許！",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "外部應用程式嘗試增加連結。請參閱記錄的詳細資訊。"
+}

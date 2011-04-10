@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Zamykanie systemu",
+  "gui_config_jdshutdown_forceshutdown" : "Wymuś zamykanie (nie dla wszystkich systemów)",
+  "interaction_shutdown_dialog_title_standby" : "Stan czuwania?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Uwaga! Twój system jest w trakcie wyłączania!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Zainstaluj Wymuszone Wyłączenie (tylko MacOS X)",
+  "interaction_shutdown_dialog_title_hibernate" : "Hibernować?",
+  "interaction_shutdown_dialog_title_shutdown" : "Zamknąć system?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader zostanie zamknięty!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "System NIE ZOSTANIE zamknięty przez JDownloadera.",
+  "gui_config_jdshutdown_hibernate" : "Hibernacja (nie dla wszystkich systemów)",
+  "gui_config_jdshutdown_close" : "Zamknij JD",
+  "gui_config_jdshutdown_standby" : "Stan wstrzymania  (nie dla wszystkich systemów)",
+  "gui_config_jdshutdown_osx_force_short" : "Instaluj",
+  "jd_plugins_optional_jdshutdown" : "Zamykanie systemu",
+  "interaction_shutdown_dialog_title_closejd" : "Zamknąć JD?",
+  "gui_config_jdshutdown_mode" : "Tryb:",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader zamknie system po ukończeniu pobierania.",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Stwój system wejdzie w stan czuwaniaa!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Stwój system wejdzie w stan hibernacji!</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "Automatycznie wyłącza, usypia, hibernuje twojego peceta lub zamyka JDownloadera po zakończeniu wszystkich pobierań."
+}

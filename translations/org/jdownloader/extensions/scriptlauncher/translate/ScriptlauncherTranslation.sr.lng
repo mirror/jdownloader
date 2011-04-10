@@ -1,0 +1,4 @@
+{
+  "jd_plugins_optional_scriptlauncher_jdscriptlauncher_description" : "Омогућава покретање скрипти (shell/bash) или извршних датотека из менија.\\r\\nСве скрипте или симболичке везе морају бити смештене у \"scripts\" подфасциклу JD фасцикле.",
+  "jd_plugins_optional_scriptlauncher_jdscriptlauncher" : "Покретач скрипти"
+}

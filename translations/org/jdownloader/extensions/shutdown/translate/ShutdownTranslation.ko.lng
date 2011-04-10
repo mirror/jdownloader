@@ -1,0 +1,18 @@
+{
+  "gui_config_jdshutdown_shutdown" : "종료",
+  "interaction_shutdown_dialog_title_standby" : "대기?",
+  "gui_config_jdshutdown_forceshutdown" : "강제 종료",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">시스템이 종료됩니다!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "설치 강제 종료 (오직 맥에서만)",
+  "interaction_shutdown_dialog_title_shutdown" : "종료?",
+  "addons_jdshutdown_statusmessage_disabled" : "다운로드완료 후 자동종료지 않습니다.",
+  "gui_config_jdshutdown_hibernate" : "대기 모드",
+  "gui_config_jdshutdown_close" : "JDownloader 종료",
+  "gui_config_jdshutdown_standby" : "대기모드",
+  "jd_plugins_optional_jdshutdown" : "JD 종료",
+  "gui_config_jdshutdown_osx_force_short" : "설치",
+  "interaction_shutdown_dialog_title_closejd" : "JDownloader를 종료하시겠습니까?",
+  "gui_config_jdshutdown_mode" : "모드:",
+  "addons_jdshutdown_statusmessage_enabled" : "다운로드완료 후 자동종료됩니다.",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">시스템이 절전모드로 들어갑니다!</font></h2>"
+}

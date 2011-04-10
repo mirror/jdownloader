@@ -1,0 +1,8 @@
+{
+  "jd_plugins_optional_jdinfofilewriter" : "كاتب معلومات الملف",
+  "plugins_optional_infofilewriter_content" : "المحتوى:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "إستخدم فقط عندما تكون كلمة المرور مفعلة",
+  "jd_plugins_optional_jdinfofilewriter_description" : "كاتب معلومات الملف",
+  "plugins_optional_infofilewriter_variables" : "المتغيرات المتاحة",
+  "plugins_optional_infofilewriter_filename" : "إسم الملف:"
+}

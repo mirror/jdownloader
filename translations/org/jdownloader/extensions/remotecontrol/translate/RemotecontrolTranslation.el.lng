@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Απομακρυσμένος Έλεγχος",
+  "plugins_optional_remotecontrol_startedonport2" : "Ο %s1 άρχισε στη θύρα %s2\\nhttp://127.0.0.1:%s3\\n/Βοήθεια για Πληροφορίες Προγραμματιστών.",
+  "plugins_optional_remotecontrol_stopped2" : "Ο %s1 σταμάτησε",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Απομακρυσμένος Έλεγχος"
+}

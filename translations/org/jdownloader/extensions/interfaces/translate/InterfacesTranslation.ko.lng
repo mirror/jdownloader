@@ -1,0 +1,7 @@
+{
+  "updater_beta_rlyupdate_title" : "베타버젼을 업테이트 하시겠습니까?",
+  "updater_beta_rlyupdate_message" : "JD-%s1로 업데이트 하시겠습니까?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "엑서스 거부!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "허용하기",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "외부 프로그램의 링크 추가 시도. 자세한 사항은 로그 참조"
+}

@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Actualizar a la BETA ahora?",
+  "updater_beta_rlyupdate_message" : "Desea actualizar a JD %s1?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Denegar acceso!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Pedido externo de %s1 a la integracion de %s2!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Permitir",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Un programa externo está intentando agregar vínculos. Vea el Registro para detalles."
+}

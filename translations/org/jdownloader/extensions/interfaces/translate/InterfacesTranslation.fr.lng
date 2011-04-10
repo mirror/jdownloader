@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Mettre à jour avec la version BETA maintenant ?",
+  "updater_beta_rlyupdate_message" : "Voulez-vous mettre à jour JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Accès refusé !",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Requête externe de %s1 à %s2 interface !",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Autorisez-le !",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Une application externe essaye d'ajouter des liaisons. Voir le Journal pour plus de détails."
+}

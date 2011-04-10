@@ -16,6 +16,8 @@
 
 package jd;
 
+
+ import org.jdownloader.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -184,8 +186,8 @@ public class JDInit {
             if (!old.equals(JDUtilities.getRevision())) {
                 JDInit.LOG.info("Detected that JD just got updated");
 
-                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successful"), null, null, null);
-                dialog.setLeftActions(new AbstractAction(JDL.L("system.update.showchangelogv2", "What's new?")) {
+                final ConfirmDialog dialog = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.system_update_message_title( JDUtilities.getRevision()), T._.system_update_message(), null, null, null);
+                dialog.setLeftActions(new AbstractAction(T._.system_update_showchangelogv2()) {
 
                     private static final long serialVersionUID = 1L;
 
@@ -351,13 +353,13 @@ public class JDInit {
                     final File home = JDUtilities.getResourceFile(".");
                     if (!home.canWrite()) {
                         JDInit.LOG.severe("INSTALL abgebrochen");
-                        UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
+                        UserIO.getInstance().requestMessageDialog(T._.installer_error_noWriteRights());
                         JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                         System.exit(1);
                     }
                 } else {
                     JDInit.LOG.severe("INSTALL abgebrochen2");
-                    UserIO.getInstance().requestMessageDialog(JDL.L("installer.abortInstallation", "Error. User aborted installation."));
+                    UserIO.getInstance().requestMessageDialog(T._.installer_abortInstallation());
                     JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(0);
                 }

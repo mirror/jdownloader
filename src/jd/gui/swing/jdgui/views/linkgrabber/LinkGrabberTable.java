@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -77,7 +79,7 @@ class PropMenuItem extends JMenuItem implements ActionListener {
     private LinkGrabberPanel  linkgrabber;
 
     public PropMenuItem(LinkGrabberPanel linkgrabber) {
-        super(JDL.L("gui.table.contextmenu.prop", "Properties"));
+        super(T._.gui_table_contextmenu_prop());
         this.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
         this.linkgrabber = linkgrabber;
         this.addActionListener(this);
@@ -336,7 +338,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
 
                 final JDTableColumn column = this.getJDTableModel().getJDTableColumn(col);
                 if (column.isSortable(sfp)) {
-                    this.getDefaultSortMenuItem().set(column, sfp, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
+                    this.getDefaultSortMenuItem().set(column, sfp, T._.gui_table_contextmenu_packagesort() + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
                     popup.add(this.getDefaultSortMenuItem());
                 }
 
@@ -370,7 +372,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
     }
 
     private JMenu createDeleteMenu(ArrayList<DownloadLink> alllinks) {
-        JMenu popup = new JMenu(JDL.L("gui.table.contextmenu.remove", "Remove"));
+        JMenu popup = new JMenu(T._.gui_table_contextmenu_remove());
         popup.setIcon(JDTheme.II("gui.images.delete", 16, 16));
         if (alllinks != null && alllinks.size() > 0) {
             popup.add(new DeleteAction(alllinks));
@@ -386,7 +388,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
     private JMenu createFilterMenu() {
         JExtCheckBoxMenuItem tmp;
 
-        JMenu men = new JMenu(JDL.L("gui.table.contextmenu.filetype", "Filter"));
+        JMenu men = new JMenu(T._.gui_table_contextmenu_filetype());
         men.setIcon(JDTheme.II("gui.images.filter", 16, 16));
 
         ArrayList<String> extensions = linkgrabber.getExtensions();
@@ -407,7 +409,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, KeyListe
     }
 
     private JMenu createPrioMenu(ArrayList<DownloadLink> links) {
-        JMenu prioPopup = new JMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
+        JMenu prioPopup = new JMenu(T._.gui_table_contextmenu_priority() + " (" + links.size() + ")");
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
 
         prioPopup.add(new PriorityAction(links, 3));

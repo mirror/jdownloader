@@ -1,0 +1,23 @@
+{
+  "plugin_optional_scheduler_add_save" : "Save",
+  "plugin_optional_scheduler_add_column_executions_parameter" : "Parameter",
+  "plugin_optional_scheduler_add_year" : "Year:",
+  "plugin_optional_scheduler_add_specific" : "Choose interval",
+  "plugin_optional_scheduler_add_hour" : "Hour:",
+  "plugin_optional_scheduler_add_once" : "Only once",
+  "plugin_optional_scheduler_add_noparameter" : "No Parameter needed",
+  "plugin_optional_scheduler_add_name" : "Name",
+  "plugin_optional_scheduler_add_cancel" : "Cancel",
+  "plugin_optional_scheduler_add_day" : "Day:",
+  "plugin_optional_scheduler_add_problem_emptyname" : "Name is empty",
+  "plugin_optional_scheduler_add_weekly" : "Weekly",
+  "plugin_optional_scheduler_add_minute" : "Minute:",
+  "plugin_optional_scheduler_add_problem_nochanges" : "No changes made",
+  "plugin_optional_scheduler_add_month" : "Month:",
+  "jd_plugins_optional_schedule_schedule" : "Schedule",
+  "plugin_optional_scheduler_add_hourly" : "Hourly",
+  "plugin_optional_scheduler_add_column_executions_name" : "Name",
+  "plugin_optional_scheduler_add_repeats" : "Repeats",
+  "plugin_optional_scheduler_add_daily" : "Daily",
+  "plugin_optional_scheduler_add_problem_badparameter" : "No correct Parameter"
+}

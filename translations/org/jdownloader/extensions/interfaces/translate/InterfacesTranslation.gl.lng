@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Actualizar a BETA agora?",
+  "updater_beta_rlyupdate_message" : "Desexa actualizar a JD %s1?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Denegar acceso!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Pedido externo de %s1 a a interfaz de %s2!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Permitir!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Un programa externo está intentando engadir ligazóns. Vexa o Rexistro para detalles."
+}

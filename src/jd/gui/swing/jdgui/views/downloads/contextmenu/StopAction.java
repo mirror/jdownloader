@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -30,7 +32,7 @@ public class StopAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("jd.gui.swing.jdgui.views.downloads.contextmenu.StopAction.name", "Stop") + " (" + links.size() + ")";
+        return T._.jd_gui_swing_jdgui_views_downloads_contextmenu_StopAction_name() + " (" + links.size() + ")";
     }
 
     @Override

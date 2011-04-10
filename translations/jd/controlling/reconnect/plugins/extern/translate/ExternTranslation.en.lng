@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Command (use absolute directory paths)",
+  "interaction_externreconnect_parameter" : "Parameter (1 parameter per line)",
+  "interaction_externreconnect_dummybat" : "Use special executer for windows"
+}

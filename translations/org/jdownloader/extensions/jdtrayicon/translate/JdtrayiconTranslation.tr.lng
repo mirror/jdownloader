@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Tepsi İkonu",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Tepsi İkonu",
+  "plugins_trayicon_popup_bottom_simdls" : "Eş zamanlı indirme",
+  "plugins_trayicon_popup_bottom_speed" : "Hız limiti (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Eş zamanlı bağlantı",
+  "gui_tooltip_statusbar_simultan_downloads" : "Eş zamanlı maksimum indirme [1..20]",
+  "gui_tooltip_statusbar_speedlimiter" : "İndirme hız Limiti (KiB/s) [0:limitsiz]",
+  "gui_tooltip_statusbar_max_chunks" : "Dosya başına maksimum bağlantı [1..20]"
+}

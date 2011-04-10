@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.downloads.columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,8 +61,8 @@ public class HosterColumn extends JDTableColumn {
         jlr.setBorder(null);
         imgResume = JDTheme.II("gui.images.resume", 16, 16);
         imgPremium = JDTheme.II("gui.images.premium", 16, 16);
-        strResume = JDL.L(JDL_PREFIX + "resume", "Resumable download");
-        strPremium = JDL.L(JDL_PREFIX + "premium", "Loading with Premium");
+        strResume = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_resume();
+        strPremium = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_premium();
     }
 
     @Override

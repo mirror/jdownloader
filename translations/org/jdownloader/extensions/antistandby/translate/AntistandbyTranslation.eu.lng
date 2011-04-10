@@ -1,0 +1,6 @@
+{
+  "gui_config_antistandby_mode" : "Modua:",
+  "gui_config_antistandby_whiledl" : "Standby ez jarri deskargatzean",
+  "gui_config_antistandby_whilejd" : "Standby ez jarri JD irekita dagoenean",
+  "jd_plugins_optional_antistandby_jdantistandby" : "StandBy-kontrakoa"
+}

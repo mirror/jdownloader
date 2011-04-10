@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Unesite ime za novu postavku",
+  "action_customize_removesetting_ask" : "Ukloniti odabarane postavke? (Naloga:%s1)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Pomoću regularnih izraza (regeksa) napravite filtere koji će automatski urediti pakete koje preuzimate",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Uređivač paketa"
+}

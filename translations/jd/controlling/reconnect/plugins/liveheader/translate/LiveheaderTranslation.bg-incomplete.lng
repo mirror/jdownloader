@@ -1,0 +1,10 @@
+{
+  "gui_config_jdrr_success" : "Успешно!",
+  "gui_btn_start" : "Започни",
+  "gui_btn_help" : "Помощ",
+  "gui_config_reconnect_selectrouter_example" : "Примерно: 3Com ADSL",
+  "gui_btn_yes" : "Да",
+  "gui_btn_no" : "Не",
+  "gui_btn_cancel" : "Откажи",
+  "gui_btn_abort" : "Прекрати"
+}

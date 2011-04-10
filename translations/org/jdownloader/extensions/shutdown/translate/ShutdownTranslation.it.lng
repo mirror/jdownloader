@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Spegnimento",
+  "gui_config_jdshutdown_forceshutdown" : "Arresta il sistema  (non in tutti i S.O.)",
+  "interaction_shutdown_dialog_title_standby" : "Standby?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Il sistema verrà spento!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Installa spegnimento forzato (solo per MAC OSX)",
+  "interaction_shutdown_dialog_title_hibernate" : "Ibernare?",
+  "interaction_shutdown_dialog_title_shutdown" : "Spegnere?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader verrà chiuso!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "JDownloader NON arresterà il sistema alla termine dei download",
+  "gui_config_jdshutdown_hibernate" : "Iberna (non in tutti i S.O.)",
+  "gui_config_jdshutdown_close" : "Chiudi JD",
+  "gui_config_jdshutdown_standby" : "Standby (non in tutti i S.O.)",
+  "gui_config_jdshutdown_osx_force_short" : "Installa",
+  "jd_plugins_optional_jdshutdown" : "null",
+  "interaction_shutdown_dialog_title_closejd" : "Chiudere JD?",
+  "gui_config_jdshutdown_mode" : "Modo:",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader arresterà il sistema alla termine dei download",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Il sistema verrà posto in standby!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Il sistema verra posto in ibernazione!</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "null"
+}

@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Exemplo: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Modo inexperiente?",
+  "gui_btn_yes" : "Sim",
+  "gui_config_routeripfinder_ready" : "Hostname encontrado: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importar router",
+  "gui_config_jdrr_success" : "Sucesso!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Desligou o verificador de IP. Isto irá aumentar o tempo de reconexão drasticamente.\\r\\n\\r\\nVários outros módulos foram desligados também.",
+  "gui_config_jdrr_reconnectfaild" : "Ligação falhou",
+  "gui_btn_help" : "Ajuda",
+  "gui_btn_start" : "Iniciar",
+  "gui_config_jdrr_savereconnect" : "A ligação foi bem sucedida, quer guardar agora?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "IP do router",
+  "gui_config_jdrr_title" : "Gravar ligação",
+  "gui_config_jdrr_status_title" : "Estado Gravação",
+  "gui_config_routeripfinder_notfound" : "Não é possível encontrar o hostname do seu router",
+  "gui_btn_no" : "Não",
+  "gui_btn_cancel" : "Cancelar",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Verificador de IP desligado!",
+  "gui_btn_abort" : "Abortar",
+  "gui_config_reconnect_selectrouter" : "Procure o modelo do router"
+}

@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Jetzt auf BETA aktualisieren?",
+  "updater_beta_rlyupdate_message" : "Auf JD %s1 aktualisieren?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Verbieten!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Externe Anfrage von %s1 an die %s2-Schnittstelle!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Erlauben!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Eine externe Anwendung versucht Links einzufügen. Details sind im Log zu finden."
+}

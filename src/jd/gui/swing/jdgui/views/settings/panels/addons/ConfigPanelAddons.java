@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.addons;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
@@ -56,7 +58,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.";
 
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "addons.title", "Extensions");
+        return T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelAddons_addons_title();
     }
 
     public ImageIcon getIcon() {
@@ -75,8 +77,8 @@ public class ConfigPanelAddons extends ConfigPanel {
 
         @Override
         protected void initColumns() {
-            this.addColumn(new ActivateColumn(JDL.L("gui.column_status", "Activate"), this, ConfigPanelAddons.this));
-            this.addColumn(new ExtTextColumn<AbstractExtensionWrapper>(JDL.L("gui.column_plugin", "Plugin"), this) {
+            this.addColumn(new ActivateColumn(T._.gui_column_status(), this, ConfigPanelAddons.this));
+            this.addColumn(new ExtTextColumn<AbstractExtensionWrapper>(T._.gui_column_plugin(), this) {
 
                 private static final long serialVersionUID = -3960914415647488335L;
 
@@ -91,7 +93,7 @@ public class ConfigPanelAddons extends ConfigPanel {
                 }
 
             });
-            this.addColumn(new ExtLongColumn<AbstractExtensionWrapper>(JDL.L("gui.column_version", "Version"), this) {
+            this.addColumn(new ExtLongColumn<AbstractExtensionWrapper>(T._.gui_column_version(), this) {
 
                 private static final long serialVersionUID = -7390851512040553114L;
 
@@ -183,7 +185,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         AbstractExtensionWrapper opw = table.getExtTableModel().getElementAt(row);
         lblName.setIcon(opw._getIcon(24));
         lblName.setText(opw.getName());
-        lblVersion.setText(JDL.LF(JDL_PREFIX + ".version", "Version: %s", opw.getVersion()));
+        lblVersion.setText(T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelAddons_version( opw.getVersion()));
         txtDescription.setText(opw.getDescription());
         txtDescription.setCaretPosition(0);
     }

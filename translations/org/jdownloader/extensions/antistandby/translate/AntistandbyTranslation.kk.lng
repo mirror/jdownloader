@@ -1,0 +1,6 @@
+{
+  "gui_config_antistandby_mode" : "Режимі:",
+  "gui_config_antistandby_whiledl" : "Жүктеу кезінде күту режимін сақтап қалу",
+  "gui_config_antistandby_whilejd" : "JD жұмыс жасау кезінде күту режимін сақтап қалу",
+  "jd_plugins_optional_antistandby_jdantistandby" : "JDAntiStandby"
+}

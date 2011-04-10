@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.passwords;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -31,7 +33,7 @@ public class PasswordListHTAccess extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.";
 
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "general.title", "HTAccess logins");
+        return T._.jd_gui_swing_jdgui_settings_panels_passwords_PasswordListHTAccess_general_title();
     }
 
     @Override
@@ -56,7 +58,7 @@ public class PasswordListHTAccess extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), T._.plugins_http_htaccess()));
 
         return container;
     }

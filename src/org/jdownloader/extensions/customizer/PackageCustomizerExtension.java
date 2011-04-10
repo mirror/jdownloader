@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.customizer;
 
+
+ import org.jdownloader.extensions.customizer.translate.*;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
@@ -56,9 +58,9 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
     }
 
     public PackageCustomizerExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.customizer.jdpackagecustomizer", null));
+        super(T._.jd_plugins_optional_customizer_jdpackagecustomizer());
 
-        customIconText = JDL.L(JDL_PREFIX + "customized", "Customized with the Regex %s");
+        customIconText = T._.jd_plugins_optional_customizer_JDPackageCustomizer_customized();
     }
 
     @Override
@@ -135,7 +137,7 @@ public class PackageCustomizerExtension extends AbstractExtension implements Lin
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.customizer.jdpackagecustomizer.description", null);
+        return T._.jd_plugins_optional_customizer_jdpackagecustomizer_description();
     }
 
     @Override

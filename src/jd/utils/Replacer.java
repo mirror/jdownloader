@@ -16,6 +16,8 @@
 
 package jd.utils;
 
+
+ import org.jdownloader.translate.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -69,7 +71,7 @@ public final class Replacer {
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")) {
             final String name = dLink.getFilePackage().getName();
-            if (name == null || name.equals("") || name.equals(JDL.L("controller.packages.defaultname", "various"))) {
+            if (name == null || name.equals("") || name.equals(T._.controller_packages_defaultname())) {
                 return dLink.getName();
             } else {
                 return dLink.getFilePackage().getName();
@@ -138,26 +140,26 @@ public final class Replacer {
 
     private static void initKeys() {
         Replacer.KEYS = new ArrayList<String[]>();
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", JDL.L("replacer.password", "Last finished package: Password") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.AUTO_PASSWORD", JDL.L("replacer.autopassword", "Last finished package: Auto Password") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.FILELIST", JDL.L("replacer.filelist", "Last finished package: Filelist") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", JDL.L("replacer.packagename", "Last finished package: Packagename") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.COMMENT", JDL.L("replacer.comment", "Last finished package: Comment") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", JDL.L("replacer.downloaddirectory", "Last finished package: Download Directory") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", JDL.L("replacer.filepath", "Last finished File: Filepath") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.HOST", JDL.L("replacer.hoster", "Last finished File: Hoster") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.NAME", JDL.L("replacer.filename", "Last finished File: Filename") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.FILESIZE", JDL.L("replacer.filesize", "Last finished File: Filesize") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.AVAILABLE", JDL.L("replacer.available", "Last finished File: is Available (Yes,No)") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.BROWSER_URL", JDL.L("replacer.browserurl", "Last finished File: Browser-URL") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_URL", JDL.L("replacer.downloadurl", "Last finished File: Download-URL (only for non-container links)") });
-        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.CHECKSUM", JDL.L("replacer.checksum", "Last finished File: Checksum (SHA1/MD5) if set by hoster") });
-        Replacer.KEYS.add(new String[] { "SYSTEM.IP", JDL.L("replacer.ipaddress", "Current IP Address") });
-        Replacer.KEYS.add(new String[] { "SYSTEM.DATE", JDL.L("replacer.date", "Current Date") });
-        Replacer.KEYS.add(new String[] { "SYSTEM.TIME", JDL.L("replacer.time", "Current Time") });
-        Replacer.KEYS.add(new String[] { "SYSTEM.JAVA_VERSION", JDL.L("replacer.javaversion", "Used Java Version") });
-        Replacer.KEYS.add(new String[] { "JD.REVISION", JDL.L("replacer.jdversion", "jDownloader: Revision/Version") });
-        Replacer.KEYS.add(new String[] { "JD.HOME_DIR", JDL.L("replacer.jdhomedirectory", "jDownloader: Homedirectory/Installdirectory") });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", T._.replacer_password() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.AUTO_PASSWORD", T._.replacer_autopassword() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.FILELIST", T._.replacer_filelist() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", T._.replacer_packagename() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.COMMENT", T._.replacer_comment() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", T._.replacer_downloaddirectory() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", T._.replacer_filepath() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.HOST", T._.replacer_hoster() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.NAME", T._.replacer_filename() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.FILESIZE", T._.replacer_filesize() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.AVAILABLE", T._.replacer_available() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.BROWSER_URL", T._.replacer_browserurl() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_URL", T._.replacer_downloadurl() });
+        Replacer.KEYS.add(new String[] { "LAST_FINISHED_FILE.CHECKSUM", T._.replacer_checksum() });
+        Replacer.KEYS.add(new String[] { "SYSTEM.IP", T._.replacer_ipaddress() });
+        Replacer.KEYS.add(new String[] { "SYSTEM.DATE", T._.replacer_date() });
+        Replacer.KEYS.add(new String[] { "SYSTEM.TIME", T._.replacer_time() });
+        Replacer.KEYS.add(new String[] { "SYSTEM.JAVA_VERSION", T._.replacer_javaversion() });
+        Replacer.KEYS.add(new String[] { "JD.REVISION", T._.replacer_jdversion() });
+        Replacer.KEYS.add(new String[] { "JD.HOME_DIR", T._.replacer_jdhomedirectory() });
     }
 
     public static String insertVariables(final String str, final DownloadLink dLink) {
@@ -169,7 +171,7 @@ public final class Replacer {
             }
             for (final String[] element : Replacer.KEYS) {
                 if (str.indexOf("%" + element[0] + "%") >= 0) {
-                    JDLogger.getLogger().finer("%" + element[0] + "%" + " --> *****");
+                    JDLogger.getLogger().finer("%" + element[0] + "% --> *****");
                     ret = Replacer.replace(ret, "%" + element[0] + "%", Replacer.getReplacement(element[0], dLink));
                 }
             }

@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_infobar_docking" : "Włącz dokowanie do krawędzi",
+  "jd_plugins_optional_infobar_jdinfobar_description" : "Mały pływający panel informacyjny ze statystykami pobierania w czasie rzeczywistym oraz strefa Przeciągnij & Upuść do przeciągania linków, adresów URL i plików DLC.",
+  "jd_plugins_optional_infobar_jdinfobar" : "InfoPasek",
+  "jd_plugins_optional_infobar_opacity" : "Przeźroczystość [%]"
+}

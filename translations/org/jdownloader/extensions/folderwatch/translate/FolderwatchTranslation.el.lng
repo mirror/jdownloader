@@ -1,0 +1,12 @@
+{
+  "jd_plugins_optional_folderwatch_tablemodel_filetype" : "Τύπος container",
+  "jd_plugins_optional_folderwatch_tablemodel_filepath" : "Διαδρομή",
+  "plugins_optional_folderwatch_panel_filestatus_notexists" : "Το αρχείο δεν υπάρχει",
+  "jd_plugins_optional_folderwatch_tablemodel_importdate" : "Ημερομηνία εισαγωγής",
+  "plugins_optional_folderwatch_view_title" : "Ιστορικό Παρακολούθησης Φακέλων",
+  "jd_plugins_optional_folderwatch_tablemodel_filename" : "Όνομα αρχείου",
+  "action_folderwatch_clear_message" : "Είστε σίγουρος ότι θέλετε να διαγράψετε το ιστορικό;",
+  "plugins_optional_folderwatch_panel_filestatus" : "Κατάσταση αρχείου",
+  "plugins_optional_folderwatch_view_tooltip" : "Εμφανίζει όλα τα αρχεία container που βρέθηκαν από την Παρακολούθηση φακέλων",
+  "plugins_optional_folderwatch_panel_filestatus_exists" : "Το αρχείο υπάρχει"
+}

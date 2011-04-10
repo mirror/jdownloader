@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -50,7 +52,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private Timer               updateAsync;
 
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "title2", "Accounts");
+        return T._.jd_gui_swing_jdgui_settings_panels_premium_Premium_title2();
     }
 
     @Override
@@ -87,8 +89,8 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, new ViewToolbar("action.premiumview.addacc", "action.premiumview.refreshacc", "action.premiumview.removeacc", "action.premium.buy"), ""));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMPONENT, scrollPane, "growy, pushy"));
 
-        container.setGroup(new ConfigGroup(JDL.L(JDL_PREFIX + "settings", "Advanced Settings"), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, AccountController.getInstance(), AccountController.PROPERTY_ACCOUNT_SELECTION, JDL.L(JDL_PREFIX + "accountSelection", "Always select the premium account with the most traffic left for downloading")));
+        container.setGroup(new ConfigGroup(T._.jd_gui_swing_jdgui_settings_panels_premium_Premium_settings(), getIconKey()));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, AccountController.getInstance(), AccountController.PROPERTY_ACCOUNT_SELECTION, T._.jd_gui_swing_jdgui_settings_panels_premium_Premium_accountSelection()));
         return container;
     }
 
@@ -130,7 +132,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                 ArrayList<Account> accs = internalTable.getAllSelectedAccounts();
                 internalTable.editingStopped(null);
                 if (accs.size() == 0) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("action.premiumview.removeacc.ask", "Remove selected?") + " (" + JDL.LF("action.premiumview.removeacc.accs", "%s Account(s)", accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.action_premiumview_removeacc_ask() + " (" + T._.action_premiumview_removeacc_accs( accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     for (Account acc : accs) {
                         AccountController.getInstance().removeAccount((String) null, acc);
                     }

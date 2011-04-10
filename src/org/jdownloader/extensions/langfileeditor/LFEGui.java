@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.langfileeditor;
 
+
+ import org.jdownloader.extensions.langfileeditor.translate.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -128,7 +130,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         this.plugin = plugin;
         this.subConfig = plugin.getPluginConfig();
         this.infoPanel = LFEInfoPanel.getInstance();
-        this.setName(JDL.L(LFEGui.LOCALE_PREFIX + "title", "Language Editor"));
+        this.setName(T._.plugins_optional_langfileeditor_title());
         this.dirLanguages = JDUtilities.getResourceFile("tmp/lfe/lng/");
         this.dirWorkingCopy = JDUtilities.getResourceFile("tmp/lfe/src/");
         this.dirLanguages.mkdirs();
@@ -177,12 +179,12 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
             String[] result;
             try {
-                result = Dialog.getInstance().showDialog(new TwoTextFieldDialog(JDL.L(LFEGui.LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LFEGui.LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), "", JDL.L(LFEGui.LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), ""));
+                result = Dialog.getInstance().showDialog(new TwoTextFieldDialog(T._.plugins_optional_langfileeditor_addKey_title(), T._.plugins_optional_langfileeditor_addKey_message1(), "", T._.plugins_optional_langfileeditor_addKey_message2(), ""));
                 if (result == null || result[0].equals("")) { return; }
                 result[0] = result[0].toLowerCase();
                 for (final KeyInfo ki : this.data) {
                     if (ki.getKey().equals(result[0])) {
-                        UserIO.getInstance().requestMessageDialog(JDL.LF(LFEGui.LOCALE_PREFIX + "addKey.error.message", "The key '%s' is already in use!", result[0]));
+                        UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_addKey_error_message( result[0]));
                         return;
                     }
                 }
@@ -215,7 +217,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
         } else if (e.getSource() == this.mnuDeleteOld) {
 
-            if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L(LFEGui.LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LFEGui.LOCALE_PREFIX + "deleteOld.message", "Delete all %s old Key(s)?", this.numOld)), UserIO.RETURN_OK)) {
+            if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.plugins_optional_langfileeditor_deleteOld_title(), T._.plugins_optional_langfileeditor_deleteOld_message( this.numOld)), UserIO.RETURN_OK)) {
                 this.deleteOldKeys();
             }
 
@@ -227,10 +229,10 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         // Context Menu
         this.mnuContextPopup = new JPopupMenu();
 
-        this.mnuContextPopup.add(this.mnuContextDelete = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
-        this.mnuContextPopup.add(this.mnuContextClear = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
+        this.mnuContextPopup.add(this.mnuContextDelete = new JMenuItem(T._.plugins_optional_langfileeditor_deleteKeys()));
+        this.mnuContextPopup.add(this.mnuContextClear = new JMenuItem(T._.plugins_optional_langfileeditor_clearValues()));
         this.mnuContextPopup.addSeparator();
-        this.mnuContextPopup.add(this.mnuContextAdopt = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
+        this.mnuContextPopup.add(this.mnuContextAdopt = new JMenuItem(T._.plugins_optional_langfileeditor_adoptDefaults()));
 
         this.mnuContextDelete.addActionListener(this);
         this.mnuContextClear.addActionListener(this);
@@ -374,7 +376,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     }
 
     private void getSourceEntries() {
-        final ProgressController progress = new ProgressController(JDL.L(LFEGui.LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"), "gui.splash.languages");
+        final ProgressController progress = new ProgressController(T._.plugins_optional_langfileeditor_analyzingSource1(), "gui.splash.languages");
         progress.setIndeterminate(true);
 
         this.sourceParser = new SrcParser(this.dirWorkingCopy);
@@ -383,7 +385,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
         JDLogger.getLogger().warning("Patternmatches are not recommened: \r\n" + this.sourceParser.getPattern());
 
-        progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
+        progress.setStatusText(T._.plugins_optional_langfileeditor_analyzingSource_ready());
         progress.doFinalize(2 * 1000l);
     }
 
@@ -423,7 +425,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         });
         this.table.addRowHighlighter(new SelectionHighlighter(null, LFEGui.COLOR_SELECTED_ROW));
 
-        this.warning = new JButton(JDL.L(LFEGui.LOCALE_PREFIX + "account.warning", "SVN Account missing. Click here to read more."));
+        this.warning = new JButton(T._.plugins_optional_langfileeditor_account_warning());
         this.warning.setVisible(false);
         this.warning.addActionListener(new ActionListener() {
 
@@ -432,7 +434,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                     CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
                 } catch (final Exception e1) {
                     e1.printStackTrace();
-                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), "http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
+                    UserIO.getInstance().requestMessageDialog(T._.jd_plugins_optional_langfileeditor_LangFileEditor_btn_readmore(), "http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
                 }
             }
 
@@ -472,7 +474,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                     if (Subversion.checkLogin(LFEGui.SOURCE_SVN, LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), LFEGui.this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS))) {
                         break;
                     } else {
-                        UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.langfileeditor.badlogins", "Logins incorrect.\r\nPlease enter correct logins."));
+                        UserIO.getInstance().requestMessageDialog(T._.jd_plugins_optional_langfileeditor_langfileeditor_badlogins());
                         LFEGui.this.subConfig.setProperty(LFEGui.PROPERTY_SVN_ACCESS_USER, null);
                         LFEGui.this.subConfig.setProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS, null);
                         LFEGui.this.subConfig.save();
@@ -568,21 +570,21 @@ public class LFEGui extends SwitchPanel implements ActionListener {
     public void initMenu(final JMenuBar menubar) {
         this.menubar = menubar;
         // Load Menu
-        this.mnuLoad = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "load", "Load Language"));
+        this.mnuLoad = new JMenu(T._.plugins_optional_langfileeditor_load());
 
         this.populateLngMenu();
 
         // File Menu
-        this.mnuFile = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "file", "File"));
+        this.mnuFile = new JMenu(T._.plugins_optional_langfileeditor_file());
 
         this.mnuFile.add(this.mnuLoad);
         this.mnuFile.addSeparator();
-        this.mnuFile.add(this.mnuSaveLocal = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "savelocale", "Save Offline")));
+        this.mnuFile.add(this.mnuSaveLocal = new JMenuItem(T._.plugins_optional_langfileeditor_savelocale()));
         this.mnuFile.setEnabled(false);
-        this.mnuFile.add(this.mnuSave = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "saveandupload", "Save & Upload")));
+        this.mnuFile.add(this.mnuSave = new JMenuItem(T._.plugins_optional_langfileeditor_saveandupload()));
         this.mnuFile.addSeparator();
-        this.mnuFile.add(this.mnuReload = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "reload", "Revert/Reload")));
-        this.mnuFile.add(this.mnuCompleteReload = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "completeReload", "Complete Reload (Deletes Cache)")));
+        this.mnuFile.add(this.mnuReload = new JMenuItem(T._.plugins_optional_langfileeditor_reload()));
+        this.mnuFile.add(this.mnuCompleteReload = new JMenuItem(T._.plugins_optional_langfileeditor_completeReload()));
 
         this.mnuSaveLocal.addActionListener(this);
         this.mnuSave.addActionListener(this);
@@ -595,16 +597,16 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         this.mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
 
         // Key Menu
-        this.mnuKey = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "key", "Key"));
+        this.mnuKey = new JMenu(T._.plugins_optional_langfileeditor_key());
         this.mnuKey.setEnabled(false);
 
-        this.mnuKey.add(this.mnuAdd = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "addKey", "Add Key")));
-        this.mnuKey.add(this.mnuDelete = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
-        this.mnuKey.add(this.mnuClear = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
+        this.mnuKey.add(this.mnuAdd = new JMenuItem(T._.plugins_optional_langfileeditor_addKey()));
+        this.mnuKey.add(this.mnuDelete = new JMenuItem(T._.plugins_optional_langfileeditor_deleteKeys()));
+        this.mnuKey.add(this.mnuClear = new JMenuItem(T._.plugins_optional_langfileeditor_clearValues()));
         this.mnuKey.addSeparator();
-        this.mnuKey.add(this.mnuAdopt = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
+        this.mnuKey.add(this.mnuAdopt = new JMenuItem(T._.plugins_optional_langfileeditor_adoptDefaults()));
         this.mnuKey.addSeparator();
-        this.mnuKey.add(this.mnuDeleteOld = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "deleteOldKeys", "Delete Old Key(s)")));
+        this.mnuKey.add(this.mnuDeleteOld = new JMenuItem(T._.plugins_optional_langfileeditor_deleteOldKeys()));
 
         this.mnuAdd.addActionListener(this);
         this.mnuDelete.addActionListener(this);
@@ -615,11 +617,11 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         this.mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
 
         // Test
-        this.mnuTest = new JMenu(JDL.L(LFEGui.LOCALE_PREFIX + "test", "Test"));
+        this.mnuTest = new JMenu(T._.plugins_optional_langfileeditor_test());
 
-        this.mnuTest.add(this.mnuCurrent = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "startcurrent", "Test JD with current translation")));
+        this.mnuTest.add(this.mnuCurrent = new JMenuItem(T._.plugins_optional_langfileeditor_startcurrent()));
         this.mnuCurrent.addActionListener(this);
-        this.mnuTest.add(this.mnuKeymode = new JMenuItem(JDL.L(LFEGui.LOCALE_PREFIX + "startkey", "Test JD in Key mode")));
+        this.mnuTest.add(this.mnuKeymode = new JMenuItem(T._.plugins_optional_langfileeditor_startkey()));
         this.mnuKeymode.addActionListener(this);
         this.mnuCurrent.setEnabled(false);
 
@@ -720,11 +722,11 @@ public class LFEGui extends SwitchPanel implements ActionListener {
         if (!this.changed) { return; }
         String message;
         if (upload) {
-            message = JDL.LF(LFEGui.LOCALE_PREFIX + "saveChanges.message.upload", "Save and upload your changes to %s?", this.languageFile);
+            message = T._.plugins_optional_langfileeditor_saveChanges_message_upload( this.languageFile);
         } else {
-            message = JDL.LF(LFEGui.LOCALE_PREFIX + "saveChanges.message", "Save your changes to %s?", this.languageFile);
+            message = T._.plugins_optional_langfileeditor_saveChanges_message( this.languageFile);
         }
-        final int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L(LFEGui.LOCALE_PREFIX + "saveChanges", "Save changes?"), message, null, JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+        final int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, T._.plugins_optional_langfileeditor_saveChanges(), message, null, T._.gui_btn_yes(), T._.gui_btn_no());
         if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
             this.saveLanguageFile(this.languageFile, upload);
         }
@@ -735,7 +737,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
 
         Collections.sort(this.data);
 
-        if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, JDL.L(LFEGui.LOCALE_PREFIX + "deleteOld.title", "Delete Old Key(s)?"), JDL.LF(LFEGui.LOCALE_PREFIX + "deleteOld.message2", "There are still %s old keys in the LanguageFile. Delete them before saving?", this.numOld)), UserIO.RETURN_OK)) {
+        if (this.numOld > 0 && JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, T._.plugins_optional_langfileeditor_deleteOld_title(), T._.plugins_optional_langfileeditor_deleteOld_message2( this.numOld)), UserIO.RETURN_OK)) {
             this.deleteOldKeys();
         }
 
@@ -768,13 +770,13 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 }
             }
         } catch (final Exception e) {
-            UserIO.getInstance().requestMessageDialog(JDL.LF(LFEGui.LOCALE_PREFIX + "save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()));
+            UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_save_error_message( e.getMessage()));
             return;
         }
 
         this.changed = false;
         if (upload) {
-            UserIO.getInstance().requestMessageDialog(JDL.L(LFEGui.LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
+            UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_save_success_message());
         }
         this.initLocaleData();
     }
@@ -819,7 +821,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             this.dirWorkingCopy.mkdirs();
         }
 
-        final ProgressController progress = new ProgressController(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait"), "gui.splash.languages");
+        final ProgressController progress = new ProgressController(T._.plugins_optional_langfileeditor_svn_updating(), "gui.splash.languages");
         progress.setIndeterminate(true);
         try {
             Subversion svn = new Subversion(LFEGui.SOURCE_SVN, this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER), this.subConfig.getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS));
@@ -829,7 +831,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
             svn.getBroadcaster().addListener(new MessageListener() {
 
                 public void onMessage(final MessageEvent event) {
-                    progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(LFEGui.this.dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
+                    progress.setStatusText(T._.plugins_optional_langfileeditor_svn_updating() + ": " + event.getMessage().replace(LFEGui.this.dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
                 }
 
             });
@@ -842,7 +844,7 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 svn.update(this.dirWorkingCopy, null);
             } catch (final Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(JDL.L(LFEGui.LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LFEGui.LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_error_title(), T._.plugins_optional_langfileeditor_error_updatesource_message( JDLogger.getStackTrace(e)));
             }
             if (revert) {
                 try {
@@ -855,16 +857,16 @@ public class LFEGui extends SwitchPanel implements ActionListener {
                 svnLanguageDir.update(this.dirLanguages, null);
             } catch (final Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(JDL.L(LFEGui.LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LFEGui.LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_langfileeditor_error_title(), T._.plugins_optional_langfileeditor_error_updatelanguages_message( JDLogger.getStackTrace(e)));
             }
             svnLanguageDir.dispose();
             svn.dispose();
-            progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
+            progress.setStatusText(T._.plugins_optional_langfileeditor_svn_updating_ready());
             progress.doFinalize(2 * 1000l);
         } catch (final Exception e) {
             JDLogger.exception(e);
             progress.setColor(Color.RED);
-            progress.setStatusText(JDL.L(LFEGui.LOCALE_PREFIX + "svn.updating.error", "Updating SVN: Error!"));
+            progress.setStatusText(T._.plugins_optional_langfileeditor_svn_updating_error());
             progress.doFinalize(5 * 1000l);
         }
 

@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Contrôle à distance",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 commencé sur le port %s2\\nhttp ://127.0.0.1 :%s3\\n/aide pour information au développeur",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 arrêtés",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Contrôle à distance"
+}

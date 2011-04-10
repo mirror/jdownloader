@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Set;
@@ -28,7 +30,7 @@ public class SelectHostAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.linkgrabberv2.onlyselectedhoster", "Keep only selected Hoster") + " (" + hosts.size() + ")";
+        return T._.gui_linkgrabberv2_onlyselectedhoster() + " (" + hosts.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

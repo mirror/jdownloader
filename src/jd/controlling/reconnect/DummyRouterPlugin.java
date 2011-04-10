@@ -1,5 +1,7 @@
 package jd.controlling.reconnect;
 
+
+ import org.jdownloader.translate.*;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
@@ -41,7 +43,7 @@ public class DummyRouterPlugin extends RouterPlugin {
         text.setBackground(null);
         text.setOpaque(false);
         text.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        text.setText(JDL.L("jd.controlling.reconnect.plugins.DummyRouterPlugin.getGUI", "<b><u>No Reconnect selected</u></b><br/><p>Reconnection is an advanced approach for skipping long waits that some hosts impose on free users. <br>It is not helpful while using a premium account.</p><p>Read more about Reconnect <a href='http://board.jdownloader.org/showthread.php?t=16450'>here</a></p>"));
+        text.setText(T._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI());
         p.add(text);
         return p;
     }
@@ -53,7 +55,7 @@ public class DummyRouterPlugin extends RouterPlugin {
 
     @Override
     public String getName() {
-        return JDL.L("jd.controlling.reconnect.plugins.DummyRouterPlugin.getName", "No Reconnect");
+        return T._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();
     }
 
     @Override

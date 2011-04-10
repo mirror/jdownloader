@@ -1,0 +1,7 @@
+{
+  "gui_config_antistandby_mode" : "Modo:",
+  "gui_config_antistandby_whiledl" : "Prevenir la suspensión durante las descargas",
+  "jd_plugins_optional_antistandby_jdantistandby_description" : "Evita que tu sistema se suspenda o hiberne, para mantener las descargas activas.",
+  "gui_config_antistandby_whilejd" : "Prevenir la suspensión mientras JD esté abierto",
+  "jd_plugins_optional_antistandby_jdantistandby" : "JD AntiSuspension"
+}

@@ -16,6 +16,8 @@
 
 package jd.utils;
 
+
+ import org.jdownloader.translate.*;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.GridBagConstraints;
@@ -257,7 +259,7 @@ public class JDUtilities {
 
         if (JDUpdater.getInstance().getWaitingUpdates() > 0) {
             ret.append(new char[] { ' ', '(' });
-            ret.append(JDL.LF("gui.mainframe.title.updatemessage2", "%s Updates available", JDUpdater.getInstance().getWaitingUpdates()));
+            ret.append(T._.gui_mainframe_title_updatemessage2( JDUpdater.getInstance().getWaitingUpdates()));
             ret.append(')');
         }
 

@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Wprowadź nazwę dla nowego ustawienia:",
+  "action_customize_removesetting_ask" : "Usunąć wybrane ustawienie/a ? (%s1 kont)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Edytor pakietów JD",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Dostosowywanie Pakietów"
+}

@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.log;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -42,7 +44,7 @@ public class LogInfoPanel extends InfoPanel implements ActionListener {
     public LogInfoPanel() {
         super("gui.images.taskpanes.log");
 
-        btnUpload = createButton(JDL.L(JDL_PREFIX + "upload", "Upload Log"), JDTheme.II("gui.images.upload", 16, 16));
+        btnUpload = createButton(T._.jd_gui_swing_jdgui_views_info_LogInfoPanel_upload(), JDTheme.II("gui.images.upload", 16, 16));
 
         addComponent(btnUpload, 1, 1);
     }

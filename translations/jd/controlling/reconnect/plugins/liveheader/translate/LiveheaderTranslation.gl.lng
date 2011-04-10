@@ -1,0 +1,19 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Exemplo: 3Com ADSL",
+  "gui_btn_yes" : "Si",
+  "gui_config_routeripfinder_ready" : "IP atopada: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importar router",
+  "gui_config_jdrr_success" : "Exito!",
+  "gui_config_jdrr_reconnectfaild" : "Reconexión fallida",
+  "gui_btn_help" : "Axuda",
+  "gui_btn_start" : "Iniciar",
+  "gui_config_jdrr_savereconnect" : "Reconexión satisfactoria. ¿Gardar agora?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "Router IP",
+  "gui_config_jdrr_title" : "Gravador de reconexión",
+  "gui_config_jdrr_status_title" : "Gravación de Reconexión",
+  "gui_config_routeripfinder_notfound" : "non se atopa o nome do router",
+  "gui_btn_cancel" : "Cancelar",
+  "gui_btn_abort" : "Abortar",
+  "gui_config_reconnect_selectrouter" : "Buscar modelo..."
+}

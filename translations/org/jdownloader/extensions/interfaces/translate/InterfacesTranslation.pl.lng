@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Czy chcesz teraz zaktualizować do wersji beta?",
+  "updater_beta_rlyupdate_message" : "Czy chcesz zaktualizować %s1?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Odmów",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Zewnętrzna prośba od %s1 do interfejsu %s2.",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Zezwól",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Zewnętrzna aplikacja próbuje dodać linki. Więcej szczegółów w Dzienniku zdarzeń."
+}

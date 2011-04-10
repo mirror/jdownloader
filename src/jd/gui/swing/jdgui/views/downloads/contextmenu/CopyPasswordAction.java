@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,7 +31,7 @@ public class CopyPasswordAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.copyPassword", "Copy Password") + " (" + links.size() + ")";
+        return T._.gui_table_contextmenu_copyPassword() + " (" + links.size() + ")";
     }
 
     @Override

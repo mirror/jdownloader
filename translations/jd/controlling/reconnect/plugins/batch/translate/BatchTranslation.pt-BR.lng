@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "Iniciar em (pasta do aplicativo)",
+  "interaction_batchreconnect_batch" : "Script em Lote",
+  "interaction_batchreconnect_terminal" : "Interpretar"
+}

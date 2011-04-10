@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Commande (utiliser des chemins de répertoire absolus)",
+  "interaction_externreconnect_parameter" : "Paramètres (1 paramètre par ligne)",
+  "interaction_externreconnect_dummybat" : "Utiliser une routine spéciale pour Windows"
+}

@@ -1,0 +1,7 @@
+{
+  "gui_config_jdshutdown_forceshutdown" : "Isključi računar (Nije za sve OS)",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader bo izlopil računalnik, ko se prenos konča",
+  "gui_config_jdshutdown_hibernate" : "Hibernate (Nije za sve OS)",
+  "addons_jdshutdown_statusmessage_disabled" : "Računalnik NEBO izklopljen z strani JDownloader-a",
+  "gui_config_jdshutdown_standby" : "Standby (Nije za sve OS)"
+}

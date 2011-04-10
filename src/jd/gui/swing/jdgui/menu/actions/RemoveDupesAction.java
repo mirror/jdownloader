@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -44,7 +46,7 @@ public class RemoveDupesAction extends ThreadedAction {
 
     @Override
     public void threadedActionPerformed(ActionEvent e) {
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.gui.swing.jdgui.menu.actions.RemoveDupesAction.message", "Do you really want to remove all duplicated DownloadLinks?")))) return;
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.jd_gui_swing_jdgui_menu_actions_RemoveDupesAction_message()))) return;
 
         if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
             synchronized (LinkGrabberController.ControllerLock) {

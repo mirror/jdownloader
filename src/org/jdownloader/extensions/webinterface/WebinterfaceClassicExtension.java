@@ -19,6 +19,8 @@
 
 package org.jdownloader.extensions.webinterface;
 
+
+ import org.jdownloader.extensions.webinterface.translate.*;
 import java.util.ArrayList;
 
 import jd.config.ConfigContainer;
@@ -57,7 +59,7 @@ public class WebinterfaceClassicExtension extends AbstractExtension {
     }
 
     public WebinterfaceClassicExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.webinterface.jdwebinterface", "Webinterface"));
+        super(T._.jd_plugins_optional_webinterface_jdwebinterface());
         instance = this;
 
     }
@@ -86,14 +88,14 @@ public class WebinterfaceClassicExtension extends AbstractExtension {
     protected void initSettings(ConfigContainer config) {
         JSonWrapper subConfig = JSonWrapper.get("WEBINTERFACE");
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, JDL.L("plugins.optional.webinterface.refresh", "AutoRefresh")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_REFRESH_INTERVAL, JDL.L("plugins.optional.webinterface.refresh_interval", "Refresh Interval"), 5, 60, 1).setDefaultValue(5));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDL.L("plugins.optional.webinterface.port", "Port"), 1, 65000, 1).setDefaultValue(8765));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOCALHOST_ONLY, JDL.L("plugins.optional.webinterface.localhostonly", "Access only from this Computer")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDL.L("plugins.optional.webinterface.needlogin", "Need User Authentication")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDL.L("plugins.optional.webinterface.https", "Use HTTPS")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDL.L("plugins.optional.webinterface.loginname", "Login Name")).setDefaultValue("JD"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, JDL.L("plugins.optional.webinterface.loginpass", "Login Pass")).setDefaultValue("JD"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, T._.plugins_optional_webinterface_refresh()).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_REFRESH_INTERVAL, T._.plugins_optional_webinterface_refresh_interval(), 5, 60, 1).setDefaultValue(5));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, T._.plugins_optional_webinterface_port(), 1, 65000, 1).setDefaultValue(8765));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOCALHOST_ONLY, T._.plugins_optional_webinterface_localhostonly()).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, T._.plugins_optional_webinterface_needlogin()).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, T._.plugins_optional_webinterface_https()).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, T._.plugins_optional_webinterface_loginname()).setDefaultValue("JD"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, T._.plugins_optional_webinterface_loginpass()).setDefaultValue("JD"));
 
     }
 
@@ -109,7 +111,7 @@ public class WebinterfaceClassicExtension extends AbstractExtension {
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.webinterface.jdwebinterface.description", "");
+        return T._.jd_plugins_optional_webinterface_jdwebinterface_description();
     }
 
     @Override

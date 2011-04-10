@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "Prosím zadajte meno nových Nastavení:",
+  "action_customize_removesetting_ask" : "Odstrániť zvolené Nastavenia? (%s1 Účet(y))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JDEditorBalíkov"
+}

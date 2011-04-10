@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Atualizar para versão BETA agora?",
+  "updater_beta_rlyupdate_message" : "Você gostaria de agualizar para JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Negar acesso!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Requisição externa de %s1 para %s2 interface!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Liberar!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "O aplicativo externo está tendando adicionar links. Leia o Log para detalhes."
+}

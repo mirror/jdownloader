@@ -1,0 +1,15 @@
+{
+  "gui_config_antireconnect_newreconnect" : "Tekrar bağlanmaya izin ver:",
+  "gui_config_antireconnect_each" : "Her x (ms)'de dentle",
+  "gui_config_antireconnect_oldspeed" : "İndirme hızı kb/s",
+  "gui_config_antireconnect_newgroup" : "Eğer diğer istemciler (kullanıclar) çevrimiçi ise",
+  "gui_config_antireconnect_newspeed" : "İndirme hızı kb/s değeri",
+  "gui_config_antireconnect_newdownloads" : "Eş zamanlı indirmeler:",
+  "gui_config_antireconnect_oldreconnect" : "Tekrar bağlanmaya izin ver:",
+  "gui_config_antireconnect_mode" : "Mod:",
+  "gui_config_antireconnect_olddownloads" : "Eş zamanlı indirmeler:",
+  "gui_config_antireconnect_ips" : "IP/leri denetle (192.168.1.20-80)",
+  "gui_config_antireconnect_oldgroup" : "Normalde",
+  "gui_config_antireconnect_timeout" : "Zaman aşımı denetimi (ms):",
+  "jd_plugins_optional_antireconnect_jdantireconnect" : "Anti tekrar bağlanma"
+}

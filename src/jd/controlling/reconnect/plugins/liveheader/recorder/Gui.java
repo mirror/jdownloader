@@ -16,6 +16,8 @@
 
 package jd.controlling.reconnect.plugins.liveheader.recorder;
 
+
+ import jd.controlling.reconnect.plugins.liveheader.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -74,9 +76,9 @@ public class Gui extends AbstractDialog<Object> {
                 this.imageProgress = JDTheme.II("gui.images.reconnect", 32, 32);
                 this.imageBad = JDTheme.II("gui.images.unselected", 32, 32);
                 this.imageGood = JDTheme.II("gui.images.selected", 32, 32);
-                this.strProgress = JDL.L("jd.router.reconnectrecorder.Gui.icon.progress", "Recording Reconnect ...");
-                this.strBad = JDL.L("jd.router.reconnectrecorder.Gui.icon.bad", "Error while recording the Reconnect!");
-                this.strGood = JDL.L("jd.router.reconnectrecorder.Gui.icon.good", "Reconnect successfully recorded!");
+                this.strProgress = T._.jd_router_reconnectrecorder_Gui_icon_progress();
+                this.strBad = T._.jd_router_reconnectrecorder_Gui_icon_bad();
+                this.strGood = T._.jd_router_reconnectrecorder_Gui_icon_good();
                 this.setStatus(0);
             }
 
@@ -100,7 +102,7 @@ public class Gui extends AbstractDialog<Object> {
         private RRStatus          statusicon;
 
         public JDRRInfoPopup() {
-            super(UserIO.NO_ICON | UserIO.NO_OK_OPTION, JDL.L("gui.config.jdrr.status.title", "Recording Status"), null, null, JDL.L("gui.btn_abort", "Abort"));
+            super(UserIO.NO_ICON | UserIO.NO_OK_OPTION, T._.gui_config_jdrr_status_title(), null, null, T._.gui_btn_abort());
 
         }
 
@@ -128,7 +130,7 @@ public class Gui extends AbstractDialog<Object> {
                     if (IPController.getInstance().validate()) {
                         Gui.this.save();
                     } else {
-                        UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
+                        UserIO.getInstance().requestMessageDialog(T._.gui_config_jdrr_reconnectfaild());
                     }
 
                     JDRRInfoPopup.this.dispose();
@@ -168,7 +170,7 @@ public class Gui extends AbstractDialog<Object> {
             new Thread() {
                 public void run() {
                     JDRRInfoPopup.this.statusicon.setStatus(0);
-                    this.setName(JDL.L("gui.config.jdrr.popup.title", "JDRRPopup"));
+                    this.setName(T._.gui_config_jdrr_popup_title());
                     JDRRInfoPopup.this.reconnect_timer = 0;
                     while (ReconnectRecorder.running) {
                         try {
@@ -209,14 +211,14 @@ public class Gui extends AbstractDialog<Object> {
     private static long         RECONNECT_DURATION = 0;
 
     public Gui(final String ip) {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("gui.config.jdrr.title", "Reconnect Recorder"), null, JDL.L("gui.btn_start", "Start"), JDL.L("gui.btn_cancel", "Cancel"));
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, T._.gui_config_jdrr_title(), null, T._.gui_btn_start(), T._.gui_btn_cancel());
         this.ip = ip;
 
     }
 
     @Override
     protected void addButtons(final JPanel buttonBar) {
-        final JButton help = new JButton(JDL.L("gui.btn_help", "Help"));
+        final JButton help = new JButton(T._.gui_btn_help());
         help.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
@@ -237,21 +239,21 @@ public class Gui extends AbstractDialog<Object> {
     public JComponent layoutDialogContent() {
         this.routerip = new JTextField(this.ip);
 
-        this.rawmode = new JCheckBox(JDL.L("gui.config.jdrr.rawmode", "RawMode?"));
+        this.rawmode = new JCheckBox(T._.gui_config_jdrr_rawmode());
         this.rawmode.setSelected(false);
         this.rawmode.setHorizontalTextPosition(SwingConstants.LEADING);
 
         final StringBuilder sb = new StringBuilder();
         sb.append("<html>");
-        sb.append(JDL.L(Gui.JDL_PREFIX + "info1", "Check the IP address of the router and press the Start button"));
+        sb.append(T._.jd_nrouter_recorder_Gui_info1());
         sb.append("<br>");
-        sb.append(JDL.L(Gui.JDL_PREFIX + "info2", "Web browser window with the home page of the router opens"));
+        sb.append(T._.jd_nrouter_recorder_Gui_info2());
         sb.append("<br>");
-        sb.append(JDL.L(Gui.JDL_PREFIX + "info3", "After the Reconnection hit the Stop button and save"));
+        sb.append(T._.jd_nrouter_recorder_Gui_info3());
         sb.append("</html>");
 
         final JPanel panel = new JPanel(new MigLayout("wrap 3, ins 5", "[][grow]10[]"));
-        panel.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"));
+        panel.add(new JLabel(T._.gui_fengshuiconfig_routerip() + ":"));
         panel.add(this.routerip, "growx");
         panel.add(this.rawmode);
         panel.add(new JLabel(sb.toString()), "spanx,growx");
@@ -259,7 +261,7 @@ public class Gui extends AbstractDialog<Object> {
     }
 
     private void save() {
-        final int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.config.jdrr.success", "Success!"), JDL.L("gui.config.jdrr.savereconnect", "Reconnection was successful. Save now?"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+        final int ret = UserIO.getInstance().requestConfirmDialog(0, T._.gui_config_jdrr_success(), T._.gui_config_jdrr_savereconnect(), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), T._.gui_btn_yes(), T._.gui_btn_no());
         if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
 
             final StringBuilder b = new StringBuilder();

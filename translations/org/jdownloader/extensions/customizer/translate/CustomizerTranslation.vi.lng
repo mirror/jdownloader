@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "Chèn tên cho Thiết đặt mới",
+  "action_customize_removesetting_ask" : "Xóa bỏ Thiết đặt được chọn? (%s1 Account(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Trình Tùy biến gói tải về"
+}

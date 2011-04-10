@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import jd.controlling.DownloadWatchDog;
 import jd.utils.locale.JDL;
 
@@ -36,7 +38,7 @@ public class SetStopMark implements SchedulerModuleInterface {
     }
 
     public String getTranslation() {
-        return JDL.L("jd.plugins.optional.schedule.modules.setstopmark", "Set StopMark");
+        return T._.jd_plugins_optional_schedule_modules_setstopmark();
     }
 
     public boolean needParameter() {

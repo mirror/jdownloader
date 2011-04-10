@@ -1,0 +1,7 @@
+{
+  "sys_warning_loguploadfailed" : "Không Tải lên tập tin Ghi quá trình được!",
+  "jd_plugins_optional_jdchat_newmessage" : "Có tin nhắn từ %s1:<hr> %s2",
+  "plugins_optional_jdchat_enternick" : "Biệt danh bạn muốn chọn khi tán gẫu?",
+  "jd_plugins_optional_jdchat_jdchat" : "Tán gẫu trực tuyến",
+  "plugin_optional_jdchat_getlog" : "%s1 cần 1 tập tin ghi chép theo dõi để giải quyết vấn đề của bạn. Bạn có đồng ý gởi file Log đó đi không?"
+}

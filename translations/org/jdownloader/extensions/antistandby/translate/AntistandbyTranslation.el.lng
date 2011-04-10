@@ -1,0 +1,7 @@
+{
+  "gui_config_antistandby_mode" : "Λειτουργία:",
+  "gui_config_antistandby_whiledl" : "Αποτροπή της Κατάστασης Αναμονής κατά τη Λήψη",
+  "jd_plugins_optional_antistandby_jdantistandby_description" : "Αποτρέπει την μετάβαση του υπολογιστή σε κατάσταση Αναμονής",
+  "gui_config_antistandby_whilejd" : "Αποτροπή της Κατάστασης Αναμονής κατά τη λειτουργία του JD",
+  "jd_plugins_optional_antistandby_jdantistandby" : "Αποτροπή Αναμονής (JDAntiStandby)"
+}

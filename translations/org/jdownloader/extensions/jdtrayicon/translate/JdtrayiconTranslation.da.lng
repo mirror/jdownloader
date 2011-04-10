@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JDLightTray",
+  "plugins_trayicon_popup_bottom_simdls" : "Samtidige downloads",
+  "plugins_trayicon_popup_bottom_speed" : "Hastighedsbegrænsning(KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Samtidige forbindelser",
+  "gui_tooltip_statusbar_simultan_downloads" : "Max. samtidige downloads",
+  "gui_tooltip_statusbar_speedlimiter" : "Hastighedsbegrænsning(KiB/s) [0:uendelig]",
+  "gui_tooltip_statusbar_max_chunks" : "Max. Forbindelser/Filer"
+}

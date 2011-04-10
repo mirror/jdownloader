@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.hoster;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,9 +31,9 @@ public class TosColumn extends ExtColumn<HostPluginWrapper> implements ActionLis
         labelRend = new JRendererLabel();
         labelRend.setBorder(null);
         labelRend.setHorizontalAlignment(SwingConstants.CENTER);
-        labelRend.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.hoster.columns.TosColumn.read", "Read TOS"));
+        labelRend.setText(T._.jd_gui_swing_jdgui_settings_panels_hoster_columns_TosColumn_read());
 
-        labelEdit = new JLink(JDL.L("jd.gui.swing.jdgui.settings.panels.hoster.columns.TosColumn.read", "Read TOS"));
+        labelEdit = new JLink(T._.jd_gui_swing_jdgui_settings_panels_hoster_columns_TosColumn_read());
         labelEdit.setHorizontalAlignment(SwingConstants.CENTER);
         labelEdit.getBroadcaster().addListener(this);
         labelEdit.removeMouseListener();

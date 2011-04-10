@@ -1,0 +1,7 @@
+{
+  "gui_config_antistandby_mode" : "Modo:",
+  "gui_config_antistandby_whiledl" : "Prevenir suspensão enquando Transfere",
+  "jd_plugins_optional_antistandby_jdantistandby_description" : "Simplesmente previne o computador de entrar em Suspensão ou Hibernação, de modo a manter as descargas activas.",
+  "gui_config_antistandby_whilejd" : "Prevenir suspensão enquando o JD está ligado",
+  "jd_plugins_optional_antistandby_jdantistandby" : "JD Anti-Suspensão"
+}

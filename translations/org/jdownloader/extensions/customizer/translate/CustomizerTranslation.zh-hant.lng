@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "請輸入新設定的名稱",
+  "action_customize_removesetting_ask" : "移除所選擇的設定？(%s1 帳號)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JD 任務自訂"
+}

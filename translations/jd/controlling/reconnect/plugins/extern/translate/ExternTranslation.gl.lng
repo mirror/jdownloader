@@ -1,0 +1,4 @@
+{
+  "interaction_externreconnect_command" : "Comando (usa rutas de directorio absolutas)",
+  "interaction_externreconnect_parameter" : "Parámetro (1 parámetro cada liña)"
+}

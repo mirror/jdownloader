@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.jdtrayicon;
 
+
+ import org.jdownloader.extensions.jdtrayicon.translate.*;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Image;
@@ -124,18 +126,18 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
     protected void initSettings(ConfigContainer config) {
         ConfigEntry ce, cond;
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_CLOSE_TO_TRAY, JDL.L("plugins.optional.JDLightTray.closetotray", "Close to tray")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_START_MINIMIZED, JDL.L("plugins.optional.JDLightTray.startMinimized", "Start minimized")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_CLOSE_TO_TRAY, T._.plugins_optional_JDLightTray_closetotray()).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_START_MINIMIZED, T._.plugins_optional_JDLightTray_startMinimized()).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SINGLE_CLICK, JDL.L("plugins.optional.JDLightTray.singleClick", "Toggle window status with single click")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SINGLE_CLICK, T._.plugins_optional_JDLightTray_singleClick()).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, JDL.L("plugins.optional.JDLightTray.tooltip", "Show Tooltip")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, JDL.L("plugins.optional.JDLightTray.linkgrabber.intray", "Show on Linkgrabbing (when minimized as trayicon)")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB2, JDL.L("plugins.optional.JDLightTray.linkgrabber.always", "Show on Linkgrabbing (always)")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_INFO_IN_TITLE, JDL.L("plugins.optional.JDLightTray.titleinfo", "Show info in TaskBar when minimized")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, T._.plugins_optional_JDLightTray_tooltip()).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, T._.plugins_optional_JDLightTray_linkgrabber_intray()).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB2, T._.plugins_optional_JDLightTray_linkgrabber_always()).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_INFO_IN_TITLE, T._.plugins_optional_JDLightTray_titleinfo()).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_PASSWORD_REQUIRED, JDL.L("plugins.optional.JDLightTray.passwordRequired", "Enter Password to open from Tray")).setDefaultValue(false));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASSWORD, JDL.L("plugins.optional.JDLightTray.password", "Password:")));
+        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_PASSWORD_REQUIRED, T._.plugins_optional_JDLightTray_passwordRequired()).setDefaultValue(false));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASSWORD, T._.plugins_optional_JDLightTray_password()));
         ce.setEnabledCondidtion(cond, true);
     }
 
@@ -151,7 +153,7 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.jdtrayicon.jdlighttray.description", null);
+        return T._.jd_plugins_optional_jdtrayicon_jdlighttray_description();
     }
 
     @Override
@@ -216,7 +218,7 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
     }
 
     public TrayExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.jdtrayicon.jdlighttray", null));
+        super(T._.jd_plugins_optional_jdtrayicon_jdlighttray());
         subConfig = JSonWrapper.get("ADDONS_JDLIGHTTRAY");
 
         disableAlwaysonTop = new Timer(2000, this);
@@ -351,9 +353,9 @@ public class TrayExtension extends AbstractExtension implements MouseListener, M
 
     private boolean checkPassword() {
         if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false) && !subConfig.getStringProperty(PROPERTY_PASSWORD, "").equals("")) {
-            String password = UserIO.getInstance().requestInputDialog(UserIO.STYLE_PASSWORD, JDL.L("plugins.optional.JDLightTray.enterPassword", "Enter the Password to open JD:"), null);
+            String password = UserIO.getInstance().requestInputDialog(UserIO.STYLE_PASSWORD, T._.plugins_optional_JDLightTray_enterPassword(), null);
             if (password == null || !password.equals(subConfig.getStringProperty(PROPERTY_PASSWORD, ""))) {
-                UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.JDLightTray.enterPassword.wrong", "The entered Password was wrong!"));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_JDLightTray_enterPassword_wrong());
                 return false;
             }
         }

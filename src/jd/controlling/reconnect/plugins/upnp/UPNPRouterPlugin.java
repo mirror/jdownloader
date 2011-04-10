@@ -1,5 +1,7 @@
 package jd.controlling.reconnect.plugins.upnp;
 
+
+ import jd.controlling.reconnect.plugins.upnp.translate.*;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -287,7 +289,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
 
                         final ImageIcon icon = JDTheme.II("gui.images.ok", 32, 32);
 
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.title", "Successful"), JDL.LF("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.successdialog.message", "JD set up the reconnection settings successfully!\r\n\r\nYour Router is \r\n'%s'", UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
+                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message( UPNPRouterPlugin.this.getStorage().get(UpnpRouterDevice.FRIENDLYNAME, null)), icon, null, null);
 
                         d.setPreferredSize(new Dimension(500, 150));
                         Dialog.getInstance().showDialog(d);
@@ -295,7 +297,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                     } else {
                         final ImageIcon icon = JDTheme.II("gui.images.bad", 32, 32);
 
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.faileddialog.title", "Failed"), JDL.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.autoFind.faileddialog.message", "Could not find any working UPNP Routers"), icon, null, null);
+                        final ConfirmDialog d = new ConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title(), T._.jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message(), icon, null, null);
                         d.setPreferredSize(new Dimension(500, 150));
                         Dialog.getInstance().showDialog(d);
                     }
@@ -465,8 +467,8 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
          * 
          * final String data = "<?xml version=\"1.0\"?>\n" +
          * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
-         * + " <s:Body>\n" + "  <m:" + command + " xmlns:m=\"" + serviceType +
-         * "\"></m:" + command + ">\n" + " </s:Body>\n" + "</s:Envelope>"; try {
+         * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType +
+         * "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try {
          * final URL url = new URL(controlUrl); final URLConnection conn =
          * url.openConnection(); conn.setDoOutput(true);
          * conn.addRequestProperty("Content-Type",
@@ -504,7 +506,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
     }
 
     public ArrayList<UpnpRouterDevice> scanDevices() throws IOException {
-        final String msg = "M-SEARCH * HTTP/1.1\r\n" + "HOST: 239.255.255.250:1900\r\n" + "ST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\n" + "MAN: \"ssdp:discover\"\r\n" + "MX: 3\r\n\r\n";
+        final String msg = "M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\nMAN: \"ssdp:discover\"\r\nMX: 3\r\n\r\n";
         /*
          * TODO (NOT IMPORTANT) To simplify will not make a request for every
          * network interface, let java decide the network interface.
@@ -645,10 +647,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements ActionListener, IP
                                     final Matcher service = Pattern.compile("wan([i|p]pp?)connection", Pattern.CASE_INSENSITIVE).matcher(servicetype);
                                     if (service.find()) {
                                         if (service.group(1).toLowerCase().equals("ppp")) {
-                                            device.setWanservice(JDL.L("interaction.UpnpReconnect.wanservice.ppp", "Point-to-Point Protocol"));
+                                            device.setWanservice(T._.interaction_UpnpReconnect_wanservice_ppp());
 
                                         } else {
-                                            device.setWanservice(JDL.L("interaction.UpnpReconnect.wanservice.ip", "Internet Protocol"));
+                                            device.setWanservice(T._.interaction_UpnpReconnect_wanservice_ip());
 
                                         }
                                     }

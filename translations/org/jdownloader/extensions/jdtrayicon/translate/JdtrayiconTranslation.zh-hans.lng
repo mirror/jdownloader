@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "托盘图标",
+  "plugins_trayicon_popup_bottom_simdls" : "同时下载数",
+  "plugins_trayicon_popup_bottom_speed" : "速度限制(KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "当前链接",
+  "gui_tooltip_statusbar_simultan_downloads" : "最大同时下载数",
+  "gui_tooltip_statusbar_speedlimiter" : "速度限制(KiB/s) [0=不限制]",
+  "gui_tooltip_statusbar_max_chunks" : "单一文件下载线程数(需要网盘支持)"
+}

@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_infobar_docking" : "Povolit zachytávání za okraje",
+  "jd_plugins_optional_infobar_jdinfobar_description" : "Malý plovoucí panel se statistikami stahování a Odhazovací plochou kam můžete přidávat odkazy nebo DLC soubory.",
+  "jd_plugins_optional_infobar_jdinfobar" : "InfoProužek",
+  "jd_plugins_optional_infobar_opacity" : "GUI neprůhlednost (v %)"
+}

@@ -16,6 +16,8 @@
 
 package jd.captcha.easy;
 
+
+ import jd.captcha.translate.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -96,7 +98,7 @@ public class BackGroundImageDialog implements ActionListener {
             new GuiRunnable<Object>() {
                 public Object runSave() {
 
-                    final JDialog dialog = JColorChooser.createDialog(BackGroundImageDialog.this.colorChooser, JDL.L("easycaptcha.addbackgroundimagedialog.deletecolor", "Deletecolor"), true, BackGroundImageDialog.this.colorChooser, null, null);
+                    final JDialog dialog = JColorChooser.createDialog(BackGroundImageDialog.this.colorChooser, T._.easycaptcha_addbackgroundimagedialog_deletecolor(), true, BackGroundImageDialog.this.colorChooser, null, null);
                     dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
                     dialog.setAlwaysOnTop(true);
                     dialog.setVisible(true);
@@ -237,10 +239,10 @@ public class BackGroundImageDialog implements ActionListener {
             public Object runSave() {
                 BackGroundImageDialog.this.imagePanel = new JPanel();
 
-                BackGroundImageDialog.this.imagePanel.setBorder(new TitledBorder(JDL.L("easycaptcha.images", "Images:")));
+                BackGroundImageDialog.this.imagePanel.setBorder(new TitledBorder(T._.easycaptcha_images()));
 
                 BackGroundImageDialog.this.imagePanel.setLayout(new BoxLayout(BackGroundImageDialog.this.imagePanel, BoxLayout.Y_AXIS));
-                BackGroundImageDialog.this.imagePanel.add(new JLabel(JDL.L("easycaptcha.mask", "Mask:")));
+                BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_mask()));
                 if (BackGroundImageDialog.this.workingImage != null) {
                     BackGroundImageDialog.this.bgmask = new ImageComponent(BackGroundImageDialog.this.workingImage.getImage(BackGroundImageDialog.this.bgim.methode));
                 } else {
@@ -255,14 +257,14 @@ public class BackGroundImageDialog implements ActionListener {
 
                 BackGroundImageDialog.this.imagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-                BackGroundImageDialog.this.imagePanel.add(new JLabel(JDL.L("easycaptcha.orginal", "Original:")));
+                BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_orginal()));
                 BackGroundImageDialog.this.bg1 = new ImageComponent(image);
 
                 BackGroundImageDialog.this.imagePanel.add(BackGroundImageDialog.this.bg1);
 
                 BackGroundImageDialog.this.imagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-                BackGroundImageDialog.this.imagePanel.add(new JLabel(JDL.L("easycaptcha.addbackgroundimagedialog.imagepreview", "Preview") + ":"));
+                BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_addbackgroundimagedialog_imagepreview() + ":"));
                 if (BackGroundImageDialog.this.workingImage != null) {
                     BackGroundImageDialog.this.threshold = BackGroundImageDialog.this.workingImage.getDistance();
                     BackGroundImageDialog.this.colorMode = BackGroundImageDialog.this.workingImage.getColorDistanceMode();
@@ -281,21 +283,21 @@ public class BackGroundImageDialog implements ActionListener {
             public Object runSave() {
                 BackGroundImageDialog.this.thresholdSpinner = new JSpinner(new SpinnerNumberModel(BackGroundImageDialog.this.threshold, 0, 360, 1));
                 BackGroundImageDialog.this.thresholdSpinner.setToolTipText("Threshold");
-                BackGroundImageDialog.this.btLoadBackgroundImage = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.loadimage", "Load BackgroundImage"));
-                BackGroundImageDialog.this.btCreateBackgroundFilter = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.generate", "Generate Backgroundfilter"));
+                BackGroundImageDialog.this.btLoadBackgroundImage = new JButton(T._.easycaptcha_addbackgroundimagedialog_loadimage());
+                BackGroundImageDialog.this.btCreateBackgroundFilter = new JButton(T._.easycaptcha_addbackgroundimagedialog_generate());
                 Color defColor = Color.WHITE;
                 if (BackGroundImageDialog.this.workingImage != null) {
                     defColor = new Color(BackGroundImageDialog.this.workingImage.getColor());
                 }
                 BackGroundImageDialog.this.colorChooser = new JColorChooser(defColor);
-                BackGroundImageDialog.this.btColorChoose = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.deletecolor", "Deletecolor"));
-                BackGroundImageDialog.this.btPreview = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.imagepreview", "Preview"));
+                BackGroundImageDialog.this.btColorChoose = new JButton(T._.easycaptcha_addbackgroundimagedialog_deletecolor());
+                BackGroundImageDialog.this.btPreview = new JButton(T._.easycaptcha_addbackgroundimagedialog_imagepreview());
                 if (BackGroundImageDialog.this.workingImage == null) {
                     BackGroundImageDialog.this.btPreview.setEnabled(false);
                 }
                 BackGroundImageDialog.this.colorModeBox = new JComboBox(ColorMode.cModes);
                 BackGroundImageDialog.this.colorModeBox.setSelectedItem(new ColorMode(BackGroundImageDialog.this.colorMode));
-                BackGroundImageDialog.this.btFinished = new JButton(JDL.L("easycaptcha.finished", "finish"));
+                BackGroundImageDialog.this.btFinished = new JButton(T._.easycaptcha_finished());
                 return null;
             }
         }.waitForEDT();
@@ -306,7 +308,7 @@ public class BackGroundImageDialog implements ActionListener {
         new GuiRunnable<Object>() {
             public Object runSave() {
                 BackGroundImageDialog.this.dialog = new JDialog(BackGroundImageDialog.this.owner);
-                BackGroundImageDialog.this.dialog.setTitle(JDL.L("easycaptcha.addbackgroundimagedialog.title", "Add BackgroundImage"));
+                BackGroundImageDialog.this.dialog.setTitle(T._.easycaptcha_addbackgroundimagedialog_title());
                 BackGroundImageDialog.this.dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
                 BackGroundImageDialog.this.dialog.setModal(true);
                 BackGroundImageDialog.this.dialog.setAlwaysOnTop(true);

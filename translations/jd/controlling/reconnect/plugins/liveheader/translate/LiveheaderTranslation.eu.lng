@@ -1,0 +1,18 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Adibidez: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "RAW modua?",
+  "gui_btn_yes" : "Bai",
+  "gui_config_jdrr_success" : "Arrakasta!",
+  "gui_config_jdrr_reconnectfaild" : "Berriro konektatzean akatsa",
+  "gui_btn_help" : "Laguntza",
+  "gui_btn_start" : "Hasi",
+  "gui_config_jdrr_savereconnect" : "Birkonexio arrakastatsua. Gorde?",
+  "gui_config_jdrr_popup_title" : "RRPopup",
+  "gui_fengshuiconfig_routerip" : "Routerraren IP-a",
+  "gui_config_jdrr_status_title" : "Grabazioaren egoera",
+  "gui_btn_cancel" : "Ezeztatu",
+  "gui_btn_no" : "Ez",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP-aren egiaztapena ezgaituta!",
+  "gui_btn_abort" : "Abortatu",
+  "gui_config_reconnect_selectrouter" : "Bilatu ruterraren modeloa"
+}

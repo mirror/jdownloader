@@ -16,6 +16,8 @@
 
 package jd.captcha;
 
+
+ import jd.captcha.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -40,9 +42,9 @@ public class JACController {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new MigLayout("wrap 2"));
         if (isTrain) {
-            frame.setTitle(JDL.L("train.chooser.title", "jDownloader :: TrainAll"));
+            frame.setTitle(T._.train_chooser_title());
         } else {
-            frame.setTitle(JDL.L("showcaptcha.chooser.title", "jDownloader :: Show Captcha"));
+            frame.setTitle(T._.showcaptcha_chooser_title());
         }
         frame.setAlwaysOnTop(true);
         frame.setLocation(20, 20);
@@ -61,15 +63,15 @@ public class JACController {
 
         String chooserText = "";
         if (isTrain) {
-            chooserText = JDL.L("train.choose.folder", "Select a folder");
+            chooserText = T._.train_choose_folder();
         } else {
-            chooserText = JDL.L("showcaptcha.choose.file", "Select an Imagefile");
+            chooserText = T._.showcaptcha_choose_file();
         }
-        frame.add(new JLabel(JDL.L("train.method", "Select a CAPTCHA method:")));
+        frame.add(new JLabel(T._.train_method()));
         frame.add(methods, "growx, spanx");
         frame.add(new JLabel(chooserText));
         frame.add(chooser, "growx, spanx");
-        final JButton btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
+        final JButton btnOK = new JButton(T._.gui_btn_ok());
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {

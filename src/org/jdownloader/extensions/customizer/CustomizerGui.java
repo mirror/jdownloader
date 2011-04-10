@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.customizer;
 
+
+ import org.jdownloader.extensions.customizer.translate.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -85,7 +87,7 @@ public class CustomizerGui extends SwitchPanel {
 
                     @Override
                     public Object runSave() {
-                        String result = UserIO.getInstance().requestInputDialog(JDL.L("action.customize.addsetting.ask", "Please insert the name for the new Setting:"));
+                        String result = UserIO.getInstance().requestInputDialog(T._.action_customize_addsetting_ask());
                         if (result != null) {
                             CustomizeSetting.getSettings().add(new CustomizeSetting(result));
                             table.getModel().refreshData();
@@ -109,7 +111,7 @@ public class CustomizerGui extends SwitchPanel {
                 int[] rows = table.getSelectedRows();
                 table.editingStopped(null);
                 if (rows.length == 0) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.LF("action.customize.removesetting.ask", "Remove selected Setting(s)? (%s Account(s))", rows.length)), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.action_customize_removesetting_ask( rows.length)), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     ArrayList<CustomizeSetting> settings = CustomizeSetting.getSettings();
                     for (int i = rows.length - 1; i >= 0; --i) {
                         settings.remove(rows[i]);
@@ -150,7 +152,7 @@ public class CustomizerGui extends SwitchPanel {
             add(iconContainer, "spany, gapleft 1");
 
             JLabel title;
-            add(title = new JLabel(JDL.L(JDL_PREFIX + "tester", "Insert examplelinks here to highlight the matched setting:")));
+            add(title = new JLabel(T._.jd_plugins_optional_customizer_CustomizerGui_tester()));
             add(tester = new JTextField(), "growx, split 2");
             add(reset = new JButton(JDTheme.II("gui.images.undo", 16, 16)));
 

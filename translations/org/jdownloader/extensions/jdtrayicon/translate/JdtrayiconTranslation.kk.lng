@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Трейдегі белгісі",
+  "plugins_trayicon_popup_bottom_simdls" : "Бір уақыта жүктеу",
+  "plugins_trayicon_popup_bottom_speed" : "Жылдымдық шегі(кб/с)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Бір уақытта қосылу",
+  "gui_tooltip_statusbar_simultan_downloads" : "Бір мезетте макс. жүктеу",
+  "gui_tooltip_statusbar_speedlimiter" : "Жылдамдықты шектеу (кб/с) [0:шектелмеген]",
+  "gui_tooltip_statusbar_max_chunks" : "Файлмен максимал байланысқан"
+}

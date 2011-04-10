@@ -1,5 +1,7 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
+
+ import jd.controlling.reconnect.plugins.liveheader.translate.*;
 import java.util.ArrayList;
 
 import javax.swing.JLabel;
@@ -120,7 +122,7 @@ public class LiveHeaderDetectionWizard {
         for (int i = 0; i < tests.size(); i++) {
             progress.setProgress((i + 1) * 100 / tests.size());
             TestScript test = tests.get(i);
-            progress.setStatusMessage(JDL.LF("jd.controlling.reconnect.plugins.liveheader.LiveHeaderDetectionWizard.runTests", "Test Script %s/%s: %s", (i + 1), tests.size(), test.getManufactor() + " - " + test.getModel()));
+            progress.setStatusMessage(T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests( (i + 1), tests.size(), test.getManufactor() + " - " + test.getModel()));
 
             if (test.run(getPlugin())) {
                 // return first Script found

@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.ClosableView;
@@ -39,12 +41,12 @@ public class SchedulerView extends ClosableView {
 
     @Override
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "title", "Scheduler");
+        return T._.jd_plugins_optional_schedule_SchedulerView_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(JDL_PREFIX + "tooltip", "Schedule your downloads");
+        return T._.jd_plugins_optional_schedule_SchedulerView_tooltip();
     }
 
     @Override

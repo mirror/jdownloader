@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "Жаңа орнату атын енгізіңіз",
+  "action_customize_removesetting_ask" : "Таңдалған орнату(лар)ды жою? (%s1 Account(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Пакеттерді дараландыру"
+}

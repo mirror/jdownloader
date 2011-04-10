@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.infobar;
 
+
+ import org.jdownloader.extensions.infobar.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -47,7 +49,7 @@ public class InfoBarExtension extends AbstractExtension {
     }
 
     public InfoBarExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.infobar.jdinfobar", null));
+        super(T._.jd_plugins_optional_infobar_jdinfobar());
 
     }
 
@@ -115,7 +117,7 @@ public class InfoBarExtension extends AbstractExtension {
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         if (Application.getJavaVersion() >= 16000000) {
-            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_OPACITY, JDL.L(JDL_PREFIX + "opacity", "Opacity of the Dialog [in %]"), 1, 100, 10) {
+            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_OPACITY, T._.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -128,7 +130,7 @@ public class InfoBarExtension extends AbstractExtension {
             config.addEntry(ce);
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_DROPLOCATION, JDL.L(JDL_PREFIX + "dropLocation2", "Enable Drop Location")) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_DROPLOCATION, T._.jd_plugins_optional_infobar_dropLocation2()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -138,7 +140,7 @@ public class InfoBarExtension extends AbstractExtension {
                 super.valueChanged(newValue);
             }
         }.setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_DOCKING, JDL.L(JDL_PREFIX + "docking", "Enable Docking to the Sides")) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_DOCKING, T._.jd_plugins_optional_infobar_docking()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -162,7 +164,7 @@ public class InfoBarExtension extends AbstractExtension {
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.infobar.jdinfobar.description", null);
+        return T._.jd_plugins_optional_infobar_jdinfobar_description();
     }
 
     @Override

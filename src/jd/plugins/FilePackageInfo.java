@@ -1,5 +1,7 @@
 package jd.plugins;
 
+
+ import org.jdownloader.translate.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -23,12 +25,12 @@ public class FilePackageInfo {
     private boolean                 dateFinishedReset     = false;
 
     private static SimpleDateFormat dateFormat            = null;
-    private static String           strDownloadLinkActive = JDL.L("gui.treetable.packagestatus.links_active", "Active");
-    private static String           strETA                = JDL.L("gui.eta", "ETA");
+    private static String           strDownloadLinkActive = T._.gui_treetable_packagestatus_links_active();
+    private static String           strETA                = T._.gui_eta();
 
     static {
         try {
-            dateFormat = new SimpleDateFormat(JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.TableRenderer.dateformat", "dd.MM.yy HH:mm"));
+            dateFormat = new SimpleDateFormat(T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_TableRenderer_dateformat());
         } catch (Exception e) {
             dateFormat = new SimpleDateFormat("dd.MM.yy HH:mm");
         }

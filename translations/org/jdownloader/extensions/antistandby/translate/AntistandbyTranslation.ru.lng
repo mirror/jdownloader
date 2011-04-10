@@ -1,0 +1,6 @@
+{
+  "gui_config_antistandby_mode" : "Режим:",
+  "gui_config_antistandby_whiledl" : "Предотвращать режим ожидания во время закачки",
+  "gui_config_antistandby_whilejd" : "Предотвращать режим ожидания во время работы JD",
+  "jd_plugins_optional_antistandby_jdantistandby" : "JDAntiStandby"
+}

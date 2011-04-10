@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Příklad: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "RAW režim?",
+  "gui_btn_yes" : "Ano",
+  "gui_config_routeripfinder_ready" : "Nalezena IP: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importuj router",
+  "gui_config_jdrr_success" : "Úspěšné!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Vypnuli jste IP-Check. Toto nastavení výrazně zvýší počet Reconnectu!\\r\\n\\r\\nNěkolik dalších modulů (např. Reconnect Recorder) bylo deaktivováno.",
+  "gui_config_jdrr_reconnectfaild" : "Reconnect selhal",
+  "gui_btn_help" : "Nápověda",
+  "gui_btn_start" : "Spustit",
+  "gui_config_jdrr_savereconnect" : "Reconnect úspěšný. Uložit?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "Router-IP",
+  "gui_config_jdrr_title" : "Recconect recorder",
+  "gui_config_jdrr_status_title" : "Status záznamu",
+  "gui_config_routeripfinder_notfound" : "Nemůžu najít jméno vašeho routeru",
+  "gui_btn_no" : "Ne",
+  "gui_btn_cancel" : "Zrušit",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP-Check deaktivován!",
+  "gui_btn_abort" : "Přerušit",
+  "gui_config_reconnect_selectrouter" : "Vyberte model routeru"
+}

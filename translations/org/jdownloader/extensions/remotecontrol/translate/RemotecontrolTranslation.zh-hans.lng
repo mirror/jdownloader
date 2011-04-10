@@ -1,0 +1,4 @@
+{
+  "plugins_optional_remotecontrol_startedonport2" : "%s1运行在端口%s2\\n打开http://127.0.0.1:%s3\\n/help查看帮助信息.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1已停止."
+}

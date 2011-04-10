@@ -1,0 +1,22 @@
+{
+  "plugins_optional_langfileeditor_error_title" : "Възникна грешка",
+  "plugins_optional_langfileeditor_keychart_done" : "Завършен",
+  "gui_btn_yes" : "Да",
+  "plugins_optional_langfileeditor_error_updatesource_message" : "Грешка при обновяването на следните сорс файлове:\\r\\n %s1",
+  "plugins_optional_langfileeditor_account_warning" : "Липстващ SVN акаунт, Моля натиснете тук за да допълнителна информация.",
+  "plugins_optional_langfileeditor_svn_updating" : "Ъпдейтване чрез SVN: Моля изчакайте",
+  "plugins_optional_langfileeditor_saveandupload" : "Запамети и качи",
+  "plugins_optional_langfileeditor_error_updatelanguages_message" : "Грешка при обновяването на следните езици:\\r\\n %s1",
+  "plugins_optional_langfileeditor_keychart_missing" : "Липстващ",
+  "jd_plugins_optional_langfileeditor_langfileeditor_description" : "(Приставка само за девелъпъри)",
+  "plugins_optional_langfileeditor_english" : "Стойност на английски",
+  "plugins_optional_langfileeditor_file" : "Файл",
+  "plugins_optional_langfileeditor_test" : "Тест",
+  "plugins_optional_langfileeditor_keychart_old" : "Стар",
+  "plugins_optional_langfileeditor_load" : "Зареди език",
+  "plugins_optional_langfileeditor_svn_updating_error" : "Ъпдейтване чрез SVN: Грешка!",
+  "gui_btn_no" : "Не",
+  "plugins_optional_langfileeditor_svn_updating_ready" : "Ъпдейтване чрез SVN: Завършено",
+  "plugins_optional_langfileeditor_savelocale" : "Запаметете само локално",
+  "plugins_optional_langfileeditor_key" : "Ключ"
+}

@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.components.modules;
 
+
+ import org.jdownloader.gui.translate.*;
 import jd.controlling.ProgressController;
 import jd.utils.locale.JDL;
 
@@ -33,7 +35,7 @@ public class ProgressControllerDialog {
         };
         final ProgressDialog dialog = new ProgressDialog(progressAdapter, 0, "Please Wait",
 
-        source.getName(), null, null, JDL.L("ProgressControllerDialog.minimize", "Minimize"));
+        source.getName(), null, null, T._.ProgressControllerDialog_minimize());
         new Thread() {
             public void run() {
                 try {

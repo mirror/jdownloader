@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Ví dụ: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Chế độ thô?",
+  "gui_btn_yes" : "Yes",
+  "gui_config_routeripfinder_ready" : "IP tìm được: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Nhập vào Router của bạn",
+  "gui_config_jdrr_success" : "Thành công!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Bạn đãị vô hiệu hoá IPCheck. Điều này sẽ làm tăng đáng kể số lần tái kết nối!. This will increase the reconnection times dramatically!\\r\\n\\r\\nThêm vào đó Một số mô-đun như Bộ ghi Tái kết nối đã bị tắt.",
+  "gui_config_jdrr_reconnectfaild" : "Tái kết nối modem bất thành!",
+  "gui_btn_help" : "Trợ giúp",
+  "gui_btn_start" : "Bắt đầu",
+  "gui_config_jdrr_savereconnect" : "Tái kết nối modem thành công. Lưu lại ngay?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "Router-IP",
+  "gui_config_jdrr_title" : "Trình Ghi Quá Trình Tái Kết Nối Modem",
+  "gui_config_jdrr_status_title" : "Tình trạng Ghi Quá Trình Tái Kết Nối Modem",
+  "gui_config_routeripfinder_notfound" : "Không thể tìm ra trang chủ (địa chỉ) router của bạn",
+  "gui_btn_no" : "No",
+  "gui_btn_cancel" : "Hủy bỏ",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Ip Check đã bị tắt!",
+  "gui_btn_abort" : "Hủy tác vụ",
+  "gui_config_reconnect_selectrouter" : "Tìm kiểu Router"
+}

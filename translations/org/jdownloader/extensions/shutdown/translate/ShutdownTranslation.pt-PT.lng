@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Desligar",
+  "gui_config_jdshutdown_forceshutdown" : "Forçar desligar (Para alguns SO)",
+  "interaction_shutdown_dialog_title_standby" : "Suspender?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Atenção! O seu sistema irá ser desligado</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Instalar 'Forçar Descarga' (apenas para MAC OSX)",
+  "interaction_shutdown_dialog_title_hibernate" : "Hibernar?",
+  "interaction_shutdown_dialog_title_shutdown" : "Desligar?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader vai fechar!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "O sistema não será desligado pelo JDownloader",
+  "gui_config_jdshutdown_hibernate" : "Pausa (Para alguns SO)",
+  "gui_config_jdshutdown_close" : "Fechar JD",
+  "gui_config_jdshutdown_standby" : "Pausa (Para alguns SO)",
+  "gui_config_jdshutdown_osx_force_short" : "Instalar",
+  "jd_plugins_optional_jdshutdown" : "JD Desligar",
+  "interaction_shutdown_dialog_title_closejd" : "Fechar JD?",
+  "gui_config_jdshutdown_mode" : "Modo:",
+  "addons_jdshutdown_statusmessage_enabled" : "O JDownloader irá desligar o seu sistema após concluir as transferências activas",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Atenção! O seu sistema irá ser suspendido</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Atenção! O seu sistema irá ser hibernado</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "DEsliga, suspende ou hiberna o computador ou o JD automáticamente, após descarga completa."
+}

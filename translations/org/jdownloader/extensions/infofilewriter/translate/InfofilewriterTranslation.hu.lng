@@ -1,0 +1,7 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nJelszó: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nAutomatikus-Jelszó: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nBefejezve %SYSTEM.DATE% to %SYSTEM.TIME% órakor",
+  "jd_plugins_optional_jdinfofilewriter" : "JDInfo Fájlszerkesztő",
+  "plugins_optional_infofilewriter_content" : "Tartalom:",
+  "plugins_optional_infofilewriter_variables" : "Elérhető változók",
+  "plugins_optional_infofilewriter_filename" : "Fájlnév:"
+}

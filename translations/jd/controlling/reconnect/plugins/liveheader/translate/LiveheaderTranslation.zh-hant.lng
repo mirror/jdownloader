@@ -1,0 +1,22 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "例如： 3Com ADSL",
+  "gui_btn_yes" : "是",
+  "gui_config_routeripfinder_ready" : "IP 找到： %s1",
+  "gui_config_liveheader_dialog_importrouter" : "匯入分享器/路由器設定",
+  "gui_config_jdrr_success" : "成功！",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "您已停用 IP 驗證。這將會大大的增加重新連線時間！\\r\\n\\r\\n幾個更進一步的模組，像是重新連接紀錄都將被停用。",
+  "gui_config_jdrr_reconnectfaild" : "重新連線失敗",
+  "gui_btn_help" : "幫助",
+  "gui_btn_start" : "開始",
+  "gui_config_jdrr_savereconnect" : "成功重新連線. 現在儲存？",
+  "gui_config_jdrr_popup_title" : "JDRR彈出視窗",
+  "gui_fengshuiconfig_routerip" : "代理伺服器 IP",
+  "gui_config_jdrr_title" : "重新連線紀錄",
+  "gui_config_jdrr_status_title" : "RR狀態",
+  "gui_config_routeripfinder_notfound" : "無法找到您的路由器主機名稱",
+  "gui_btn_no" : "否",
+  "gui_btn_cancel" : "取消",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "已停用 IP 驗證",
+  "gui_btn_abort" : "中止",
+  "gui_config_reconnect_selectrouter" : "搜尋路由器型號"
+}

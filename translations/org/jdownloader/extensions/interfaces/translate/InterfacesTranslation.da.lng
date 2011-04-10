@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Opdater til BETA nu?",
+  "updater_beta_rlyupdate_message" : "Vil du opdatere til JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Nægt adgang!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Ekstern anmodning fra %s1 til %s2 interface",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Tillad det!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Et eksternt program forsøger at tilføje links. Se log for detaljer."
+}

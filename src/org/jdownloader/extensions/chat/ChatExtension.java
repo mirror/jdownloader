@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.chat;
 
+
+ import org.jdownloader.extensions.chat.translate.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
@@ -165,7 +167,7 @@ public class ChatExtension extends AbstractExtension {
     }
 
     public ChatExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.jdchat.jdchat", null));
+        super(T._.jd_plugins_optional_jdchat_jdchat());
 
     }
 
@@ -342,7 +344,7 @@ public class ChatExtension extends AbstractExtension {
         final String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
         this.nick = config.getNick();
         if (this.nick == null || this.nick.equalsIgnoreCase("")) {
-            this.nick = UserIO.getInstance().requestInputDialog(JDL.L("plugins.optional.jdchat.enternick", "Your wished nickname?"));
+            this.nick = UserIO.getInstance().requestInputDialog(T._.plugins_optional_jdchat_enternick());
             if (this.nick != null && !this.nick.equalsIgnoreCase("")) {
                 this.nick += "[" + loc + "]";
             }
@@ -563,7 +565,7 @@ public class ChatExtension extends AbstractExtension {
             }
         };
         this.frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
-        this.closeTab = new JButton(JDL.L("jd.plugins.optional.jdchat.closeTab", "Close Tab"));
+        this.closeTab = new JButton(T._.jd_plugins_optional_jdchat_closeTab());
         this.closeTab.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 if (ChatExtension.this.tabbedPane.getSelectedIndex() > 0) {
@@ -614,8 +616,8 @@ public class ChatExtension extends AbstractExtension {
 
             @Override
             protected void initMenu(final JMenuBar menubar) {
-                menubar.add(ChatExtension.this.top = new JLabel(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day")));
-                ChatExtension.this.top.setToolTipText(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.tooltip", "Message of the day"));
+                menubar.add(ChatExtension.this.top = new JLabel(T._.jd_plugins_optional_jdchat_JDChat_topic_default()));
+                ChatExtension.this.top.setToolTipText(T._.jd_plugins_optional_jdchat_JDChat_topic_tooltip());
             }
 
         };
@@ -681,7 +683,7 @@ public class ChatExtension extends AbstractExtension {
                             text = text.substring(0, 40).concat("...");
                         }
                         if (!ChatExtension.this.tabbedPane.getTitleAt(ChatExtension.this.tabbedPane.getSelectedIndex()).equals(user)) {
-                            Balloon.show("JD Chat", null, JDL.LF("jd.plugins.optional.jdchat.newmessage", "New Message from %s:<hr> %s", user, text));
+                            Balloon.show("JD Chat", null, T._.jd_plugins_optional_jdchat_newmessage( user, text));
                         }
                         return null;
                     }
@@ -822,7 +824,7 @@ public class ChatExtension extends AbstractExtension {
                 this.lastCommand = "/msg " + rest.substring(0, end).trim() + " ";
                 this.addToText(this.getUser(this.conn.getNick()), ChatExtension.STYLE_SELF, Utils.prepareMsg(rest.substring(end).trim()), this.pms.get(rest.substring(0, end).trim().toLowerCase()).getTextArea(), this.pms.get(rest.substring(0, end).trim().toLowerCase()).getSb());
             } else if (org.appwork.utils.Regex.matches(cmd, ChatExtension.CMD_SLAP)) {
-                this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + " slaps " + rest + " with the whole Javadocs" + new String(new byte[] { 1 }));
+                this.conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION  slaps " + rest + " with the whole Javadocs" + new String(new byte[] { 1 }));
                 this.addToText(null, ChatExtension.STYLE_ACTION, this.conn.getNick() + " slaps " + rest + " with the whole Javadocs");
 
                 this.lastCommand = "/slap ";

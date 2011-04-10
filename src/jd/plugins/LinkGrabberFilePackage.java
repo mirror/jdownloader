@@ -16,6 +16,8 @@
 
 package jd.plugins;
 
+
+ import org.jdownloader.translate.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -100,7 +102,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     public LinkGrabberFilePackage() {
         created = System.currentTimeMillis();
         downloadDirectory = JDUtilities.getDefaultDownloadDirectory();
-        name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
+        name = JDUtilities.removeEndingPoints(T._.controller_packages_defaultname());
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
         // TODO
         // OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
@@ -408,7 +410,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setName(String name) {
         if (name == null || name.length() == 0) {
-            this.name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
+            this.name = JDUtilities.removeEndingPoints(T._.controller_packages_defaultname());
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         this.name = this.name.trim();

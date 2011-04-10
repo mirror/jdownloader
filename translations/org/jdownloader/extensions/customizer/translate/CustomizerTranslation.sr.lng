@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Унесите име за нову поставку",
+  "action_customize_removesetting_ask" : "Уклонити одабаране поставке? (Налога:%s1)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Помоћу регуларних израза (регекса) направите филтере који ће аутоматски уредити пакете које преузимате",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Уређивач пакета"
+}

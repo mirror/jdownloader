@@ -1,0 +1,20 @@
+{
+  "gui_config_jdshutdown_shutdown" : "關機",
+  "gui_config_jdshutdown_forceshutdown" : "關機 (並不適合全部作業系統)",
+  "interaction_shutdown_dialog_title_standby" : "待命?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">系統將執行關機!</font></h2>",
+  "interaction_shutdown_dialog_title_hibernate" : "休眠?",
+  "interaction_shutdown_dialog_title_shutdown" : "關機?",
+  "interaction_shutdown_dialog_msg_closejd" : "h2> <font color=\"red\">JDownloader將會關閉！</font> </h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "系統將不會由 JDownloader 來關機",
+  "gui_config_jdshutdown_hibernate" : "休眠 （並不適合全部作業系統)",
+  "gui_config_jdshutdown_close" : "關閉 JD",
+  "gui_config_jdshutdown_standby" : "待命 (並不適合全部作業系統)",
+  "gui_config_jdshutdown_osx_force_short" : "安裝",
+  "jd_plugins_optional_jdshutdown" : "JDShutdown",
+  "interaction_shutdown_dialog_title_closejd" : "關閉 JD？",
+  "gui_config_jdshutdown_mode" : "模式：",
+  "addons_jdshutdown_statusmessage_enabled" : "下載完成後，將會由 JDownloader 來關閉您的系統",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">系統將進入待機模式!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">系統將進入休眠模式!</font></h2>"
+}

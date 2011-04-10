@@ -16,6 +16,8 @@
 
 package jd.plugins;
 
+
+ import org.jdownloader.translate.*;
 import java.nio.charset.CharacterCodingException;
 
 import jd.gui.UserIO;
@@ -50,7 +52,7 @@ public class PluginUtils {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
             link.requestGuiUpdate();
 
-            if (message == null) message = JDL.LF(JDL_PREFIX + "askPassword", "Please enter the password for %s", link.getName());
+            if (message == null) message = T._.jd_plugins_PluginUtils_askPassword( link.getName());
             final String password = askPassword(message, link.getDecrypterPassword());
 
             link.requestGuiUpdate();
@@ -61,9 +63,9 @@ public class PluginUtils {
     }
 
     public static String askPassword(String message, final CryptedLink link) {
-        link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
+        link.getProgressController().setStatusText(T._.gui_linkgrabber_waitinguserio());
 
-        if (message == null) message = JDL.LF(JDL_PREFIX + "askPassword", "Please enter the password for %s", link.getCryptedUrl());
+        if (message == null) message = T._.jd_plugins_PluginUtils_askPassword( link.getCryptedUrl());
         final String password = askPassword(message, link.getDecrypterPassword());
 
         link.getProgressController().setStatusText(null);
@@ -83,7 +85,7 @@ public class PluginUtils {
      * @param password
      */
     public static void informPasswordWrong(final Plugin plg, final String password) {
-        Balloon.show(JDL.LF("jd.plugins.PluginUtils.informPasswordWrong.title", "Password wrong: %s", password), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), JDL.LF("jd.plugins.PluginUtils.informPasswordWrong.message", "The password you entered for %s has been wrong.", plg.getHost()));
+        Balloon.show(T._.jd_plugins_PluginUtils_informPasswordWrong_title( password), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), T._.jd_plugins_PluginUtils_informPasswordWrong_message( plg.getHost()));
     }
 
     public static void evalJSPacker(final Browser br) {

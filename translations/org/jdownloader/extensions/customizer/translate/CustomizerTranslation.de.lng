@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Bitte Namen für die neue Einstellung eingeben:",
+  "action_customize_removesetting_ask" : "Ausgewählte Einstellung(en) entfernen? (%s1)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Paket Filter",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Paket Filter"
+}

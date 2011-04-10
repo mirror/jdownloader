@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+
+ import org.jdownloader.translate.*;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -73,7 +75,7 @@ public final class CNL2 {
                             } else {
                                 LocalBrowser.openDefaultURL(new URL(text + "?jd=1"));
                             }
-                            Balloon.show(JDL.L("jd.controlling.CNL2.checkText.title", "Click'n'Load"), null, JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+                            Balloon.show(T._.jd_controlling_CNL2_checkText_title(), null, T._.jd_controlling_CNL2_checkText_message());
                             return true;
                         }
                     }

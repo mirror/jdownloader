@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.antistandby;
 
+
+ import org.jdownloader.extensions.antistandby.translate.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -59,8 +61,8 @@ public class AntiStandbyExtension extends AbstractExtension {
     }
 
     public AntiStandbyExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.antistandby.jdantistandby", null));
-        modes = new String[] { JDL.L("gui.config.antistandby.whiledl", "Prevent standby while Downloading"), JDL.L("gui.config.antistandby.whilejd", "Prevent standby while JD is running") };
+        super(T._.jd_plugins_optional_antistandby_jdantistandby());
+        modes = new String[] { T._.gui_config_antistandby_whiledl(), T._.gui_config_antistandby_whilejd() };
 
     }
 
@@ -119,7 +121,7 @@ public class AntiStandbyExtension extends AbstractExtension {
     @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), "gui.images.preferences"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, modes, JDL.L("gui.config.antistandby.mode", "Mode:")).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, modes, T._.gui_config_antistandby_mode()).setDefaultValue(0));
 
     }
 
@@ -135,7 +137,7 @@ public class AntiStandbyExtension extends AbstractExtension {
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.antistandby.jdantistandby.description", null);
+        return T._.jd_plugins_optional_antistandby_jdantistandby_description();
     }
 
     @Override

@@ -1,0 +1,21 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Выключение",
+  "gui_config_jdshutdown_forceshutdown" : "Выключить компьютер (Не все ОС)",
+  "interaction_shutdown_dialog_title_standby" : "Спящий режим?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Система будет выключена!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Установить принудит. выключение (Только Mac OSx)",
+  "interaction_shutdown_dialog_title_hibernate" : "Гибернация?",
+  "interaction_shutdown_dialog_title_shutdown" : "Выключить?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">Программа сейчас будет закрыта!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Система не будет выключена после завершения закачек",
+  "gui_config_jdshutdown_hibernate" : "Спящий режим",
+  "gui_config_jdshutdown_close" : "Закрыть JD",
+  "gui_config_jdshutdown_standby" : "Ждущий режим",
+  "gui_config_jdshutdown_osx_force_short" : "Установка",
+  "jd_plugins_optional_jdshutdown" : "Выключение",
+  "interaction_shutdown_dialog_title_closejd" : "Завершить работу программы?",
+  "gui_config_jdshutdown_mode" : "Режим:",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader выключит систему после завершения закачек",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Система перейдёт в спящий режим!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Система перейдёт в режим гибернации!</font></h2>"
+}

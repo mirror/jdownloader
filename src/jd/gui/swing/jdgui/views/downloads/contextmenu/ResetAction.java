@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -29,13 +31,13 @@ public class ResetAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.reset", "Reset") + " (" + links.size() + ")";
+        return T._.gui_table_contextmenu_reset() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"))) {
+                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_downloadlist_reset() + " (" + T._.gui_downloadlist_delete_size_packagev2( links.size()) + ")"))) {
                     for (DownloadLink link : links) {
                         if (link.getLinkStatus().isPluginActive()) {
                             /*

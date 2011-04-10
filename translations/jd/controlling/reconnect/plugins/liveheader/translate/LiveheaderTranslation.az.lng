@@ -1,0 +1,20 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Nümunə: 3Com ADSL",
+  "gui_btn_yes" : "Bəli",
+  "gui_config_routeripfinder_ready" : "IP tapıldı: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Yönləndirici idxalı",
+  "gui_config_jdrr_success" : "Uğur!",
+  "gui_config_jdrr_reconnectfaild" : "Yenidən bağlanma alınmadı",
+  "gui_btn_help" : "Kömək",
+  "gui_btn_start" : "Başla",
+  "gui_config_jdrr_savereconnect" : "Yenidan bağlanma uğurlu oldu. Saxlanılsın?",
+  "gui_config_jdrr_popup_title" : "JDRRQəfil pəncərə",
+  "gui_fengshuiconfig_routerip" : "Yönləndirici-IP",
+  "gui_config_jdrr_title" : "Yenidən Bağlanma Qeydedicisi",
+  "gui_config_jdrr_status_title" : "Vəziyyəy qeyd edilir",
+  "gui_config_routeripfinder_notfound" : "Yönləndiricinin host adı tapılmadı",
+  "gui_btn_cancel" : "Ləğv et",
+  "gui_btn_no" : "Xeyir",
+  "gui_btn_abort" : "Ləğv et",
+  "gui_config_reconnect_selectrouter" : "Yönləndirici Modelini Seç"
+}

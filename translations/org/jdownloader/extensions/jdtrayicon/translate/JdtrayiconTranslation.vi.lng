@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Khay hệ thống",
+  "plugins_trayicon_popup_bottom_simdls" : "Các tải xuống đồng thời",
+  "plugins_trayicon_popup_bottom_speed" : "Tốc độ giới hạn (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Số đồng kết nối",
+  "gui_tooltip_statusbar_simultan_downloads" : "Số tải xuống đồng thời tối đa",
+  "gui_tooltip_statusbar_speedlimiter" : "Thiết lập Tốc độ giới hạn(KiB/s) [0:bất định]",
+  "gui_tooltip_statusbar_max_chunks" : "Số kết nối tối đa cho mộtTập tin"
+}

@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule.columns;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import org.jdownloader.extensions.schedule.Actions;
 
 import jd.gui.swing.components.table.JDTableModel;
@@ -49,14 +51,14 @@ public class NextExeColumn extends JDTextTableColumn {
     @Override
     protected String getStringValue(Object value) {
         if (!((Actions) value).isEnabled()) {
-            return JDL.L("jd.plugins.optional.schedule.disabled", "disabled");
+            return T._.jd_plugins_optional_schedule_disabled();
         } else {
             nexttime = ((Actions) value).getDate().getTime() - System.currentTimeMillis();
             if (nexttime < 0) {
                 if (((Actions) value).getRepeat() == 0) {
-                    return JDL.L("jd.plugins.optional.schedule.expired", "expired");
+                    return T._.jd_plugins_optional_schedule_expired();
                 } else {
-                    return JDL.L("jd.plugins.optional.schedule.wait", "wait a moment");
+                    return T._.jd_plugins_optional_schedule_wait();
                 }
             } else {
                 /*

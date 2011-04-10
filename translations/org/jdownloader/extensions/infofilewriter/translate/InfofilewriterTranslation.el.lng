@@ -1,0 +1,9 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nΚωδικός: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nΑυτόματος Κωδικός: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nΟλοκληρώθηκε στις %SYSTEM.DATE% στις %SYSTEM.TIME%",
+  "jd_plugins_optional_jdinfofilewriter" : "Εγγραφέας Αρχείου Πληροφοριών",
+  "plugins_optional_infofilewriter_content" : "Περιεχόμενο:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Χρήση μόνο εάν ο κωδικός είναι ενεργοποιημένος",
+  "jd_plugins_optional_jdinfofilewriter_description" : "Εγγραφέας Αρχείου Πληροφοριών",
+  "plugins_optional_infofilewriter_variables" : "Διαθέσιμες μεταβλητές",
+  "plugins_optional_infofilewriter_filename" : "Όνομα αρχείου:"
+}

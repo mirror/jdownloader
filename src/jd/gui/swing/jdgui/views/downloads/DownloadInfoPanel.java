@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
+
+ import org.jdownloader.gui.translate.*;
 import jd.controlling.DownloadInformations;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.GuiRunnable;
@@ -33,12 +35,12 @@ public class DownloadInfoPanel extends InfoPanel {
     public DownloadInfoPanel() {
         super("gui.images.taskpanes.download");
 
-        addInfoEntry(JDL.L(JDL_PREFIX + "packages", "Package(s)"), "0", 0, 0);
-        addInfoEntry(JDL.L(JDL_PREFIX + "links", "Links(s)"), "0", 0, 1);
-        addInfoEntry(JDL.L(JDL_PREFIX + "size", "Total size"), "0", 1, 0);
-        addInfoEntry(JDL.L(JDL_PREFIX + "speed", "Downloadspeed"), "0", 2, 0);
-        addInfoEntry(JDL.L(JDL_PREFIX + "eta", "Download complete in"), "0", 2, 1);
-        addInfoEntry(JDL.L(JDL_PREFIX + "progress", "Progress"), "0", 3, 0);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_packages(), "0", 0, 0);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_links(), "0", 0, 1);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_size(), "0", 1, 0);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_speed(), "0", 2, 0);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_eta(), "0", 2, 1);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_progress(), "0", 3, 0);
         ds = DownloadInformations.getInstance();
         Thread updateTimer = new Thread() {
             public void run() {
@@ -68,12 +70,12 @@ public class DownloadInfoPanel extends InfoPanel {
                 } else {
                     speed = 0;
                 }
-                updateInfo(JDL.L(JDL_PREFIX + "speed", "Downloadspeed"), Formatter.formatReadable(speed) + "/s");
-                updateInfo(JDL.L(JDL_PREFIX + "eta", "Download complete in"), Formatter.formatSeconds(speed == 0 ? -1 : ds.getETA()));
-                updateInfo(JDL.L(JDL_PREFIX + "packages", "Package(s)"), ds.getPackagesCount());
-                updateInfo(JDL.L(JDL_PREFIX + "links", "Links(s)"), ds.getDownloadCount());
-                updateInfo(JDL.L(JDL_PREFIX + "size", "Total size"), Formatter.formatReadable(ds.getTotalDownloadSize()));
-                updateInfo(JDL.L(JDL_PREFIX + "progress", "Progress"), ds.getPercent() + "%");
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_speed(), Formatter.formatReadable(speed) + "/s");
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_eta(), Formatter.formatSeconds(speed == 0 ? -1 : ds.getETA()));
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_packages(), ds.getPackagesCount());
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_links(), ds.getDownloadCount());
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_size(), Formatter.formatReadable(ds.getTotalDownloadSize()));
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_DownloadInfoPanel_progress(), ds.getPercent() + "%");
                 return null;
             }
         }.start();

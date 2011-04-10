@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu;
 
+
+ import org.jdownloader.gui.translate.*;
 import jd.gui.swing.jdgui.menu.actions.AddContainerAction;
 import jd.gui.swing.jdgui.menu.actions.AddUrlAction;
 import jd.utils.locale.JDL;
@@ -25,7 +27,7 @@ public class AddLinksMenu extends JStartMenu {
     private static final long serialVersionUID = -3531629185758097151L;
 
     public AddLinksMenu() {
-        super(JDL.L("gui.menu.addlinks", null), "gui.images.add");
+        super(T._.gui_menu_addlinks(), "gui.images.add");
         this.add(new AddUrlAction());
         this.add(new AddContainerAction());
 

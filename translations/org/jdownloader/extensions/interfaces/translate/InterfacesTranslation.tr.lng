@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Beta'ya şimdi güncellensin mi?",
+  "updater_beta_rlyupdate_message" : "JD-%s1 sürümüne güncellemek istiyor musunuz?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Erişimi engelle!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "%s1 arabiriminden %s2 arabirimine harici istek!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "İzin ver!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Harici bir uygulama link eklemeye çalışıyor. Detaylar için günlüğe bakınız."
+}

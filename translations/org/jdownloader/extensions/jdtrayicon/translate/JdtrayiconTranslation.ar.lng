@@ -1,0 +1,8 @@
+{
+  "plugins_trayicon_popup_bottom_simdls" : "التحميلات فى وقت واحد",
+  "plugins_trayicon_popup_bottom_speed" : "تحديد السرعة (كب/ثانية)",
+  "plugins_trayicon_popup_bottom_simchunks" : "الإتصالات الحالية",
+  "gui_tooltip_statusbar_simultan_downloads" : "أقصى عدد تحميلات فى نفس الوقت",
+  "gui_tooltip_statusbar_speedlimiter" : "حدود سرعة التحميل (كب/ث) [0: بلا حدود]",
+  "gui_tooltip_statusbar_max_chunks" : "أقصى عدد إتصالات لكل ملف [1...20]"
+}

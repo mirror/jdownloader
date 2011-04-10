@@ -16,6 +16,8 @@
 
 package jd.gui.swing.dialog;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -56,7 +58,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     private final String      explain;
 
     public CaptchaDialog(final int flag, final String host, final File imagefile, final String defaultValue, final String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON, (host != null ? host + ": " : "") + JDL.L("gui.captchaWindow.askForInput", "Please enter..."), null, null, null);
+        super(flag | Dialog.STYLE_HIDE_ICON, (host != null ? host + ": " : "") + T._.gui_captchaWindow_askForInput(), null, null, null);
 
         this.imagefile = imagefile;
         this.defaultValue = defaultValue;

@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Бета версияға дейін жаңарту қажет па?",
+  "updater_beta_rlyupdate_message" : "Бағдарламаны %s1 версияға дейін жаңартыңыз",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Рұқсат етпеу",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Сыртқы %s1 %s2 интерфейсіне сұраныс жасауда",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Рұқсат ету!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Өзге қосымша сілтемелер қосқысы келеді.Толығырақ жұрналдан қараңыз"
+}

@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.actions;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -182,7 +184,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
                     @Override
                     public void onPropertyChanged(final Property source, final String key) {
-                        setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s KiB/s", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                        setToolTipText(T._.gui_menu_action_break2_desc( JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
                     }
                 });
             }
@@ -191,7 +193,7 @@ public class ActionController {
             public void initDefaults() {
                 this.setEnabled(false);
                 this.setType(ToolBarAction.Types.TOGGLE);
-                this.setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s KiB/s", JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+                this.setToolTipText(T._.gui_menu_action_break2_desc( JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
             }
 
             @Override
@@ -230,7 +232,7 @@ public class ActionController {
             @Override
             public void threadedActionPerformed(final ActionEvent e) {
                 if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
-                final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."), null);
+                final ProgressController pc = new ProgressController(T._.gui_downloadstop(), null);
                 final Thread test = new Thread() {
                     @Override
                     public void run() {
@@ -278,12 +280,12 @@ public class ActionController {
 
                                 if (((Number) storageEvent.getNewValue()).longValue() > 5) {
                                     setIcon("gui.images.reconnect_warning");
-                                    setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
-                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+                                    setToolTipText(T._.gui_menu_action_reconnect_notconfigured_tooltip());
+                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(T._.gui_menu_action_reconnect_notconfigured_tooltip());
                                 } else {
-                                    setToolTipText(JDL.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
+                                    setToolTipText(T._.gui_menu_action_reconnectman_desc());
                                     setIcon("gui.images.reconnect");
-                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnectauto.desc", "Auto reconnect. Get a new IP by resetting your internet connection"));
+                                    ActionController.getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(T._.gui_menu_action_reconnectauto_desc());
                                 }
                             }
 
@@ -300,7 +302,7 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(final ActionEvent e) {
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Do you want to reconnect your internet connection?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.gui_reconnect_confirm()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     new Thread(new Runnable() {
                         public void run() {
                             Reconnecter.getInstance().forceReconnect();
@@ -414,7 +416,7 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L(ActionController.JDL_PREFIX + "toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
+                this.setToolTipText(T._.jd_gui_swing_jdgui_actions_ActionController_toolbar_control_stopmark_tooltip());
                 this.setEnabled(false);
                 this.setType(ToolBarAction.Types.TOGGLE);
                 this.setSelected(false);
@@ -554,7 +556,7 @@ public class ActionController {
 
                     @Override
                     public Integer runSave() {
-                        return UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, JDL.L(ActionController.JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(ActionController.JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, i, null, JDL.L(ActionController.JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
+                        return UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, T._.jd_gui_swing_jdgui_actions_ActionController_buy_title(), T._.jd_gui_swing_jdgui_actions_ActionController_buy_message(), data, i, null, T._.jd_gui_swing_jdgui_actions_ActionController_continue(), null, new JDLabelListRenderer());
                     }
                 }.getReturnValue();
                 if (selection < 0) { return; }
@@ -596,7 +598,7 @@ public class ActionController {
             @Override
             public void onAction(final ActionEvent e) {
                 if (!this.isSelected()) {
-                    final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+                    final int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.dialogs_premiumstatus_global_title(), T._.dialogs_premiumstatus_global_message(), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), T._.gui_btn_yes(), T._.gui_btn_no());
                     if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL)) {
                         this.setSelected(true);
                         return;

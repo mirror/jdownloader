@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Ejemplo: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Modo RAW",
+  "gui_btn_yes" : "Si",
+  "gui_config_routeripfinder_ready" : "IP encontrada: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importar Router",
+  "gui_config_jdrr_success" : "Exito!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Has deshabilitado la Verificación de IP. Esto incrementará bastante los tiempos de reconexion!\\r\\n\\r\\nOtros módulos como el Grabador de Reconexion tambien se deshabilitarán.",
+  "gui_config_jdrr_reconnectfaild" : "Reconexión fallida",
+  "gui_btn_help" : "Ayuda",
+  "gui_btn_start" : "Iniciar",
+  "gui_config_jdrr_savereconnect" : "Reconexión satisfactoria. ¿Guardar ahora?",
+  "gui_config_jdrr_popup_title" : "RRPopup",
+  "gui_fengshuiconfig_routerip" : "Router IP",
+  "gui_config_jdrr_title" : "Grabador de reconexión",
+  "gui_config_jdrr_status_title" : "Grabación de Reconexión",
+  "gui_config_routeripfinder_notfound" : "No se encuentra el nombre del router",
+  "gui_btn_no" : "No",
+  "gui_btn_cancel" : "Cancelar",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Verificación de IP desactivada!",
+  "gui_btn_abort" : "Abortar",
+  "gui_config_reconnect_selectrouter" : "Buscar modelo..."
+}

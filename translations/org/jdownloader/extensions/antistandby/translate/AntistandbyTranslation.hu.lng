@@ -1,0 +1,6 @@
+{
+  "gui_config_antistandby_mode" : "Mód:",
+  "gui_config_antistandby_whiledl" : "Alvó állapot tiltása letöltés közben",
+  "gui_config_antistandby_whilejd" : "Alvó állapot tiltása a JDownloader működése közben",
+  "jd_plugins_optional_antistandby_jdantistandby" : "JD Antikészenlét"
+}

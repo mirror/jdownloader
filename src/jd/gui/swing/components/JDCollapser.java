@@ -16,6 +16,8 @@
 
 package jd.gui.swing.components;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 
 import javax.swing.BorderFactory;
@@ -84,7 +86,7 @@ public abstract class JDCollapser extends DroppedPanel {
             menutitle.setIcon(icon);
         }
 
-        closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));
+        closeButton.setToolTipText(T._.jd_gui_swing_components_JDCollapser_closetooltip( name));
     }
 
     abstract public void onClosed();

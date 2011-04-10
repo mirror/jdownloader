@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -99,7 +101,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         JPanel date = new JPanel(new MigLayout("ins 5, wrap 2", "[]10[fill, grow]", "[]10[]"));
         date.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
 
-        date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.name", "Name")));
+        date.add(new JLabel(T._.plugin_optional_scheduler_add_name()));
 
         name = new JTextField(act.getName());
         name.getDocument().addDocumentListener(this);
@@ -107,30 +109,30 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
 
         JPanel repeats = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]push[]5[]"));
 
-        optDate = new JRadioButton(JDL.L("plugin.optional.scheduler.add.once", "Only once"));
+        optDate = new JRadioButton(T._.plugin_optional_scheduler_add_once());
         optDate.setSelected(true);
         repeats.add(optDate);
 
-        optHourly = new JRadioButton(JDL.L("plugin.optional.scheduler.add.hourly", "Hourly"));
+        optHourly = new JRadioButton(T._.plugin_optional_scheduler_add_hourly());
         repeats.add(optHourly);
 
-        optDaily = new JRadioButton(JDL.L("plugin.optional.scheduler.add.daily", "Daily"));
+        optDaily = new JRadioButton(T._.plugin_optional_scheduler_add_daily());
         repeats.add(optDaily);
 
-        optWeekly = new JRadioButton(JDL.L("plugin.optional.scheduler.add.weekly", "Weekly"));
+        optWeekly = new JRadioButton(T._.plugin_optional_scheduler_add_weekly());
         repeats.add(optWeekly);
 
-        optSpecific = new JRadioButton(JDL.L("plugin.optional.scheduler.add.specific", "Choose interval") + ":");
+        optSpecific = new JRadioButton(T._.plugin_optional_scheduler_add_specific() + ":");
         optSpecific.addChangeListener(this);
         repeats.add(optSpecific);
 
-        repeats.add(new JLabel(JDL.L("plugin.optional.scheduler.add.hour", "Hour:")));
+        repeats.add(new JLabel(T._.plugin_optional_scheduler_add_hour()));
 
         repeathour = new JSpinner(new SpinnerNumberModel(01, 00, 23, 1));
         repeathour.setEnabled(false);
         repeats.add(repeathour);
 
-        repeats.add(new JLabel(JDL.L("plugin.optional.scheduler.add.minute", "Minute:")));
+        repeats.add(new JLabel(T._.plugin_optional_scheduler_add_minute()));
 
         repeatminute = new JSpinner(new SpinnerNumberModel(00, 00, 59, 1));
         repeatminute.setEnabled(false);
@@ -143,36 +145,36 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         grp.add(optWeekly);
         grp.add(optSpecific);
 
-        date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.repeats", "Repeats")));
+        date.add(new JLabel(T._.plugin_optional_scheduler_add_repeats()));
         date.add(repeats);
 
         JPanel datepre = new JPanel(new MigLayout("ins 0", "[][]5[][]5[][]20[][]5[][]"));
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.day", "Day:")));
+        datepre.add(new JLabel(T._.plugin_optional_scheduler_add_day()));
 
         day = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.DAY_OF_MONTH), 1, 31, 1));
         datepre.add(day, "sizegroup spinner");
 
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.month", "Month:")));
+        datepre.add(new JLabel(T._.plugin_optional_scheduler_add_month()));
 
         month = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.MONTH) + 1, 1, 12, 1));
         datepre.add(month, "sizegroup spinner");
 
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.year", "Year:")));
+        datepre.add(new JLabel(T._.plugin_optional_scheduler_add_year()));
 
         year = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.YEAR), 2010, 2015, 1));
         datepre.add(year, "sizegroup spinner");
 
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.hour", "Hour:")));
+        datepre.add(new JLabel(T._.plugin_optional_scheduler_add_hour()));
 
         hour = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), 00, 23, 1));
         datepre.add(hour, "sizegroup spinner");
 
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.minute", "Minute:")));
+        datepre.add(new JLabel(T._.plugin_optional_scheduler_add_minute()));
 
         minute = new JSpinner(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.MINUTE), 00, 59, 1));
         datepre.add(minute, "sizegroup spinner");
 
-        date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.date2", "Date/Time")));
+        date.add(new JLabel(T._.plugin_optional_scheduler_add_date2()));
         date.add(datepre);
 
         JPanel actions = new JPanel(new MigLayout("ins 5, wrap 2", "[fill, grow][fill, grow]"));
@@ -205,11 +207,11 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         problems.setForeground(Color.RED);
         control.add(problems);
 
-        save = new JButton(JDL.L("plugin.optional.scheduler.add.save", "Save"));
+        save = new JButton(T._.plugin_optional_scheduler_add_save());
         save.addActionListener(this);
         control.add(save, "align right,tag save");
 
-        cancel = new JButton(JDL.L("plugin.optional.scheduler.add.cancel", "Cancel"));
+        cancel = new JButton(T._.plugin_optional_scheduler_add_cancel());
         cancel.addActionListener(this);
         control.add(cancel, "align right,tag cancel");
 
@@ -261,9 +263,9 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDL.L("plugin.optional.scheduler.add.column.executions.name", "Name");
+                return T._.plugin_optional_scheduler_add_column_executions_name();
             case 1:
-                return JDL.L("plugin.optional.scheduler.add.column.executions.parameter", "Parameter");
+                return T._.plugin_optional_scheduler_add_column_executions_parameter();
             }
             return super.getColumnName(column);
         }
@@ -301,18 +303,18 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
 
         if (e.getSource() == save) {
             if (name.getText().equals("")) {
-                problems.setText(JDL.L("plugin.optional.scheduler.add.problem.emptyname", "Name is empty"));
+                problems.setText(T._.plugin_optional_scheduler_add_problem_emptyname());
                 return;
             } else if (editact.getExecutions().size() == 0) {
-                problems.setText(JDL.L("plugin.optional.scheduler.add.problem.nochanges", "No changes made"));
+                problems.setText(T._.plugin_optional_scheduler_add_problem_nochanges());
                 return;
                 // Check for Zero repeat
             } else if (optSpecific.isSelected() && (((Integer) repeathour.getValue() * 60) + (Integer) repeatminute.getValue()) == 0) {
-                problems.setText(JDL.L("plugin.optional.scheduler.add.problem.zerorepeat", "Repeattime equals Zero"));
+                problems.setText(T._.plugin_optional_scheduler_add_problem_zerorepeat());
                 return;
                 // Check for a bad starttime
             } else if (d.compareTo(new Date()) < 0) {
-                problems.setText(JDL.L("plugin.optional.scheduler.add.problem.pastdate", "Execution time is in the past"));
+                problems.setText(T._.plugin_optional_scheduler_add_problem_pastdate());
                 return;
             }
 
@@ -347,7 +349,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
                     if (smi.needParameter())
                         parameter.setText("");
                     else
-                        parameter.setText(JDL.L("plugin.optional.scheduler.add.noparameter", "No Parameter needed"));
+                        parameter.setText(T._.plugin_optional_scheduler_add_noparameter());
                     parameter.setEnabled(smi.needParameter());
                     parameter.requestFocus();
                     return;
@@ -357,10 +359,10 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             for (SchedulerModuleInterface smi : schedule.getModules()) {
                 if (smi.getTranslation().equals(cboActions.getSelectedItem())) {
                     if (smi.needParameter() && !smi.checkParameter(parameter.getText())) {
-                        problems.setText(JDL.L("plugin.optional.scheduler.add.problem.badparameter", "No correct Parameter"));
+                        problems.setText(T._.plugin_optional_scheduler_add_problem_badparameter());
                         return;
                     }
-                    if (parameter.getText().equals(JDL.L("plugin.optional.scheduler.add.noparameter", "No Parameter needed")))
+                    if (parameter.getText().equals(T._.plugin_optional_scheduler_add_noparameter()))
                         editact.addExecutions(new Executions(smi, ""));
                     else
                         editact.addExecutions(new Executions(smi, parameter.getText()));

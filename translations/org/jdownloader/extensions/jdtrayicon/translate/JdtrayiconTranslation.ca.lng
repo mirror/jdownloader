@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JDLightTray",
+  "plugins_trayicon_popup_bottom_simdls" : "Descàrregues simultànies",
+  "plugins_trayicon_popup_bottom_speed" : "Limitar velocitat(KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Connexions simultànies",
+  "gui_tooltip_statusbar_simultan_downloads" : "Descarregues Màximes Simultànies",
+  "gui_tooltip_statusbar_speedlimiter" : "Límit de velocitat (KiB/s) [0:sense límit]",
+  "gui_tooltip_statusbar_max_chunks" : "Connexions Max./Arxiu"
+}

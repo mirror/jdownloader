@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Exempel: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "RawMode?",
+  "gui_btn_yes" : "Ja",
+  "gui_config_routeripfinder_ready" : "IP funnet: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importera router",
+  "gui_config_jdrr_success" : "Lyckades!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du har inaktiverat IP-check. Detta kommer att öka återanslutningstiden dramatiskt!\\r\\n\\r\\nFlera andra moduler såsom återanslutningsinspelaren är deaktiverade.",
+  "gui_config_jdrr_reconnectfaild" : "Återanslutning misslyckades",
+  "gui_btn_help" : "Hjälp",
+  "gui_btn_start" : "Starta",
+  "gui_config_jdrr_savereconnect" : "Återanslutning lyckades. Spara nu?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "Router-IP",
+  "gui_config_jdrr_title" : "Återanslutnings-Inspelare",
+  "gui_config_jdrr_status_title" : "Inspelningsstatus",
+  "gui_config_routeripfinder_notfound" : "Can inte hita din routers värdnamn",
+  "gui_btn_no" : "Nej",
+  "gui_btn_cancel" : "Avbryt",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP Check deaktiverad!",
+  "gui_btn_abort" : "Avbryt",
+  "gui_config_reconnect_selectrouter" : "Sök router modell"
+}

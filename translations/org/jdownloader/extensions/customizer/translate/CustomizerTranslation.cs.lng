@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Prosím, vložte jméno nového filtru:",
+  "action_customize_removesetting_ask" : "Odebrat vybrané (%s1) filtry?",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "JD Package Customizer",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JD Package Customizer"
+}

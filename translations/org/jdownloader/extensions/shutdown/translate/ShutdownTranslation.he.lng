@@ -1,0 +1,20 @@
+{
+  "gui_config_jdshutdown_shutdown" : "כיבוי",
+  "gui_config_jdshutdown_forceshutdown" : "כיבוי מחשב (לא כל מערכת הפעלה)",
+  "interaction_shutdown_dialog_title_standby" : "מצב המתנה?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">מערכת תיכבה!</font></h2>",
+  "interaction_shutdown_dialog_title_hibernate" : "מצב שינה?",
+  "interaction_shutdown_dialog_title_shutdown" : "כיבוי?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader יסגר!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "JDownloader המערכת לא תכובה ע\"י",
+  "gui_config_jdshutdown_hibernate" : "מצב שינה  (לא כל מערכת הפעלה)",
+  "gui_config_jdshutdown_close" : "כיבוי JD",
+  "gui_config_jdshutdown_standby" : "מצב המתנה (לא כל מערכת הפעלה)",
+  "gui_config_jdshutdown_osx_force_short" : "התקן",
+  "jd_plugins_optional_jdshutdown" : "כיבוי JD",
+  "interaction_shutdown_dialog_title_closejd" : "לסגור JD?",
+  "gui_config_jdshutdown_mode" : "מצב:",
+  "addons_jdshutdown_statusmessage_enabled" : "יכבה את המערכת בתום ההורדות JDownloader",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">מערכת תכנס למצב המתנה</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">מערכת תכנס למצב שינה!</font></h2>"
+}

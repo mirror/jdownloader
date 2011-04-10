@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -29,7 +31,7 @@ public class PackageDirectoryAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.editdownloaddir", "Edit Directory") + " (" + packages.size() + ")";
+        return T._.gui_table_contextmenu_editdownloaddir() + " (" + packages.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

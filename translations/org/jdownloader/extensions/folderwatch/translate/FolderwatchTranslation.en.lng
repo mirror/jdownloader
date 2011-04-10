@@ -1,0 +1,12 @@
+{
+  "jd_plugins_optional_folderwatch_tablemodel_filetype" : "Container type",
+  "jd_plugins_optional_folderwatch_tablemodel_filepath" : "Path",
+  "plugins_optional_folderwatch_panel_filestatus_notexists" : "File does not exist",
+  "jd_plugins_optional_folderwatch_tablemodel_importdate" : "Import date",
+  "plugins_optional_folderwatch_view_title" : "FolderWatch History",
+  "jd_plugins_optional_folderwatch_tablemodel_filename" : "File name",
+  "action_folderwatch_clear_message" : "Are you sure you want to clear the history?",
+  "plugins_optional_folderwatch_panel_filestatus" : "File status",
+  "plugins_optional_folderwatch_view_tooltip" : "Shows all container files found by FolderWatch",
+  "plugins_optional_folderwatch_panel_filestatus_exists" : "File exists"
+}

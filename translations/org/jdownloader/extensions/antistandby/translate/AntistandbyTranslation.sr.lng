@@ -1,0 +1,7 @@
+{
+  "gui_config_antistandby_mode" : "Начин:",
+  "gui_config_antistandby_whiledl" : "Спречи прелазак у стање приправности током преузимања",
+  "jd_plugins_optional_antistandby_jdantistandby_description" : "Спречава да рачунар оде у стање приправности и на тај начин одржава преузимања активним",
+  "gui_config_antistandby_whilejd" : "Спречи прелазак у стање приправности док JD ради",
+  "jd_plugins_optional_antistandby_jdantistandby" : "Спречавање стања приправности"
+}

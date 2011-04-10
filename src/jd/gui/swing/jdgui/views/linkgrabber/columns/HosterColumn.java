@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber.columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +44,7 @@ public class HosterColumn extends JDTableColumn {
         super(name, table);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
-        strLoadingFrom = JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.loadingFrom", "Loading from") + " ";
+        strLoadingFrom = T._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_loadingFrom() + " ";
     }
 
     @Override

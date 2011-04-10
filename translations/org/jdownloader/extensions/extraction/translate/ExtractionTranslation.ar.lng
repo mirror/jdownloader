@@ -1,0 +1,20 @@
+{
+  "plugins_optional_extraction_multi_priority_high" : "مرتفع",
+  "plugins_optional_extraction_status_extractfailed" : "فشل فك الضغط",
+  "gui_config_extraction_ask_path" : "إسئل لكلمات المرور الغير معروفة",
+  "plugins_optional_extraction_multi_priority" : "الأولوية",
+  "plugins_optional_extraction_status_extractfailedcrc" : "فشل فك الضغط (خطأ CRC)",
+  "gui_config_extraction_deep_extract" : "فك ضغط عميق",
+  "gui_config_extraction_remove_infofile" : "مسح ملف المعلومات بعد فك الضغط",
+  "plugins_optional_extraction_status_extracting" : "جاري فك الضغط",
+  "gui_config_extraction_use_subpath" : "استخدام المسار الفرعي",
+  "gui_config_extraction_overwrite" : "اعادة الكتابة فوق الملفات الموجودة",
+  "plugins_optional_extraction_name" : "فك الضغط",
+  "plugins_optional_extraction_multi_priority_low" : "منخفض",
+  "gui_config_extraction_path" : "فك الضغط إلى",
+  "plugins_optional_extraction_status_openingarchive" : "جاري فتح الأرشيف...",
+  "plugins_optional_extraction_status_extractfailedpass" : "فشل فك الضغط (كلمة المرور)",
+  "plugins_optional_extraction_multi_priority_middle" : "متوسط",
+  "plugins_optional_extraction_status_extractok" : "تم فك الضغط",
+  "gui_config_extraction_subpath" : "المسار الفرعي"
+}

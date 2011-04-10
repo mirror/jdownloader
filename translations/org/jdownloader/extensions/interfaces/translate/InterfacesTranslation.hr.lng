@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Ažuriranje na beta verziju?",
+  "updater_beta_rlyupdate_message" : "Želiš li nadograditi JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Nedozvoli pristup!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Vanjski zahtjev sa %s1 na %s2 sučelje!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Dozvoli!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Vanjski program pokušava da doda linkove. Pogledajte log za detalje."
+}

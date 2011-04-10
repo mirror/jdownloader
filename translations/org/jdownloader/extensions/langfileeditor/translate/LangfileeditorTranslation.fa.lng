@@ -1,0 +1,18 @@
+{
+  "plugins_optional_langfileeditor_error_title" : "خطايي روي داده",
+  "plugins_optional_langfileeditor_keychart_done" : "انجام شد",
+  "gui_btn_yes" : "بله",
+  "plugins_optional_langfileeditor_error_updatesource_message" : "خطايي در بروزرساني منابع روي داده : /r/n %s1",
+  "plugins_optional_langfileeditor_account_warning" : "اكانت اس وي ان اشتباه است. براي اطلاعات بيشتر اينجا كليك كنيد",
+  "plugins_optional_langfileeditor_saveandupload" : "ذخيره و بارگذاري به اس وي ان",
+  "plugins_optional_langfileeditor_error_updatelanguages_message" : "خطايي در بروز رساني زبانها روي داده : \\r\\n %s1",
+  "jd_plugins_optional_langfileeditor_langfileeditor_badlogins" : "وروديه ها استباه است.\\r\\nلطفاً وروديه ها را درست وارد نماييد",
+  "plugins_optional_langfileeditor_english" : "ورودي هاي انگليسي",
+  "plugins_optional_langfileeditor_file" : "فايل",
+  "plugins_optional_langfileeditor_keychart_old" : "قديمي",
+  "plugins_optional_langfileeditor_test" : "ازمون",
+  "plugins_optional_langfileeditor_load" : "خواندن زبان",
+  "gui_btn_no" : "خير",
+  "plugins_optional_langfileeditor_savelocale" : "ذخيره آفلاين",
+  "plugins_optional_langfileeditor_key" : "كليد"
+}

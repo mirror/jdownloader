@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.extraction;
 
+
+ import org.jdownloader.extensions.extraction.translate.*;
 import java.io.File;
 import java.util.logging.Logger;
 
@@ -46,13 +48,13 @@ public class ExtractionListenerFile implements ExtractionListener {
         ProgressController pc = controller.getProgressController();
         switch (id) {
         case ExtractionConstants.WRAPPER_STARTED:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.queued", "Queued for extracting"));
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_queued());
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED:
             if (controller.getException() != null) {
-                pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailed", "Extract failed") + ": " + controller.getException().getMessage());
+                pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extractfailed() + ": " + controller.getException().getMessage());
             } else {
-                pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailed", "Extract failed"));
+                pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extractfailed());
             }
 
             for (File f : controller.getArchiv().getExtractedFiles()) {
@@ -68,10 +70,10 @@ public class ExtractionListenerFile implements ExtractionListener {
 
             break;
         case ExtractionConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailedpass", "Extract failed (password)"));
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extractfailedpass());
 
             if (ex.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.extraction.askForPassword", "Password for %s?", controller.getArchiv().getFirstDownloadLink().getName()), "");
+                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword( controller.getArchiv().getFirstDownloadLink().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     ex.onFinished(controller);
                     break;
@@ -81,26 +83,26 @@ public class ExtractionListenerFile implements ExtractionListener {
 
             break;
         case ExtractionConstants.WRAPPER_PASSWORT_CRACKING:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.crackingpass", "Cracking password"));
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_crackingpass());
             pc.setRange(controller.getPasswordList().size());
             pc.setStatus(controller.getCrackProgress());
             break;
         case ExtractionConstants.WRAPPER_START_OPEN_ARCHIVE:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.openingarchive", "Opening archive"));
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_openingarchive());
             break;
         case ExtractionConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
             ex.assignRealDownloadDir(controller);
             break;
         case ExtractionConstants.WRAPPER_PASSWORD_FOUND:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.passfound", "Password found"));
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_passfound());
             break;
         case ExtractionConstants.WRAPPER_ON_PROGRESS:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extracting", "Extracting"));
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extracting());
             pc.setRange(controller.getArchiv().getSize());
             pc.setStatus(controller.getArchiv().getExtracted());
             break;
         case ExtractionConstants.WRAPPER_EXTRACTION_FAILED_CRC:
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractfailedcrc", "Extract failed (CRC error)"));
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extractfailedcrc());
 
             for (File f : controller.getArchiv().getExtractedFiles()) {
                 if (f.exists()) {
@@ -121,7 +123,7 @@ public class ExtractionListenerFile implements ExtractionListener {
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(controller, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
 
-            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + JDL.L("plugins.optional.extraction.status.extractok", "Extract OK"));
+            pc.setStatusText(controller.getArchiv().getFirstDownloadLink().getFileOutput() + ": " + T._.plugins_optional_extraction_status_extractok());
 
             if (ex.getPluginConfig().getBooleanProperty(ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
                 File fileOutput = new File(controller.getArchiv().getFirstDownloadLink().getFileOutput());
@@ -138,7 +140,7 @@ public class ExtractionListenerFile implements ExtractionListener {
                 if (link == null) continue;
 
                 link.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                link.getLinkStatus().setStatusText(JDL.L("plugins.optional.extraction.status.notenoughspace", "Not enough space to extract"));
+                link.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_notenoughspace());
                 link.requestGuiUpdate();
             }
 
@@ -149,7 +151,7 @@ public class ExtractionListenerFile implements ExtractionListener {
             break;
         case ExtractionConstants.WRAPPER_FILE_NOT_FOUND:
             pc.setStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-            pc.setStatusText(JDL.L("plugins.optional.extraction.filenotfound", "Extract: failed (File not found)"));
+            pc.setStatusText(T._.plugins_optional_extraction_filenotfound());
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;

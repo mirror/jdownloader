@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_jdinfofilewriter" : "Ghi thông tin tập tin",
+  "plugins_optional_infofilewriter_content" : "Nội dung:",
+  "plugins_optional_infofilewriter_variables" : "Biến Khả dụng",
+  "plugins_optional_infofilewriter_filename" : "Tên tập tin:"
+}

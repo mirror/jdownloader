@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 
 import jd.controlling.JDController;
@@ -38,7 +40,7 @@ public class RestoreAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestore", "This will restart JDownloader and do a FULL-Update. Continue?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.sys_ask_rlyrestore()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             final Executer exec = new Executer("java");
             exec.addParameters(new String[] { "-jar", "jdupdate.jar", "-restore" });
             exec.setRunin(JDUtilities.getResourceFile(".").getAbsolutePath());

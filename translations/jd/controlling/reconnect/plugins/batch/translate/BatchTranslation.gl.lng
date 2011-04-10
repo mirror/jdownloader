@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "Iniciar en (cartafol da aplicación)",
+  "interaction_batchreconnect_batch" : "Lote de Script",
+  "interaction_batchreconnect_terminal" : "Intérprete"
+}

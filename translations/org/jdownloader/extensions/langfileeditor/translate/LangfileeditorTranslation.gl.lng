@@ -1,0 +1,23 @@
+{
+  "plugins_optional_langfileeditor_save_success_message" : "O arquivo de idioma enviouse correctamente",
+  "plugins_optional_langfileeditor_keychart_done" : "Feitas",
+  "gui_btn_yes" : "Si",
+  "plugins_optional_langfileeditor_startkey" : "Verificar JD en modo de keys",
+  "plugins_optional_langfileeditor_account_warning" : "Conta SVN faltante. Click aqui para ler mais.",
+  "plugins_optional_langfileeditor_reload" : "Recargar",
+  "plugins_optional_langfileeditor_svn_updating" : "Actualizando SVN: Por favor, espere",
+  "plugins_optional_langfileeditor_startcurrent" : "Verificar JD con traduccion actual",
+  "plugins_optional_langfileeditor_saveandupload" : "Gardar e Enviar",
+  "plugins_optional_langfileeditor_keychart_missing" : "Faltantes",
+  "jd_plugins_optional_langfileeditor_langfileeditor_badlogins" : "Credenciais incorrectas.\\r\\n Por favor intenteo de novo",
+  "plugins_optional_langfileeditor_english" : "English",
+  "plugins_optional_langfileeditor_title" : "Editor de Idiomas",
+  "jd_plugins_optional_langfileeditor_langfileeditor" : "Editor de Idiomas",
+  "plugins_optional_langfileeditor_file" : "Arquivo",
+  "plugins_optional_langfileeditor_test" : "Verificar",
+  "plugins_optional_langfileeditor_keychart_old" : "Vellas",
+  "plugins_optional_langfileeditor_load" : "Cargar idioma",
+  "plugins_optional_langfileeditor_svn_updating_ready" : "Actualización SVN completa!",
+  "plugins_optional_langfileeditor_savelocale" : "Gardar fora de liña",
+  "plugins_optional_langfileeditor_key" : "Chave"
+}

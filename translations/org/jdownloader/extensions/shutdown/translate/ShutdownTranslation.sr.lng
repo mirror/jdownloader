@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Искључивање",
+  "gui_config_jdshutdown_forceshutdown" : "Принуди на искључивање (није за све системе)",
+  "interaction_shutdown_dialog_title_standby" : "Стање приправности?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Систем ће се искључити!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Инсталирај присилно гашење рачунара (само ча Мек оперативне системе)",
+  "interaction_shutdown_dialog_title_hibernate" : "Хибернација?",
+  "interaction_shutdown_dialog_title_shutdown" : "Искључивање?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader ће бити затворен!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Рачунар НЕЋЕ бити искључен након преузимања",
+  "gui_config_jdshutdown_hibernate" : "Хибернација (није за све системе)",
+  "gui_config_jdshutdown_close" : "Затвори JD",
+  "gui_config_jdshutdown_standby" : "Стање приправности (није за све системе)",
+  "gui_config_jdshutdown_osx_force_short" : "Инсталирај",
+  "jd_plugins_optional_jdshutdown" : "Искључивање рачунара",
+  "interaction_shutdown_dialog_title_closejd" : "Затворити JD?",
+  "gui_config_jdshutdown_mode" : "Начин:",
+  "addons_jdshutdown_statusmessage_enabled" : "Рачунар ће бити искључен по завршетку преузимања",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Систем ће прећи у стање приправности!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Систем ће прећи у режим хибернације!</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "Аутоматски искључује рачунар или затвара програм након завршеног преузимања"
+}

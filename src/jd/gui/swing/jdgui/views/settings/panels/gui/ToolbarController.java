@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -128,7 +130,7 @@ public class ToolbarController extends ConfigPanel {
     private static final String            JDL_PREFIX       = "jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.";
 
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "toolbarController.title", "Toolbar Manager");
+        return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_toolbarController_title();
     }
 
     @Override
@@ -297,13 +299,13 @@ public class ToolbarController extends ConfigPanel {
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDL.L(JDL_PREFIX + "column.use", "Use");
+                return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_use();
             case 1:
-                return JDL.L(JDL_PREFIX + "column.name", "Name");
+                return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_name();
             case 2:
-                return JDL.L(JDL_PREFIX + "column.desc", "Description");
+                return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_desc();
             case 3:
-                return JDL.L(JDL_PREFIX + "column.hotkey", "Hotkey");
+                return T._.jd_gui_swing_jdgui_settings_panels_gui_ToolbarController_column_hotkey();
             }
             return super.getColumnName(column);
         }

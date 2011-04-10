@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium.Columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.components.table.JDTextTableColumn;
 import jd.gui.swing.jdgui.views.settings.panels.premium.HostAccounts;
@@ -55,14 +57,14 @@ public class ExpireDateColumn extends JDTextTableColumn {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();
             if (!ac.isValid()) {
-                return JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.invalidAccount", "Invalid Account");
+                return T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_invalidAccount();
             } else if (ai == null) {
-                return JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.unknown", "Unknown");
+                return T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unknown();
             } else {
                 if (ai.getValidUntil() == -1) {
-                    return JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.unlimited", "Unlimited");
+                    return T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unlimited();
                 } else if (ai.isExpired()) {
-                    return JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.expired", "Expired");
+                    return T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_expired();
                 } else {
                     return Formatter.formatTime(ai.getValidUntil());
                 }

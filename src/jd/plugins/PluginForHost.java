@@ -16,6 +16,8 @@
 
 package jd.plugins;
 
+
+ import org.jdownloader.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -123,7 +125,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         final DownloadController downloadController = DownloadController.getInstance();
         try {
             linkStatus.addStatus(LinkStatus.WAITING_USERIO);
-            linkStatus.setStatusText(JDL.L("gui.downloadview.statustext.jac", "Captcha recognition"));
+            linkStatus.setStatusText(T._.gui_downloadview_statustext_jac());
             try {
                 final BufferedImage img = ImageIO.read(file);
                 linkStatus.setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
@@ -259,7 +261,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                     c++;
                     if (getAccountwithoutUsername()) {
                         if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        account = new MenuAction(i++ + ". " + JDL.L(JDL_PREFIX + "account", "Account"));
+                        account = new MenuAction(i++ + ". " + T._.jd_plugins_PluginsForHost_account());
                         account.setType(Types.CONTAINER);
                     } else {
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
@@ -454,7 +456,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         final LinkStatus linkStatus = link.getLinkStatus();
         linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-        linkStatus.setErrorMessage(JDL.L("plugins.hoster.nopremiumsupport", "Plugin has no handlePremium Method!"));
+        linkStatus.setErrorMessage(T._.plugins_hoster_nopremiumsupport());
     }
 
     public abstract void handleFree(DownloadLink link) throws Exception;
@@ -539,7 +541,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
                 }
             } else {
                 if (accountInfo != null) {
-                    accountInfo.setStatus(JDL.L("plugins.hoster.premium.status_ok", "Account is ok"));
+                    accountInfo.setStatus(T._.plugins_hoster_premium_status_ok());
                 }
             }
         } else {
@@ -625,7 +627,7 @@ public abstract class PluginForHost extends Plugin implements FavIconRequestor {
         try {
             while (i > 0 && dlc != null && !dlc.isAborted()) {
                 i -= 1000;
-                downloadLink.getLinkStatus().setStatusText(message + JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds(i / 1000)));
+                downloadLink.getLinkStatus().setStatusText(message + T._.gui_download_waittime_status2( Formatter.formatSeconds(i / 1000)));
                 downloadLink.requestGuiUpdate();
                 Thread.sleep(1000);
             }

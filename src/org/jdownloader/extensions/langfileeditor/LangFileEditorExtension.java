@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.langfileeditor;
 
+
+ import org.jdownloader.extensions.langfileeditor.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -68,7 +70,7 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
     }
 
     public LangFileEditorExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.langfileeditor.langfileeditor", null));
+        super(T._.jd_plugins_optional_langfileeditor_langfileeditor());
         lfe = new SingletonPanel(LFEGui.class, this);
 
     }
@@ -142,11 +144,11 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
                 CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
             }
 
-        }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.message", "To use this addon, you need a JD-SVN Account"), null));
+        }, T._.jd_plugins_optional_langfileeditor_LangFileEditor_btn_readmore(), T._.jd_plugins_optional_langfileeditor_LangFileEditor_initConfigEntries_message(), null));
 
         user = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER);
         pass = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.username", "Upload (SVN) Username")) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, T._.jd_plugins_optional_langfileeditor_LangFileEditor_initConfigEntries_username()) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -156,7 +158,7 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
             }
         });
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.password", "Upload (SVN) Password")) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, T._.jd_plugins_optional_langfileeditor_LangFileEditor_initConfigEntries_password()) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -172,17 +174,17 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
                 boolean ret = Subversion.checkLogin(LFEGui.LANGUAGE_SVN, user, pass);
 
                 if (ret) {
-                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.succeeded", "Successful!"));
+                    UserIO.getInstance().requestMessageDialog(T._.jd_plugins_optional_langfileeditor_LangFileEditor_initConfigEntries_checklogins_succeeded());
                     getPluginConfig().setProperty(LFEGui.PROPERTY_SVN_ACCESS_USER, user);
 
                     getPluginConfig().setProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS, pass);
                     getPluginConfig().save();
                 } else {
-                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.failed", "Username or password wrong!"));
+                    UserIO.getInstance().requestMessageDialog(T._.jd_plugins_optional_langfileeditor_LangFileEditor_initConfigEntries_checklogins_failed());
                 }
 
             }
-        }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testlogins", "Test & Save Logins"), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testloginsmessage", "Test if the logins are correct"), JDTheme.II("gui.images.premium", 16, 16)));
+        }, T._.jd_plugins_optional_langfileeditor_LangFileEditor_testlogins(), T._.jd_plugins_optional_langfileeditor_LangFileEditor_testloginsmessage(), JDTheme.II("gui.images.premium", 16, 16)));
 
     }
 
@@ -198,7 +200,7 @@ public class LangFileEditorExtension extends AbstractExtension implements Action
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.langfileeditor.langfileeditor.description", null);
+        return T._.jd_plugins_optional_langfileeditor_langfileeditor_description();
     }
 
     @Override

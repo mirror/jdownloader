@@ -16,6 +16,8 @@
 
 package jd.gui.swing.components.pieapi;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -170,7 +172,7 @@ public abstract class ChartAPI extends JComponent {
         }
 
         g.drawImage(image, 0, 0, null);
-        g.drawString(JDL.L("plugins.config.premium.chartapi.caption.error2", "Chart is loading or not available"), 0, 10);
+        g.drawString(T._.plugins_config_premium_chartapi_caption_error2(), 0, 10);
     }
 
     public abstract String createDataString();

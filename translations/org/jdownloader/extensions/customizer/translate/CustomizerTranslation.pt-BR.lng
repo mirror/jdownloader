@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Por favor insira o nome para a nova configuração:",
+  "action_customize_removesetting_ask" : "Remover configuração(ões) selecionada(s)? (%s1 Conta(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Customizador de pacote",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JD Customizador de pacotes"
+}

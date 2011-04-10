@@ -1,0 +1,5 @@
+{
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 %s2\\nhttp://127.0.0.1:%s3 портында іске қосылды\\n/Өндірушілер жайында мәлімет алу үшін.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 тоқтатылды",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "JD арақашықтықтан басқару (JDRemoteControl)"
+}

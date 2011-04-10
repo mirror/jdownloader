@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -173,7 +175,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         this.save();
         if (changes == PropertyType.NEEDS_RESTART) {
             if (!JDGui.getInstance().isExitRequested()) {
-                int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.title", "Restart required!"), JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion", "This option needs a JDownloader restart."), null, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.ok", "Restart NOW!"), null);
+                int answer = UserIO.getInstance().requestConfirmDialog(0, T._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), T._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, T._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
 
                 if (UserIO.isOK(answer)) {
                     RestartController.getInstance().directRestart();

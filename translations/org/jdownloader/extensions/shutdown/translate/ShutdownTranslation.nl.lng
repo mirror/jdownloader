@@ -1,0 +1,8 @@
+{
+  "jd_plugins_optional_jdshutdown" : "JDShutdown",
+  "gui_config_jdshutdown_forceshutdown" : "Afsluiten Forceren (Niet voor alle OS)",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader zal het Systeem na het Downloaden afsluiten.",
+  "gui_config_jdshutdown_hibernate" : "Rusttoestand/Slaaptoestand (Niet voor alle OS)",
+  "addons_jdshutdown_statusmessage_disabled" : "JDownloader zal het Systeem na het Downloaden NIET afsluiten.",
+  "gui_config_jdshutdown_standby" : "Standby (Niet voor alle OS)"
+}

@@ -21,6 +21,8 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.util.ArrayList;
 
 import jd.DownloadSettings;
@@ -57,7 +59,7 @@ public class DownloadAutostart implements LinkGrabberControllerListener {
         if (pc != null) abortAutostart();
         if (!JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck()) return;
         if (LinkGrabberController.getInstance().size() == 0) return;
-        pc = new ProgressController(JDL.L("controller.downloadautostart", "Autostart downloads in few seconds..."), null);
+        pc = new ProgressController(T._.controller_downloadautostart(), null);
         pc.getBroadcaster().addListener(new ProgressControllerListener() {
             public void onProgressControllerEvent(ProgressControllerEvent event) {
                 if (event.getEventID() == ProgressControllerEvent.CANCEL) {

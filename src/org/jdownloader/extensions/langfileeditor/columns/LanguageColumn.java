@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.langfileeditor.columns;
 
+
+ import org.jdownloader.extensions.langfileeditor.translate.*;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
@@ -45,14 +47,14 @@ public class LanguageColumn extends ExtTextEditorColumn<KeyInfo> {
 
     @Override
     public String getToolTip(KeyInfo obj) {
-        if (obj.hasWrongParameterCount()) return JDL.L(JDL_PREFIX + "tooltip.wrongParameterCount", "Your translated String contains a wrong count of placeholders!");
+        if (obj.hasWrongParameterCount()) return T._.jd_plugins_optional_langfileeditor_columns_LanguageColumn_tooltip_wrongParameterCount();
 
         String match = new Regex(((KeyInfo) obj).getKey(), "gui\\.menu\\.(.*?)\\.accel").getMatch(0);
         if (match != null) {
             StringBuilder toolTip = new StringBuilder();
-            toolTip.append(JDL.LF(JDL_PREFIX + "tooltip.accelerator", "Insert the hotkey for the action %s here. Allowed modifiers are CTRL, ALTGR, ALT, META, SHIFT", match));
+            toolTip.append(T._.jd_plugins_optional_langfileeditor_columns_LanguageColumn_tooltip_accelerator( match));
             if (new Regex(obj.getLanguage(), "(CONTROL|STRG|UMSCHALT|ALT GR|ALT_GR)").matches()) {
-                toolTip.append(new char[] { ' ', '[' }).append(JDL.LF(JDL_PREFIX + "tooltip.accelerator.wrong", "The modifier %s isn't allowed!", obj.getLanguage())).append(']');
+                toolTip.append(new char[] { ' ', '[' }).append(T._.jd_plugins_optional_langfileeditor_columns_LanguageColumn_tooltip_accelerator_wrong( obj.getLanguage())).append(']');
             }
             return toolTip.toString();
         }

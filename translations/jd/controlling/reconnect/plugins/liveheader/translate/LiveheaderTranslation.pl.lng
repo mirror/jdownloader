@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Przykład: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Tryb RAW?",
+  "gui_btn_yes" : "Tak",
+  "gui_config_routeripfinder_ready" : "Znalezione IP: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importuj router",
+  "gui_config_jdrr_success" : "Powodzenie!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Wyłączyłeś sprawdzanie adresu IP. Zdecydowanie zwiększy to ilość prób ponownego połączenia!\\r\\n\\r\\nNiektóre moduły, takie jak Nagrywanie Ponownego Połączenia przestaną funkcjonować.",
+  "gui_config_jdrr_reconnectfaild" : "Próba ponownego połączenia nieudana",
+  "gui_btn_help" : "Pomoc",
+  "gui_btn_start" : "Start",
+  "gui_config_jdrr_savereconnect" : "Ponowne nawiązanie połączenia powiodło się. Czy chcesz zapisać akcję?",
+  "gui_config_jdrr_popup_title" : "Nagrywanie akcji ponownego naw. poł.",
+  "gui_fengshuiconfig_routerip" : "IP routera",
+  "gui_config_jdrr_title" : "Nagrywanie ponownego naw. poł.",
+  "gui_config_jdrr_status_title" : "Stan nagrywania",
+  "gui_config_routeripfinder_notfound" : "Nie można odnaleźć nazwy hosta twojego routera",
+  "gui_btn_no" : "Nie",
+  "gui_btn_cancel" : "Anuluj",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Wyłączone sprawdzanie adresu IP",
+  "gui_btn_abort" : "Przerwij",
+  "gui_config_reconnect_selectrouter" : "Wyszukaj model routera"
+}

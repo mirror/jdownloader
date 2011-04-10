@@ -1,0 +1,14 @@
+{
+  "gui_config_liveheader_dialog_importrouter" : "Ubaci ruter",
+  "gui_config_jdrr_reconnectfaild" : "Spajanje neuspješno",
+  "gui_btn_start" : "Zaženi",
+  "gui_btn_help" : "Pomoč",
+  "gui_config_jdrr_savereconnect" : "Spajanje je uspješno. Spremi odmah?",
+  "gui_config_jdrr_popup_title" : "JDRRProzor",
+  "gui_fengshuiconfig_routerip" : "Ruter-IP",
+  "gui_config_jdrr_title" : "Rekonektivanje snimljeno",
+  "gui_btn_yes" : "Da",
+  "gui_btn_no" : "Ne",
+  "gui_btn_cancel" : "Prekliči",
+  "gui_config_routeripfinder_ready" : "IP pronađen: %s1"
+}

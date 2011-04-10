@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Εντολή (χρησιμοποιήστε απόλυτες διαδρομές καταλόγου)",
+  "interaction_externreconnect_parameter" : "Παράμετρος (1 παράμετρος ανά γραμμή)",
+  "interaction_externreconnect_dummybat" : "Χρήση ειδικού εκτελεστή για Windows"
+}

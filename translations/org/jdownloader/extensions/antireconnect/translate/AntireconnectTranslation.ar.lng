@@ -1,0 +1,6 @@
+{
+  "gui_config_antireconnect_newreconnect" : "السماح بإعادى الإتصال:",
+  "gui_config_antireconnect_mode" : "الوضع:",
+  "gui_config_antireconnect_oldspeed" : "سرعة التحميل بالـkb/s",
+  "gui_config_antireconnect_oldreconnect" : "السماح بإعادة الإتصال:"
+}

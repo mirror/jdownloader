@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -29,13 +31,13 @@ public class DeleteAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.remove", "Remove") + " (" + links.size() + ")";
+        return T._.gui_table_contextmenu_remove() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
         LinkGrabberController controller = LinkGrabberController.getInstance();
 
-        if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Delete selected links?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"))) {
+        if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.gui_downloadlist_delete() + " (" + T._.gui_downloadlist_delete_size_packagev2( links.size()) + ")"))) {
             LinkGrabberFilePackage fp;
             for (DownloadLink link : links) {
                 link.setProperty("removed", true);

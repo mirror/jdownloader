@@ -1,0 +1,19 @@
+{
+  "jd_plugins_optional_schedule_expired" : "باطل شده",
+  "plugin_optional_scheduler_add_save" : "ذخيره",
+  "plugin_optional_scheduler_add_year" : "سال :",
+  "plugin_optional_scheduler_add_hour" : "ساعت :",
+  "jd_plugins_optional_schedule_wait" : "يك لحظه صبر كنيد",
+  "plugin_optional_scheduler_add_once" : "فقط يكبار",
+  "plugin_optional_scheduler_add_name" : "نام",
+  "plugin_optional_scheduler_add_cancel" : "لغو",
+  "plugin_optional_scheduler_add_problem_emptyname" : "نام نوشته نشده",
+  "plugin_optional_scheduler_add_weekly" : "هفتگي",
+  "jd_plugins_optional_schedule_disabled" : "غيرفعال شده",
+  "plugin_optional_scheduler_add_month" : "ماه:",
+  "jd_plugins_optional_schedule_schedule" : "زمانبند",
+  "plugin_optional_scheduler_add_hourly" : "ساعتي",
+  "plugin_optional_scheduler_add_column_executions_name" : "نام",
+  "plugin_optional_scheduler_add_repeats" : "تكراري ها",
+  "plugin_optional_scheduler_add_daily" : "وقفه"
+}

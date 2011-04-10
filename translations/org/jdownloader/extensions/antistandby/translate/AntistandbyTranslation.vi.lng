@@ -1,0 +1,6 @@
+{
+  "gui_config_antistandby_mode" : "Chế độ:",
+  "gui_config_antistandby_whiledl" : "Ngăn chế độ Standby khi đang tải về",
+  "gui_config_antistandby_whilejd" : "Ngăn chế độ Standby khi JD đang chạy",
+  "jd_plugins_optional_antistandby_jdantistandby" : "JDAntiStandby"
+}

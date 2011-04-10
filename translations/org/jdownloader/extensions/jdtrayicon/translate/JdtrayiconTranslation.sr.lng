@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Иконица у палети",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Омогућава смањивање програма, слање у обавештајну зону, задавање шифре за покретање програма, као и многе друге опције",
+  "plugins_trayicon_popup_bottom_simdls" : "Истовремених преузимања",
+  "plugins_trayicon_popup_bottom_speed" : "Ограничење брзине (кб/с)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Истовремене конекције",
+  "gui_tooltip_statusbar_simultan_downloads" : "Највише истовремених преузимања",
+  "gui_tooltip_statusbar_speedlimiter" : "Ограничење брзине (кб/с) [0:неограничено]",
+  "gui_tooltip_statusbar_max_chunks" : "Највише успостављених веза по датотеци"
+}

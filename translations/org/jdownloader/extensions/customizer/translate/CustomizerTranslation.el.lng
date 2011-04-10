@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Εισαγωγή ονόματος για τη νέα ρύθμιση:",
+  "action_customize_removesetting_ask" : "Αφαίρεση επιλεγμένων Ρυθμίσεων; (%s1)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "JD Προσαρμογέας Πακέτων",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JD Προσαρμογέας Πακέτων"
+}

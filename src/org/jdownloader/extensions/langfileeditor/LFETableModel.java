@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.langfileeditor;
 
+
+ import org.jdownloader.extensions.langfileeditor.translate.*;
 import java.util.ArrayList;
 
 import jd.utils.locale.JDL;
@@ -45,7 +47,7 @@ public class LFETableModel extends ExtTableModel<KeyInfo> {
 
     @Override
     protected void initColumns() {
-        this.addColumn(new ExtTextEditorColumn<KeyInfo>(JDL.L(LOCALE_PREFIX + "key", "Key"), this) {
+        this.addColumn(new ExtTextEditorColumn<KeyInfo>(T._.plugins_optional_langfileeditor_key(), this) {
 
             private static final long serialVersionUID = 7120563498624188924L;
 
@@ -59,7 +61,7 @@ public class LFETableModel extends ExtTableModel<KeyInfo> {
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<KeyInfo>(JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), this) {
+        this.addColumn(new ExtTextEditorColumn<KeyInfo>(T._.plugins_optional_langfileeditor_sourceValue(), this) {
 
             private static final long serialVersionUID = 8317088520940463895L;
 
@@ -73,7 +75,7 @@ public class LFETableModel extends ExtTableModel<KeyInfo> {
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<KeyInfo>(JDL.L(LOCALE_PREFIX + "english", "en.loc"), this) {
+        this.addColumn(new ExtTextEditorColumn<KeyInfo>(T._.plugins_optional_langfileeditor_english(), this) {
 
             private static final long serialVersionUID = -2259126596005921191L;
 
@@ -87,7 +89,7 @@ public class LFETableModel extends ExtTableModel<KeyInfo> {
             }
 
         });
-        this.addColumn(new LanguageColumn(JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value"), this));
+        this.addColumn(new LanguageColumn(T._.plugins_optional_langfileeditor_languageFileValue(), this));
     }
 
     protected void refreshData() {

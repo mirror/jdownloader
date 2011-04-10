@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Slå av",
+  "gui_config_jdshutdown_forceshutdown" : "Tvungen avslutning (Ikke for alle OS)",
+  "interaction_shutdown_dialog_title_standby" : "Standby?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">System will be shut down!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Installer tvungen avslutning (Kun MacOSX)",
+  "interaction_shutdown_dialog_title_hibernate" : "Hibernate?",
+  "interaction_shutdown_dialog_title_shutdown" : "Shutdown?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader will be closed!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "JDownloader vil IKKE slå av systemet",
+  "gui_config_jdshutdown_hibernate" : "Hvilemodus (Ikke for alle OS)",
+  "gui_config_jdshutdown_close" : "Lukk JDownloader",
+  "gui_config_jdshutdown_standby" : "Standby (Ikke for alle OS)",
+  "gui_config_jdshutdown_osx_force_short" : "Installer",
+  "jd_plugins_optional_jdshutdown" : "JD Shutdown",
+  "interaction_shutdown_dialog_title_closejd" : "Lukk JDownloader?",
+  "gui_config_jdshutdown_mode" : "Mode:",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader vil slå av PC'en når nedlastingene er ferdig!",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">System will be put into standby mode!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">System will be put into hibernate mode!</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "Automatically shut down, suspend, hibernate your PC or close JDownloader when all downloads are finished."
+}

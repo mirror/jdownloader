@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "開始位置 (アプリケーション フォルダー)",
+  "interaction_batchreconnect_batch" : "バッチ スクリプト",
+  "interaction_batchreconnect_terminal" : "インタープリター"
+}

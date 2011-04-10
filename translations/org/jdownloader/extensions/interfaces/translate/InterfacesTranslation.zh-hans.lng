@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "升级到beta版本?",
+  "updater_beta_rlyupdate_message" : "你希望升级到 JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "拒绝访问!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "来自%s1的外部请求%s2界面",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "允许!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "一个外部程序试图添加链接. 详情请查看日志."
+}

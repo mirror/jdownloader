@@ -1,0 +1,7 @@
+{
+  "sys_warning_loguploadfailed" : "Tarixçə faylının yüklənməsi alınmadı!",
+  "jd_plugins_optional_jdchat_newmessage" : "%s1:<hr> %s2 tərəfindən yeni İsmarış",
+  "plugins_optional_jdchat_enternick" : "İstədiyin Ləqəb",
+  "jd_plugins_optional_jdchat_jdchat" : "JDSöhbət",
+  "plugin_optional_jdchat_getlog" : "Probleminizin həlli üçün %s1 üçün tarixçə lazımdır. Tarixçənin ona göndərməyə razısınız?"
+}

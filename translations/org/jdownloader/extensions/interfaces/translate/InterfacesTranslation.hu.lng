@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Frissít a beta verzióra?",
+  "updater_beta_rlyupdate_message" : "Szeretné frissíteni a JDwonloadert %s1 verzióra?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Hozzáférés megtagadása!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "%s1 felől külső kérés a %s2 felülethez!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Engedélyez!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Egy külső alkalmazás linkeket próbál hozzáadni. Bővebb információért nézze meg a log fájlt!"
+}

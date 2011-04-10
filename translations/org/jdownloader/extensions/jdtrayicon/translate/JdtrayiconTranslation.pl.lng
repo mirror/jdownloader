@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Ikona w zasobniku",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Pozwala na minimalizację/zamykanie JDownloadera do obszaru powiadomień oraz innych związanych z tym funkcji, takich jak ochrona hasłem i nie tylko.",
+  "plugins_trayicon_popup_bottom_simdls" : "Jednoczesne transfery",
+  "plugins_trayicon_popup_bottom_speed" : "Ograniczenie prędkości (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Równoległe połączenia",
+  "gui_tooltip_statusbar_simultan_downloads" : "Maksymalna ilość równoczesnych transferów",
+  "gui_tooltip_statusbar_speedlimiter" : "Limit prędkości pobierania (KiB/s) [0=brak limitu]",
+  "gui_tooltip_statusbar_max_chunks" : "Maksymalna ilość połączeń na plik"
+}

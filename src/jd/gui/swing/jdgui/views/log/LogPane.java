@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.log;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.StringReader;
@@ -75,16 +77,16 @@ public class LogPane extends SwitchPanel implements ActionListener {
             }
             if (content == null || content.length() == 0) return;
 
-            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
+            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, T._.userio_input_title(), T._.gui_logger_askQuestion(), null, null, null, null);
             if (question == null) question = "";
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             String url = Upload.toJDownloader(content, question);
             if (url != null) {
                 CrossSystem.openURLOrShowMessage(url);
-                append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n" + url);
+                append(T._.gui_logupload_message() + "\r\n" + url);
             } else {
-                UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.loguploadfailed", "Upload of logfile failed!"));
-                append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
+                UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, T._.sys_warning_loguploadfailed());
+                append(T._.gui_logDialog_warning_uploadFailed());
             }
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             break;

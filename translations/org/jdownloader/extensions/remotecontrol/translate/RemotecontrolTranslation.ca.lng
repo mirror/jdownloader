@@ -1,0 +1,4 @@
+{
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 iniciat al port %s2\\nhttp://127.0.0.1:%s3\\n/ajuda informant als desenvolupadors",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 aturada."
+}

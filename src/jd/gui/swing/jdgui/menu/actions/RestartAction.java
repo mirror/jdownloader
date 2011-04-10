@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 
 import jd.gui.UserIO;
@@ -35,7 +37,7 @@ public class RestartAction extends ToolBarAction {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestart", "Are you sure that you want to restart JDownloader?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, T._.sys_ask_rlyrestart()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             RestartController.getInstance().directRestart();
         }
     }

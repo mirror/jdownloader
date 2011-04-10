@@ -1,0 +1,19 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Apagat",
+  "gui_config_jdshutdown_forceshutdown" : "Forçar apagada (No per tots els S.O)",
+  "interaction_shutdown_dialog_title_standby" : "Espera?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">El sistema s'apaga!</font></h2>",
+  "interaction_shutdown_dialog_title_hibernate" : "Hibernar?",
+  "interaction_shutdown_dialog_title_shutdown" : "Apagar?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">Es tancarà JDownloader!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "JDownloader NO apagarà el sistema",
+  "gui_config_jdshutdown_hibernate" : "Hibernar (No per tots els S.O)",
+  "gui_config_jdshutdown_close" : "Tencar JD",
+  "gui_config_jdshutdown_standby" : "Suspendre (No per tots els S.O)",
+  "jd_plugins_optional_jdshutdown" : "JDShutdown",
+  "interaction_shutdown_dialog_title_closejd" : "Tancar JD?",
+  "gui_config_jdshutdown_mode" : "Mode:",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader apagarà l’equip en finalitzar las descàrregues",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">El sistema es posara en moda d'espera!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">El sistema es posara en mode d'hivernació!</font></h2>"
+}

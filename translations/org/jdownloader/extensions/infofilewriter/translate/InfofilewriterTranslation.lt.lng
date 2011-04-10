@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_jdinfofilewriter" : "JDInfoFileWriter",
+  "plugins_optional_infofilewriter_content" : "Content:",
+  "plugins_optional_infofilewriter_variables" : "Available variables",
+  "plugins_optional_infofilewriter_filename" : "Filename:"
+}

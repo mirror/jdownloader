@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.webinterface;
 
+
+ import org.jdownloader.extensions.webinterface.translate.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -203,51 +205,51 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
             if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getPassword() != null) {
-                addEntry(JDL.L("gui.linkinfo.password", "Password"), downloadLink.getFilePackage().getPassword());
+                addEntry(T._.gui_linkinfo_password(), downloadLink.getFilePackage().getPassword());
             }
             if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getComment() != null) {
-                addEntry(JDL.L("gui.linkinfo.comment", "Comment"), downloadLink.getFilePackage().getComment());
+                addEntry(T._.gui_linkinfo_comment(), downloadLink.getFilePackage().getComment());
             }
             if (downloadLink.getFilePackage() != null) {
-                addEntry(JDL.L("gui.linkinfo.package", "Package"), downloadLink.getFilePackage().getName());
+                addEntry(T._.gui_linkinfo_package(), downloadLink.getFilePackage().getName());
             }
             if (downloadLink.getDownloadSize() > 0) {
-                addEntry(JDL.L("gui.linkinfo.filesize", "Filesize"), Formatter.formatReadable(downloadLink.getDownloadSize()));
+                addEntry(T._.gui_linkinfo_filesize(), Formatter.formatReadable(downloadLink.getDownloadSize()));
             }
             if (downloadLink.isAborted()) {
-                addEntry(JDL.L("gui.linkinfo.download", "Download"), JDL.L("linkinformation.download.aborted", "Aborted"));
+                addEntry(T._.gui_linkinfo_download(), T._.linkinformation_download_aborted());
             }
             if (downloadLink.isAvailabilityStatusChecked()) {
-                addEntry(JDL.L("gui.linkinfo.available", "Available"), downloadLink.isAvailable() ? JDL.L("gui.linkinfo.available.ok", "File is OK") : JDL.L("linkinformation.available.error", "Error!"));
+                addEntry(T._.gui_linkinfo_available(), downloadLink.isAvailable() ? T._.gui_linkinfo_available_ok() : T._.linkinformation_available_error());
             } else {
-                addEntry(JDL.L("gui.linkinfo.available", "Available"), JDL.L("gui.linkinfo.available.notchecked", "Not checked"));
+                addEntry(T._.gui_linkinfo_available(), T._.gui_linkinfo_available_notchecked());
             }
             if (downloadLink.getDownloadSpeed() > 0) {
-                addEntry(JDL.L("gui.linkinfo.speed", "Speed"), Formatter.formatReadable(downloadLink.getDownloadSpeed()) + " /s");
+                addEntry(T._.gui_linkinfo_speed(), Formatter.formatReadable(downloadLink.getDownloadSpeed()) + " /s");
             }
             if (downloadLink.getFileOutput() != null) {
-                addEntry(JDL.L("gui.linkinfo.saveto", "Save to"), downloadLink.getFileOutput());
+                addEntry(T._.gui_linkinfo_saveto(), downloadLink.getFileOutput());
             }
             long wait = ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost());
             if (wait > 0) {
-                addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "%s sec", wait / 1000));
+                addEntry(T._.gui_linkinfo_waittime(), T._.gui_linkinfo_secs( wait / 1000));
             } else {
                 wait = ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost());
                 if (wait > 0) {
-                    addEntry(JDL.L("gui.linkinfo.waittime", "Wait time"), JDL.LF("gui.linkinfo.secs", "%s sec", wait / 1000));
+                    addEntry(T._.gui_linkinfo_waittime(), T._.gui_linkinfo_secs( wait / 1000));
                 }
             }
             if (downloadLink.getLinkStatus().isPluginActive()) {
-                addEntry(JDL.L("gui.linkinfo.download", "Download"), JDL.L("gui.linkinfo.download.underway", "is in process"));
+                addEntry(T._.gui_linkinfo_download(), T._.gui_linkinfo_download_underway());
             } else {
-                addEntry(JDL.L("gui.linkinfo.download", "Download"), JDL.L("gui.linkinfo.download.notunderway", "is not in process"));
+                addEntry(T._.gui_linkinfo_download(), T._.gui_linkinfo_download_notunderway());
             }
             if (!downloadLink.isEnabled()) {
-                addEntry(JDL.L("gui.linkinfo.download", "Download"), JDL.L("gui.linkinfo.download.deactivated", "is deactivated"));
+                addEntry(T._.gui_linkinfo_download(), T._.gui_linkinfo_download_deactivated());
             } else {
-                addEntry(JDL.L("gui.linkinfo.download", "Download"), JDL.L("gui.linkinfo.download.activated", "is activated"));
+                addEntry(T._.gui_linkinfo_download(), T._.gui_linkinfo_download_activated());
             }
-            addEntry(JDL.L("gui.linkinfo.status", "Status"), downloadLink.getLinkStatus().getStatusString());
+            addEntry(T._.gui_linkinfo_status(), downloadLink.getLinkStatus().getStatusString());
 
             if (downloadLink.isEnabled()) {
                 switch (downloadLink.getLinkStatus().getLatestStatus()) {
@@ -265,14 +267,14 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             }
             DownloadInterface dl;
             if (downloadLink.getLinkStatus().isPluginActive() && (dl = downloadLink.getDownloadInstance()) != null) {
-                addEntry(JDL.L("linkinformation.download.chunks.label", "Chunks"), "");
+                addEntry(T._.linkinformation_download_chunks_label(), "");
                 int i = 1;
                 for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
                     Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
                     Chunk next = it.next();
                     double percent = next.getPercent() / 100.0;
                     h_info.put("download_status", Single_Status);
-                    h_info.put("info_var", JDL.L("download.chunks.connection", "Connection") + " " + i);
+                    h_info.put("info_var", T._.download_chunks_connection() + " " + i);
                     h_info.put("info_value", Formatter.formatReadable(next.getSpeed()) + "/s " + f.format(next.getPercent() / 100.0) + " %");
                     h_info.put("info_percent", f.format(percent));
                     h_info.put("download_id", i - 1);/*
@@ -316,10 +318,10 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             h.put("download_status_percent", f.format(percent));
 
             if (filePackage.getLinksInProgress() > 0) {
-                value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDL.L("gui.treetable.packagestatus.links_active", "Active");
+                value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + T._.gui_treetable_packagestatus_links_active();
             }
             if (filePackage.getTotalDownloadSpeed() > 0) {
-                value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + Formatter.formatSeconds(filePackage.getETA()) + " @ " + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s";
+                value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] ETA " + Formatter.formatSeconds(filePackage.getETA()) + " @ " + Formatter.formatReadable(filePackage.getTotalDownloadSpeed()) + "/s";
             }
 
             h.put("package_id", Package_ID.toString());

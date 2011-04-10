@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "새로운 설정에 대한 이름 입력:",
+  "action_customize_removesetting_ask" : "선택된 설정을 삭제하시겠습니까 (%s1 계정)?",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "패키지 커스터마이저"
+}

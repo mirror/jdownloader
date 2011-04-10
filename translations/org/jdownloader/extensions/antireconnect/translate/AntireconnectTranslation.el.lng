@@ -1,0 +1,15 @@
+{
+  "gui_config_antireconnect_newreconnect" : "Να επιτρέπεται η Επανασύνδεση:",
+  "gui_config_antireconnect_each" : "Έλεγχος κάθε (ms):",
+  "gui_config_antireconnect_oldspeed" : "Ταχύτητα Λήψης σε kB/s",
+  "gui_config_antireconnect_newgroup" : "Εάν άλλοι clients είναι online",
+  "gui_config_antireconnect_newspeed" : "Ταχύτητα Λήψης σε kB/s",
+  "gui_config_antireconnect_newdownloads" : "Ταυτόχρονες Λήψεις:",
+  "gui_config_antireconnect_oldreconnect" : "Να επιτρέπεται η Επανασύνδεση:",
+  "gui_config_antireconnect_mode" : "Λειτουργία:",
+  "gui_config_antireconnect_olddownloads" : "Ταυτόχρονες Λήψεις:",
+  "gui_config_antireconnect_ips" : "Έλεγχος IPs (192.168.1.20-80)",
+  "gui_config_antireconnect_oldgroup" : "Κανονικά",
+  "gui_config_antireconnect_timeout" : "Χρονικό όριο ελέγχου (ms):",
+  "jd_plugins_optional_antireconnect_jdantireconnect" : "Αποτροπή Επανασύνδεσης (JDAntiReconnect)"
+}

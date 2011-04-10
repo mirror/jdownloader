@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Oppdater til beta nå?",
+  "updater_beta_rlyupdate_message" : "Vil du oppgradere til JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Fjern tilgang!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "External request from %s1 to %s2 interface!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Tillat!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "An external application tries to add links. See Log for details."
+}

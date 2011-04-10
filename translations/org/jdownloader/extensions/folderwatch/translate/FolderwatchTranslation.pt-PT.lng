@@ -1,0 +1,12 @@
+{
+  "jd_plugins_optional_folderwatch_tablemodel_filetype" : "Tipo de Lista",
+  "jd_plugins_optional_folderwatch_tablemodel_filepath" : "Caminho",
+  "plugins_optional_folderwatch_panel_filestatus_notexists" : "Ficheiro não existe",
+  "jd_plugins_optional_folderwatch_tablemodel_importdate" : "Importar data",
+  "plugins_optional_folderwatch_view_title" : "Histórico da Observação de Pastas",
+  "jd_plugins_optional_folderwatch_tablemodel_filename" : "Nome Ficheiro",
+  "action_folderwatch_clear_message" : "Tem a certeza que quer apagar o histórico?",
+  "plugins_optional_folderwatch_panel_filestatus" : "Estado do ficheiro",
+  "plugins_optional_folderwatch_view_tooltip" : "Mostra todos os ficheiros de listas encontradas pela Observação de Pastas",
+  "plugins_optional_folderwatch_panel_filestatus_exists" : "Ficheiro existe"
+}

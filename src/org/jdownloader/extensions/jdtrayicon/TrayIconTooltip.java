@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.jdtrayicon;
 
+
+ import org.jdownloader.extensions.jdtrayicon.translate.*;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
@@ -47,19 +49,19 @@ public class TrayIconTooltip extends JWindowTooltip {
 
     protected void addContent(JPanel panel) {
         panel.setLayout(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
-        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.downloads", "Downloads:")), "spanx 2");
-        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.running", "Running:")), "gapleft 10");
+        panel.add(new JLabel(T._.plugins_optional_trayIcon_downloads()), "spanx 2");
+        panel.add(new JLabel(T._.plugins_optional_trayIcon_dl_running()), "gapleft 10");
         panel.add(lblDlRunning = new JLabel(""));
-        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.finished", "Finished:")), "gapleft 10");
+        panel.add(new JLabel(T._.plugins_optional_trayIcon_dl_finished()), "gapleft 10");
         panel.add(lblDlFinished = new JLabel(""));
-        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.total", "Total:")), "gapleft 10");
+        panel.add(new JLabel(T._.plugins_optional_trayIcon_dl_total()), "gapleft 10");
         panel.add(lblDlTotal = new JLabel(""));
-        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.speed", "Speed:")));
+        panel.add(new JLabel(T._.plugins_optional_trayIcon_speed()));
         panel.add(lblSpeed = new JLabel(""));
-        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress", "Progress:")));
+        panel.add(new JLabel(T._.plugins_optional_trayIcon_progress()));
         panel.add(lblProgress = new JLabel(""));
         panel.add(prgTotal = new JDProgressBar(), "spanx 2");
-        panel.add(new JLabel(JDL.L("plugins.optional.trayIcon.eta", "ETA:")));
+        panel.add(new JLabel(T._.plugins_optional_trayIcon_eta()));
         panel.add(lblETA = new JLabel(""));
     }
 

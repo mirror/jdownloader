@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Aktualizovať na skúšobnú verziu?",
+  "updater_beta_rlyupdate_message" : "Chcete aktualizovať na JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Zakázať Prístup!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Požiadavka z vonku od %s1 pre prostredie %s2!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Povoliť!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Externá aplikácia sa pokúša pridať linky. Pozrieť záznam pre viac detailov."
+}

@@ -16,6 +16,8 @@
 
 package jd.controlling.reconnect;
 
+
+ import org.jdownloader.translate.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -212,7 +214,7 @@ public final class Reconnecter implements StateMachineInterface {
             for (retry = 0; retry < maxretries; retry++) {
                 ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + (retry + 1));
                 progress.increase(1);
-                progress.setStatusText(JDL.L("jd.controlling.reconnect.plugins.ReconnectPluginController.doReconnect_1", "Reconnect #") + (retry + 1));
+                progress.setStatusText(T._.jd_controlling_reconnect_plugins_ReconnectPluginController_doReconnect_1() + (retry + 1));
                 ret = ReconnectPluginController.getInstance().doReconnect();
                 if (ret) {
                     reconnectCounter.incrementAndGet();
@@ -321,7 +323,7 @@ public final class Reconnecter implements StateMachineInterface {
         }
         if (ret == false) {
             /* reconnect failed, increase fail counter */
-            final ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100, "gui.images.reconnect_warning");
+            final ProgressController progress = new ProgressController(T._.jd_controlling_reconnect_Reconnector_progress_failed(), 100, "gui.images.reconnect_warning");
             progress.doFinalize(10000l);
 
             final long counter = this.storage.get(Reconnecter.RECONNECT_FAILED_COUNTER, 0);
@@ -334,7 +336,7 @@ public final class Reconnecter implements StateMachineInterface {
 
                 this.setAutoReconnectEnabled(false);
 
-                UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.controlling.reconnect.Reconnector.progress.failed2", "Reconnect failed too often! Autoreconnect is disabled! Please check your reconnect Settings!"));
+                UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.jd_controlling_reconnect_Reconnector_progress_failed2());
 
             }
 
@@ -352,7 +354,7 @@ public final class Reconnecter implements StateMachineInterface {
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, b);
         if (!b) {
 
-            UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnection has been disabled!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "To allow JDownloader to perform automated reconnections, you should enable this feature!"));
+            UserIF.getInstance().displayMiniWarning(T._.gui_warning_reconnect_hasbeendisabled(), T._.gui_warning_reconnect_hasbeendisabled_tooltip());
 
         }
         JDUtilities.getConfiguration().save();

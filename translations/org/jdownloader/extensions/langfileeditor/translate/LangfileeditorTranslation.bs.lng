@@ -1,0 +1,13 @@
+{
+  "plugins_optional_langfileeditor_save_success_message" : "LanguageFile uspješno spremljen!",
+  "plugins_optional_langfileeditor_keychart_missing" : "Nedostaje",
+  "plugins_optional_langfileeditor_keychart_done" : "Zavreno",
+  "plugins_optional_langfileeditor_title" : "JDownloader - Urednik Jezika",
+  "plugins_optional_langfileeditor_file" : "Fajl",
+  "plugins_optional_langfileeditor_keychart_old" : "Stari",
+  "gui_btn_yes" : "Da",
+  "plugins_optional_langfileeditor_save_error_message" : "Dogodila se greška pri pisanju u LanguageFile:\\n%s1",
+  "plugins_optional_langfileeditor_reload" : "Ponovo ubaci",
+  "gui_btn_no" : "Ne",
+  "plugins_optional_langfileeditor_key" : "Ključ"
+}

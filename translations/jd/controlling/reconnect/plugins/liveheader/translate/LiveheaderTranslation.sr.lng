@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Пример: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Raw начин?",
+  "gui_btn_yes" : "Да",
+  "gui_config_routeripfinder_ready" : "Пронађена IP: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Увези рутер",
+  "gui_config_jdrr_success" : "Успешно!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Онемогућили сте IP проверу. Ово ће драматично продужити време потребно за поновно успостављање везе!\\r\\n\\r\\nОнемогућено је неколико зависних модула као Снимање поновног успостављања везе.",
+  "gui_config_jdrr_reconnectfaild" : "Поновно успостављање везе није успело",
+  "gui_btn_help" : "Помоћ",
+  "gui_btn_start" : "Покрени",
+  "gui_config_jdrr_savereconnect" : "Веза је поново успостављена. Сачувати сада?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "IP рутера",
+  "gui_config_jdrr_title" : "Снимање поновног успостављања везе",
+  "gui_config_jdrr_status_title" : "Стање RR",
+  "gui_config_routeripfinder_notfound" : "Име вашег рутера није пронађено",
+  "gui_btn_no" : "Не",
+  "gui_btn_cancel" : "Одустани",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Ip провера је онемогућена!",
+  "gui_btn_abort" : "Обустави",
+  "gui_config_reconnect_selectrouter" : "Тражи модел рутера"
+}

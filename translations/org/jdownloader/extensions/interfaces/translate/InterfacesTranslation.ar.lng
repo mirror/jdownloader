@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "تحديث الى النسخة التجريبية؟",
+  "updater_beta_rlyupdate_message" : "هل تريد التحديث إلى JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "رفض الوصول",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "طلب خارجي من %s1 الى واجهة %s2 !",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "إسمح به!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "برنامج خارجي يحاول  إضافة روابط. شاهد السجل للتفاصيل."
+}

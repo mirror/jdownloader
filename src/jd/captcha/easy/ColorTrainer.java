@@ -16,6 +16,8 @@
 
 package jd.captcha.easy;
 
+
+ import jd.captcha.translate.*;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -206,7 +208,7 @@ public class ColorTrainer {
         }
         float[] hsb = Colors.rgb2hsb(c.getRed(), c.getGreen(), c.getBlue());
 
-        return "<HTML><BODY>" + JDL.L("easycaptcha.color", "Color") + ":#" + Integer.toHexString(c.getRGB() & 0x00ffffff) + "<BR>\r\n" + xc + ":" + yc + "<BR>\r\n" + "<span style=\"color:#" + Integer.toHexString(new Color(c.getRed(), 0, 0).getRGB() & 0x00ffffff) + "\">R:" + getDigit(c.getRed()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, c.getGreen(), 0).getRGB() & 0x00ffffff) + "\"> G:" + getDigit(c.getGreen()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, 0, c.getBlue()).getRGB() & 0x00ffffff) + "\"> B:" + getDigit(c.getBlue()) + "</span><BR>\r\n" + "H:" + getDigit(Math.round(hsb[0] * 360)) + " S:" + getDigit(Math.round(hsb[1] * 100)) + " B:" + getDigit(Math.round(hsb[2] * 100)) + "\r\n</BODY></HTML>";
+        return "<HTML><BODY>" + T._.easycaptcha_color() + ":#" + Integer.toHexString(c.getRGB() & 0x00ffffff) + "<BR>\r\n" + xc + ":" + yc + "<BR>\r\n<span style=\"color:#" + Integer.toHexString(new Color(c.getRed(), 0, 0).getRGB() & 0x00ffffff) + "\">R:" + getDigit(c.getRed()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, c.getGreen(), 0).getRGB() & 0x00ffffff) + "\"> G:" + getDigit(c.getGreen()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, 0, c.getBlue()).getRGB() & 0x00ffffff) + "\"> B:" + getDigit(c.getBlue()) + "</span><BR>\r\nH:" + getDigit(Math.round(hsb[0] * 360)) + " S:" + getDigit(Math.round(hsb[1] * 100)) + " B:" + getDigit(Math.round(hsb[2] * 100)) + "\r\n</BODY></HTML>";
     }
 
     /**

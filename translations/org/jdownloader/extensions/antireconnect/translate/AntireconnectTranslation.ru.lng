@@ -1,0 +1,12 @@
+{
+  "gui_config_antireconnect_newreconnect" : "Разрешать перезапускать:",
+  "gui_config_antireconnect_olddownloads" : "Одновременно закачек:",
+  "gui_config_antireconnect_mode" : "Режим:",
+  "gui_config_antireconnect_oldspeed" : "Скорость закачки kb/s",
+  "gui_config_antireconnect_ips" : "Проверить IPs (192.168.1.20-80)",
+  "gui_config_antireconnect_newdownloads" : "Одновременно закачек:",
+  "gui_config_antireconnect_oldgroup" : "Нормально",
+  "gui_config_antireconnect_newspeed" : "Скорость закачки в kb/s",
+  "jd_plugins_optional_antireconnect_jdantireconnect" : "AntiReconnect",
+  "gui_config_antireconnect_oldreconnect" : "Разрешать перезапускать:"
+}

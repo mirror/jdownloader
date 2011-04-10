@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.customizer;
 
+
+ import org.jdownloader.extensions.customizer.translate.*;
 import javax.swing.Icon;
 
 import jd.plugins.AddonPanel;
@@ -40,12 +42,12 @@ public class CustomizerView extends AddonPanel {
 
     @Override
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "title", "Package Customizer");
+        return T._.jd_plugins_optional_customizer_CustomizerView_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(JDL_PREFIX + "tooltip", "Customize your FilePackages");
+        return T._.jd_plugins_optional_customizer_CustomizerView_tooltip();
     }
 
     @Override

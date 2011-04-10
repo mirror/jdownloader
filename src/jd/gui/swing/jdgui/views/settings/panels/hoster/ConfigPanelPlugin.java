@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.hoster;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -56,7 +58,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, Mo
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelPlugin.";
 
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "plugins.title", "Plugins");
+        return T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelPlugin_plugins_title();
     }
 
     @Override
@@ -79,7 +81,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, Mo
 
         @Override
         protected void initColumns() {
-            this.addColumn(new ExtTextColumn<HostPluginWrapper>(JDL.L("gui.column_plugin", "Plugin"), this) {
+            this.addColumn(new ExtTextColumn<HostPluginWrapper>(T._.gui_column_plugin(), this) {
 
                 private static final long serialVersionUID = -7209180150340921804L;
 
@@ -94,7 +96,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, Mo
                 }
 
             });
-            this.addColumn(new ExtLongColumn<HostPluginWrapper>(JDL.L("gui.column_version", "Version"), this) {
+            this.addColumn(new ExtLongColumn<HostPluginWrapper>(T._.gui_column_version(), this) {
 
                 private static final long serialVersionUID = 8197242738899719303L;
 
@@ -104,7 +106,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, Mo
                 }
 
             });
-            this.addColumn(new ExtIconColumn<HostPluginWrapper>(JDL.L("gui.column_settings", "Settings"), this) {
+            this.addColumn(new ExtIconColumn<HostPluginWrapper>(T._.gui_column_settings(), this) {
 
                 private static final long serialVersionUID = 4948749148702891718L;
 
@@ -126,7 +128,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, Mo
                 }
 
             });
-            this.addColumn(new TosColumn(JDL.L("gui.column_tos", "TOS"), this));
+            this.addColumn(new TosColumn(T._.gui_column_tos(), this));
         }
     }
 
@@ -177,7 +179,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, Mo
             }
         });
 
-        btnEdit = new JButton(JDL.L("gui.btn_settings", "Settings"));
+        btnEdit = new JButton(T._.gui_btn_settings());
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
         btnEdit.setIcon(JDTheme.II("gui.images.config.home", 16, 16));
@@ -185,7 +187,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener, Mo
         /*
          * TODO: please someone implement as tableheader instead of checkbox
          */
-        chkUseAll = new JCheckBox(JDL.L(JDL_PREFIX + "useAll", "Use all Hosts"));
+        chkUseAll = new JCheckBox(T._.jd_gui_swing_jdgui_settings_panels_ConfigPanelPlugin_useAll());
         chkUseAll.setEnabled(true);
         chkUseAll.addActionListener(this);
         chkUseAll.setHorizontalAlignment(JCheckBox.RIGHT);

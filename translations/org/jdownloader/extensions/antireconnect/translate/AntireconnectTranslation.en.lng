@@ -1,0 +1,15 @@
+{
+  "gui_config_antireconnect_newreconnect" : "Allow Reconnect:",
+  "gui_config_antireconnect_each" : "Check each (ms):",
+  "gui_config_antireconnect_oldspeed" : "Download speed in kb/s",
+  "gui_config_antireconnect_newgroup" : "If Other Clients are Online",
+  "gui_config_antireconnect_newspeed" : "Download speed in kb/s",
+  "gui_config_antireconnect_newdownloads" : "Simultaneous Downloads:",
+  "gui_config_antireconnect_oldreconnect" : "Allow Reconnect:",
+  "gui_config_antireconnect_mode" : "Mode:",
+  "gui_config_antireconnect_olddownloads" : "Simultaneous Downloads:",
+  "gui_config_antireconnect_ips" : "Check IPs (192.168.1.20-80)",
+  "gui_config_antireconnect_oldgroup" : "Normally",
+  "gui_config_antireconnect_timeout" : "Check Timeout (ms):",
+  "jd_plugins_optional_antireconnect_jdantireconnect" : "AntiReconnect"
+}

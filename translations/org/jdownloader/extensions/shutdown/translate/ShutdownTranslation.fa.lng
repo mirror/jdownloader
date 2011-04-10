@@ -1,0 +1,14 @@
+{
+  "gui_config_jdshutdown_osx_force_short" : "نصب",
+  "gui_config_jdshutdown_shutdown" : "خاموش كردن",
+  "gui_config_jdshutdown_forceshutdown" : "اجراي اجباري خاموش كردن رايانه (براي همه سيستم عامل ها نمي باشد)",
+  "interaction_shutdown_dialog_title_standby" : "رفتن به حالت انتظار ؟",
+  "interaction_shutdown_dialog_title_closejd" : "بستن جي دانلودر ؟",
+  "gui_config_jdshutdown_mode" : "نوع :",
+  "addons_jdshutdown_statusmessage_enabled" : "جي دانلودر سيستم شما را پس از پايان دانلودي ها خاموش خواهد كرد",
+  "interaction_shutdown_dialog_title_shutdown" : "خاموش ؟",
+  "gui_config_jdshutdown_hibernate" : "خاموش كردن رايانه بدون بستن برنامه ها (براي همه سيستم عامل ها نمي باشد)",
+  "addons_jdshutdown_statusmessage_disabled" : "سيسم توسط جي دانلودر خاموش نخواهد شد",
+  "gui_config_jdshutdown_close" : "بستن جي دانلودر",
+  "gui_config_jdshutdown_standby" : "انتظار (براي همه سيستم عامل ها نمي باشد)"
+}

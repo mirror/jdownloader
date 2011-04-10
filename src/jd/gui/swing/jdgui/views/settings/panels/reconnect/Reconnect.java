@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 
@@ -41,7 +43,7 @@ public class Reconnect extends ConfigPanel {
     }
 
     public String getTitle() {
-        return JDL.L(Reconnect.JDL_PREFIX + "reconnect.advanced.title", "Reconnection");
+        return T._.jd_gui_swing_jdgui_settings_panels_reconnect_Advanced_reconnect_advanced_title();
     }
 
     @Override
@@ -62,17 +64,17 @@ public class Reconnect extends ConfigPanel {
         ConfigEntry ce, cond;
         final ConfigContainer container = new ConfigContainer();
 
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.reconnect.shared", "General Reconnect Settings"), "gui.images.reconnect_settings"));
+        container.setGroup(new ConfigGroup(T._.gui_config_reconnect_shared(), "gui.images.reconnect_settings"));
 
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_IPCHECKWAITTIME, JDL.L("reconnect.waittimetofirstipcheck", "First IP check wait time (sec)"), 5, 600, 5).setDefaultValue(5));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_RETRIES, JDL.L("reconnect.retries", "Max repeats (-1 = no limit)"), -1, 20, 1).setDefaultValue(5));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_WAITFORIPCHANGE, JDL.L("reconnect.waitforip", "Timeout for ip change [sec]"), 30, 600, 10).setDefaultValue(30));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDL.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads")).setDefaultValue(true));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_PREFER_RECONNECT", JDL.L("gui.config.download.preferreconnect", "Do not start new links if reconnect requested")).setDefaultValue(true));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_IPCHECKWAITTIME, T._.reconnect_waittimetofirstipcheck(), 5, 600, 5).setDefaultValue(5));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_RETRIES, T._.reconnect_retries(), -1, 20, 1).setDefaultValue(5));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_WAITFORIPCHANGE, T._.reconnect_waitforip(), 30, 600, 10).setDefaultValue(30));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", T._.gui_config_download_autoresume()).setDefaultValue(true));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_PREFER_RECONNECT", T._.gui_config_download_preferreconnect()).setDefaultValue(true));
 
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnection IP-Check"), "gui.images.network"));
+        container.setGroup(new ConfigGroup(T._.gui_config_download_ipcheck(), "gui.images.network"));
 
-        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "Disable IP-Check")) {
+        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, T._.gui_config_download_ipcheck_disable()) {
             private static final long serialVersionUID = 1L;
             /**
              * assures that the user sees the warning only once
@@ -94,7 +96,7 @@ public class Reconnect extends ConfigPanel {
                     SwingUtilities.invokeLater(new Runnable() {
 
                         public void run() {
-                            UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "IP-Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
+                            UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, T._.jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title(), T._.jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message());
                         }
 
                     });
@@ -106,21 +108,21 @@ public class Reconnect extends ConfigPanel {
         });
         cond.setDefaultValue(false);
 
-        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, JDL.L("gui.config.download.ipcheck.balance", "Use balanced IP-Check")));
+        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, T._.gui_config_download_ipcheck_balance()));
         cond.setDefaultValue(true);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "Check IP online")));
-        ce.setDefaultValue(JDL.L("gui.config.download.ipcheck.website.default", "Please enter Website for IPCheck here"));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, T._.gui_config_download_ipcheck_website()));
+        ce.setDefaultValue(T._.gui_config_download_ipcheck_website_default());
         ce.setEnabledCondidtion(cond, false);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "IP Filter RegEx")));
-        ce.setDefaultValue(JDL.L("gui.config.download.ipcheck.regex.default", "Please enter Regex for IPCheck here"));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, T._.gui_config_download_ipcheck_regex()));
+        ce.setDefaultValue(T._.gui_config_download_ipcheck_regex_default());
         ce.setEnabledCondidtion(cond, false);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Allowed IPs")));
-        ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, T._.gui_config_download_ipcheck_mask()));
+        ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", JDL.L("gui.config.download.ipcheck.externalinterval2", "External IP Check Interval [min]"), 10, 240, 10));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", T._.gui_config_download_ipcheck_externalinterval2(), 10, 240, 10));
         ce.setDefaultValue(10);
 
         return container;

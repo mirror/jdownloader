@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -44,10 +46,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
     public LinkGrabberInfoPanel() {
         super("gui.images.taskpanes.linkgrabber");
 
-        addInfoEntry(JDL.L(JDL_PREFIX + "packages", "Package(s)"), "0", 0, 0);
-        addInfoEntry(JDL.L(JDL_PREFIX + "links", "Links(s)"), "0", 0, 1);
-        addInfoEntry(JDL.L(JDL_PREFIX + "filteredlinks", "filtered Links(s)"), "0", 1, 1);
-        addInfoEntry(JDL.L(JDL_PREFIX + "size", "Total size"), "0", 1, 0);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_packages(), "0", 0, 0);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_links(), "0", 0, 1);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_filteredlinks(), "0", 1, 1);
+        addInfoEntry(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_size(), "0", 1, 0);
         addCheckboxes();
         lgi = LinkGrabberController.getInstance();
         Thread updateTimer = new Thread() {
@@ -68,7 +70,7 @@ public class LinkGrabberInfoPanel extends InfoPanel {
     }
 
     private void addCheckboxes() {
-        final JCheckBox topOrBottom = new JCheckBox(JDL.L("gui.taskpanes.download.linkgrabber.config.addattop", "Add at top"));
+        final JCheckBox topOrBottom = new JCheckBox(T._.gui_taskpanes_download_linkgrabber_config_addattop());
         topOrBottom.setOpaque(false);
         topOrBottom.addActionListener(new ActionListener() {
 
@@ -80,10 +82,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         });
         topOrBottom.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAddNewLinksOnTop());
 
-        topOrBottom.setToolTipText(JDL.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
+        topOrBottom.setToolTipText(T._.gui_tooltips_linkgrabber_topOrBottom());
         topOrBottom.setIconTextGap(3);
 
-        final JCheckBox startAfterAdding = new JCheckBox(JDL.L("gui.taskpanes.download.linkgrabber.config.startofter", "Start after adding"));
+        final JCheckBox startAfterAdding = new JCheckBox(T._.gui_taskpanes_download_linkgrabber_config_startofter());
         startAfterAdding.setOpaque(false);
         startAfterAdding.addActionListener(new ActionListener() {
 
@@ -95,10 +97,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         });
         startAfterAdding.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAutoDownloadStartAfterAddingEnabled());
 
-        startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
+        startAfterAdding.setToolTipText(T._.gui_tooltips_linkgrabber_startlinksafteradd());
         startAfterAdding.setIconTextGap(3);
 
-        final JCheckBox autoStart = new JCheckBox(JDL.L("gui.taskpanes.download.linkgrabber.config.autostart", "Start Automatically"));
+        final JCheckBox autoStart = new JCheckBox(T._.gui_taskpanes_download_linkgrabber_config_autostart());
         autoStart.setOpaque(false);
         autoStart.addActionListener(new ActionListener() {
 
@@ -109,7 +111,7 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         });
         autoStart.setSelected(JsonConfig.create(LinkgrabberSettings.class).isAutoaddLinksAfterLinkcheck());
 
-        autoStart.setToolTipText(JDL.L("gui.tooltips.linkgrabber.autostart", "if selected, links will get added and started automatically"));
+        autoStart.setToolTipText(T._.gui_tooltips_linkgrabber_autostart());
         autoStart.setIconTextGap(3);
 
         addComponent(topOrBottom, 2, 0);
@@ -130,10 +132,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
                     tot += fp.getDownloadSize(false);
                     links += fp.getDownloadLinks().size();
                 }
-                updateInfo(JDL.L(JDL_PREFIX + "packages", "Package(s)"), fps.size());
-                updateInfo(JDL.L(JDL_PREFIX + "links", "Links(s)"), links);
-                updateInfo(JDL.L(JDL_PREFIX + "filteredlinks", "filtered Links(s)"), lgi.getFilterPackage().size());
-                updateInfo(JDL.L(JDL_PREFIX + "size", "Total size"), Formatter.formatReadable(tot));
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_packages(), fps.size());
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_links(), links);
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_filteredlinks(), lgi.getFilterPackage().size());
+                updateInfo(T._.jd_gui_swing_jdgui_views_info_LinkGrabberInfoPanel_size(), Formatter.formatReadable(tot));
                 fps.clear();
                 return null;
             }

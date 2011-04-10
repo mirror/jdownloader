@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -64,7 +66,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         delete.addActionListener(this);
         delete.setEnabled(false);
 
-        edit = new JButton(JDL.L(JDL_PREFIX + "edit", "Edit"));
+        edit = new JButton(T._.jd_plugins_optional_schedule_MainGui_edit());
         edit.addActionListener(this);
         edit.setEnabled(false);
 

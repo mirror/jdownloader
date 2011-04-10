@@ -1,0 +1,22 @@
+{
+  "plugin_optional_scheduler_add_save" : "Запамети",
+  "plugin_optional_scheduler_add_column_executions_parameter" : "Параметър",
+  "plugin_optional_scheduler_add_year" : "Година:",
+  "plugin_optional_scheduler_add_date2" : "Дата/Време",
+  "plugin_optional_scheduler_add_specific" : "Изберете интервал",
+  "jd_plugins_optional_schedule_wait" : "Изчакайте моля...",
+  "plugin_optional_scheduler_add_problem_zerorepeat" : "Броят на опитите е 0",
+  "plugin_optional_scheduler_add_once" : "Само веднъж",
+  "plugin_optional_scheduler_add_cancel" : "Откажи",
+  "plugin_optional_scheduler_add_day" : "Ден:",
+  "plugin_optional_scheduler_add_problem_emptyname" : "Името е празно",
+  "plugin_optional_scheduler_add_weekly" : "Седмично",
+  "plugin_optional_scheduler_add_minute" : "Минута:",
+  "plugin_optional_scheduler_add_problem_nochanges" : "Няма промени",
+  "plugin_optional_scheduler_add_month" : "Месец:",
+  "jd_plugins_optional_schedule_disabled" : "Изключен",
+  "jd_plugins_optional_schedule_schedule" : "Диспечер",
+  "plugin_optional_scheduler_add_column_executions_name" : "Действие",
+  "plugin_optional_scheduler_add_repeats" : "Опити",
+  "plugin_optional_scheduler_add_daily" : "Дневно"
+}

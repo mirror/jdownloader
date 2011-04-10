@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Exemplo: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Modo Raw?",
+  "gui_btn_yes" : "Sim",
+  "gui_config_routeripfinder_ready" : "IP encontrado: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importar Roteador",
+  "gui_config_jdrr_success" : "Sucesso!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Você desabilitou a checagem de IP. Este será acrescentado muito tempo para reconexão!\\r\\n\\r\\nVários módulos de  adição para gravação de reconexão foram desativados.",
+  "gui_config_jdrr_reconnectfaild" : "Falha de reconexão",
+  "gui_btn_help" : "Ajuda",
+  "gui_btn_start" : "Iniciar",
+  "gui_config_jdrr_savereconnect" : "Sucesso na reconexão, salvar agora?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "IP Roteador",
+  "gui_config_jdrr_title" : "Gravar Script de reconexão",
+  "gui_config_jdrr_status_title" : "Estado da gravação",
+  "gui_config_routeripfinder_notfound" : "Não encontrado hostname de seu router",
+  "gui_btn_no" : "Não",
+  "gui_btn_cancel" : "Cancelar",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Checagem de IP desativada!",
+  "gui_btn_abort" : "Interromper",
+  "gui_config_reconnect_selectrouter" : "Procurar modelo do Router"
+}

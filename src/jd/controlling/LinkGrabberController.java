@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+
+ import org.jdownloader.translate.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -162,11 +164,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
         });
 
-        FP_UNSORTED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.unsorted", "various"), this);
-        FP_UNCHECKED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.unchecked", "unchecked"), this);
-        FP_OFFLINE = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.offline", "offline"), this);
+        FP_UNSORTED = new LinkGrabberFilePackage(T._.gui_linkgrabber_package_unsorted(), this);
+        FP_UNCHECKED = new LinkGrabberFilePackage(T._.gui_linkgrabber_package_unchecked(), this);
+        FP_OFFLINE = new LinkGrabberFilePackage(T._.gui_linkgrabber_package_offline(), this);
         FP_OFFLINE.setIgnore(true);
-        FP_FILTERED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.filtered", "filtered"));
+        FP_FILTERED = new LinkGrabberFilePackage(T._.gui_linkgrabber_package_filtered());
         FP_FILTERED.setIgnore(true);
     }
 

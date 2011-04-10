@@ -1,0 +1,7 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JDLightTray",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "JDLightTray",
+  "plugins_trayicon_popup_bottom_simdls" : "Едновременно сваляне",
+  "plugins_trayicon_popup_bottom_speed" : "Ограничение на скоростта (КБ/с)",
+  "gui_tooltip_statusbar_speedlimiter" : "Ограничение на скоростта (КБ/с) [0 = без ограничение]"
+}

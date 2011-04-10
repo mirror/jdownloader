@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Light Tray",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Allows minimizing or closing JDownloader to the notification area, along with other related features like password protection and more.",
+  "plugins_trayicon_popup_bottom_simdls" : "Samtidige nedlastinger",
+  "plugins_trayicon_popup_bottom_speed" : "Hastighetsgrense (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Samtidige tilkoblinger",
+  "gui_tooltip_statusbar_simultan_downloads" : "Maks samtidige nedlastinger [1...20]",
+  "gui_tooltip_statusbar_speedlimiter" : "Hastighetsgrense (KiB/s) [0 = ubegrenset]",
+  "gui_tooltip_statusbar_max_chunks" : "Maks tilkoblinger per fil [1...20]"
+}

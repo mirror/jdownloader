@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
+
+ import org.jdownloader.gui.translate.*;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.linkgrabber.columns.FileColumn;
@@ -35,10 +37,10 @@ public class LinkGrabberJTableModel extends JDTableModel {
     }
 
     protected void initColumns() {
-        this.addColumn(new FileColumn(JDL.L("gui.linkgrabber.header.packagesfiles", "Package / Filename"), this));
-        this.addColumn(new SizeColumn(JDL.L("gui.treetable.header.size", "Size"), this));
-        this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Host"), this));
-        this.addColumn(new StatusColumn(JDL.L("gui.treetable.status", "Status"), this));
+        this.addColumn(new FileColumn(T._.gui_linkgrabber_header_packagesfiles(), this));
+        this.addColumn(new SizeColumn(T._.gui_treetable_header_size(), this));
+        this.addColumn(new HosterColumn(T._.gui_treetable_hoster(), this));
+        this.addColumn(new StatusColumn(T._.gui_treetable_status(), this));
     }
 
     public void refreshModel() {

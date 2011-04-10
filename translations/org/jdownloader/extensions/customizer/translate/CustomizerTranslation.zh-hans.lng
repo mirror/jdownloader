@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "请输入新设置名称:",
+  "action_customize_removesetting_ask" : "移除选定的设置(s)? (%s1 Account(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JDPackageCustomizer"
+}

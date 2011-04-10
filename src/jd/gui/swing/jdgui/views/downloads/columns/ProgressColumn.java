@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.downloads.columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.ArrayList;
@@ -57,9 +59,9 @@ public class ProgressColumn extends JDTableColumn {
         /* FIXME: wait for synthethica simple2d bugfix */
         // progress.setBorder(null);
         COL_PROGRESS_NORMAL = progress.getForeground();
-        strPluginDisabled = JDL.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
-        strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
-        strUnknownFilesize = JDL.L("jd.gui.swing.jdgui.views.downloadview.Columns.ProgressColumn.unknownFilesize", "Unknown FileSize");
+        strPluginDisabled = T._.gui_downloadlink_plugindisabled();
+        strPluginError = T._.gui_treetable_error_plugin();
+        strUnknownFilesize = T._.jd_gui_swing_jdgui_views_downloadview_Columns_ProgressColumn_unknownFilesize();
         jlr = new JRendererLabel();
         jlr.setBorder(null);
     }

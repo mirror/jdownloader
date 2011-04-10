@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Nu Updaten naar bèta?",
+  "updater_beta_rlyupdate_message" : "Wilt u updaten naar JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Toegang weigeren!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Externe verzoek van %s1 tot %s2 interface!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Toestaan!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Een externe toepassing probeert links toe te voegen. Zie logbestand voor meer informatie."
+}

@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Molimo unesi naziv za novu postavku:",
+  "action_customize_removesetting_ask" : "Ukloni odabrane postavke? (Računa:%s1)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Prilagodnik paketa",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JD Izmjena paketa"
+}

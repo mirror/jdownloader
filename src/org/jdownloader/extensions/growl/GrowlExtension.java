@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.growl;
 
+
+ import org.jdownloader.extensions.growl.translate.*;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -86,7 +88,7 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.jdgrowlnotification.description", null);
+        return T._.jd_plugins_optional_jdgrowlnotification_description();
     }
 
     @Override
@@ -120,22 +122,22 @@ public class GrowlExtension extends AbstractExtension implements ControlListener
     }
 
     public GrowlExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.jdgrowlnotification", null));
+        super(T._.jd_plugins_optional_jdgrowlnotification());
     }
 
     public void controlEvent(ControlEvent event) {
         switch (event.getEventID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
-            growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader started..."), getDateAndTime(), "Programstart");
+            growlNotification(T._.jd_plugins_optional_JDGrowlNotification_started(), getDateAndTime(), "Programstart");
             break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
-            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(JDL.L(JDL_PREFIX + "allfinished", "All downloads stopped"), "", "All downloads finished");
+            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(T._.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getCaller() instanceof PluginForHost)) return;
             DownloadLink lastLink = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getName(), "Download complete");
+                growlNotification(T._.jd_plugins_optional_JDGrowlNotification_finished(), lastLink.getName(), "Download complete");
             }
             break;
         }

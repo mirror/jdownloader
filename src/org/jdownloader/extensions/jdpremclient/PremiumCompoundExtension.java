@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.jdpremclient;
 
+
+ import org.jdownloader.extensions.jdpremclient.translate.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -52,7 +54,7 @@ public class PremiumCompoundExtension extends AbstractExtension {
     private static final HashMap<String, String> premShareHosts      = new HashMap<String, String>();
 
     public PremiumCompoundExtension() {
-        super(JDL.L("jd.plugins.optional.jdpremium.name", "JDPremium"));
+        super(T._.jd_plugins_optional_jdpremium_name());
     }
 
     private void replaceHosterPlugin(String host, String with) {

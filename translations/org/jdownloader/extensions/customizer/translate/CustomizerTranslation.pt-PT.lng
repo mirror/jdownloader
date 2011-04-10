@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Introduza o nome das novas Definições:",
+  "action_customize_removesetting_ask" : "Remover Definições seleccionadas?  (%s1 Conta(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Customizador de Pacotes",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Customizar pacotes"
+}

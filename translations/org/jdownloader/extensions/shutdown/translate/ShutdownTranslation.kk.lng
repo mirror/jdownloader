@@ -1,0 +1,21 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Сөну",
+  "gui_config_jdshutdown_forceshutdown" : "Компьютерді сөндіру (Барлық ОЖ емес)",
+  "interaction_shutdown_dialog_title_standby" : "Қалғу режимі?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Жүйе жұмысын аяқтайды!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Мәжбүрлеп сөндіру мүмкіндігін орнату (Тек Mac OSx үшін)",
+  "interaction_shutdown_dialog_title_hibernate" : "Гибернация?",
+  "interaction_shutdown_dialog_title_shutdown" : "Сөндіру?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">Бағдарлама қазір жабылады!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "ОЖ жүктеулер аяқталған соң өшірілмейді",
+  "gui_config_jdshutdown_hibernate" : "Қалғу режимі",
+  "gui_config_jdshutdown_close" : "JD жабу",
+  "gui_config_jdshutdown_standby" : "Күту режимі",
+  "gui_config_jdshutdown_osx_force_short" : "Орнату",
+  "jd_plugins_optional_jdshutdown" : "Сөну",
+  "interaction_shutdown_dialog_title_closejd" : "Бағдарламаның жұмысын аяқтау?",
+  "gui_config_jdshutdown_mode" : "Режимі:",
+  "addons_jdshutdown_statusmessage_enabled" : "Жүктеулер аяқталған соң, JDownloader ОЖ сөндіреді",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Жүйе қалғу режиміне ауысады!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Жүйе гибернация режиміне ауысады!</font></h2>"
+}

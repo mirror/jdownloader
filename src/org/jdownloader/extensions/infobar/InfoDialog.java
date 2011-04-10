@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.infobar;
 
+
+ import org.jdownloader.extensions.infobar.translate.*;
 import java.awt.DisplayMode;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -84,11 +86,11 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         prgTotal = new JDProgressBar();
         prgTotal.setStringPainted(true);
 
-        lblHelp = new JLabel(JDL.L(JDL_PREFIX + "help", "Drag'N'Drop Zone"));
+        lblHelp = new JLabel(T._.jd_plugins_optional_infobar_InfoDialog_help());
         lblHelp.setIcon(JDTheme.II("gui.images.clipboard", 16, 16));
         lblHelp.setHorizontalTextPosition(JLabel.LEADING);
         lblHelp.setHorizontalAlignment(JLabel.CENTER);
-        lblHelp.setToolTipText(JDL.L(JDL_PREFIX + "help.tooltip2", "Drop URLs, Hyperlinks or DLC files here!"));
+        lblHelp.setToolTipText(T._.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());
 
         JPanel panel = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill,200]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
@@ -179,7 +181,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            JMenuItem mi = new JMenuItem(JDL.L(JDL_PREFIX + "hideWindow", "Hide InfoBar"));
+            JMenuItem mi = new JMenuItem(T._.jd_plugins_optional_infobar_InfoDialog_hideWindow());
             mi.setIcon(JDCloseAction.getCloseIcon());
             mi.addActionListener(this);
 

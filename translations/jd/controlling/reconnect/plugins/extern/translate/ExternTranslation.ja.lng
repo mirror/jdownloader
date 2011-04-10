@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "コマンド (絶対パスを使用)",
+  "interaction_externreconnect_parameter" : "パラメーター (一行につき一つ)",
+  "interaction_externreconnect_dummybat" : "Windows 用の特別な実行ユーティリティを使用"
+}

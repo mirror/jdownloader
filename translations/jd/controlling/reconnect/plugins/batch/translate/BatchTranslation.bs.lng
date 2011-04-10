@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "Pokreni u (folderu aplikacije)",
+  "interaction_batchreconnect_batch" : "Batch Skripta",
+  "interaction_batchreconnect_terminal" : "Interpreter"
+}

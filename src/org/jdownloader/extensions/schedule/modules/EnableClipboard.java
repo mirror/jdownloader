@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.schedule.modules;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 
@@ -20,7 +22,7 @@ public class EnableClipboard implements SchedulerModuleInterface {
     }
 
     public String getTranslation() {
-        return JDL.L("jd.plugins.optional.schedule.modules.enableClipboard", "Enable Clipboard Monitoring");
+        return T._.jd_plugins_optional_schedule_modules_enableClipboard();
     }
 
     public boolean needParameter() {

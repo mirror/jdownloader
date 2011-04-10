@@ -1,0 +1,20 @@
+{
+  "gui_config_jdshutdown_shutdown" : "シャットダウン",
+  "gui_config_jdshutdown_forceshutdown" : "強制的にシャットダウン(一部の OS のみ対応)",
+  "interaction_shutdown_dialog_title_standby" : "スタンバイ状態にしますか？",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">システムはシャットダウンされます！</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "強制シャットダウンをインストール(Mac OSX のみ)",
+  "interaction_shutdown_dialog_title_hibernate" : "休止状態にしますか？",
+  "interaction_shutdown_dialog_title_shutdown" : "シャットダウンしますか？",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader は終了されます！</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "このシステムは、JDownloader でシャットダウンできません！",
+  "gui_config_jdshutdown_hibernate" : "休止状態(一部の OS のみ対応)",
+  "gui_config_jdshutdown_close" : "JDownloader を閉じる",
+  "gui_config_jdshutdown_standby" : "スタンバイ状態(一部の OS のみ対応)",
+  "gui_config_jdshutdown_osx_force_short" : "インストール",
+  "interaction_shutdown_dialog_title_closejd" : "JDownloader を終了しますか？",
+  "gui_config_jdshutdown_mode" : "モード:",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader はダウンロード完了後にシステムをシャットダウンします。",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">システムはスタンバイ モードになります！</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">システムは休止モードになります！</font></h2>"
+}

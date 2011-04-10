@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Naredba (koristi apsolutnu putanju mape)",
+  "interaction_externreconnect_parameter" : "Parametar (u svaki red po jedan parametar)",
+  "interaction_externreconnect_dummybat" : "Koristi poseban izvršitelj za windows"
+}

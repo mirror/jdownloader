@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,7 +33,7 @@ public class CopyURLAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.copyLink", "Copy URL") + " (" + links.size() + ")";
+        return T._.gui_table_contextmenu_copyLink() + " (" + links.size() + ")";
     }
 
     @Override

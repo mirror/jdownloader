@@ -1,0 +1,9 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nLozinka:  %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nAuto-lozinka: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nFinaliziran %SYSTEM.DATE% to %SYSTEM.TIME% Sat",
+  "jd_plugins_optional_jdinfofilewriter" : "JDInfo (Zapisivanje info datoteke)",
+  "plugins_optional_infofilewriter_content" : "Sadržaj:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Upotrijebi samo ako je lozinka uključena",
+  "jd_plugins_optional_jdinfofilewriter_description" : "Pisač info datoteke",
+  "plugins_optional_infofilewriter_variables" : "Dostupne promijenljive",
+  "plugins_optional_infofilewriter_filename" : "Naziv datoteke:"
+}

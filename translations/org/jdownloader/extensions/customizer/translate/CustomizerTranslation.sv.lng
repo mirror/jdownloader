@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "Skriv/Lägg till ett namn för dom nya inställningarna",
+  "action_customize_removesetting_ask" : "Radera Inställningar? (%s1 Konto(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JD Paketanpassare"
+}

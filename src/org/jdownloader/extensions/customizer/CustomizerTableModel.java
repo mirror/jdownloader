@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.customizer;
 
+
+ import org.jdownloader.extensions.customizer.translate.*;
 import java.util.ArrayList;
 
 import jd.utils.locale.JDL;
@@ -37,7 +39,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
     }
 
     protected void initColumns() {
-        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "name", "Name"), this) {
+        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_name(), this) {
 
             private static final long serialVersionUID = -8945184634371898061L;
 
@@ -57,7 +59,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new ExtCheckColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "enabled", "Enabled"), this) {
+        this.addColumn(new ExtCheckColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_enabled(), this) {
 
             private static final long serialVersionUID = -755486233284215838L;
 
@@ -82,7 +84,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "regex", "Regex"), this) {
+        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_regex(), this) {
 
             private static final long serialVersionUID = 4211754232119068701L;
 
@@ -104,10 +106,10 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             @Override
             protected String getToolTip(CustomizeSetting obj) {
                 if (obj.isRegexValid()) return super.getToolTip(obj);
-                return JDL.L(JDL_PREFIX + "regex.malformed", "Malformed Regex!");
+                return T._.jd_plugins_optional_customizer_CustomizerTableModel_regex_malformed();
             }
         });
-        this.addColumn(new ExtCheckColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "onurl", "On URL?"), this) {
+        this.addColumn(new ExtCheckColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_onurl(), this) {
 
             private static final long serialVersionUID = -755486233284215838L;
 
@@ -132,7 +134,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "packageName", "FilePackage name"), this) {
+        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_packageName(), this) {
 
             private static final long serialVersionUID = 7315104566941756777L;
 
@@ -148,7 +150,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
 
             @Override
             protected String getToolTip(CustomizeSetting obj) {
-                return JDL.L("jd.plugins.optional.customizer.columns.PackageNameColumn.toolTip", "The name of the filepackage, if the link matches the regex. Leave it empty to use the default name!");
+                return T._.jd_plugins_optional_customizer_columns_PackageNameColumn_toolTip();
             }
 
             @Override
@@ -157,8 +159,8 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new DownloadDirColumn(JDL.L(JDL_PREFIX + "downloadDir", "Download directory"), this));
-        this.addColumn(new ExtCheckColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "subDirectory", "Use SubDirectory"), this) {
+        this.addColumn(new DownloadDirColumn(T._.jd_plugins_optional_customizer_CustomizerTableModel_downloadDir(), this));
+        this.addColumn(new ExtCheckColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_subDirectory(), this) {
 
             private static final long serialVersionUID = 5660615874659705475L;
 
@@ -183,7 +185,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new ExtCheckColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "postProcessing", "Post Processing"), this) {
+        this.addColumn(new ExtCheckColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_postProcessing(), this) {
 
             private static final long serialVersionUID = -6837005675767011587L;
 
@@ -208,7 +210,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "password", "Password"), this) {
+        this.addColumn(new ExtTextEditorColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_password(), this) {
 
             private static final long serialVersionUID = 6345445804247730821L;
 
@@ -233,8 +235,8 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             }
 
         });
-        this.addColumn(new DLPriorityColumn(JDL.L(JDL_PREFIX + "dlPriority", "Download Priority"), this));
-        this.addColumn(new ExtLongColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "matchCount", "Match count from Start"), this) {
+        this.addColumn(new DLPriorityColumn(T._.jd_plugins_optional_customizer_CustomizerTableModel_dlPriority(), this));
+        this.addColumn(new ExtLongColumn<CustomizeSetting>(T._.jd_plugins_optional_customizer_CustomizerTableModel_matchCount(), this) {
 
             private static final long serialVersionUID = -8673582883080206266L;
 

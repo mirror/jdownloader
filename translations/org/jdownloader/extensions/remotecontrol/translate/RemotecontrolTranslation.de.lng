@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Fernbedienung",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 auf Port %s2 gestartet\\r\\nhttp://127.0.0.1:%s3\\n/help für Entwicklerinformationen",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 angehalten",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Fernbedienung"
+}

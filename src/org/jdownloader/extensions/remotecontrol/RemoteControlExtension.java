@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.remotecontrol;
 
+
+ import org.jdownloader.extensions.remotecontrol.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -63,7 +65,7 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
     }
 
     public RemoteControlExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.remotecontrol.jdremotecontrol", null));
+        super(T._.jd_plugins_optional_remotecontrol_jdremotecontrol());
         subConfig = getPluginConfig();
 
     }
@@ -81,10 +83,10 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
             if (activate.isSelected()) {
                 server = initServer();
                 if (server != null) server.start();
-                UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.remotecontrol.startedonport2", "%s started on port %s\nhttp://127.0.0.1:%s\n/help for Developer Information.", getName(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_startedonport2( getName(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
             } else {
                 if (server != null) server.sstop();
-                UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.remotecontrol.stopped2", "%s stopped.", getName()));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_remotecontrol_stopped2( getName()));
             }
         } catch (Exception ex) {
             JDLogger.exception(ex);
@@ -126,8 +128,8 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
     @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500, 1).setDefaultValue(10025));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_LOCALHOST, JDL.L("plugins.optional.RemoteControl.localhost", "localhost only?")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, T._.plugins_optional_RemoteControl_port(), 1000, 65500, 1).setDefaultValue(10025));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_LOCALHOST, T._.plugins_optional_RemoteControl_localhost()).setDefaultValue(false));
 
     }
 
@@ -143,7 +145,7 @@ public class RemoteControlExtension extends AbstractExtension implements ActionL
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.remotecontrol.jdremotecontrol.description", null);
+        return T._.jd_plugins_optional_remotecontrol_jdremotecontrol_description();
     }
 
     @Override

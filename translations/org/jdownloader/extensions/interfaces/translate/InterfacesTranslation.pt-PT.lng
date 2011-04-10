@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Actualizar para BETA agora?",
+  "updater_beta_rlyupdate_message" : "Deseja actualizar para JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Negar acesso!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Pedido externo de %s1 para interface %s2!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Permitir!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Uma aplicação externa tentou addicionar um endereço. Veja Diário para mais detalhes."
+}

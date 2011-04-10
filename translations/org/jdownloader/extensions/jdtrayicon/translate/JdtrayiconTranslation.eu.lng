@@ -1,0 +1,7 @@
+{
+  "plugins_trayicon_popup_bottom_simdls" : "Baterako deskargak",
+  "plugins_trayicon_popup_bottom_speed" : "Abiadura muga (KiB/s)",
+  "gui_tooltip_statusbar_simultan_downloads" : "Deskargak batera gehienez [1...20]",
+  "gui_tooltip_statusbar_speedlimiter" : "Abiadura muga (KiB/s) [0 = mugagabea]",
+  "gui_tooltip_statusbar_max_chunks" : "Gehienezko konexioak artxiboko [1...20]"
+}

@@ -1,0 +1,7 @@
+{
+  "sys_warning_loguploadfailed" : "Η αποστολή του Αρχείου Σφαλμάτων απέτυχε!",
+  "jd_plugins_optional_jdchat_newmessage" : "Νέο μήνυμα από %s1:<hr> %s2",
+  "plugins_optional_jdchat_enternick" : "Το επιθυμητό ψευδώνυμό σας;",
+  "jd_plugins_optional_jdchat_jdchat" : "Συζήτηση",
+  "plugin_optional_jdchat_getlog" : "Ο %s1 χρειάζεται ένα αρχείο σφαλμάτων για να λύσει το πρόβλημα. Συμφωνείτε να του στείλετε το Αρχείο Σφαλμάτων;"
+}

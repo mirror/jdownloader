@@ -1,0 +1,16 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Söndür",
+  "interaction_shutdown_dialog_title_standby" : "Gözləmə rejimi?",
+  "gui_config_jdshutdown_forceshutdown" : "Sönməyə Məcbur Et (Bütün Əməliyyat Sistemləri üçün deyil)",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Sistem söndürüləcək!</font></h2>",
+  "interaction_shutdown_dialog_title_hibernate" : "Mürgüləmə?",
+  "interaction_shutdown_dialog_title_shutdown" : "Söndürülsün?",
+  "addons_jdshutdown_statusmessage_disabled" : "Sistem JDownloader tərəfindən söndürülMƏyəcək",
+  "gui_config_jdshutdown_hibernate" : "Mürgüləmə (Bütün Əməliyyat Sistemləri üçün deyil)",
+  "gui_config_jdshutdown_standby" : "Gözləmə Rejimi (Bütün Əməliyyat Sistemi üçün deyil)",
+  "jd_plugins_optional_jdshutdown" : "JD Söndürmə",
+  "gui_config_jdshutdown_mode" : "Rejim:",
+  "addons_jdshutdown_statusmessage_enabled" : "Endirmə tamamlandıqdan sonra JDownloader Sisteminizis söndürəcək",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Sistem yuxu rejiminə keçiriləcək!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Sistem mürgüləmə rejiminə keçiriləcək!</font></h2>"
+}

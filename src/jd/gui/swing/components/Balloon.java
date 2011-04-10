@@ -16,6 +16,8 @@
 
 package jd.gui.swing.components;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
@@ -125,7 +127,7 @@ public class Balloon {
 
                 final JLabel lblTitle = new JLabel(title);
                 lblTitle.setIcon(new ImageIcon(JDImage.getImage("logo/logo_16_16")));
-                lblTitle.setToolTipText(JDL.L("jd.gui.swing.components.Balloon.toolTip", "Click here to close this Balloon and open JD"));
+                lblTitle.setToolTipText(T._.jd_gui_swing_components_Balloon_toolTip());
                 lblTitle.addMouseListener(new JDMouseAdapter() {
                     @Override
                     public void mouseClicked(final MouseEvent e) {

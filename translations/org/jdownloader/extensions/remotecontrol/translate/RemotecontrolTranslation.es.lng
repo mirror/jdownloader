@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Control Remoto",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 iniciado en el puerto %s2\\nhttp://127.0.0.1:%s3\\n/help para informacion de desarrolladores.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 detenido.",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Control Remoto"
+}

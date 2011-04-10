@@ -16,6 +16,8 @@
 
 package jd.captcha.easy;
 
+
+ import jd.captcha.translate.*;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -62,14 +64,14 @@ public class EasyCaptchaTool {
             public Object runSave() {
                 final JDialog cHosterDialog = new JDialog(ownerFrame);
                 cHosterDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                cHosterDialog.setTitle(JDL.L("easycaptcha.tool.mothodedialog.title", "EasyCaptcha Methodes"));
+                cHosterDialog.setTitle(T._.easycaptcha_tool_mothodedialog_title());
                 cHosterDialog.setModal(true);
                 cHosterDialog.setAlwaysOnTop(true);
                 Box box = new Box(BoxLayout.Y_AXIS);
 
                 JPanel pa = new JPanel(new GridLayout(2, 1));
 
-                pa.add(new JLabel(JDL.L("easycaptcha.tool.mothodedialog.selectmethode", "select the methode:")));
+                pa.add(new JLabel(T._.easycaptcha_tool_mothodedialog_selectmethode()));
                 EasyMethodFile[] paths = EasyMethodFile.getMethodeList();
 
                 final JComboBox combox = new JComboBox(paths);
@@ -78,7 +80,7 @@ public class EasyCaptchaTool {
                 pa.add(combox);
                 box.add(pa);
                 pa = new JPanel(new GridLayout(1, 2));
-                JButton ok = new JButton(JDL.L("gui.btn_ok", "OK"));
+                JButton ok = new JButton(T._.gui_btn_ok());
                 pa.add(ok);
                 ok.addActionListener(new ActionListener() {
 
@@ -92,7 +94,7 @@ public class EasyCaptchaTool {
                     }
                 });
 
-                JButton cancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
+                JButton cancel = new JButton(T._.gui_btn_cancel());
                 pa.add(cancel);
                 cancel.addActionListener(new ActionListener() {
 
@@ -120,10 +122,10 @@ public class EasyCaptchaTool {
                 final EasyMethodFile ef = new EasyMethodFile();
                 final JDialog dialog = new JDialog(ownerFrame);
                 dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                dialog.setTitle(JDL.L("easycaptcha.tool.title", "EasyCaptcha"));
+                dialog.setTitle(T._.easycaptcha_tool_title());
                 dialog.setModal(true);
                 JPanel box = new JPanel(new GridLayout(3, 1));
-                JButton btcs = new JButton(JDL.L("easycaptcha.tool.continuelastsession", "Continue Last Session"));
+                JButton btcs = new JButton(T._.easycaptcha_tool_continuelastsession());
                 final EasyMethodFile lastEF = (EasyMethodFile) config.getProperty(CONFIG_LASTSESSION, null);
                 if (lastEF == null) btcs.setEnabled(false);
                 btcs.addActionListener(new ActionListener() {
@@ -139,7 +141,7 @@ public class EasyCaptchaTool {
                     }
                 });
                 box.add(btcs);
-                JButton btl = new JButton(JDL.L("easycaptcha.tool.loadmethode", "Load Methode"));
+                JButton btl = new JButton(T._.easycaptcha_tool_loadmethode());
                 btl.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
@@ -152,7 +154,7 @@ public class EasyCaptchaTool {
                 });
 
                 box.add(btl);
-                JButton btc = new JButton(JDL.L("easycaptcha.tool.createmethode", "Create Methode"));
+                JButton btc = new JButton(T._.easycaptcha_tool_createmethode());
                 btc.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
@@ -161,19 +163,19 @@ public class EasyCaptchaTool {
                                 final JDialog cHosterDialog = new JDialog(ownerFrame);
                                 cHosterDialog.setAlwaysOnTop(true);
                                 cHosterDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                                cHosterDialog.setTitle(JDL.L("easycaptcha.tool.title", "EasyCaptcha"));
+                                cHosterDialog.setTitle(T._.easycaptcha_tool_title());
                                 cHosterDialog.setModal(true);
                                 JPanel box = new JPanel(new GridLayout(4, 2));
                                 final JTextField tfHoster = new JTextField();
-                                box.add(new JLabel(JDL.L("gui.column_host", "Host") + ":"));
+                                box.add(new JLabel(T._.gui_column_host() + ":"));
                                 box.add(tfHoster);
                                 final JTextField tfAuthor = new JTextField(config.getStringProperty(CONFIG_AUTHOR, "JDTeam"));
-                                box.add(new JLabel(JDL.L("gui.config.jac.column.author", "Author") + ":"));
+                                box.add(new JLabel(T._.gui_config_jac_column_author() + ":"));
                                 box.add(tfAuthor);
                                 final JSpinner spMaxLetters = new JSpinner(new SpinnerNumberModel(4, 1, 40, 1));
-                                box.add(new JLabel(JDL.L("easycaptcha.tool.maxletternum", "Maximal number of letters") + ":"));
+                                box.add(new JLabel(T._.easycaptcha_tool_maxletternum() + ":"));
                                 box.add(spMaxLetters);
-                                JButton ok = new JButton(JDL.L("gui.btn_ok", "OK"));
+                                JButton ok = new JButton(T._.gui_btn_ok());
                                 box.add(ok);
                                 ok.addActionListener(new ActionListener() {
 
@@ -187,11 +189,11 @@ public class EasyCaptchaTool {
                                             CreateHoster.create(new EasyMethodFile("easycaptcha"), ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
 
                                         } else {
-                                            JOptionPane.showConfirmDialog(null, JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+                                            JOptionPane.showConfirmDialog(null, T._.easycaptcha_tool_warning_hostnamemissing(), T._.easycaptcha_tool_warning_hostnamemissing(), JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
                                         }
                                     }
                                 });
-                                JButton cancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
+                                JButton cancel = new JButton(T._.gui_btn_cancel());
                                 box.add(cancel);
                                 cancel.addActionListener(new ActionListener() {
 
@@ -272,9 +274,9 @@ public class EasyCaptchaTool {
             }
         });
         dialog.setLocation(Screen.getCenterOfComponent(ownerFrame, dialog));
-        dialog.setTitle(JDL.L("easycaptcha.tool.title", "EasyCaptcha"));
+        dialog.setTitle(T._.easycaptcha_tool_title());
         final JPanel box = new JPanel(new GridLayout(5, 1));
-        final JButton btnTrain = new JButton(JDL.L("easycaptcha.tool.btn.train", "Train"));
+        final JButton btnTrain = new JButton(T._.easycaptcha_tool_btn_train());
         btnTrain.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -286,7 +288,7 @@ public class EasyCaptchaTool {
             }
         });
         box.add(btnTrain);
-        JButton btnShowLetters = new JButton(JDL.L("easycaptcha.tool.btn.letterdb", "Show Letter Database"));
+        JButton btnShowLetters = new JButton(T._.easycaptcha_tool_btn_letterdb());
         btnShowLetters.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -301,7 +303,7 @@ public class EasyCaptchaTool {
             }
         });
         box.add(btnShowLetters);
-        final JButton btnColorTrainer = new JButton(JDL.L("easycaptcha.tool.btn.colortrainer", "Train Colors"));
+        final JButton btnColorTrainer = new JButton(T._.easycaptcha_tool_btn_colortrainer());
         btnColorTrainer.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -317,7 +319,7 @@ public class EasyCaptchaTool {
             }
         });
         box.add(btnColorTrainer);
-        final JButton btnBackGround = new JButton(JDL.L("easycaptcha.tool.btn.background", "Remove Backgrounds"));
+        final JButton btnBackGround = new JButton(T._.easycaptcha_tool_btn_background());
         btnBackGround.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -332,7 +334,7 @@ public class EasyCaptchaTool {
             }
         });
         box.add(btnBackGround);
-        JButton btnColorLoadCaptchas = new JButton(JDL.L("easycaptcha.tool.btn.loadcaptchas", "Load Captchas"));
+        JButton btnColorLoadCaptchas = new JButton(T._.easycaptcha_tool_btn_loadcaptchas());
         btnColorLoadCaptchas.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

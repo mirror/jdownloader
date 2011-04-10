@@ -16,6 +16,8 @@
 
 package jd.captcha.easy;
 
+
+ import jd.captcha.translate.*;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -104,7 +106,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
         final File folder2 = this.getCaptchaFolder();
         if (showLoadDialog) {
             if (!folder2.exists() || folder2.list().length < 1) {
-                final int res = UserIO.getInstance().requestConfirmDialog(0, JDL.L("easycaptcha.loadcaptchas.title", "Load Captchas"), JDL.L("easycaptcha.needCaptchas", "You need Captchas first!"), null, JDL.L("easycaptcha.openCaptchaFolder", "Open Captcha Folder"), JDL.L("easycaptcha.loadcaptchas", "Load Captchas"));
+                final int res = UserIO.getInstance().requestConfirmDialog(0, T._.easycaptcha_loadcaptchas_title(), T._.easycaptcha_needCaptchas(), null, T._.easycaptcha_openCaptchaFolder(), T._.easycaptcha_loadcaptchas());
                 if (JDFlags.hasSomeFlags(res, UserIO.RETURN_OK)) {
                     folder2.mkdir();
                     this.openCaptchaFolder();

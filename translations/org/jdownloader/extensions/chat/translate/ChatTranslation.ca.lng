@@ -1,0 +1,7 @@
+{
+  "sys_warning_loguploadfailed" : "Càrrega del fitxer de registre fallida!",
+  "jd_plugins_optional_jdchat_newmessage" : "Nou missatge de %s1:<hr> %s2",
+  "plugins_optional_jdchat_enternick" : "Nom d’usuari desitjat?",
+  "jd_plugins_optional_jdchat_jdchat" : "JDChat",
+  "plugin_optional_jdchat_getlog" : "%s1 necessita un registre (log) Per resoldre el problema. Enviar el registre?"
+}

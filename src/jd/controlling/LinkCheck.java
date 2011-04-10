@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+
+ import org.jdownloader.translate.*;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -174,7 +176,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             public void run() {
                 setName("OnlineCheck");
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.START));
-                pc = new ProgressController(JDL.L("gui.linkgrabber.pc.onlinecheck", "Checking online availability..."), null);
+                pc = new ProgressController(T._.gui_linkgrabber_pc_onlinecheck(), null);
                 pc.getBroadcaster().addListener(LinkCheck.getLinkChecker());
                 pc.setRange(0);
                 while (linksToCheck.size() != 0) {
@@ -267,7 +269,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         if (checkThread != null && checkThread.isAlive()) {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    pc.setStatusText(pc.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
+                    pc.setStatusText(pc.getStatusText() + ": " + T._.gui_linkgrabber_aborted());
                     pc.doFinalize(5000l);
                 }
             });

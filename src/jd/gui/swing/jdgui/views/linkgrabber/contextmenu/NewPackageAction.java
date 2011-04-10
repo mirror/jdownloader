@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -32,7 +34,7 @@ public class NewPackageAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.newpackage", "Move into new Package") + " (" + links.size() + ")";
+        return T._.gui_table_contextmenu_newpackage() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -40,7 +42,7 @@ public class NewPackageAction extends ContextMenuAction {
 
         LinkGrabberFilePackage fp = controller.getFPwithLink(links.get(0));
 
-        String newName = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+        String newName = UserIO.getInstance().requestInputDialog(0, T._.gui_linklist_newpackage_message(), fp.getName());
         if (newName == null) return;
 
         LinkGrabberFilePackage nfp = new LinkGrabberFilePackage(newName, controller);

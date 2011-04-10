@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.log;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.controlling.GarbageController;
@@ -83,12 +85,12 @@ public class LogView extends ClosableView {
 
     @Override
     public String getTitle() {
-        return JDL.L(IDENT_PREFIX + "tab.title", "Log");
+        return T._.jd_gui_swing_jdgui_views_log_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(IDENT_PREFIX + "tab.tooltip", "See or Upload the Log");
+        return T._.jd_gui_swing_jdgui_views_log_tab_tooltip();
     }
 
     @Override

@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+
+ import org.jdownloader.translate.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -669,7 +671,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         /* wait till all downloads are stopped */
         int waitStop = DownloadWatchDog.this.activeDownloads.get();
         if (waitStop > 0) {
-            final ProgressController progress = new ProgressController(JDL.LF(DownloadWatchDog.JDL_PREFIX + "stopping", "Stopping all downloads %s", waitStop), waitStop, null);
+            final ProgressController progress = new ProgressController(T._.jd_controlling_DownloadWatchDog_stopping( waitStop), waitStop, null);
             try {
                 while (true) {
                     boolean alive = true;
@@ -784,20 +786,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (entry instanceof DownloadLink) {
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
-                    stopMark.setToolTipText(JDL.LF(DownloadWatchDog.JDL_PREFIX + "stopmark.downloadlink", "Stopmark is set on Downloadlink: %s", ((DownloadLink) entry).getName()));
+                    stopMark.setToolTipText(T._.jd_controlling_DownloadWatchDog_stopmark_downloadlink( ((DownloadLink) entry).getName()));
                     DownloadController.getInstance().fireDownloadLinkUpdate(entry);
                 } else if (entry instanceof FilePackage) {
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
-                    stopMark.setToolTipText(JDL.LF(DownloadWatchDog.JDL_PREFIX + "stopmark.filepackage", "Stopmark is set on Filepackage: %s", ((FilePackage) entry).getName()));
+                    stopMark.setToolTipText(T._.jd_controlling_DownloadWatchDog_stopmark_filepackage( ((FilePackage) entry).getName()));
                     DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) entry).get(0));
                 } else if (entry == STOPMARK.HIDDEN) {
                     stopMark.setSelected(true);
                     stopMark.setEnabled(true);
-                    stopMark.setToolTipText(JDL.L(DownloadWatchDog.JDL_PREFIX + "stopmark.set", "Stopmark is still set!"));
+                    stopMark.setToolTipText(T._.jd_controlling_DownloadWatchDog_stopmark_set());
                 } else if (entry == STOPMARK.NONE) {
                     stopMark.setSelected(false);
-                    stopMark.setToolTipText(JDL.L("jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
+                    stopMark.setToolTipText(T._.jd_gui_swing_jdgui_actions_actioncontroller_toolbar_control_stopmark_tooltip());
                 }
                 /* refresh old stopmark */
                 if (oldStopMark instanceof DownloadLink) {
@@ -1069,7 +1071,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* wait till all downloads are stopped */
                         int waitStop = DownloadWatchDog.this.activeDownloads.get();
                         if (waitStop > 0) {
-                            final ProgressController progress = new ProgressController(JDL.LF(DownloadWatchDog.JDL_PREFIX + "stopping", "Stopping all downloads %s", waitStop), waitStop, null);
+                            final ProgressController progress = new ProgressController(T._.jd_controlling_DownloadWatchDog_stopping( waitStop), waitStop, null);
                             try {
                                 while (true) {
                                     if ((waitStop = DownloadWatchDog.this.activeDownloads.get()) == 0) break;

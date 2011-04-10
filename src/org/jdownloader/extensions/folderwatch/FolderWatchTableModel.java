@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.folderwatch;
 
+
+ import org.jdownloader.extensions.folderwatch.translate.*;
 import java.util.ArrayList;
 
 import org.jdownloader.extensions.folderwatch.columns.FilenameColumn;
@@ -39,10 +41,10 @@ public class FolderWatchTableModel extends JDTableModel {
 
     @Override
     protected void initColumns() {
-        this.addColumn(new FilenameColumn(JDL.L(JDL_PREFIX + "filename", "Filename"), this));
-        this.addColumn(new FiletypeColumn(JDL.L(JDL_PREFIX + "filetype", "Container type"), this));
-        this.addColumn(new FilepathColumn(JDL.L(JDL_PREFIX + "filepath", "Path"), this));
-        this.addColumn(new ImportdateColumn(JDL.L(JDL_PREFIX + "importdate", "Import date"), this));
+        this.addColumn(new FilenameColumn(T._.jd_plugins_optional_folderwatch_tablemodel_filename(), this));
+        this.addColumn(new FiletypeColumn(T._.jd_plugins_optional_folderwatch_tablemodel_filetype(), this));
+        this.addColumn(new FilepathColumn(T._.jd_plugins_optional_folderwatch_tablemodel_filepath(), this));
+        this.addColumn(new ImportdateColumn(T._.jd_plugins_optional_folderwatch_tablemodel_importdate(), this));
     }
 
     @Override

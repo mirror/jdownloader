@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD Light Tray",
+  "plugins_trayicon_popup_bottom_simdls" : "Flera nerladdningar",
+  "plugins_trayicon_popup_bottom_speed" : "Fartbegränsning(Kbit/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Samtidiga anslutningar",
+  "gui_tooltip_statusbar_simultan_downloads" : "Max simultana nerladdningar",
+  "gui_tooltip_statusbar_speedlimiter" : "Fartbegränsning(KiB/s) [0:obegränsad]",
+  "gui_tooltip_statusbar_max_chunks" : "Max anslutningar per fil"
+}

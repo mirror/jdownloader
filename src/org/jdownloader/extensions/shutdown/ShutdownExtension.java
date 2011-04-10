@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.shutdown;
 
+
+ import org.jdownloader.extensions.shutdown.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -69,8 +71,8 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
     }
 
     public ShutdownExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.jdshutdown", null));
-        MODES_AVAIL = new String[] { JDL.L("gui.config.jdshutdown.shutdown", "Shutdown"), JDL.L("gui.config.jdshutdown.standby", "Standby (Not for all OS)"), JDL.L("gui.config.jdshutdown.hibernate", "Hibernate (Not for all OS)"), JDL.L("gui.config.jdshutdown.close", "Close JD") };
+        super(T._.jd_plugins_optional_jdshutdown());
+        MODES_AVAIL = new String[] { T._.gui_config_jdshutdown_shutdown(), T._.gui_config_jdshutdown_standby(), T._.gui_config_jdshutdown_hibernate(), T._.gui_config_jdshutdown_close() };
         shutdownEnabled = getPluginConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
     }
 
@@ -348,9 +350,9 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
             case 0:
                 /* try to shutdown */
                 logger.info("ask user about shutdown");
-                message = JDL.L("interaction.shutdown.dialog.msg.shutdown", "<h2><font color=\"red\">System will be shut down!</font></h2>");
+                message = T._.interaction_shutdown_dialog_msg_shutdown();
                 UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title.shutdown", "Shutdown?"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, T._.interaction_shutdown_dialog_title_shutdown(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -360,9 +362,9 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
             case 1:
                 /* try to standby */
                 logger.info("ask user about standby");
-                message = JDL.L("interaction.shutdown.dialog.msg.standby", "<h2><font color=\"red\">System will be put into standby mode!</font></h2>");
+                message = T._.interaction_shutdown_dialog_msg_standby();
                 UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title.standby", "Standby?"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, T._.interaction_shutdown_dialog_title_standby(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -372,9 +374,9 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
             case 2:
                 /* try to hibernate */
                 logger.info("ask user about hibernate");
-                message = JDL.L("interaction.shutdown.dialog.msg.hibernate", "<h2><font color=\"red\">System will be put into hibernate mode!</font></h2>");
+                message = T._.interaction_shutdown_dialog_msg_hibernate();
                 UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title.hibernate", "Hibernate?"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, T._.interaction_shutdown_dialog_title_hibernate(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -384,9 +386,9 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
             case 3:
                 /* try to close */
                 logger.info("ask user about closing");
-                message = JDL.L("interaction.shutdown.dialog.msg.closejd", "<h2><font color=\"red\">JDownloader will be closed!</font></h2>");
+                message = T._.interaction_shutdown_dialog_msg_closejd();
                 UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title.closejd", "Close JD?"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, T._.interaction_shutdown_dialog_title_closejd(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -435,9 +437,9 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
                 this.setActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         if (shutdownEnabled) {
-                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("addons.jdshutdown.statusmessage.enabled", "JDownloader will shut down your System after downloads finished."));
+                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, T._.addons_jdshutdown_statusmessage_enabled());
                         } else {
-                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("addons.jdshutdown.statusmessage.disabled", "The System will NOT be shut down by JDownloader."));
+                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, T._.addons_jdshutdown_statusmessage_disabled());
                         }
                     }
                 });
@@ -460,9 +462,9 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
         JSonWrapper subConfig = getPluginConfig();
 
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, JDL.L("gui.config.jdshutdown.enabledOnStart", "Enabled on Start")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, JDL.L("gui.config.jdshutdown.mode", "Mode:")).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Force Shutdown (Not for all OS)")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, T._.gui_config_jdshutdown_enabledOnStart()).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, T._.gui_config_jdshutdown_mode()).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, T._.gui_config_jdshutdown_forceshutdown()).setDefaultValue(false));
 
         /* enable force shutdown for Mac OSX */
         if (OSDetector.isMac()) {
@@ -486,7 +488,7 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
                     }
                 }
 
-            }, JDL.L("gui.config.jdshutdown.osx.force.short", "Install"), JDL.L("gui.config.jdshutdown.osx.force.long", "Install Force Shutdown (only Mac OSX)"), null));
+            }, T._.gui_config_jdshutdown_osx_force_short(), T._.gui_config_jdshutdown_osx_force_long(), null));
         }
     }
 
@@ -502,7 +504,7 @@ public class ShutdownExtension extends AbstractExtension implements ControlListe
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.jdshutdown.description", null);
+        return T._.jd_plugins_optional_jdshutdown_description();
     }
 
     @Override

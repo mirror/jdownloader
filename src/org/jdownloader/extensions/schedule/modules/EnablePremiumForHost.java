@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import java.util.ArrayList;
 
 import jd.controlling.AccountController;
@@ -45,7 +47,7 @@ public class EnablePremiumForHost implements SchedulerModuleInterface {
     }
 
     public String getTranslation() {
-        return JDL.L("jd.plugins.optional.schedule.modules.enablePremiumForHost", "Enable Premium for specific Host");
+        return T._.jd_plugins_optional_schedule_modules_enablePremiumForHost();
     }
 
     public boolean needParameter() {

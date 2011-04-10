@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.JMenu;
 
 import jd.gui.swing.jdgui.menu.actions.AboutAction;
@@ -29,7 +31,7 @@ public class AboutMenu extends JMenu {
     private static final long serialVersionUID = 1899581616146592295L;
 
     public AboutMenu() {
-        super(JDL.L("gui.menu.about", "About"));
+        super(T._.gui_menu_about());
 
         this.add(new LogAction());
         this.addSeparator();

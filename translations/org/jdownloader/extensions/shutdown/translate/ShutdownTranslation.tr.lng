@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Bilgisayarı Kapat",
+  "gui_config_jdshutdown_forceshutdown" : "Sistem kapatmayı zorla (Bazı sistemler için)",
+  "interaction_shutdown_dialog_title_standby" : "Beklemede/Uyku Modu?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Sisteminiz kapatılacak!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Sistem Kapatma'yı Zorla'yı Yükle (sadece Mac OSX)",
+  "interaction_shutdown_dialog_title_hibernate" : "Hazırda Bekleme/Hibernasyon?",
+  "interaction_shutdown_dialog_title_shutdown" : "Sistemi Kapat?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader Kapatılacak!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Tüm indirmeler bittiğinde ya da durdurulduğunda sisteminiz kapatılmayacak !",
+  "gui_config_jdshutdown_hibernate" : "Hazırda Beklet/ Hibernasyon (Her işletim sisteminde çalışmaz)",
+  "gui_config_jdshutdown_close" : "JDownloader'ı Kapat",
+  "gui_config_jdshutdown_standby" : "Beklemede/Uyku Modu (Her işletim sisteminde çalışmaz)",
+  "gui_config_jdshutdown_osx_force_short" : "Yükle",
+  "jd_plugins_optional_jdshutdown" : "Sistem Kapatma",
+  "interaction_shutdown_dialog_title_closejd" : "JDownloader'ı Kapat?",
+  "gui_config_jdshutdown_mode" : "Mod:",
+  "addons_jdshutdown_statusmessage_enabled" : "Tüm indirmeler bittiğinde ya da durdurulduğunda sisteminiz KAPATILACAK!",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Sisteminiz Bekleme/Uyku moduna geçirilecek!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Sisteminiz Hazırda Bekleme/Hibernasyon Moduna Geçirilecek!</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "Sistem Kapatma"
+}

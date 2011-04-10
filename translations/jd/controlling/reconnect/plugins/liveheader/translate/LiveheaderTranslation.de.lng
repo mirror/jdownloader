@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Beispiel: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Rohmodus?",
+  "gui_btn_yes" : "Ja",
+  "gui_config_routeripfinder_ready" : "IP gefunden: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Router importieren",
+  "gui_config_jdrr_success" : "Erfolgreich!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\\r\\n\\r\\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.",
+  "gui_config_jdrr_reconnectfaild" : "Reconnect fehlgeschlagen",
+  "gui_btn_help" : "Hilfe",
+  "gui_btn_start" : "Start",
+  "gui_config_jdrr_savereconnect" : "Der Reconnect war erfolgreich möchten sie jetzt speichern?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "Router-IP",
+  "gui_config_jdrr_title" : "Reconnect Recorder",
+  "gui_config_jdrr_status_title" : "RRStatus",
+  "gui_config_routeripfinder_notfound" : "Konnte den Router Hostnamen nicht finden",
+  "gui_btn_no" : "Nein",
+  "gui_btn_cancel" : "Abbrechen",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP Prüfung abgeschaltet!",
+  "gui_btn_abort" : "Abbrechen",
+  "gui_config_reconnect_selectrouter" : "Router Modell suchen"
+}

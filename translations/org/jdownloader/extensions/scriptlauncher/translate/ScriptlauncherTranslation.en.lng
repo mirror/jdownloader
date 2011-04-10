@@ -1,0 +1,4 @@
+{
+  "jd_plugins_optional_scriptlauncher_jdscriptlauncher_description" : "Allows you to execute shell/bash scripts or other executable files out of the menu bar.\\r\\nAll scripts or symbolic links must be placed in the \"scripts\"-folder in JD's root.",
+  "jd_plugins_optional_scriptlauncher_jdscriptlauncher" : "Script Launcher"
+}

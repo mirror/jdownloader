@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import jd.controlling.DownloadWatchDog;
 import jd.utils.locale.JDL;
 
@@ -36,7 +38,7 @@ public class UnPauseDownloads implements SchedulerModuleInterface {
     }
 
     public String getTranslation() {
-        return JDL.L("jd.plugins.optional.schedule.modules.unpauseDownloads", "Unpause Downloads");
+        return T._.jd_plugins_optional_schedule_modules_unpauseDownloads();
     }
 
     public boolean needParameter() {

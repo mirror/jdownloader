@@ -25,6 +25,8 @@
 
 package jd.gui.swing;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.KeyEvent;
 
 import javax.swing.KeyStroke;
@@ -66,35 +68,35 @@ public class ShortCuts {
 
         if ((modifiers & KeyEvent.CTRL_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(JDL.L(JDL_PREFIX + "key.ctrl", "ctrl"));
+            buf.append(T._.jd_gui_swing_ShortCuts_key_ctrl());
         }
         if ((modifiers & KeyEvent.META_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(JDL.L(JDL_PREFIX + "key.meta", "meta"));
+            buf.append(T._.jd_gui_swing_ShortCuts_key_meta());
         }
         if ((modifiers & KeyEvent.ALT_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(JDL.L(JDL_PREFIX + "key.alt", "alt"));
+            buf.append(T._.jd_gui_swing_ShortCuts_key_alt());
         }
         if ((modifiers & KeyEvent.ALT_GRAPH_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(JDL.L(JDL_PREFIX + "key.altGr", "alt Gr"));
+            buf.append(T._.jd_gui_swing_ShortCuts_key_altGr());
         }
         if ((modifiers & KeyEvent.SHIFT_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(JDL.L(JDL_PREFIX + "key.shift", "shift"));
+            buf.append(T._.jd_gui_swing_ShortCuts_key_shift());
         }
         if ((modifiers & KeyEvent.BUTTON1_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(JDL.L(JDL_PREFIX + "key.button1", "button1"));
+            buf.append(T._.jd_gui_swing_ShortCuts_key_button1());
         }
         if ((modifiers & KeyEvent.BUTTON2_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(JDL.L(JDL_PREFIX + "key.button2", "button2"));
+            buf.append(T._.jd_gui_swing_ShortCuts_key_button2());
         }
         if ((modifiers & KeyEvent.BUTTON3_DOWN_MASK) != 0) {
             if (buf.length() > 0) buf.append('+');
-            buf.append(JDL.L(JDL_PREFIX + "key.button3", "button3"));
+            buf.append(T._.jd_gui_swing_ShortCuts_key_button3());
         }
 
         return buf.toString();

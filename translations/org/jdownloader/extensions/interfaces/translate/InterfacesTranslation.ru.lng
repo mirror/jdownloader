@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Обновить до бета версии?",
+  "updater_beta_rlyupdate_message" : "Обновить программу до версии %s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Запретить доступ",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Внешний запрос от %s1  к %s2 интерфейсу",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Разрешить это!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Внешнее приложение пытается добавить ссылки. Смотрите подробности в журнале"
+}

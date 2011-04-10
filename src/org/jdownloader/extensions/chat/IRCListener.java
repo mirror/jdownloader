@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.chat;
 
+
+ import org.jdownloader.extensions.chat.translate.*;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -110,7 +112,7 @@ class IRCListener implements IRCEventListener {
     public void onNotice(final String target, final IRCUser u, final String msg) {
         // logger.info(target + "> " + u.getNick() + " (notice): " + msg);
         if (u.getNick() == null) {
-            // owner.addToText(JDChat.COLOR_NOTICE,"System" + " (notice): " +
+            // owner.addToText(JDChat.COLOR_NOTICE,"System (notice): " +
             // Utils.prepareMsg(msg));
         } else {
             this.owner.addToText(null, ChatExtension.STYLE_NOTICE, u.getNick() + " (notice): " + Utils.prepareMsg(msg));
@@ -148,11 +150,11 @@ class IRCListener implements IRCEventListener {
             new Thread(new Runnable() {
 
                 public void run() {
-                    if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, JDL.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name))) {
+                    if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, T._.plugin_optional_jdchat_getlog( user.name))) {
 
                         final String url = Upload.toJDownloader(JDLogger.getLog(), "JDChatuser:\r\n\r\n" + IRCListener.this.owner.getNick());
                         if (url == null) {
-                            UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.loguploadfailed", "Upload of logfile failed!"));
+                            UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, T._.sys_warning_loguploadfailed());
                         } else {
                             IRCListener.this.owner.sendMessage(user.name, url);
                         }

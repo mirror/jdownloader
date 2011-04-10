@@ -1,0 +1,5 @@
+{
+  "interaction_externreconnect_command" : "Команда (используйте абсолютные пути к каталогам)",
+  "interaction_externreconnect_parameter" : "Параметр (по 1 параметру на строку)",
+  "interaction_externreconnect_dummybat" : "Использовать внешнюю программу для Windows"
+}

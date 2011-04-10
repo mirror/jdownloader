@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -60,7 +62,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     public LinkGrabberFilePackageInfo() {
         buildGui();
         fp = null;
-        menutitle.setText(JDL.L("gui.table.contextmenu.prop", "Properties"));
+        menutitle.setText(T._.gui_table_contextmenu_prop());
         menutitle.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
     }
 
@@ -118,30 +120,30 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
         txtComment.addFocusListener(this);
-        chbPostProcessing = new JCheckBox(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing", "Post Processing"));
-        chbPostProcessing.setToolTipText(JDL.L("gui.fileinfopanel.packagetab.chb.postProcessing.toolTip", "Enable Post Processing for this FilePackage, like extracting or merging."));
+        chbPostProcessing = new JCheckBox(T._.gui_fileinfopanel_packagetab_chb_postProcessing());
+        chbPostProcessing.setToolTipText(T._.gui_fileinfopanel_packagetab_chb_postProcessing_toolTip());
         chbPostProcessing.setSelected(true);
         chbPostProcessing.setHorizontalTextPosition(JCheckBox.LEFT);
         chbPostProcessing.addActionListener(this);
 
-        chbUseSubdirectory = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
+        chbUseSubdirectory = new JCheckBox(T._.gui_linkgrabber_packagetab_chb_useSubdirectory());
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(JCheckBox.LEFT);
         chbUseSubdirectory.addActionListener(this);
 
         content.setLayout(new MigLayout("ins 5, wrap 3", "[]10[grow,fill]10[]", "[]5[]5[]5[]"));
-        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.name", "Package Name")));
+        content.add(new JLabel(T._.gui_linkgrabber_packagetab_lbl_name()));
         content.add(txtName, "span 2");
-        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.saveto", "Save to")));
+        content.add(new JLabel(T._.gui_linkgrabber_packagetab_lbl_saveto()));
         content.add(brwSaveTo.getInput(), "growx");
         content.add(brwSaveTo.getButton(), "pushx, growx");
-        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password", "Archive Password")));
+        content.add(new JLabel(T._.gui_linkgrabber_packagetab_lbl_password()));
         content.add(txtPassword, "growx");
         content.add(chbPostProcessing, "alignx right");
-        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password2", "Archive Password(auto)")));
+        content.add(new JLabel(T._.gui_linkgrabber_packagetab_lbl_password2()));
         content.add(txtPassword2, "growx");
         content.add(chbUseSubdirectory, "alignx right");
-        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.comment", "Comment")));
+        content.add(new JLabel(T._.gui_linkgrabber_packagetab_lbl_comment()));
         content.add(txtComment, "span 2");
     }
 

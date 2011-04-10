@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Example: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "RAW Mode?",
+  "gui_btn_yes" : "Yes",
+  "gui_config_routeripfinder_ready" : "IP found: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Import Router",
+  "gui_config_jdrr_success" : "Success!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "You disabled the IP check. This will increase the reconnection times dramatically!\\r\\n\\r\\nSeveral further modules like Reconnect Recorder are disabled.",
+  "gui_config_jdrr_reconnectfaild" : "Reconnection failed",
+  "gui_btn_help" : "Help",
+  "gui_btn_start" : "Start",
+  "gui_config_jdrr_savereconnect" : "Reconnection was successful. Save now?",
+  "gui_config_jdrr_popup_title" : "RRPopup",
+  "gui_fengshuiconfig_routerip" : "Router-IP",
+  "gui_config_jdrr_title" : "Reconnection Recorder",
+  "gui_config_jdrr_status_title" : "Recording Status",
+  "gui_config_routeripfinder_notfound" : "Can't find your router's hostname",
+  "gui_btn_no" : "No",
+  "gui_btn_cancel" : "Cancel",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP Check disabled!",
+  "gui_btn_abort" : "Abort",
+  "gui_config_reconnect_selectrouter" : "Search Router Model"
+}

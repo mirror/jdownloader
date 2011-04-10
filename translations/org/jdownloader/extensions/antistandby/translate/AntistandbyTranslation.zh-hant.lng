@@ -1,0 +1,6 @@
+{
+  "gui_config_antistandby_mode" : "模式",
+  "gui_config_antistandby_whiledl" : "下載時防止進入休眠狀態",
+  "gui_config_antistandby_whilejd" : "JD 執行時防止進入休眠狀態",
+  "jd_plugins_optional_antistandby_jdantistandby" : "JDAntiStandby"
+}

@@ -1,0 +1,12 @@
+{
+  "jd_plugins_optional_folderwatch_tablemodel_filetype" : "Tipo de contenedor",
+  "jd_plugins_optional_folderwatch_tablemodel_filepath" : "Ubicación",
+  "plugins_optional_folderwatch_panel_filestatus_notexists" : "El archivo no existe",
+  "jd_plugins_optional_folderwatch_tablemodel_importdate" : "Fecha de importacion",
+  "plugins_optional_folderwatch_view_title" : "Historial del Observador de Carpetas",
+  "jd_plugins_optional_folderwatch_tablemodel_filename" : "Nombre del archivo",
+  "action_folderwatch_clear_message" : "Está seguro de eliminar el historial?",
+  "plugins_optional_folderwatch_panel_filestatus" : "Estado del archivo",
+  "plugins_optional_folderwatch_view_tooltip" : "Muestra todos los contenedores encontrados por el Observador de Carpetas",
+  "plugins_optional_folderwatch_panel_filestatus_exists" : "El archivo ya existe"
+}

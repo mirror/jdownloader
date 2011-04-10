@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
@@ -68,7 +70,7 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
     }
 
     public ScheduleExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.schedule.schedule", null));
+        super(T._.jd_plugins_optional_schedule_schedule());
     }
 
     private void initModules() {
@@ -351,7 +353,7 @@ public class ScheduleExtension extends AbstractExtension implements ActionListen
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.schedule.schedule.description", null);
+        return T._.jd_plugins_optional_schedule_schedule_description();
     }
 
     @Override

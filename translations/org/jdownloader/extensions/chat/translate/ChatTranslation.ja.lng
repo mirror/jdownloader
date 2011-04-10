@@ -1,0 +1,4 @@
+{
+  "plugins_optional_jdchat_enternick" : "あなたのニックネーム?",
+  "plugin_optional_jdchat_getlog" : "%s1 は問題解決にログを必要としています. ログを送信することに同意しますか?"
+}

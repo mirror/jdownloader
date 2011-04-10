@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.jdtrayicon;
 
+
+ import org.jdownloader.extensions.jdtrayicon.translate.*;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -189,20 +191,20 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     }
 
     private void initBottomPanel() {
-        spMaxSpeed = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.speed", "Speed limit(KiB/s)"), "width 60!,h 20!,right");
+        spMaxSpeed = new JDSpinner(T._.plugins_trayicon_popup_bottom_speed(), "width 60!,h 20!,right");
         spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
-        spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Speed Limit (KiB/s) [0 = Infinite]"));
+        spMaxSpeed.setToolTipText(T._.gui_tooltip_statusbar_speedlimiter());
         spMaxSpeed.getSpinner().addChangeListener(this);
         colorizeSpinnerSpeed();
 
-        spMaxDls = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.simdls", "Simultaneous downloads"), "width 60!,h 20!,right");
+        spMaxDls = new JDSpinner(T._.plugins_trayicon_popup_bottom_simdls(), "width 60!,h 20!,right");
         spMaxDls.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
-        spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Maximum simultaneous Downloads [1..20]"));
+        spMaxDls.setToolTipText(T._.gui_tooltip_statusbar_simultan_downloads());
         spMaxDls.getSpinner().addChangeListener(this);
 
-        spMaxChunks = new JDSpinner(JDL.L("plugins.trayicon.popup.bottom.simchunks", "Concurrent Connections"), "width 60!,h 20!,right");
+        spMaxChunks = new JDSpinner(T._.plugins_trayicon_popup_bottom_simchunks(), "width 60!,h 20!,right");
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(config.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
-        spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
+        spMaxChunks.setToolTipText(T._.gui_tooltip_statusbar_max_chunks());
         spMaxChunks.getSpinner().addChangeListener(this);
 
         bottomPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]2[]2[]"));

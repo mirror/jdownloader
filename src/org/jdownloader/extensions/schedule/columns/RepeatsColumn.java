@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule.columns;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import org.jdownloader.extensions.schedule.Actions;
 
 import jd.gui.swing.components.table.JDTableModel;
@@ -48,16 +50,16 @@ public class RepeatsColumn extends JDTextTableColumn {
     protected String getStringValue(Object value) {
         switch (((Actions) value).getRepeat()) {
         case 0:
-            return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.once", "Only once");
+            return T._.jd_plugins_optional_schedule_MainGui_MyTableModel_add_once();
         case 60:
-            return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.hourly", "Hourly");
+            return T._.jd_plugins_optional_schedule_MainGui_MyTableModel_add_hourly();
         case 1440:
-            return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.daily", "Daily");
+            return T._.jd_plugins_optional_schedule_MainGui_MyTableModel_add_daily();
         case 10080:
-            return JDL.L("jd.plugins.optional.schedule.MainGui.MyTableModel.add.weekly", "Weekly");
+            return T._.jd_plugins_optional_schedule_MainGui_MyTableModel_add_weekly();
         }
         int hour = ((Actions) value).getRepeat() / 60;
-        return JDL.LF("jd.plugins.optional.schedule.MainGui.MyTableModel.add.interval", "Interval: %sh %sm", hour, ((Actions) value).getRepeat() - (hour * 60));
+        return T._.jd_plugins_optional_schedule_MainGui_MyTableModel_add_interval( hour, ((Actions) value).getRepeat() - (hour * 60));
 
     }
 

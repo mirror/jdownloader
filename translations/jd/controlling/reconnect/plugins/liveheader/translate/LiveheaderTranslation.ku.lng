@@ -1,0 +1,20 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Example: 3Com ADSL",
+  "gui_btn_yes" : "Erê",
+  "gui_config_routeripfinder_ready" : "IP hat dîtin: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Router têxe",
+  "gui_config_jdrr_success" : "Serkeftî!",
+  "gui_config_jdrr_reconnectfaild" : "Dîsgirêdan têk çû",
+  "gui_btn_help" : "Alîkarî",
+  "gui_btn_start" : "Destpêke",
+  "gui_config_jdrr_savereconnect" : "Dîsgirêdan serkeftî ye. Niha tomarke?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "Router-IP",
+  "gui_config_jdrr_title" : "Qeydkera Dîsgirêdanê",
+  "gui_config_jdrr_status_title" : "Rewşa Qeydkirinê",
+  "gui_config_routeripfinder_notfound" : "Can't find your router's hostname",
+  "gui_btn_cancel" : "Betal",
+  "gui_btn_no" : "Na",
+  "gui_btn_abort" : "Betal",
+  "gui_config_reconnect_selectrouter" : "Modela Routerê Bigere"
+}

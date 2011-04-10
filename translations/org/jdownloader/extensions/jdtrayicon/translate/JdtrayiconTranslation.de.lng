@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Tray Icon",
+  "plugins_trayicon_popup_bottom_simdls" : "Gleichzeitige Downloads",
+  "plugins_trayicon_popup_bottom_speed" : "Geschwindigkeitsbegrenzung",
+  "plugins_trayicon_popup_bottom_simchunks" : "Gleichzeitige Verbindungen",
+  "gui_tooltip_statusbar_simultan_downloads" : "Max. gleichzeitige Downloads",
+  "gui_tooltip_statusbar_speedlimiter" : "Geschwindigkeitsbegrenzung festlegen (KiB/s) [0:unendlich]",
+  "gui_tooltip_statusbar_max_chunks" : "Maximale Verbindungen pro Datei"
+}

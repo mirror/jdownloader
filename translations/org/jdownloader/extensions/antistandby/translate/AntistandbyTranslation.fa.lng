@@ -1,0 +1,5 @@
+{
+  "gui_config_antistandby_mode" : "نوع :",
+  "gui_config_antistandby_whiledl" : "جلوگيري از رفتن رايانه به حالت انتظار در حين دانلود",
+  "gui_config_antistandby_whilejd" : "جلوگيري از رفتن رايانه به حالت انتظار وقتي جي دانلودر باز است"
+}

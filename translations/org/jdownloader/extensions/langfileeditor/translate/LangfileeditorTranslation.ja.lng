@@ -1,0 +1,15 @@
+{
+  "plugins_optional_langfileeditor_save_success_message" : "言語ファイルの保存が完了しました!",
+  "plugins_optional_langfileeditor_keychart_done" : "完了",
+  "gui_btn_yes" : "はい",
+  "plugins_optional_langfileeditor_reload" : "再読込",
+  "plugins_optional_langfileeditor_svn_updating" : "SVN を更新中: お待ちください",
+  "plugins_optional_langfileeditor_keychart_missing" : "失敗",
+  "plugins_optional_langfileeditor_file" : "ファイル",
+  "plugins_optional_langfileeditor_keychart_old" : "古い",
+  "plugins_optional_langfileeditor_svn_updating_error" : "SVN の更新中: エラー!",
+  "plugins_optional_langfileeditor_save_error_message" : "言語ファイル書き込みのエラー:\\n%s1",
+  "plugins_optional_langfileeditor_svn_updating_ready" : "SVN の更新: 完了",
+  "gui_btn_no" : "いいえ",
+  "plugins_optional_langfileeditor_key" : "キー"
+}

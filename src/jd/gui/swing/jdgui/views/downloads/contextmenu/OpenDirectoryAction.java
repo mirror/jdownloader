@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
@@ -26,7 +28,7 @@ public class OpenDirectoryAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.downloaddir", "Open Directory");
+        return T._.gui_table_contextmenu_downloaddir();
     }
 
     public void actionPerformed(ActionEvent e) {

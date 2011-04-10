@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_folderwatch_tablemodel_filetype" : "Тип контейнера",
+  "plugins_optional_folderwatch_panel_filestatus_notexists" : "Файл не существует",
+  "jd_plugins_optional_folderwatch_tablemodel_importdate" : "Импортировать дату",
+  "jd_plugins_optional_folderwatch_tablemodel_filename" : "Имя файла",
+  "action_folderwatch_clear_message" : "Вы уверены, что хотите удалить историю?",
+  "plugins_optional_folderwatch_panel_filestatus" : "Статус файла",
+  "plugins_optional_folderwatch_panel_filestatus_exists" : "Файл существует"
+}

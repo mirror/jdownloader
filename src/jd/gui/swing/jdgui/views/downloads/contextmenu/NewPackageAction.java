@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -32,12 +34,12 @@ public class NewPackageAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.newpackage", "Move into new Package") + " (" + links.size() + ")";
+        return T._.gui_table_contextmenu_newpackage() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
         FilePackage fp = links.get(0).getFilePackage();
-        String string = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+        String string = UserIO.getInstance().requestInputDialog(0, T._.gui_linklist_newpackage_message(), fp.getName());
         if (string == null) return;
 
         FilePackage nfp = FilePackage.getInstance();

@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Arrêt PC",
+  "gui_config_jdshutdown_forceshutdown" : "Forcer la mise hors tension (pas pour tous les OS)",
+  "interaction_shutdown_dialog_title_standby" : "Mise en veille ?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Le système va être arrêté !</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Installer l'extinction forcée (MacOSX uniquement)",
+  "interaction_shutdown_dialog_title_hibernate" : "Mettre en veille ?",
+  "interaction_shutdown_dialog_title_shutdown" : "Arrêt PC ?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader va être fermé !</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Le Système ne sera pas arrêté par JDownloader",
+  "gui_config_jdshutdown_hibernate" : "Mise en veille prolongée (pas pour tous les OS)",
+  "gui_config_jdshutdown_close" : "Fermer JD",
+  "gui_config_jdshutdown_standby" : "Mise en veille (pas pour tous les OS)",
+  "gui_config_jdshutdown_osx_force_short" : "Installer",
+  "jd_plugins_optional_jdshutdown" : "JD Mise hors tension",
+  "interaction_shutdown_dialog_title_closejd" : "Fermer JD ?",
+  "gui_config_jdshutdown_mode" : "Mode :",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader arrêtera le Système après les téléchargements complétés",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Le système sera mis en mode veille !</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Le système va être mis en mode veille prolongée !</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "Extinction, Mise en veille ou Hibernation automatique à la fin des téléchargements"
+}

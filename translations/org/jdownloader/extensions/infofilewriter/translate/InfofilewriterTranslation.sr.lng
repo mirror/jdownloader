@@ -1,0 +1,9 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "Напомена: %LAST_FINISHED_PACKAGE.COMMENT%\\r\\nШифра: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nАутоматска шифра: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nЗавршено %SYSTEM.DATE% у %SYSTEM.TIME%",
+  "jd_plugins_optional_jdinfofilewriter" : "Записивање инфо датотеке",
+  "plugins_optional_infofilewriter_content" : "Садржај:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Користи само ако је шифра омогућена",
+  "jd_plugins_optional_jdinfofilewriter_description" : "Записивање инфо датотеке (списак датотека, домаћин, време завршавања преузимања, шифра за распакивање...)",
+  "plugins_optional_infofilewriter_variables" : "Доступне променљиве",
+  "plugins_optional_infofilewriter_filename" : "Назив датотеке:"
+}

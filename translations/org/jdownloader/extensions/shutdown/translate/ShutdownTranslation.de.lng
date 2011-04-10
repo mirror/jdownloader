@@ -1,0 +1,21 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Herunterfahren",
+  "gui_config_jdshutdown_forceshutdown" : "Shutdown erzwingen (Nur einige OS)",
+  "interaction_shutdown_dialog_title_standby" : "Ruhezustand?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">System wird heruntergefahren!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Installiere 'Herunterfahren erzwingen' (Nur MacOSX)",
+  "interaction_shutdown_dialog_title_hibernate" : "Energiesparmodus?",
+  "interaction_shutdown_dialog_title_shutdown" : "System herunterfahren?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader wird beendet!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Das System wird nach dem Download NICHT heruntergefahren.",
+  "gui_config_jdshutdown_hibernate" : "Ruhezustand/Hibernate (Nur einige OS)",
+  "gui_config_jdshutdown_close" : "JD schließen",
+  "gui_config_jdshutdown_standby" : "Standby (Nur einige OS)",
+  "gui_config_jdshutdown_osx_force_short" : "Installieren",
+  "jd_plugins_optional_jdshutdown" : "Shutdown",
+  "interaction_shutdown_dialog_title_closejd" : "JDownloader beenden?",
+  "gui_config_jdshutdown_mode" : "Modus:",
+  "addons_jdshutdown_statusmessage_enabled" : "Das System wird nach dem Download heruntergefahren.",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">System wird in den Ruhezustand versetzt!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">System wird in den Energiesparmodus versetzt!</font></h2>"
+}

@@ -1,0 +1,8 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "Kommentar: %LAST_FINISHED_PACKAGE.COMMENT%\\r\\nPasswort: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nAuto-Passwort: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nBeendet am %SYSTEM.DATE% um %SYSTEM.TIME% Uhr",
+  "jd_plugins_optional_jdinfofilewriter" : "Info Datei Schreiber",
+  "plugins_optional_infofilewriter_content" : "Inhalt:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Nur nutzen, wenn Passwort angeschaltet",
+  "plugins_optional_infofilewriter_variables" : "Verfügbare Parameter",
+  "plugins_optional_infofilewriter_filename" : "Dateiname:"
+}

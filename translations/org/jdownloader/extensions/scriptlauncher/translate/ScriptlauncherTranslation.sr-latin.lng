@@ -1,0 +1,4 @@
+{
+  "jd_plugins_optional_scriptlauncher_jdscriptlauncher_description" : "Omogućava pokretanje skripti (shell/bash) ili izvršnih datoteka iz menija.\\r\\nSve skripte ili simboličke veze moraju biti smeštene u \"scripts\" podfasciklu JD fascikle.",
+  "jd_plugins_optional_scriptlauncher_jdscriptlauncher" : "Pokretač skripti"
+}

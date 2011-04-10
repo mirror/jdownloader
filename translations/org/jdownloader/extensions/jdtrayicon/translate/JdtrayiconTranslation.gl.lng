@@ -1,0 +1,8 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD Bandexa de Notificación",
+  "plugins_trayicon_popup_bottom_simdls" : "Descargas simultáneas",
+  "plugins_trayicon_popup_bottom_speed" : "Limitar velocidade (KiB/s)",
+  "gui_tooltip_statusbar_simultan_downloads" : "Descargas máximas á vez",
+  "gui_tooltip_statusbar_speedlimiter" : "Límite de velocidade (KiB/s) [0:sen límite]",
+  "gui_tooltip_statusbar_max_chunks" : "Conexións Max./Arquivo"
+}

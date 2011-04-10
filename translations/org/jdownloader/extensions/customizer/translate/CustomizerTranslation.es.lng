@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Ingrese un nombre para la nueva configuración:",
+  "action_customize_removesetting_ask" : "Eliminar cuentas seleccionadas de JDownloader? (%s1)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Personalizador de Paquetes",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Personalizador de Paquetes"
+}

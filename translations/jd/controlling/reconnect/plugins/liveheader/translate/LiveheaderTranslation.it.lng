@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Esempio: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Modo RAW?",
+  "gui_btn_yes" : "Si",
+  "gui_config_routeripfinder_ready" : "IP trovato: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Importa router",
+  "gui_config_jdrr_success" : "Completato!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "E' stato disabilitato il controllo IP. Questo aumenterà in modo pesante il tempo di riconnessione!\\r\\n\\r\\nAlcuni moduli come il Registratore riconnession saranno disabilitati.",
+  "gui_config_jdrr_reconnectfaild" : "Riconnessione fallita",
+  "gui_btn_help" : "Aiuto",
+  "gui_btn_start" : "Avvia",
+  "gui_config_jdrr_savereconnect" : "Riconnessione avvenuta. Salvare?",
+  "gui_config_jdrr_popup_title" : "Popup riconnessione",
+  "gui_fengshuiconfig_routerip" : "IP router",
+  "gui_config_jdrr_title" : "Registratore riconnessioni",
+  "gui_config_jdrr_status_title" : "Stato registrazione",
+  "gui_config_routeripfinder_notfound" : "Impossibile trovare il'IP del router",
+  "gui_btn_no" : "No",
+  "gui_btn_cancel" : "Annulla",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Controllo IP disabilitato!",
+  "gui_btn_abort" : "Annulla",
+  "gui_config_reconnect_selectrouter" : "Rilevazione modello del router"
+}

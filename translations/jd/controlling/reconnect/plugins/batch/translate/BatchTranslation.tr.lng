@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "Burada çalıştır (uygulamanın bulunduğu dizini seç)",
+  "interaction_batchreconnect_batch" : "Batch Script (betik)",
+  "interaction_batchreconnect_terminal" : "Yorumlayıcı"
+}

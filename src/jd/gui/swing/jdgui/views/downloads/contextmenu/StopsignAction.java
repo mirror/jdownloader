@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 
 import jd.controlling.DownloadWatchDog;
@@ -26,9 +28,9 @@ public class StopsignAction extends ContextMenuAction {
     @Override
     protected String getName() {
         if (DownloadWatchDog.getInstance().isStopMark(obj)) {
-            return JDL.L("gui.table.contextmenu.stopmark.unset", "Unset Stopmark");
+            return T._.gui_table_contextmenu_stopmark_unset();
         } else {
-            return JDL.L("gui.table.contextmenu.stopmark.set", "Set Stopmark");
+            return T._.gui_table_contextmenu_stopmark_set();
         }
     }
 

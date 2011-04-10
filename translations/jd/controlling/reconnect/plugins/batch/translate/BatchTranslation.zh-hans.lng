@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "启动于 (应用程序所在目录)",
+  "interaction_batchreconnect_batch" : "批处理脚本",
+  "interaction_batchreconnect_terminal" : "解释器"
+}

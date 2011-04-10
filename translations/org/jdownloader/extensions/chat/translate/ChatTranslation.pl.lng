@@ -1,0 +1,7 @@
+{
+  "sys_warning_loguploadfailed" : "Wysyłanie pliku dziennika zdarzeń nie powiodło się!",
+  "jd_plugins_optional_jdchat_newmessage" : "Nowa wiadomość od %s1:<hr>%s2",
+  "plugins_optional_jdchat_enternick" : "Wybierz pseudonim dla siebie",
+  "jd_plugins_optional_jdchat_jdchat" : "Czat wsparcia technicznego JD",
+  "plugin_optional_jdchat_getlog" : "%s1 potrzebuje dziennika zdarzeń, by rozwiązać twój problem. Czy zgadzasz się, by wysłać mu swój dziennik zdarzeń?"
+}

@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
@@ -44,9 +46,9 @@ public class BackupAction extends ThreadedAction {
         JDController.getInstance().syncDatabase();
         File backupFile = JDUpdateUtils.backupDataBase();
         if (backupFile == null) {
-            Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished.failed", "Linklist Backup failed! Check %s for rights!", JDUtilities.getResourceFile("backup/")));
+            Balloon.show(T._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), T._.gui_backup_finished_failed( JDUtilities.getResourceFile("backup/")));
         } else {
-            Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished.success", "Linklist Backup successful! (%s)", backupFile.getAbsolutePath()));
+            Balloon.show(T._.gui_balloon_backup_title(), JDTheme.II("gui.images.save", 32, 32), T._.gui_backup_finished_success( backupFile.getAbsolutePath()));
         }
     }
 

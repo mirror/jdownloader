@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Point;
@@ -90,7 +92,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
     private final DownloadLinksPanel panel;
 
-    public static String[]           PRIO_DESCS        = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "Default Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
+    public static String[]           PRIO_DESCS        = new String[] { T._.gui_treetable_tooltip_priority_1(), T._.gui_treetable_tooltip_priority0(), T._.gui_treetable_tooltip_priority1(), T._.gui_treetable_tooltip_priority2(), T._.gui_treetable_tooltip_priority3() };
 
     private final PropMenuItem       propItem;
 
@@ -198,7 +200,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
             final JDTableColumn column = this.getJDTableModel().getJDTableColumn(col);
             if (column.isSortable(sfp)) {
-                this.getDefaultSortMenuItem().set(column, sfp, JDL.L("gui.table.contextmenu.packagesort", "Sort Packages") + " (" + sfp.size() + "), (" + this.getJDTableModel().getColumnName(col) + ")");
+                this.getDefaultSortMenuItem().set(column, sfp, T._.gui_table_contextmenu_packagesort() + " (" + sfp.size() + "), (" + this.getJDTableModel().getColumnName(col) + ")");
                 ret.add(new RatedMenuItem("SORTITEM", this.getDefaultSortMenuItem(), 0));
             }
 
@@ -245,7 +247,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
     }
 
     private JMenu createPrioMenu(final ArrayList<DownloadLink> links) {
-        final JMenu prioPopup = new JMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
+        final JMenu prioPopup = new JMenu(T._.gui_table_contextmenu_priority() + " (" + links.size() + ")");
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
 
         prioPopup.add(new PriorityAction(links, 3));
@@ -423,7 +425,7 @@ public class DownloadTable extends JDTable implements MouseListener, KeyListener
 
             }
 
-            final JMenu pop = new JMenu(JDL.L("gui.table.contextmenu.more", "More"));
+            final JMenu pop = new JMenu(T._.gui_table_contextmenu_more());
             popup.add(pop);
             pop.setIcon(JDTheme.II("gui.images.configuration", 16, 16));
             while (items.getSub().size() > 0) {
@@ -544,7 +546,7 @@ class PropMenuItem extends JMenuItem implements ActionListener {
     private final DownloadLinksPanel panel;
 
     public PropMenuItem(final DownloadLinksPanel panel) {
-        super(JDL.L("gui.table.contextmenu.prop", "Properties"));
+        super(T._.gui_table_contextmenu_prop());
         this.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
         this.panel = panel;
         this.addActionListener(this);

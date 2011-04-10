@@ -16,6 +16,8 @@
 
 package jd.gui.swing.dialog;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -78,7 +80,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
     private final PluginForHost plugin;
 
     private AccountDialog(final PluginForHost plugin) {
-        super(UserIO.NO_ICON, JDL.L(AccountDialog.JDL_PREFIX + "title", "Add new Account"), null, null, null);
+        super(UserIO.NO_ICON, T._.jd_gui_swing_components_AccountDialog_title(), null, null, null);
 
         this.plugin = plugin;
     }
@@ -119,7 +121,7 @@ public class AccountDialog extends AbstractDialog<Integer> {
         this.hoster.setRenderer(new JDLabelListRenderer());
 
         final JButton link = new JButton(JDTheme.II("gui.images.buy", 16, 16));
-        link.setToolTipText(JDL.L("gui.menu.action.premium.buy.name", "action.premium.buy"));
+        link.setToolTipText(T._.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 ActionController.getToolBarAction("action.premium.buy").actionPerformed(new ActionEvent(AccountDialog.this.getHoster(), 0, "buyaccount"));
@@ -127,14 +129,14 @@ public class AccountDialog extends AbstractDialog<Integer> {
         });
 
         final JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow,fill]"));
-        panel.add(new JLabel(JDL.L(AccountDialog.JDL_PREFIX + "hoster", "Hoster:")));
+        panel.add(new JLabel(T._.jd_gui_swing_components_AccountDialog_hoster()));
         panel.add(this.hoster, "split 2");
         panel.add(link);
 
-        panel.add(new JLabel(JDL.L(AccountDialog.JDL_PREFIX + "name", "Name:")));
+        panel.add(new JLabel(T._.jd_gui_swing_components_AccountDialog_name()));
         panel.add(this.name = new JTextField());
 
-        panel.add(new JLabel(JDL.L(AccountDialog.JDL_PREFIX + "pass", "Pass:")));
+        panel.add(new JLabel(T._.jd_gui_swing_components_AccountDialog_pass()));
         panel.add(this.pass = new JPasswordField());
         return panel;
     }

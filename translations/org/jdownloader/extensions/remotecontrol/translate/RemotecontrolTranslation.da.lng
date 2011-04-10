@@ -1,0 +1,4 @@
+{
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 startet på port %s2\\nhttp://127.0.0.1:%s3\\n/hjælp til Udvikler Information.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 stoppet."
+}

@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -33,7 +35,7 @@ public class General extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.";
 
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "download.title", "Download & Network");
+        return T._.jd_gui_swing_jdgui_settings_panels_downloadandnetwork_general_download_title();
     }
 
     @Override
@@ -57,28 +59,28 @@ public class General extends ConfigPanel {
         ConfigEntry ce, cond;
 
         /* Download Directory */
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.general.downloaddirectory", "Download directory"), "gui.images.userhome"));
+        container.setGroup(new ConfigGroup(T._.gui_config_general_downloaddirectory(), "gui.images.userhome"));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, ""));
         ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
 
-        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDL.L("gui.config.general.createsubfolders", "Create Subfolder with packagename if possible")));
+        container.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, T._.gui_config_general_createsubfolders()));
         ce.setDefaultValue(false);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, JDL.L("gui.config.general.createsubfoldersbefore", "Create sub-folders after adding links")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, T._.gui_config_general_createsubfoldersbefore()));
         ce.setDefaultValue(false);
         ce.setEnabledCondidtion(cond, true);
 
         /* Download Control */
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.download.download.tab", "Download Control"), "gui.images.downloadorder"));
+        container.setGroup(new ConfigGroup(T._.gui_config_download_download_tab(), "gui.images.downloadorder"));
 
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, JDL.L("gui.config.download.simultan_downloads_per_host", "Maximum of simultaneous downloads per host (0 = no limit)"), 0, 20, 1).setDefaultValue(0));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, T._.gui_config_download_simultan_downloads_per_host(), 0, 20, 1).setDefaultValue(0));
 
-        String[] removeDownloads = new String[] { JDL.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDL.L("gui.config.general.toDoWithDownloads.atstart", "at startup"), JDL.L("gui.config.general.toDoWithDownloads.packageready", "when package is ready"), JDL.L("gui.config.general.toDoWithDownloads.never", "never") };
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, JDL.L("gui.config.general.todowithdownloads", "Remove finished downloads ...")).setDefaultValue(3));
+        String[] removeDownloads = new String[] { T._.gui_config_general_toDoWithDownloads_immediate(), T._.gui_config_general_toDoWithDownloads_atstart(), T._.gui_config_general_toDoWithDownloads_packageready(), T._.gui_config_general_toDoWithDownloads_never() };
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, T._.gui_config_general_todowithdownloads()).setDefaultValue(3));
 
-        String[] fileExists = new String[] { JDL.L("system.download.triggerfileexists.overwrite", "Overwrite"), JDL.L("system.download.triggerfileexists.skip", "Skip Link"), JDL.L("system.download.triggerfileexists.rename", "Auto rename"), JDL.L("system.download.triggerfileexists.askpackage", "Ask for each package"), JDL.L("system.download.triggerfileexists.ask", "Ask for each file") };
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, Configuration.PARAM_FILE_EXISTS, fileExists, JDL.L("system.download.triggerfileexists", "If the file already exists:")).setDefaultValue(1));
+        String[] fileExists = new String[] { T._.system_download_triggerfileexists_overwrite(), T._.system_download_triggerfileexists_skip(), T._.system_download_triggerfileexists_rename(), T._.system_download_triggerfileexists_askpackage(), T._.system_download_triggerfileexists_ask() };
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, Configuration.PARAM_FILE_EXISTS, fileExists, T._.system_download_triggerfileexists()).setDefaultValue(1));
 
         // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
         // GUIUtils.getConfig(),
@@ -86,12 +88,12 @@ public class General extends ConfigPanel {
         // JDL.L("gui.config.download.startdownloadsonstartUp",
         // "Start Downloads on Startup")).setDefaultValue(false));
 
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JSonWrapper.get("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, JDL.L("gui.config.download.pausespeed", "Speed of pause in KiB/s"), 10, 500, 10).setDefaultValue(10));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JSonWrapper.get("DOWNLOAD"), Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, T._.gui_config_download_pausespeed(), 10, 500, 10).setDefaultValue(10));
 
         /* File Writing */
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), "gui.images.save"));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDL.L("gui.config.download.crc", "SFV/CRC check when possible")).setDefaultValue(true));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAXBUFFERSIZE", JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000, 100).setDefaultValue(500));
+        container.setGroup(new ConfigGroup(T._.gui_config_download_write(), "gui.images.save"));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, T._.gui_config_download_crc()).setDefaultValue(true));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAXBUFFERSIZE", T._.gui_config_download_buffersize2(), 500, 2000, 100).setDefaultValue(500));
 
         return container;
     }

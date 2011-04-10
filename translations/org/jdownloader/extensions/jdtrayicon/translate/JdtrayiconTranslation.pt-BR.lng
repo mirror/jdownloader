@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD Bandeja Light",
+  "plugins_trayicon_popup_bottom_simdls" : "Downloads simultâneos",
+  "plugins_trayicon_popup_bottom_speed" : "Limite de velocidade(KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Conexões atuais",
+  "gui_tooltip_statusbar_simultan_downloads" : "Máximo de downloads simultâneos",
+  "gui_tooltip_statusbar_speedlimiter" : "Velocidade Limite (KiB/s) [0:infinito]",
+  "gui_tooltip_statusbar_max_chunks" : "Conexões máximas por arquivo"
+}

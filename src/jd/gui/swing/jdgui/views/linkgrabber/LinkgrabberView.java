@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.controlling.LinkGrabberController;
@@ -65,12 +67,12 @@ public class LinkgrabberView extends View {
 
     @Override
     public String getTitle() {
-        return JDL.L(IDENT_PREFIX + "tab.title", "Linkgrabber");
+        return T._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(IDENT_PREFIX + "tab.tooltip", "Collect, add and select links and URLs");
+        return T._.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip();
     }
 
     @Override

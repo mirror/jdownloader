@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Betaya yenilənsin indi?",
+  "updater_beta_rlyupdate_message" : "JD-%s1-in yenilənməsin istəyirsiniz?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Girişi yasaqla!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "%s1 araüzünə %s2 bölməsindən xarici sorğu!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "İcazə ver!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Xarici tətbiqetmə bu keçidləri əlavə etməyə çalışır. Daha ətraflı məlumat üçün Tarixçəyə bax."
+}

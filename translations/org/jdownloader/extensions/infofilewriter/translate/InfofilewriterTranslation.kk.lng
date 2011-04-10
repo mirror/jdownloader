@@ -1,0 +1,8 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nҚұпия сөз: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nАвто-құпия сөз: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nДайын %SYSTEM.DATE% to %SYSTEM.TIME% Уақыт",
+  "jd_plugins_optional_jdinfofilewriter" : "Мәліметтер файлын жазу",
+  "plugins_optional_infofilewriter_content" : "Құрамы:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Тек қана құпия сөз орнатылған жағдайда қолдану",
+  "plugins_optional_infofilewriter_variables" : "Өзгермелер",
+  "plugins_optional_infofilewriter_filename" : "Файл аты:"
+}

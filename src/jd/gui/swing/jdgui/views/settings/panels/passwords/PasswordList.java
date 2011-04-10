@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.passwords;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -31,7 +33,7 @@ public class PasswordList extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.PasswordList.";
 
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "general.title", "Archive passwords");
+        return T._.jd_gui_swing_jdgui_settings_panels_PasswordList_general_title();
     }
 
     public static String getIconKey() {
@@ -56,7 +58,7 @@ public class PasswordList extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
 
         container.setGroup(new ConfigGroup(getTitle(), getIconKey()));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), JDL.L("plugins.optional.jdunrar.config.passwordlist", "List of all passwords. Each line one password.")));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), T._.plugins_optional_jdunrar_config_passwordlist()));
 
         return container;
     }

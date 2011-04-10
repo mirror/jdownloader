@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.linkgrabber;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -138,7 +140,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 if (current instanceof LinkGrabberFilePackage) {
                     /* Links in Package */
                     String Name = ((LinkGrabberFilePackage) current).getName();
-                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackagestart", "Insert at the beginning of Package '%s'", Name)));
+                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_insertinpackagestart( Name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -146,7 +148,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackageend", "Insert at the end of Package '%s'", Name)));
+                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_insertinpackageend( Name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -157,7 +159,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 } else if (current instanceof DownloadLink) {
                     /* Links in Links */
                     String name = ((DownloadLink) current).getName();
-                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.before", "Drop before '%s'", name)));
+                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_before( name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -165,7 +167,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.after", "Drop after '%s'", name)));
+                    popup.add(m = new JMenuItem(T._.gui_table_draganddrop_after( name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -183,7 +185,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 } else
                     return false;
 
-                popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.movepackagebefore", "Insert before '%s'", name)));
+                popup.add(m = new JMenuItem(T._.gui_table_draganddrop_movepackagebefore( name)));
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -192,7 +194,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
 
                 });
 
-                popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.movepackageend", "Insert after '%s'", name)));
+                popup.add(m = new JMenuItem(T._.gui_table_draganddrop_movepackageend( name)));
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -205,7 +207,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 return false;
             }
         }
-        popup.add(m = new JMenuItem(JDL.L("gui.btn_cancel", "Cancel")));
+        popup.add(m = new JMenuItem(T._.gui_btn_cancel()));
         m.setIcon(JDTheme.II("gui.images.unselected", 16, 16));
         popup.show(table, point.x, point.y);
         return true;

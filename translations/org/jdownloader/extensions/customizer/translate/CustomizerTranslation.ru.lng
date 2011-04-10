@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Введите имя новой установки",
+  "action_customize_removesetting_ask" : "Удалить выбранную установку(и)? (%s1 Account(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Индивидуализация пакетов",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Индивидуализация пакетов"
+}

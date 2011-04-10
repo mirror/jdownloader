@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -27,7 +29,7 @@ public class ContinuePackagesAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.linkgrabberv2.lg.continueselected", "Continue with selected package(s)") + " (" + packages.size() + ")";
+        return T._.gui_linkgrabberv2_lg_continueselected() + " (" + packages.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

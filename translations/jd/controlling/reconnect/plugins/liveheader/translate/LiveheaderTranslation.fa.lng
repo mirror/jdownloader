@@ -1,0 +1,19 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "براي مثال : 3Com ADSL",
+  "gui_btn_yes" : "بله",
+  "gui_config_routeripfinder_ready" : "آي پي پيدا شده: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "وارد كردن روتر",
+  "gui_config_jdrr_success" : "موفق !",
+  "gui_config_jdrr_reconnectfaild" : "اتصال مجدد لغو شد",
+  "gui_btn_help" : "راهنما",
+  "gui_btn_start" : "شروع",
+  "gui_config_jdrr_savereconnect" : "اتصال مجدد موفقيت آميز بود. ذخيره شود ؟",
+  "gui_fengshuiconfig_routerip" : "آي پي روتر",
+  "gui_config_jdrr_title" : "ثبت كننده اتصال مجدد",
+  "gui_config_jdrr_status_title" : "وضعيت ثبت",
+  "gui_config_routeripfinder_notfound" : "نام ميزبان روتر شما پيدا نشد",
+  "gui_btn_cancel" : "لغو",
+  "gui_btn_no" : "خير",
+  "gui_btn_abort" : "لغو",
+  "gui_config_reconnect_selectrouter" : "جستجوي مدل روتر"
+}

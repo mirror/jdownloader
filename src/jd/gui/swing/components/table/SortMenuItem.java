@@ -1,5 +1,7 @@
 package jd.gui.swing.components.table;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -13,7 +15,7 @@ public class SortMenuItem extends JMenuItem implements ActionListener {
     private static final long serialVersionUID = 6328630034846759725L;
     private Object            obj              = null;
     private JDTableColumn     column           = null;
-    private static String     defaultString    = JDL.L("gui.table.contextmenu.sort", "Sort");
+    private static String     defaultString    = T._.gui_table_contextmenu_sort();
 
     public SortMenuItem() {
         super(SortMenuItem.defaultString);

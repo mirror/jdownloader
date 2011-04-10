@@ -1,5 +1,7 @@
 package jd.controlling.captcha;
 
+
+ import org.jdownloader.translate.*;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -76,11 +78,11 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
             if (resp == null) {
                 /* no external response available */
                 if (!e.isCausedByTimeout()) {
-                    String[] options = new String[] { JDL.L("captchacontroller.cancel.dialog.allorhost.next", "Show all further pending Captchas"), JDL.LF("captchacontroller.cancel.dialog.allorhost.cancelhost", "Do not show pending Captchas for %s", captchaController.getHost()), JDL.L("captchacontroller.cancel.dialog.allorhost.all", "Cancel all pending Captchas") };
+                    String[] options = new String[] { T._.captchacontroller_cancel_dialog_allorhost_next(), T._.captchacontroller_cancel_dialog_allorhost_cancelhost( captchaController.getHost()), T._.captchacontroller_cancel_dialog_allorhost_all() };
                     try {
                         int defSelection = JSonStorage.getPlainStorage("CaptchaController").get("lastCancelOption", 0);
 
-                        switch (Dialog.getInstance().showComboDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, JDL.L("captchacontroller.cancel.dialog.allorhost", "Canceled Captcha Dialog"), JDL.L("captchacontroller.cancel.dialog.allorhost.msg", "You canceled a Captcha Dialog!\r\nHow do you want to continue?"), options, defSelection, null, null, null, null)) {
+                        switch (Dialog.getInstance().showComboDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.captchacontroller_cancel_dialog_allorhost(), T._.captchacontroller_cancel_dialog_allorhost_msg(), options, defSelection, null, null, null, null)) {
                         case 0:
                             // nothing
                             JSonStorage.getPlainStorage("CaptchaController").put("lastCancelOption", 0);

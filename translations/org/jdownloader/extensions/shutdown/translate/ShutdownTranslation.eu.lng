@@ -1,0 +1,17 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Itzali",
+  "interaction_shutdown_dialog_title_standby" : "Standby-n utzi?",
+  "gui_config_jdshutdown_forceshutdown" : "Itzaltzera behartu (Sistema eragile batzuetarako)",
+  "gui_config_jdshutdown_osx_force_long" : "Itzaltzera behartzekoa instalatu (MacOSX bakarrik)",
+  "interaction_shutdown_dialog_title_hibernate" : "Hibernatu?",
+  "interaction_shutdown_dialog_title_shutdown" : "Itzali?",
+  "addons_jdshutdown_statusmessage_disabled" : "Jdownloaderrek EZ du Sistema itzaliko",
+  "gui_config_jdshutdown_hibernate" : "Hibernatu (Sistema eragile batzuetarako)",
+  "gui_config_jdshutdown_close" : "Jdownloader Itxi",
+  "gui_config_jdshutdown_standby" : "Standby (Sistema eragile batzuetarako)",
+  "jd_plugins_optional_jdshutdown" : "JD itzaltzea",
+  "gui_config_jdshutdown_osx_force_short" : "Instalatu",
+  "interaction_shutdown_dialog_title_closejd" : "JDownloader itxi",
+  "gui_config_jdshutdown_mode" : "Modua:",
+  "addons_jdshutdown_statusmessage_enabled" : "Jdownloaderrek zure sistema itzaliko du deskkargak amaitzean!"
+}

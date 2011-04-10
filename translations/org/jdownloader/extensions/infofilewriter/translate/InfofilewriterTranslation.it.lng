@@ -1,0 +1,9 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "Commento: %LAST_FINISHED_PACKAGE.COMMENT%\\r\\nPassword: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nPassword auto: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nFinalizzato %SYSTEM.DATE% to %SYSTEM.TIME%",
+  "jd_plugins_optional_jdinfofilewriter" : "null",
+  "plugins_optional_infofilewriter_content" : "Contenuto:",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Usa solo se la password è abilitata",
+  "jd_plugins_optional_jdinfofilewriter_description" : "null",
+  "plugins_optional_infofilewriter_variables" : "Variabili disponibili",
+  "plugins_optional_infofilewriter_filename" : "Nome file:"
+}

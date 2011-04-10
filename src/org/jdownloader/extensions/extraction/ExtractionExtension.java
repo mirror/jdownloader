@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.extraction;
 
+
+ import org.jdownloader.extensions.extraction.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -145,7 +147,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
         ExtractionController controller = new ExtractionController(archive, logger);
 
         if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
-            ProgressController progress = new ProgressController(JDL.LF("plugins.optional.extraction.progress.extractfile", "Extract %s", archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
+            ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile( archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
             controller.setProgressController(progress);
 
             controller.addExtractionListener(new ExtractionListenerFile(this));
@@ -294,7 +296,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
             String path = link.getStringProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
 
             if (!new File(path).exists()) {
-                UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.extraction.messages", "The path %s does not exist.", path));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_extraction_messages( path));
             } else {
                 JDUtilities.openExplorer(new File(path));
             }
@@ -314,7 +316,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
 
                 @Override
                 public String getDescription() {
-                    return JDL.L("plugins.optional.extraction.filefilter.extractto", "Extract Directory");
+                    return T._.plugins_optional_extraction_filefilter_extractto();
                 }
             };
 
@@ -355,30 +357,30 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
 
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
 
-        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDL.L("gui.config.extraction.use_extractto", "Use customized extract path")).setDefaultValue(false));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, ExtractionConstants.CONFIG_KEY_UNPACKPATH, JDL.L("gui.config.extraction.path", "Extract to")));
+        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_EXTRACT_PATH, T._.gui_config_extraction_use_extractto()).setDefaultValue(false));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, ExtractionConstants.CONFIG_KEY_UNPACKPATH, T._.gui_config_extraction_path()));
         ce.setDefaultValue(JDUtilities.getDefaultDownloadDirectory());
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDL.L("gui.config.extraction.remove_after_extract", "Delete archives after suc. extraction?")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_OVERWRITE, JDL.L("gui.config.extraction.overwrite", "Overwrite existing files?")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, T._.gui_config_extraction_remove_after_extract()).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_OVERWRITE, T._.gui_config_extraction_overwrite()).setDefaultValue(false));
 
-        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.config.advanced", "Advanced settings"), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDL.L("gui.config.extraction.ask_path", "Ask for unknown passwords?")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, JDL.L("gui.config.extraction.deep_extract", "Deep-Extraction")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDL.L("gui.config.extraction.remove_infofile", "Delete Infofile after extraction")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, JDL.L("gui.config.extraction.additional_space", "Leave x MiB additional space after unpacking"), 1, 2048, 1).setDefaultValue(512));
+        config.setGroup(new ConfigGroup(T._.plugins_optional_extraction_config_advanced(), getIconKey()));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, T._.gui_config_extraction_ask_path()).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_DEEP_EXTRACT, T._.gui_config_extraction_deep_extract()).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_REMOVE_INFO_FILE, T._.gui_config_extraction_remove_infofile()).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_ADDITIONAL_SPACE, T._.gui_config_extraction_additional_space(), 1, 2048, 1).setDefaultValue(512));
 
-        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.config.subfolder", "Subfolder settings"), getIconKey()));
-        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_SUBPATH, JDL.L("gui.config.extraction.use_subpath", "Use subpath")).setDefaultValue(false));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH, JDL.L("gui.config.extraction.subpath", "Subpath")));
+        config.setGroup(new ConfigGroup(T._.plugins_optional_extraction_config_subfolder(), getIconKey()));
+        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_USE_SUBPATH, T._.gui_config_extraction_use_subpath()).setDefaultValue(false));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH, T._.gui_config_extraction_subpath()));
         ce.setDefaultValue("%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, JDL.L("gui.config.extraction.subpath_minnum", "Only use subpath if archive contains more than x files"), 0, 1000, 1).setDefaultValue(0));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_MINNUM, T._.gui_config_extraction_subpath_minnum(), 0, 1000, 1).setDefaultValue(0));
         ce.setEnabledCondidtion(conditionEntry, true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, JDL.L("gui.config.extraction.subpath_no_folder", "Only use subpath if the files of the archive are in not in one folder")).setDefaultValue(false));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, ExtractionConstants.CONFIG_KEY_SUBPATH_NO_FOLDER, T._.gui_config_extraction_subpath_no_folder()).setDefaultValue(false));
         ce.setEnabledCondidtion(conditionEntry, true);
 
-        config.setGroup(new ConfigGroup(JDL.L("plugins.optional.extraction.config.matcher.title", "Don't unpack files with the following patterns"), getIconKey()));
+        config.setGroup(new ConfigGroup(T._.plugins_optional_extraction_config_matcher_title(), getIconKey()));
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, ExtractionConstants.CONFIG_KEY_MATCHER, ""));
         ce.setDefaultValue("#Ignore filetype 'xyz':\r\n\r\n.xyz\r\n\r\n#Ignore folder 'abc':\r\n\r\n/abc/\r\n\r\n#One exclude each line\r\n\r\n");
 
@@ -687,7 +689,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
 
                     @Override
                     public String getDescription() {
-                        return JDL.L("plugins.optional.extraction.filefilter", "All supported formats");
+                        return T._.plugins_optional_extraction_filefilter();
                     }
                 };
 

@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_infobar_docking" : "Enable Docking to the edges",
+  "jd_plugins_optional_infobar_jdinfobar_description" : "A small floating information panel with Downloads stats in realtime, and Drag'N'Drop Zone where you can add links, URLs or DLC files.",
+  "jd_plugins_optional_infobar_jdinfobar" : "Info Bar",
+  "jd_plugins_optional_infobar_opacity" : "GUI Opacity [%]"
+}

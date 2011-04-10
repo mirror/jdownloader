@@ -1,0 +1,21 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Tắt máy",
+  "gui_config_jdshutdown_forceshutdown" : "Tắt máy cưỡng bức (Chỉ trên 1 số HĐH)",
+  "interaction_shutdown_dialog_title_standby" : "Chờ máy?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\"Hệ thống sẽ được tắt!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Install Force Shutdown (chỉ cho Mac OSX)",
+  "interaction_shutdown_dialog_title_hibernate" : "Ngủ đông?",
+  "interaction_shutdown_dialog_title_shutdown" : "Tắt máy?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader sẽ bị đóng lại!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Hệ thống không Tắt máy từ JDownloader.",
+  "gui_config_jdshutdown_hibernate" : "Ngủ đông (Chỉ trên 1 số HĐH)",
+  "gui_config_jdshutdown_close" : "Đóng JD",
+  "gui_config_jdshutdown_standby" : "Để máy tính ở chế độ chờ (Chỉ trên 1 số HĐH)",
+  "gui_config_jdshutdown_osx_force_short" : "Cài đặt",
+  "jd_plugins_optional_jdshutdown" : "Kiểm soát tắt máy",
+  "interaction_shutdown_dialog_title_closejd" : "Đóng JD?",
+  "gui_config_jdshutdown_mode" : "Chế độ:",
+  "addons_jdshutdown_statusmessage_enabled" : "JDownloader sẽ Tắt máy sau khi các tải xuống hoàn tất",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Hệ thống sẽ được đưa vào chế độ chờ!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Hệ thống sẽ được đưa vào chế độ ngủ đông!</font></h2>"
+}

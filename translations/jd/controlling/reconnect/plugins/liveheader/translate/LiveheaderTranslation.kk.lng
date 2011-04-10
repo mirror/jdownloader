@@ -1,0 +1,21 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Мысалға: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Raw режимі?",
+  "gui_btn_yes" : "Иә",
+  "gui_config_routeripfinder_ready" : "Хост атауы табылды: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Маршрутизаторды импорттау",
+  "gui_config_jdrr_success" : "Сәтті!",
+  "gui_config_jdrr_reconnectfaild" : "Қайта қосылу мүмкін емес!",
+  "gui_btn_help" : "Көмек",
+  "gui_btn_start" : "Қосу",
+  "gui_config_jdrr_savereconnect" : "Қайта қосылу сәтті аяқталды, сақтау?",
+  "gui_config_jdrr_popup_title" : "JDownloader қалқу терезесі",
+  "gui_fengshuiconfig_routerip" : "Маршрутизатордың IP-і",
+  "gui_config_jdrr_title" : "Қайта қосылу жұрналы",
+  "gui_config_jdrr_status_title" : "Жазу статусы",
+  "gui_config_routeripfinder_notfound" : "Маршрутизатор атауын таба алмадым",
+  "gui_btn_no" : "Жоқ",
+  "gui_btn_cancel" : "Болдырмау",
+  "gui_btn_abort" : "Үзу",
+  "gui_config_reconnect_selectrouter" : "Маршрутизатор моделін іздеу"
+}

@@ -1,0 +1,4 @@
+{
+  "action_customize_addsetting_ask" : "新しい設定の名前を指定:",
+  "action_customize_removesetting_ask" : "選択された設定を削除しますか？ (%s1 アカウント)"
+}

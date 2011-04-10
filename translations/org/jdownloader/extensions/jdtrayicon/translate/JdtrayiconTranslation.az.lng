@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JDownloader Sadə Sahə",
+  "plugins_trayicon_popup_bottom_simdls" : "Eyni zamanlı endirmələr",
+  "plugins_trayicon_popup_bottom_speed" : "Sürət həddi(KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Eyni Zamanlı Bağlantılar",
+  "gui_tooltip_statusbar_simultan_downloads" : "Ən çox eyni zamanda endirmələr",
+  "gui_tooltip_statusbar_speedlimiter" : "Sürət həddi(KiB/s) [0:sonsuz]",
+  "gui_tooltip_statusbar_max_chunks" : "Hər Fayl Üçün Ən Çox Bağlantı"
+}

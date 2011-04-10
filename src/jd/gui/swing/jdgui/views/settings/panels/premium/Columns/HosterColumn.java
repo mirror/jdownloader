@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium.Columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Component;
 
 import javax.swing.BorderFactory;
@@ -74,7 +76,7 @@ public class HosterColumn extends JDTableColumn {
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof Account) {
-            jlr.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.account", "Account"));
+            jlr.setText(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_account());
             jlr.setBorder(leftGap);
             jlr.setIcon(null);
             jlr.setHorizontalAlignment(SwingConstants.RIGHT);

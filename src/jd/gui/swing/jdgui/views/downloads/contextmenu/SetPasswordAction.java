@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
@@ -27,11 +29,11 @@ public class SetPasswordAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + links.size() + ")";
+        return T._.gui_table_contextmenu_setdlpw() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {
-        String pw = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.setpw.message", "Set download password"), null);
+        String pw = UserIO.getInstance().requestInputDialog(0, T._.gui_linklist_setpw_message(), null);
         for (DownloadLink link : links) {
             link.setProperty("pass", pw);
         }

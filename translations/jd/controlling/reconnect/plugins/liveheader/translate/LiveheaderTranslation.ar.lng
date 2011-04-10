@@ -1,0 +1,21 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "مثال: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "وضع RAW؟",
+  "gui_btn_yes" : "موافق",
+  "gui_config_routeripfinder_ready" : "التائج: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "إستيراد رواتر",
+  "gui_config_jdrr_success" : "نجح!",
+  "gui_config_jdrr_reconnectfaild" : "فشلت إعادة الإتصال",
+  "gui_btn_help" : "الدعم",
+  "gui_btn_start" : "بدء",
+  "gui_config_jdrr_savereconnect" : "تم إعادة الإتصال . هل تريد الحفظ ؟",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "أى بى الراوتر",
+  "gui_config_jdrr_title" : "إعادة التسجيل ؟",
+  "gui_config_jdrr_status_title" : "تسجيل الحالة",
+  "gui_btn_no" : "لا",
+  "gui_btn_cancel" : "إلغاء",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "التأكد من ألـIP غير مفعل",
+  "gui_btn_abort" : "خروج",
+  "gui_config_reconnect_selectrouter" : "ابحث عن نوع الراوتر"
+}

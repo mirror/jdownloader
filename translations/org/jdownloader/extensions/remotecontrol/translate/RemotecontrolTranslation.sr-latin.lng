@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Zadavanje naredbi programu JD sa udaljenog računara preko HTTP protokola",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 pokrenut na portu %s2\\nhttp://127.0.0.1:%s3\\n/pomoć za razvojne informacije",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 je zaustavljen.",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Daljinsko upravljanje"
+}

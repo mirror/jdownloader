@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Uppdatera till BETA nu?",
+  "updater_beta_rlyupdate_message" : "Vill du uppdatera till JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Neka tillgång!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Extern förfrågan från %s1 till %s2 att komunicera!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Tillåt det!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "En applikation försöker lägga till länkar. Se loggen för detaljer."
+}

@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.downloads;
 
+
+ import org.jdownloader.gui.translate.*;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.downloads.columns.DateAddedColumn;
@@ -41,16 +43,16 @@ public class DownloadJTableModel extends JDTableModel {
     }
 
     protected void initColumns() {
-        this.addColumn(new FileColumn(JDL.L("gui.treetable.name", "Package / Filename"), this));
-        this.addColumn(new SizeColumn(JDL.L("gui.treetable.size", "FileSize"), this));
-        this.addColumn(new LoadedColumn(JDL.L("gui.treetable.loaded", "Loaded"), this));
-        this.addColumn(new RemainingColumn(JDL.L("gui.treetable.remaining", "Remaining"), this));
-        this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Host"), this));
-        this.addColumn(new DateAddedColumn(JDL.L("gui.treetable.added", "Added date"), this));
-        this.addColumn(new DateFinishedColumn(JDL.L("gui.treetable.finished", "Finished date"), this));
-        this.addColumn(new StatusColumn(JDL.L("gui.treetable.status", "Status"), this));
-        this.addColumn(new ProgressColumn(JDL.L("gui.treetable.progress", "Progress"), this));
-        this.addColumn(new ProxyColumn(JDL.L("gui.treetable.proxy", "Proxy"), this));
+        this.addColumn(new FileColumn(T._.gui_treetable_name(), this));
+        this.addColumn(new SizeColumn(T._.gui_treetable_size(), this));
+        this.addColumn(new LoadedColumn(T._.gui_treetable_loaded(), this));
+        this.addColumn(new RemainingColumn(T._.gui_treetable_remaining(), this));
+        this.addColumn(new HosterColumn(T._.gui_treetable_hoster(), this));
+        this.addColumn(new DateAddedColumn(T._.gui_treetable_added(), this));
+        this.addColumn(new DateFinishedColumn(T._.gui_treetable_finished(), this));
+        this.addColumn(new StatusColumn(T._.gui_treetable_status(), this));
+        this.addColumn(new ProgressColumn(T._.gui_treetable_progress(), this));
+        this.addColumn(new ProxyColumn(T._.gui_treetable_proxy(), this));
     }
 
     public void refreshModel() {

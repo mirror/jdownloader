@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.langfileeditor;
 
+
+ import org.jdownloader.extensions.langfileeditor.translate.*;
 import javax.swing.Icon;
 import javax.swing.JMenuBar;
 
@@ -54,12 +56,12 @@ public class LFEView extends ClosableView {
 
     @Override
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "title", "Translation Editor");
+        return T._.jd_plugins_optional_langfileeditor_LFEView_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(JDL_PREFIX + "tooltip", "Edit a translation file");
+        return T._.jd_plugins_optional_langfileeditor_LFEView_tooltip();
     }
 
     @Override

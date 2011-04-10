@@ -1,0 +1,4 @@
+{
+  "plugins_optional_remotecontrol_startedonport2" : "%s1  %s2\\nhttp://127.0.0.1:%s3 \\nportunda başladıldı/İşləyib Hazırlayan haqda Məlumat",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 dənəsi dayandı."
+}

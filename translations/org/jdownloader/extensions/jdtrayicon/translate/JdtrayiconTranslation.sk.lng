@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD Tray Ikona",
+  "plugins_trayicon_popup_bottom_simdls" : "Súčasných Sťahovaní",
+  "plugins_trayicon_popup_bottom_speed" : "Rýchlostný limit(KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Aktuálne Spojenia",
+  "gui_tooltip_statusbar_simultan_downloads" : "Max. súčasných sťahovaní",
+  "gui_tooltip_statusbar_speedlimiter" : "Obmedzenie Rýchlosti(KiB/s) [0:neobmedzená]",
+  "gui_tooltip_statusbar_max_chunks" : "Max. Paralelných Spojení na Súbor"
+}

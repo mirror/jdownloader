@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Cập nhật phiên bản Béta ngay bây giở?",
+  "updater_beta_rlyupdate_message" : "Bạn có muốn cập nhật lên phiên bản JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Ẩn Truy nhập!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Ứng dụng bên ngoài yêu cầu từ %s1 tới %s2 giao diện!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Cho phép!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Một ứng dụng bên ngoài cố gắng để thêm liên kết. Đăng nhập để xem chi tiết."
+}

@@ -1,0 +1,5 @@
+{
+  "action_customize_addsetting_ask" : "Si us plau insereix el nom per el nou ajustament:",
+  "action_customize_removesetting_ask" : "Eliminar configuració(ns) seleccionades? (%s1 del compte(s))",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JDPackageCustomizer"
+}

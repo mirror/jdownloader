@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -33,7 +35,7 @@ public class Linkgrabber extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.";
 
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "gui.linkgrabber.title", "Linkgrabber");
+        return T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_gui_linkgrabber_title();
     }
 
     public static String getIconKey() {
@@ -60,26 +62,26 @@ public class Linkgrabber extends ConfigPanel {
 
         ConfigEntry ce;
 
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.linggrabber", "General Linkgrabber Settings"), "gui.images.taskpanes.linkgrabber"));
+        container.setGroup(new ConfigGroup(T._.gui_config_gui_linggrabber(), "gui.images.taskpanes.linkgrabber"));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_ONLINECHECK, JDL.L("gui.config.linkgrabber.onlincheck", "Check linkinfo and onlinestatus")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_ONLINECHECK, T._.gui_config_linkgrabber_onlincheck()));
         ce.setDefaultValue(true);
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_REPLACECHARS, JDL.L("gui.config.linkgrabber.replacechars", "(Autopackager)Replace dots and _ with spaces?")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_REPLACECHARS, T._.gui_config_linkgrabber_replacechars()));
         ce.setDefaultValue(false);
-        String[] options = new String[] { JDL.L(JDL_PREFIX + "newpackages.expanded", "Expanded"), JDL.L(JDL_PREFIX + "newpackages.automatic", "Automatic"), JDL.L(JDL_PREFIX + "newpackages.collapsed", "Collapsed") };
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, LinkGrabberController.PARAM_NEWPACKAGES, options, JDL.L(JDL_PREFIX + "newpackages", "Open new packages by default")));
+        String[] options = new String[] { T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_expanded(), T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_automatic(), T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages_collapsed() };
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, LinkGrabberController.PARAM_NEWPACKAGES, options, T._.jd_gui_swing_jdgui_settings_panels_gui_Linkgrabber_newpackages()));
         ce.setDefaultValue(2);
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_CONTROLPOSITION, JDL.L("gui.config.linkgrabber.controlposition", "Put Linkgrabberbuttons above table")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_CONTROLPOSITION, T._.gui_config_linkgrabber_controlposition()));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_INFOPANEL_ONLINKGRAB, JDL.L("gui.config.linkgrabber.infopanel.onlinkgrab", "Show infopanel on linkgrab")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_INFOPANEL_ONLINKGRAB, T._.gui_config_linkgrabber_infopanel_onlinkgrab()));
         ce.setDefaultValue(false);
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_USE_CNL2, JDL.L("gui.config.linkgrabber.cnl2", "Enable Click'n'Load Support")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabberController.PARAM_USE_CNL2, T._.gui_config_linkgrabber_cnl2()));
         ce.setDefaultValue(true);
 
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.linggrabber.ignorelist", "Linkfilter"), "gui.images.filter"));
+        container.setGroup(new ConfigGroup(T._.gui_config_gui_linggrabber_ignorelist(), "gui.images.filter"));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, config, LinkGrabberController.IGNORE_LIST, JDL.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, config, LinkGrabberController.IGNORE_LIST, T._.gui_config_linkgrabber_iognorelist()));
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
 
         return container;

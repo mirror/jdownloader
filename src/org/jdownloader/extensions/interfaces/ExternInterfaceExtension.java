@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.interfaces;
 
+
+ import org.jdownloader.extensions.interfaces.translate.*;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -88,7 +90,7 @@ public class ExternInterfaceExtension extends AbstractExtension {
     @Override
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOCALONLY, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.localonly", "Listen only on localhost?")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOCALONLY, T._.jd_plugins_optional_interfaces_JDExternInterface_localonly()).setDefaultValue(true));
 
     }
 
@@ -272,7 +274,7 @@ public class ExternInterfaceExtension extends AbstractExtension {
 
                     }.waitForEDT();
 
-                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
+                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, T._.updater_beta_rlyupdate_title(), T._.updater_beta_rlyupdate_message( branch)))) {
                         JDUpdater.getInstance().setBranchInUse(branch);
 
                         WebUpdate.doUpdateCheck(false);
@@ -485,7 +487,7 @@ public class ExternInterfaceExtension extends AbstractExtension {
                 return;
             }
             app = url != null ? new URL(url).getHost() : app;
-            if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
+            if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN, T._.jd_plugins_optional_interfaces_jdflashgot_security_title( app, namespace), T._.jd_plugins_optional_interfaces_jdflashgot_security_message(), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), T._.jd_plugins_optional_interfaces_jdflashgot_security_btn_allow(), T._.jd_plugins_optional_interfaces_jdflashgot_security_btn_deny()), UserIO.RETURN_OK)) {
                 JDLogger.getLogger().warning("Denied access.");
                 throw new Exception("User denied access");
             }

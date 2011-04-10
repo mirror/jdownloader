@@ -1,0 +1,7 @@
+{
+  "updater_beta_rlyupdate_title" : "Beta-ra eguneratu?",
+  "updater_beta_rlyupdate_message" : "JD-%s1-era eguneratu nahi duzu?",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Sarrera debekatu!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Baimendu!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Kanpoko aplikazio batek estekak gehitu nahi ditu. Ikusi log-a xehetasunak jakiteko."
+}

@@ -1,0 +1,9 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nSenha: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nSenha automatica: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nFinalizado %SYSTEM.DATE% em %SYSTEM.TIME% hs",
+  "jd_plugins_optional_jdinfofilewriter" : "JDinfo Gravador de arquivo",
+  "plugins_optional_infofilewriter_content" : "Conteúdo",
+  "plugins_optional_infofilewriter_onlywithpassword" : "Usaar somente se a senha está ativa",
+  "jd_plugins_optional_jdinfofilewriter_description" : "JD InfoFileWiter",
+  "plugins_optional_infofilewriter_variables" : "Variáveis disponíveis",
+  "plugins_optional_infofilewriter_filename" : "Nome do arquivo:"
+}

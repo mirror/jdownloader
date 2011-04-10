@@ -1,0 +1,8 @@
+{
+  "updater_beta_rlyupdate_title" : "Aktualizovat na beta verzi?",
+  "updater_beta_rlyupdate_message" : "Chcete aktualizovat na JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "Zamítnout přístup!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_title" : "Externí požadavek od %s1 na %s2 rozhraní!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "Povolit!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_message" : "Externí aplikace se snaží přidat odkazy. Shlédněte log pro podrobnosti."
+}

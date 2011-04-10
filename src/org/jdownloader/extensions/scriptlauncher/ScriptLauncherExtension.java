@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.scriptlauncher;
 
+
+ import org.jdownloader.extensions.scriptlauncher.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -64,7 +66,7 @@ public class ScriptLauncherExtension extends AbstractExtension implements Remote
     }
 
     public ScriptLauncherExtension() throws StartException {
-        super(JDL.L("jd.plugins.optional.scriptlauncher.jdscriptlauncher", null));
+        super(T._.jd_plugins_optional_scriptlauncher_jdscriptlauncher());
     }
 
     public void actionPerformed(ActionEvent event) {
@@ -246,7 +248,7 @@ public class ScriptLauncherExtension extends AbstractExtension implements Remote
 
     @Override
     public String getDescription() {
-        return JDL.L("jd.plugins.optional.scriptlauncher.jdscriptlauncher.description", null);
+        return T._.jd_plugins_optional_scriptlauncher_jdscriptlauncher_description();
     }
 
     @Override
@@ -266,7 +268,7 @@ public class ScriptLauncherExtension extends AbstractExtension implements Remote
         }
 
         if (menuitems.size() == 0) {
-            ma.addMenuItem(ma = new MenuAction(JDL.L("plugins.optional.JDScriptLauncher.noscripts", "No scripts were found."), 0));
+            ma.addMenuItem(ma = new MenuAction(T._.plugins_optional_JDScriptLauncher_noscripts(), 0));
             ma.setEnabled(false);
         }
 

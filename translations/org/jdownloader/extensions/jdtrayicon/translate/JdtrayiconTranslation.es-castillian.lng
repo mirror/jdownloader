@@ -1,0 +1,10 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JD Bandeja de Notificación",
+  "jd_plugins_optional_jdtrayicon_jdlighttray_description" : "Permite minimizar o cerrar JDownloader al area de notificacion, y otras caracteristicas relacionadas como proteccion del programa con contraseña, y otros ajustes.",
+  "plugins_trayicon_popup_bottom_simdls" : "Descargas simultáneas",
+  "plugins_trayicon_popup_bottom_speed" : "Limitar velocidad (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Conexiones simultáneas",
+  "gui_tooltip_statusbar_simultan_downloads" : "Maximo de descargas simultáneas",
+  "gui_tooltip_statusbar_speedlimiter" : "Limite de velocidad (KiB/s) [0 = sin límite]",
+  "gui_tooltip_statusbar_max_chunks" : "Maximo de conexiones por archivo"
+}

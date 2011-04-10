@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Exemple : 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Mode Brut (RAW)",
+  "gui_btn_yes" : "Oui",
+  "gui_config_routeripfinder_ready" : "IP trouvée : %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Sélection du Routeur",
+  "gui_config_jdrr_success" : "Réussi !",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Vous avez désactivé l'IPCheck. Cela va 'accroître considérablement les temps de reconnexion !\\R\\n\\r\\nPlusieurs autres modules comme Reconnecter l'Enregistrement sont désactivés.",
+  "gui_config_jdrr_reconnectfaild" : "Reconnexion échouée",
+  "gui_btn_help" : "Aide",
+  "gui_btn_start" : "Démarrer",
+  "gui_config_jdrr_savereconnect" : "Reconnexion réussie. Enregistrer maintenant ?",
+  "gui_config_jdrr_popup_title" : "Reconnexion",
+  "gui_fengshuiconfig_routerip" : "IP-Routeur",
+  "gui_config_jdrr_title" : "Enregistrement de reconnexion",
+  "gui_config_jdrr_status_title" : "Statut d'enregistrement",
+  "gui_config_routeripfinder_notfound" : "Nom du routeur introuvable",
+  "gui_btn_no" : "Non",
+  "gui_btn_cancel" : "Annuler",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "IP-Check désactivé !",
+  "gui_btn_abort" : "Abandonner",
+  "gui_config_reconnect_selectrouter" : "Recherche du modèle du routeur"
+}

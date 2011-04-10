@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.folderwatch;
 
+
+ import org.jdownloader.extensions.folderwatch.translate.*;
 import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.ClosableView;
@@ -41,12 +43,12 @@ public class FolderWatchView extends ClosableView {
 
     @Override
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "title", "FolderWatch");
+        return T._.plugins_optional_folderwatch_view_title();
     }
 
     @Override
     public String getTooltip() {
-        return JDL.L(JDL_PREFIX + "tooltip", "Shows all container files that were found by FolderWatch");
+        return T._.plugins_optional_folderwatch_view_tooltip();
     }
 
     @Override

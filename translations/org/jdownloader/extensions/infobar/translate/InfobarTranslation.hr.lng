@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_infobar_docking" : "Omogući Docking na rubovima",
+  "jd_plugins_optional_infobar_jdinfobar_description" : "Mali plutajući panel sa informacijama o statistici preuzimanja u realnom vremenu, i Drag'N'Drop zona gdje možete ubaciti linkove, URL-ove ili DLC datoteke.",
+  "jd_plugins_optional_infobar_jdinfobar" : "Info traka",
+  "jd_plugins_optional_infobar_opacity" : "GUI prozirnost [%]"
+}

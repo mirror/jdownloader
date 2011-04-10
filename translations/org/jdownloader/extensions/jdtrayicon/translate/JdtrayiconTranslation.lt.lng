@@ -1,0 +1,8 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JDLightTray",
+  "plugins_trayicon_popup_bottom_simdls" : "Simultaneous downloads",
+  "plugins_trayicon_popup_bottom_speed" : "Speed limit(KiB/s)",
+  "gui_tooltip_statusbar_simultan_downloads" : "Max. simul. downloads",
+  "gui_tooltip_statusbar_speedlimiter" : "Speed limit(KiB/s) [0:infinite]",
+  "gui_tooltip_statusbar_max_chunks" : "Max. Connections per File"
+}

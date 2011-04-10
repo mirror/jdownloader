@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Vzdálené ovládání JD",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 spuštěno na portu %s2\\nhttp://127.0.0.1:%s3\\n/help pro informace.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 zastaveno.",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Remote Control"
+}

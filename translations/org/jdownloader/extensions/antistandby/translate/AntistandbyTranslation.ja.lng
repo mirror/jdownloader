@@ -1,0 +1,5 @@
+{
+  "gui_config_antistandby_mode" : "モード:",
+  "gui_config_antistandby_whiledl" : "ダウンロード中にスタンバイ状態になるのを防ぐ",
+  "gui_config_antistandby_whilejd" : "JD 実行中にスタンバイ状態になるのを防ぐ"
+}

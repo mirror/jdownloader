@@ -1,0 +1,22 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Gašenje računala",
+  "gui_config_jdshutdown_forceshutdown" : "Prisili na gašenje računala (nije za sve sustave)",
+  "interaction_shutdown_dialog_title_standby" : "Stanje pripravnosti?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">Sustav će se isključiti!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Instaliraj Force Shutdown (samo MacOSX)",
+  "interaction_shutdown_dialog_title_hibernate" : "Hibernacija?",
+  "interaction_shutdown_dialog_title_shutdown" : "Isključivanje?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">JDownloader će biti zatvoren!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "Računalo neće biti ugašeno nakon preuzimanja",
+  "gui_config_jdshutdown_hibernate" : "Hibernacija (nije za sve sustave)",
+  "gui_config_jdshutdown_close" : "Izlaz iz JD-a",
+  "gui_config_jdshutdown_standby" : "Stanje pripravnosti (nije za sve sustave)",
+  "gui_config_jdshutdown_osx_force_short" : "Instaliraj",
+  "jd_plugins_optional_jdshutdown" : "JD gašenje",
+  "interaction_shutdown_dialog_title_closejd" : "Zatvoriti JD?",
+  "gui_config_jdshutdown_mode" : "Odabir načina:",
+  "addons_jdshutdown_statusmessage_enabled" : "Računalo će biti ugašeno po završetku preuzimanja!",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">Sustav će preći u stanje pripravnosti!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">Sustav će preći u hibernaciju!</font></h2>",
+  "jd_plugins_optional_jdshutdown_description" : "Automatski isključiti, obustaviti, hibernirati računalo ili zatvoriti JDownloader kada budu sva preuzimanja završena."
+}

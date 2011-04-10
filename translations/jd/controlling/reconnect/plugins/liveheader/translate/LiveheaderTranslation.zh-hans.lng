@@ -1,0 +1,20 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "例如: 3Com ADSL",
+  "gui_btn_yes" : "是",
+  "gui_config_routeripfinder_ready" : "IP found: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "导入路由器设定",
+  "gui_config_jdrr_success" : "成功!",
+  "gui_config_jdrr_reconnectfaild" : "重连失败",
+  "gui_btn_help" : "帮助",
+  "gui_btn_start" : "开始",
+  "gui_config_jdrr_savereconnect" : "重连成功. 立即保存?",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "路由器地址",
+  "gui_config_jdrr_title" : "重新连接记录器",
+  "gui_config_jdrr_status_title" : "RRStatus",
+  "gui_config_routeripfinder_notfound" : "无法找到您的路由器主机名",
+  "gui_btn_cancel" : "取消",
+  "gui_btn_no" : "否",
+  "gui_btn_abort" : "跳过",
+  "gui_config_reconnect_selectrouter" : "搜索路由器型号"
+}

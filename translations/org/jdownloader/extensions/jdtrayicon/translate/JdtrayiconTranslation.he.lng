@@ -1,0 +1,8 @@
+{
+  "plugins_trayicon_popup_bottom_simdls" : "הורדות מקבילות",
+  "plugins_trayicon_popup_bottom_speed" : "מגבלת מהירות (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "חיבור נוכחי",
+  "gui_tooltip_statusbar_simultan_downloads" : "מקסץ חיבורים מקבילים",
+  "gui_tooltip_statusbar_speedlimiter" : "מגבלת רוחב פס (ק\"ב/שנ') [0:אינסופית]",
+  "gui_tooltip_statusbar_max_chunks" : "מקס. חיבורים לקובץ"
+}

@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.downloads.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
@@ -30,7 +32,7 @@ public class CreateDLCAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.table.contextmenu.dlc", "Create DLC") + " (" + links.size() + ")";
+        return T._.gui_table_contextmenu_dlc() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

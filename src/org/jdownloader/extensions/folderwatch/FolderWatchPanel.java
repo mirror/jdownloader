@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.folderwatch;
 
+
+ import org.jdownloader.extensions.folderwatch.translate.*;
 import java.awt.event.ActionEvent;
 
 import javax.swing.JScrollPane;
@@ -68,7 +70,7 @@ public class FolderWatchPanel extends SwitchPanel {
                 new GuiRunnable<Object>() {
                     @Override
                     public Object runSave() {
-                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("action.folderwatch.clear.message", "Are you sure you want to clear the history?")), UserIO.RETURN_OK)) {
+                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, T._.action_folderwatch_clear_message()), UserIO.RETURN_OK)) {
                             History.clear();
                             config.setProperty(FolderWatchConstants.PROPERTY_HISTORY, null);
                             config.save();
@@ -140,7 +142,7 @@ public class FolderWatchPanel extends SwitchPanel {
         public FolderWatchInfoPanel(String iconKey) {
             super(iconKey);
 
-            addInfoEntry(JDL.L(JDL_PREFIX + "filestatus", "File status"), "", 0, 0);
+            addInfoEntry(T._.plugins_optional_folderwatch_panel_filestatus(), "", 0, 0);
         }
 
         public void update() {
@@ -155,13 +157,13 @@ public class FolderWatchPanel extends SwitchPanel {
                         container = History.updateEntry(container);
 
                         if (container.isExisting()) {
-                            info = JDL.L(JDL_PREFIX + "filestatus.exists", "File exists");
+                            info = T._.plugins_optional_folderwatch_panel_filestatus_exists();
                         } else {
-                            info = JDL.L(JDL_PREFIX + "filestatus.notexists", "File does not exist");
+                            info = T._.plugins_optional_folderwatch_panel_filestatus_notexists();
                         }
                     }
 
-                    updateInfo(JDL.L(JDL_PREFIX + "filestatus", "File status"), info);
+                    updateInfo(T._.plugins_optional_folderwatch_panel_filestatus(), info);
 
                     return null;
                 }

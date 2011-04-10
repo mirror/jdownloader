@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "Значок в трее",
+  "plugins_trayicon_popup_bottom_simdls" : "Одновременно закачек",
+  "plugins_trayicon_popup_bottom_speed" : "Предел скорости(кб/с)",
+  "plugins_trayicon_popup_bottom_simchunks" : "Одновременных подключений",
+  "gui_tooltip_statusbar_simultan_downloads" : "Макс. одноврем. закачек [1...20]",
+  "gui_tooltip_statusbar_speedlimiter" : "Ограничение скорости (кб/с) [0:неограниченно]",
+  "gui_tooltip_statusbar_max_chunks" : "Макс. соединений на файл [1...20]"
+}

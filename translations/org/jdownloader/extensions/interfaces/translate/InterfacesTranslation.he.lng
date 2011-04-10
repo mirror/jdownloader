@@ -1,0 +1,6 @@
+{
+  "updater_beta_rlyupdate_title" : "עדכן לגירסת BETA עכשיו?",
+  "updater_beta_rlyupdate_message" : "האם את/ה מעוניין/ת לעדכן ל JD-%s1",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_deny" : "מנע גישה!",
+  "jd_plugins_optional_interfaces_jdflashgot_security_btn_allow" : "אפשר זאת!"
+}

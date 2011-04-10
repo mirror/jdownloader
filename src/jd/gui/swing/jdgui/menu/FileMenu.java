@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.menu;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
@@ -15,7 +17,7 @@ public class FileMenu extends JMenu {
     private static final long serialVersionUID = -6088167424746457972L;
 
     public FileMenu() {
-        super(JDL.L("jd.gui.skins.simple.simplegui.menubar.filemenu", "File"));
+        super(T._.jd_gui_skins_simple_simplegui_menubar_filemenu());
 
         add(new SaveMenu());
         addSeparator();

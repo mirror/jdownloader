@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Zdalna Kontrola JD",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 uruchomiony na porcie %s2\\nhttp://127.0.0.1:%s3\\n/help aby uzyskać informacje dla deweloperów.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 zatrzymany.",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Zdalna Kontrola"
+}

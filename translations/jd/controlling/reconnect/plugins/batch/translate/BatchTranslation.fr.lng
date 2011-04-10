@@ -1,0 +1,5 @@
+{
+  "interaction_batchreconnect_executein" : "Démarrer dans le répertoire de l'application",
+  "interaction_batchreconnect_batch" : "Script Batch",
+  "interaction_batchreconnect_terminal" : "Interprète"
+}

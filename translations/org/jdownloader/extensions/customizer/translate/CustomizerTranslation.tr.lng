@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Lütfen yeni ayar için isim ekleyin:",
+  "action_customize_removesetting_ask" : "Seçilen Ayar(lar) kaldırılsın mı? (%s1 Hesap)",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Paket Özelleştirici",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Paket Özelleştirici"
+}

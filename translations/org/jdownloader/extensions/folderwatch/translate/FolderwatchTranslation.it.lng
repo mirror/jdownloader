@@ -1,0 +1,12 @@
+{
+  "jd_plugins_optional_folderwatch_tablemodel_filetype" : "Tipo contenitore",
+  "jd_plugins_optional_folderwatch_tablemodel_filepath" : "Percorso",
+  "plugins_optional_folderwatch_panel_filestatus_notexists" : "Il file non esiste",
+  "jd_plugins_optional_folderwatch_tablemodel_importdate" : "Importa data",
+  "plugins_optional_folderwatch_view_title" : "Cronologia monitor cartelle",
+  "jd_plugins_optional_folderwatch_tablemodel_filename" : "Nome file",
+  "action_folderwatch_clear_message" : "Azzerare la cronolgia?",
+  "plugins_optional_folderwatch_panel_filestatus" : "Stato file",
+  "plugins_optional_folderwatch_view_tooltip" : "Visualizza tutti i file contenitore trovati da Monitor cartelle",
+  "plugins_optional_folderwatch_panel_filestatus_exists" : "Il file esiste"
+}

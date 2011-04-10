@@ -1,5 +1,7 @@
 package jd.gui.swing.components;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -38,7 +40,7 @@ public class JDCloseAction extends AbstractAction {
         this.height = ic.getIconHeight();
         this.width = ic.getIconWidth();
         this.putValue(AbstractAction.SMALL_ICON, ic);
-        this.putValue(AbstractAction.SHORT_DESCRIPTION, JDL.L(JDL_PREFIX + "closeTab", "Close Tab"));
+        this.putValue(AbstractAction.SHORT_DESCRIPTION, T._.jd_gui_swing_components_JDCloseAction_closeTab());
     }
 
     public int getHeight() {

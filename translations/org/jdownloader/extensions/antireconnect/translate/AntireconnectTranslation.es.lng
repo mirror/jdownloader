@@ -1,0 +1,15 @@
+{
+  "gui_config_antireconnect_newreconnect" : "Permitir Reconexión:",
+  "gui_config_antireconnect_each" : "Verificar cada (ms):",
+  "gui_config_antireconnect_oldspeed" : "Velocidad de descarga en kb/s",
+  "gui_config_antireconnect_newgroup" : "Si otros clientes estan conectados",
+  "gui_config_antireconnect_newspeed" : "Velocidad de descarga en kb/s",
+  "gui_config_antireconnect_newdownloads" : "Descargas simultaneas:",
+  "gui_config_antireconnect_oldreconnect" : "Permitir Reconexión:",
+  "gui_config_antireconnect_mode" : "Modo:",
+  "gui_config_antireconnect_olddownloads" : "Descargas simultaneas:",
+  "gui_config_antireconnect_ips" : "Verificar IPs (192.168.1.20-80)",
+  "gui_config_antireconnect_oldgroup" : "Normal",
+  "gui_config_antireconnect_timeout" : "Tiempo para la verificación (ms):",
+  "jd_plugins_optional_antireconnect_jdantireconnect" : "AntiReconexión"
+}

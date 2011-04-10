@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,7 +27,7 @@ public abstract class DateColumn extends ExtTextColumn<PackageLinkNode> {
         date = new Date();
         sb = new StringBuffer();
         try {
-            dateFormat = new SimpleDateFormat(JDL.L("org.jdownloader.gui.views.downloads.columns.DateColumn.dateFormat", "dd.MM.yy HH:mm")) {
+            dateFormat = new SimpleDateFormat(T._.org_jdownloader_gui_views_downloads_columns_DateColumn_dateFormat()) {
 
                 /**
                  * 

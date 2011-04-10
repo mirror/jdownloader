@@ -1,0 +1,5 @@
+{
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nПарола: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nАвтоматична парола: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\Завършено на %SYSTEM.DATE% в %SYSTEM.TIME% часа",
+  "plugins_optional_infofilewriter_content" : "Създържание:",
+  "plugins_optional_infofilewriter_filename" : "Име на файла:"
+}

@@ -1,0 +1,6 @@
+{
+  "action_customize_addsetting_ask" : "Inserire il nome per una nuova impostazione:",
+  "action_customize_removesetting_ask" : "Rimuovere le impostazioni selezionate (account %s1)?",
+  "jd_plugins_optional_customizer_jdpackagecustomizer_description" : "Personalizzazione pacchetto",
+  "jd_plugins_optional_customizer_jdpackagecustomizer" : "Personaliazzatore pacchetto JD"
+}

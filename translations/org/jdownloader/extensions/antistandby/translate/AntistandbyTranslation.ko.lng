@@ -1,0 +1,6 @@
+{
+  "gui_config_antistandby_mode" : "모드:",
+  "gui_config_antistandby_whiledl" : "다운로드 중 대기모드 비활성화",
+  "gui_config_antistandby_whilejd" : "실행 중 대기모드 비활성화",
+  "jd_plugins_optional_antistandby_jdantistandby" : "안티 스탠바이"
+}

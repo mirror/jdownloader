@@ -1,0 +1,7 @@
+{
+  "sys_warning_loguploadfailed" : "Günlüğün karşıya yüklenmesi başarısız!",
+  "jd_plugins_optional_jdchat_newmessage" : "%s1 size yeni bir ileti gönderdi:<hr> %s2",
+  "plugins_optional_jdchat_enternick" : "Dilediğiniz takma isim?",
+  "jd_plugins_optional_jdchat_jdchat" : "Sohbet",
+  "plugin_optional_jdchat_getlog" : "%s1 adlı geliştirenin problemi çözebilmesi için olay günlüğe ihtiyacı var. Ona günlüğünüzü göndermeyi kabul ediyor musunuz?"
+}

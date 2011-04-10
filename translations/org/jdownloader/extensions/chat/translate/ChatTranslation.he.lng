@@ -1,0 +1,7 @@
+{
+  "sys_warning_loguploadfailed" : "נכשלה העלאת קובץ הלוג!",
+  "jd_plugins_optional_jdchat_newmessage" : "הודעה חדשה מ %s1:<hr> %s2",
+  "plugins_optional_jdchat_enternick" : "כינוי",
+  "jd_plugins_optional_jdchat_jdchat" : "צ'אט JD",
+  "plugin_optional_jdchat_getlog" : "%s1 needs a log to solve your problem. Do you agree to send him the Log?"
+}

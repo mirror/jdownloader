@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.premium.Columns;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.Color;
 import java.awt.Component;
 
@@ -134,12 +136,12 @@ public class TrafficLeftColumn extends JDTableColumn {
         } else {
             HostAccounts ha = (HostAccounts) value;
             if (!ha.gotAccountInfos()) {
-                jlr.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.unknown", "Unknown"));
+                jlr.setText(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unknown());
             } else {
                 if (ha.getTraffic() < 0) {
-                    jlr.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.unlimited", "Unlimited"));
+                    jlr.setText(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_unlimited());
                 } else if (ha.getTraffic() == 0) {
-                    jlr.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.noTrafficLeft", "No Traffic Left"));
+                    jlr.setText(T._.jd_gui_swing_jdgui_settings_panels_premium_PremiumTableRenderer_noTrafficLeft());
                 } else {
                     jlr.setText(Formatter.formatReadable(ha.getTraffic()));
                 }

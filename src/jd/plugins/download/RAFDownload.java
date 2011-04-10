@@ -16,6 +16,8 @@
 
 package jd.plugins.download;
 
+
+ import org.jdownloader.translate.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -71,7 +73,7 @@ public class RAFDownload extends DownloadInterface {
             logger.finest("no errors : rename");
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
                 logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
-                error(LinkStatus.ERROR_LOCAL_IO, JDL.L("system.download.errors.couldnotrename", "Could not rename partfile"));
+                error(LinkStatus.ERROR_LOCAL_IO, T._.system_download_errors_couldnotrename());
             }
 
             /*
@@ -87,7 +89,7 @@ public class RAFDownload extends DownloadInterface {
                     boolean success = false;
                     DownloadLink sfv = downloadLink.getFilePackage().getSFV();
                     if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
+                        downloadLink.getLinkStatus().setStatusText(T._.system_download_doCRC2( "CRC32"));
                         downloadLink.requestGuiUpdate();
 
                         String sfvText = JDIO.readFileToString(new File(sfv.getFileOutput()));
@@ -107,13 +109,13 @@ public class RAFDownload extends DownloadInterface {
 
                     if (hashType == null) {
                         if (downloadLink.getMD5Hash() != null) {
-                            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "MD5"));
+                            downloadLink.getLinkStatus().setStatusText(T._.system_download_doCRC2( "MD5"));
                             downloadLink.requestGuiUpdate();
 
                             hashType = "MD5";
                             success = downloadLink.getMD5Hash().equalsIgnoreCase(JDHash.getMD5(new File(downloadLink.getFileOutput())));
                         } else if (downloadLink.getSha1Hash() != null) {
-                            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "SHA1"));
+                            downloadLink.getLinkStatus().setStatusText(T._.system_download_doCRC2( "SHA1"));
                             downloadLink.requestGuiUpdate();
 
                             hashType = "SHA1";
@@ -135,10 +137,10 @@ public class RAFDownload extends DownloadInterface {
     private void hashCheckFinished(String hashType, boolean success) {
         logger.info(hashType + "-Check: " + (success ? "ok" : "failed"));
         if (success) {
-            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", hashType));
+            downloadLink.getLinkStatus().setStatusText(T._.system_download_doCRC2_success( hashType));
             downloadLink.requestGuiUpdate();
         } else {
-            String error = JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType);
+            String error = T._.system_download_doCRC2_failed( hashType);
             downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
             downloadLink.getLinkStatus().setStatusText(error);
             downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
@@ -203,7 +205,7 @@ public class RAFDownload extends DownloadInterface {
 
             chunk = new Chunk(0, rangePosition = connection.getRange()[1], connection, this);
             rangePosition++;
-            logger.finer("Setup chunk " + "0" + ": " + chunk);
+            logger.finer("Setup chunk 0: " + chunk);
             addChunk(chunk);
             start++;
         }

@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.components.premiumbar;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -196,19 +198,19 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                     bars[ii].setMaximum(10);
                                     bars[ii].setValue(0);
                                     if (special) {
-                                        bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.expired_maybetraffic.tooltip", "%s - %s account(s) -- At the moment it may be that no premium traffic is left.", host, accs.size()));
+                                        bars[ii].setToolTipText(T._.gui_premiumstatus_expired_maybetraffic_tooltip( host, accs.size()));
                                     } else {
-                                        bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.expired_traffic.tooltip", "%s - %s account(s) -- At the moment no premium traffic is available.", host, accs.size()));
+                                        bars[ii].setToolTipText(T._.gui_premiumstatus_expired_traffic_tooltip( host, accs.size()));
                                     }
                                 } else if (left > 0) {
                                     bars[ii].setMaximum(max);
                                     bars[ii].setValue(left);
-                                    bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, accs.size(), Formatter.formatReadable(left)));
+                                    bars[ii].setToolTipText(T._.gui_premiumstatus_traffic_tooltip( host, accs.size(), Formatter.formatReadable(left)));
                                 } else {
                                     /* left < 0 for unlimited */
                                     bars[ii].setMaximum(10);
                                     bars[ii].setValue(10);
-                                    bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
+                                    bars[ii].setToolTipText(T._.gui_premiumstatus_unlimited_traffic_tooltip( host));
                                 }
                                 ii++;
                                 if (ii >= BARCOUNT) {

@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_remotecontrol_jdremotecontrol_description" : "Uzaktan Kumanda",
+  "plugins_optional_remotecontrol_startedonport2" : "%s1 port %s2 üzerinden başlatıldı. Komut listesini görüntülemek için \\nhttp://127.0.0.1:%s3/help adresine gidiniz.",
+  "plugins_optional_remotecontrol_stopped2" : "%s1 durduruldu.",
+  "jd_plugins_optional_remotecontrol_jdremotecontrol" : "Uzaktan Kumanda"
+}

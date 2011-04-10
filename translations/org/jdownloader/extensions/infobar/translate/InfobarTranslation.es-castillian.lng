@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_infobar_docking" : "Adherir a los bordes de la pantalla",
+  "jd_plugins_optional_infobar_jdinfobar_description" : "Pequeño panel flotante de informacion con datos en tiempo real sobre el estado de las Descargas. Tambien funciona como una zona de Arrastrar y Soltar donde se pueden agregar enlaces, URLs o archivos DLC.",
+  "jd_plugins_optional_infobar_jdinfobar" : "JD Barra de Informacion",
+  "jd_plugins_optional_infobar_opacity" : "Opacidad de la ventana (%):"
+}

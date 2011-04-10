@@ -1,0 +1,21 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "例: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "RAW モード？",
+  "gui_btn_yes" : "はい",
+  "gui_config_routeripfinder_ready" : "検出されたホスト名: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "ルーターをインポート",
+  "gui_config_jdrr_success" : "成功！",
+  "gui_config_jdrr_reconnectfaild" : "再接続に失敗",
+  "gui_btn_help" : "ヘルプ",
+  "gui_btn_start" : "開始",
+  "gui_config_jdrr_savereconnect" : "再接続に成功しました。今すぐ保存しますか？",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "ルーター IP",
+  "gui_config_jdrr_title" : "再接続の記録",
+  "gui_config_jdrr_status_title" : "状態の記録中",
+  "gui_config_routeripfinder_notfound" : "ルーターのホスト名がみつかりません！",
+  "gui_btn_no" : "いいえ",
+  "gui_btn_cancel" : "キャンセル",
+  "gui_btn_abort" : "中止",
+  "gui_config_reconnect_selectrouter" : "ルーターの型番を検索"
+}

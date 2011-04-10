@@ -1,0 +1,23 @@
+{
+  "gui_config_reconnect_selectrouter_example" : "Παράδειγμα: 3Com ADSL",
+  "gui_config_jdrr_rawmode" : "Λειτουργία RAW;",
+  "gui_btn_yes" : "Ναι",
+  "gui_config_routeripfinder_ready" : "Η IP βρέθηκε: %s1",
+  "gui_config_liveheader_dialog_importrouter" : "Εισαγωγή router",
+  "gui_config_jdrr_success" : "Επιτυχία!",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Απενεργοποιήσατε τον έλεγχο IP. Αυτό θα αυξήσει δραματικά το χρόνο επανασύνδεσης!\\r\\n\\r\\nΑρκετές περαιτέρω λειτουργίες, όπως ο Εγγραφέας Επανασύνδεσης, έχουν απενεργοποιηθεί.",
+  "gui_config_jdrr_reconnectfaild" : "Η επανασύνδεση απέτυχε",
+  "gui_btn_help" : "Βοήθεια",
+  "gui_btn_start" : "Εκκίνηση",
+  "gui_config_jdrr_savereconnect" : "Η επανασύνδεση ήταν επιτυχής. Αποθήκευση τώρα;",
+  "gui_config_jdrr_popup_title" : "JDRRPopup",
+  "gui_fengshuiconfig_routerip" : "IP του router",
+  "gui_config_jdrr_title" : "Εγγραφέας Επανασύνδεσης",
+  "gui_config_jdrr_status_title" : "Κατάσταση Εγγραφής",
+  "gui_config_routeripfinder_notfound" : "Δεν είναι δυνατόν να βρεθεί το όνομα παρόχου του router",
+  "gui_btn_no" : "Όχι",
+  "gui_btn_cancel" : "Ακύρωση",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title" : "Ο έλεγχος IP απενεργοποιήθηκε!",
+  "gui_btn_abort" : "Ματαίωση",
+  "gui_config_reconnect_selectrouter" : "Αναζήτηση μοντέλου router"
+}

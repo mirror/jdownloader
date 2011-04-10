@@ -1,0 +1,6 @@
+{
+  "jd_plugins_optional_jdinfofilewriter" : "JDInfoFileWriter",
+  "plugins_optional_infofilewriter_content" : "Indhold:",
+  "plugins_optional_infofilewriter_variables" : "Tilgængelige variabler",
+  "plugins_optional_infofilewriter_filename" : "Filnavn:"
+}

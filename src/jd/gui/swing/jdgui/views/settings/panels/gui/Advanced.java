@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.gui;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
@@ -36,7 +38,7 @@ public class Advanced extends ConfigPanel {
 
     @Override
     public String getTitle() {
-        return JDL.L(JDL_PREFIX + "gui.advanced.title", "Advanced");
+        return T._.jd_gui_swing_jdgui_settings_panels_gui_advanced_gui_advanced_title();
     }
 
     @Override
@@ -56,12 +58,12 @@ public class Advanced extends ConfigPanel {
 
         ConfigEntry ce;
 
-        container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"), "gui.images.container"));
+        container.setGroup(new ConfigGroup(T._.gui_config_gui_container(), "gui.images.container"));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDL.L("gui.config.reloadcontainer", "Reload Download Container")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, T._.gui_config_reloadcontainer()));
         ce.setDefaultValue(true);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDL.L("gui.config.showContainerOnLoadInfo", "Show detailed container information on load")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, T._.gui_config_showContainerOnLoadInfo()));
         ce.setDefaultValue(false);
 
         return container;

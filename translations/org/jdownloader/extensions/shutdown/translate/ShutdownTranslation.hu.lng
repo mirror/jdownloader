@@ -1,0 +1,21 @@
+{
+  "gui_config_jdshutdown_shutdown" : "Leállítás",
+  "gui_config_jdshutdown_forceshutdown" : "Kényszerített kikapcsolás (nem minden operációs rendszer támogatja)",
+  "interaction_shutdown_dialog_title_standby" : "Alvó állapot?",
+  "interaction_shutdown_dialog_msg_shutdown" : "<h2><font color=\"red\">A rendszer leáll!</font></h2>",
+  "gui_config_jdshutdown_osx_force_long" : "Kényszerített leállítás telepítése (csak MacOSX)",
+  "interaction_shutdown_dialog_title_hibernate" : "Hibernálás?",
+  "interaction_shutdown_dialog_title_shutdown" : "Kikapcsolás?",
+  "interaction_shutdown_dialog_msg_closejd" : "<h2><font color=\"red\">A JDownloader bezárásra kerül!</font></h2>",
+  "addons_jdshutdown_statusmessage_disabled" : "A JDownloader NEM kapcsolja ki a számítógépet",
+  "gui_config_jdshutdown_hibernate" : "Hibernálás  (nem minden operációs rendszer támogatja)",
+  "gui_config_jdshutdown_close" : "Jdownloader bezárása",
+  "gui_config_jdshutdown_standby" : "Készenlét  (nem minden operációs rendszer támogatja)",
+  "gui_config_jdshutdown_osx_force_short" : "Telepítés",
+  "jd_plugins_optional_jdshutdown" : "JD Leállító",
+  "interaction_shutdown_dialog_title_closejd" : "JDownloader bezárása?",
+  "gui_config_jdshutdown_mode" : "Mód:",
+  "addons_jdshutdown_statusmessage_enabled" : "A JDownloader a letöltések befejezése után kikapcsolja a számítógépet!",
+  "interaction_shutdown_dialog_msg_standby" : "<h2><font color=\"red\">A rendszer alvó állapotba kerül!</font></h2>",
+  "interaction_shutdown_dialog_msg_hibernate" : "<h2><font color=\"red\">A rendszer hibernál!</font></h2>"
+}

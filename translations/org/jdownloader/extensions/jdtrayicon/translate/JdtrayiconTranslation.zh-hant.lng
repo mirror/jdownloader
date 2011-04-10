@@ -1,0 +1,9 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "JDLightTray",
+  "plugins_trayicon_popup_bottom_simdls" : "同時下載",
+  "plugins_trayicon_popup_bottom_speed" : "速度限制(KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "同時連線",
+  "gui_tooltip_statusbar_simultan_downloads" : "最大同時下載數量",
+  "gui_tooltip_statusbar_speedlimiter" : "設定速度限制 (KiB/s) [0：無限制]",
+  "gui_tooltip_statusbar_max_chunks" : "最大連接數/檔案"
+}

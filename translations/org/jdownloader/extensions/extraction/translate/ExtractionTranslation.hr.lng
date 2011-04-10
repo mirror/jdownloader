@@ -1,0 +1,19 @@
+{
+  "plugins_optional_extraction_status_extractfailed" : "Raspakiranje nije uspjelo",
+  "plugins_optional_extraction_status_passfound" : "Lozinka pronađena",
+  "plugins_optional_extraction_status_extractfailedcrc" : "Raspakiranje nije uspjelo (CRC greška)",
+  "plugins_optional_extraction_status_queued" : "Čekanje za raspakiranje",
+  "plugins_optional_extraction_status_crackingpass" : "Probijanje lozinke...",
+  "plugins_optional_extraction_status_extracting" : "Raspakiranje...",
+  "plugins_optional_extraction_messages" : "Putanja %s1 ne postoji",
+  "plugins_optional_extraction_progress_extractfile" : "Raspakiranje %s1",
+  "plugins_optional_extraction_name" : "Raspakiranje",
+  "plugins_optional_extraction_filefilter" : "Svi podržani formati",
+  "plugins_optional_extraction_status_openingarchive" : "Otvaranje arhive...",
+  "plugins_optional_extraction_status_extractfailedpass" : "Raspakiranje nije uspjelo (lozinka)",
+  "plugins_optional_extraction_status_notenoughspace" : "Nema dovoljno mjesta za raspakiranje",
+  "plugins_optional_extraction_status_extractok" : "Raspakiranje je uspjelo",
+  "plugins_optional_extraction_error_extrfailedcrc" : "Raspakiranje nije uspjelo (CRC u nepoznatoj datoteci)",
+  "plugins_optional_extraction_filefilter_extractto" : "Raspakiranje mape",
+  "plugins_optional_extraction_crcerrorin" : "Raspakiranje nije uspjelo (CRC u %s1)"
+}

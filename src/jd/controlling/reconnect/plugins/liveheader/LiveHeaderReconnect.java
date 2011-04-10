@@ -1,5 +1,7 @@
 package jd.controlling.reconnect.plugins.liveheader;
 
+
+ import jd.controlling.reconnect.plugins.liveheader.translate.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -353,7 +355,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     private void editScript() {
 
-        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", this.getScript(), null, JDL.L("jd.controlling.reconnect.plugins.liveheader.LiveHeaderReconnect.actionPerformed.save", "Save"), null);
+        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", this.getScript(), null, T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
         dialog.setPreferredSize(new Dimension(700, 400));
         // CLR Import
         dialog.setLeftActions(new AbstractAction("Browser Scripts") {
@@ -370,7 +372,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                     if (data != null) {
 
                         if (data[2].toLowerCase().indexOf("curl") >= 0) {
-                            UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
+                            UserIO.getInstance().requestMessageDialog(T._.gui_config_liveHeader_warning_noCURLConvert());
                         }
 
                         dialog.setDefaultMessage(data[2]);
@@ -428,9 +430,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
             @Override
             public void runInEDT() {
-                final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100, null);
+                final ProgressController progress = new ProgressController(T._.gui_config_routeripfinder_featchIP(), 100, null);
 
-                LiveHeaderReconnect.this.txtIP.setText(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
+                LiveHeaderReconnect.this.txtIP.setText(T._.gui_config_routeripfinder_featchIP());
 
                 progress.setStatus(80);
                 final InetAddress ia = RouterUtils.getAddress(true);
@@ -441,10 +443,10 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
                 LiveHeaderReconnect.this.updateGUI();
                 progress.setStatus(100);
                 if (ia != null) {
-                    progress.setStatusText(JDL.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
+                    progress.setStatusText(T._.gui_config_routeripfinder_ready( ia.getHostAddress()));
                     progress.doFinalize(3000);
                 } else {
-                    progress.setStatusText(JDL.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
+                    progress.setStatusText(T._.gui_config_routeripfinder_notfound());
                     progress.doFinalize(3000);
                     progress.setColor(Color.RED);
                 }
@@ -878,7 +880,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ActionListener,
 
     private void routerRecord() {
         if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.title", "IP-Check disabled!"), JDL.L("jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.ipcheckdisable.warning.message", "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled."));
+            UserIO.getInstance().requestMessageDialog(UserIO.ICON_WARNING, T._.jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title(), T._.jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message());
         } else {
             new Thread() {
                 @Override

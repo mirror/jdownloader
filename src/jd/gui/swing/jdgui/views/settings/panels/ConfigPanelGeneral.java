@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels;
 
+
+ import org.jdownloader.gui.translate.*;
 import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
@@ -50,16 +52,16 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         downloadFolder = new FolderChooser("downloadfolder");
         subfolder = new Checkbox();
 
-        this.addHeader(JDL.L("gui.config.general.downloaddirectory", "Download directory"), JDTheme.II("gui.images.userhome", 32, 32));
+        this.addHeader(T._.gui_config_general_downloaddirectory(), JDTheme.II("gui.images.userhome", 32, 32));
         this.addDescription(JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
-        this.addPair(JDL.L("gui.config.general.createsubfolders", "Create Subfolder with packagename if possible"), subfolder);
+        this.addPair(T._.gui_config_general_createsubfolders(), subfolder);
 
         /* File Writing */
         autoCRC = new Checkbox();
-        this.addHeader(JDL.L("gui.config.download.write", "File writing"), JDTheme.II("gui.images.save", 32, 32));
+        this.addHeader(T._.gui_config_download_write(), JDTheme.II("gui.images.save", 32, 32));
         this.addDescription(JDT._.gui_settings_filewriting_description());
-        this.addPair(JDL.L("gui.config.download.crc", "SFV/CRC check when possible"), autoCRC);
+        this.addPair(T._.gui_config_download_crc(), autoCRC);
 
     }
 

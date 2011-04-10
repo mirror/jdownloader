@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.linkgrabber.contextmenu;
 
+
+ import org.jdownloader.gui.translate.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Set;
@@ -29,7 +31,7 @@ public class SplitHosterAction extends ContextMenuAction {
 
     @Override
     protected String getName() {
-        return JDL.L("gui.linkgrabberv2.splithoster", "Split by hoster") + " (" + packages.size() + ")";
+        return T._.gui_linkgrabberv2_splithoster() + " (" + packages.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

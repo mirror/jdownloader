@@ -1,0 +1,7 @@
+{
+  "jd_plugins_optional_jdtrayicon_jdlighttray" : "트레이",
+  "plugins_trayicon_popup_bottom_simdls" : "동시 다운로드",
+  "plugins_trayicon_popup_bottom_speed" : "속도 제한 (KiB/s)",
+  "plugins_trayicon_popup_bottom_simchunks" : "동시 연결",
+  "gui_tooltip_statusbar_speedlimiter" : "속도 제한 (KiB/s)[0 = 무제한]"
+}

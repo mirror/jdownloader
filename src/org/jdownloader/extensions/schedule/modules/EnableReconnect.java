@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
+
+ import org.jdownloader.extensions.schedule.translate.*;
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 
@@ -36,7 +38,7 @@ public class EnableReconnect implements SchedulerModuleInterface {
     }
 
     public String getTranslation() {
-        return JDL.L("jd.plugins.optional.schedule.modules.enableReconnect", "Enable Reconnect");
+        return T._.jd_plugins_optional_schedule_modules_enableReconnect();
     }
 
     public boolean needParameter() {

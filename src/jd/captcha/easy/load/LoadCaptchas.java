@@ -16,6 +16,8 @@
 
 package jd.captcha.easy.load;
 
+
+ import jd.captcha.translate.*;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -137,7 +139,7 @@ public class LoadCaptchas {
             if (selectedImage != null)
                 selectedImage.load(host);
             else {
-                dialog.setTitle(JDL.L("easycaptcha.loadcaptchas.clickoncaptcha", "click on the captcha"));
+                dialog.setTitle(T._.easycaptcha_loadcaptchas_clickoncaptcha());
                 images = getAllImages(br);
                 loadImages();
                 dialog.addWindowListener(new WindowListener() {
@@ -333,7 +335,7 @@ public class LoadCaptchas {
         final JPanel p = new GuiRunnable<JPanel>() {
             public JPanel runSave() {
                 JPanel ret = new JPanel(new GridLayout(6, 2));
-                ret.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.link", "Link") + ":"));
+                ret.add(new JLabel(T._.easycaptcha_loadcaptchas_link() + ":"));
                 return ret;
 
             }
@@ -349,7 +351,7 @@ public class LoadCaptchas {
         p.add(tfl);
         JSpinner sm = new GuiRunnable<JSpinner>() {
             public JSpinner runSave() {
-                p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.howmuch", "How much captchas you need") + ":"));
+                p.add(new JLabel(T._.easycaptcha_loadcaptchas_howmuch() + ":"));
                 if (loadImage != null) tfl.setText(loadImage.baseUrl);
                 return new JSpinner(new SpinnerNumberModel(100, 1, 4000, 1));
             }
@@ -357,7 +359,7 @@ public class LoadCaptchas {
         p.add(sm);
         JCheckBox followLinks = new GuiRunnable<JCheckBox>() {
             public JCheckBox runSave() {
-                p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.followlinks", "follow normal Links (very slow)") + ":"));
+                p.add(new JLabel(T._.easycaptcha_loadcaptchas_followlinks() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(false);
                 p.add(checkBox);
@@ -366,7 +368,7 @@ public class LoadCaptchas {
         }.getReturnValue();
         JCheckBox threadedCheck = new GuiRunnable<JCheckBox>() {
             public JCheckBox runSave() {
-                p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.threaded", "threaded image Download (very fast)") + ":"));
+                p.add(new JLabel(T._.easycaptcha_loadcaptchas_threaded() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(false);
                 p.add(checkBox);
@@ -375,7 +377,7 @@ public class LoadCaptchas {
         }.getReturnValue();
         JCheckBox loadDirect = new GuiRunnable<JCheckBox>() {
             public JCheckBox runSave() {
-                p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.loaddirect", "Load direct if possible (much faster)") + ":"));
+                p.add(new JLabel(T._.easycaptcha_loadcaptchas_loaddirect() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(true);
                 p.add(checkBox);
@@ -384,7 +386,7 @@ public class LoadCaptchas {
         }.getReturnValue();
         JButton ok = new GuiRunnable<JButton>() {
             public JButton runSave() {
-                return new JButton(JDL.L("gui.btn_ok", "OK"));
+                return new JButton(T._.gui_btn_ok());
             }
         }.getReturnValue();
         ok.addActionListener(new ActionListener() {
@@ -421,7 +423,7 @@ public class LoadCaptchas {
         };
         JButton cancel = new GuiRunnable<JButton>() {
             public JButton runSave() {
-                return new JButton(JDL.L("gui.btn_cancel", "Cancel"));
+                return new JButton(T._.gui_btn_cancel());
             }
         }.getReturnValue();
         cancel.addActionListener(new ActionListener() {

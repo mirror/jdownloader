@@ -1,5 +1,7 @@
 package jd.controlling.reconnect.plugins.batch;
 
+
+ import jd.controlling.reconnect.plugins.batch.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -74,13 +76,13 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
         this.browse.addActionListener(this);
         this.browse.setFileSelectionMode(UserIO.DIRECTORIES_ONLY);
         this.browse.setDialogType(JFileChooser.SAVE_DIALOG);
-        p.add(new JLabel(JDL.L("interaction.batchreconnect.terminal", "Interpreter")), "sg left");
+        p.add(new JLabel(T._.interaction_batchreconnect_terminal()), "sg left");
         p.add(this.txtCommand);
 
-        p.add(new JLabel(JDL.L("interaction.batchreconnect.batch", "Batch Script")), "newline,spanx,sg left");
+        p.add(new JLabel(T._.interaction_batchreconnect_batch()), "newline,spanx,sg left");
         p.add(new JScrollPane(this.txtBatch), "spanx,newline,pushx,growx");
 
-        p.add(new JLabel(JDL.L("interaction.batchreconnect.executein", "Start in (application folder)")), "sg left");
+        p.add(new JLabel(T._.interaction_batchreconnect_executein()), "sg left");
         p.add(this.browse);
         new TextComponentChangeListener(this.txtCommand) {
             @Override
@@ -110,7 +112,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     @Override
     public String getName() {
-        return JDL.L("jd.controlling.reconnect.plugins.batch.ExternBatchReconnectPlugin.getName", "External Batch Reconnect");
+        return T._.jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName();
     }
 
     private String getTerminalCommand() {
