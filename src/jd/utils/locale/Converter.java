@@ -129,16 +129,29 @@ public class Converter implements MessageListener {
 
             }
             System.out.println(sb);
+            ti.getTranslationFile().delete();
 
+            StringBuilder sb2 = new StringBuilder();
+            String pkg = ti.getPath().toString().substring(4).replace("\\", ".").replace("/", ".");
+            sb2.append("package " + pkg + ";\r\n");
+            sb2.append("import org.appwork.txtresource.*;\r\n");
+            sb2.append("@Defaults(lngs = { \"en\"})\r\n");
+
+            sb2.append("public interface " + ti.getClassName() + "Translation extends " + ti.getClassName() + "Interface {\r\n");
+            sb2.append(sb + "\r\n");
+            sb2.append("}");
+
+            IO.writeStringToFile(ti.getTranslationFile(), sb2.toString());
             for (String s : lngfiles.keySet()) {
                 HashMap<String, String> lsb = lngfiles.get(s);
-                ti.getTranslationFile().delete();
+
                 ti.getShortFile().delete();
                 ti.getTranslationFile().getParentFile().mkdirs();
-
-                IO.writeStringToFile(ti.getTranslationFile(), JSonStorage.toString(lsb));
-                StringBuilder sb2 = new StringBuilder();
-                String pkg = ti.getPath().toString().substring(4).replace("\\", ".").replace("/", ".");
+                File lngF = new File(ti.getPath(), ti.getClassName() + "Translation." + s + ".lng");
+                lngF.delete();
+                IO.writeStringToFile(lngF, JSonStorage.toString(lsb));
+                sb2 = new StringBuilder();
+                pkg = ti.getPath().toString().substring(4).replace("\\", ".").replace("/", ".");
                 sb2.append("package " + pkg + ";\r\n");
                 sb2.append("import org.appwork.txtresource.TranslationFactory;\r\n");
                 sb2.append("public class T {\r\n");
