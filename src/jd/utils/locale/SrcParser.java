@@ -29,7 +29,6 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
-import org.jdownloader.extensions.langfileeditor.LngEntry;
 
 public class SrcParser {
 
