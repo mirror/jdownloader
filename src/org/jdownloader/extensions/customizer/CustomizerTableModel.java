@@ -104,7 +104,7 @@ public class CustomizerTableModel extends ExtTableModel<CustomizeSetting> {
             @Override
             protected String getToolTip(CustomizeSetting obj) {
                 if (obj.isRegexValid()) return super.getToolTip(obj);
-                return JDL.LF(JDL_PREFIX + "regex.malformed", "Malformed Regex!");
+                return JDL.L(JDL_PREFIX + "regex.malformed", "Malformed Regex!");
             }
         });
         this.addColumn(new ExtCheckColumn<CustomizeSetting>(JDL.L(JDL_PREFIX + "onurl", "On URL?"), this) {
