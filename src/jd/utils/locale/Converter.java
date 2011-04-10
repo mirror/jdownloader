@@ -79,7 +79,7 @@ public class Converter implements MessageListener {
                 if (defValue == null || defValue.equals("null")) {
                     defValue = readValue("en", c.getKey());
                 }
-                String key = c.getKey().replace(".", "_");
+                String key = c.getKey().replaceAll("\\W+", "_");
                 sb.append("\r\n");
                 String value = defValue;
                 int count = 1;
@@ -100,12 +100,12 @@ public class Converter implements MessageListener {
                     if (r != null) lsb.put(key, r);
                 }
                 sb.append("\r\n");
-                sb.append("Object " + key + "(");
+                sb.append("String " + key + "(");
                 boolean first = true;
                 for (int i = 0; i < count; i++) {
                     if (!first) sb.append(", ");
                     first = false;
-                    sb.append("String s" + (i + 1));
+                    sb.append("Object s" + (i + 1));
                 }
                 sb.append(");");
 
