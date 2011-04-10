@@ -87,9 +87,10 @@ public class Converter implements MessageListener {
             if (v != null) {
                 System.out.println("Replaced " + s + " <" + v);
                 content = content.replace(s + " + \"", "\"" + v);
-                content = content.replace("\" + \"", "");
+
             }
         }
+        content = content.replace("\" + \"", "");
         int found = content.split("PREFIX").length - 2;
         return content;
 
