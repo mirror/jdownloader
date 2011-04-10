@@ -160,7 +160,7 @@ public class Converter implements MessageListener {
             sb2.append("import org.appwork.txtresource.*;\r\n");
             sb2.append("@Defaults(lngs = { \"en\"})\r\n");
 
-            sb2.append("public interface " + ti.getClassName() + "Translation extends " + ti.getClassName() + "Interface {\r\n");
+            sb2.append("public interface " + ti.getClassName() + "Translation extends TranslateInterface {\r\n");
             sb2.append(sb + "\r\n");
             sb2.append("}");
             ti.getTranslationFile().getParentFile().mkdirs();
@@ -180,7 +180,7 @@ public class Converter implements MessageListener {
                     sb2.append("package " + pkg + ";\r\n");
                     sb2.append("import org.appwork.txtresource.TranslationFactory;\r\n");
                     sb2.append("public class T {\r\n");
-                    sb2.append("public static final " + ti.getClassName() + " T = TranslationFactory.create(" + ti.getClassName() + ".class);\r\n");
+                    sb2.append("public static final " + ti.getClassName() + "Translation _ = TranslationFactory.create(" + ti.getClassName() + "Translation.class);\r\n");
                     sb2.append("}");
                     IO.writeStringToFile(ti.getShortFile(), sb2.toString());
                 }
