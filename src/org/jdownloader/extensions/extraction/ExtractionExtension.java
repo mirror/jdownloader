@@ -60,7 +60,7 @@ import org.jdownloader.extensions.extraction.multi.Multi;
 import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
-import org.jdownloader.extensions.extraction.translation.T;
+import org.jdownloader.extensions.extraction.translation.TT;
 
 public class ExtractionExtension extends AbstractExtension implements ControlListener, ActionListener {
     private static final int             EXTRACT_LINK            = 1000;
@@ -90,7 +90,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
     private final ArrayList<Archive>     archives                = new ArrayList<Archive>();
 
     public ExtractionExtension() throws StartException {
-        super(T.T.name());
+        super(TT.T.name());
     }
 
     /**
@@ -725,7 +725,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
 
     @Override
     public String getDescription() {
-        return T.T.description();
+        return TT.T.description();
     }
 
     @Override
