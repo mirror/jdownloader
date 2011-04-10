@@ -123,6 +123,8 @@ public class Converter implements MessageListener {
 
                         }
                     }
+                    f.delete();
+                    IO.writeStringToFile(f, content);
                 }
 
             }
@@ -132,6 +134,8 @@ public class Converter implements MessageListener {
                 HashMap<String, String> lsb = lngfiles.get(s);
                 ti.getTranslationFile().delete();
                 ti.getShortFile().delete();
+                ti.getTranslationFile().getParentFile().mkdirs();
+
                 IO.writeStringToFile(ti.getTranslationFile(), JSonStorage.toString(lsb));
                 StringBuilder sb2 = new StringBuilder();
                 String pkg = ti.getPath().toString().substring(4).replace("\\", ".").replace("/", ".");
