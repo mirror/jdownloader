@@ -27,7 +27,6 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.windowflasher.WindowFlasher;
 import org.jdownloader.update.gui.JDStandaloneUpdaterGui;
 import org.jdownloader.update.translate.T;
 
@@ -38,14 +37,12 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
     private JButton           ok;
     private JButton           cancel;
     private JButton           ok2;
-    private WindowFlasher     flasher;
 
     public UpdaterGUI() {
         super("Updater");
         panel = new UpdaterCoreGui(JDUpdater.getInstance());
         panel.expand();
 
-        flasher = new WindowFlasher(this);
         JDUpdater.getInstance().getEventSender().addListener(panel);
 
         JDUpdater.getInstance().getEventSender().addListener(this);
@@ -180,7 +177,7 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
                 // toFront();
                 // setExtendedState(JFrame.NORMAL);
                 // }
-                flasher.start();
+                // flasher.start();
             }
         };
     }
