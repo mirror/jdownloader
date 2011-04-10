@@ -64,6 +64,9 @@ public class Converter implements MessageListener {
         variable = variable.replace(clazz + ".", "");
 
         String[] matches = new Regex(content, variable + "\\s*=(.*?);").getColumn(0);
+        if (matches.length == 0) { return null;
+
+        }
         String ret = matches[matches.length - 1].trim();
         while (ret.startsWith("\"")) {
             ret = ret.substring(1);
@@ -76,13 +79,15 @@ public class Converter implements MessageListener {
     }
 
     private String prepareContent(String content, File f, ConvertEntry c) {
-        String[] stats = new Regex(content, "JDL\\.L\\(([^\"].*?) +").getColumn(0);
+        String[] stats = new Regex(content, "JDL\\.LF?\\(([^\"].*?) +").getColumn(0);
 
         for (String s : stats) {
 
             String v = this.getValueOf(s, content, f.getName().substring(0, f.getName().length() - 5));
-            System.out.println("Replaced " + s + " <" + v);
-            content = content.replace(s + " + \"", "\"" + v);
+            if (v != null) {
+                System.out.println("Replaced " + s + " <" + v);
+                content = content.replace(s + " + \"", "\"" + v);
+            }
         }
         int found = content.split("PREFIX").length - 2;
         return content;
