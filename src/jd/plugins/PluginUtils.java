@@ -18,6 +18,7 @@ package jd.plugins;
 
 
  import org.jdownloader.translate.*;
+
 import java.nio.charset.CharacterCodingException;
 
 import jd.gui.UserIO;
@@ -52,7 +53,7 @@ public class PluginUtils {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
             link.requestGuiUpdate();
 
-            if (message == null) message = T._.jd_plugins_PluginUtils_askPassword( link.getName());
+            if (message == null) message = JDT._.jd_plugins_PluginUtils_askPassword( link.getName());
             final String password = askPassword(message, link.getDecrypterPassword());
 
             link.requestGuiUpdate();
@@ -63,9 +64,9 @@ public class PluginUtils {
     }
 
     public static String askPassword(String message, final CryptedLink link) {
-        link.getProgressController().setStatusText(T._.gui_linkgrabber_waitinguserio());
+        link.getProgressController().setStatusText(JDT._.gui_linkgrabber_waitinguserio());
 
-        if (message == null) message = T._.jd_plugins_PluginUtils_askPassword( link.getCryptedUrl());
+        if (message == null) message = JDT._.jd_plugins_PluginUtils_askPassword( link.getCryptedUrl());
         final String password = askPassword(message, link.getDecrypterPassword());
 
         link.getProgressController().setStatusText(null);
@@ -85,7 +86,7 @@ public class PluginUtils {
      * @param password
      */
     public static void informPasswordWrong(final Plugin plg, final String password) {
-        Balloon.show(T._.jd_plugins_PluginUtils_informPasswordWrong_title( password), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), T._.jd_plugins_PluginUtils_informPasswordWrong_message( plg.getHost()));
+        Balloon.show(JDT._.jd_plugins_PluginUtils_informPasswordWrong_title( password), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), JDT._.jd_plugins_PluginUtils_informPasswordWrong_message( plg.getHost()));
     }
 
     public static void evalJSPacker(final Browser br) {

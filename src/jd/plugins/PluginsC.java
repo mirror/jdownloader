@@ -18,6 +18,7 @@ package jd.plugins;
 
 
  import org.jdownloader.translate.*;
+
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
@@ -108,7 +109,7 @@ public abstract class PluginsC extends Plugin {
         progress.addToMax(dlU.size());
         for (String string : dlU) {
             progress.increase(1);
-            progress.setStatusText(T._.plugins_container_decrypt( i));
+            progress.setStatusText(JDT._.plugins_container_decrypt( i));
 
             final DistributeData distributeData = new DistributeData(string);
             final ArrayList<DownloadLink> links = distributeData.findLinks();
@@ -366,7 +367,7 @@ public abstract class PluginsC extends Plugin {
             if (progress != null) {
                 progress.doFinalize();
             }
-            progress = new ProgressController(T._.plugins_container_open(), 10, null);
+            progress = new ProgressController(JDT._.plugins_container_open(), 10, null);
             progress.increase(1);
             if (bs != null) k = bs;
             try {
@@ -378,9 +379,9 @@ public abstract class PluginsC extends Plugin {
 
             logger.info(filename + " Parse");
             if (cls != null && dlU != null) {
-                progress.setStatusText(T._.plugins_container_found( cls.size()));
+                progress.setStatusText(JDT._.plugins_container_found( cls.size()));
                 decryptLinkProtectorLinks();
-                progress.setStatusText(T._.plugins_container_exit( cls.size()));
+                progress.setStatusText(JDT._.plugins_container_exit( cls.size()));
                 final Iterator<DownloadLink> it = cls.iterator();
                 while (it.hasNext()) {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
@@ -389,11 +390,11 @@ public abstract class PluginsC extends Plugin {
             }
             if (this.containerStatus == null) {
                 progress.setColor(Color.RED);
-                progress.setStatusText(T._.plugins_container_exit_error( "Container not found!"));
+                progress.setStatusText(JDT._.plugins_container_exit_error( "Container not found!"));
                 progress.doFinalize(500);
             } else if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
                 progress.setColor(Color.RED);
-                progress.setStatusText(T._.plugins_container_exit_error( containerStatus.getStatusText()));
+                progress.setStatusText(JDT._.plugins_container_exit_error( containerStatus.getStatusText()));
                 progress.doFinalize(5000);
                 WebUpdate.doUpdateCheck(false);
             } else {

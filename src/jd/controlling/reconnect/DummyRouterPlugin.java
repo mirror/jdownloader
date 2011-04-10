@@ -2,6 +2,7 @@ package jd.controlling.reconnect;
 
 
  import org.jdownloader.translate.*;
+
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
@@ -43,7 +44,7 @@ public class DummyRouterPlugin extends RouterPlugin {
         text.setBackground(null);
         text.setOpaque(false);
         text.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        text.setText(T._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI());
+        text.setText(JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI());
         p.add(text);
         return p;
     }
@@ -55,7 +56,7 @@ public class DummyRouterPlugin extends RouterPlugin {
 
     @Override
     public String getName() {
-        return T._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();
+        return JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();
     }
 
     @Override

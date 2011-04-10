@@ -18,6 +18,7 @@ package jd.plugins;
 
 
  import org.jdownloader.translate.*;
+
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -229,40 +230,40 @@ public class LinkStatus implements Serializable {
     private String getDefaultErrorMessage() {
         switch (lastestStatus) {
         case LinkStatus.ERROR_RETRY:
-            return T._.downloadlink_status_error_retry();
+            return JDT._.downloadlink_status_error_retry();
         case LinkStatus.ERROR_PLUGIN_DEFECT:
-            return T._.downloadlink_status_error_defect();
+            return JDT._.downloadlink_status_error_defect();
         case LinkStatus.ERROR_PLUGIN_NEEDED:
-            return T._.downloadlink_status_error_no_plugin_available();
+            return JDT._.downloadlink_status_error_no_plugin_available();
         case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
-            return T._.downloadlink_status_incomplete();
+            return JDT._.downloadlink_status_incomplete();
         case LinkStatus.ERROR_ALREADYEXISTS:
-            return T._.downloadlink_status_error_file_exists();
+            return JDT._.downloadlink_status_error_file_exists();
         case LinkStatus.ERROR_CAPTCHA:
-            return T._.downloadlink_status_error_captcha_wrong();
+            return JDT._.downloadlink_status_error_captcha_wrong();
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
-            return T._.downloadlink_status_error_downloadfailed();
+            return JDT._.downloadlink_status_error_downloadfailed();
         case LinkStatus.ERROR_IP_BLOCKED:
-            return T._.downloadlink_status_error_download_limit();
+            return JDT._.downloadlink_status_error_download_limit();
         case LinkStatus.ERROR_FILE_NOT_FOUND:
-            return T._.downloadlink_status_error_file_not_found();
+            return JDT._.downloadlink_status_error_file_not_found();
         case LinkStatus.ERROR_POST_PROCESS:
-            return T._.downloadlink_status_error_post_process();
+            return JDT._.downloadlink_status_error_post_process();
         case LinkStatus.ERROR_TIMEOUT_REACHED:
         case LinkStatus.ERROR_NO_CONNECTION:
-            return T._.downloadlink_status_error_no_connection();
+            return JDT._.downloadlink_status_error_no_connection();
         case LinkStatus.ERROR_PREMIUM:
-            return T._.downloadlink_status_error_premium();
+            return JDT._.downloadlink_status_error_premium();
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-            return T._.downloadlink_status_error_temp_unavailable();
+            return JDT._.downloadlink_status_error_temp_unavailable();
         case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
-            return T._.downloadlink_status_error_hoster_temp_unavailable();
+            return JDT._.downloadlink_status_error_hoster_temp_unavailable();
         case LinkStatus.ERROR_FATAL:
-            return T._.downloadlink_status_error_fatal();
+            return JDT._.downloadlink_status_error_fatal();
         case LinkStatus.WAITING_USERIO:
-            return T._.downloadlink_status_waitinguserio();
+            return JDT._.downloadlink_status_waitinguserio();
         case LinkStatus.NOT_ENOUGH_HARDDISK_SPACE:
-            return T._.downloadlink_status_error();
+            return JDT._.downloadlink_status_error();
         }
         return null;
     }
@@ -273,7 +274,7 @@ public class LinkStatus implements Serializable {
             ret = getDefaultErrorMessage();
         }
         if (ret == null) {
-            ret = T._.downloadlink_status_error_unexpected();
+            ret = JDT._.downloadlink_status_error_unexpected();
         }
         return ret;
     }
@@ -306,7 +307,7 @@ public class LinkStatus implements Serializable {
             } else if (getStatusText() != null) {
                 ret.append(getStatusText());
             } else {
-                ret.append(T._.gui_downloadlink_errorpostprocess3());
+                ret.append(JDT._.gui_downloadlink_errorpostprocess3());
             }
             return ret.toString();
         }
@@ -315,7 +316,7 @@ public class LinkStatus implements Serializable {
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
             if (downloadLink.isAborted() && (statusText == null || statusText.trim().length() == 0)) {
-                ret.append(T._.gui_downloadlink_aborted()).append(' ');
+                ret.append(JDT._.gui_downloadlink_aborted()).append(' ');
             } else if (downloadLink.isAborted()) {
                 ret.append(statusText);
             }
@@ -328,27 +329,27 @@ public class LinkStatus implements Serializable {
 
         /* ip blocked */
         if (hasStatus(ERROR_IP_BLOCKED) && ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0) {
-            ret.append(T._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
+            ret.append(JDT._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
         }
         /* temp unavail */
         if (hasStatus(ERROR_TEMPORARILY_UNAVAILABLE) && getRemainingWaittime() > 0) {
-            ret.append(T._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
+            ret.append(JDT._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
         }
         /* hoster temp unavail */
         if (hasStatus(ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0) {
-            ret.append(T._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
+            ret.append(JDT._.gui_download_waittime_status2( Formatter.formatSeconds(getRemainingWaittime() / 1000)));
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
         }
 
         if (isFailed()) return getLongErrorMessage();
         final DownloadInterface dli = downloadLink.getDownloadInstance();
-        if (downloadLink.getDefaultPlugin() != null && ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return T._.gui_downloadlink_hosterwaittime(); }
-        if (downloadLink.getDefaultPlugin() != null && ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return T._.gui_downloadlink_hostertempunavail(); }
+        if (downloadLink.getDefaultPlugin() != null && ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDT._.gui_downloadlink_hosterwaittime(); }
+        if (downloadLink.getDefaultPlugin() != null && ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDT._.gui_downloadlink_hostertempunavail(); }
         if (dli == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
         }
@@ -359,18 +360,18 @@ public class LinkStatus implements Serializable {
 
             if (speed > 0) {
                 if (downloadLink.getDownloadSize() < 0) {
-                    return Formatter.formatReadable(speed) + "/s " + T._.gui_download_filesize_unknown();
+                    return Formatter.formatReadable(speed) + "/s " + JDT._.gui_download_filesize_unknown();
                 } else {
                     long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
                     return "ETA " + Formatter.formatSeconds((int) eta) + " @ " + Formatter.formatReadable(speed) + "/s" + chunkString;
                 }
             } else {
-                return T._.gui_download_create_connection() + chunkString;
+                return JDT._.gui_download_create_connection() + chunkString;
             }
         }
 
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) return T._.gui_download_onlinecheckfailed();
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) return JDT._.gui_download_onlinecheckfailed();
         if (errorMessage != null) return errorMessage;
         if (statusText != null) return statusText;
         return "";

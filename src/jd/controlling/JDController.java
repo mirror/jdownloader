@@ -18,6 +18,7 @@ package jd.controlling;
 
 
  import org.jdownloader.translate.*;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -571,7 +572,7 @@ public class JDController implements ControlListener {
                         }
                         final String comment = filePackage.getComment();
                         final String password = filePackage.getPassword();
-                        JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, T._.container_message_title(), String.format(html, JDIO.getFileExtension(file).toLowerCase(), T._.container_message_title(), T._.container_message_uploaded(), uploader, T._.container_message_created(), app, T._.container_message_comment(), comment, T._.container_message_password(), password)), UserIO.RETURN_OK);
+                        JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, JDT._.container_message_title(), String.format(html, JDIO.getFileExtension(file).toLowerCase(), JDT._.container_message_title(), JDT._.container_message_uploaded(), uploader, JDT._.container_message_created(), app, JDT._.container_message_comment(), comment, JDT._.container_message_password(), password)), UserIO.RETURN_OK);
 
                     }
                     // schickt die Links zuerst mal zum Linkgrabber
@@ -602,7 +603,7 @@ public class JDController implements ControlListener {
             JDIO.writeLocalFile(file, cipher);
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false)) {
                 // Nur Falls Die Meldung nicht deaktiviert wurde {
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, T._.sys_dlc_success()), UserIO.RETURN_OK)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDT._.sys_dlc_success()), UserIO.RETURN_OK)) {
                     loadContainerFile(file);
                     return;
                 }
@@ -619,7 +620,7 @@ public class JDController implements ControlListener {
         new Thread("Autostart counter") {
             @Override
             public void run() {
-                final ProgressController pc = new ProgressController(T._.gui_autostart(), null);
+                final ProgressController pc = new ProgressController(JDT._.gui_autostart(), null);
                 pc.getBroadcaster().addListener(new ProgressControllerListener() {
                     public void onProgressControllerEvent(final ProgressControllerEvent event) {
                         pc.setStatusText("Autostart aborted!");

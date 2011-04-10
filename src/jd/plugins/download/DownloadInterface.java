@@ -18,6 +18,7 @@ package jd.plugins.download;
 
 
  import org.jdownloader.translate.*;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -266,7 +267,7 @@ abstract public class DownloadInterface {
                 buffer = new ByteArray(bufferSize);
 
             } catch (Exception e) {
-                error(LinkStatus.ERROR_FATAL, T._.download_error_message_outofmemory());
+                error(LinkStatus.ERROR_FATAL, JDT._.download_error_message_outofmemory());
                 return;
             }
             /* +1 because of startByte also gets loaded (startbyte till endbyte) */
@@ -325,34 +326,34 @@ abstract public class DownloadInterface {
                 }
                 if (getCurrentBytesPosition() < endByte && endByte > 0 || getCurrentBytesPosition() <= 0) {
                     logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endByte);
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, T._.download_error_message_incomplete());
+                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDT._.download_error_message_incomplete());
                 }
             } catch (FileNotFoundException e) {
                 logger.severe("file not found. " + e.getLocalizedMessage());
                 error(LinkStatus.ERROR_FILE_NOT_FOUND, null);
             } catch (SecurityException e) {
                 logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-                error(LinkStatus.ERROR_LOCAL_IO, T._.download_error_message_iopermissions());
+                error(LinkStatus.ERROR_LOCAL_IO, JDT._.download_error_message_iopermissions());
             } catch (UnknownHostException e) {
                 linkStatus.setValue(10 * 60000l);
-                error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, T._.download_error_message_unavailable());
+                error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDT._.download_error_message_unavailable());
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().contains("reset")) {
                     JDLogger.getLogger().info("Connection reset: network problems!");
                     linkStatus.setValue(1000l * 60 * 5);
-                    error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, T._.download_error_message_networkreset());
+                    error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDT._.download_error_message_networkreset());
                 } else if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                     JDLogger.getLogger().info("Read timeout: network problems! (too many connections?, firewall/antivirus?)");
-                    error(LinkStatus.ERROR_TIMEOUT_REACHED, T._.download_error_message_networkreset());
+                    error(LinkStatus.ERROR_TIMEOUT_REACHED, JDT._.download_error_message_networkreset());
                     JDLogger.exception(e);
                 } else {
                     JDLogger.exception(e);
                     if (e.getMessage() != null && e.getMessage().contains("503")) {
                         linkStatus.setValue(10 * 60000l);
-                        error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, T._.download_error_message_unavailable());
+                        error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDT._.download_error_message_unavailable());
                     } else {
                         logger.severe("error occurred while writing to file. " + e.getMessage());
-                        error(LinkStatus.ERROR_LOCAL_IO, T._.download_error_message_iopermissions());
+                        error(LinkStatus.ERROR_LOCAL_IO, JDT._.download_error_message_iopermissions());
                     }
                 }
             } catch (Exception e) {
@@ -498,7 +499,7 @@ abstract public class DownloadInterface {
                             logger.finer("Is no error. Last chunk is just already finished");
                             return;
                         }
-                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, T._.download_error_message_connectioncopyerror());
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDT._.download_error_message_connectioncopyerror());
                         if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                         return;
                     }
@@ -511,13 +512,13 @@ abstract public class DownloadInterface {
                         return;
                     }
                     if (connection == null) {
-                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, T._.download_error_message_connectioncopyerror());
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDT._.download_error_message_connectioncopyerror());
                         if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                         return;
                     }
 
                     if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
-                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, T._.download_error_message_rangeheaders());
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDT._.download_error_message_rangeheaders());
                         logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this) + connection.toString());
                         // logger.finest(connection.toString());
                         return;
@@ -583,7 +584,7 @@ abstract public class DownloadInterface {
                                 return;
                             }
                             logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.toString());
-                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, T._.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range"));
+                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDT._.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range"));
 
                             // logger.finest(connection.toString());
                             return;
@@ -762,7 +763,7 @@ abstract public class DownloadInterface {
         this.plugin = plugin;
         logger = plugin.getLogger();
         linkStatus = downloadLink.getLinkStatus();
-        linkStatus.setStatusText(T._.download_connection_normal());
+        linkStatus.setStatusText(JDT._.download_connection_normal());
         browser = plugin.getBrowser().cloneBrowser();
         downloadLink.setDownloadInstance(this);
         requestTimeout = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
@@ -1097,12 +1098,12 @@ abstract public class DownloadInterface {
             }
             logger.severe("Filesize: " + fileSize + " Loaded: " + totaleLinkBytesLoaded);
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
-            error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, T._.download_error_message_incomplete());
+            error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDT._.download_error_message_incomplete());
             return false;
         }
 
         if (getExceptions() != null && getExceptions().size() > 0) {
-            error(LinkStatus.ERROR_RETRY, T._.download_error_message_incomplete());
+            error(LinkStatus.ERROR_RETRY, JDT._.download_error_message_incomplete());
             return false;
         }
         if (!linkStatus.isFailed()) {
@@ -1203,20 +1204,20 @@ abstract public class DownloadInterface {
         LinkStatus linkstatus = link.getLinkStatus();
         if (block != null) {
             linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            if (block.getDefaultPlugin() != null) linkstatus.setStatusText(T._.system_download_errors_linkisBlocked( block.getHost()));
+            if (block.getDefaultPlugin() != null) linkstatus.setStatusText(JDT._.system_download_errors_linkisBlocked( block.getHost()));
             return true;
         }
         File fileOutput = new File(downloadLink.getFileOutput());
         if (fileOutput.getParentFile() == null) {
             linkstatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkstatus.setErrorMessage(T._.system_download_errors_invalidoutputfile());
+            linkstatus.setErrorMessage(JDT._.system_download_errors_invalidoutputfile());
             return true;
         }
         if (fileOutput.isDirectory()) return false;
         if (!fileOutput.getParentFile().exists()) {
             if (!fileOutput.getParentFile().mkdirs()) {
                 linkstatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkstatus.setErrorMessage(T._.system_download_errors_invalidoutputfile());
+                linkstatus.setErrorMessage(JDT._.system_download_errors_invalidoutputfile());
                 return true;
             }
         }
@@ -1224,12 +1225,12 @@ abstract public class DownloadInterface {
             if (JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 0) {
                 if (!new File(downloadLink.getFileOutput()).delete()) {
                     linkstatus.addStatus(LinkStatus.ERROR_FATAL);
-                    linkstatus.setErrorMessage(T._.system_download_errors_couldnotoverwrite());
+                    linkstatus.setErrorMessage(JDT._.system_download_errors_couldnotoverwrite());
                     return true;
                 }
             } else {
                 linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                linkstatus.setErrorMessage(T._.downloadlink_status_error_file_exists());
+                linkstatus.setErrorMessage(JDT._.downloadlink_status_error_file_exists());
                 return true;
             }
         }
@@ -1277,7 +1278,7 @@ abstract public class DownloadInterface {
             return handleErrors();
         } catch (Exception e) {
             if (e instanceof FileNotFoundException) {
-                this.error(LinkStatus.ERROR_LOCAL_IO, T._.download_error_message_localio( e.getMessage()));
+                this.error(LinkStatus.ERROR_LOCAL_IO, JDT._.download_error_message_localio( e.getMessage()));
             } else {
                 JDLogger.exception(e);
             }

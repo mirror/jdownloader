@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.chat;
 
-
- import org.jdownloader.extensions.chat.translate.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
@@ -76,7 +74,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
-import org.jdownloader.extensions.chat.translation.TT;
+import org.jdownloader.extensions.chat.translate.T;
 import org.schwering.irc.lib.IRCConnection;
 
 public class ChatExtension extends AbstractExtension {
@@ -399,7 +397,7 @@ public class ChatExtension extends AbstractExtension {
 
                 @Override
                 protected void runInEDT() {
-                    tabbedPane.setTitleAt(0, TT.T.gui_tab_title(getCurrentChannel()));
+                    tabbedPane.setTitleAt(0, T._.gui_tab_title(getCurrentChannel()));
                 }
             };
             config.setChannelLanguage(newChannel);
@@ -683,7 +681,7 @@ public class ChatExtension extends AbstractExtension {
                             text = text.substring(0, 40).concat("...");
                         }
                         if (!ChatExtension.this.tabbedPane.getTitleAt(ChatExtension.this.tabbedPane.getSelectedIndex()).equals(user)) {
-                            Balloon.show("JD Chat", null, T._.jd_plugins_optional_jdchat_newmessage( user, text));
+                            Balloon.show("JD Chat", null, T._.jd_plugins_optional_jdchat_newmessage(user, text));
                         }
                         return null;
                     }
@@ -1044,7 +1042,7 @@ public class ChatExtension extends AbstractExtension {
 
     @Override
     public String getDescription() {
-        return TT.T.description();
+        return T._.description();
     }
 
     @Override

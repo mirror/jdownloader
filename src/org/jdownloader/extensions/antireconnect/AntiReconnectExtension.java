@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.antireconnect;
 
-
- import org.jdownloader.extensions.antireconnect.translate.*;
 import java.util.ArrayList;
 
 import jd.config.ConfigContainer;
@@ -27,30 +25,28 @@ import jd.config.Configuration;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
-import org.appwork.txtresource.TranslationFactory;
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.antireconnect.translate.T;
 
 public class AntiReconnectExtension extends AbstractExtension {
-    private static final String              CONFIG_MODE         = "CONFIG_MODE";
-    private static final String              CONFIG_IPS          = "CONFIG_IPS";
-    private static final String              CONFIG_TIMEOUT      = "CONFIG_TIMEOUT";
-    private static final String              CONFIG_EACH         = "CONFIG_EACH";
-    private static final String              CONFIG_OLDDOWNLOADS = "CONFIG_OLDDOWNLOADS";
-    private static final String              CONFIG_NEWDOWNLOADS = "CONFIG_NEWDOWNLOADS";
-    private static final String              CONFIG_OLDRECONNECT = "CONFIG_OLDRECONNECT";
-    private static final String              CONFIG_NEWRECONNECT = "CONFIG_NEWRECONNECT";
-    private static final String              CONFIG_OLDSPEED     = "CONFIG_OLDSPEED";
-    private static final String              CONFIG_NEWSPEED     = "CONFIG_NEWSPEED";
+    private static final String   CONFIG_MODE         = "CONFIG_MODE";
+    private static final String   CONFIG_IPS          = "CONFIG_IPS";
+    private static final String   CONFIG_TIMEOUT      = "CONFIG_TIMEOUT";
+    private static final String   CONFIG_EACH         = "CONFIG_EACH";
+    private static final String   CONFIG_OLDDOWNLOADS = "CONFIG_OLDDOWNLOADS";
+    private static final String   CONFIG_NEWDOWNLOADS = "CONFIG_NEWDOWNLOADS";
+    private static final String   CONFIG_OLDRECONNECT = "CONFIG_OLDRECONNECT";
+    private static final String   CONFIG_NEWRECONNECT = "CONFIG_NEWRECONNECT";
+    private static final String   CONFIG_OLDSPEED     = "CONFIG_OLDSPEED";
+    private static final String   CONFIG_NEWSPEED     = "CONFIG_NEWSPEED";
 
-    private String[]                         availableModes;
+    private String[]              availableModes;
 
-    private JDAntiReconnectThread            asthread            = null;
-    public static JDAntiReconnectTranslation TT                   = TranslationFactory.create(JDAntiReconnectTranslation.class);
+    private JDAntiReconnectThread asthread            = null;
 
     public AbstractConfigPanel getConfigPanel() {
         return null;
@@ -62,7 +58,7 @@ public class AntiReconnectExtension extends AbstractExtension {
 
     public AntiReconnectExtension() throws StartException {
         super(T._.jd_plugins_optional_antireconnect_jdantireconnect());
-        availableModes = new String[] { TT.mode_disabled(), TT.mode_ping(), TT.mode_arp() };
+        availableModes = new String[] { T._.mode_disabled(), T._.mode_ping(), T._.mode_arp() };
 
     }
 
@@ -89,7 +85,7 @@ public class AntiReconnectExtension extends AbstractExtension {
 
     @Override
     public String getDescription() {
-        return TT.description();
+        return T._.description();
     }
 
     @Override

@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.extraction;
 
-
- import org.jdownloader.extensions.extraction.translate.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -52,7 +50,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.extensions.AbstractConfigPanel;
 import org.jdownloader.extensions.AbstractExtension;
@@ -62,7 +59,7 @@ import org.jdownloader.extensions.extraction.multi.Multi;
 import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
-import org.jdownloader.extensions.extraction.translation.TT;
+import org.jdownloader.extensions.extraction.translate.T;
 
 public class ExtractionExtension extends AbstractExtension implements ControlListener, ActionListener {
     private static final int             EXTRACT_LINK            = 1000;
@@ -92,7 +89,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
     private final ArrayList<Archive>     archives                = new ArrayList<Archive>();
 
     public ExtractionExtension() throws StartException {
-        super(TT.T.name());
+        super(T._.name());
     }
 
     /**
@@ -147,7 +144,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
         ExtractionController controller = new ExtractionController(archive, logger);
 
         if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
-            ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile( archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
+            ProgressController progress = new ProgressController(T._.plugins_optional_extraction_progress_extractfile(archive.getFirstDownloadLink().getFileOutput()), 100, getIconKey());
             controller.setProgressController(progress);
 
             controller.addExtractionListener(new ExtractionListenerFile(this));
@@ -296,7 +293,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
             String path = link.getStringProperty(ExtractionConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
 
             if (!new File(path).exists()) {
-                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_extraction_messages( path));
+                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_extraction_messages(path));
             } else {
                 JDUtilities.openExplorer(new File(path));
             }
@@ -727,7 +724,7 @@ public class ExtractionExtension extends AbstractExtension implements ControlLis
 
     @Override
     public String getDescription() {
-        return TT.T.description();
+        return T._.description();
     }
 
     @Override

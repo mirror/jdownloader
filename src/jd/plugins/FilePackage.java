@@ -18,6 +18,7 @@ package jd.plugins;
 
 
  import org.jdownloader.translate.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -66,7 +67,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     public synchronized static FilePackage getDefaultFilePackage() {
         if (FP == null) {
             FP = new FilePackage();
-            FP.setName(T._.controller_packages_defaultname());
+            FP.setName(JDT._.controller_packages_defaultname());
         }
         return FP;
     }

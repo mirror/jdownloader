@@ -18,6 +18,7 @@ package jd.controlling;
 
 
  import org.jdownloader.translate.*;
+
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -75,7 +76,7 @@ public final class CNL2 {
                             } else {
                                 LocalBrowser.openDefaultURL(new URL(text + "?jd=1"));
                             }
-                            Balloon.show(T._.jd_controlling_CNL2_checkText_title(), null, T._.jd_controlling_CNL2_checkText_message());
+                            Balloon.show(JDT._.jd_controlling_CNL2_checkText_title(), null, JDT._.jd_controlling_CNL2_checkText_message());
                             return true;
                         }
                     }

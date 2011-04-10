@@ -1,5 +1,6 @@
 package jd.network.rtmp;
 
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -193,7 +194,7 @@ public class RtmpDump extends RTMPDownload {
                 logger.finest("no errors : rename");
                 if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) {
                     logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
-                    error(LinkStatus.ERROR_LOCAL_IO, T._.system_download_errors_couldnotrename());
+                    error(LinkStatus.ERROR_LOCAL_IO, JDT._.system_download_errors_couldnotrename());
                 }
                 downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
             } else {
