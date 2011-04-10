@@ -74,7 +74,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
-import org.jdownloader.extensions.chat.translation.T;
+import org.jdownloader.extensions.chat.translation.TT;
 import org.schwering.irc.lib.IRCConnection;
 
 public class ChatExtension extends AbstractExtension {
@@ -397,7 +397,7 @@ public class ChatExtension extends AbstractExtension {
 
                 @Override
                 protected void runInEDT() {
-                    tabbedPane.setTitleAt(0, T.T.gui_tab_title(getCurrentChannel()));
+                    tabbedPane.setTitleAt(0, TT.T.gui_tab_title(getCurrentChannel()));
                 }
             };
             config.setChannelLanguage(newChannel);
@@ -1042,7 +1042,7 @@ public class ChatExtension extends AbstractExtension {
 
     @Override
     public String getDescription() {
-        return T.T.description();
+        return TT.T.description();
     }
 
     @Override

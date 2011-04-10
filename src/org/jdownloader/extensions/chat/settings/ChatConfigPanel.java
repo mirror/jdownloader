@@ -8,7 +8,7 @@ import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.chat.ChatConfig;
 import org.jdownloader.extensions.chat.ChatExtension;
-import org.jdownloader.extensions.chat.translation.T;
+import org.jdownloader.extensions.chat.translation.TT;
 
 public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
 
@@ -32,7 +32,7 @@ public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
     private void initComponents() {
         nick = new TextInput();
         userColors = new Checkbox();
-        userPosition = new ComboBox(T.T.settings_userlist_position_right(), T.T.settings_userlist_position_left());
+        userPosition = new ComboBox(TT.T.settings_userlist_position_right(), TT.T.settings_userlist_position_left());
         perform = new TextArea();
     }
 
@@ -66,10 +66,10 @@ public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
 
     protected void layoutPanel() {
 
-        addPair(T.T.settings_nick(), nick);
-        addPair(T.T.settings_enabled_userlist_colors(), userColors);
-        addPair(T.T.settings_userlist_position(), userPosition);
-        addPair(T.T.settings_perform(), perform);
+        addPair(TT.T.settings_nick(), nick);
+        addPair(TT.T.settings_enabled_userlist_colors(), userColors);
+        addPair(TT.T.settings_userlist_position(), userPosition);
+        addPair(TT.T.settings_perform(), perform);
 
     }
 
