@@ -48,7 +48,7 @@ public class AntiReconnectExtension extends AbstractExtension {
     private String[]                         availableModes;
 
     private JDAntiReconnectThread            asthread            = null;
-    public static JDAntiReconnectTranslation T                   = TranslationFactory.create(JDAntiReconnectTranslation.class);
+    public static JDAntiReconnectTranslation TT                   = TranslationFactory.create(JDAntiReconnectTranslation.class);
 
     public AbstractConfigPanel getConfigPanel() {
         return null;
@@ -60,7 +60,7 @@ public class AntiReconnectExtension extends AbstractExtension {
 
     public AntiReconnectExtension() throws StartException {
         super(JDL.L("jd.plugins.optional.antireconnect.jdantireconnect", "Anti Reconnect"));
-        availableModes = new String[] { T.mode_disabled(), T.mode_ping(), T.mode_arp() };
+        availableModes = new String[] { TT.mode_disabled(), TT.mode_ping(), TT.mode_arp() };
 
     }
 
@@ -87,7 +87,7 @@ public class AntiReconnectExtension extends AbstractExtension {
 
     @Override
     public String getDescription() {
-        return T.description();
+        return TT.description();
     }
 
     @Override
