@@ -93,7 +93,7 @@ public class Converter implements MessageListener {
                     count++;
                 }
                 count--;
-                sb.append("@Default(lngs = { \"en\" }, values = { \"" + value + "\" })");
+                sb.append("@Default(lngs = { \"en\" }, values = { \"" + value.replace("\"", "\\\"") + "\" })");
                 for (String s : lngfiles.keySet()) {
                     HashMap<String, String> lsb = lngfiles.get(s);
                     String r = convert(readValue(s, c.getKey()));
@@ -178,8 +178,6 @@ public class Converter implements MessageListener {
             System.out.println("Write " + ti.getShortFile());
             for (String s : lngfiles.keySet()) {
                 HashMap<String, String> lsb = lngfiles.get(s);
-
-                ti.getShortFile().delete();
 
                 File lngF = new File("translations/" + ti.getPath().toString().substring(4) + "/" + ti.getClassName() + "Translation." + s + ".lng");
                 lngF.delete();
