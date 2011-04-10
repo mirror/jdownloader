@@ -170,17 +170,20 @@ public class Converter implements MessageListener {
 
                 ti.getShortFile().delete();
 
-                File lngF = new File(ti.getPath(), ti.getClassName() + "Translation." + s + ".lng");
+                File lngF = new File("translations/" + ti.getPath().toString().substring(4) + "/" + ti.getClassName() + "Translation." + s + ".lng");
                 lngF.delete();
-                IO.writeStringToFile(lngF, JSonStorage.toString(lsb));
-                sb2 = new StringBuilder();
-                pkg = ti.getPath().toString().substring(4).replace("\\", ".").replace("/", ".");
-                sb2.append("package " + pkg + ";\r\n");
-                sb2.append("import org.appwork.txtresource.TranslationFactory;\r\n");
-                sb2.append("public class T {\r\n");
-                sb2.append("public static final " + ti.getClassName() + " T = TranslationFactory.create(" + ti.getClassName() + ".class);\r\n");
-                sb2.append("}");
-                IO.writeStringToFile(ti.getShortFile(), sb2.toString());
+                if (lsb.size() > 0) {
+                    lngF.getParentFile().mkdirs();
+                    IO.writeStringToFile(lngF, JSonStorage.toString(lsb));
+                    sb2 = new StringBuilder();
+                    pkg = ti.getPath().toString().substring(4).replace("\\", ".").replace("/", ".");
+                    sb2.append("package " + pkg + ";\r\n");
+                    sb2.append("import org.appwork.txtresource.TranslationFactory;\r\n");
+                    sb2.append("public class T {\r\n");
+                    sb2.append("public static final " + ti.getClassName() + " T = TranslationFactory.create(" + ti.getClassName() + ".class);\r\n");
+                    sb2.append("}");
+                    IO.writeStringToFile(ti.getShortFile(), sb2.toString());
+                }
 
             }
         }
