@@ -44,9 +44,12 @@ import org.w3c.dom.Document;
 @HostPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "rtl-now.rtl.de", "voxnow.de", "superrtlnow.de" }, urls = { "http://rtl-now\\.rtl\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://www\\.voxnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://www\\.superrtlnow\\.de/\\w+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
 public class RTLnowDe extends PluginForHost {
 
-    private static String MAINPAGE = "http://rtl-now.rtl.de";
+    public RTLnowDe(final PluginWrapper wrapper) {
+        super(wrapper);
+        setStartIntervall(5000l);
+    }
 
-    public static long crc32Hash(final String wahl) throws UnsupportedEncodingException {
+    private long crc32Hash(final String wahl) throws UnsupportedEncodingException {
         String a = Long.toString(System.currentTimeMillis()) + Double.toString(Math.random());
         if (wahl == "session") {
             a = Long.toString(System.currentTimeMillis()) + Double.toString(Math.random()) + Long.toString(Runtime.getRuntime().totalMemory());
@@ -54,11 +57,6 @@ public class RTLnowDe extends PluginForHost {
         final CRC32 c = new CRC32();
         c.update(a.getBytes("UTF-8"));
         return c.getValue();
-    }
-
-    public RTLnowDe(final PluginWrapper wrapper) {
-        super(wrapper);
-        setStartIntervall(5000l);
     }
 
     @Override
@@ -80,7 +78,7 @@ public class RTLnowDe extends PluginForHost {
         final String swfurl = br.getRegex("swfobject.embedSWF\\(\"(.*?)\",").getMatch(0);
         if (linkurl == null || ivw == null || client == null || swfurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        linkurl = Encoding.urlDecode(MAINPAGE + linkurl, true);
+        linkurl = Encoding.urlDecode("http://" + br.getHost() + linkurl, true);
         final URL url = new URL(linkurl + "&ts=" + System.currentTimeMillis() / 1000);
 
         final InputStream stream = url.openStream();
@@ -100,12 +98,6 @@ public class RTLnowDe extends PluginForHost {
         if (dllink.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, dllink);
             final RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-            // Parametersetup
-            // StreamUrl:
-            // rtmpe://fms-fra29.rtl.de/rtlnow/3/Z23433_KFA001_A_700k.flv
-            // <----------Host---------><-App-><---------------------PlayPath---------------------------->
-            // <-------------TcUrl------------>
 
             String playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow)/(.*?)$").getMatch(1);
             String host = new Regex(dllink, "(.*?)(rtl.de/|rtl.de:1935/)").getMatch(-1);

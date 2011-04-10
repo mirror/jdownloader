@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 14018 $", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(www\\.)?4tube\\.com/videos/\\d+/[\\w-]+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(www\\.)?4tube\\.com/videos/\\d+/?([\\w-]+)?" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class FourTubeCom extends PluginForHost {
 
     public FourTubeCom(final PluginWrapper wrapper) {

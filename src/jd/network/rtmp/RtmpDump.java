@@ -1,7 +1,5 @@
 package jd.network.rtmp;
 
-
- import org.jdownloader.translate.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -18,19 +16,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.RTMPDownload;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.nativ.NativeProcess;
+import org.jdownloader.translate.T;
 
 public class RtmpDump extends RTMPDownload {
 
     private Chunk             chunk;
     private long              speed = 0l;
-    private static int        PID   = -1;
-    private static String     RTMPDUMP;
+    private int               PID   = -1;
+    private String            RTMPDUMP;
     private NativeProcess     np;
     private Process           p;
     private InputStreamReader r;
@@ -113,12 +111,13 @@ public class RtmpDump extends RTMPDownload {
 
             final File tmp = new File(downloadLink.getFileOutput() + ".part");
             String line = "";
+            String error = "";
             long iSize = 0;
             long before = 0;
             long lastTime = System.currentTimeMillis();
             long bytesLoaded = 0l;
-            String cmd = rtmpConnection.getCommandLineParameter();
 
+            String cmd = rtmpConnection.getCommandLineParameter();
             if (CrossSystem.isWindows() && String.valueOf(tmp).length() >= 260) {
                 // MAX_PATH Fix --> \\?\ + Path
                 cmd += " -o \"\\\\?\\" + String.valueOf(tmp) + "\"";
@@ -141,6 +140,7 @@ public class RtmpDump extends RTMPDownload {
                 final BufferedReader br = new BufferedReader(r);
                 int sizeCalulateBuffer = 0;
                 while ((line = br.readLine()) != null) {
+                    error = line;
                     if (!new Regex(line, "^[0-9]").matches()) {
                         if (line.contains("length")) {
                             final String size = new Regex(line, ".*?(\\d.+)").getMatch(0);
@@ -155,7 +155,6 @@ public class RtmpDump extends RTMPDownload {
                         if (pos1 != -1 && pos2 != -1 && line.toUpperCase().contains("KB")) {
                             final float progressFloat = Float.parseFloat(line.substring(pos1 + 1, pos2 - 1));
                             bytesLoaded = SizeFormatter.getSize(line.substring(0, line.toLowerCase().indexOf("kb") + 2));
-                            // System.out.println(line + " : " + bytesLoaded);
                             if (Thread.currentThread().isInterrupted()) {
                                 if (CrossSystem.isWindows()) {
                                     np.sendCtrlCSignal();
@@ -189,7 +188,7 @@ public class RtmpDump extends RTMPDownload {
             } finally {
                 rtmpConnection.disconnect();
             }
-            if (line.toLowerCase().contains("download complete")) {
+            if (line != null && line.toLowerCase().contains("download complete")) {
                 downloadLink.setDownloadSize(bytesLoaded);
                 logger.finest("no errors : rename");
                 if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) {
@@ -198,7 +197,7 @@ public class RtmpDump extends RTMPDownload {
                 }
                 downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
             } else {
-                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " rtmpdump-Output: " + line);
+                throw new PluginException(LinkStatus.ERROR_FATAL, " rtmpdump-Output: " + error);
             }
             return true;
         } finally {
